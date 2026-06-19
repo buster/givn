@@ -135,6 +135,18 @@ For each artifact:
   is set to the runner chosen in design.md. This task gates all others.
 - Subsequent tasks: one `- [ ]` checkbox per scenario, covering a full
   RED/GREEN/REFACTOR cycle.
+- **Every scenario task must include a "Design constraints" block** drawn from
+  design.md, specific to that scenario. This is not optional. The coding agent
+  that executes each task reads the task body as its primary architecture
+  reference — if the constraints are absent, it will take the shortest path
+  that makes the test pass, which may not match the design.
+  Example block (adapt to the actual tech stack and scenario):
+  ```
+  Design constraints:
+    - <which module/layer owns this behaviour>
+    - <which protocol, data format, or library to use>
+    - <what response shape / side-effect is required by the design>
+  ```
 - Think about: what is the right order? What setup is needed before features?
   Are any tasks dependent on each other?
 

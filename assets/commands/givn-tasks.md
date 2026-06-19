@@ -66,17 +66,30 @@ This task gates all others — the runner must be working before any RED phase b
 
 **Subsequent tasks: one per scenario**
 
+Each task body must embed the design constraints that are relevant to that
+specific scenario. The coding agent that executes the task may not read
+design.md — everything it needs to follow the architecture must be in the task.
+
 ```markdown
 - [ ] <capability>: <Scenario title>
+      Design constraints:
+        - <copy the architectural decisions from design.md that apply here>
+          e.g. which layer/module handles this, which protocol or data format
+          to use, which framework/library to call, which response shape to
+          return. Be specific enough that there is no ambiguous shortcut.
       RED:      Remove @wip from this scenario. Write step definitions with real
                 assertions. Run: <verify.command> → MUST FAIL.
-      GREEN:    Write minimum production code. Run: <verify.command> → PASSES.
+      GREEN:    Write the minimum production code that makes this scenario pass,
+                following the design constraints above exactly.
+                Run: <verify.command> → PASSES.
       REFACTOR: Clean up. Run: <verify.command> → still PASSES.
 ```
 
 **Rules:**
 - First task is always infrastructure setup — never skip it.
 - One scenario task = one full RED/GREEN/REFACTOR cycle.
+- Every scenario task must include a "Design constraints" block populated from
+  design.md — never leave it empty or generic.
 - Order scenario tasks by dependency (foundational scenarios before edge cases).
 - `givn lint` is a static check only — it does NOT run tests.
 - GREEN is confirmed by `verify.command` only, never by `givn lint`.
@@ -119,5 +132,8 @@ artifact if the manifest defines one after `tasks`).
 
 - One task per scenario — do not collapse multiple scenarios into one task.
 - Read design.md before writing tasks — step def locations matter.
+- Every scenario task must have a populated "Design constraints" block drawn
+  from design.md. A task with no constraints, or with placeholder text, is
+  incomplete — the coding agent will have no anchor and will take shortcuts.
 - Tasks must be checkboxes (`- [ ]`) so `givn apply` can track progress.
 - Verify the file exists after writing.

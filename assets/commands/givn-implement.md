@@ -52,9 +52,12 @@ givn lint --change <id>
 
 Read once; pass to every subagent:
 
-- `givn/changes/<id>/tasks.md` — task list and order
+- `givn/changes/<id>/tasks.md` — task list and order (each task includes a
+  "Design constraints" block; if any task is missing it, read design.md and
+  add it before spawning that subagent)
 - `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
-- `givn/changes/<id>/design.md` — architecture, step def locations, verify command
+- `givn/changes/<id>/design.md` — full design document; pass this to every
+  subagent in full, not just "relevant sections"
 - `givn/config.yaml` — resolve the actual `verify.command`
 
 ### 5. Loop: one coding subagent per task
@@ -72,7 +75,7 @@ Pass the subagent a self-contained prompt that includes:
 You are a coding agent executing a single TDD task for the givn change '<id>'.
 
 ## Your task
-<paste the task line verbatim>
+<paste the task line verbatim, including the Design constraints block>
 
 ## Scenario to implement
 <paste the relevant scenario(s) from the .feature file>
@@ -80,9 +83,15 @@ You are a coding agent executing a single TDD task for the givn change '<id>'.
 ## Context
 - Verify command: <verify.command>
 - Step definitions location: <from design.md>
-- Relevant design notes: <paste relevant section of design.md>
 
 ## Instructions
+
+### Before any code: read the design
+Read givn/changes/<id>/design.md in full before touching any file.
+The "Design constraints" block in your task summarises the decisions that apply
+to this scenario specifically. The full design.md is the authoritative source.
+Do not substitute a simpler approach that happens to make a test pass —
+implement the architecture as specified.
 
 ### RED phase
 1. Remove `@wip` from this scenario only (leave it on all others).
@@ -93,7 +102,10 @@ You are a coding agent executing a single TDD task for the givn change '<id>'.
    If it passes, the assertions are not real — fix them.
 
 ### GREEN phase
-4. Write the minimum production code to make this scenario pass.
+4. Write the minimum production code to make this scenario pass,
+   following the design constraints in the task and the architecture in
+   design.md exactly. "Minimum" means fewest lines that satisfy the
+   scenario — it does not mean a simpler architecture than the one designed.
 5. Run: <verify.command> → this scenario passes; others may still fail.
 
 ### REFACTOR phase
@@ -192,3 +204,7 @@ Task 4/7: ...
 - `givn lint` is a STATIC check only — GREEN comes from `<verify.command>` only.
 - If a task is ambiguous, ask the user before spawning its subagent.
 - Do not batch multiple scenarios into one subagent.
+- If a subagent reports GREEN but deviated from the design (e.g. used a simpler
+  architecture that happens to pass the test), reject the result and re-spawn
+  with an explicit instruction to follow the design. GREEN means the scenario
+  passes AND the implementation matches the design.
