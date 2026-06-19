@@ -4,9 +4,8 @@ This is the architecture documentation for **givn**, following the
 [arc42](https://arc42.org) template. Each chapter is a separate file to keep
 documents focused and reviewable.
 
-> **Status:** Planning complete. Implementation not started.
-> All decisions captured here were settled during the design Q&A and must not be
-> silently changed during implementation. See chapter 9 for the decision log.
+> **Status:** Phases 0–5 implemented (core engine complete). Phases 6–7 (distribution,
+> dogfood) pending. All architecture decisions remain binding — see chapter 9.
 
 ## Chapters
 
@@ -30,9 +29,9 @@ documents focused and reviewable.
 - [`../../README.md`](../../README.md) — user-facing project overview.
 - [`../TASKS.md`](../TASKS.md) — phase-by-phase implementation task breakdown.
 
-## How to use this during implementation
+## How to use this
 
 1. Read chapter 1 and 4 for the big picture.
 2. Read chapter 8 (cross-cutting concepts) — it is the heart of the design.
 3. Read chapter 9 to understand *why* each decision was made (do not relitigate).
-4. Work through [`../TASKS.md`](../TASKS.md) phase by phase.
+4. See [`../TASKS.md`](../TASKS.md) for the phase-by-phase task breakdown and current completion status.

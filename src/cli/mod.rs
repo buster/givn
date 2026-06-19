@@ -1,5 +1,4 @@
 pub mod apply;
-pub mod plan;
 pub mod archive;
 pub mod check;
 pub mod eject;

@@ -15,10 +15,11 @@ If ambiguous, list changes and ask.
 ### 1. Resolve the change
 
 ```sh
-givn status
+givn status --json
 ```
 
-Identify the active change. Announce: "Using change: <id>".
+Identify the active change from `active[0].id` (or ask if multiple).
+Announce: "Using change: <id>".
 
 ### 2. Check current progress
 

@@ -28,25 +28,24 @@ proceeding only if the name is genuinely ambiguous.
 givn new <id>
 ```
 
-### 3. Discover the artifact sequence
+### 3. Check current state and discover what to write
 
 ```sh
-givn plan --json
+givn status --change <id> --json
 ```
 
 Parse the JSON. It contains:
-- `artifacts`: array of artifacts in execution order, each with:
-  - `id`: artifact identifier
-  - `generates`: file path(s) this artifact produces
-  - `optional`: whether it can be skipped
-  - `gates_archive`: whether it must be complete before archiving
-  - `has_instruction`: whether `givn instructions <id>` will return content
-- `verify.command`: the configured test runner
-- `verify.features_path`: where features live
+- `artifacts`: array in execution order, each with `id`, `status`
+  (`pending`/`partial`/`done`), `optional`, `gates_archive`
+- `next_required`: the next artifact that must be written (`id`, `optional`)
+- `optional_pending`: optional artifacts not yet written
+- `verify_command`: the configured test runner
 
-**The `artifacts` array IS the planning sequence.** Work through every
-non-optional artifact in order (stop before `review` — that belongs to
-`/givn-review` after implementation is done).
+**Use `next_required` to drive the loop.** After writing each artifact,
+re-query `givn status --change <id> --json` to find the new `next_required`.
+Stop when `next_required.id` is `review` (or `all_required_done` is true
+and only review remains) — that step belongs to `/givn-review` after
+implementation.
 
 ### 4. Loop: write each planning artifact
 

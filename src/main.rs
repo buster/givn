@@ -55,11 +55,14 @@ enum Commands {
         #[arg(long)]
         change: Option<String>,
     },
-    /// Show lifecycle state derived from the filesystem.
+    /// Show lifecycle state: artifact checklist, current stage, next required and optional steps.
     Status {
         /// Change identifier (default: all active changes).
         #[arg(long)]
         change: Option<String>,
+        /// Output as JSON (machine-readable, for use by commands and scripts).
+        #[arg(long)]
+        json: bool,
     },
     /// Track task progress for a change.
     Apply {
@@ -85,12 +88,6 @@ enum Commands {
     Skills {
         #[command(subcommand)]
         command: SkillsCommands,
-    },
-    /// Show the effective artifact plan (ordered sequence from the manifest).
-    Plan {
-        /// Output as JSON (machine-readable, for use by commands and scripts).
-        #[arg(long)]
-        json: bool,
     },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
@@ -126,12 +123,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Check { artifact, change } => {
             cli::check::run(artifact.as_deref(), change.as_deref())
         }
-        Commands::Status { change } => cli::status::run(change.as_deref()),
+        Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
         Commands::Apply { change } => cli::apply::run(&change),
         Commands::Archive { change } => cli::archive::run(&change),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
         Commands::Skills { command: SkillsCommands::Sync } => cli::skills::run_sync(),
-        Commands::Plan { json } => cli::plan::run(json),
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
     }

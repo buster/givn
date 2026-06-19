@@ -2,7 +2,7 @@ use anyhow::{bail, Result};
 use crate::config::overlay::load_effective;
 use crate::gherkin::parse::collect_feature_files;
 use crate::gherkin::merge::merge_file;
-use crate::state::ChangeState;
+use crate::state::{ArtifactStatus, ChangeState};
 use gherkin::GherkinEnv;
 
 /// Archive a completed change.
@@ -31,51 +31,33 @@ pub fn run(change: &str) -> Result<()> {
     }
 
     let manifest = load_effective()?;
-    let state = ChangeState::from_path(&change_dir);
+    let state = ChangeState::from_manifest(&change_dir, &manifest);
 
     println!("Archiving change '{change}'...");
 
-    // === Gate checks ===
+    // === Gate checks (manifest-aware) ===
 
-    // 1. Check apply.requires artifacts exist.
+    // 1. Check all apply.requires artifacts are Done.
     for req in &manifest.apply.requires {
-        let exists = match req.as_str() {
-            "proposal" => state.proposal_exists,
-            "specs" => state.specs_exist,
-            "design" => state.design_exists,
-            "tasks" => state.tasks_exists,
-            "review" => state.review_exists,
-            _ => false,
-        };
-        if !exists {
-            bail!(
+        let artifact_state = state.artifacts.iter().find(|a| a.id == *req);
+        match artifact_state {
+            None => bail!("archive blocked: required artifact '{}' not found in manifest", req),
+            Some(a) if a.status == ArtifactStatus::Pending => bail!(
                 "archive blocked: required artifact '{}' does not exist for change '{}'",
-                req,
-                change
-            );
-        }
-    }
-
-    // 2. Check tasks complete.
-    if manifest.apply.requires.contains(&"tasks".to_string()) {
-        match &state.tasks_progress {
-            None => bail!("archive blocked: tasks.md not found"),
-            Some(p) if !p.is_complete() => bail!(
-                "archive blocked: tasks not complete ({}/{} done)",
-                p.done,
-                p.total
+                req, change
             ),
+            Some(a) if a.status == ArtifactStatus::Partial => {
+                // For tasks: incomplete checkboxes. For review: missing PASS.
+                if let Some(ref p) = a.tasks_progress {
+                    bail!("archive blocked: tasks not complete ({}/{} done)", p.done, p.total);
+                }
+                bail!(
+                    "archive blocked: artifact '{}' is incomplete. \
+                     For review: ensure 'REVIEW: PASS' is present.",
+                    req
+                );
+            }
             _ => {}
-        }
-    }
-
-    // 3. Check review PASS.
-    if manifest.apply.requires.contains(&"review".to_string()) {
-        if !state.review_pass {
-            bail!(
-                "archive blocked: review.md does not contain 'REVIEW: PASS'. \
-                 Complete the review and add the sign-off marker."
-            );
         }
     }
 

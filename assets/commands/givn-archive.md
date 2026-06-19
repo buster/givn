@@ -12,22 +12,19 @@ ambiguous, list changes and ask.
 
 ## Steps
 
-### 1. Resolve the change
+### 1. Resolve the change and run pre-flight checks
 
 ```sh
-givn status
+givn status --change <id> --json
 ```
 
 Identify the active change. Announce: "Using change: <id>".
 
-### 2. Pre-flight checks (you run these; givn also enforces them)
-
-**Tasks:**
-```sh
-givn apply --change <id>
-```
-If any tasks are unchecked (`- [ ]`), warn the user and ask for confirmation
-before continuing.
+From the JSON, check:
+- `artifacts` where `id == "tasks"`: if `status != "done"`, warn and confirm.
+- `artifacts` where `id == "review"`: if `status != "done"`, stop — direct
+  the user to `/givn-review` first.
+- `all_required_done`: if false, list what is missing and stop.
 
 **Review:**
 Check that `givn/changes/<id>/review.md` exists and contains `REVIEW: PASS`.

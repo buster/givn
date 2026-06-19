@@ -15,12 +15,12 @@ ambiguous, list changes and ask.
 ### 1. Resolve the change
 
 ```sh
-givn status
+givn status --change <id> --json
 ```
 
 Identify the active change. Announce: "Using change: <id>".
-If any tasks are still unchecked, warn the user — all tasks should be done
-before review. Confirm to proceed if they want.
+Check the `artifacts` array: if the `tasks` entry is not `"status": "done"`,
+warn the user — all tasks should be complete before review. Confirm to proceed.
 
 ### 2. Get review instructions
 

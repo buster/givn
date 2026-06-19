@@ -1,19 +1,31 @@
 /// Filesystem-derived lifecycle state (ADR-014, arc42 ch.8.6).
 ///
-/// There is no state file. State is computed entirely from which files exist.
+/// There is no state file. State is computed entirely from which files exist,
+/// driven by the effective manifest's artifact graph rather than hardcoded fields.
 use std::path::Path;
+use crate::config::manifest::{Artifact, Manifest};
 
-/// The lifecycle state of a single change.
+/// The status of a single artifact within a change.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ArtifactStatus {
+    /// All `generates` paths exist (and for tasks: all checkboxes are checked;
+    /// for review: REVIEW: PASS is present).
+    Done,
+    /// Some `generates` paths exist but the artifact is not fully complete.
+    Partial,
+    /// No `generates` paths exist.
+    Pending,
+}
+
+/// The state of a single artifact within a change, with context.
 #[derive(Debug, Clone)]
-pub struct ChangeState {
+pub struct ArtifactState {
     pub id: String,
-    pub proposal_exists: bool,
-    pub specs_exist: bool,
-    pub design_exists: bool,
-    pub tasks_exists: bool,
-    pub review_exists: bool,
+    pub status: ArtifactStatus,
+    pub optional: bool,
+    pub gates_archive: bool,
+    /// Task progress, if this artifact tracks checkboxes.
     pub tasks_progress: Option<TasksProgress>,
-    pub review_pass: bool,
 }
 
 /// Progress derived from tasks.md checkbox parsing.
@@ -29,73 +41,228 @@ impl TasksProgress {
     }
 }
 
+/// The full lifecycle state of a single change, manifest-aware.
+#[derive(Debug, Clone)]
+pub struct ChangeState {
+    pub id: String,
+    /// Artifacts in topological order with their current status.
+    pub artifacts: Vec<ArtifactState>,
+    pub verify_command: String,
+    pub archived: bool,
+}
+
 impl ChangeState {
-    /// Derive state from the filesystem for a change under `givn/changes/<id>/`.
-    pub fn from_path(change_dir: &Path) -> Self {
+    /// Derive state by walking the manifest's artifact graph against the filesystem.
+    pub fn from_manifest(change_dir: &Path, manifest: &Manifest) -> Self {
         let id = change_dir
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or("")
             .to_string();
 
-        let proposal_exists = change_dir.join("proposal.md").exists();
-        let design_exists = change_dir.join("design.md").exists();
-        let tasks_exists = change_dir.join("tasks.md").exists();
-        let review_exists = change_dir.join("review.md").exists();
+        let archive_requires: std::collections::HashSet<&str> = manifest
+            .apply
+            .requires
+            .iter()
+            .map(|s| s.as_str())
+            .collect();
 
-        // Check if any .feature files exist under specs/.
-        let specs_exist = {
-            let specs_dir = change_dir.join("specs");
-            specs_dir.exists()
-                && crate::gherkin::parse::collect_feature_files(&specs_dir).len() > 0
-        };
+        let ordered = topological_sort(&manifest.artifacts);
 
-        // Parse tasks progress.
-        let tasks_progress = if tasks_exists {
-            Some(parse_tasks_progress(&change_dir.join("tasks.md")))
-        } else {
-            None
-        };
+        let artifacts = ordered
+            .iter()
+            .map(|a| {
+                let status = artifact_status(a, change_dir);
+                let tasks_progress = if a.id == "tasks" || a.generates.iter().any(|g| g.ends_with("tasks.md")) {
+                    let tasks_path = change_dir.join("tasks.md");
+                    if tasks_path.exists() {
+                        Some(parse_tasks_progress(&tasks_path))
+                    } else {
+                        None
+                    }
+                } else {
+                    None
+                };
 
-        // Detect review PASS marker.
-        let review_pass = if review_exists {
-            detect_review_pass(&change_dir.join("review.md"))
-        } else {
-            false
-        };
+                ArtifactState {
+                    id: a.id.clone(),
+                    status,
+                    optional: a.optional,
+                    gates_archive: archive_requires.contains(a.id.as_str()),
+                    tasks_progress,
+                }
+            })
+            .collect();
 
         ChangeState {
             id,
-            proposal_exists,
-            specs_exist,
-            design_exists,
-            tasks_exists,
-            review_exists,
-            tasks_progress,
-            review_pass,
+            artifacts,
+            verify_command: manifest.verify.command.clone(),
+            archived: false,
         }
     }
 
-    /// Returns a human-readable summary of the current stage.
-    pub fn stage_label(&self) -> &'static str {
-        if self.review_exists && self.review_pass {
-            "ready-to-archive"
-        } else if self.tasks_exists {
-            if self.tasks_progress.as_ref().map(|p| p.is_complete()).unwrap_or(false) {
-                "implementation-done"
+    /// The first required artifact that is not yet Done — the immediate next step.
+    pub fn next_required(&self) -> Option<&ArtifactState> {
+        self.artifacts
+            .iter()
+            .find(|a| !a.optional && a.status != ArtifactStatus::Done)
+    }
+
+    /// All optional artifacts that are still Pending.
+    pub fn optional_pending(&self) -> Vec<&ArtifactState> {
+        self.artifacts
+            .iter()
+            .filter(|a| a.optional && a.status == ArtifactStatus::Pending)
+            .collect()
+    }
+
+    /// Whether all required artifacts are Done (change is complete pending archive).
+    pub fn all_required_done(&self) -> bool {
+        self.artifacts
+            .iter()
+            .filter(|a| !a.optional)
+            .all(|a| a.status == ArtifactStatus::Done)
+    }
+
+    /// Human-readable stage label derived from manifest-aware state.
+    pub fn stage_label(&self) -> String {
+        if self.all_required_done() {
+            "ready-to-archive".to_string()
+        } else if let Some(next) = self.next_required() {
+            // Find the previous done artifact to describe current stage.
+            let done_count = self
+                .artifacts
+                .iter()
+                .filter(|a| !a.optional && a.status == ArtifactStatus::Done)
+                .count();
+            if done_count == 0 {
+                "empty".to_string()
+            } else if next.id == "tasks" {
+                // Check if tasks is partial (in-progress).
+                let tasks = self.artifacts.iter().find(|a| a.id == "tasks");
+                if tasks.map(|t| t.status == ArtifactStatus::Partial).unwrap_or(false) {
+                    "in-progress".to_string()
+                } else {
+                    format!("{}-done", self.last_done_id())
+                }
             } else {
-                "in-progress"
+                format!("{}-done", self.last_done_id())
             }
-        } else if self.design_exists {
-            "design-done"
-        } else if self.specs_exist {
-            "specs-done"
-        } else if self.proposal_exists {
-            "proposal-done"
         } else {
-            "empty"
+            "empty".to_string()
         }
     }
+
+    fn last_done_id(&self) -> &str {
+        self.artifacts
+            .iter()
+            .filter(|a| !a.optional && a.status == ArtifactStatus::Done)
+            .last()
+            .map(|a| a.id.as_str())
+            .unwrap_or("unknown")
+    }
+}
+
+/// Determine whether an artifact's output exists in the change directory.
+fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
+    if artifact.generates.is_empty() {
+        return ArtifactStatus::Pending;
+    }
+
+    let mut any_exist = false;
+    let mut all_exist = true;
+
+    for pattern in &artifact.generates {
+        let exists = if pattern.contains('*') {
+            // Glob: check if any matching file exists.
+            let base = pattern.split('*').next().unwrap_or("");
+            let base_dir = change_dir.join(base.trim_end_matches('/'));
+            crate::gherkin::parse::collect_feature_files(&base_dir).len() > 0
+        } else {
+            change_dir.join(pattern).exists()
+        };
+
+        if exists {
+            any_exist = true;
+        } else {
+            all_exist = false;
+        }
+    }
+
+    if !any_exist {
+        return ArtifactStatus::Pending;
+    }
+
+    // For tasks: check if all checkboxes are done.
+    if artifact.generates.iter().any(|g| g.ends_with("tasks.md")) {
+        let tasks_path = change_dir.join("tasks.md");
+        if tasks_path.exists() {
+            let progress = parse_tasks_progress(&tasks_path);
+            return if progress.is_complete() {
+                ArtifactStatus::Done
+            } else {
+                ArtifactStatus::Partial
+            };
+        }
+    }
+
+    // For review: check for REVIEW: PASS marker.
+    if artifact.generates.iter().any(|g| g.ends_with("review.md")) {
+        let review_path = change_dir.join("review.md");
+        if review_path.exists() {
+            return if detect_review_pass(&review_path) {
+                ArtifactStatus::Done
+            } else {
+                ArtifactStatus::Partial
+            };
+        }
+    }
+
+    if all_exist { ArtifactStatus::Done } else { ArtifactStatus::Partial }
+}
+
+/// Topological sort of artifacts by their `requires` graph (Kahn's algorithm).
+pub fn topological_sort(artifacts: &[Artifact]) -> Vec<&Artifact> {
+    use std::collections::{HashMap, VecDeque};
+
+    let index: HashMap<&str, usize> = artifacts
+        .iter()
+        .enumerate()
+        .map(|(i, a)| (a.id.as_str(), i))
+        .collect();
+
+    let mut in_degree = vec![0usize; artifacts.len()];
+    let mut dependents: Vec<Vec<usize>> = vec![vec![]; artifacts.len()];
+
+    for (i, a) in artifacts.iter().enumerate() {
+        for req in &a.requires {
+            if let Some(&j) = index.get(req.as_str()) {
+                dependents[j].push(i);
+                in_degree[i] += 1;
+            }
+        }
+    }
+
+    let mut queue: VecDeque<usize> = in_degree
+        .iter()
+        .enumerate()
+        .filter(|(_, d)| **d == 0)
+        .map(|(i, _)| i)
+        .collect();
+
+    let mut result = Vec::new();
+    while let Some(i) = queue.pop_front() {
+        result.push(&artifacts[i]);
+        for &j in &dependents[i] {
+            in_degree[j] -= 1;
+            if in_degree[j] == 0 {
+                queue.push_back(j);
+            }
+        }
+    }
+
+    result
 }
 
 /// Parse the number of `[x]` and `[ ]` checkboxes in a tasks.md file.
@@ -112,15 +279,15 @@ pub fn detect_review_pass(path: &Path) -> bool {
     content.contains("REVIEW: PASS")
 }
 
-/// Find all active changes under `givn/changes/`.
-pub fn list_changes(project_root: &Path) -> Vec<ChangeState> {
+/// Find all active changes under `givn/changes/`, manifest-aware.
+pub fn list_changes(project_root: &Path, manifest: &Manifest) -> Vec<ChangeState> {
     let changes_dir = project_root.join("givn/changes");
     let mut changes = Vec::new();
     if let Ok(entries) = std::fs::read_dir(&changes_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
             if path.is_dir() {
-                changes.push(ChangeState::from_path(&path));
+                changes.push(ChangeState::from_manifest(&path, manifest));
             }
         }
     }
@@ -149,6 +316,7 @@ pub fn list_archived(project_root: &Path) -> Vec<String> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::manifest::Manifest;
 
     #[test]
     fn parse_tasks_progress_counts_checkboxes() {
@@ -175,5 +343,30 @@ mod tests {
 
         std::fs::write(&path, "Some content\n\n**REVIEW: FAIL**\n").unwrap();
         assert!(!detect_review_pass(&path));
+    }
+
+    #[test]
+    fn topological_sort_respects_requires() {
+        let manifest = Manifest::load_embedded().unwrap();
+        let sorted = topological_sort(&manifest.artifacts);
+        let ids: Vec<&str> = sorted.iter().map(|a| a.id.as_str()).collect();
+        let pos = |id: &str| ids.iter().position(|&x| x == id).unwrap();
+        assert!(pos("proposal") < pos("specs"));
+        assert!(pos("specs") < pos("design"));
+        assert!(pos("design") < pos("tasks"));
+        assert!(pos("tasks") < pos("review"));
+    }
+
+    #[test]
+    fn next_required_returns_first_pending() {
+        let manifest = Manifest::load_embedded().unwrap();
+        let dir = std::env::temp_dir().join("givn_state_test3");
+        std::fs::create_dir_all(&dir).unwrap();
+        // Write only proposal.md.
+        std::fs::write(dir.join("proposal.md"), "# Proposal").unwrap();
+
+        let state = ChangeState::from_manifest(&dir, &manifest);
+        let next = state.next_required().unwrap();
+        assert_eq!(next.id, "specs");
     }
 }

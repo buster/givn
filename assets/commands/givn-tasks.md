@@ -76,13 +76,12 @@ Confirms task tracking is live.
 ### 6. Show next step
 
 ```sh
-givn plan --json
+givn status --change <id> --json
 ```
 
-Find `tasks` in the sequence and confirm it is the last planning artifact.
-Report: "Ready to implement. Run `/givn-implement` to start the TDD loop."
-(Or, if there are further planning artifacts after `tasks` in the manifest,
-report the next one instead.)
+Read `next_required.id`. If it is `review` (or `all_required_done` is true),
+report: "Ready to implement. Run `/givn-implement`."
+If there are further planning artifacts after `tasks`, report that instead.
 
 ---
 

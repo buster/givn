@@ -43,10 +43,13 @@ givn/  (single published binary crate)
 ├── assets/                     # embedded via rust-embed
 │   ├── default-manifest.yaml   # the default artifact graph
 │   ├── config.yaml.tmpl        # documented, versioned project config scaffold
+│   ├── AGENTS.md.tmpl          # project rules/context template
 │   ├── templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
-│   ├── skills/                 # default SKILL.md templates per workflow step
+│   ├── instructions/           # per-artifact instruction files (proposal, specs, design, tasks, review)
+│   ├── commands/               # opencode slash command templates (givn-propose … givn-archive)
+│   ├── skills/                 # default SKILL.md.tmpl templates per workflow step
 │   └── addons/                 # opt-in addons (pre-packaged artifacts)
-│       └── arc42/              # arc42 chapter templates + index + instruction
+│       └── arc42/              # arc42 chapter templates + index + instruction (Phase 5.5)
 └── tests/                      # integration tests
 ```
 
@@ -60,7 +63,7 @@ givn/  (single published binary crate)
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
 | `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner); block & exit non-zero on failure. | `hooks`, `config::manifest` |
-| `cli::status` | Report lifecycle state derived from filesystem. | `state` |
+| `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. | `config::embedded`, `config::cascade` |
@@ -76,7 +79,7 @@ givn/  (single published binary crate)
 | `gherkin::delta` | Detect `@givn.*` tags; split features/scenarios. | `parse` |
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md / AGENTS.md. | `config::cascade` |
-| `skills::targets` | Write rendered output to the three skill locations + root. | `render` |
+| `skills::targets` | Write rendered output to the three skill locations + root AGENTS.md + `.opencode/commands/`. | `render` |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). | `config::manifest`, `cli::lint` |
 | `state` | Compute change state from which files exist. | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -93,4 +96,4 @@ givn/  (single published binary crate)
 | `thiserror` | Library error types | 2.0 |
 | `serde_json` | `--json` output | 1 |
 
-(Exact versions to be pinned in `Cargo.toml` during Phase 1.)
+Versions are pinned in `Cargo.lock`. The dep-age policy (`scripts/check-dep-age.sh`) enforces that every locked dependency is ≥ 30 days old (TC-13).

@@ -62,12 +62,11 @@ framework details, step-definition mechanics.
 ### 5. Show next step
 
 ```sh
-givn plan --json
+givn status --change <id> --json
 ```
 
-Find this artifact (`design`) in the sequence and report the next artifact id
-as the next command to run (e.g. `/givn-tasks`, or whatever follows `design`
-in the configured manifest).
+Read `next_required.id` from the output and report it as the next step
+(e.g. `/givn-tasks`, or whatever the manifest defines after `design`).
 
 ---
 

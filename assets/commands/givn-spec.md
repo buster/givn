@@ -85,12 +85,11 @@ givn lint
 ### 6. Show next step
 
 ```sh
-givn plan --json
+givn status --change <id> --json
 ```
 
-Find this artifact (`specs`) in the sequence and report the next artifact id
-as the next command to run (e.g. `/givn-design`, or whatever follows `specs`
-in the configured manifest).
+Read `next_required.id` from the output and report it as the next step
+(e.g. `/givn-design`, or whatever the manifest defines after `specs`).
 
 ---
 

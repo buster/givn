@@ -13,10 +13,11 @@ user → cli::init
        - every key present-but-commented with description/default/allowed-values
        - verify.command uncommented as the sentinel "givn missing-testrunner"
        - givn_config_version set to the current binary version
-  4. skills::render + skills::targets:
+   4. skills::render + skills::targets:
        - render AGENTS.md from embedded rules template → repo root
        - render each default skill template → .agents/skills/<name>/SKILL.md
        - mirror to .claude/skills/ and .opencode/skills/
+       - write each command template → .opencode/commands/<name>.md
   5. print next steps (incl. "set verify.command to your test runner")
 ```
 
@@ -140,9 +141,41 @@ user → cli::eject
 ```
 user → cli::skills
   1. skills::render all skill templates (cascade-resolved) + AGENTS.md
-  2. skills::targets: rewrite .agents/.claude/.opencode + root AGENTS.md
-  (Used after a binary upgrade to refresh generated agent files.)
+  2. skills::targets:
+       - write .agents/skills/<name>/SKILL.md  (primary neutral)
+       - mirror to .claude/skills/ and .opencode/skills/
+       - write .opencode/commands/<name>.md    (opencode slash commands)
+       - write AGENTS.md at repo root
+  (Used after a binary upgrade or manifest change to refresh generated agent files.)
 ```
+
+## 6.11 `givn status [--change <id>] [--json]`
+
+`givn status` is the manifest-aware state view. It goes beyond listing which
+files exist — it computes completion per artifact, derives the next required
+step, and surfaces optional artifacts still pending.
+
+```
+user/agent/command → cli::status
+  1. config::manifest + overlay → load effective manifest
+  2. state::topological_sort → order artifacts by requires DAG
+  3. for each artifact: check generates paths against filesystem
+       - tasks.md: also parse [x]/[ ] checkboxes
+       - review.md: also detect REVIEW: PASS marker
+     → ArtifactStatus: Done | Partial | Pending
+  4. derive:
+       next_required  = first non-optional artifact not yet Done
+       optional_pending = optional artifacts still Pending
+       all_required_done = all non-optional artifacts are Done
+  5. --json: structured output for machine consumption by commands/scripts
+     default: human-readable checklist with next step instruction
+```
+
+This is the mechanism commands use to discover both the workflow sequence
+and the current position within it at runtime — without hardcoding artifact
+names or order. A project that adds a `risk-assessment` artifact sees it in
+`givn status --json` automatically; `/givn-propose` follows `next_required`
+to drive its loop regardless of how the manifest is configured.
 
 ## 6.9 Running the test runner on a fresh project (sentinel)
 

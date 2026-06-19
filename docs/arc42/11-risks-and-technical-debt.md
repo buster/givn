@@ -4,8 +4,8 @@
 
 | ID | Risk | Likelihood | Impact | Mitigation |
 | --- | --- | --- | --- | --- |
-| R-1 | The `gherkin` crate's AST does not expose enough position info to losslessly merge + strip tags while preserving formatting. | Medium | High | Prototype merge early (Phase 3). If needed, operate on a light token/line model (the prototype used text splitting) rather than full AST rewrite. |
-| R-2 | Overlay/patch semantics for the manifest become ambiguous (deep-merge edge cases). | Medium | Medium | Specify overlay rules precisely in Phase 2 with unit tests for add/modify/remove/reorder. |
+| R-1 | The `gherkin` crate's AST does not expose enough position info to losslessly merge + strip tags while preserving formatting. | Medium | High | **Resolved (Phase 3):** merge operates on a line-based text model, not a full AST rewrite. This preserves formatting and comments correctly. |
+| R-2 | Overlay/patch semantics for the manifest become ambiguous (deep-merge edge cases). | Medium | Medium | **Resolved (Phase 2):** overlay rules specified and unit-tested for add/modify/remove/cycle/dangling-requires. |
 | R-3 | `serde_yaml_ng` diverges or is itself abandoned. | Low | Medium | Thin wrapper around (de)serialisation; `serde_norway` is a fallback fork. |
 | R-4 | Skill/agent conventions shift (the `.agents/skills` convention is emerging, not ratified). | Medium | Low | Templates are ejectable and targets are pluggable; adding/altering a target is cheap. |
 | R-5 | Cross-platform static linking (musl, Windows) causes build friction. | Medium | Medium | Use `cargo-dist`; pin toolchains; test in CI before first release. |
@@ -20,12 +20,12 @@
 | D-1 | No `givn migrate` from `openspec/`. | MVP focus; clean break. | Add as a later command (ADR-017). |
 | D-2 | Only `.agents` + claude + opencode skill targets shipped. | Cover the common cases first. | Users eject/retarget now; add built-ins later. |
 | D-3 | No CI/remote initially (local git only). | OC-1. | Wire up `cargo-dist` pipeline when a remote is added. |
-| D-4 | Overlay may start with replace-only (not deep-merge) for some fields. | Get a working MVP. | Extend to richer merge as needs surface. |
+| D-4 | Overlay may start with replace-only (not deep-merge) for some fields. | Get a working MVP. | **Partially resolved:** field-level deep-merge implemented for artifacts. Richer nested merge can be added as needs surface. |
 
-## 11.3 Open questions to resolve during implementation
+## 11.3 Open questions — resolved
 
-- Exact override path convention for facets (`givn/artifacts/<id>/template.<ext>`
-  vs another layout) — settle in Phase 2.
-- Whether to default Linux builds to musl (full static) or gnu — settle in Phase 6.
-- Precise `review.md` PASS detection for the archive gate (string marker vs
-  structured field) — settle in Phase 4.
+| Question | Resolution |
+| --- | --- |
+| Override path convention for facets | **`givn/artifacts/<id>/template.<ext>`** and **`givn/artifacts/<id>/instructions.md`** (Phase 2). |
+| Linux build target: musl vs gnu | Deferred to Phase 6 (distribution not yet implemented). |
+| `review.md` PASS detection: string marker vs structured field | **String marker `REVIEW: PASS`** anywhere in the file (Phase 4). Simple, git-diffable, human-readable. |
