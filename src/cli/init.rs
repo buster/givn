@@ -1,10 +1,25 @@
 use anyhow::Result;
 use crate::config::render;
 
+const BANNER: &str = r#"
+  ________  .__
+ /  _____/  |__|__  __ ____
+/   \  ___  |  \  \/ //    \
+\    \_\  \ |  |\   /|   |  \
+ \______  / |__| \_/ |___|  /
+        \/                \/
+
+  from Given to done.
+"#;
+
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
 /// versioned `givn/config.yaml`. Generates AGENTS.md and skills. Idempotent.
 pub fn run(force: bool) -> Result<()> {
     let project_root = std::env::current_dir()?;
+
+    print!("{BANNER}");
+    println!("  version {}\n", env!("CARGO_PKG_VERSION"));
+    println!("{}", "─".repeat(52));
 
     // Create directory scaffolding.
     let dirs = [
@@ -12,24 +27,25 @@ pub fn run(force: bool) -> Result<()> {
         "givn/changes",
         "givn/archive",
     ];
+    println!("\nScaffolding project...\n");
     for dir in &dirs {
         let path = project_root.join(dir);
         std::fs::create_dir_all(&path)?;
-        println!("  created  {}", path.display());
+        println!("  created  {dir}");
     }
 
     // Write givn/config.yaml (documented + versioned).
     let config_path = project_root.join("givn/config.yaml");
     if config_path.exists() && !force {
-        println!("  exists   {} (use --force to overwrite)", config_path.display());
+        println!("  exists   givn/config.yaml  (use --force to overwrite)");
     } else {
         let content = render::config_yaml(env!("CARGO_PKG_VERSION"))?;
         std::fs::write(&config_path, content)?;
-        println!("  wrote    {}", config_path.display());
+        println!("  wrote    givn/config.yaml");
     }
 
     // Generate skills and AGENTS.md.
-    println!("\nGenerating skills and AGENTS.md...");
+    println!("\nGenerating skills and agent commands...\n");
     match crate::skills::targets::sync(&project_root) {
         Ok(()) => {}
         Err(e) => {
@@ -38,10 +54,12 @@ pub fn run(force: bool) -> Result<()> {
         }
     }
 
-    println!("\ngivn initialised. Next step:");
-    println!("  1. Set verify.command in givn/config.yaml");
-    println!("  2. Run `givn skills sync` to refresh skills and commands");
-    println!("  3. Run `givn new <change-id>` to start a change");
+    println!("\n{}", "─".repeat(52));
+    println!("\nReady. Three steps to your first change:\n");
+    println!("  1. Start a change    givn new <change-id>");
+    println!("  2. Plan it           /givn-propose  (in your AI agent)");
+    println!("  3. Implement it      /givn-implement");
+    println!();
 
     Ok(())
 }
