@@ -1,0 +1,90 @@
+---
+description: Write the technical design for a givn change — HOW layer, technology decisions, architecture impact
+---
+
+Write the technical design for a givn change.
+
+**Input**: Optionally specify a change ID after `/givn-design`. If omitted, infer
+from conversation context, or auto-select if only one active change exists. If
+ambiguous, list changes and ask.
+
+---
+
+## Steps
+
+### 1. Resolve the change
+
+```sh
+givn status
+```
+
+Identify the active change. Announce: "Using change: <id>".
+
+### 2. Get design instructions
+
+```sh
+givn instructions design --change <id>
+```
+
+Parse the output for:
+- `output`: path to write the design (typically `givn/changes/<id>/design.md`)
+- `template`: structure to follow
+- `instruction`: guidance on what to produce
+- `context` / `rules`: constraints for you — **do not copy these into the file**
+- `dependencies`: completed artifacts to read (proposal.md, specs/)
+
+### 3. Read the inputs
+
+Read:
+- `givn/changes/<id>/proposal.md` — WHAT and WHY
+- `givn/changes/<id>/specs/<capability>/<capability>.feature` — observable behaviours
+- Relevant existing code (architecture, patterns, integration points)
+
+### 4. Write the design
+
+Write `givn/changes/<id>/design.md` covering:
+
+- **Technology decisions** — language, framework, libraries, patterns chosen and why.
+- **Architecture impact** — which modules/components are affected; what is new.
+- **Data model changes** — schema, structs, database changes if any.
+- **Step definition locations** — where Cucumber/Gherkin step defs will live.
+- **Runner command** — confirm `verify.command` in `givn/config.yaml` is correct.
+- **Non-obvious choices** — justify them; obvious choices need no justification.
+
+This is the HOW layer. Everything that was kept out of the proposal and spec
+belongs here: class names, routes, DB schemas, function signatures,
+framework details, step-definition mechanics.
+
+### 5. Show progress
+
+```sh
+givn status
+```
+
+Display next step: "Run `/givn-tasks` to write the implementation task breakdown."
+
+---
+
+## Output
+
+```
+## Design written: <id>
+
+**Design written:** givn/changes/<id>/design.md
+
+### Key decisions
+- <decision 1>
+- <decision 2>
+
+**Next:** Run `/givn-tasks` to break this down into a scenario-by-scenario task list.
+```
+
+---
+
+## Guardrails
+
+- Keep implementation detail OUT of proposal.md and the .feature files — it
+  belongs here in design.md.
+- Read the proposal and spec before writing.
+- Justify non-obvious technical choices; skip self-evident ones.
+- Verify the file exists after writing.

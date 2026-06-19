@@ -83,6 +83,24 @@ givn skills sync                     # regenerate this file + skills
 
 ---
 
+## opencode commands
+
+If you are using opencode, the following slash commands are available:
+
+| Command | Purpose |
+|---|---|
+| `/givn-propose` | Start a new change — create it and write the proposal |
+| `/givn-spec` | Write Gherkin `.feature` delta files |
+| `/givn-design` | Write the technical design (HOW layer) |
+| `/givn-tasks` | Write the scenario-by-scenario task list |
+| `/givn-implement` | Execute the RED/GREEN/REFACTOR TDD loop |
+| `/givn-review` | Complete the coverage review and sign off |
+| `/givn-archive` | Run gate hooks, merge delta specs, archive the change |
+
+Each command optionally accepts a change ID as an argument (e.g. `/givn-propose add-user-auth`).
+
+---
+
 ## Project config
 
 - `givn/config.yaml` — manifest overlay + verify.command
