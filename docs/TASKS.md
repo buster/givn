@@ -69,22 +69,22 @@ loads from the binary.
 
 ## Phase 2 — Cascade & overlay
 
-- [ ] 2.1 Implement `config/cascade.rs`: `resolve_facet(artifact_id, facet)` —
+- [x] 2.1 Implement `config/cascade.rs`: `resolve_facet(artifact_id, facet)` —
       project override path under `givn/` wins, else embedded default.
-- [ ] 2.2 Decide & document the override path convention
+- [x] 2.2 Decide & document the override path convention
       (e.g. `givn/artifacts/<id>/template.<ext>`, `.../instructions.md`).
-- [ ] 2.3 Implement `config/overlay.rs`: merge `givn/config.yaml` onto the
+- [x] 2.3 Implement `config/overlay.rs`: merge `givn/config.yaml` onto the
       embedded default manifest (add by new id, deep-merge by existing id, `remove`
       directive, scalar replace incl. `verify.command`). Support `optional: bool`
       on artifacts. Unit tests for each case. (ADR-024)
-- [ ] 2.3a Implement effective-graph validation: acyclic, no dangling `requires`,
+- [x] 2.3a Implement effective-graph validation: acyclic, no dangling `requires`,
       `apply.requires` may not reference a removed non-optional artifact; clear
       errors. Derive order from `requires`. Tests incl. remove-review and
       add-refactor reconfigurations. (ADR-024)
-- [ ] 2.4 Implement `cli::eject` for `artifact:facet`, `skill:<name>`, `manifest`;
+- [x] 2.4 Implement `cli::eject` for `artifact:facet`, `skill:<name>`, `manifest`;
       refuse to overwrite without `--force`.
-- [ ] 2.5 Implement `cli::instructions` (text + `--json`) using cascade + overlay.
-- [ ] 2.6 Commit: "feat: cascade resolution, manifest overlay, eject, instructions".
+- [x] 2.5 Implement `cli::instructions` (text + `--json`) using cascade + overlay.
+- [x] 2.6 Commit: "feat: cascade resolution, manifest overlay, eject, instructions".
 
 **Done when:** ejecting a facet then editing it changes resolution; overlay tests
 green; `givn instructions <a> --json` works.

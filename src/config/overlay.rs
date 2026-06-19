@@ -1,19 +1,342 @@
-use anyhow::Result;
-use crate::config::manifest::Manifest;
-
-/// Merge the project overlay (from `givn/config.yaml`) onto the embedded default manifest.
+/// Apply the project overlay (from `givn/config.yaml`) onto the embedded default manifest.
 ///
 /// Overlay semantics (ADR-010, ADR-024):
-/// - Artifacts keyed by `id`. New id = append. Existing id = deep-merge.
+/// - Artifacts keyed by `id`. New id = append. Existing id = deep-merge field-by-field.
 /// - `remove: true` on an artifact removes it from the effective graph.
 /// - `optional: true` marks it skippable.
 /// - Scalar fields (e.g. `verify.command`) in the overlay replace the default.
 /// - `addons: { arc42: true }` expands to the arc42-docs artifact definition.
-///
-/// Not yet implemented: full validation (cycles, dangling requires, apply.requires
-/// referencing removed artifacts). This is Phase 2.
-pub fn apply(base: Manifest, _overlay_yaml: &str) -> Result<Manifest> {
-    // Phase 2: implement full overlay + validation.
-    // For now: return the base manifest unchanged.
-    Ok(base)
+/// - After merge, the effective graph is validated (Phase 2.3a).
+use anyhow::{bail, Result};
+use crate::config::manifest::{Addons, Apply, Artifact, HookEntry, Manifest, Verify};
+
+/// Parse the project overlay YAML and merge it onto `base`.
+pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
+    // Parse the overlay as a Manifest (using lenient defaults for missing fields).
+    let overlay: OverlayDoc = serde_yaml_ng::from_str(overlay_yaml)
+        .map_err(|e| anyhow::anyhow!("failed to parse givn/config.yaml: {e}"))?;
+
+    let mut result = base;
+
+    // Merge verify block.
+    if let Some(v) = overlay.verify {
+        result.verify = v;
+    }
+
+    // Merge apply block.
+    if let Some(a) = overlay.apply {
+        result.apply = a;
+    }
+
+    // Merge addons (expand arc42 if enabled).
+    if let Some(addons) = overlay.addons {
+        if addons.arc42 && !result.addons.arc42 {
+            result.addons.arc42 = true;
+            result.artifacts.push(arc42_artifact());
+        }
+    }
+
+    // Merge artifact patches.
+    for patch in overlay.artifacts {
+        if patch.remove {
+            result.artifacts.retain(|a| a.id != patch.id);
+            continue;
+        }
+        if let Some(existing) = result.artifacts.iter_mut().find(|a| a.id == patch.id) {
+            // Deep merge: only apply fields that are explicitly set in the patch.
+            merge_artifact(existing, patch);
+        } else {
+            // New artifact: append (convert from patch type to full Artifact).
+            result.artifacts.push(overlay_to_artifact(patch));
+        }
+    }
+
+    // Validate the effective graph.
+    validate_graph(&result)?;
+
+    Ok(result)
+}
+
+/// Load the effective manifest: embedded default + project overlay (if present).
+pub fn load_effective() -> Result<Manifest> {
+    let base = Manifest::load_embedded()?;
+    let project_root = std::env::current_dir()?;
+    let config_path = project_root.join("givn/config.yaml");
+
+    if config_path.exists() {
+        let yaml = std::fs::read_to_string(&config_path)?;
+        apply(base, &yaml)
+    } else {
+        // No project overlay: return embedded defaults as-is.
+        Ok(base)
+    }
+}
+
+/// Convert an overlay patch to a full Artifact (for new artifacts added via overlay).
+fn overlay_to_artifact(patch: OverlayArtifact) -> Artifact {
+    Artifact {
+        id: patch.id,
+        generates: patch.generates,
+        requires: patch.requires,
+        template: patch.template,
+        instruction: patch.instruction,
+        optional: patch.optional,
+        remove: false,
+        post: patch.post,
+    }
+}
+
+/// Merge non-default patch fields onto the existing artifact in place.
+fn merge_artifact(existing: &mut Artifact, patch: OverlayArtifact) {
+    if !patch.generates.is_empty() {
+        existing.generates = patch.generates;
+    }
+    if !patch.requires.is_empty() {
+        existing.requires = patch.requires;
+    }
+    if patch.template.is_some() {
+        existing.template = patch.template;
+    }
+    if patch.instruction.is_some() {
+        existing.instruction = patch.instruction;
+    }
+    if patch.optional {
+        existing.optional = true;
+    }
+    if !patch.post.is_empty() {
+        existing.post = patch.post;
+    }
+}
+
+/// Validate the effective artifact graph:
+/// - No cycles in `requires`.
+/// - No dangling `requires` references.
+/// - `apply.requires` may not reference a removed non-optional artifact.
+pub fn validate_graph(manifest: &Manifest) -> Result<()> {
+    let ids: std::collections::HashSet<&str> =
+        manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+
+    // Check for dangling requires.
+    for artifact in &manifest.artifacts {
+        for dep in &artifact.requires {
+            if !ids.contains(dep.as_str()) {
+                bail!(
+                    "artifact '{}' requires '{}' which does not exist in the effective manifest",
+                    artifact.id,
+                    dep
+                );
+            }
+        }
+    }
+
+    // Check apply.requires references exist.
+    for req in &manifest.apply.requires {
+        if !ids.contains(req.as_str()) {
+            bail!(
+                "apply.requires references '{}' which does not exist in the effective manifest",
+                req
+            );
+        }
+    }
+
+    // Check for cycles using DFS.
+    if let Some(cycle) = find_cycle(&manifest.artifacts) {
+        bail!("dependency graph contains a cycle: {}", cycle.join(" → "));
+    }
+
+    Ok(())
+}
+
+/// Returns the cycle path if one exists, else None.
+fn find_cycle(artifacts: &[Artifact]) -> Option<Vec<String>> {
+    use std::collections::HashMap;
+
+    // Build adjacency list.
+    let adj: HashMap<&str, &[String]> = artifacts
+        .iter()
+        .map(|a| (a.id.as_str(), a.requires.as_slice()))
+        .collect();
+
+    let mut visited = std::collections::HashSet::new();
+    let mut rec_stack = std::collections::HashSet::new();
+
+    for artifact in artifacts {
+        if !visited.contains(artifact.id.as_str()) {
+            if let Some(cycle) = dfs(&artifact.id, &adj, &mut visited, &mut rec_stack, &mut vec![]) {
+                return Some(cycle);
+            }
+        }
+    }
+    None
+}
+
+fn dfs<'a>(
+    node: &'a str,
+    adj: &std::collections::HashMap<&'a str, &'a [String]>,
+    visited: &mut std::collections::HashSet<&'a str>,
+    rec_stack: &mut std::collections::HashSet<&'a str>,
+    path: &mut Vec<String>,
+) -> Option<Vec<String>> {
+    visited.insert(node);
+    rec_stack.insert(node);
+    path.push(node.to_string());
+
+    if let Some(deps) = adj.get(node) {
+        for dep in *deps {
+            if !visited.contains(dep.as_str()) {
+                if let Some(cycle) = dfs(dep, adj, visited, rec_stack, path) {
+                    return Some(cycle);
+                }
+            } else if rec_stack.contains(dep.as_str()) {
+                // Found a cycle: build the cycle path.
+                let mut cycle_path = path.clone();
+                cycle_path.push(dep.clone());
+                return Some(cycle_path);
+            }
+        }
+    }
+
+    path.pop();
+    rec_stack.remove(node);
+    None
+}
+
+/// The default arc42-docs artifact definition (used when addon is enabled).
+fn arc42_artifact() -> Artifact {
+    Artifact {
+        id: "arc42-docs".to_string(),
+        generates: vec!["arc42.md".to_string()],
+        requires: vec!["design".to_string()],
+        template: Some("arc42.md".to_string()),
+        instruction: Some("arc42-docs".to_string()),
+        optional: true,
+        remove: false,
+        post: vec![],
+    }
+}
+
+/// Lenient overlay document — only fields that are explicitly overridden need to be present.
+#[derive(Debug, serde::Deserialize)]
+struct OverlayDoc {
+    #[serde(default)]
+    artifacts: Vec<OverlayArtifact>,
+    verify: Option<Verify>,
+    apply: Option<Apply>,
+    addons: Option<Addons>,
+    /// Ignored during overlay processing (used for version tracking).
+    #[allow(dead_code)]
+    givn_config_version: Option<String>,
+}
+
+/// Overlay artifact patch — same fields as `Artifact` but all are optional/defaulted
+/// so the user only has to specify what they want to change.
+#[derive(Debug, serde::Deserialize)]
+struct OverlayArtifact {
+    id: String,
+    #[serde(default)]
+    generates: Vec<String>,
+    #[serde(default)]
+    requires: Vec<String>,
+    template: Option<String>,
+    instruction: Option<String>,
+    #[serde(default)]
+    optional: bool,
+    #[serde(default, rename = "remove")]
+    remove: bool,
+    #[serde(default)]
+    post: Vec<HookEntry>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn empty_overlay_returns_base_unchanged() {
+        let base = Manifest::load_embedded().unwrap();
+        let base_count = base.artifacts.len();
+        let result = apply(base, "{}").unwrap();
+        assert_eq!(result.artifacts.len(), base_count);
+    }
+
+    #[test]
+    fn overlay_replaces_verify_command() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, r#"verify: {command: "cargo test"}"#).unwrap();
+        assert_eq!(result.verify.command, "cargo test");
+    }
+
+    #[test]
+    fn overlay_can_remove_artifact() {
+        let base = Manifest::load_embedded().unwrap();
+        let original_count = base.artifacts.len();
+        // When removing review, also update apply.requires to remove the reference.
+        let overlay = r#"
+artifacts:
+  - id: review
+    remove: true
+apply:
+  requires: [tasks]
+"#;
+        let result = apply(base, overlay).unwrap();
+        assert_eq!(result.artifacts.len(), original_count - 1);
+        assert!(!result.artifacts.iter().any(|a| a.id == "review"));
+        assert!(!result.apply.requires.contains(&"review".to_string()));
+    }
+
+    #[test]
+    fn overlay_can_add_artifact() {
+        let base = Manifest::load_embedded().unwrap();
+        let original_count = base.artifacts.len();
+        let overlay = r#"
+artifacts:
+  - id: refactor
+    generates: ["refactor.md"]
+    requires: ["tasks"]
+"#;
+        let result = apply(base, overlay).unwrap();
+        assert_eq!(result.artifacts.len(), original_count + 1);
+        assert!(result.artifacts.iter().any(|a| a.id == "refactor"));
+    }
+
+    #[test]
+    fn overlay_can_make_artifact_optional() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "artifacts:\n  - id: review\n    optional: true").unwrap();
+        let review = result.artifacts.iter().find(|a| a.id == "review").unwrap();
+        assert!(review.optional);
+    }
+
+    #[test]
+    fn validation_rejects_dangling_requires() {
+        let base = Manifest::load_embedded().unwrap();
+        let overlay = r#"
+artifacts:
+  - id: new-artifact
+    generates: ["new.md"]
+    requires: ["nonexistent"]
+"#;
+        let err = apply(base, overlay).unwrap_err();
+        assert!(err.to_string().contains("nonexistent"));
+    }
+
+    #[test]
+    fn validation_rejects_cycle() {
+        let base = Manifest::load_embedded().unwrap();
+        // Create a cycle by making design require tasks (which already requires design).
+        let overlay = r#"
+artifacts:
+  - id: design
+    requires: ["tasks"]
+"#;
+        let err = apply(base, overlay).unwrap_err();
+        assert!(err.to_string().contains("cycle"));
+    }
+
+    #[test]
+    fn addons_arc42_inserts_artifact() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: true").unwrap();
+        assert!(result.artifacts.iter().any(|a| a.id == "arc42-docs"));
+    }
 }
