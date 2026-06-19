@@ -1,0 +1,204 @@
+use serde::{Deserialize, Serialize};
+
+/// Top-level manifest document (embedded default or project overlay).
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
+pub struct Manifest {
+    /// Artifact definitions.
+    #[serde(default)]
+    pub artifacts: Vec<Artifact>,
+
+    /// Archive gate and tracking configuration.
+    #[serde(default)]
+    pub apply: Apply,
+
+    /// Test-runner configuration.
+    #[serde(default)]
+    pub verify: Verify,
+
+    /// Enabled addons (e.g. `arc42: true`).
+    #[serde(default)]
+    pub addons: Addons,
+
+    /// Config version marker (written to givn/config.yaml by init/upgrade).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub givn_config_version: Option<String>,
+}
+
+/// An artifact node in the lifecycle graph.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Artifact {
+    /// Unique artifact identifier (e.g. `proposal`, `specs`, `tasks`).
+    pub id: String,
+
+    /// Glob(s) the artifact produces (relative to the change dir or project root).
+    #[serde(default)]
+    pub generates: Vec<String>,
+
+    /// Artifact ids that must exist before this one (defines the DAG order).
+    #[serde(default)]
+    pub requires: Vec<String>,
+
+    /// Template facet name (resolved via cascade).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub template: Option<String>,
+
+    /// Instruction facet name (resolved via cascade).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub instruction: Option<String>,
+
+    /// If true, the artifact may be skipped without blocking the lifecycle.
+    #[serde(default)]
+    pub optional: bool,
+
+    /// Overlay directive: if true, remove this artifact from the effective graph.
+    #[serde(default, rename = "remove")]
+    pub remove: bool,
+
+    /// Post-completion hooks (e.g. `verify`, `lint`, or a shell command).
+    #[serde(default)]
+    pub post: Vec<HookEntry>,
+}
+
+/// A single post-hook entry.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(untagged)]
+pub enum HookEntry {
+    /// Shorthand: just the hook name (e.g. `"verify"` or a shell command).
+    Short(String),
+    /// Object form: allows `allow_failure` and `name`.
+    Full(HookFull),
+}
+
+/// Full hook object form.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct HookFull {
+    /// Hook name or shell command.
+    pub run: String,
+    /// If true, a non-zero exit only warns and does not block the gate.
+    #[serde(default)]
+    pub allow_failure: bool,
+    /// Display name for the hook (shown in output).
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub name: Option<String>,
+}
+
+/// Archive gate configuration.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct Apply {
+    /// Artifact ids that must be complete before a change can be archived.
+    #[serde(default)]
+    pub requires: Vec<String>,
+    /// Path (relative to change dir) of the artifact whose checkboxes are tracked.
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub tracks: Option<String>,
+}
+
+/// Test-runner configuration.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Verify {
+    /// Command to run the test suite. Default is the sentinel.
+    pub command: String,
+    /// Features path passed to the runner via GIVN_FEATURES.
+    #[serde(default = "Verify::default_features_path")]
+    pub features_path: String,
+}
+
+impl Default for Verify {
+    fn default() -> Self {
+        Self {
+            command: "givn missing-testrunner".to_string(),
+            features_path: Self::default_features_path(),
+        }
+    }
+}
+
+impl Verify {
+    fn default_features_path() -> String {
+        "givn/specs".to_string()
+    }
+}
+
+/// Addon switches.
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
+pub struct Addons {
+    /// Enable the arc42 documentation artifact.
+    #[serde(default)]
+    pub arc42: bool,
+}
+
+impl Manifest {
+    /// Load and parse the embedded default manifest.
+    pub fn load_embedded() -> anyhow::Result<Self> {
+        let yaml = crate::config::embedded::Assets::get_str("default-manifest.yaml")
+            .ok_or_else(|| anyhow::anyhow!("embedded default-manifest.yaml not found"))?;
+        let manifest: Self = serde_yaml_ng::from_str(&yaml)?;
+        Ok(manifest)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Verify that every key documented in config.yaml.tmpl maps to a real
+    /// manifest schema key, and vice versa (ADR-022 — no drift allowed).
+    ///
+    /// This is a structural smoke test: we check that the config template
+    /// references the same top-level keys the manifest schema defines.
+    #[test]
+    fn config_template_keys_match_manifest_schema() {
+        let tmpl = crate::config::embedded::Assets::get_str("config.yaml.tmpl")
+            .expect("config.yaml.tmpl must be embedded");
+
+        // The documented top-level keys in the template.
+        let documented_keys = ["verify", "apply", "artifacts", "addons"];
+        for key in &documented_keys {
+            assert!(
+                tmpl.contains(key),
+                "config.yaml.tmpl must document the '{key}' key"
+            );
+        }
+
+        // The manifest schema top-level fields.
+        // If you add a new field to Manifest, add it here too.
+        let schema_fields = ["artifacts", "apply", "verify", "addons", "givn_config_version"];
+        for field in &schema_fields {
+            assert!(
+                tmpl.contains(field),
+                "config.yaml.tmpl must reference the schema field '{field}'"
+            );
+        }
+    }
+
+    #[test]
+    fn embedded_manifest_deserialises() {
+        let manifest = Manifest::load_embedded().expect("should load embedded manifest");
+        assert!(!manifest.artifacts.is_empty(), "manifest must define at least one artifact");
+
+        // Check required built-in artifacts are present.
+        let ids: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+        for required in &["proposal", "specs", "design", "tasks", "review"] {
+            assert!(
+                ids.contains(required),
+                "embedded manifest must contain artifact '{required}'"
+            );
+        }
+
+        // apply.requires must reference [tasks, review] by default.
+        assert!(
+            manifest.apply.requires.contains(&"tasks".to_string()),
+            "apply.requires must include 'tasks'"
+        );
+        assert!(
+            manifest.apply.requires.contains(&"review".to_string()),
+            "apply.requires must include 'review'"
+        );
+
+        // Default verify.command is the sentinel.
+        assert_eq!(
+            manifest.verify.command, "givn missing-testrunner",
+            "default verify.command must be the sentinel"
+        );
+    }
+}

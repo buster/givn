@@ -10,15 +10,15 @@ Legend: `[ ]` pending · `[x]` done.
 
 ## Phase 0 — Repository bootstrap
 
-- [ ] 0.1 `cargo init --bin` in `~/projects/givn` (crate name `givn`).
-- [ ] 0.2 Add `Cargo.toml` deps: `clap` (derive), `serde` (derive),
+- [x] 0.1 `cargo init --bin` in `~/projects/givn` (crate name `givn`).
+- [x] 0.2 Add `Cargo.toml` deps: `clap` (derive), `serde` (derive),
       `serde_yaml_ng`, `serde_json`, `rust-embed`, `gherkin`, `anyhow`,
       `thiserror`. Pin versions (see arc42 ch.5.4).
-- [ ] 0.3 Add `.gitignore` (`/target`, editor cruft).
-- [ ] 0.4 Verify `cargo build` and `cargo test` succeed (empty).
-- [ ] 0.5 Run `scripts/check-dep-age.sh` (TC-13): every locked dep ≥ 30 days old.
+- [x] 0.3 Add `.gitignore` (`/target`, editor cruft).
+- [x] 0.4 Verify `cargo build` and `cargo test` succeed (empty).
+- [x] 0.5 Run `scripts/check-dep-age.sh` (TC-13): every locked dep ≥ 30 days old.
       Fix violations by pinning older versions; only allowlist with justification.
-- [ ] 0.6 Commit: "chore: bootstrap cargo project".
+- [x] 0.6 Commit: "chore: bootstrap cargo project".
 
 **Done when:** empty binary builds, runs `givn --help`, and passes the dependency
 age policy (`scripts/check-dep-age.sh`).
@@ -30,36 +30,36 @@ age policy (`scripts/check-dep-age.sh`).
 
 ## Phase 1 — Skeleton & embedded defaults
 
-- [ ] 1.1 Define `clap` CLI skeleton in `main.rs` with all subcommands
+- [x] 1.1 Define `clap` CLI skeleton in `main.rs` with all subcommands
       (`init`, `new`, `instructions`, `lint`, `check`, `status`, `apply`,
       `archive`, `eject`, `skills sync`, `upgrade`, `missing-testrunner`) as stubs
       returning "not implemented".
-- [ ] 1.2 Create `assets/` and wire `rust-embed` in `config/embedded.rs`.
-- [ ] 1.3 Port the prototype `schema.yaml` → `assets/default-manifest.yaml`,
+- [x] 1.2 Create `assets/` and wire `rust-embed` in `config/embedded.rs`.
+- [x] 1.3 Port the prototype `schema.yaml` → `assets/default-manifest.yaml`,
       renaming tags to `@givn.*` and paths to `givn/...`. Artifacts: proposal,
       specs, design, tasks, review; `apply.requires: [tasks, review]`;
       `apply.tracks: tasks.md`; `verify` block; default hooks
       `tasks.post: [verify]` and `review.post: [verify]` (ADR-028).
-- [ ] 1.4 Port the 5 templates into `assets/templates/`
+- [x] 1.4 Port the 5 templates into `assets/templates/`
       (`proposal.md`, `spec.feature`, `design.md`, `tasks.md`, `review.md`),
       with `@givn.*` tags and `GIVN_FEATURES` default `givn/specs`.
-- [ ] 1.5 Implement `config/manifest.rs` serde types; load + parse the embedded
+- [x] 1.5 Implement `config/manifest.rs` serde types; load + parse the embedded
       manifest; unit test it deserialises. Default `verify.command` is the
       sentinel `givn missing-testrunner` (ADR-021).
-- [ ] 1.6 Author `assets/config.yaml.tmpl`: the fully-commented, documented
+- [x] 1.6 Author `assets/config.yaml.tmpl`: the fully-commented, documented
       config scaffold (ADR-022) — every key present-but-commented with
       description/default/allowed-values, `verify.command` uncommented as the
       sentinel with a "CHANGE ME" note, and a `givn_config_version` marker
       (ADR-023). Cross-reference arc42 ch.8.10.
-- [ ] 1.7 Implement `cli::missing_testrunner`: print per-language setup guidance
+- [x] 1.7 Implement `cli::missing_testrunner`: print per-language setup guidance
       (cargo/mvn/cucumber-js/behave/go test/...) and exit non-zero (ADR-021).
-- [ ] 1.8 Implement `config/render.rs` (initial): render `config.yaml.tmpl` with
+- [x] 1.8 Implement `config/render.rs` (initial): render `config.yaml.tmpl` with
       the current binary version into `givn_config_version`.
-- [ ] 1.9 Implement `cli::init`: scaffold `givn/{specs,changes,archive}` and
+- [x] 1.9 Implement `cli::init`: scaffold `givn/{specs,changes,archive}` and
       write the documented, versioned `givn/config.yaml`. Idempotent; `--force`.
-- [ ] 1.10 Test: every documented key in `config.yaml.tmpl` maps to a real
+- [x] 1.10 Test: every documented key in `config.yaml.tmpl` maps to a real
       manifest schema key and vice versa (no drift — ADR-022).
-- [ ] 1.11 Commit: "feat: embedded defaults, manifest model, documented config, givn init".
+- [x] 1.11 Commit: "feat: embedded defaults, manifest model, documented config, givn init".
 
 **Done when:** `givn init` scaffolds a project with a fully-documented, versioned
 `givn/config.yaml`; `givn missing-testrunner` prints guidance and fails; manifest

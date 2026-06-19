@@ -1,0 +1,132 @@
+# ============================================================================
+#  givn configuration  —  https://github.com/TBD/givn
+#  See arc42 chapter 8 (cross-cutting concepts) for detailed explanations.
+#
+#  How this file works:
+#    - Commented lines (# ...) are the givn-managed documentation scaffold.
+#      They may be refreshed by `givn upgrade` (which preserves your overrides).
+#    - Uncommented key/value lines are user-owned and are never touched by
+#      `givn upgrade`.
+#    - To override a setting: uncomment the relevant key and edit its value.
+#    - After `givn upgrade`: review changes via `git diff` and resolve there.
+# ============================================================================
+
+# Managed by givn. Do not delete the next line.
+givn_config_version: "{{GIVN_VERSION}}"
+
+# --- Test runner -------------------------------------------------------------
+# The command givn invokes to run your test suite. This is the ONLY value
+# you MUST set for a working project. The shipped default is a sentinel that
+# prints setup guidance and exits non-zero — so nothing ever falsely reports
+# GREEN until you configure a real runner.
+#
+# CHANGE ME — set this to your project's test runner, e.g.:
+#   cargo test
+#   mvn test
+#   npx cucumber-js "givn/specs/**/*.feature"
+#   behave
+#   go test ./...
+#   pytest
+#
+# See arc42 ch.8.10 for details.
+verify:
+  command: "givn missing-testrunner"   # <-- replace this with your runner
+
+# --- Features path -----------------------------------------------------------
+# Path the test runner reads .feature files from during development. Also
+# exported to the test runner as the GIVN_FEATURES environment variable.
+#
+# Default: givn/specs
+# After archive, GIVN_FEATURES points here for the permanent merged specs.
+#
+# verify:
+#   features_path: "givn/specs"
+
+# --- Artifact graph overlay --------------------------------------------------
+# Patch the embedded default artifact graph without replacing it. Declare only
+# the additions, modifications, or removals you want. Everything else keeps its
+# default. See arc42 ch.8.2 for examples and full semantics.
+#
+# Examples:
+#
+#   # a) Remove the review gate entirely:
+#   # artifacts:
+#   #   - id: review
+#   #     remove: true
+#   # apply:
+#   #   requires: [tasks]
+#
+#   # b) Make review optional (skip without blocking):
+#   # artifacts:
+#   #   - id: review
+#   #     optional: true
+#   # apply:
+#   #   requires: [tasks]
+#
+#   # c) Add a custom refactor step after implementation:
+#   # artifacts:
+#   #   - id: refactor
+#   #     generates: refactor.md
+#   #     requires: [tasks]
+#   #     template: refactor.md
+#   #     instruction: |
+#   #       Record refactorings: what was cleaned up, why, and confirmation
+#   #       that all scenarios still pass. No behaviour change.
+#   # apply:
+#   #   requires: [tasks, refactor, review]
+
+# --- Archive gate ------------------------------------------------------------
+# Control which artifacts must be complete before `givn archive` succeeds.
+# Default: [tasks, review]  — both must be done and their hooks must pass.
+#
+# apply:
+#   requires: [tasks, review]
+#   tracks: "tasks.md"         # file whose checkboxes givn tracks
+
+# --- Hooks (post-artifact gate checks) ---------------------------------------
+# Each artifact may declare `post:` hooks that run after it is completed.
+# `givn check <artifact>` runs them on demand.
+# `givn archive` auto-runs the hooks of all apply.requires artifacts as the gate.
+#
+# Built-in hook names:
+#   verify  -> run verify.command (the test runner)
+#   lint    -> run `givn lint` (static .feature check)
+# Or: any shell command string.
+# Object form adds options: { run: verify, allow_failure: false, name: "..." }
+#
+# Defaults already in the embedded manifest:
+#   tasks.post:  [verify]
+#   review.post: [verify]
+#
+# Override examples:
+# artifacts:
+#   - id: tasks
+#     post: [lint, verify]
+#   - id: review
+#     post:
+#       - { run: verify, name: "full suite green" }
+#       - { run: "scripts/coverage.sh", allow_failure: true }
+
+# --- Addons ------------------------------------------------------------------
+# Opt-in pre-packaged artifact sets. See arc42 ch.8.11.
+#
+# addons:
+#   arc42: false    # set to true to enable the arc42 documentation artifact
+
+# --- arc42 configuration (requires addons.arc42: true) -----------------------
+# arc42:
+#   output_dir: "docs/arc42"     # where durable arc42 docs live (not per-change)
+#   chapters:                    # subset/superset of the 12 standard chapters
+#     - introduction-and-goals
+#     - architecture-constraints
+#     - context-and-scope
+#     - solution-strategy
+#     - building-block-view
+#     - runtime-view
+#     - deployment-view
+#     - crosscutting-concepts
+#     - architecture-decisions
+#     - quality-requirements
+#     - risks-and-technical-debt
+#     - glossary
+#   require_for_archive: false   # if true, adds arc42-docs to apply.requires
