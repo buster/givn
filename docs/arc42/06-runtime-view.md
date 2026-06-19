@@ -195,6 +195,34 @@ returns 0/1/2. Only the *test runner* (`verify.command`) is the sentinel until
 configured. The two are complementary: `givn lint` checks the spec is well-formed;
 `verify.command` runs the tests that confirm behaviour (GREEN).
 
+## 6.9a `givn completions <shell>`
+
+```
+user → main.rs (inline handler, no separate cli module)
+  1. clap_complete::generate(shell, &mut Cli::command(), "givn", stdout)
+     → emits a shell-specific completion script to stdout
+  2. exit 0
+```
+
+The script is printed to stdout so the user can eval it, pipe it, or redirect
+it to a completions file. No filesystem writes; no project config required.
+Works before `givn init` (does not need `givn/config.yaml`).
+
+Supported shells: `bash`, `zsh`, `fish`, `elvish`, `powershell` (all
+`clap_complete::Shell` variants).
+
+Typical one-time install:
+```sh
+# bash
+echo 'eval "$(givn completions bash)"' >> ~/.bashrc
+
+# zsh
+echo 'eval "$(givn completions zsh)"' >> ~/.zshrc
+
+# fish (persist to the completions dir — preferred over eval)
+givn completions fish > ~/.config/fish/completions/givn.fish
+```
+
 ## 6.9b `givn addons list / enable / disable`
 
 ```

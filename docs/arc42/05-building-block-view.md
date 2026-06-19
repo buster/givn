@@ -10,7 +10,7 @@ project's `givn/` directory, and writes artifacts and agent files.
 ```
 givn/  (single published binary crate)
 ├── src/
-│   ├── main.rs                 # clap dispatch / entrypoint
+│   ├── main.rs                 # clap dispatch / entrypoint; inline completions handler
 │   ├── cli/                    # one module per subcommand
 │   │   ├── init.rs
 │   │   ├── new.rs
@@ -91,6 +91,7 @@ givn/  (single published binary crate)
 | Crate | Use | Version (verified) |
 | --- | --- | --- |
 | `clap` | CLI parsing | 4.6 |
+| `clap_complete` | Shell completion script generation (bash/zsh/fish/…) | 4 |
 | `serde` + `serde_yaml_ng` | Manifest (de)serialisation | serde 1, serde_yaml_ng 0.10 |
 | `rust-embed` | Embed default assets | 8.11 |
 | `gherkin` | Parse `.feature` files | 0.16 |

@@ -11,7 +11,8 @@ easily-installable Rust binary: delta lifecycle → scenario-by-scenario TDD →
 completeness-based coverage review → automatic delta merge on archive.
 Language- and test-runner-agnostic.
 
-**Status:** planning complete, implementation not started. See the
+**Status:** implementation complete (phases 0–5.5). Single binary, all commands
+working, 47 tests passing. See the
 [arc42 architecture docs](docs/arc42/README.md) and the
 [implementation task breakdown](docs/TASKS.md).
 
@@ -105,7 +106,7 @@ No npm. No root. No runtime. Pick whichever you like:
 
 > The crate name `givn` is verified available on crates.io and Homebrew.
 
-## Quickstart (planned CLI)
+## Quickstart
 
 ```sh
 givn init                       # scaffold givn/ + generate AGENTS.md and skills
@@ -114,11 +115,17 @@ givn instructions proposal --change add-user-auth --json
 givn lint                       # static check of .feature files (exit 0 clean / 1 parse / 2 wip) — runs NO tests
 givn check tasks                # run an artifact's post hooks (e.g. the test suite via verify.command)
 givn status                     # show lifecycle state (derived from the filesystem)
+givn status --change add-user-auth --json   # machine-readable state for commands/scripts
 givn apply --change add-user-auth     # track task progress
 givn archive --change add-user-auth   # merge deltas into givn/specs/, move to archive/
 givn eject design:template      # pull an embedded default into your project to edit
 givn skills sync                # regenerate AGENTS.md + skills after a binary update
 givn upgrade                    # refresh documented config to the new givn version
+givn addons list                # show available addons (e.g. arc42) and their status
+givn addons enable arc42        # enable the arc42 documentation addon
+givn completions bash           # print bash completion script (eval in ~/.bashrc)
+givn completions zsh            # print zsh completion script  (eval in ~/.zshrc)
+givn completions fish           # print fish completion script (source or save to completions/)
 ```
 
 > **First thing after `init`:** set `verify.command` in `givn/config.yaml` to your
@@ -142,6 +149,7 @@ givn/
 │   ├── proposal.md
 │   ├── specs/<cap>/<cap>.feature     # delta: @givn.delta + added|modified|removed
 │   ├── design.md  tasks.md  review.md
+│   └── arc42.md                      # optional: arc42-docs addon marker (STATUS: DONE)
 ├── archive/<id>/                     # archived changes
 └── (ejected overrides, on demand)
     artifacts/<id>/template.*
