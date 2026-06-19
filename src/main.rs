@@ -6,7 +6,8 @@ mod hooks;
 mod skills;
 mod state;
 
-use clap::{Parser, Subcommand};
+use clap::{CommandFactory, Parser, Subcommand};
+use clap_complete::{generate, Shell};
 
 /// givn — from Given to done.
 ///
@@ -102,6 +103,17 @@ enum Commands {
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
+    /// Generate shell completion script and print it to stdout.
+    ///
+    /// Add to your shell profile:
+    ///   bash:  eval "$(givn completions bash)"
+    ///   zsh:   eval "$(givn completions zsh)"
+    ///   fish:  givn completions fish | source
+    #[command(name = "completions")]
+    Completions {
+        /// Shell to generate completions for.
+        shell: Shell,
+    },
 }
 
 #[derive(Subcommand)]
@@ -159,5 +171,10 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Skills { command: SkillsCommands::Sync } => cli::skills::run_sync(),
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
+        Commands::Completions { shell } => {
+            let mut cmd = Cli::command();
+            generate(shell, &mut cmd, "givn", &mut std::io::stdout());
+            Ok(())
+        }
     }
 }
