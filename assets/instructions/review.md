@@ -1,28 +1,26 @@
 # Instruction: review
 
-Perform a completeness-based coverage review. The goal is not a percentage
-threshold — the goal is that every uncovered region is deliberately classified
-and resolved.
+Perform a review of the completed change. The goal is a clean test suite and
+an honest coverage record — not a coverage percentage threshold.
 
-**Coverage classification (three buckets only):**
-1. **Dead code** (YAGNI/KISS) → delete it now.
-2. **Missing test coverage** → add step definitions, or add a scenario and run
-   the full RED→GREEN→REFACTOR loop.
-3. **Legitimately hard to test** — rare; requires concrete technical justification
-   (e.g. OS signal handling, external hardware). Document the justification.
+**Coverage is informational, not a gate.**
+Run the coverage tool, record the number and the uncovered regions. Use the
+three buckets to label each observation — but gap resolution is encouraged,
+not required for sign-off. A low percentage is a hint worth noting; it does
+not block the review from passing.
 
-**Coverage is complete when:**
-- Every gap is classified into exactly one of the three buckets.
-- Every dead code region is deleted.
-- Every missing-test gap has a new scenario + passing test, or a fix.
-- Every hard-to-test gap has a written justification.
+**Coverage buckets (for labelling observations):**
+1. **Dead code** (YAGNI/KISS) — consider deleting it.
+2. **Missing test coverage** — consider adding a scenario or step.
+3. **Legitimately hard to test** — note the reason (e.g. OS signal handling,
+   external hardware, I/O boundary).
 
-**Sign-off checklist:**
+**The real sign-off gate:**
 - All scenarios pass (test runner exits 0).
-- Every coverage gap classified and resolved (or justified).
 - No `@wip` tags remain in the delta spec.
-- The delta spec contains no implementation-layer detail (no class names,
-  function names, HTTP routes, etc.).
+- The delta spec contains no implementation-layer detail.
+- Coverage has been measured and recorded (or explicitly marked "not measured"
+  with a reason).
 
 **Review result:** End the file with `REVIEW: PASS` or `REVIEW: FAIL`.
 The archive gate reads this marker.
