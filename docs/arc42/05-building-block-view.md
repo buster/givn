@@ -20,12 +20,15 @@ givn/  (single published binary crate)
 │   │   ├── apply.rs
 │   │   ├── archive.rs
 │   │   ├── eject.rs
-│   │   └── skills.rs           # `skills sync`
+│   │   ├── skills.rs           # `skills sync`
+│   │   ├── upgrade.rs          # re-render managed config scaffold, bump version
+│   │   └── missing_testrunner.rs  # sentinel default verify.command
 │   ├── config/
 │   │   ├── embedded.rs         # access to baked-in assets (rust-embed)
 │   │   ├── manifest.rs         # serde types for the YAML manifest
 │   │   ├── overlay.rs          # merge project overlay onto embedded graph
-│   │   └── cascade.rs          # per-facet resolution (project ← embedded)
+│   │   ├── cascade.rs          # per-facet resolution (project ← embedded)
+│   │   └── render.rs           # render documented, versioned config.yaml scaffold
 │   ├── gherkin/
 │   │   ├── parse.rs            # wrap the `gherkin` crate
 │   │   ├── delta.rs            # tag detection, split feature/scenario
@@ -56,10 +59,13 @@ givn/  (single published binary crate)
 | `cli::archive` | Merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `gherkin::merge`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. | `config::embedded`, `config::cascade` |
 | `cli::skills` | Regenerate AGENTS.md + skills from current templates. | `skills` |
+| `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
+| `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
 | `config::manifest` | Serde model of the manifest (artifacts, deps, apply, verify). | `serde_yaml_ng` |
 | `config::overlay` | Apply the project overlay to the embedded default graph. | `manifest` |
 | `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
+| `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |
 | `gherkin::parse` | Parse `.feature` into a typed AST; classify lint findings. | `gherkin` crate |
 | `gherkin::delta` | Detect `@givn.*` tags; split features/scenarios. | `parse` |
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |

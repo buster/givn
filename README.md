@@ -28,6 +28,9 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 | Schema customisation requires forking TS source | Eject any facet into your project dir; edit freely |
 | Skill templates hardcoded; overwritten on update | Templates are ejectable override files; updates touch only the embedded fallback |
 | Config scattered across 3 layers | One visible `givn/` directory holds all project config |
+| Opaque config; unclear what's changeable | `givn/config.yaml` is fully commented with documented defaults for every key |
+| No upgrade path when the tool evolves | Config is versioned; `givn upgrade` refreshes it, with `git diff` as the merge surface |
+| Silent/guessed test running | Default runner is a sentinel that prints setup guidance and fails until configured |
 | A parallel `spec.md` format duplicating the `.feature` | The `.feature` file **is** the spec — nothing duplicated |
 | Coverage gated on an arbitrary percentage | Gate is **completeness of gap classification**, not a number |
 
@@ -53,6 +56,13 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   `AGENTS.md` (the Linux-Foundation-stewarded standard). Invokable skills are
   emitted to the neutral `.agents/skills/<name>/SKILL.md` path, with mirrors for
   Claude Code and opencode.
+- **Self-documenting, versioned config.** `givn init` writes `givn/config.yaml`
+  with every key present-but-commented, documented inline (description, default,
+  allowed values). It carries `givn_config_version`; `givn upgrade` provides a
+  version-to-version upgrade path that preserves your overrides.
+- **No silent test running.** The default `verify.command` is the sentinel
+  `givn missing-testrunner`, which prints per-language setup guidance and exits
+  non-zero until you configure a real runner — so nothing ever falsely reports green.
 
 ## The workflow
 
@@ -88,13 +98,25 @@ givn apply --change add-user-auth     # track task progress
 givn archive --change add-user-auth   # merge deltas into givn/specs/, move to archive/
 givn eject design:template      # pull an embedded default into your project to edit
 givn skills sync                # regenerate AGENTS.md + skills after a binary update
+givn upgrade                    # refresh documented config to the new givn version
 ```
+
+> **First thing after `init`:** set `verify.command` in `givn/config.yaml` to your
+> project's test runner (e.g. `cargo test`, `mvn test`,
+> `npx cucumber-js "givn/specs/**/*.feature"`, `behave`). Until you do, the default
+> runner is the sentinel `givn missing-testrunner`, which prints setup guidance and
+> fails on purpose so nothing falsely reports green.
+
+> `givn/config.yaml` ships **fully commented** — every option is documented inline
+> with its default and allowed values. It is **versioned** (`givn_config_version`);
+> `givn upgrade` refreshes the documentation scaffold to a newer givn release while
+> preserving your overrides, with `git diff` as the review/merge surface.
 
 ## What the tool creates in your project
 
 ```
 givn/
-├── config.yaml                       # manifest OVERLAY + verify.command
+├── config.yaml                       # documented + versioned: overlay + verify.command
 ├── specs/<cap>/<cap>.feature         # permanent merged spec (source of truth)
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md

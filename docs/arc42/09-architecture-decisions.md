@@ -192,6 +192,20 @@ override, (C) givn only lints, runner entirely external.
 **Rationale.** Explicit and portable; `givn verify` stays a pure Gherkin linter
 while the runner is unambiguous for agents and CI.
 
+**Default value (refined — see ADR-021).** The shipped default `verify.command`
+is a deliberate **sentinel** that is not a real runner:
+
+```yaml
+verify:
+  command: "givn missing-testrunner"
+```
+
+`givn missing-testrunner` is a built-in subcommand that prints actionable guidance
+("no test runner configured — set `verify.command` in `givn/config.yaml` to your
+project's command, e.g. `cargo test`, `mvn test`, `npx cucumber-js ...`,
+`behave`") and exits non-zero. This makes the missing configuration loud and
+self-documenting instead of silently running nothing or guessing wrong.
+
 ---
 
 ## ADR-016: Repository location and version control
@@ -229,3 +243,95 @@ for now.
 **Decision.** Tags are `@givn.delta`, `@givn.added`, `@givn.modified`,
 `@givn.removed`. Renamed from the prototype's `@openspec.*` for the clean break.
 Test-runner feature path env var is `GIVN_FEATURES` (default `givn/specs`).
+
+---
+
+## ADR-021: Default `verify.command` is a self-documenting sentinel
+
+**Context.** A freshly initialised project has no idea how to execute the
+project's step definitions (the runner is language-specific: cargo/maven/npm/
+behave/...). Silently doing nothing, or guessing, both produce confusing
+false-GREEN states.
+
+**Decision.** The shipped default `verify.command` is `givn missing-testrunner`,
+a built-in subcommand that:
+- prints a clear message that no test runner is configured,
+- shows per-language examples of what to put in `givn/config.yaml`
+  (`cargo test`, `mvn test`, `npx cucumber-js "givn/specs/**/*.feature"`,
+  `behave`, `go test ./...`, ...),
+- exits with a non-zero status so CI and agents treat it as "not yet GREEN".
+
+**Rationale.** Makes the one mandatory per-project decision impossible to miss,
+turns a config gap into guidance, and keeps `givn verify` (Gherkin lint) cleanly
+separate from running the actual runner.
+
+**Consequences.** `missing-testrunner` is a real (hidden/utility) subcommand.
+The generated `givn/config.yaml` documents `verify.command` thoroughly (ADR-022).
+
+---
+
+## ADR-022: Generated config ships fully commented with documented defaults
+
+**Context.** "All config in one place" only helps if users can discover what is
+configurable. With eject-on-demand (ADR-006), the artifact facets are pulled in
+as needed — but the top-level `givn/config.yaml` is created by `init` and is the
+primary knob surface.
+
+**Decision.** `givn init` writes a `givn/config.yaml` in which **every supported
+key is present but commented out**, each with:
+- a short description of what it does,
+- the effective default value shown (commented),
+- allowed values / format notes,
+- a cross-reference to the relevant arc42/README section where useful.
+
+Only the minimum a project must set (notably `verify.command`) is written
+uncommented (or written uncommented as the sentinel default with a prominent
+"CHANGE ME" note).
+
+**Rationale.** Self-documenting config; users override exactly what they want by
+uncommenting and editing; no need to read external docs to discover options. The
+file doubles as living documentation of the configuration surface.
+
+**Consequences.** The config template lives in `assets/` and must be kept in sync
+with the manifest schema. A test asserts that every documented key corresponds to
+a real schema key (and vice versa) so the docs cannot drift.
+
+---
+
+## ADR-023: Configuration is versioned with an upgrade path
+
+**Context.** A project initialised with givn 1.0.0 should be able to adopt
+improvements introduced in 1.1.0 (new keys, changed defaults, new commented
+documentation) without manual archaeology. Because all config lives in the
+project repo, git is the conflict-resolution surface.
+
+**Decision.**
+- The generated `givn/config.yaml` records the givn version that wrote/last
+  upgraded it, via a top-level key, e.g.:
+  ```yaml
+  # Managed by givn. Do not delete this line.
+  givn_config_version: "1.0.0"
+  ```
+- A `givn upgrade` command re-renders the managed/commented scaffolding of
+  `givn/config.yaml` (and other generated managed files) from the current
+  binary's templates, **preserving the user's uncommented overrides**, and bumps
+  `givn_config_version`.
+- The upgrade is performed as ordinary file writes in the project repo, so the
+  user reviews the result via `git diff` and resolves any conflicts there.
+- Upgrades are idempotent and never silently discard user-set values; when a key
+  was removed or renamed between versions, `givn upgrade` leaves the old value in
+  place and emits a note (and, where possible, a migration hint) rather than
+  deleting it.
+
+**Rationale.** Gives a real version-to-version upgrade path while keeping git as
+the trusted diff/merge tool. Honours "project files always win" (ADR-005): user
+overrides are preserved; only the documentation/scaffolding layer is refreshed.
+
+**Consequences.** Adds a `givn upgrade` command and a `givn_config_version`
+marker. Managed-but-editable files need a clear convention distinguishing
+user-owned regions (uncommented overrides) from givn-managed regions (the
+commented documentation scaffold). See chapter 8.10.
+
+**Scope note.** v1 targets `givn/config.yaml` and generated agent files
+(via `givn skills sync`). Upgrading ejected artifact facets is left to the user
+through `git diff` against a re-eject; a future enhancement may assist this.

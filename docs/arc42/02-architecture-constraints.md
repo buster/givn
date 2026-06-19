@@ -46,3 +46,6 @@ relitigation during implementation (see chapter 9 for rationale).
 | CV-2 | Agent skills emitted to neutral `.agents/skills/<name>/SKILL.md` (primary) with `.claude/skills` and `.opencode/skills` mirrors. |
 | CV-3 | Capability names use kebab-case (e.g. `user-auth`). |
 | CV-4 | Test-runner feature path overridable via `GIVN_FEATURES` env var, default `givn/specs`. |
+| CV-5 | Default `verify.command` is the sentinel `givn missing-testrunner` (prints setup guidance, exits non-zero) until the project sets a real runner. |
+| CV-6 | `givn/config.yaml` ships fully commented with documented defaults; every key is discoverable in-file. |
+| CV-7 | `givn/config.yaml` carries `givn_config_version`; `givn upgrade` provides a version-to-version upgrade path, with git as the diff/merge surface. |

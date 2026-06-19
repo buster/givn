@@ -9,12 +9,15 @@ chapter 5.
 user → cli::init
   1. detect project root (cwd)
   2. create givn/ skeleton: specs/, changes/, archive/
-  3. write minimal givn/config.yaml (e.g. `verify: { command: "..." }`)
+  3. config::render → write documented, versioned givn/config.yaml:
+       - every key present-but-commented with description/default/allowed-values
+       - verify.command uncommented as the sentinel "givn missing-testrunner"
+       - givn_config_version set to the current binary version
   4. skills::render + skills::targets:
        - render AGENTS.md from embedded rules template → repo root
        - render each default skill template → .agents/skills/<name>/SKILL.md
        - mirror to .claude/skills/ and .opencode/skills/
-  5. print next steps
+  5. print next steps (incl. "set verify.command to your test runner")
 ```
 
 Idempotent: existing files are not overwritten unless `--force`.
@@ -112,3 +115,37 @@ user → cli::skills
   2. skills::targets: rewrite .agents/.claude/.opencode + root AGENTS.md
   (Used after a binary upgrade to refresh generated agent files.)
 ```
+
+## 6.9 Running the test runner on a fresh project (sentinel)
+
+When a project has not configured `verify.command`, the manifest's default points
+at the sentinel:
+
+```
+agent/user runs the configured verify.command (= "givn missing-testrunner")
+  → cli::missing_testrunner
+      1. print "no test runner configured" + how to set verify.command
+      2. show per-language examples (cargo/mvn/cucumber-js/behave/go test/...)
+      3. exit non-zero (treated as "not GREEN" by CI and agents)
+```
+
+Note: `givn verify` (Gherkin lint) is unaffected — it still runs and returns
+0/1/2. Only the *runner* command is the sentinel until configured.
+
+## 6.10 `givn upgrade`
+
+```
+user → cli::upgrade
+  1. read givn/config.yaml: parse user overrides + givn_config_version
+  2. config::render: re-render the managed (commented) documentation scaffold
+       from the current binary's template
+  3. merge: preserve every user-uncommented key/value verbatim; refresh only
+       the managed comment regions; keep removed/renamed keys with a note
+  4. set givn_config_version to the current binary version
+  5. write givn/config.yaml (ordinary file write)
+  6. optionally run `skills sync` (or advise it)
+  7. print summary; user reviews via `git diff` and resolves conflicts in git
+```
+
+Idempotent: running `givn upgrade` twice on the same binary produces no further
+diff. Never deletes user-set values.

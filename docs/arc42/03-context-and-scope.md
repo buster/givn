@@ -39,7 +39,7 @@ Gherkin `.feature` files.
 | Interface | Direction | Format / contract |
 | --- | --- | --- |
 | CLI args | in | `clap`-parsed subcommands and flags. |
-| `givn/config.yaml` | in | YAML manifest overlay + `verify.command`. |
+| `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files. |
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
 | `AGENTS.md` | out | Markdown (the agent-rules standard). |
@@ -59,6 +59,8 @@ Gherkin `.feature` files.
 - `verify` (Gherkin lint with exit codes).
 - Filesystem-derived state and task-progress tracking.
 - `AGENTS.md` + skill generation (neutral + claude + opencode).
+- Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
+- Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
 - Distribution: release binaries, curl\|sh, brew, cargo.
 
 ### Out of scope (deferred / non-goals)

@@ -26,7 +26,8 @@ Legend: `[ ]` pending · `[x]` done.
 
 - [ ] 1.1 Define `clap` CLI skeleton in `main.rs` with all subcommands
       (`init`, `new`, `instructions`, `verify`, `status`, `apply`, `archive`,
-      `eject`, `skills sync`) as stubs returning "not implemented".
+      `eject`, `skills sync`, `upgrade`, `missing-testrunner`) as stubs returning
+      "not implemented".
 - [ ] 1.2 Create `assets/` and wire `rust-embed` in `config/embedded.rs`.
 - [ ] 1.3 Port the prototype `schema.yaml` → `assets/default-manifest.yaml`,
       renaming tags to `@givn.*` and paths to `givn/...`. Artifacts: proposal,
@@ -36,13 +37,26 @@ Legend: `[ ]` pending · `[x]` done.
       (`proposal.md`, `spec.feature`, `design.md`, `tasks.md`, `review.md`),
       with `@givn.*` tags and `GIVN_FEATURES` default `givn/specs`.
 - [ ] 1.5 Implement `config/manifest.rs` serde types; load + parse the embedded
-      manifest; unit test it deserialises.
-- [ ] 1.6 Implement `cli::init`: scaffold `givn/{specs,changes,archive}` and a
-      minimal `givn/config.yaml` (with `verify.command` placeholder). Idempotent;
-      `--force` to overwrite.
-- [ ] 1.7 Commit: "feat: embedded defaults, manifest model, givn init".
+      manifest; unit test it deserialises. Default `verify.command` is the
+      sentinel `givn missing-testrunner` (ADR-021).
+- [ ] 1.6 Author `assets/config.yaml.tmpl`: the fully-commented, documented
+      config scaffold (ADR-022) — every key present-but-commented with
+      description/default/allowed-values, `verify.command` uncommented as the
+      sentinel with a "CHANGE ME" note, and a `givn_config_version` marker
+      (ADR-023). Cross-reference arc42 ch.8.10.
+- [ ] 1.7 Implement `cli::missing_testrunner`: print per-language setup guidance
+      (cargo/mvn/cucumber-js/behave/go test/...) and exit non-zero (ADR-021).
+- [ ] 1.8 Implement `config/render.rs` (initial): render `config.yaml.tmpl` with
+      the current binary version into `givn_config_version`.
+- [ ] 1.9 Implement `cli::init`: scaffold `givn/{specs,changes,archive}` and
+      write the documented, versioned `givn/config.yaml`. Idempotent; `--force`.
+- [ ] 1.10 Test: every documented key in `config.yaml.tmpl` maps to a real
+      manifest schema key and vice versa (no drift — ADR-022).
+- [ ] 1.11 Commit: "feat: embedded defaults, manifest model, documented config, givn init".
 
-**Done when:** `givn init` scaffolds a project; manifest loads from the binary.
+**Done when:** `givn init` scaffolds a project with a fully-documented, versioned
+`givn/config.yaml`; `givn missing-testrunner` prints guidance and fails; manifest
+loads from the binary.
 
 ---
 
@@ -62,6 +76,25 @@ Legend: `[ ]` pending · `[x]` done.
 
 **Done when:** ejecting a facet then editing it changes resolution; overlay tests
 green; `givn instructions <a> --json` works.
+
+---
+
+## Phase 2.5 — Config versioning & upgrade
+
+- [ ] 2.5.1 Define the managed-vs-user region convention for `givn/config.yaml`
+      (commented lines = givn-managed scaffold; uncommented key/values = user-owned).
+- [ ] 2.5.2 Extend `config/render.rs`: given an existing `config.yaml`, parse user
+      overrides + `givn_config_version`, re-render the managed comment scaffold from
+      the current template, preserve user overrides verbatim, keep removed/renamed
+      keys with a note, bump the version.
+- [ ] 2.5.3 Implement `cli::upgrade`: perform the above as ordinary file writes;
+      print a summary; advise `git diff` review and `givn skills sync`.
+- [ ] 2.5.4 Tests: idempotency (second run = no diff), override preservation,
+      version bump, removed-key retention. (ADR-023)
+- [ ] 2.5.5 Commit: "feat: versioned config with givn upgrade".
+
+**Done when:** a 1.0.0-style config can be upgraded in place; user overrides are
+preserved; re-running produces no diff; changes are reviewable via `git diff`.
 
 ---
 

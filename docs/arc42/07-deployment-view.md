@@ -55,3 +55,17 @@ runtimes.
 
 Per-project footprint is created by `givn init` (see chapter 8.4 for the layout).
 No global config directory is used (NFR-3: all config in the project `givn/`).
+
+## 7.6 Upgrading an installed project
+
+After upgrading the binary (via any channel), a project adopts new defaults and
+documentation with:
+
+```
+givn upgrade        # refresh documented/versioned config scaffold (ch.8.10)
+givn skills sync    # refresh AGENTS.md + generated skills (ch.8.7)
+```
+
+Both write into the project repo; the user reviews via `git diff`. User overrides
+are preserved (ADR-005, ADR-023). `givn_config_version` in `givn/config.yaml`
+records which binary version last upgraded the project.

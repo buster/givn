@@ -37,6 +37,9 @@ propose → spec → design → tasks → implement → review → archive
 | FR-12 | Eject embedded defaults on demand (`givn eject`). |
 | FR-13 | Derive lifecycle state from the filesystem (no separate state file). |
 | FR-14 | Declare the test-runner command in the project manifest. |
+| FR-15 | Default test-runner command is a self-documenting sentinel that prints setup guidance and fails until configured. |
+| FR-16 | Generate `givn/config.yaml` fully commented, with documented defaults for every key. |
+| FR-17 | Version the project config (`givn_config_version`) and provide `givn upgrade` to refresh scaffolding while preserving user overrides. |
 
 ### Non-functional requirements (top)
 
