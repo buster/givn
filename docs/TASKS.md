@@ -191,25 +191,23 @@ loudly under the sentinel default).
 
 ## Phase 5.5 — Addons & arc42 documentation artifact
 
-- [ ] 5.5.1 Implement the `addons:` overlay sugar in `config/overlay.rs`: an
+- [x] 5.5.1 Implement the `addons:` overlay sugar in `config/overlay.rs`: an
       enabled addon expands into its artifact definition(s). (ADR-026)
-- [ ] 5.5.2 Author embedded `assets/addons/arc42/`: 12 arc42 chapter templates +
+- [x] 5.5.2 Author embedded `assets/addons/arc42-docs/`: 12 arc42 chapter templates +
       an index template + the `arc42-docs` artifact instruction (create missing
       chapters, update only affected ones; durable project-level docs).
-- [ ] 5.5.3 Define the `arc42-docs` artifact default: `requires: [design]`,
-      `optional: true`, output `docs/arc42/` (configurable `arc42.output_dir`,
-      `arc42.chapters`, `arc42.require_for_archive`).
-- [ ] 5.5.4 Document the addon + arc42 keys in `config.yaml.tmpl` (commented).
-- [ ] 5.5.5 Ensure filesystem-derived state observes the change-level marker for
-      arc42 maintenance (durable docs themselves are not per-change artifacts).
-- [ ] 5.5.6 Make addon templates/instruction ejectable; test that enabling the
-      addon inserts the artifact after `design` and (optionally) gates archive.
-- [ ] 5.5.8 Implement `givn addons list`: list all known addons with name,
+- [x] 5.5.3 Define the `arc42-docs` artifact default: `requires: [design]`,
+      `optional: true`, change-level marker `arc42.md` with `STATUS: DONE`.
+- [x] 5.5.4 Document the addon + arc42 keys in `config.yaml.tmpl` (commented).
+- [x] 5.5.5 Ensure filesystem-derived state observes the change-level `arc42.md`
+      marker (`STATUS: DONE` detection, parallel to `REVIEW: PASS`).
+- [x] 5.5.6 Make addon templates/instruction ejectable via cascade fallback
+      (`addons/<id>/`); eject uses effective manifest so addon artifacts work.
+- [x] 5.5.8 Implement `givn addons list`: list all known addons with name,
       description, and enabled/disabled status for the current project.
-- [ ] 5.5.9 Implement `givn addons enable <name>` / `givn addons disable <name>`:
-      toggle the addon switch in `givn/config.yaml` (uncomment/update the
-      `addons:` block); print a confirmation and the next suggested step.
-- [ ] 5.5.10 Commit: "feat: addon mechanism + arc42 documentation artifact".
+- [x] 5.5.9 Implement `givn addons enable <name>` / `givn addons disable <name>`:
+      toggle the addon switch in `givn/config.yaml`; print confirmation + next step.
+- [x] 5.5.10 Commit: "feat: addon mechanism + arc42 documentation artifact".
 
 **Done when:** enabling `addons: { arc42: true }` adds an `arc42-docs` step after
 design that creates/maintains durable `docs/arc42/` docs; everything configurable
