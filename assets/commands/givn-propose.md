@@ -146,7 +146,7 @@ the implementation is done.
 
 ## Guardrails
 
-- Always run `givn plan --json` to get the sequence — never hardcode it.
+- Always run `givn status --change <id> --json` to get current state and next step — never hardcode the sequence.
 - Write all planning artifacts before stopping. Do not pause between them to ask.
 - Never put implementation detail (HOW) in the proposal or specs.
 - Keep all scenarios `@wip` — step definitions are not written yet.

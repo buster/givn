@@ -81,7 +81,7 @@ Read `next_required.id` from the output and report it as the next step
 - <decision 1>
 - <decision 2>
 
-**Next:** Run `/<next-artifact-id>` to continue (from `givn plan --json`).
+**Next:** Run `/<next-artifact-id>` to continue (from `givn status --change <id> --json` → `next_required.id`).
 ```
 
 ---

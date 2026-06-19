@@ -48,7 +48,6 @@ pub struct ChangeState {
     /// Artifacts in topological order with their current status.
     pub artifacts: Vec<ArtifactState>,
     pub verify_command: String,
-    pub archived: bool,
 }
 
 impl ChangeState {
@@ -98,7 +97,6 @@ impl ChangeState {
             id,
             artifacts,
             verify_command: manifest.verify.command.clone(),
-            archived: false,
         }
     }
 

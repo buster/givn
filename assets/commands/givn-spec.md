@@ -103,7 +103,7 @@ Read `next_required.id` from the output and report it as the next step
 
 **Lint:** clean (N @wip scenarios — expected)
 
-**Next:** Run `/<next-artifact-id>` to continue (from `givn plan --json`).
+**Next:** Run `/<next-artifact-id>` to continue (from `givn status --change <id> --json` → `next_required.id`).
 ```
 
 ---
