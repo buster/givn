@@ -8,7 +8,11 @@ details are welcome and required here.
 - Architecture impact: which modules/components are affected, what is new.
 - Data model changes: schema, structs, database changes.
 - Step definition locations: where Cucumber/Gherkin step definitions live.
-- Test runner command: confirm the `verify.command` in givn/config.yaml.
+- Test runner: choose the runner that fits the tech stack (e.g. `cargo test`,
+  `npm test`, `pytest`). Document the chosen command. If `verify.command` in
+  `givn/config.yaml` is still `"givn missing-testrunner"`, update it to the
+  chosen runner. The tasks artifact will include a setup task to install and
+  configure it.
 - Any other technical decision the implementer needs before writing tasks.
 
 **Rules:**

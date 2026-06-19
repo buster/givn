@@ -3,6 +3,13 @@
 Write the implementation task breakdown using a strict scenario-by-scenario
 RED→GREEN→REFACTOR loop.
 
+**First task: test infrastructure setup**
+
+Before any scenario task, include a setup task that:
+- Installs and configures the test runner chosen in design.md
+- Sets `verify.command` in `givn/config.yaml` if still the sentinel
+- Verifies the runner exits 0 before any RED phase begins
+
 **The TDD loop (one scenario at a time, in .feature order):**
 
 ```

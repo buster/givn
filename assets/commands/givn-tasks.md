@@ -46,9 +46,25 @@ Read:
 
 ### 4. Write the task list
 
-Write `givn/changes/<id>/tasks.md` as a checkboxed scenario-by-scenario breakdown.
+Write `givn/changes/<id>/tasks.md` as a checkboxed breakdown.
 
-**Structure each task as one full RED/GREEN/REFACTOR cycle for one scenario:**
+**First task: test infrastructure setup (always required)**
+
+Before any scenario task, add a setup task:
+
+```markdown
+- [ ] Setup: configure test infrastructure and verify.command
+      - Install/configure the test runner chosen in design.md
+        (e.g. add Cucumber dependency, create step definitions skeleton,
+        configure test framework)
+      - Set `verify.command` in `givn/config.yaml` to the runner from design.md
+        if not already done
+      - Run: <verify.command> → must exit 0 (even with no scenarios yet)
+```
+
+This task gates all others — the runner must be working before any RED phase begins.
+
+**Subsequent tasks: one per scenario**
 
 ```markdown
 - [ ] <capability>: <Scenario title>
@@ -59,9 +75,9 @@ Write `givn/changes/<id>/tasks.md` as a checkboxed scenario-by-scenario breakdow
 ```
 
 **Rules:**
-- One task = one scenario = one full RED/GREEN/REFACTOR cycle.
-- Order tasks by dependency (infrastructure first, feature scenarios after).
-- Confirm the verify command from `givn/config.yaml`.
+- First task is always infrastructure setup — never skip it.
+- One scenario task = one full RED/GREEN/REFACTOR cycle.
+- Order scenario tasks by dependency (foundational scenarios before edge cases).
 - `givn lint` is a static check only — it does NOT run tests.
 - GREEN is confirmed by `verify.command` only, never by `givn lint`.
 

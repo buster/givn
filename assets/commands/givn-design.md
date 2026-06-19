@@ -24,28 +24,7 @@ givn status
 
 Identify the active change. Announce: "Using change: <id>".
 
-### 2. Check verify.command is configured
-
-```sh
-givn status --change <id> --json
-```
-
-Inspect `verify_command`. If it is `"givn missing-testrunner"`, the test runner
-is not configured. **Stop and ask the user:**
-
-> `verify.command` in `givn/config.yaml` is still the default sentinel.
-> What command runs your test suite? (e.g. `cargo test`, `npm test`, `pytest`)
-
-Update `givn/config.yaml`:
-
-```yaml
-verify:
-  command: "<user's runner>"
-```
-
-Confirm the update took effect, then proceed. If already set, continue immediately.
-
-### 3. Get design instructions
+### 2. Get design instructions
 
 ```sh
 givn instructions design --change <id>
@@ -58,14 +37,14 @@ Parse the output for:
 - `context` / `rules`: constraints for you — **do not copy these into the file**
 - `dependencies`: completed artifacts to read (proposal.md, specs/)
 
-### 4. Read the inputs
+### 3. Read the inputs
 
 Read:
 - `givn/changes/<id>/proposal.md` — WHAT and WHY
 - `givn/changes/<id>/specs/<capability>/<capability>.feature` — observable behaviours
 - Relevant existing code (architecture, patterns, integration points)
 
-### 5. Write the design
+### 4. Write the design
 
 Write `givn/changes/<id>/design.md` covering:
 
@@ -73,14 +52,18 @@ Write `givn/changes/<id>/design.md` covering:
 - **Architecture impact** — which modules/components are affected; what is new.
 - **Data model changes** — schema, structs, database changes if any.
 - **Step definition locations** — where Cucumber/Gherkin step defs will live.
-- **Runner command** — record `verify.command` from `givn/config.yaml` (already confirmed above).
+- **Runner command** — choose the test runner that fits the tech stack
+  (e.g. `cargo test`, `npm test`, `pytest`). Document it in design.md.
+  If `verify.command` in `givn/config.yaml` is still `"givn missing-testrunner"`,
+  update it now to the chosen runner. The tasks artifact will include a
+  setup task to install and configure the runner.
 - **Non-obvious choices** — justify them; obvious choices need no justification.
 
 This is the HOW layer. Everything that was kept out of the proposal and spec
 belongs here: class names, routes, DB schemas, function signatures,
 framework details, step-definition mechanics.
 
-### 6. Show next step
+### 5. Show next step
 
 ```sh
 givn status --change <id> --json

@@ -38,31 +38,7 @@ proceeding only if the name is genuinely ambiguous.
 givn new <id>
 ```
 
-### 3. Check verify.command is configured
-
-```sh
-givn status --change <id> --json
-```
-
-Inspect `verify_command` in the output. If it is `"givn missing-testrunner"`,
-the test runner is not configured. **Stop and ask the user:**
-
-> `verify.command` in `givn/config.yaml` is still the default sentinel.
-> What command runs your test suite? (e.g. `cargo test`, `npm test`, `pytest`)
-
-Once the user provides it, update `givn/config.yaml`:
-
-```yaml
-verify:
-  command: "<user's runner>"
-```
-
-Then confirm by re-running `givn status --change <id> --json` and checking
-`verify_command` is no longer `"givn missing-testrunner"` before continuing.
-
-If verify.command is already set, proceed immediately — do not ask.
-
-### 4. Discover the artifact sequence
+### 3. Discover the artifact sequence
 
 ```sh
 givn status --change <id> --json
@@ -73,7 +49,7 @@ Parse the JSON:
 - `next_required`: the first artifact to write
 - `verify_command`: the configured test runner
 
-### 5. Collect instructions for every planning artifact
+### 4. Collect instructions for every planning artifact
 
 For each artifact in the sequence (up to and including `tasks`, excluding `review`):
 
@@ -83,7 +59,7 @@ givn instructions <artifact-id> --change <id>
 
 Capture the full output for each.
 
-### 6. Spawn a thinking architect subagent
+### 5. Spawn a thinking architect subagent
 
 Use the **Task tool** to spawn a thinking architect subagent (fall back to
 describing the pattern in prose if the Task tool is not available to you).
@@ -141,14 +117,24 @@ For each artifact:
 
 **design** (design.md):
 - HOW layer: technology decisions, architecture impact, step def locations,
-  runner command, data model changes. Justify non-obvious choices.
+  data model changes. Justify non-obvious choices.
+- **Test runner**: decide which runner fits the tech stack (e.g. `cargo test`,
+  `npm test`, `pytest`). Document it in design.md. If `verify.command` in
+  `givn/config.yaml` is still `"givn missing-testrunner"`, update it now:
+  ```yaml
+  verify:
+    command: "<chosen runner>"
+  ```
 - Think about: what is the simplest architecture that delivers the proposal?
   What are the tradeoffs? What existing code is affected?
 
 **tasks** (tasks.md):
-- One `- [ ]` checkbox per scenario, covering a full RED/GREEN/REFACTOR cycle.
-  Infrastructure/setup tasks first, feature scenarios after.
-- Confirm verify command from givn/config.yaml.
+- **First task must always be test infrastructure setup**: install the runner,
+  configure the project for BDD/TDD (e.g. add Cucumber dependency, create
+  step definitions skeleton), and verify `verify.command` in `givn/config.yaml`
+  is set to the runner chosen in design.md. This task gates all others.
+- Subsequent tasks: one `- [ ]` checkbox per scenario, covering a full
+  RED/GREEN/REFACTOR cycle.
 - Think about: what is the right order? What setup is needed before features?
   Are any tasks dependent on each other?
 
@@ -162,9 +148,6 @@ For each artifact:
 Run: givn apply --change <id>
 Confirm task tracking is live.
 
-## Verify command
-<verified verify.command from step 3 — guaranteed not to be "givn missing-testrunner">
-
 ## Report back with
 - A summary of each artifact written (path + one-sentence summary)
 - Any significant decisions or tradeoffs made
@@ -173,7 +156,7 @@ Confirm task tracking is live.
 - Final givn status --change <id> output
 ```
 
-### 7. Wait for the architect subagent to complete
+### 6. Wait for the architect subagent to complete
 
 The architect must produce all planning artifacts (through `tasks`) and run
 `givn apply` before the orchestrator proceeds.
@@ -181,7 +164,7 @@ The architect must produce all planning artifacts (through `tasks`) and run
 If the subagent flags ambiguities that require user input, surface them and
 wait before spawning again (or re-prompting the subagent with the answers).
 
-### 8. Show final status
+### 7. Show final status
 
 ```sh
 givn status --change <id>
