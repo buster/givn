@@ -195,6 +195,33 @@ returns 0/1/2. Only the *test runner* (`verify.command`) is the sentinel until
 configured. The two are complementary: `givn lint` checks the spec is well-formed;
 `verify.command` runs the tests that confirm behaviour (GREEN).
 
+## 6.9b `givn addons list / enable / disable`
+
+```
+user → cli::addons
+
+  list:
+    1. read givn/config.yaml (line scan) → parse which addons are enabled
+    2. print each known addon with [enabled] / [disabled] status + description
+
+  enable <name>:
+    1. validate name against known addon registry (currently: arc42)
+    2. read givn/config.yaml; locate or create the addons: block
+    3. write addons.<name>: true (line-based edit; preserves all comments
+       and other user overrides)
+    4. print confirmation + next-step hint
+       → givn status now shows arc42-docs in the workflow (optional, after design)
+
+  disable <name>:
+    1. same as enable but writes false
+    2. existing docs/arc42/ files are not deleted
+```
+
+Enabling an addon is equivalent to adding the artifact manually in the overlay —
+`addons: { arc42: true }` expands to the `arc42-docs` artifact definition during
+`config::overlay::apply`. The CLI command is convenience sugar; power users may
+edit `givn/config.yaml` directly.
+
 ## 6.10 `givn upgrade`
 
 ```

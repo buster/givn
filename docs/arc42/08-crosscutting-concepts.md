@@ -28,11 +28,23 @@ Pseudocode:
 
 ```
 fn resolve_facet(artifact_id, facet) -> Bytes {
+    // 1. Project override wins.
     let project_path = project_override_path(artifact_id, facet); // givn/artifacts/<id>/<facet>
     if exists(project_path) { return read(project_path); }
-    return embedded_default(artifact_id, facet);
+
+    // 2. Embedded core default (templates/ or instructions/).
+    if let Some(content) = embedded_core(artifact_id, facet) { return content; }
+
+    // 3. Embedded addon fallback (addons/<artifact_id>/template.md or instructions.md).
+    return embedded_addon(artifact_id, facet);   // error if not found
 }
 ```
+
+The third layer exists for addon artifacts (e.g. `arc42-docs`) whose assets live
+under `assets/addons/<id>/` rather than the core `assets/templates/` and
+`assets/instructions/` directories. Project overrides still win — ejecting an
+addon facet places a file at `givn/artifacts/arc42-docs/instructions.md` which
+takes precedence over the embedded addon default.
 
 ## 8.2 Manifest and overlay/patch
 
@@ -249,10 +261,19 @@ There is no state file. Lifecycle state is computed from which files exist:
 | `givn/changes/<id>/specs/**.feature` exist | spec drafted |
 | `design.md` / `tasks.md` / `review.md` exist | respective stage reached |
 | all `tasks.md` checkboxes `[x]` | implementation complete |
+| `review.md` contains `REVIEW: PASS` | review signed off |
+| `arc42.md` (in change dir) contains `STATUS: DONE` | arc42-docs update complete |
 | `givn/archive/<id>/` exists | archived |
 
 Benefits: no drift, git-friendly, trivially correct. `apply.requires` (e.g.
 `[tasks, review]`) is checked by file presence (and review PASS) before archive.
+
+Marker conventions for completion signals beyond mere file presence:
+- **`review.md`** — must contain the string `REVIEW: PASS` (written by the
+  review agent at sign-off; `REVIEW: FAIL` or absence → Partial).
+- **`arc42.md`** (change-level) — must contain `STATUS: DONE` (written by the
+  arc42-docs agent; `STATUS: PARTIAL` or absence → Partial). The durable
+  `docs/arc42/` chapter files are not themselves tracked — only this marker.
 
 ## 8.7 Skill & rule generation
 
@@ -422,21 +443,29 @@ in the binary but is **off by default**. Enabling it is just an overlay edit
 (ADR-024) — there is no separate plugin runtime. This is givn's extension model:
 the workflow is data, so an addon is "data the user opts into".
 
-Enabling an addon:
+Enabling an addon — three equivalent ways:
+
+```bash
+givn addons enable arc42          # CLI: writes addons.arc42: true into config.yaml
+givn addons disable arc42         # CLI: writes addons.arc42: false
+givn addons list                  # CLI: shows all addons + enabled/disabled status
+```
+
 ```yaml
-# givn/config.yaml
+# givn/config.yaml — direct edit (equivalent to givn addons enable arc42):
 addons:
-  arc42: true          # convenience switch (expands to the artifact(s) below)
-# equivalently / for full control, add the artifact directly:
+  arc42: true          # expands to the arc42-docs artifact definition
+
+# For full control, add the artifact directly in the overlay:
 artifacts:
   - id: arc42-docs
     optional: true
     requires: [design]
 ```
 
-A convenience `addons:` block is sugar that expands to the addon's artifact
-definitions; advanced users can instead declare the artifacts explicitly and
-customise every field.
+The `addons:` block is convenience sugar that expands to the addon's artifact
+definition during overlay processing; advanced users can declare the artifact
+directly and customise every field.
 
 ### The `arc42-docs` artifact (ADR-026)
 
@@ -451,7 +480,7 @@ the docs reflect each change.
 | `optional` | `true` | Opt-in; does not gate archive unless added to `apply.requires`. |
 | Output location | `docs/arc42/` | Configurable (`arc42.output_dir`). Durable, **not** per-change. |
 | Chapter set | 12 arc42 chapters + index | Configurable; chapters are individual files. |
-| Templates/instruction | embedded `assets/addons/arc42/` | Cascade-resolved & ejectable. |
+| Templates/instruction | embedded `assets/addons/arc42-docs/` | Cascade-resolved & ejectable. |
 
 Behaviour (driven by the artifact instruction):
 - On first run, **create missing** arc42 chapter files from templates and an index.

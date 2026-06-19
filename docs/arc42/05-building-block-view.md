@@ -21,6 +21,7 @@ givn/  (single published binary crate)
 │   │   ├── apply.rs
 │   │   ├── archive.rs
 │   │   ├── eject.rs
+│   │   ├── addons.rs           # `addons list/enable/disable`
 │   │   ├── skills.rs           # `skills sync`
 │   │   ├── upgrade.rs          # re-render managed config scaffold, bump version
 │   │   └── missing_testrunner.rs  # sentinel default verify.command
@@ -49,7 +50,7 @@ givn/  (single published binary crate)
 │   ├── commands/               # opencode slash command templates (givn-propose … givn-archive)
 │   ├── skills/                 # default SKILL.md.tmpl templates per workflow step
 │   └── addons/                 # opt-in addons (pre-packaged artifacts)
-│       └── arc42/              # arc42 chapter templates + index + instruction (Phase 5.5)
+│       └── arc42-docs/         # instruction, marker template, 12 chapter templates + index
 └── tests/                      # integration tests
 ```
 
@@ -66,7 +67,8 @@ givn/  (single published binary crate)
 | `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `config::manifest` |
-| `cli::eject` | Write an embedded default facet into the project `givn/`. | `config::embedded`, `config::cascade` |
+| `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
+| `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate AGENTS.md + skills from current templates. | `skills` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
