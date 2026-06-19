@@ -35,7 +35,7 @@ givn quality
 | Q-5 | Upgradeability | After upgrade, generated skills are stale. | `givn skills sync` regenerates AGENTS.md + skills from the new templates. |
 | Q-6 | Correctness | An archive includes a `@givn.modified` scenario whose title is missing in the permanent spec. | Archive aborts with a clear error; no files are modified. |
 | Q-7 | Correctness | An archive merges added/modified/removed across several `.feature` files. | Permanent specs updated correctly; all `@givn.*` tags stripped; result is valid Gherkin. |
-| Q-8 | Correctness | CI runs `givn verify` on specs containing a `@wip` scenario. | Exit code 2; CI can distinguish wip from parse error (1) and clean (0). |
+| Q-8 | Correctness | CI runs `givn lint` on specs containing a `@wip` scenario. | Exit code 2; CI can distinguish wip from parse error (1) and clean (0). Tests themselves are run separately via `verify.command`. |
 | Q-9 | Correctness | State is queried mid-change. | `givn status` reports the correct stage purely from file presence, even after manual edits. |
 | Q-10 | Agent ergonomics | An agent requests instructions for the spec artifact. | `givn instructions specs --change <id> --json` returns id, generates, requires, instruction. |
 | Q-11 | Configurability | A fresh project tries to run tests without configuring a runner. | The sentinel `givn missing-testrunner` prints per-language setup guidance and exits non-zero; nothing falsely reports GREEN. |
@@ -51,7 +51,7 @@ givn quality
 ## 10.3 Acceptance signals per phase
 
 - **Phase 1–2:** cascade + overlay unit tests pass; `givn init`/`eject` work.
-- **Phase 3:** Gherkin merge round-trip tests pass; verify exit codes correct.
+- **Phase 3:** Gherkin merge round-trip tests pass; `givn lint` exit codes correct.
 - **Phase 4:** lifecycle commands produce correct state and archive results.
 - **Phase 5:** AGENTS.md + three skill targets generated and re-syncable.
 - **Phase 6:** binaries build for all targets; installer works on a clean machine.

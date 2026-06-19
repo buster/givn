@@ -28,7 +28,7 @@ propose → spec → design → tasks → implement → review → archive
 | FR-3 | Treat `.feature` files as the single source of truth — no `spec.md`. |
 | FR-4 | Support delta tags (`@givn.delta`, `@givn.added/modified/removed`). |
 | FR-5 | Merge delta `.feature` files into permanent specs on archive, stripping tags. |
-| FR-6 | Lint `.feature` files (`givn verify`) with distinct exit codes. |
+| FR-6 | Lint `.feature` files (`givn lint`) with distinct exit codes (static check; runs no tests). |
 | FR-7 | Emit per-artifact instructions for AI agents (`givn instructions --json`). |
 | FR-8 | Drive a scenario-by-scenario RED/GREEN/REFACTOR TDD loop. |
 | FR-9 | Provide a completeness-based coverage review (not a percentage gate). |
@@ -75,4 +75,4 @@ and AI-agent ergonomics (standards-aligned skill/rule generation).
 | OSS developers (end users) | Easy install; customise workflow without forking; clear docs. |
 | AI coding agents | Consume `givn instructions`, `AGENTS.md`, and generated skills. |
 | Contributors | Readable Rust; clear architecture (this document). |
-| CI systems | Run `givn verify` and the project test runner deterministically. |
+| CI systems | Run `givn lint` (static) and the project test runner (`verify.command`) deterministically. |

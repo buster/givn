@@ -15,7 +15,7 @@ givn/  (single published binary crate)
 │   │   ├── init.rs
 │   │   ├── new.rs
 │   │   ├── instructions.rs
-│   │   ├── verify.rs
+│   │   ├── lint.rs              # static .feature check (syntax/@wip/tags)
 │   │   ├── status.rs
 │   │   ├── apply.rs
 │   │   ├── archive.rs
@@ -56,7 +56,7 @@ givn/  (single published binary crate)
 | `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, generate AGENTS.md + skills. | `config`, `skills` |
 | `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). | `config`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
-| `cli::verify` | Lint `.feature` files; produce exit codes 0/1/2. | `gherkin::parse` |
+| `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
 | `cli::status` | Report lifecycle state derived from filesystem. | `state` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
 | `cli::archive` | Merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `gherkin::merge`, `config::manifest` |
@@ -65,7 +65,7 @@ givn/  (single published binary crate)
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
-| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, deps, apply, verify); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
+| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, deps, apply, the `verify` test-runner block); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
 | `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. | `manifest`, `embedded` |
 | `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
 | `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |

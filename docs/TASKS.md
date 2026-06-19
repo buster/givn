@@ -25,7 +25,7 @@ Legend: `[ ]` pending · `[x]` done.
 ## Phase 1 — Skeleton & embedded defaults
 
 - [ ] 1.1 Define `clap` CLI skeleton in `main.rs` with all subcommands
-      (`init`, `new`, `instructions`, `verify`, `status`, `apply`, `archive`,
+      (`init`, `new`, `instructions`, `lint`, `status`, `apply`, `archive`,
       `eject`, `skills sync`, `upgrade`, `missing-testrunner`) as stubs returning
       "not implemented".
 - [ ] 1.2 Create `assets/` and wire `rust-embed` in `config/embedded.rs`.
@@ -107,7 +107,8 @@ preserved; re-running produces no diff; changes are reviewable via `git diff`.
 
 - [ ] 3.1 Implement `gherkin/parse.rs` wrapping the `gherkin` crate; surface
       parse errors and `@wip`/PENDING detection.
-- [ ] 3.2 Implement `cli::verify`: collect targets, classify findings, exit
+- [ ] 3.2 Implement `cli::lint` (the `givn lint` command — static `.feature`
+      check; runs no tests): collect targets, classify findings, exit
       **0/1/2** (parse error > wip > clean). Tests for each exit code.
 - [ ] 3.3 Implement `gherkin/delta.rs`: detect `@givn.delta`, capability tag, and
       `@givn.added/modified/removed` (default added); handle `@givn.removed`
@@ -117,10 +118,10 @@ preserved; re-running produces no diff; changes are reviewable via `git diff`.
       all-or-nothing (validate before write). Round-trip integration tests
       (added/modified/removed, error cases: add-existing, modify-missing,
       remove-missing).
-- [ ] 3.5 Commit: "feat: gherkin parse/verify and delta merge engine".
+- [ ] 3.5 Commit: "feat: gherkin parse/lint and delta merge engine".
 
-**Done when:** merge round-trip tests pass; verify exit codes correct; failures
-abort without partial writes.
+**Done when:** merge round-trip tests pass; `givn lint` exit codes correct;
+failures abort without partial writes.
 
 ---
 
@@ -160,7 +161,7 @@ state and merged specs.
       length).
 - [ ] 5.4 Wire generation into `cli::init`; implement `cli::skills sync` for
       regeneration after upgrades.
-- [ ] 5.5 Make skill templates ejectable (`givn eject skill:<name>`) — verify
+- [ ] 5.5 Make skill templates ejectable (`givn eject skill:<name>`) — confirm
       cascade picks the override.
 - [ ] 5.6 Commit: "feat: AGENTS.md + multi-target skill generation".
 
@@ -212,7 +213,7 @@ and ejectable; graph validates.
 - [ ] 7.1 Copy/convert a sample (e.g. gherkintest) to use `givn/` and
       `GIVN_FEATURES` default `givn/specs`.
 - [ ] 7.2 Run the full loop: `init → new → instructions → (author specs) →
-      verify → apply → review → archive`.
+      lint → run tests (verify.command) → apply → review → archive`.
 - [ ] 7.3 Confirm merged specs are clean Gherkin and the runner passes against
       `givn/specs`.
 - [ ] 7.4 Capture any rough edges as issues/follow-ups.

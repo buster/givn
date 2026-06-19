@@ -9,7 +9,7 @@ Gherkin `.feature` files.
 ```
         ┌─────────────────────────────────────────────────────┐
         │                      givn (CLI)                       │
-        │  init · new · instructions · verify · status ·        │
+        │  init · new · instructions · lint · status ·          │
         │  apply · archive · eject · skills sync                │
         └───────┬───────────────┬───────────────┬──────────────┘
                 │               │               │
@@ -32,7 +32,7 @@ Gherkin `.feature` files.
 | AI coding agent | Reads `givn instructions --json`, `AGENTS.md`, generated skills; edits artifacts and code. |
 | Project filesystem | Holds the `givn/` directory, source code, and generated agent files. |
 | Test runner (cargo/npm/pytest/…) | Invoked via the manifest's `verify.command`; executes step definitions. |
-| CI system | Runs `givn verify` and the test runner; relies on exit codes. |
+| CI system | Runs `givn lint` (static) and the test runner (`verify.command`); relies on exit codes. |
 
 ## 3.2 Technical Context — Interfaces
 
@@ -44,7 +44,7 @@ Gherkin `.feature` files.
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
 | `AGENTS.md` | out | Markdown (the agent-rules standard). |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
-| Exit codes | out | 0 GREEN / 1 parse error / 2 wip (for `verify`); standard 0/non-0 elsewhere. |
+| Exit codes | out | 0 clean / 1 parse error / 2 wip (for `givn lint`); standard 0/non-0 elsewhere. |
 | `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
 | Embedded assets | in | Compiled-in default manifest, templates, skill templates. |
 
@@ -56,7 +56,7 @@ Gherkin `.feature` files.
 - `.feature`-as-spec with delta tags and merge-on-archive.
 - Cascade configuration with per-facet override and `eject`.
 - YAML manifest overlay onto embedded default graph.
-- `verify` (Gherkin lint with exit codes).
+- `givn lint` (static Gherkin check with exit codes; runs no tests).
 - Filesystem-derived state and task-progress tracking.
 - `AGENTS.md` + skill generation (neutral + claude + opencode).
 - Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.

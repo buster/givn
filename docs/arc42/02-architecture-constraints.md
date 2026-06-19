@@ -18,7 +18,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-9 | Embedded assets via **`rust-embed`** (or `include_dir`). | Bake defaults into the binary. |
 | TC-10 | Lifecycle state is **derived from the filesystem**; no separate state file. | No drift, git-friendly, stateless. |
 | TC-11 | Delta tags use the `@givn.*` namespace. | Clean break from `@openspec.*`. |
-| TC-12 | `verify` exit codes: **0** GREEN, **1** parse error, **2** `@wip`/PENDING. | Preserved contract from the prototype; CI-friendly. |
+| TC-12 | `givn lint` exit codes: **0** clean, **1** parse error, **2** `@wip`/PENDING. | Static Gherkin check; preserved CI-friendly contract. Distinct from the test runner (`verify.command`). |
 
 ## 2.2 Distribution Constraints
 

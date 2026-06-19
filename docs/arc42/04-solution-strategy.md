@@ -17,7 +17,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Coverage | **Completeness of gap classification**, not a percentage threshold. |
 | State | **Filesystem-derived** — file presence determines lifecycle state. |
 | Agent integration | `AGENTS.md` for rules; `.agents/skills` (neutral) + claude/opencode mirrors. |
-| Test running | Manifest-declared `verify.command`; `givn verify` only lints Gherkin. |
+| Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 
 ## 4.2 How the strategy meets the top quality goals

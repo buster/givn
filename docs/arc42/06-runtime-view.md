@@ -43,16 +43,19 @@ user/agent → cli::instructions
   5. emit text, or JSON {id, generates, requires, instruction} when --json
 ```
 
-## 6.4 `givn verify [path]`
+## 6.4 `givn lint [path]`
+
+Static check of `.feature` files. Runs **no** tests (that is the test runner,
+`verify.command` — see 6.9).
 
 ```
-user/CI → cli::verify
+user/CI → cli::lint
   1. collect target .feature files (path arg or givn/specs + active change)
   2. gherkin::parse each:
        - parse error            → record (will exit 1)
        - @wip or PENDING steps  → record (will exit 2)
   3. report findings
-  4. exit code: 1 if any parse error; else 2 if any wip; else 0 (GREEN)
+  4. exit code: 1 if any parse error; else 2 if any wip; else 0 (clean)
 ```
 
 Exit-code precedence: parse error (1) outranks wip (2) outranks clean (0).
@@ -62,7 +65,7 @@ Exit-code precedence: parse error (1) outranks wip (2) outranks clean (0).
 ```
 user/agent → cli::apply
   1. config::manifest + overlay → read apply.requires, apply.tracks (tasks.md)
-  2. state: verify required artifacts exist (e.g. tasks, review per apply.requires)
+  2. state: check required artifacts exist (e.g. tasks, review per apply.requires)
   3. parse tasks.md checkboxes: count [ ] vs [x]
   4. report progress and the next pending task group
   (Execution of tasks is performed by the developer/agent, not by givn.)
@@ -129,8 +132,10 @@ agent/user runs the configured verify.command (= "givn missing-testrunner")
       3. exit non-zero (treated as "not GREEN" by CI and agents)
 ```
 
-Note: `givn verify` (Gherkin lint) is unaffected — it still runs and returns
-0/1/2. Only the *runner* command is the sentinel until configured.
+Note: `givn lint` (static Gherkin check) is unaffected — it still runs and
+returns 0/1/2. Only the *test runner* (`verify.command`) is the sentinel until
+configured. The two are complementary: `givn lint` checks the spec is well-formed;
+`verify.command` runs the tests that confirm behaviour (GREEN).
 
 ## 6.10 `givn upgrade`
 

@@ -144,7 +144,7 @@ The `.feature` file is the spec. During an active change, `.feature` files are
 Rules:
 - A scenario with no `@givn.*` delta tag defaults to `@givn.added`.
 - `@givn.removed` scenarios include exactly one placeholder step so the parser
-  accepts them; `givn verify` suppresses lint warnings for them.
+  accepts them; `givn lint` suppresses warnings for them.
 - On archive, **all `@givn.*` tags are stripped** from the permanent output; the
   result is clean, runnable Gherkin.
 
@@ -230,10 +230,14 @@ Then move to the next scenario.
 ```
 
 Two distinct tools, never conflated:
-- `givn verify` — lints `.feature` syntax and `@wip` only. Never runs tests.
-- `<verify.command>` (e.g. `cargo test`) — executes step definitions against code.
+- **`givn lint`** — a built-in command. Statically checks `.feature` syntax,
+  `@wip`, and delta tags only. **Never runs tests.** Exit 0/1/2.
+- **The test runner** — the command in `verify.command` (e.g. `cargo test`).
+  Executes step definitions against production code. This is what confirms GREEN.
+  It is **not** a givn subcommand; givn does not run it (the agent/CI does).
 
-`givn verify` alone is **never** sufficient to confirm GREEN.
+`givn lint` alone is **never** sufficient to confirm GREEN — that requires the
+test runner (`verify.command`).
 
 ## 8.6 Filesystem-derived state
 
@@ -267,7 +271,9 @@ Standards-aligned, multi-target emit (see ADR-013):
 ## 8.8 Error handling and exit codes
 
 - Library errors via `thiserror`; application context via `anyhow`.
-- `verify` exit codes: **0** GREEN, **1** parse error, **2** `@wip`/PENDING.
+- `givn lint` exit codes: **0** clean, **1** parse error, **2** `@wip`/PENDING
+  (these describe spec well-formedness, not test results — "GREEN" comes from the
+  test runner, not from `givn lint`).
 - Other commands: **0** success, non-zero on failure with a clear message.
 - Destructive operations (archive) validate all preconditions before any write.
 
@@ -337,6 +343,37 @@ verify:
 
 A test asserts the documented keys and the manifest schema stay in sync (ADR-022),
 so the file cannot drift from reality.
+
+### `givn lint` vs. the test runner (`verify.command`) — no overlap
+
+These are two different operations and must never be conflated:
+
+| | `givn lint` (command) | `verify.command` (config key) |
+| --- | --- | --- |
+| Purpose | Static check of `.feature` files: syntax, `@wip`/PENDING, delta tags. | Run the actual tests (execute step definitions against code). |
+| Runs code? | No. | Yes. |
+| Who runs it | givn (built-in subcommand). | The developer / AI agent / CI — **not** givn itself. |
+| Configurable? | No (built-in). | Yes — set in `givn/config.yaml`. |
+| Exit codes | 0 clean / 1 parse / 2 wip (spec well-formedness). | Whatever the runner returns (sentinel: non-zero). |
+| Confirms GREEN? | Never. | Yes — this is the source of truth for behaviour. |
+
+There is intentionally **no `givn verify`/`givn test` command** that runs tests.
+givn does not execute the test suite (ADR-014: givn tracks and reports; the agent
+or CI drives the RED/GREEN/REFACTOR loop). The test command lives in config so it
+stays language-agnostic and explicit.
+
+### Where `verify.command` is read and used
+
+- **Resolved** by `config::manifest` after `config::overlay` applies the project's
+  `givn/config.yaml` onto the embedded default manifest. Effective value = project
+  override if present, otherwise the embedded default (the sentinel).
+- **Written** into `givn/config.yaml` by `givn init`, refreshed by `givn upgrade`
+  (documented and commented; ADR-022/023).
+- **Invoked** by the developer, the AI agent (each RED/GREEN/REFACTOR step), and
+  CI to run the tests. givn surfaces the value (e.g. in `instructions` and skills)
+  but does not run it.
+- **Surfaced** to agents via `givn instructions` and the generated skills, so the
+  exact runner command is unambiguous wherever it is needed.
 
 ### The missing-testrunner sentinel (ADR-021)
 

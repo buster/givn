@@ -18,8 +18,9 @@
 | **Scenario** | A Gherkin scenario (Given/When/Then). The unit of the TDD loop. |
 | **Skill** | A `SKILL.md` (frontmatter + markdown) that an agent can load to perform a workflow action. |
 | **TDD loop** | Scenario-by-scenario RED (failing assertions) → GREEN (minimum code) → REFACTOR. |
-| **Verify** | `givn verify`: lints `.feature` syntax and `@wip` only. Exit 0/1/2. Does not run tests. |
-| **`verify.command`** | The manifest-declared test-runner command that executes step definitions. |
+| **Lint** (`givn lint`) | Built-in command that statically checks `.feature` syntax, `@wip`/PENDING, and delta tags. Exit 0/1/2. **Runs no tests.** (Renamed from `givn verify` — ADR-027.) |
+| **Test runner** | The command that actually executes step definitions against code, configured in `verify.command`. Invoked by the agent/CI, not by givn. Confirms GREEN. |
+| **`verify.command`** | The manifest config key holding the test-runner command (default sentinel `givn missing-testrunner`). Read after overlay resolution; written by `init`/`upgrade`; invoked by agent/CI. |
 | **`@givn.delta`** | Feature-level tag marking a delta document. |
 | **`@givn.added` / `@givn.modified` / `@givn.removed`** | Scenario-level merge directives. |
 | **`@wip`** | Scenario tag: step definitions not yet implemented. |

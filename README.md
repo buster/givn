@@ -60,6 +60,12 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   with every key present-but-commented, documented inline (description, default,
   allowed values). It carries `givn_config_version`; `givn upgrade` provides a
   version-to-version upgrade path that preserves your overrides.
+- **Lint and test are separate, by design.** `givn lint` is a built-in command
+  that statically checks your `.feature` files (syntax, `@wip`, delta tags) and
+  **runs no tests**. Running the actual tests is a separate command you configure
+  as `verify.command` in `givn/config.yaml` (e.g. `cargo test`). There is no
+  `givn verify`/`givn test` — givn never runs your suite itself; your agent/CI
+  invokes `verify.command`.
 - **No silent test running.** The default `verify.command` is the sentinel
   `givn missing-testrunner`, which prints per-language setup guidance and exits
   non-zero until you configure a real runner — so nothing ever falsely reports green.
@@ -101,7 +107,7 @@ No npm. No root. No runtime. Pick whichever you like:
 givn init                       # scaffold givn/ + generate AGENTS.md and skills
 givn new add-user-auth          # create a change scaffold
 givn instructions proposal --change add-user-auth --json
-givn verify                     # lint .feature files (exit 0 GREEN / 1 parse / 2 wip)
+givn lint                       # static check of .feature files (exit 0 clean / 1 parse / 2 wip) — runs NO tests
 givn status                     # show lifecycle state (derived from the filesystem)
 givn apply --change add-user-auth     # track task progress
 givn archive --change add-user-auth   # merge deltas into givn/specs/, move to archive/

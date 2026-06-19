@@ -16,7 +16,7 @@ across three layers.
 
 **Consequences.** Clean slate; freedom to fix the install/config model; loses
 nothing essential (lifecycle, pluggable artifacts, graph, templates,
-instructions/context/rules, delta+merge, verify, state, skill generation).
+instructions/context/rules, delta+merge, Gherkin lint, state, skill generation).
 
 ---
 
@@ -189,8 +189,8 @@ override, (C) givn only lints, runner entirely external.
 
 **Decision.** **(A)** `verify.command` is declared in the manifest, language-agnostic.
 
-**Rationale.** Explicit and portable; `givn verify` stays a pure Gherkin linter
-while the runner is unambiguous for agents and CI.
+**Rationale.** Explicit and portable; `givn lint` stays a pure Gherkin static
+checker while the runner (`verify.command`) is unambiguous for agents and CI.
 
 **Default value (refined — see ADR-021).** The shipped default `verify.command`
 is a deliberate **sentinel** that is not a real runner:
@@ -229,12 +229,16 @@ for now.
 
 ---
 
-## ADR-019: `verify` exit-code contract
+## ADR-019: `givn lint` exit-code contract (renamed from `givn verify`)
 
-**Decision.** `givn verify` exits **0** (GREEN), **1** (parse error), **2**
-(`@wip`/PENDING). Parse error outranks wip outranks clean.
+**Decision.** The static Gherkin-check command is named **`givn lint`** (renamed
+from `givn verify` to remove the collision with the `verify.command` config key —
+see ADR-027). It exits **0** (clean), **1** (parse error), **2** (`@wip`/PENDING).
+Parse error outranks wip outranks clean. "GREEN" is determined by the test runner
+(`verify.command`), not by `givn lint`.
 
-**Rationale.** Preserves the prototype's CI-friendly contract.
+**Rationale.** Preserves the prototype's CI-friendly contract while making clear
+this command checks spec well-formedness and never runs tests.
 
 ---
 
@@ -262,8 +266,8 @@ a built-in subcommand that:
 - exits with a non-zero status so CI and agents treat it as "not yet GREEN".
 
 **Rationale.** Makes the one mandatory per-project decision impossible to miss,
-turns a config gap into guidance, and keeps `givn verify` (Gherkin lint) cleanly
-separate from running the actual runner.
+turns a config gap into guidance, and keeps `givn lint` (static Gherkin check)
+cleanly separate from running the actual test runner (`verify.command`).
 
 **Consequences.** `missing-testrunner` is a real (hidden/utility) subcommand.
 The generated `givn/config.yaml` documents `verify.command` thoroughly (ADR-022).
@@ -436,3 +440,29 @@ templates + index + instruction). Adds an "addons" notion in docs/config: an
 addon is simply a pre-packaged artifact (or set of artifacts) the user enables
 via overlay. The arc42 docs it manages are durable (live under `docs/`), updated
 across changes, and are not archived per-change. See ch.8.11.
+
+---
+
+## ADR-027: Lint command renamed `givn verify` → `givn lint`; `verify.command` kept
+
+**Context.** The prototype had a `givn verify` command (static Gherkin check) and
+a `verify.command` config key (the command that runs the actual tests). Same word
+"verify" for two different operations — and "verify" implies running tests, which
+the command does **not** do. This caused real confusion.
+
+**Decision.**
+- Rename the static-check command **`givn verify` → `givn lint`**. It checks
+  `.feature` syntax, `@wip`/PENDING, and delta tags only; it runs no tests.
+- **Keep** the config key **`verify.command`** as the command that runs the actual
+  tests (default sentinel `givn missing-testrunner`).
+- There is intentionally **no** `givn verify` or `givn test` command: givn does
+  not execute the test suite (ADR-014); the agent/CI invokes `verify.command`.
+
+**Rationale.** Two distinct words for two distinct operations removes the
+collision. `lint` clearly signals "static check, no execution"; `verify.command`
+clearly signals "the command that verifies behaviour by running tests".
+
+**Consequences.** Module `cli::verify` → `cli::lint` (`verify.rs` → `lint.rs`).
+All docs/skills/instructions reference `givn lint` for the static check and
+`verify.command` for the runner. The `verify.command` key name is unchanged, so
+existing config semantics are preserved.
