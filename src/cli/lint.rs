@@ -11,9 +11,23 @@ use crate::gherkin::delta::is_removed_placeholder;
 ///
 /// Parse errors outrank wip/PENDING.
 /// `@givn.removed` scenarios suppress @wip warnings (they contain placeholder steps).
-pub fn run(paths: Vec<String>) -> Result<()> {
+pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
     let project_root = std::env::current_dir()?;
-    let feature_files = if paths.is_empty() {
+    let feature_files = if !paths.is_empty() {
+        paths
+            .iter()
+            .map(|p| std::path::PathBuf::from(p))
+            .collect()
+    } else if let Some(id) = change {
+        // Scope to givn/<id>/specs/
+        let specs_dir = project_root.join("givn").join(id).join("specs");
+        let files = collect_feature_files(&specs_dir);
+        if files.is_empty() {
+            println!("givn lint: no .feature files found under givn/{id}/specs/");
+            return Ok(());
+        }
+        files
+    } else {
         // Default: check all .feature files under givn/ in the project.
         let files = collect_feature_files(&project_root.join("givn"));
         if files.is_empty() {
@@ -21,11 +35,6 @@ pub fn run(paths: Vec<String>) -> Result<()> {
             return Ok(());
         }
         files
-    } else {
-        paths
-            .iter()
-            .map(|p| std::path::PathBuf::from(p))
-            .collect()
     };
 
     let mut max_severity = 0u8;

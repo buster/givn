@@ -44,6 +44,9 @@ enum Commands {
     },
     /// Static check of .feature files (syntax, @wip, delta tags). Runs NO tests.
     Lint {
+        /// Change identifier — limit check to givn/<id>/specs/.
+        #[arg(long)]
+        change: Option<String>,
         /// Paths to check (default: all .feature files under givn/).
         paths: Vec<String>,
     },
@@ -119,7 +122,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Instructions { artifact, change, json } => {
             cli::instructions::run(&artifact, change.as_deref(), json)
         }
-        Commands::Lint { paths } => cli::lint::run(paths),
+        Commands::Lint { change, paths } => cli::lint::run(change.as_deref(), paths),
         Commands::Check { artifact, change } => {
             cli::check::run(artifact.as_deref(), change.as_deref())
         }
