@@ -1,5 +1,5 @@
 ---
-description: Complete the coverage review for a givn change — record coverage, confirm GREEN, sign off
+description: Complete the coverage review for a givn change — classify every gap, sign off, confirm GREEN
 ---
 
 Complete the coverage review for a givn change.
@@ -14,7 +14,8 @@ ambiguous, list changes and ask.
 
 This command is an **orchestrator**. It collects context and then delegates all
 review work to a **review subagent**. The review subagent runs the test suite,
-measures coverage, records observations, and writes `review.md`.
+measures and records coverage, classifies every gap, resolves them, and writes
+`review.md`.
 
 ---
 
@@ -53,15 +54,16 @@ pattern in prose if the Task tool is not available to you).
 Pass a self-contained prompt:
 
 ```
-You are a review agent completing the review for givn change '<id>'.
+You are a review agent completing the coverage review for givn change '<id>'.
 
 ## Your objective
 Produce a complete, signed-off review.md at:
   givn/changes/<id>/review.md
 
-The final line of the file MUST be either:
+The final line of the file MUST be:
   REVIEW: PASS
-  REVIEW: FAIL
+
+Do not write that line until all sign-off conditions are met.
 
 ## Review instructions
 <paste full output of: givn instructions review --change <id>>
@@ -71,61 +73,64 @@ The final line of the file MUST be either:
 
 ## Steps
 
-### 1. Confirm all scenarios pass
+### 1. Confirm all tests pass
 Run: <verify.command>
-All scenarios must be GREEN (no @wip remaining).
-If any fail, stop and report — do not proceed to coverage until GREEN.
+All scenarios must be GREEN (no @wip remaining). If any fail, fix them first.
 
-### 2. Measure coverage
-Run the coverage tool specified in design.md (or a sensible default for the
-tech stack). Record the overall percentage and the list of uncovered regions.
+### 2. Measure and record coverage
+Run the coverage tool specified in design.md. Record:
+- The overall coverage percentage (line and/or branch)
+- The raw tool output
 
-Coverage is informational — you are recording it, not enforcing a threshold.
-A low number is worth noting; it does not prevent REVIEW: PASS.
+Paste both into the Coverage section of review.md. The percentage is a fact —
+it is recorded regardless of its value. It is not a threshold gate.
 
-### 3. Record coverage observations
-For each uncovered region, note it in the coverage table with a bucket label:
-- Dead code — worth deleting (but not required for sign-off)
-- Missing test — worth adding (but not required for sign-off)
-- Hard to test — note the reason
+### 3. Classify every gap
+For every uncovered region, assign exactly one bucket:
 
-If coverage tooling is unavailable or impractical, mark the coverage result
-as "not measured" and give a brief reason.
+| Bucket | Meaning | Action |
+|---|---|---|
+| Dead code | YAGNI/KISS — should not exist | Delete it; re-run tests. |
+| Missing test | Behaviour not covered by a scenario | Add scenario (@givn.added), RED/GREEN/REFACTOR. |
+| Hard to test | Infrastructure, I/O boundary, etc. | Write concrete technical justification. |
 
-### 4. Write review.md
-Follow the template from the review instructions. Fill in:
-- Coverage result (percentage or "not measured")
-- Coverage tool output
-- Coverage observations table
-- Test suite output
-- Sign-off checklist (all items checked if conditions are met)
-- Final line: REVIEW: PASS (or REVIEW: FAIL if the test suite is not GREEN)
+### 4. Resolve each gap
+- Dead code: delete, re-run tests, confirm GREEN.
+- Missing test: add scenario to the relevant .feature file with @givn.added tag,
+  run full RED/GREEN/REFACTOR, confirm GREEN.
+- Hard to test: write the justification in review.md (no code change needed).
 
-Sign-off conditions for PASS:
-- All scenarios pass (verify.command exits 0)
-- No @wip tags remain in the delta spec
-- The delta spec contains no implementation-layer detail
-- Coverage has been measured and recorded (or explicitly marked "not measured")
+### 5. Final GREEN confirmation
+Run: <verify.command>
+All tests must pass after all gap resolutions.
 
-### 5. Run the review hook
+### 6. Write review.md
+Follow the template from the review instructions. Include:
+- Coverage percentage and tool output
+- Coverage gap table (bucket, region, action taken for each gap)
+- Test suite output and result
+- Sign-off checklist (all items checked)
+- Final line: REVIEW: PASS
+
+### 7. Run the review hook
 Run: givn check review --change <id>
 Fix any failures before reporting back.
 
 ## Report back with
-- Test suite result (PASS/FAIL)
-- Coverage percentage (or "not measured")
-- Number of coverage observations noted (not necessarily resolved)
-- Path written and confirmation that REVIEW: PASS or REVIEW: FAIL is the final line
+- Coverage percentage recorded
+- Number of gaps classified (dead code / missing test / hard to test)
+- Final test run result
+- Path written and confirmation that REVIEW: PASS is the final line
 - Any issues encountered
 ```
 
 ### 4. Wait for the review subagent to complete
 
-The subagent must finish, write `review.md`, and run `givn check review` before
-the orchestrator proceeds.
+The subagent must finish all gap resolution, write `review.md`, and run
+`givn check review` before the orchestrator proceeds.
 
-If the subagent reports the test suite is not GREEN, surface this to the user —
-the review cannot sign off until all scenarios pass.
+If the subagent reports a blocker (e.g. a gap it cannot classify), surface it
+to the user and wait for guidance.
 
 ### 5. Show final status
 
@@ -142,9 +147,13 @@ Display next step: "Run `/givn-archive` to archive this change."
 ```
 ## Review complete: <id>
 
-**Test suite:** GREEN
-**Coverage:** <percentage or "not measured">
-**Observations:** N regions noted (Dead code: N, Missing test: N, Hard to test: N)
+**Coverage:** <percentage>
+**Coverage gaps classified:** N
+  - Dead code removed: N
+  - Missing tests added: N
+  - Hard to test (justified): N
+
+**Final test run:** GREEN
 
 **Review written:** givn/changes/<id>/review.md  (REVIEW: PASS)
 
@@ -155,10 +164,12 @@ Display next step: "Run `/givn-archive` to archive this change."
 
 ## Guardrails
 
-- The orchestrator does not run tools or write review.md — it delegates.
-- Coverage is a record, not a gate. The subagent must not fail the review
-  solely because coverage is below some threshold.
-- The only hard gates are: test suite GREEN, no @wip, no implementation detail
-  in specs, coverage measured (or explicitly waived).
+- The orchestrator does not run coverage tools or write review.md — it delegates.
+- The subagent must record the coverage percentage before classifying gaps.
+- The coverage number is a fact, not a threshold — do not fail the review based
+  on percentage alone.
+- The subagent must not write `REVIEW: PASS` until all gaps are resolved.
+- If the subagent adds new scenarios during review, they must go through full
+  RED/GREEN/REFACTOR before the review can be signed off.
 - `givn lint` is a static check only — GREEN comes from `<verify.command>`.
-- The archive gate hard-blocks if `REVIEW: PASS` is absent or hooks fail.
+- The archive gate will hard-block if `REVIEW: PASS` is absent or hooks fail.
