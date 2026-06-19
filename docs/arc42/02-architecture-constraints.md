@@ -19,6 +19,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-10 | Lifecycle state is **derived from the filesystem**; no separate state file. | No drift, git-friendly, stateless. |
 | TC-11 | Delta tags use the `@givn.*` namespace. | Clean break from `@openspec.*`. |
 | TC-12 | `givn lint` exit codes: **0** clean, **1** parse error, **2** `@wip`/PENDING. | Static Gherkin check; preserved CI-friendly contract. Distinct from the test runner (`verify.command`). |
+| TC-13 | **Minimum dependency age:** every crate version in `Cargo.lock` (direct *and* transitive) must have been published on crates.io **≥ 30 days** ago. | Avoid brand-new releases that have had no time to surface bugs or supply-chain compromise. See 2.5. |
 
 ## 2.2 Distribution Constraints
 
@@ -50,3 +51,29 @@ relitigation during implementation (see chapter 9 for rationale).
 | CV-6 | `givn/config.yaml` ships fully commented with documented defaults; every key is discoverable in-file. |
 | CV-7 | `givn/config.yaml` carries `givn_config_version`; `givn upgrade` provides a version-to-version upgrade path, with git as the diff/merge surface. |
 | CV-8 | Artifacts may declare `post` hooks (built-in `verify`/`lint` or shell). Defaults: `tasks.post: [verify]`, `review.post: [verify]`. `givn check` runs them; `givn archive` runs the hooks of `apply.requires` artifacts as the gate. Failing hooks block (unless `allow_failure`). |
+
+## 2.5 Dependency Age Policy (TC-13)
+
+**Rule.** Every crate version pinned in `Cargo.lock` — direct *and* transitive —
+must have been published on crates.io at least **30 days** ago.
+
+**Why.** Cargo has **no native minimum-dependency-age feature** (no `--max-age`
+flag; `-Z minimal-versions` is about minimum *version*, not *age*). Brand-new
+releases are the highest-risk window for both ordinary regressions and
+supply-chain compromise. A 30-day soak requirement lets issues surface before we
+adopt a release.
+
+**Enforcement.** A checked-in script, [`scripts/check-dep-age.sh`](../../scripts/check-dep-age.sh),
+parses `Cargo.lock`, queries each crate version's `created_at` from the crates.io
+API, and fails (exit 1) if any registry dependency is younger than the threshold.
+
+- Threshold configurable via `MIN_AGE_DAYS` (default 30).
+- Local `path`/`git` dependencies and the workspace's own crates are skipped
+  (only `registry+…` sources are checked).
+- Rare, justified exceptions go in `GIVN_DEP_AGE_ALLOWLIST` (`name@version` list).
+- Intended to run as: (a) a CI gate, and (b) optionally a givn `post` hook on a
+  dev/release artifact. Failure blocks the gate.
+
+**Remediation when it fails.** Pin an older version
+(`cargo update -p <crate> --precise <older>`), wait until the release ages past
+the threshold, or allowlist with explicit justification.

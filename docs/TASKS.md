@@ -16,9 +16,15 @@ Legend: `[ ]` pending · `[x]` done.
       `thiserror`. Pin versions (see arc42 ch.5.4).
 - [ ] 0.3 Add `.gitignore` (`/target`, editor cruft).
 - [ ] 0.4 Verify `cargo build` and `cargo test` succeed (empty).
-- [ ] 0.5 Commit: "chore: bootstrap cargo project".
+- [ ] 0.5 Run `scripts/check-dep-age.sh` (TC-13): every locked dep ≥ 30 days old.
+      Fix violations by pinning older versions; only allowlist with justification.
+- [ ] 0.6 Commit: "chore: bootstrap cargo project".
 
-**Done when:** empty binary builds and runs `givn --help`.
+**Done when:** empty binary builds, runs `givn --help`, and passes the dependency
+age policy (`scripts/check-dep-age.sh`).
+
+> The script `scripts/check-dep-age.sh` already exists. It needs a `Cargo.lock`
+> (created by 0.1) to run. Wire it into CI in Phase 6.
 
 ---
 
@@ -215,7 +221,9 @@ and ejectable; graph validates.
 - [ ] 6.4 Prepare crates.io publish metadata (`cargo publish --dry-run`).
 - [ ] 6.5 Write the install matrix into the user `README.md` (already drafted).
 - [ ] 6.6 (When a remote exists) wire the release CI pipeline.
-- [ ] 6.7 Commit: "build: cargo-dist multi-platform release + installers".
+- [ ] 6.7 Add a CI job running `scripts/check-dep-age.sh` (TC-13) on every PR and
+      before release; fail the build on policy violation.
+- [ ] 6.8 Commit: "build: cargo-dist multi-platform release + installers + dep-age CI".
 
 **Done when:** binaries build for all targets; installer works on a clean machine.
 
