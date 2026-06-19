@@ -24,7 +24,7 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
 
     if let Some(artifact_id) = artifact {
         // Run hooks for a specific artifact.
-        crate::hooks::run_artifact_hooks_full(artifact_id, &manifest, &features_path)
+        crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
         let change_dir = if let Some(id) = change {
@@ -46,7 +46,7 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
 
             if output_exists {
                 ran_any = true;
-                crate::hooks::run_artifact_hooks_full(&artifact.id, &manifest, &features_path)?;
+                crate::hooks::run_artifact_hooks(&artifact.id, &manifest, &features_path)?;
             }
         }
         if !ran_any {

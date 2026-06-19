@@ -38,7 +38,31 @@ proceeding only if the name is genuinely ambiguous.
 givn new <id>
 ```
 
-### 3. Discover the artifact sequence
+### 3. Check verify.command is configured
+
+```sh
+givn status --change <id> --json
+```
+
+Inspect `verify_command` in the output. If it is `"givn missing-testrunner"`,
+the test runner is not configured. **Stop and ask the user:**
+
+> `verify.command` in `givn/config.yaml` is still the default sentinel.
+> What command runs your test suite? (e.g. `cargo test`, `npm test`, `pytest`)
+
+Once the user provides it, update `givn/config.yaml`:
+
+```yaml
+verify:
+  command: "<user's runner>"
+```
+
+Then confirm by re-running `givn status --change <id> --json` and checking
+`verify_command` is no longer `"givn missing-testrunner"` before continuing.
+
+If verify.command is already set, proceed immediately — do not ask.
+
+### 4. Discover the artifact sequence
 
 ```sh
 givn status --change <id> --json
@@ -49,7 +73,7 @@ Parse the JSON:
 - `next_required`: the first artifact to write
 - `verify_command`: the configured test runner
 
-### 4. Collect instructions for every planning artifact
+### 5. Collect instructions for every planning artifact
 
 For each artifact in the sequence (up to and including `tasks`, excluding `review`):
 
@@ -59,7 +83,7 @@ givn instructions <artifact-id> --change <id>
 
 Capture the full output for each.
 
-### 5. Spawn a thinking architect subagent
+### 6. Spawn a thinking architect subagent
 
 Use the **Task tool** to spawn a thinking architect subagent (fall back to
 describing the pattern in prose if the Task tool is not available to you).
@@ -139,7 +163,7 @@ Run: givn apply --change <id>
 Confirm task tracking is live.
 
 ## Verify command
-<verify_command from givn status --json>
+<verified verify.command from step 3 — guaranteed not to be "givn missing-testrunner">
 
 ## Report back with
 - A summary of each artifact written (path + one-sentence summary)
@@ -149,7 +173,7 @@ Confirm task tracking is live.
 - Final givn status --change <id> output
 ```
 
-### 6. Wait for the architect subagent to complete
+### 7. Wait for the architect subagent to complete
 
 The architect must produce all planning artifacts (through `tasks`) and run
 `givn apply` before the orchestrator proceeds.
@@ -157,7 +181,7 @@ The architect must produce all planning artifacts (through `tasks`) and run
 If the subagent flags ambiguities that require user input, surface them and
 wait before spawning again (or re-prompting the subagent with the answers).
 
-### 7. Show final status
+### 8. Show final status
 
 ```sh
 givn status --change <id>
