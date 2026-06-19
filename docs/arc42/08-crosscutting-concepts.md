@@ -57,6 +57,76 @@ Overlay semantics (to specify precisely in Phase 2):
 - Scalar fields in the overlay replace the default; the `verify.command` is set
   here by most projects.
 
+### Artifacts are first-class configurable (the workflow is data, not code)
+
+The lifecycle is **not hardcoded**. The sequence of artifacts, their
+dependencies, and the gates between them are entirely described by the manifest
+and therefore fully reconfigurable per project via the overlay — without touching
+the binary. This is a primary feature, not an afterthought. Each artifact node
+carries:
+
+| Field | Meaning |
+| --- | --- |
+| `id` | Unique key (e.g. `proposal`, `specs`, `design`, `tasks`, `review`). |
+| `generates` | File(s) the artifact produces (path or glob). |
+| `requires` | Artifact ids that must exist first (defines the graph/order). |
+| `template` | Facet name of the embedded/ejected template. |
+| `instruction` | The guidance text (cascade-resolved). |
+| `optional` | If `true`, the artifact may be skipped without blocking the lifecycle. |
+
+The `apply` block separately defines the archive gate via `apply.requires`
+(which artifacts must be complete before archiving) and `apply.tracks` (which
+file holds the checklist).
+
+Common reconfigurations — all via `givn/config.yaml` overlay only:
+
+**a) Remove the review step (no review gate).**
+```yaml
+artifacts:
+  - id: review
+    remove: true
+apply:
+  requires: [tasks]          # was [tasks, review]
+```
+
+**b) Make review optional rather than removing it.**
+```yaml
+artifacts:
+  - id: review
+    optional: true
+apply:
+  requires: [tasks]          # review no longer gates archive
+```
+
+**c) Add a dedicated Refactor step after implementation.**
+```yaml
+artifacts:
+  - id: refactor
+    generates: refactor.md
+    requires: [tasks]        # runs after implementation/tasks
+    template: refactor.md    # eject/author this template
+    instruction: |
+      Record refactorings performed after GREEN: what was cleaned up,
+      why, and confirmation that all scenarios still pass. No behaviour change.
+apply:
+  requires: [tasks, refactor, review]   # refactor now gates archive too
+```
+
+**d) Reorder / add any artifact.** Order is derived from `requires`, so changing
+dependencies reorders the graph. New ids are appended and slotted by their deps.
+
+Rules and guarantees:
+- Removing or reordering artifacts must keep the dependency graph acyclic;
+  `givn` validates the effective graph and refuses an inconsistent overlay
+  (e.g. a dangling `requires`, a cycle, or an `apply.requires` referencing a
+  removed non-optional artifact) with a clear error.
+- Default templates/instructions exist only for the built-in artifacts. A
+  custom artifact (e.g. `refactor`) needs its template/instruction provided by
+  the project (author the file under `givn/artifacts/<id>/`, or rely on a minimal
+  generated stub).
+- Filesystem-derived state (8.6) adapts automatically: state is computed from the
+  effective artifact set, not a hardcoded list.
+
 ## 8.3 The Gherkin delta model
 
 The `.feature` file is the spec. During an active change, `.feature` files are
@@ -83,6 +153,41 @@ Rules:
 For each delta scenario, apply added/modified/removed to
 `givn/specs/<cap>/<cap>.feature` by scenario title, then strip tags. Merge
 preconditions that fail abort the archive without partial writes.
+
+### Specification vs implementation — strict separation of concerns
+
+There is a hard conceptual boundary between *what/why* and *how*. The artifacts
+are assigned to exactly one side of it:
+
+| Layer | Artifacts | Concern | Must NOT contain |
+| --- | --- | --- | --- |
+| **Specification** | `proposal`, `specs` (`.feature`) | WHAT the system does and WHY (observable behaviour, user value). | Implementation details: classes, function names, frameworks, DB schemas, HTTP routes, step-definition mechanics, file paths, libraries. |
+| **Implementation** | `design`, `tasks` (and any custom impl artifacts) | HOW it is built. | — (this is where all the "how" belongs). |
+
+Principles:
+- **Proposal and `.feature` files are implementation-independent** — they describe
+  behaviour a domain expert could read and validate, independent of the chosen
+  technology. They should remain valid even if the entire implementation is
+  rewritten.
+- **Scenarios assert observable behaviour**, in domain language (Given/When/Then
+  about inputs, outputs, state visible to a user/client) — not internal calls,
+  not specific code structures.
+- **The only permitted exception** is when an implementation aspect is *itself*
+  the externally-required behaviour (e.g. "the response is valid JSON", "data is
+  persisted across restart", "the endpoint responds within 200 ms"). Such
+  constraints are part of the spec because they are observable requirements, not
+  implementation choices. When in doubt: if it would still be true under a
+  reasonable reimplementation, it belongs in the spec; otherwise it belongs in
+  design/tasks.
+- **Design owns the technology decisions**: language, test runner, step-definition
+  locations, world/context object, coverage setup, runner commands. **Tasks own
+  the build steps**: the scenario-by-scenario RED/GREEN/REFACTOR plan.
+
+This separation is enforced *by the instructions* shipped with each artifact
+(the proposal and spec instructions explicitly forbid implementation detail; the
+design and tasks instructions explicitly carry it). The instructions are
+cascade-resolved and ejectable, so a project can tighten or relax the wording —
+but the default templates make the boundary explicit.
 
 ## 8.4 Project directory layout
 
@@ -254,3 +359,74 @@ silently doing nothing.
 **Managed vs user regions.** Commented documentation lines are givn-managed and
 may be rewritten by `givn upgrade`. Uncommented key/value lines are user-owned and
 are preserved verbatim. This convention keeps upgrades safe and `git diff` readable.
+
+## 8.11 Addons and the arc42 documentation artifact
+
+### What an addon is
+
+An **addon** is a pre-packaged artifact (or set of artifacts) that ships embedded
+in the binary but is **off by default**. Enabling it is just an overlay edit
+(ADR-024) — there is no separate plugin runtime. This is givn's extension model:
+the workflow is data, so an addon is "data the user opts into".
+
+Enabling an addon:
+```yaml
+# givn/config.yaml
+addons:
+  arc42: true          # convenience switch (expands to the artifact(s) below)
+# equivalently / for full control, add the artifact directly:
+artifacts:
+  - id: arc42-docs
+    optional: true
+    requires: [design]
+```
+
+A convenience `addons:` block is sugar that expands to the addon's artifact
+definitions; advanced users can instead declare the artifacts explicitly and
+customise every field.
+
+### The `arc42-docs` artifact (ADR-026)
+
+Purpose: create and maintain **durable, project-level arc42 architecture
+documentation** as the system evolves — e.g. running after the `design` step so
+the docs reflect each change.
+
+| Property | Default | Notes |
+| --- | --- | --- |
+| `id` | `arc42-docs` | |
+| `requires` | `[design]` | Runs after the change's "how" is known. |
+| `optional` | `true` | Opt-in; does not gate archive unless added to `apply.requires`. |
+| Output location | `docs/arc42/` | Configurable (`arc42.output_dir`). Durable, **not** per-change. |
+| Chapter set | 12 arc42 chapters + index | Configurable; chapters are individual files. |
+| Templates/instruction | embedded `assets/addons/arc42/` | Cascade-resolved & ejectable. |
+
+Behaviour (driven by the artifact instruction):
+- On first run, **create missing** arc42 chapter files from templates and an index.
+- On subsequent changes, **update only the affected chapters** based on the
+  change's proposal/spec/design (e.g. new decisions → chapter 9; new building
+  blocks → chapter 5). Do not rewrite untouched chapters.
+- These documents are **project-level and durable**: they live under `docs/`
+  (outside `givn/changes/`), evolve across changes, and are **not** archived or
+  merged per change. The change lifecycle merely triggers their maintenance.
+
+Distinction from per-change artifacts:
+- Per-change artifacts (proposal, spec, design, tasks, review) live under
+  `givn/changes/<id>/` and are archived with the change.
+- The arc42 docs are a *side effect target* the artifact maintains in the repo's
+  durable docs tree; the artifact's own marker file (e.g. an `arc42.md` note in
+  the change, or a checklist entry) records that the docs were updated for that
+  change, which is what filesystem-derived state observes.
+
+Configuration knobs (all optional, documented in `givn/config.yaml`):
+```yaml
+addons:
+  arc42: true
+# arc42:
+#   output_dir: "docs/arc42"      # where the durable docs live
+#   chapters: [introduction-and-goals, ..., glossary]  # subset/superset allowed
+#   require_for_archive: false    # if true, adds arc42-docs to apply.requires
+```
+
+Because it is an ordinary configurable artifact, everything in ch.8.2 applies:
+reorder via `requires`, make it gate archive via `apply.requires`, eject its
+templates/instruction to customise wording or the chapter structure.

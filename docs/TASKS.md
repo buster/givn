@@ -67,8 +67,13 @@ loads from the binary.
 - [ ] 2.2 Decide & document the override path convention
       (e.g. `givn/artifacts/<id>/template.<ext>`, `.../instructions.md`).
 - [ ] 2.3 Implement `config/overlay.rs`: merge `givn/config.yaml` onto the
-      embedded default manifest (add by new id, deep-merge by existing id, remove
-      directive, scalar replace incl. `verify.command`). Unit tests for each case.
+      embedded default manifest (add by new id, deep-merge by existing id, `remove`
+      directive, scalar replace incl. `verify.command`). Support `optional: bool`
+      on artifacts. Unit tests for each case. (ADR-024)
+- [ ] 2.3a Implement effective-graph validation: acyclic, no dangling `requires`,
+      `apply.requires` may not reference a removed non-optional artifact; clear
+      errors. Derive order from `requires`. Tests incl. remove-review and
+      add-refactor reconfigurations. (ADR-024)
 - [ ] 2.4 Implement `cli::eject` for `artifact:facet`, `skill:<name>`, `manifest`;
       refuse to overwrite without `--force`.
 - [ ] 2.5 Implement `cli::instructions` (text + `--json`) using cascade + overlay.
@@ -161,6 +166,29 @@ state and merged specs.
 
 **Done when:** `givn init` and `givn skills sync` produce the three skill targets
 + AGENTS.md; ejected templates override defaults.
+
+---
+
+## Phase 5.5 — Addons & arc42 documentation artifact
+
+- [ ] 5.5.1 Implement the `addons:` overlay sugar in `config/overlay.rs`: an
+      enabled addon expands into its artifact definition(s). (ADR-026)
+- [ ] 5.5.2 Author embedded `assets/addons/arc42/`: 12 arc42 chapter templates +
+      an index template + the `arc42-docs` artifact instruction (create missing
+      chapters, update only affected ones; durable project-level docs).
+- [ ] 5.5.3 Define the `arc42-docs` artifact default: `requires: [design]`,
+      `optional: true`, output `docs/arc42/` (configurable `arc42.output_dir`,
+      `arc42.chapters`, `arc42.require_for_archive`).
+- [ ] 5.5.4 Document the addon + arc42 keys in `config.yaml.tmpl` (commented).
+- [ ] 5.5.5 Ensure filesystem-derived state observes the change-level marker for
+      arc42 maintenance (durable docs themselves are not per-change artifacts).
+- [ ] 5.5.6 Make addon templates/instruction ejectable; test that enabling the
+      addon inserts the artifact after `design` and (optionally) gates archive.
+- [ ] 5.5.7 Commit: "feat: addon mechanism + arc42 documentation artifact".
+
+**Done when:** enabling `addons: { arc42: true }` adds an `arc42-docs` step after
+design that creates/maintains durable `docs/arc42/` docs; everything configurable
+and ejectable; graph validates.
 
 ---
 

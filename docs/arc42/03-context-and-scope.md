@@ -61,6 +61,8 @@ Gherkin `.feature` files.
 - `AGENTS.md` + skill generation (neutral + claude + opencode).
 - Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
 - Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
+- Configurable artifacts (add/remove/reorder/optional) via overlay.
+- Opt-in addons; bundled `arc42-docs` addon maintaining durable arc42 docs.
 - Distribution: release binaries, curl\|sh, brew, cargo.
 
 ### Out of scope (deferred / non-goals)

@@ -63,6 +63,15 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 - **No silent test running.** The default `verify.command` is the sentinel
   `givn missing-testrunner`, which prints per-language setup guidance and exits
   non-zero until you configure a real runner — so nothing ever falsely reports green.
+- **Configurable workflow (artifacts are data).** Add, remove, reorder, or make
+  optional any lifecycle step purely via `givn/config.yaml` — e.g. drop the review
+  gate or add a dedicated refactor step after implementation. No fork required.
+- **Spec/implementation separation.** Proposals and `.feature` files describe
+  *what* and *why* (implementation-independent, domain language); *how* lives in
+  design and tasks. The default instructions enforce the boundary.
+- **Opt-in addons.** Enable extras via `addons:` — e.g. the bundled `arc42`
+  addon adds an `arc42-docs` step (after design) that creates and maintains
+  durable project-level arc42 architecture documentation under `docs/arc42/`.
 
 ## The workflow
 

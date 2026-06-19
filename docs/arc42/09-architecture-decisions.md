@@ -335,3 +335,104 @@ commented documentation scaffold). See chapter 8.10.
 **Scope note.** v1 targets `givn/config.yaml` and generated agent files
 (via `givn skills sync`). Upgrading ejected artifact facets is left to the user
 through `git diff` against a re-eject; a future enhancement may assist this.
+
+---
+
+## ADR-024: Artifacts (the workflow) are first-class configurable data
+
+**Context.** The default lifecycle is propose → spec → design → tasks →
+implement → review → archive. Projects legitimately need to vary this: skip the
+review gate, make review optional, add a dedicated refactor step after
+implementation, or insert custom artifacts (e.g. a risk assessment). Prior tools
+hardcoded the workflow, forcing a source fork to change it.
+
+**Decision.** The lifecycle is **entirely described by the manifest** (artifacts,
+their `requires` graph, the `apply` gate) and is fully reconfigurable per project
+via the overlay (ADR-010). The artifact schema gains:
+- `optional: bool` — an artifact that may be skipped without blocking the lifecycle.
+- `remove: true` — an overlay directive deleting a default artifact by id.
+
+Order is derived from `requires` (a DAG), so changing dependencies reorders the
+workflow. `apply.requires` independently controls which artifacts gate archive.
+
+`givn` validates the effective graph: no cycles, no dangling `requires`, and
+`apply.requires` may not reference a removed non-optional artifact; otherwise it
+refuses with a clear error. Filesystem-derived state (ADR-014) is computed from
+the effective artifact set, not a hardcoded list.
+
+**Rationale.** Makes "add/remove/reorder steps" a config change, never a fork.
+Directly satisfies the requirement to keep artifacts configurable (e.g. optional
+review, extra refactor step).
+
+**Consequences.** Manifest model adds `optional` and the `remove` overlay
+directive; graph validation is required (Phase 2). Custom artifacts need a
+project-provided template/instruction (or a minimal generated stub). See ch.8.2.
+
+---
+
+## ADR-025: Strict separation of specification and implementation
+
+**Context.** Gherkin `.feature` files and proposals tend to accumulate
+implementation detail (class/function names, frameworks, routes, step mechanics),
+which couples the specification to one implementation and undermines the
+"`.feature` is the durable source of truth" principle.
+
+**Decision.** Enforce a hard boundary:
+- **Specification layer** — `proposal` and `specs` (`.feature`) — describe WHAT
+  and WHY (observable behaviour, domain language) and must be
+  implementation-independent.
+- **Implementation layer** — `design` and `tasks` (and any custom impl
+  artifacts) — carry the HOW (technology, step definitions, runner, build steps).
+- The **only** permitted implementation-flavoured content in the spec is an
+  aspect that is itself an externally observable requirement (e.g. "response is
+  valid JSON", "data persists across restart", "responds within 200 ms").
+  Heuristic: if it would still hold under a reasonable reimplementation, it is a
+  spec; otherwise it is design/tasks.
+
+This is enforced through the **default artifact instructions**: proposal and spec
+instructions explicitly forbid implementation detail; design and tasks
+instructions explicitly own it. Instructions are cascade-resolved and ejectable,
+so projects may adjust the wording.
+
+**Rationale.** Keeps proposals and specs valid across reimplementations; makes
+specs reviewable by domain experts; preserves the spec as the durable contract.
+
+**Consequences.** The default template/instruction text for proposal and spec
+(Phase 1) must state the prohibition and the narrow exception; design and tasks
+text must explicitly capture the "how". Reviews should flag leakage of
+implementation detail into the spec layer.
+
+---
+
+## ADR-026: Optional arc42 documentation artifact (addon)
+
+**Context.** Beyond per-change artifacts, projects often want durable, evolving
+architecture documentation. A natural fit is an artifact that creates and
+maintains arc42 documents — e.g. running after the `design` step so that the
+project-level architecture docs reflect the change. This must be opt-in and not
+imposed on projects that do not want it.
+
+**Decision.** Ship an **optional `arc42-docs` artifact** (an addon enabled via
+config), realising the configurable-artifacts mechanism (ADR-024):
+- It is **not** part of the default active gate; projects enable it by adding it
+  to the overlay (and, if desired, to `apply.requires`).
+- It `requires: [design]` by default, so it runs after design (the change's "how"
+  is known) and keeps the durable arc42 docs in sync.
+- It maintains **project-level** arc42 documents (the living architecture of the
+  whole system), distinct from per-change artifacts. Target location is
+  configurable; default `docs/arc42/` (one file per chapter, matching this very
+  project's convention).
+- It ships with templates for the 12 arc42 chapters and an index, plus an
+  instruction to **create missing chapters and update affected ones** based on
+  the change's proposal/spec/design — not to rewrite everything each time.
+- Like all artifacts, its templates and instructions are cascade-resolved and
+  ejectable; the chapter set and output path are configurable.
+
+**Rationale.** Gives teams first-class, maintained architecture docs as a
+composable step, demonstrates the addon/extension model, and stays fully optional.
+
+**Consequences.** Adds embedded assets: `assets/addons/arc42/` (chapter
+templates + index + instruction). Adds an "addons" notion in docs/config: an
+addon is simply a pre-packaged artifact (or set of artifacts) the user enables
+via overlay. The arc42 docs it manages are durable (live under `docs/`), updated
+across changes, and are not archived per-change. See ch.8.11.

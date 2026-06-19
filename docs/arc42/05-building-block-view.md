@@ -40,8 +40,11 @@ givn/  (single published binary crate)
 │   └── error.rs                # error types (thiserror) + exit-code mapping
 ├── assets/                     # embedded via rust-embed
 │   ├── default-manifest.yaml   # the default artifact graph
+│   ├── config.yaml.tmpl        # documented, versioned project config scaffold
 │   ├── templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
-│   └── skills/                 # default SKILL.md templates per workflow step
+│   ├── skills/                 # default SKILL.md templates per workflow step
+│   └── addons/                 # opt-in addons (pre-packaged artifacts)
+│       └── arc42/              # arc42 chapter templates + index + instruction
 └── tests/                      # integration tests
 ```
 
@@ -62,8 +65,8 @@ givn/  (single published binary crate)
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
-| `config::manifest` | Serde model of the manifest (artifacts, deps, apply, verify). | `serde_yaml_ng` |
-| `config::overlay` | Apply the project overlay to the embedded default graph. | `manifest` |
+| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, deps, apply, verify); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
+| `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. | `manifest`, `embedded` |
 | `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
 | `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |
 | `gherkin::parse` | Parse `.feature` into a typed AST; classify lint findings. | `gherkin` crate |

@@ -42,6 +42,11 @@ givn quality
 | Q-12 | Configurability | A user opens `givn/config.yaml` to discover what they can change. | Every key is present (commented) with description, default, and allowed values; no external docs needed. |
 | Q-13 | Upgradeability | A project made with 1.0.0 runs `givn upgrade` after installing 1.1.0. | Managed comment scaffold is refreshed, user overrides preserved, `givn_config_version` bumped to 1.1.0; changes reviewable via `git diff`. |
 | Q-14 | Upgradeability | `givn upgrade` is run twice on the same binary. | Second run produces no diff (idempotent); no user value is ever deleted. |
+| Q-15 | Configurability | A team removes the review gate via overlay (`review: remove`, `apply.requires: [tasks]`). | Lifecycle no longer includes review; archive is allowed after tasks; graph validates. |
+| Q-16 | Configurability | A team adds a `refactor` artifact requiring `tasks` and gating archive. | `refactor` appears after implementation; `givn status` tracks it; archive blocks until it exists. |
+| Q-17 | Configurability | An overlay introduces a cycle or an `apply.requires` pointing at a removed artifact. | `givn` refuses with a clear graph-validation error; no command proceeds on an invalid graph. |
+| Q-18 | Spec/impl separation | A proposal or `.feature` includes class names, routes, or step-definition mechanics. | Default instructions forbid it; review flags the leakage; spec stays implementation-independent. |
+| Q-19 | Addons | A team enables `addons: { arc42: true }`. | An `arc42-docs` step is inserted after `design`; running it creates/updates durable `docs/arc42/` chapters; it stays optional unless added to `apply.requires`. |
 
 ## 10.3 Acceptance signals per phase
 

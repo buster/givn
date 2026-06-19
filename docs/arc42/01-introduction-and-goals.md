@@ -40,6 +40,9 @@ propose → spec → design → tasks → implement → review → archive
 | FR-15 | Default test-runner command is a self-documenting sentinel that prints setup guidance and fails until configured. |
 | FR-16 | Generate `givn/config.yaml` fully commented, with documented defaults for every key. |
 | FR-17 | Version the project config (`givn_config_version`) and provide `givn upgrade` to refresh scaffolding while preserving user overrides. |
+| FR-18 | Allow projects to add, remove, reorder, and mark-optional lifecycle artifacts purely via config (e.g. drop review, add a refactor step). |
+| FR-19 | Keep specification artifacts (`proposal`, `.feature`) implementation-independent; carry implementation detail only in `design`/`tasks`. |
+| FR-20 | Provide an opt-in addon mechanism; ship an `arc42-docs` addon that creates and maintains durable project-level arc42 documentation (e.g. after `design`). |
 
 ### Non-functional requirements (top)
 
