@@ -1,0 +1,54 @@
+---
+name: givn-archive
+description: Archive a completed givn change — runs gate hooks, merges delta specs into permanent specs, and moves the change to archive/.
+---
+
+# givn-archive
+
+Archive change `{{CHANGE_ID}}`.
+
+## Context
+
+- Change: `givn/changes/{{CHANGE_ID}}/`
+- Archive target: `givn/archive/{{CHANGE_ID}}/`
+- Permanent specs: `givn/specs/`
+- Test runner: `{{VERIFY_COMMAND}}`
+
+## Archive gate
+
+`givn archive` automatically checks:
+
+1. All `apply.requires` artifacts exist (tasks.md, review.md by default).
+2. All tasks checked (`[x]`).
+3. `review.md` contains `REVIEW: PASS`.
+4. Hooks of all `apply.requires` artifacts pass (runs `{{VERIFY_COMMAND}}`).
+
+If any gate fails, the archive is refused with a clear error.
+
+## Steps
+
+1. Confirm all tasks are done:
+   ```
+   givn apply --change {{CHANGE_ID}}
+   ```
+
+2. Confirm review is signed off:
+   ```
+   givn check review --change {{CHANGE_ID}}
+   ```
+
+3. Archive:
+   ```
+   givn archive --change {{CHANGE_ID}}
+   ```
+
+This will:
+- Run the gate hooks (test suite must be GREEN).
+- Merge delta `.feature` files into `givn/specs/` (strips `@givn.*` tags).
+- Move `givn/changes/{{CHANGE_ID}}/` to `givn/archive/{{CHANGE_ID}}/`.
+
+## Verify command
+
+```
+{{VERIFY_COMMAND}}
+```

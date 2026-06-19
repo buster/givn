@@ -1,6 +1,10 @@
 mod cli;
 mod config;
 mod error;
+mod gherkin;
+mod hooks;
+mod skills;
+mod state;
 
 use clap::{Parser, Subcommand};
 

@@ -28,8 +28,20 @@ pub fn run(force: bool) -> Result<()> {
         println!("  wrote    {}", config_path.display());
     }
 
-    println!("\ngivn initialised. Next step: set verify.command in givn/config.yaml.");
-    println!("Run `givn skills sync` to generate AGENTS.md and skills.");
+    // Generate skills and AGENTS.md.
+    println!("\nGenerating skills and AGENTS.md...");
+    match crate::skills::targets::sync(&project_root) {
+        Ok(()) => {}
+        Err(e) => {
+            eprintln!("  warning: skill generation failed: {e}");
+            eprintln!("  Run `givn skills sync` after configuring verify.command.");
+        }
+    }
+
+    println!("\ngivn initialised. Next step:");
+    println!("  1. Set verify.command in givn/config.yaml");
+    println!("  2. Run `givn skills sync` to refresh skills");
+    println!("  3. Run `givn new <change-id>` to start a change");
 
     Ok(())
 }

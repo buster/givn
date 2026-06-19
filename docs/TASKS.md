@@ -93,17 +93,17 @@ green; `givn instructions <a> --json` works.
 
 ## Phase 2.5 — Config versioning & upgrade
 
-- [ ] 2.5.1 Define the managed-vs-user region convention for `givn/config.yaml`
+- [x] 2.5.1 Define the managed-vs-user region convention for `givn/config.yaml`
       (commented lines = givn-managed scaffold; uncommented key/values = user-owned).
-- [ ] 2.5.2 Extend `config/render.rs`: given an existing `config.yaml`, parse user
+- [x] 2.5.2 Extend `config/render.rs`: given an existing `config.yaml`, parse user
       overrides + `givn_config_version`, re-render the managed comment scaffold from
       the current template, preserve user overrides verbatim, keep removed/renamed
       keys with a note, bump the version.
-- [ ] 2.5.3 Implement `cli::upgrade`: perform the above as ordinary file writes;
+- [x] 2.5.3 Implement `cli::upgrade`: perform the above as ordinary file writes;
       print a summary; advise `git diff` review and `givn skills sync`.
-- [ ] 2.5.4 Tests: idempotency (second run = no diff), override preservation,
+- [x] 2.5.4 Tests: idempotency (second run = no diff), override preservation,
       version bump, removed-key retention. (ADR-023)
-- [ ] 2.5.5 Commit: "feat: versioned config with givn upgrade".
+- [x] 2.5.5 Commit: "feat: versioned config with givn upgrade".
 
 **Done when:** a 1.0.0-style config can be upgraded in place; user overrides are
 preserved; re-running produces no diff; changes are reviewable via `git diff`.
@@ -112,20 +112,20 @@ preserved; re-running produces no diff; changes are reviewable via `git diff`.
 
 ## Phase 3 — Gherkin core
 
-- [ ] 3.1 Implement `gherkin/parse.rs` wrapping the `gherkin` crate; surface
+- [x] 3.1 Implement `gherkin/parse.rs` wrapping the `gherkin` crate; surface
       parse errors and `@wip`/PENDING detection.
-- [ ] 3.2 Implement `cli::lint` (the `givn lint` command — static `.feature`
+- [x] 3.2 Implement `cli::lint` (the `givn lint` command — static `.feature`
       check; runs no tests): collect targets, classify findings, exit
       **0/1/2** (parse error > wip > clean). Tests for each exit code.
-- [ ] 3.3 Implement `gherkin/delta.rs`: detect `@givn.delta`, capability tag, and
+- [x] 3.3 Implement `gherkin/delta.rs`: detect `@givn.delta`, capability tag, and
       `@givn.added/modified/removed` (default added); handle `@givn.removed`
       placeholder step; split features/scenarios by title.
-- [ ] 3.4 Implement `gherkin/merge.rs`: apply added/modified/removed to a
+- [x] 3.4 Implement `gherkin/merge.rs`: apply added/modified/removed to a
       permanent `.feature` by scenario title; strip all `@givn.*` tags;
       all-or-nothing (validate before write). Round-trip integration tests
       (added/modified/removed, error cases: add-existing, modify-missing,
       remove-missing).
-- [ ] 3.5 Commit: "feat: gherkin parse/lint and delta merge engine".
+- [x] 3.5 Commit: "feat: gherkin parse/lint and delta merge engine".
 
 **Done when:** merge round-trip tests pass; `givn lint` exit codes correct;
 failures abort without partial writes.
@@ -134,31 +134,31 @@ failures abort without partial writes.
 
 ## Phase 4 — Lifecycle
 
-- [ ] 4.1 Implement `state.rs`: derive change state from file presence
+- [x] 4.1 Implement `state.rs`: derive change state from file presence
       (proposal/spec/design/tasks/review/archived); parse `tasks.md` checkboxes.
-- [ ] 4.2 Implement `cli::new <id>`: validate kebab-case, scaffold
+- [x] 4.2 Implement `cli::new <id>`: validate kebab-case, scaffold
       `givn/changes/<id>/` with a proposal stub from cascade.
-- [ ] 4.3 Implement `cli::status`: report derived state (+ task progress).
-- [ ] 4.4 Implement `cli::apply --change <id>`: enforce `apply.requires`, report
+- [x] 4.3 Implement `cli::status`: report derived state (+ task progress).
+- [x] 4.4 Implement `cli::apply --change <id>`: enforce `apply.requires`, report
       progress and next pending task group (givn tracks, does not execute).
-- [ ] 4.5 Implement `hooks.rs` (ADR-028): parse artifact `post` entries
+- [x] 4.5 Implement `hooks.rs` (ADR-028): parse artifact `post` entries
       (built-in `verify` → run `verify.command`; `lint` → run `givn lint`; or a
       shell string; object form with `allow_failure`/`name`). Execute with
       `GIVN_FEATURES` set (active change in dev; `givn/specs` after archive),
       stream output, map failures to non-zero unless `allow_failure`.
-- [ ] 4.6 Implement `cli::check [<artifact>] [--change <id>]`: run an artifact's
+- [x] 4.6 Implement `cli::check [<artifact>] [--change <id>]`: run an artifact's
       `post` hooks (or all artifacts with existing output); exit non-zero if a
       required hook fails. Tests: green passes, red blocks, sentinel fails loudly.
-- [ ] 4.7 Implement `cli::archive --change <id>`: check `apply.requires`
+- [x] 4.7 Implement `cli::archive --change <id>`: check `apply.requires`
       (tasks complete AND review PASS); **run hooks of every `apply.requires`
       artifact as the gate** (refuse on failure); then merge into `givn/specs/`,
       move change to `givn/archive/<id>/`. Refuse + clear error on unmet gate,
       hook failure, or merge failure.
-- [ ] 4.8 Decide review-PASS detection (string marker vs structured field) and
+- [x] 4.8 Decide review-PASS detection (string marker vs structured field) and
       implement.
 - [ ] 4.9 Integration test: full lifecycle on a temp project, incl. a red-suite
       run that blocks archive and a green run that passes the gate.
-- [ ] 4.10 Commit: "feat: lifecycle + post hooks (new, status, apply, check, archive)".
+- [x] 4.10 Commit: "feat: lifecycle + post hooks (new, status, apply, check, archive)".
 
 **Done when:** a change can go new → … → archive in a temp project; `givn check`
 runs `verify.command`; archive is gated on the test suite being green (and fails
@@ -168,21 +168,21 @@ loudly under the sentinel default).
 
 ## Phase 5 — Skills & AGENTS.md generation
 
-- [ ] 5.1 Author default skill templates in `assets/skills/` (one per action:
+- [x] 5.1 Author default skill templates in `assets/skills/` (one per action:
       `givn-propose`, `givn-spec`, `givn-design`, `givn-tasks`, `givn-implement`,
       `givn-review`, `givn-archive`) and an `AGENTS.md` rules template. Port the
       proven SKILL.md content from the gherkinspec prototype.
-- [ ] 5.2 Implement `skills/render.rs`: render templates with project context
+- [x] 5.2 Implement `skills/render.rs`: render templates with project context
       (cascade-resolved; ejectable).
-- [ ] 5.3 Implement `skills/targets.rs`: write to `.agents/skills/<name>/SKILL.md`
+- [x] 5.3 Implement `skills/targets.rs`: write to `.agents/skills/<name>/SKILL.md`
       (primary) + mirrors `.claude/skills/`, `.opencode/skills/`, and root
       `AGENTS.md`. Validate SKILL.md frontmatter (name matches dir, description
       length).
-- [ ] 5.4 Wire generation into `cli::init`; implement `cli::skills sync` for
+- [x] 5.4 Wire generation into `cli::init`; implement `cli::skills sync` for
       regeneration after upgrades.
-- [ ] 5.5 Make skill templates ejectable (`givn eject skill:<name>`) — confirm
+- [x] 5.5 Make skill templates ejectable (`givn eject skill:<name>`) — confirm
       cascade picks the override.
-- [ ] 5.6 Commit: "feat: AGENTS.md + multi-target skill generation".
+- [x] 5.6 Commit: "feat: AGENTS.md + multi-target skill generation".
 
 **Done when:** `givn init` and `givn skills sync` produce the three skill targets
 + AGENTS.md; ejected templates override defaults.

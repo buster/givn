@@ -1,0 +1,55 @@
+---
+name: givn-implement
+description: Execute the RED/GREEN/REFACTOR TDD loop for a givn change, one scenario at a time.
+---
+
+# givn-implement
+
+Implement change `{{CHANGE_ID}}` using scenario-by-scenario TDD.
+
+## Context
+
+- Tasks: `givn/changes/{{CHANGE_ID}}/tasks.md`
+- Spec: `givn/changes/{{CHANGE_ID}}/specs/`
+- Design: `givn/changes/{{CHANGE_ID}}/design.md`
+- Test runner: `{{VERIFY_COMMAND}}`
+- Features path: `GIVN_FEATURES={{FEATURES_PATH}}`
+
+## Before starting
+
+1. Check your progress: `givn apply --change {{CHANGE_ID}}`
+2. `givn lint` to confirm the spec is well-formed (does NOT run tests).
+
+## The loop
+
+Work through tasks.md, one scenario at a time:
+
+### RED phase
+1. Remove `@wip` from the current scenario only (keep it on others).
+2. Write step definitions with **real assertions** (`Then` checks concrete values).
+3. Run: `{{VERIFY_COMMAND}}`
+   - This scenario **must fail** — you have no production code yet.
+   - If it passes, the assertions are fake — fix the steps.
+
+### GREEN phase
+4. Write the **minimum** production code to make this scenario pass.
+5. Run: `{{VERIFY_COMMAND}}` — this scenario passes; others still fail (that's fine).
+
+### REFACTOR phase
+6. Clean up code, names, duplication — without changing behaviour.
+7. Run: `{{VERIFY_COMMAND}}` — still passes.
+
+### Done with scenario
+8. Check off the task in `tasks.md`: `- [ ]` → `- [x]`
+9. Move to the next scenario.
+
+## When all tasks are checked
+
+Run `givn apply --change {{CHANGE_ID}}` to confirm progress.
+Then proceed to the review step.
+
+## Verify command
+
+```
+{{VERIFY_COMMAND}}
+```

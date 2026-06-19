@@ -1,0 +1,42 @@
+---
+name: givn-tasks
+description: Break down implementation into a scenario-by-scenario RED/GREEN/REFACTOR task list for a givn change.
+---
+
+# givn-tasks
+
+Write the implementation task breakdown for change `{{CHANGE_ID}}`.
+
+## Context
+
+- Tasks file: `givn/changes/{{CHANGE_ID}}/tasks.md`
+- Instructions: run `givn instructions tasks --change {{CHANGE_ID}}`
+- Design (HOW): `givn/changes/{{CHANGE_ID}}/design.md`
+- Test runner: `{{VERIFY_COMMAND}}`
+
+## The TDD loop (one scenario at a time)
+
+```
+For each scenario:
+  RED:      Remove @wip from THIS scenario only.
+            Write step definitions WITH real assertions.
+            Run: {{VERIFY_COMMAND}} → MUST FAIL (no production code yet).
+            If it passes, assertions are not real — fix the steps first.
+  GREEN:    Write minimum production code.
+            Run: {{VERIFY_COMMAND}} → this scenario PASSES.
+  REFACTOR: Clean up without changing behaviour.
+            Run: {{VERIFY_COMMAND}} → still PASSES.
+Then move to the next scenario.
+```
+
+## Important
+
+- `givn lint` is a STATIC Gherkin check only. It does NOT run tests.
+- GREEN is confirmed by `{{VERIFY_COMMAND}}` only, never by `givn lint`.
+- Track progress: `givn apply --change {{CHANGE_ID}}`
+
+## Verify command
+
+```
+{{VERIFY_COMMAND}}
+```
