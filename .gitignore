@@ -1,10 +1,12 @@
-# Rust
+# Rust build output — do NOT ignore Cargo.lock for binary crates
 /target
+
+# Backup files
 **/*.rs.bk
-# Cargo.lock IS committed for binary crates (do not ignore).
 
 # Editor / OS
 .DS_Store
 *.swp
+*.swo
 .idea/
 .vscode/
