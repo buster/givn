@@ -1,19 +1,17 @@
 /// Filesystem-derived lifecycle state (ADR-014, arc42 ch.8.6).
 ///
 /// There is no state file. State is computed entirely from which files exist.
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// The lifecycle state of a single change.
 #[derive(Debug, Clone)]
 pub struct ChangeState {
     pub id: String,
-    pub path: PathBuf,
     pub proposal_exists: bool,
     pub specs_exist: bool,
     pub design_exists: bool,
     pub tasks_exists: bool,
     pub review_exists: bool,
-    pub archived: bool,
     pub tasks_progress: Option<TasksProgress>,
     pub review_pass: bool,
 }
@@ -68,13 +66,11 @@ impl ChangeState {
 
         ChangeState {
             id,
-            path: change_dir.to_path_buf(),
             proposal_exists,
             specs_exist,
             design_exists,
             tasks_exists,
             review_exists,
-            archived: false,
             tasks_progress,
             review_pass,
         }

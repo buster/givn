@@ -1,10 +1,11 @@
-use gherkin::{Feature, GherkinEnv, ParseError};
+use gherkin::{Feature, GherkinEnv};
+#[cfg(test)]
+use gherkin::ParseError;
 use std::path::Path;
 
 /// Result of parsing a single .feature file for lint purposes.
 #[derive(Debug)]
 pub struct ParseResult {
-    pub path: std::path::PathBuf,
     pub feature: Option<Feature>,
     pub errors: Vec<LintError>,
 }
@@ -32,7 +33,6 @@ pub fn parse_file(path: &Path) -> ParseResult {
         Ok(feature) => {
             let errors = collect_wip(&feature);
             ParseResult {
-                path: path.to_path_buf(),
                 feature: Some(feature),
                 errors,
             }
@@ -40,7 +40,6 @@ pub fn parse_file(path: &Path) -> ParseResult {
         Err(e) => {
             let message = format!("{e}");
             ParseResult {
-                path: path.to_path_buf(),
                 feature: None,
                 errors: vec![LintError {
                     kind: LintKind::ParseError,
@@ -53,6 +52,7 @@ pub fn parse_file(path: &Path) -> ParseResult {
 }
 
 /// Parse a .feature string (for testing).
+#[cfg(test)]
 pub fn parse_str(input: &str) -> Result<Feature, ParseError> {
     let env = GherkinEnv::default();
     Feature::parse(input, env)

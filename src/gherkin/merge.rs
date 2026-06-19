@@ -9,7 +9,8 @@
 ///
 /// The merge works at the text level rather than on a parsed AST, to preserve
 /// formatting and comments in the permanent spec files.
-use anyhow::{bail, Result};
+use anyhow::Result;
+use crate::error::GivnError;
 use crate::gherkin::delta::{DeltaOp, DeltaScenario, strip_givn_tags};
 use gherkin::{Feature, Scenario};
 
@@ -40,19 +41,20 @@ pub fn apply_deltas(permanent_text: Option<&str>, deltas: &[DeltaScenario<'_>]) 
         match delta.op {
             DeltaOp::Added => {
                 if exists {
-                    bail!(
+                    return Err(GivnError::MergeError(format!(
                         "cannot add scenario '{}': title already exists in the permanent spec",
                         title
-                    );
+                    ))
+                    .into());
                 }
             }
             DeltaOp::Modified | DeltaOp::Removed => {
                 if !exists {
-                    bail!(
+                    return Err(GivnError::MergeError(format!(
                         "cannot {:?} scenario '{}': title not found in the permanent spec",
-                        delta.op,
-                        title
-                    );
+                        delta.op, title
+                    ))
+                    .into());
                 }
             }
         }
@@ -104,10 +106,11 @@ pub fn merge_file(
     use crate::gherkin::delta::{delta_scenarios, is_delta_feature};
 
     if !is_delta_feature(delta_feature) {
-        bail!(
+        return Err(GivnError::MergeError(format!(
             "feature '{}' is not tagged @givn.delta — cannot merge",
             delta_feature.name
-        );
+        ))
+        .into());
     }
 
     let deltas = delta_scenarios(delta_feature);
