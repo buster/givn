@@ -1,8 +1,12 @@
 ---
-description: Write the technical design for a givn change — HOW layer, technology decisions, architecture impact
+description: (Re-)write the technical design for a givn change — HOW layer, technology decisions, architecture impact
 ---
 
-Write the technical design for a givn change.
+Write (or re-write) the technical design for a givn change.
+
+**Tip:** If you are starting a new change, use `/givn-propose` instead — it
+writes the proposal, spec, design, and tasks in one pass.
+Use this command to redo or extend the design for an existing change.
 
 **Input**: Optionally specify a change ID after `/givn-design`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If

@@ -1,8 +1,12 @@
 ---
-description: Write Gherkin .feature delta files for a givn change
+description: (Re-)write the Gherkin .feature spec for a givn change
 ---
 
-Write the Gherkin spec for a givn change.
+Write (or re-write) the Gherkin spec for a givn change.
+
+**Tip:** If you are starting a new change, use `/givn-propose` instead — it
+writes the proposal, spec, design, and tasks in one pass.
+Use this command to redo or extend the spec for an existing change.
 
 **Input**: Optionally specify a change ID after `/givn-spec`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If

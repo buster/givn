@@ -1,8 +1,12 @@
 ---
-description: Write the scenario-by-scenario RED/GREEN/REFACTOR task list for a givn change
+description: (Re-)write the scenario-by-scenario RED/GREEN/REFACTOR task list for a givn change
 ---
 
-Write the implementation task breakdown for a givn change.
+Write (or re-write) the implementation task breakdown for a givn change.
+
+**Tip:** If you are starting a new change, use `/givn-propose` instead — it
+writes the proposal, spec, design, and tasks in one pass.
+Use this command to redo or extend the task list for an existing change.
 
 **Input**: Optionally specify a change ID after `/givn-tasks`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If
