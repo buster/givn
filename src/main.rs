@@ -86,6 +86,12 @@ enum Commands {
         #[command(subcommand)]
         command: SkillsCommands,
     },
+    /// Show the effective artifact plan (ordered sequence from the manifest).
+    Plan {
+        /// Output as JSON (machine-readable, for use by commands and scripts).
+        #[arg(long)]
+        json: bool,
+    },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
@@ -125,6 +131,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Archive { change } => cli::archive::run(&change),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
         Commands::Skills { command: SkillsCommands::Sync } => cli::skills::run_sync(),
+        Commands::Plan { json } => cli::plan::run(json),
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
     }

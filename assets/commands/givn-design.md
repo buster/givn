@@ -59,13 +59,15 @@ This is the HOW layer. Everything that was kept out of the proposal and spec
 belongs here: class names, routes, DB schemas, function signatures,
 framework details, step-definition mechanics.
 
-### 5. Show progress
+### 5. Show next step
 
 ```sh
-givn status
+givn plan --json
 ```
 
-Display next step: "Run `/givn-tasks` to write the implementation task breakdown."
+Find this artifact (`design`) in the sequence and report the next artifact id
+as the next command to run (e.g. `/givn-tasks`, or whatever follows `design`
+in the configured manifest).
 
 ---
 
@@ -80,7 +82,7 @@ Display next step: "Run `/givn-tasks` to write the implementation task breakdown
 - <decision 1>
 - <decision 2>
 
-**Next:** Run `/givn-tasks` to break this down into a scenario-by-scenario task list.
+**Next:** Run `/<next-artifact-id>` to continue (from `givn plan --json`).
 ```
 
 ---

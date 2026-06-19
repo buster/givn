@@ -1,5 +1,5 @@
 ---
-description: Plan a givn change end-to-end — proposal, Gherkin spec, design, and task list in one pass
+description: Plan a givn change end-to-end — runs all planning artifacts in the order the manifest defines
 ---
 
 Plan a new givn change from start to finish.
@@ -7,9 +7,10 @@ Plan a new givn change from start to finish.
 **Input**: The argument after `/givn-propose` is the change ID (kebab-case), OR a
 plain description of what to build. If nothing is provided, ask.
 
-This command runs the full planning chain: **proposal → spec → design → tasks**.
-It stops when the change is fully planned and ready to implement. You invoke
-`/givn-implement` when you are ready to start coding.
+This command discovers the artifact sequence from `givn` at runtime — it does not
+hardcode which steps exist or in what order. If the project has customised its
+manifest (added a risk-assessment step, removed review, etc.), this command
+automatically follows the configured sequence.
 
 ---
 
@@ -27,120 +28,100 @@ proceeding only if the name is genuinely ambiguous.
 givn new <id>
 ```
 
-### 3. Get proposal instructions
+### 3. Discover the artifact sequence
 
 ```sh
-givn instructions proposal --change <id>
+givn plan --json
 ```
 
-### 4. Write the proposal
+Parse the JSON. It contains:
+- `artifacts`: array of artifacts in execution order, each with:
+  - `id`: artifact identifier
+  - `generates`: file path(s) this artifact produces
+  - `optional`: whether it can be skipped
+  - `gates_archive`: whether it must be complete before archiving
+  - `has_instruction`: whether `givn instructions <id>` will return content
+- `verify.command`: the configured test runner
+- `verify.features_path`: where features live
 
-Read any existing permanent specs at `givn/specs/` for context.
+**The `artifacts` array IS the planning sequence.** Work through every
+non-optional artifact in order (stop before `review` — that belongs to
+`/givn-review` after implementation is done).
 
-Write `givn/changes/<id>/proposal.md`:
+### 4. Loop: write each planning artifact
 
-1. **Problem / Opportunity** — what is wrong or missing?
-2. **Proposed Solution** — what should the system do?
-3. **Out of Scope** — what is not changing?
-4. **Open Questions** — unresolved decisions (if any).
+For each artifact in the sequence (excluding `review` and any artifact whose
+`id` is the implementation gate — i.e. where you stop for the user to code):
 
-**Rules:**
-- Domain language only. No class names, routes, DB schemas, function names,
-  framework details, or step-definition mechanics.
-- Only externally observable technical constraints are allowed (e.g. "response
-  is valid JSON", "persists across restart").
-- Park any HOW details — they go in design.md, written below.
+#### 4a. Get the instruction
 
----
-
-### 5. Get spec instructions
-
+If `has_instruction` is true:
 ```sh
-givn instructions specs --change <id>
+givn instructions <artifact-id> --change <id>
 ```
+Use the returned instruction to understand what to produce and how.
 
-### 6. Write delta .feature files
+#### 4b. Read dependencies
 
-Read the proposal. For each capability, create:
-`givn/changes/<id>/specs/<capability>/<capability>.feature`
+Before writing each artifact, read all previously written artifacts for this
+change (they are the inputs). Also read relevant existing project files
+(permanent specs at `givn/specs/`, existing code, etc.) as needed.
 
-**Required tags:**
-- `@givn.delta` and `@<capability>` on the Feature line
-- `@givn.added` / `@givn.modified` / `@givn.removed` on each Scenario (default: `@givn.added`)
-- `@wip` on every Scenario
+#### 4c. Write the artifact
 
-**Rules:**
+Write to the path(s) listed in `generates` under `givn/changes/<id>/`.
+
+Follow the instruction for this artifact. Key rules per artifact type:
+
+**proposal** (`proposal.md`):
+- WHAT and WHY in domain language — no implementation detail.
+- Observable behaviour only. No class names, routes, DB schemas, step mechanics.
+
+**specs** (`specs/**/*.feature`):
+- One `.feature` file per capability, derived from the proposal.
+- Tags: `@givn.delta @<capability>` on Feature; `@givn.added` (default) /
+  `@givn.modified` / `@givn.removed` + `@wip` on each Scenario.
 - Scenarios assert observable behaviour in Given/When/Then domain language.
-- No implementation detail in the spec.
-- One `.feature` file per capability.
+- After writing specs, validate: `givn lint` — fix exit 1 (parse error);
+  exit 2 (@wip) is expected and correct.
 
-### 7. Validate syntax
+**design** (`design.md`):
+- HOW layer: technology decisions, architecture impact, step def locations,
+  runner command, data model changes. Justify non-obvious choices.
 
-```sh
-givn lint
-```
+**tasks** (`tasks.md`):
+- One `- [ ]` checkbox per scenario, each covering a full RED/GREEN/REFACTOR
+  cycle. Infrastructure/setup first, feature scenarios after.
+- Confirm verify command from `givn/config.yaml`.
 
-- Exit 0 or 2 = fine (`@wip` present is expected at this stage).
-- Exit 1 = parse error — fix before continuing.
+**Any custom artifact** (e.g. `risk-assessment.md`):
+- Follow the instruction returned by `givn instructions <id>`.
+- Write to the path in `generates`.
 
----
-
-### 8. Get design instructions
-
-```sh
-givn instructions design --change <id>
-```
-
-### 9. Write the design
-
-Read the proposal and the `.feature` files just written.
-Read relevant existing code (architecture, patterns, integration points).
-
-Write `givn/changes/<id>/design.md` covering:
-
-- **Technology decisions** — language, framework, libraries chosen and why.
-- **Architecture impact** — which modules are affected; what is new.
-- **Data model changes** — schema, structs, DB changes if any.
-- **Step definition locations** — where Cucumber/Gherkin step defs will live.
-- **Runner command** — confirm `verify.command` in `givn/config.yaml`.
-
-This is the HOW layer. Everything kept out of proposal and spec belongs here.
-
----
-
-### 10. Get tasks instructions
-
-```sh
-givn instructions tasks --change <id>
-```
-
-### 11. Write the task list
-
-Read the design and the `.feature` files.
-
-Write `givn/changes/<id>/tasks.md` as a checkboxed scenario-by-scenario breakdown.
-One task per scenario, each covering a full RED/GREEN/REFACTOR cycle:
-
-```markdown
-- [ ] <capability>: <Scenario title>
-      RED:      Remove @wip. Write step defs with real assertions. Run: <verify.command> → MUST FAIL.
-      GREEN:    Write minimum production code. Run: <verify.command> → PASSES.
-      REFACTOR: Clean up. Run: <verify.command> → still PASSES.
-```
-
-Order: infrastructure/setup tasks first, feature scenarios after.
-
-### 12. Confirm task tracking
+#### 4d. After writing tasks (or the last planning artifact)
 
 ```sh
 givn apply --change <id>
 ```
 
-### 13. Show final status
+Confirm task tracking is live.
+
+### 5. Show final status
 
 ```sh
 givn status
 ```
+
+---
+
+## When to stop
+
+Stop after writing the last artifact whose `id` appears in the sequence
+**before** the implementation gate. In the default manifest that is `tasks`;
+in a customised manifest it may be different — follow the actual sequence.
+
+Do **not** write the `review` artifact — that belongs to `/givn-review` after
+the implementation is done.
 
 ---
 
@@ -149,17 +130,15 @@ givn status
 ```
 ## Change planned: <id>
 
-**Proposal:** givn/changes/<id>/proposal.md
-  <one-paragraph summary of WHAT and WHY>
-
-**Spec:** givn/changes/<id>/specs/<capability>/<capability>.feature
-  N scenarios — all @wip, ready for step definitions
-
-**Design:** givn/changes/<id>/design.md
+**Artifacts written** (in manifest order):
+- proposal:  givn/changes/<id>/proposal.md
+  <one-sentence summary>
+- specs:     givn/changes/<id>/specs/<cap>/<cap>.feature  (N scenarios, all @wip)
+- design:    givn/changes/<id>/design.md
   Key decisions: <brief summary>
-
-**Tasks:** givn/changes/<id>/tasks.md
-  N tasks (one per scenario), ready for RED/GREEN/REFACTOR
+- tasks:     givn/changes/<id>/tasks.md
+  N tasks (one per scenario)
+[... any additional artifacts from the manifest ...]
 
 **Ready to implement.** Run `/givn-implement` to start the TDD loop.
 ```
@@ -168,10 +147,12 @@ givn status
 
 ## Guardrails
 
-- Write all four artifacts before stopping — do not pause between them to ask.
-- Never put implementation detail (HOW) in the proposal or spec.
+- Always run `givn plan --json` to get the sequence — never hardcode it.
+- Write all planning artifacts before stopping. Do not pause between them to ask.
+- Never put implementation detail (HOW) in the proposal or specs.
 - Keep all scenarios `@wip` — step definitions are not written yet.
-- Run `givn lint` after writing specs and fix any parse errors (exit 1) before continuing.
+- Run `givn lint` after writing specs; fix parse errors (exit 1) before continuing.
 - Tasks must use `- [ ]` checkboxes so `givn apply` can track progress.
+- Follow the instruction from `givn instructions <id>` for every artifact.
 - If context is critically unclear before starting, ask — but prefer reasonable
   decisions over stalling mid-chain.

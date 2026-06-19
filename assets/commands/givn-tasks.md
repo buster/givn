@@ -73,13 +73,16 @@ givn apply --change <id>
 
 Confirms task tracking is live.
 
-### 6. Show progress
+### 6. Show next step
 
 ```sh
-givn status
+givn plan --json
 ```
 
-Display next step: "Run `/givn-implement` to start the TDD loop."
+Find `tasks` in the sequence and confirm it is the last planning artifact.
+Report: "Ready to implement. Run `/givn-implement` to start the TDD loop."
+(Or, if there are further planning artifacts after `tasks` in the manifest,
+report the next one instead.)
 
 ---
 
@@ -91,7 +94,8 @@ Display next step: "Run `/givn-implement` to start the TDD loop."
 **Tasks written:** givn/changes/<id>/tasks.md
 **Total tasks:** N (one per scenario)
 
-**Next:** Run `/givn-implement` to work through the RED/GREEN/REFACTOR loop.
+**Next:** Run `/givn-implement` to start the TDD loop (or the next planning
+artifact if the manifest defines one after `tasks`).
 ```
 
 ---

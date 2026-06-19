@@ -82,13 +82,15 @@ givn lint
 - Exit 1 = parse error (fix before proceeding)
 - Exit 2 = `@wip` or PENDING (expected; does NOT indicate test failure)
 
-### 6. Show progress
+### 6. Show next step
 
 ```sh
-givn status
+givn plan --json
 ```
 
-Display next step: "Run `/givn-design` to write the technical design."
+Find this artifact (`specs`) in the sequence and report the next artifact id
+as the next command to run (e.g. `/givn-design`, or whatever follows `specs`
+in the configured manifest).
 
 ---
 
@@ -102,7 +104,7 @@ Display next step: "Run `/givn-design` to write the technical design."
 
 **Lint:** clean (N @wip scenarios — expected)
 
-**Next:** Run `/givn-design` to write the HOW layer.
+**Next:** Run `/<next-artifact-id>` to continue (from `givn plan --json`).
 ```
 
 ---
