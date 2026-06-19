@@ -202,12 +202,16 @@ fn dfs<'a>(
 }
 
 /// The default arc42-docs artifact definition (used when addon is enabled).
+///
+/// `generates` is the change-level marker file (`arc42.md` in the change dir).
+/// The actual durable docs live under `docs/arc42/` (not tracked as generates).
+/// Template and instruction are resolved via the cascade (addon fallback layer).
 fn arc42_artifact() -> Artifact {
     Artifact {
         id: "arc42-docs".to_string(),
         generates: vec!["arc42.md".to_string()],
         requires: vec!["design".to_string()],
-        template: Some("arc42.md".to_string()),
+        template: Some("template.md".to_string()),
         instruction: Some("arc42-docs".to_string()),
         optional: true,
         remove: false,
@@ -338,5 +342,35 @@ artifacts:
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  arc42: true").unwrap();
         assert!(result.artifacts.iter().any(|a| a.id == "arc42-docs"));
+    }
+
+    #[test]
+    fn addons_arc42_not_present_by_default() {
+        let base = Manifest::load_embedded().unwrap();
+        assert!(!base.artifacts.iter().any(|a| a.id == "arc42-docs"));
+    }
+
+    #[test]
+    fn addons_arc42_idempotent() {
+        // Enabling twice must not insert two arc42-docs entries.
+        let base = Manifest::load_embedded().unwrap();
+        let once = apply(base, "addons:\n  arc42: true").unwrap();
+        let count = once.artifacts.iter().filter(|a| a.id == "arc42-docs").count();
+        assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn addon_instruction_resolves_via_cascade() {
+        // The embedded addon instruction must be findable via cascade.
+        let instruction = crate::config::cascade::resolve_instruction("arc42-docs").unwrap();
+        assert!(instruction.contains("arc42"), "arc42-docs instruction must reference arc42");
+    }
+
+    #[test]
+    fn addon_template_resolves_via_cascade() {
+        // The embedded addon template must be findable via cascade.
+        // arc42-docs template name is "template.md".
+        let template = crate::config::cascade::resolve_template("arc42-docs", "template.md").unwrap();
+        assert!(template.contains("STATUS"), "arc42-docs template must contain STATUS marker");
     }
 }

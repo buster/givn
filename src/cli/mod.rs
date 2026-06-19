@@ -1,3 +1,4 @@
+pub mod addons;
 pub mod apply;
 pub mod archive;
 pub mod check;

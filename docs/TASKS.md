@@ -204,7 +204,12 @@ loudly under the sentinel default).
       arc42 maintenance (durable docs themselves are not per-change artifacts).
 - [ ] 5.5.6 Make addon templates/instruction ejectable; test that enabling the
       addon inserts the artifact after `design` and (optionally) gates archive.
-- [ ] 5.5.7 Commit: "feat: addon mechanism + arc42 documentation artifact".
+- [ ] 5.5.8 Implement `givn addons list`: list all known addons with name,
+      description, and enabled/disabled status for the current project.
+- [ ] 5.5.9 Implement `givn addons enable <name>` / `givn addons disable <name>`:
+      toggle the addon switch in `givn/config.yaml` (uncomment/update the
+      `addons:` block); print a confirmation and the next suggested step.
+- [ ] 5.5.10 Commit: "feat: addon mechanism + arc42 documentation artifact".
 
 **Done when:** enabling `addons: { arc42: true }` adds an `arc42-docs` step after
 design that creates/maintains durable `docs/arc42/` docs; everything configurable

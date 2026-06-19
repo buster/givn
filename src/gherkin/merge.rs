@@ -244,6 +244,7 @@ mod tests {
     Then they see their details
 "#;
 
+    #[allow(dead_code)]
     fn make_delta_scenario<'a>(
         scenario: &'a gherkin::Scenario,
         op: DeltaOp,

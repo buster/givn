@@ -217,6 +217,18 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
         }
     }
 
+    // For arc42-docs: check for STATUS: DONE marker in the change-level arc42.md.
+    if artifact.generates.iter().any(|g| g.ends_with("arc42.md")) {
+        let arc42_path = change_dir.join("arc42.md");
+        if arc42_path.exists() {
+            return if detect_arc42_done(&arc42_path) {
+                ArtifactStatus::Done
+            } else {
+                ArtifactStatus::Partial
+            };
+        }
+    }
+
     if all_exist { ArtifactStatus::Done } else { ArtifactStatus::Partial }
 }
 
@@ -275,6 +287,12 @@ pub fn parse_tasks_progress(path: &Path) -> TasksProgress {
 pub fn detect_review_pass(path: &Path) -> bool {
     let content = std::fs::read_to_string(path).unwrap_or_default();
     content.contains("REVIEW: PASS")
+}
+
+/// Detect if arc42.md (the change-level marker) contains `STATUS: DONE`.
+pub fn detect_arc42_done(path: &Path) -> bool {
+    let content = std::fs::read_to_string(path).unwrap_or_default();
+    content.contains("STATUS: DONE")
 }
 
 /// Find all active changes under `givn/changes/`, manifest-aware.
@@ -366,5 +384,40 @@ mod tests {
         let state = ChangeState::from_manifest(&dir, &manifest);
         let next = state.next_required().unwrap();
         assert_eq!(next.id, "specs");
+    }
+
+    #[test]
+    fn detect_arc42_done_finds_marker() {
+        let dir = std::env::temp_dir().join("givn_state_arc42_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("arc42.md");
+
+        std::fs::write(&path, "## Status\n\nSTATUS: DONE\n").unwrap();
+        assert!(detect_arc42_done(&path));
+
+        std::fs::write(&path, "## Status\n\nSTATUS: PARTIAL\n").unwrap();
+        assert!(!detect_arc42_done(&path));
+    }
+
+    #[test]
+    fn arc42_addon_artifact_is_optional_and_requires_design() {
+        use crate::config::overlay::apply;
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: true").unwrap();
+        let arc42 = result.artifacts.iter().find(|a| a.id == "arc42-docs").unwrap();
+        assert!(arc42.optional, "arc42-docs must be optional");
+        assert!(arc42.requires.contains(&"design".to_string()), "arc42-docs must require design");
+        assert_eq!(arc42.generates, vec!["arc42.md"]);
+    }
+
+    #[test]
+    fn arc42_addon_not_in_apply_requires_by_default() {
+        use crate::config::overlay::apply;
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: true").unwrap();
+        assert!(
+            !result.apply.requires.contains(&"arc42-docs".to_string()),
+            "arc42-docs must not gate archive by default"
+        );
     }
 }

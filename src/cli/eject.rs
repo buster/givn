@@ -45,21 +45,28 @@ pub fn run(target: &str, force: bool) -> Result<()> {
 }
 
 fn eject_template(project_root: &std::path::Path, artifact_id: &str, force: bool) -> Result<()> {
-    // Determine the template filename for this artifact.
-    let manifest = crate::config::manifest::Manifest::load_embedded()?;
+    // Use the effective manifest so addon artifacts (e.g. arc42-docs) are ejectable.
+    let manifest = crate::config::overlay::load_effective()?;
     let artifact = manifest.artifacts.iter().find(|a| a.id == artifact_id).ok_or_else(|| {
-        anyhow::anyhow!("no artifact '{artifact_id}' in the embedded manifest")
+        anyhow::anyhow!(
+            "no artifact '{artifact_id}' in the effective manifest. \
+             If this is an addon artifact, enable it in givn/config.yaml first."
+        )
     })?;
 
     let template_name = artifact.template.as_deref().unwrap_or(artifact_id);
 
-    // Try to find the embedded template.
-    let embedded_key = format!("templates/{template_name}");
-    let content = Assets::get_str(&embedded_key).ok_or_else(|| {
-        anyhow::anyhow!(
-            "no embedded template for artifact '{artifact_id}' (tried '{embedded_key}')"
-        )
-    })?;
+    // Cascade: core templates/ then addons/<id>/template.md.
+    let core_key = format!("templates/{template_name}");
+    let addon_key = format!("addons/{artifact_id}/template.md");
+    let content = Assets::get_str(&core_key)
+        .or_else(|| Assets::get_str(&addon_key))
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "no embedded template for artifact '{artifact_id}' \
+                 (tried '{core_key}' and '{addon_key}')"
+            )
+        })?;
 
     let dest_dir = project_root.join("givn/artifacts").join(artifact_id);
     std::fs::create_dir_all(&dest_dir)?;
@@ -72,12 +79,17 @@ fn eject_template(project_root: &std::path::Path, artifact_id: &str, force: bool
 }
 
 fn eject_instruction(project_root: &std::path::Path, artifact_id: &str, force: bool) -> Result<()> {
-    let embedded_key = format!("instructions/{artifact_id}.md");
-    let content = Assets::get_str(&embedded_key).ok_or_else(|| {
-        anyhow::anyhow!(
-            "no embedded instruction for artifact '{artifact_id}' (tried '{embedded_key}')"
-        )
-    })?;
+    // Cascade: core instructions/ then addons/<id>/instructions.md.
+    let core_key = format!("instructions/{artifact_id}.md");
+    let addon_key = format!("addons/{artifact_id}/instructions.md");
+    let content = Assets::get_str(&core_key)
+        .or_else(|| Assets::get_str(&addon_key))
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "no embedded instruction for artifact '{artifact_id}' \
+                 (tried '{core_key}' and '{addon_key}')"
+            )
+        })?;
 
     let dest_dir = project_root.join("givn/artifacts").join(artifact_id);
     std::fs::create_dir_all(&dest_dir)?;

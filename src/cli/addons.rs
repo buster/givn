@@ -1,0 +1,256 @@
+/// `givn addons` subcommands: list, enable, disable.
+///
+/// Addons are pre-packaged artifact sets embedded in the binary and enabled
+/// via the `addons:` key in `givn/config.yaml`. See arc42 ch.8.11.
+use anyhow::{bail, Result};
+
+/// Registry of all known addons (id, one-line description).
+const KNOWN_ADDONS: &[(&str, &str)] = &[(
+    "arc42",
+    "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
+)];
+
+/// `givn addons list` — print all known addons and their enabled/disabled status.
+pub fn run_list() -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    let config_path = project_root.join("givn/config.yaml");
+
+    // Read enabled state from config (if it exists).
+    let enabled = if config_path.exists() {
+        let yaml = std::fs::read_to_string(&config_path)?;
+        parse_enabled_addons(&yaml)
+    } else {
+        std::collections::HashMap::new()
+    };
+
+    println!("Available addons:\n");
+    for (id, description) in KNOWN_ADDONS {
+        let state = if *enabled.get(*id).unwrap_or(&false) {
+            "enabled "
+        } else {
+            "disabled"
+        };
+        println!("  [{state}]  {id}");
+        println!("            {description}");
+        println!();
+    }
+
+    if !config_path.exists() {
+        println!("Tip: run `givn init` first to create givn/config.yaml, then");
+        println!("     `givn addons enable <name>` to enable an addon.");
+    } else {
+        println!("Use `givn addons enable <name>` or `givn addons disable <name>`");
+        println!("to toggle an addon. Changes are written to givn/config.yaml.");
+    }
+
+    Ok(())
+}
+
+/// `givn addons enable <name>` — set addon to true in givn/config.yaml.
+pub fn run_enable(name: &str) -> Result<()> {
+    validate_addon_name(name)?;
+    set_addon(name, true)?;
+    println!("enabled addon '{name}' in givn/config.yaml");
+    println!();
+    println!("The '{name}' artifact is now part of the effective workflow.");
+    println!("It will appear after 'design' in `givn status`.");
+    println!();
+    println!("Next steps:");
+    println!("  givn status              — see the updated workflow");
+    println!("  givn eject {name}:instruction   — customise the instruction (optional)");
+    Ok(())
+}
+
+/// `givn addons disable <name>` — set addon to false in givn/config.yaml.
+pub fn run_disable(name: &str) -> Result<()> {
+    validate_addon_name(name)?;
+    set_addon(name, false)?;
+    println!("disabled addon '{name}' in givn/config.yaml");
+    println!();
+    println!("The '{name}' artifact is no longer part of the workflow.");
+    println!("Existing docs/arc42/ files are not deleted.");
+    Ok(())
+}
+
+// ── Internals ────────────────────────────────────────────────────────────────
+
+fn validate_addon_name(name: &str) -> Result<()> {
+    if KNOWN_ADDONS.iter().any(|(id, _)| *id == name) {
+        Ok(())
+    } else {
+        let known: Vec<&str> = KNOWN_ADDONS.iter().map(|(id, _)| *id).collect();
+        bail!(
+            "unknown addon '{name}'. Known addons: {}",
+            known.join(", ")
+        )
+    }
+}
+
+/// Write `addons.<name>: <value>` into givn/config.yaml.
+///
+/// Strategy (line-based, preserves all other content):
+///   1. If `addons:` block already exists with the key → replace the value line.
+///   2. If `addons:` block exists without the key → insert the key after `addons:`.
+///   3. If no `addons:` block exists → append a new block at the end.
+fn set_addon(name: &str, enabled: bool) -> Result<()> {
+    let project_root = std::env::current_dir()?;
+    let config_path = project_root.join("givn/config.yaml");
+
+    if !config_path.exists() {
+        bail!(
+            "givn/config.yaml not found. Run `givn init` first."
+        );
+    }
+
+    let content = std::fs::read_to_string(&config_path)?;
+    let value_str = if enabled { "true" } else { "false" };
+    let key_line = format!("  {name}: {value_str}");
+
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+
+    // Case 1: key already exists (uncommented) — replace its value in place.
+    for line in &mut lines {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with(&format!("{name}:")) && !line.trim_start_matches(' ').starts_with('#') {
+            // We're inside addons block if the key is indented.
+            if line.starts_with("  ") && !line.starts_with("   ") {
+                *line = key_line.clone();
+                std::fs::write(&config_path, lines.join("\n") + "\n")?;
+                return Ok(());
+            }
+        }
+    }
+
+    // Case 2: `addons:` block exists (uncommented) — insert/replace key inside it.
+    for i in 0..lines.len() {
+        let trimmed = lines[i].trim();
+        if trimmed == "addons:" {
+            // Check if the key exists commented-out on the next few lines.
+            // Uncomment it, or insert after `addons:`.
+            let mut inserted = false;
+            for j in (i + 1)..lines.len() {
+                let l = &lines[j];
+                // Stop if we hit a new top-level key.
+                if !l.is_empty() && !l.starts_with(' ') && !l.starts_with('#') {
+                    break;
+                }
+                // Uncomment or replace a commented version of this key.
+                if l.contains(&format!("{name}:")) {
+                    lines[j] = key_line.clone();
+                    inserted = true;
+                    break;
+                }
+            }
+            if !inserted {
+                lines.insert(i + 1, key_line.clone());
+            }
+            std::fs::write(&config_path, lines.join("\n") + "\n")?;
+            return Ok(());
+        }
+    }
+
+    // Case 3: no `addons:` block at all — look for commented-out addons block
+    // and uncomment it, or append a new one.
+    for i in 0..lines.len() {
+        if lines[i].trim_start_matches('#').trim() == "addons:" {
+            // Found a commented `# addons:` — uncomment the block.
+            lines[i] = "addons:".to_string();
+            // Uncomment or insert the specific key on the next line.
+            let mut key_set = false;
+            for j in (i + 1)..lines.len() {
+                let l = &lines[j];
+                if l.trim_start_matches([' ', '#']).starts_with(&format!("{name}:")) {
+                    lines[j] = key_line.clone();
+                    key_set = true;
+                    break;
+                }
+                // Stop at next non-comment, non-blank, non-indented line.
+                if !l.is_empty() && !l.starts_with(' ') && !l.starts_with('#') {
+                    break;
+                }
+            }
+            if !key_set {
+                lines.insert(i + 1, key_line.clone());
+            }
+            std::fs::write(&config_path, lines.join("\n") + "\n")?;
+            return Ok(());
+        }
+    }
+
+    // Append a fresh addons block.
+    if !lines.last().map(|l| l.is_empty()).unwrap_or(true) {
+        lines.push(String::new());
+    }
+    lines.push("addons:".to_string());
+    lines.push(key_line);
+    std::fs::write(&config_path, lines.join("\n") + "\n")?;
+    Ok(())
+}
+
+/// Parse which addons are enabled from config YAML (simple line scan,
+/// no full YAML parse — avoids clobbering comments).
+fn parse_enabled_addons(yaml: &str) -> std::collections::HashMap<String, bool> {
+    let mut result = std::collections::HashMap::new();
+    let mut in_addons = false;
+
+    for line in yaml.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') {
+            continue;
+        }
+        if trimmed == "addons:" {
+            in_addons = true;
+            continue;
+        }
+        if in_addons {
+            // Stop if we hit a new top-level key (non-indented, non-blank).
+            if !line.is_empty() && !line.starts_with(' ') {
+                break;
+            }
+            // Parse `  <name>: true|false`.
+            if let Some(rest) = trimmed.strip_suffix(": true") {
+                result.insert(rest.to_string(), true);
+            } else if let Some(rest) = trimmed.strip_suffix(": false") {
+                result.insert(rest.to_string(), false);
+            }
+        }
+    }
+
+    result
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn parse_enabled_addons_finds_true() {
+        let yaml = "addons:\n  arc42: true\n";
+        let map = parse_enabled_addons(yaml);
+        assert_eq!(map.get("arc42"), Some(&true));
+    }
+
+    #[test]
+    fn parse_enabled_addons_finds_false() {
+        let yaml = "addons:\n  arc42: false\n";
+        let map = parse_enabled_addons(yaml);
+        assert_eq!(map.get("arc42"), Some(&false));
+    }
+
+    #[test]
+    fn parse_enabled_addons_ignores_comments() {
+        let yaml = "# addons:\n#   arc42: true\nverify:\n  command: cargo test\n";
+        let map = parse_enabled_addons(yaml);
+        assert!(map.is_empty());
+    }
+
+    #[test]
+    fn validate_addon_name_rejects_unknown() {
+        assert!(validate_addon_name("nonexistent").is_err());
+    }
+
+    #[test]
+    fn validate_addon_name_accepts_arc42() {
+        assert!(validate_addon_name("arc42").is_ok());
+    }
+}

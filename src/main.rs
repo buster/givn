@@ -87,6 +87,11 @@ enum Commands {
         #[arg(long)]
         force: bool,
     },
+    /// Manage optional addon artifact sets (arc42, etc.).
+    Addons {
+        #[command(subcommand)]
+        command: AddonsCommands,
+    },
     /// Regenerate AGENTS.md and skills.
     Skills {
         #[command(subcommand)]
@@ -97,6 +102,22 @@ enum Commands {
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
+}
+
+#[derive(Subcommand)]
+enum AddonsCommands {
+    /// List all available addons and their enabled/disabled status.
+    List,
+    /// Enable an addon in givn/config.yaml.
+    Enable {
+        /// Addon name (e.g. arc42).
+        name: String,
+    },
+    /// Disable an addon in givn/config.yaml.
+    Disable {
+        /// Addon name (e.g. arc42).
+        name: String,
+    },
 }
 
 #[derive(Subcommand)]
@@ -130,6 +151,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Apply { change } => cli::apply::run(&change),
         Commands::Archive { change } => cli::archive::run(&change),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
+        Commands::Addons { command } => match command {
+            AddonsCommands::List => cli::addons::run_list(),
+            AddonsCommands::Enable { name } => cli::addons::run_enable(&name),
+            AddonsCommands::Disable { name } => cli::addons::run_disable(&name),
+        },
         Commands::Skills { command: SkillsCommands::Sync } => cli::skills::run_sync(),
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
