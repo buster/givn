@@ -19,11 +19,11 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
             .map(|p| std::path::PathBuf::from(p))
             .collect()
     } else if let Some(id) = change {
-        // Scope to givn/<id>/specs/
-        let specs_dir = project_root.join("givn").join(id).join("specs");
+        // Scope to givn/changes/<id>/specs/
+        let specs_dir = project_root.join("givn/changes").join(id).join("specs");
         let files = collect_feature_files(&specs_dir);
         if files.is_empty() {
-            println!("givn lint: no .feature files found under givn/{id}/specs/");
+            println!("givn lint: no .feature files found under givn/changes/{id}/specs/");
             return Ok(());
         }
         files
