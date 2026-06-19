@@ -25,14 +25,15 @@ Legend: `[ ]` pending · `[x]` done.
 ## Phase 1 — Skeleton & embedded defaults
 
 - [ ] 1.1 Define `clap` CLI skeleton in `main.rs` with all subcommands
-      (`init`, `new`, `instructions`, `lint`, `status`, `apply`, `archive`,
-      `eject`, `skills sync`, `upgrade`, `missing-testrunner`) as stubs returning
-      "not implemented".
+      (`init`, `new`, `instructions`, `lint`, `check`, `status`, `apply`,
+      `archive`, `eject`, `skills sync`, `upgrade`, `missing-testrunner`) as stubs
+      returning "not implemented".
 - [ ] 1.2 Create `assets/` and wire `rust-embed` in `config/embedded.rs`.
 - [ ] 1.3 Port the prototype `schema.yaml` → `assets/default-manifest.yaml`,
       renaming tags to `@givn.*` and paths to `givn/...`. Artifacts: proposal,
       specs, design, tasks, review; `apply.requires: [tasks, review]`;
-      `apply.tracks: tasks.md`; `verify` block.
+      `apply.tracks: tasks.md`; `verify` block; default hooks
+      `tasks.post: [verify]` and `review.post: [verify]` (ADR-028).
 - [ ] 1.4 Port the 5 templates into `assets/templates/`
       (`proposal.md`, `spec.feature`, `design.md`, `tasks.md`, `review.md`),
       with `@givn.*` tags and `GIVN_FEATURES` default `givn/specs`.
@@ -134,16 +135,28 @@ failures abort without partial writes.
 - [ ] 4.3 Implement `cli::status`: report derived state (+ task progress).
 - [ ] 4.4 Implement `cli::apply --change <id>`: enforce `apply.requires`, report
       progress and next pending task group (givn tracks, does not execute).
-- [ ] 4.5 Implement `cli::archive --change <id>`: check `apply.requires`
-      (tasks complete AND review PASS), run merge into `givn/specs/`, move change
-      to `givn/archive/<id>/`. Refuse + clear error on unmet gate or merge failure.
-- [ ] 4.6 Decide review-PASS detection (string marker vs structured field) and
+- [ ] 4.5 Implement `hooks.rs` (ADR-028): parse artifact `post` entries
+      (built-in `verify` → run `verify.command`; `lint` → run `givn lint`; or a
+      shell string; object form with `allow_failure`/`name`). Execute with
+      `GIVN_FEATURES` set (active change in dev; `givn/specs` after archive),
+      stream output, map failures to non-zero unless `allow_failure`.
+- [ ] 4.6 Implement `cli::check [<artifact>] [--change <id>]`: run an artifact's
+      `post` hooks (or all artifacts with existing output); exit non-zero if a
+      required hook fails. Tests: green passes, red blocks, sentinel fails loudly.
+- [ ] 4.7 Implement `cli::archive --change <id>`: check `apply.requires`
+      (tasks complete AND review PASS); **run hooks of every `apply.requires`
+      artifact as the gate** (refuse on failure); then merge into `givn/specs/`,
+      move change to `givn/archive/<id>/`. Refuse + clear error on unmet gate,
+      hook failure, or merge failure.
+- [ ] 4.8 Decide review-PASS detection (string marker vs structured field) and
       implement.
-- [ ] 4.7 Integration test: full lifecycle on a temp project.
-- [ ] 4.8 Commit: "feat: lifecycle — new, status, apply, archive".
+- [ ] 4.9 Integration test: full lifecycle on a temp project, incl. a red-suite
+      run that blocks archive and a green run that passes the gate.
+- [ ] 4.10 Commit: "feat: lifecycle + post hooks (new, status, apply, check, archive)".
 
-**Done when:** a change can go new → … → archive in a temp project with correct
-state and merged specs.
+**Done when:** a change can go new → … → archive in a temp project; `givn check`
+runs `verify.command`; archive is gated on the test suite being green (and fails
+loudly under the sentinel default).
 
 ---
 

@@ -63,9 +63,13 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 - **Lint and test are separate, by design.** `givn lint` is a built-in command
   that statically checks your `.feature` files (syntax, `@wip`, delta tags) and
   **runs no tests**. Running the actual tests is a separate command you configure
-  as `verify.command` in `givn/config.yaml` (e.g. `cargo test`). There is no
-  `givn verify`/`givn test` — givn never runs your suite itself; your agent/CI
-  invokes `verify.command`.
+  as `verify.command` in `givn/config.yaml` (e.g. `cargo test`).
+- **Self-contained gates via hooks.** Artifacts can declare `post` hooks; by
+  default `tasks` and `review` run `verify.command` after they complete. `givn
+  check <artifact>` runs those hooks, and `givn archive` runs the hooks of every
+  required artifact as the gate — so a change can only archive when the suite is
+  green. Hooks are fully configurable (add `lint`, custom shell commands, or
+  `allow_failure`).
 - **No silent test running.** The default `verify.command` is the sentinel
   `givn missing-testrunner`, which prints per-language setup guidance and exits
   non-zero until you configure a real runner — so nothing ever falsely reports green.
@@ -108,6 +112,7 @@ givn init                       # scaffold givn/ + generate AGENTS.md and skills
 givn new add-user-auth          # create a change scaffold
 givn instructions proposal --change add-user-auth --json
 givn lint                       # static check of .feature files (exit 0 clean / 1 parse / 2 wip) — runs NO tests
+givn check tasks                # run an artifact's post hooks (e.g. the test suite via verify.command)
 givn status                     # show lifecycle state (derived from the filesystem)
 givn apply --change add-user-auth     # track task progress
 givn archive --change add-user-auth   # merge deltas into givn/specs/, move to archive/

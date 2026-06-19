@@ -180,6 +180,12 @@ state; no separate state file.
 
 **Rationale.** No drift, git-friendly, trivially correct.
 
+**Amendment (ADR-028).** givn does **not drive the per-scenario TDD loop** — that
+remains the agent/developer's job. However, givn **does** run `verify.command`
+(and other hooks) at defined gate points to confirm GREEN. "givn never executes
+anything" was too strong: givn executes *hooks* (e.g. the test runner after tasks
+and after review), it just does not micro-manage the RED/GREEN/REFACTOR cycle.
+
 ---
 
 ## ADR-015: Test-runner command declared in the manifest
@@ -466,3 +472,53 @@ clearly signals "the command that verifies behaviour by running tests".
 All docs/skills/instructions reference `givn lint` for the static check and
 `verify.command` for the runner. The `verify.command` key name is unchanged, so
 existing config semantics are preserved.
+
+---
+
+## ADR-028: Per-artifact post hooks; givn runs `verify.command` at gates
+
+**Context.** `verify.command` defined the test runner but nothing in givn ever
+ran it — it was purely informational, invoked only by the agent/CI. To make the
+flow self-contained and give `verify.command` real meaning, givn should run the
+tests at the right points (notably after `tasks` and after `review`) and confirm
+GREEN before allowing progression/archive.
+
+**Decision.** Introduce **per-artifact `post` hooks** in the manifest (realising
+the configurable-artifacts model, ADR-024):
+
+- Each artifact may declare `post: [ ... ]` — commands run after that artifact is
+  completed. A hook entry is either:
+  - a **named built-in**: `verify` (runs the resolved `verify.command`) or
+    `lint` (runs `givn lint` on the relevant features), or
+  - an **arbitrary shell command string** (e.g. `"npm run typecheck"`).
+- An entry may be an object for options, e.g.
+  `{ run: verify, allow_failure: false, name: "tests green" }`.
+- **Defaults:** `tasks.post: [verify]` and `review.post: [verify]` so the test
+  runner executes after implementation and after review.
+- **Failure blocks the gate**: a failing hook (non-zero) blocks progression and
+  givn exits non-zero. `allow_failure: true` downgrades a hook to a warning.
+- **Invocation:**
+  - `givn check <artifact>` runs that artifact's hooks on demand.
+  - `givn check` (no arg) runs hooks for all artifacts whose output exists.
+  - `givn archive` **auto-runs the hooks of every `apply.requires` artifact** as
+    the archive gate; archive is refused if any required hook fails.
+- The sentinel default `verify.command` (`givn missing-testrunner`) therefore
+  causes `givn check`/`givn archive` to fail loudly until a real runner is set —
+  exactly the desired "nothing falsely reports green" behaviour, now enforced by
+  givn itself.
+
+**Rationale.** Makes the workflow self-contained (givn confirms GREEN, not just
+the agent), gives `verify.command` a concrete role, and stays fully configurable
+(hooks are data; override/extend via overlay, eject, or `allow_failure`). Reuses
+one runner definition across all gate points.
+
+**Consequences.**
+- Manifest schema gains `post` on artifacts (built-in or shell entries, with
+  `allow_failure`/`name`). Amends ADR-014 (givn now executes hooks).
+- New `cli::check` command and a `hooks` runner module (resolve + execute, map
+  exit codes, stream output). `givn archive` integrates the gate.
+- Hooks run with `GIVN_FEATURES` set appropriately (active change vs permanent
+  specs) so the test runner targets the right `.feature` files.
+- Security note: hooks execute shell commands from the project's own config
+  (same trust level as a Makefile/justfile in the repo); givn does not fetch or
+  run remote commands.

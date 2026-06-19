@@ -9,7 +9,7 @@ Gherkin `.feature` files.
 ```
         ┌─────────────────────────────────────────────────────┐
         │                      givn (CLI)                       │
-        │  init · new · instructions · lint · status ·          │
+        │  init · new · instructions · lint · check · status ·  │
         │  apply · archive · eject · skills sync                │
         └───────┬───────────────┬───────────────┬──────────────┘
                 │               │               │
@@ -31,8 +31,8 @@ Gherkin `.feature` files.
 | Developer | Runs `givn` commands from the terminal. |
 | AI coding agent | Reads `givn instructions --json`, `AGENTS.md`, generated skills; edits artifacts and code. |
 | Project filesystem | Holds the `givn/` directory, source code, and generated agent files. |
-| Test runner (cargo/npm/pytest/…) | Invoked via the manifest's `verify.command`; executes step definitions. |
-| CI system | Runs `givn lint` (static) and the test runner (`verify.command`); relies on exit codes. |
+| Test runner (cargo/npm/pytest/…) | The `verify.command`; executes step definitions. Invoked by givn via `post` hooks (`givn check`, archive gate) and directly by the agent during the TDD loop. |
+| CI system | Runs `givn lint` (static) and `givn check`/`givn archive` (which run the test runner via hooks); relies on exit codes. |
 
 ## 3.2 Technical Context — Interfaces
 
@@ -61,6 +61,7 @@ Gherkin `.feature` files.
 - `AGENTS.md` + skill generation (neutral + claude + opencode).
 - Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
 - Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
+- Per-artifact `post` hooks; givn runs `verify.command` at gates (`givn check`, archive).
 - Configurable artifacts (add/remove/reorder/optional) via overlay.
 - Opt-in addons; bundled `arc42-docs` addon maintaining durable arc42 docs.
 - Distribution: release binaries, curl\|sh, brew, cargo.

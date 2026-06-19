@@ -71,9 +71,31 @@ user/agent → cli::apply
   (Execution of tasks is performed by the developer/agent, not by givn.)
 ```
 
-`givn` tracks and reports; it does not itself run the TDD loop. The loop is
-driven by the agent following the instructions, invoking the manifest's
-`verify.command` for RED/GREEN.
+`givn` tracks and reports; it does not drive the per-scenario TDD loop. That loop
+is run by the agent following the instructions, invoking `verify.command` for each
+RED/GREEN. givn *does* run `verify.command` at gate points via hooks — see
+`givn check` (6.5b) and the archive gate (6.6).
+
+## 6.5b `givn check [<artifact>] [--change <id>]`
+
+Runs an artifact's `post` hooks (see ch.8.12). This is how givn executes the test
+runner (`verify.command`) at gate points — e.g. after implementation and review.
+
+```
+user/agent/CI → cli::check
+  1. config::manifest + overlay → resolve target artifact(s):
+       - `givn check tasks`  → just the tasks artifact's post hooks
+       - `givn check`        → post hooks of every artifact whose output exists
+  2. hooks: for each post entry (verify | lint | shell):
+       - set GIVN_FEATURES (active change features in dev; givn/specs after archive)
+       - execute; stream output
+  3. if any hook fails (non-zero) and not allow_failure → exit non-zero (gate fails)
+     else → exit 0
+```
+
+Example: after the agent finishes `tasks`, `givn check tasks` runs the configured
+test suite and confirms GREEN before review. With the sentinel default runner, it
+fails loudly until `verify.command` is set.
 
 ## 6.6 `givn archive --change <id>`
 
@@ -81,6 +103,9 @@ driven by the agent following the instructions, invoking the manifest's
 user → cli::archive
   1. config::manifest + overlay → check apply.requires satisfied
        (tasks complete AND review.md present/PASS) else refuse
+  1b. GATE: run hooks of every apply.requires artifact (e.g. tasks.post + review.post)
+       → typically runs verify.command (the test suite). If any required hook
+         fails (non-zero, no allow_failure), refuse archive and exit non-zero.
   2. for each delta givn/changes/<id>/specs/**/*.feature:
        gherkin::delta: read @givn.delta + scenario tags
        gherkin::merge: into givn/specs/<cap>/<cap>.feature

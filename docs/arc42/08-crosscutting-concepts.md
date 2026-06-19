@@ -339,6 +339,22 @@ verify:
 #
 # apply:
 #   requires: [tasks, review]
+
+# --- Hooks (run verify.command / lint / shell at gates) ----------------------
+# Each artifact may declare `post:` hooks run after it completes. Built-ins:
+#   verify  -> runs verify.command (the test runner)
+#   lint    -> runs `givn lint`
+# or any shell command string. Object form supports allow_failure / name.
+# `givn check <artifact>` runs them; `givn archive` runs hooks of every
+# apply.requires artifact as the gate (failure blocks archive). See arc42 ch.8.12.
+# Defaults (already in the embedded graph): tasks.post: [verify], review.post: [verify]
+# artifacts:
+#   - id: tasks
+#     post: [lint, verify]
+#   - id: review
+#     post:
+#       - { run: verify, name: "full suite green" }
+#       - { run: "scripts/coverage.sh", allow_failure: true }
 ```
 
 A test asserts the documented keys and the manifest schema stay in sync (ADR-022),
@@ -467,3 +483,80 @@ addons:
 Because it is an ordinary configurable artifact, everything in ch.8.2 applies:
 reorder via `requires`, make it gate archive via `apply.requires`, eject its
 templates/instruction to customise wording or the chapter structure.
+
+## 8.12 Hooks — running `verify.command` at gates (ADR-028)
+
+To make the flow self-contained, artifacts can declare **`post` hooks**: commands
+givn runs after an artifact is completed. This is how `verify.command` actually
+gets executed *by givn* (e.g. to confirm tests are GREEN after implementation and
+after review), rather than only being invoked by the agent/CI.
+
+### Hook entries
+
+A `post` list contains entries that are one of:
+- a **named built-in**:
+  - `verify` → run the resolved `verify.command` (the test runner),
+  - `lint` → run `givn lint` on the relevant `.feature` files,
+- an **arbitrary shell command string** (e.g. `"npm run typecheck"`),
+- or an **object** with options:
+  ```yaml
+  { run: verify, allow_failure: false, name: "tests green" }
+  ```
+
+### Defaults
+
+```yaml
+# (embedded default-manifest, shown as it would appear)
+artifacts:
+  - id: tasks
+    post: [verify]      # run the test runner after implementation
+  - id: review
+    post: [verify]      # run the test runner again after review
+```
+
+A project overrides these like any other artifact field via the overlay — add
+hooks, remove them, or add custom ones:
+
+```yaml
+# givn/config.yaml
+artifacts:
+  - id: tasks
+    post: [lint, verify, "npm run typecheck"]
+  - id: review
+    post:
+      - { run: verify, name: "full suite green" }
+      - { run: "scripts/coverage.sh", allow_failure: true }
+```
+
+### Execution and failure semantics
+
+- `givn check <artifact>` runs that artifact's `post` hooks on demand.
+- `givn check` (no argument) runs hooks for every artifact whose output exists.
+- `givn archive` **auto-runs the hooks of all `apply.requires` artifacts** as the
+  archive gate; archive is refused if any required hook fails.
+- A hook that exits non-zero **blocks the gate** and givn exits non-zero, unless
+  that hook has `allow_failure: true` (then it only warns).
+- Hooks run with `GIVN_FEATURES` set to the right target (the active change's
+  features during development; `givn/specs` after archive), so the runner tests
+  the correct `.feature` files.
+
+### Interaction with the sentinel
+
+Because the default `verify.command` is the sentinel `givn missing-testrunner`
+(ch.8.10), `givn check` and `givn archive` **fail loudly** on a fresh project
+until a real runner is configured. This is the enforcement mechanism behind
+"nothing ever falsely reports green" — now checked by givn itself, not just by
+convention.
+
+### Relationship to the TDD loop
+
+Hooks do **not** replace or drive the scenario-by-scenario RED/GREEN/REFACTOR loop
+(ch.8.5); the agent still does that. Hooks are *gate checks*: after the loop is
+done (tasks) and after review, givn runs the whole suite to confirm it is green
+before letting the change proceed to archive.
+
+### Security note
+
+Hooks are shell commands declared in the project's own `givn/config.yaml` — the
+same trust level as a `Makefile`/`justfile` committed to the repo. givn does not
+fetch or execute remote commands.

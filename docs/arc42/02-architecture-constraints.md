@@ -49,3 +49,4 @@ relitigation during implementation (see chapter 9 for rationale).
 | CV-5 | Default `verify.command` is the sentinel `givn missing-testrunner` (prints setup guidance, exits non-zero) until the project sets a real runner. |
 | CV-6 | `givn/config.yaml` ships fully commented with documented defaults; every key is discoverable in-file. |
 | CV-7 | `givn/config.yaml` carries `givn_config_version`; `givn upgrade` provides a version-to-version upgrade path, with git as the diff/merge surface. |
+| CV-8 | Artifacts may declare `post` hooks (built-in `verify`/`lint` or shell). Defaults: `tasks.post: [verify]`, `review.post: [verify]`. `givn check` runs them; `givn archive` runs the hooks of `apply.requires` artifacts as the gate. Failing hooks block (unless `allow_failure`). |

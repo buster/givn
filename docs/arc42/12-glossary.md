@@ -18,6 +18,8 @@
 | **Scenario** | A Gherkin scenario (Given/When/Then). The unit of the TDD loop. |
 | **Skill** | A `SKILL.md` (frontmatter + markdown) that an agent can load to perform a workflow action. |
 | **TDD loop** | Scenario-by-scenario RED (failing assertions) → GREEN (minimum code) → REFACTOR. |
+| **Hook** (`post`) | A command an artifact runs after completion: built-in `verify` (runs the test runner) or `lint`, or a shell command. Run by `givn check` and as the `givn archive` gate; failure blocks (unless `allow_failure`). See ADR-028, ch.8.12. |
+| **Check** (`givn check`) | Built-in command that runs an artifact's `post` hooks (e.g. the test suite via `verify.command`). Exits non-zero if a required hook fails. |
 | **Lint** (`givn lint`) | Built-in command that statically checks `.feature` syntax, `@wip`/PENDING, and delta tags. Exit 0/1/2. **Runs no tests.** (Renamed from `givn verify` — ADR-027.) |
 | **Test runner** | The command that actually executes step definitions against code, configured in `verify.command`. Invoked by the agent/CI, not by givn. Confirms GREEN. |
 | **`verify.command`** | The manifest config key holding the test-runner command (default sentinel `givn missing-testrunner`). Read after overlay resolution; written by `init`/`upgrade`; invoked by agent/CI. |

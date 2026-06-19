@@ -16,6 +16,7 @@ givn/  (single published binary crate)
 │   │   ├── new.rs
 │   │   ├── instructions.rs
 │   │   ├── lint.rs              # static .feature check (syntax/@wip/tags)
+│   │   ├── check.rs            # run an artifact's post hooks (e.g. verify.command)
 │   │   ├── status.rs
 │   │   ├── apply.rs
 │   │   ├── archive.rs
@@ -36,6 +37,7 @@ givn/  (single published binary crate)
 │   ├── skills/
 │   │   ├── render.rs           # template → SKILL.md / AGENTS.md
 │   │   └── targets.rs          # emit to .agents, .claude, .opencode
+│   ├── hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
 │   ├── state.rs                # derive lifecycle state from the filesystem
 │   └── error.rs                # error types (thiserror) + exit-code mapping
 ├── assets/                     # embedded via rust-embed
@@ -57,15 +59,16 @@ givn/  (single published binary crate)
 | `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). | `config`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
+| `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner); block & exit non-zero on failure. | `hooks`, `config::manifest` |
 | `cli::status` | Report lifecycle state derived from filesystem. | `state` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
-| `cli::archive` | Merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `gherkin::merge`, `config::manifest` |
+| `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. | `config::embedded`, `config::cascade` |
 | `cli::skills` | Regenerate AGENTS.md + skills from current templates. | `skills` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
-| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, deps, apply, the `verify` test-runner block); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
+| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, `post` hooks, deps, apply, the `verify` test-runner block); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
 | `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. | `manifest`, `embedded` |
 | `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
 | `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |
@@ -74,6 +77,7 @@ givn/  (single published binary crate)
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md / AGENTS.md. | `config::cascade` |
 | `skills::targets` | Write rendered output to the three skill locations + root. | `render` |
+| `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). | `config::manifest`, `cli::lint` |
 | `state` | Compute change state from which files exist. | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
 
