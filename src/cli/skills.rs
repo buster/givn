@@ -12,9 +12,10 @@ pub fn run_sync() -> Result<()> {
     crate::skills::targets::sync(&project_root)?;
     println!("\nDone. Generated:");
     println!("  AGENTS.md");
-    println!("  .agents/skills/  (primary)");
-    println!("  .claude/skills/  (Claude Code mirror)");
-    println!("  .opencode/skills/ (opencode mirror)");
+    println!("  .agents/skills/   (primary neutral skills)");
+    println!("  .claude/skills/   (Claude Code mirror)");
+    println!("  .opencode/skills/ (opencode skills mirror)");
+    println!("  .opencode/commands/ (opencode slash commands)");
 
     Ok(())
 }

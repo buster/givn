@@ -40,7 +40,7 @@ pub fn run(force: bool) -> Result<()> {
 
     println!("\ngivn initialised. Next step:");
     println!("  1. Set verify.command in givn/config.yaml");
-    println!("  2. Run `givn skills sync` to refresh skills");
+    println!("  2. Run `givn skills sync` to refresh skills and commands");
     println!("  3. Run `givn new <change-id>` to start a change");
 
     Ok(())

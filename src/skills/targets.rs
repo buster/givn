@@ -1,14 +1,15 @@
-/// Write rendered skills to all target locations:
+/// Write rendered skills and commands to all target locations:
 /// - `.agents/skills/<name>/SKILL.md`   (primary neutral)
 /// - `.claude/skills/<name>/SKILL.md`   (Claude Code mirror)
 /// - `.opencode/skills/<name>/SKILL.md` (opencode mirror)
+/// - `.opencode/commands/<name>.md`     (opencode slash commands)
 /// - `AGENTS.md` at repo root
 use anyhow::Result;
 use std::path::Path;
 use crate::skills::render::{SkillContext, render_skill, render_agents_md, resolve_skill_template, default_skill_names};
 use crate::config::overlay::load_effective;
 
-/// Regenerate all skills and AGENTS.md in the project.
+/// Regenerate all skills, commands, and AGENTS.md in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
     let manifest = load_effective()?;
     let verify_command = &manifest.verify.command;
@@ -36,6 +37,14 @@ pub fn sync(project_root: &Path) -> Result<()> {
         println!("  synced skill: {name}");
     }
 
+    // Write opencode slash commands.
+    let command_names = default_command_names();
+    for name in &command_names {
+        let content = resolve_command_template(name)?;
+        write_opencode_command(project_root, name, &content)?;
+        println!("  synced command: /{name}");
+    }
+
     // Render and write AGENTS.md.
     let skill_refs: Vec<&str> = skill_names.clone();
     let agents_content = render_agents_md(verify_command, features_path, version, &skill_refs)?;
@@ -46,7 +55,7 @@ pub fn sync(project_root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Write a rendered SKILL.md to all three target locations.
+/// Write a rendered SKILL.md to all three skill target locations.
 fn write_skill_to_targets(project_root: &Path, name: &str, content: &str) -> Result<()> {
     let targets = [
         format!(".agents/skills/{name}/SKILL.md"),
@@ -63,6 +72,39 @@ fn write_skill_to_targets(project_root: &Path, name: &str, content: &str) -> Res
     }
 
     Ok(())
+}
+
+/// Write an opencode command file to `.opencode/commands/<name>.md`.
+fn write_opencode_command(project_root: &Path, name: &str, content: &str) -> Result<()> {
+    let path = project_root.join(format!(".opencode/commands/{name}.md"));
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(&path, content)?;
+    Ok(())
+}
+
+/// Resolve a command template: project override wins over embedded default.
+/// Project override path: `givn/commands/<name>.md`
+/// Embedded path: `commands/<name>.md`
+fn resolve_command_template(name: &str) -> Result<String> {
+    crate::config::cascade::resolve_asset(
+        &format!("commands/{name}.md"),
+        &format!("givn/commands/{name}.md"),
+    )
+}
+
+/// The default opencode command names (one per givn workflow action).
+pub fn default_command_names() -> Vec<&'static str> {
+    vec![
+        "givn-propose",
+        "givn-spec",
+        "givn-design",
+        "givn-tasks",
+        "givn-implement",
+        "givn-review",
+        "givn-archive",
+    ]
 }
 
 /// Validate SKILL.md frontmatter (name matches dir, description present and bounded).
@@ -90,6 +132,7 @@ fn validate_frontmatter(content: &str, expected_name: &str) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::config::embedded::Assets;
 
     #[test]
     fn validate_frontmatter_requires_name_match() {
@@ -102,5 +145,16 @@ mod tests {
     fn validate_frontmatter_requires_description() {
         let content = "---\nname: givn-propose\n---\n\nContent";
         assert!(validate_frontmatter(content, "givn-propose").is_err());
+    }
+
+    #[test]
+    fn all_command_templates_are_embedded() {
+        for name in default_command_names() {
+            let key = format!("commands/{name}.md");
+            assert!(
+                Assets::get(&key).is_some(),
+                "embedded command template missing: {key}"
+            );
+        }
     }
 }
