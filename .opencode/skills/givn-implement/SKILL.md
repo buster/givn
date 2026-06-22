@@ -12,7 +12,7 @@ Implement change `<change-id>` using scenario-by-scenario TDD.
 - Tasks: `givn/changes/<change-id>/tasks.md`
 - Spec: `givn/changes/<change-id>/specs/`
 - Design: `givn/changes/<change-id>/design.md`
-- Test runner: `givn missing-testrunner`
+- Test runner: `cargo test --test features_runner`
 - Features path: `GIVN_FEATURES=givn/specs`
 
 ## Before starting
@@ -27,17 +27,17 @@ Work through tasks.md, one scenario at a time:
 ### RED phase
 1. Remove `@wip` from the current scenario only (keep it on others).
 2. Write step definitions with **real assertions** (`Then` checks concrete values).
-3. Run: `givn missing-testrunner`
+3. Run: `cargo test --test features_runner`
    - This scenario **must fail** — you have no production code yet.
    - If it passes, the assertions are fake — fix the steps.
 
 ### GREEN phase
 4. Write the **minimum** production code to make this scenario pass.
-5. Run: `givn missing-testrunner` — this scenario passes; others still fail (expected).
+5. Run: `cargo test --test features_runner` — this scenario passes; others still fail (expected).
 
 ### REFACTOR phase
 6. Clean up code, names, duplication — without changing behaviour.
-7. Run: `givn missing-testrunner` — still passes.
+7. Run: `cargo test --test features_runner` — still passes.
 
 ### Done with scenario
 8. Check off the task in `tasks.md`: `- [ ]` → `- [x]`
@@ -51,5 +51,5 @@ Then proceed to the review step.
 ## Verify command
 
 ```
-givn missing-testrunner
+cargo test --test features_runner
 ```

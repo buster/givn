@@ -11,22 +11,8 @@ Reverse-engineer an existing capability into givn specifications for change
 ## Context
 
 - Change: `givn/changes/<change-id>/`
-- Test runner: read `verify.command` from `givn/config.yaml` at runtime (MUST
-  be a Gherkin/Cucumber runner that executes the `.feature` files — see the
-  executable-spec invariant below; never the `givn missing-testrunner`
-  sentinel)
+- Test runner: `cargo test --test features_runner`
 - Features path: `GIVN_FEATURES=givn/specs`
-
-## Executable-spec invariant (enforced)
-
-The chosen `verify.command` MUST execute the `.feature` files produced by
-the `specs` artifact via a Gherkin/Cucumber runner (e.g. `cucumber-rs` for
-Rust, `behave` for Python, `cucumber-js` for Node). A bare unit-test runner
-(e.g. `cargo test` with only `#[test]` functions, bare `pytest`) is NOT
-acceptable on its own. "Step definitions" always means the bindings the
-Gherkin runner uses to map `.feature` steps to code — never a parallel
-hand-maintained test file. The `.feature` file is the sole source of
-scenario identity.
 
 ## Stance: descriptive, not prescriptive
 
@@ -78,7 +64,6 @@ When planning is complete, suggest:
 
 ## Verify command
 
-Read `verify.command` from `givn/config.yaml`. It MUST be a Gherkin/Cucumber
-runner that executes the `.feature` files (see the executable-spec invariant
-above). If it is still the `givn missing-testrunner` sentinel, the design
-artifact must set it before characterization begins.
+```
+cargo test --test features_runner
+```

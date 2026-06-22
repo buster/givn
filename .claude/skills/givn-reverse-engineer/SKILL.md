@@ -11,7 +11,7 @@ Reverse-engineer an existing capability into givn specifications for change
 ## Context
 
 - Change: `givn/changes/<change-id>/`
-- Test runner: `givn missing-testrunner`
+- Test runner: `cargo test --test features_runner`
 - Features path: `GIVN_FEATURES=givn/specs`
 
 ## Stance: descriptive, not prescriptive
@@ -65,5 +65,5 @@ When planning is complete, suggest:
 ## Verify command
 
 ```
-givn missing-testrunner
+cargo test --test features_runner
 ```

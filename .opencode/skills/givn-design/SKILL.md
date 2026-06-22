@@ -12,10 +12,7 @@ Write the design for change `<change-id>`.
 - Design file: `givn/changes/<change-id>/design.md`
 - Instructions: run `givn instructions design --change <change-id>`
 - Spec (WHAT): `givn/changes/<change-id>/specs/`
-- Test runner: read `verify.command` from `givn/config.yaml` at runtime (MUST
-  be a Gherkin/Cucumber runner that executes the `.feature` files — see the
-  executable-spec invariant in the design instruction; if it is still the
-  `givn missing-testrunner` sentinel, running it prints setup guidance)
+- Test runner: `cargo test --test features_runner`
 
 ## This is the HOW layer
 
@@ -30,7 +27,6 @@ Everything technical belongs here — do not add implementation details to the s
 
 ## Verify command
 
-Read `verify.command` from `givn/config.yaml`. It MUST be a Gherkin/Cucumber
-runner that executes the `.feature` files. If it is still the `givn
-missing-testrunner` sentinel, running it prints setup guidance — follow that
-guidance to configure a real runner.
+```
+cargo test --test features_runner
+```

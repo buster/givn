@@ -12,7 +12,7 @@ Execute the characterization loop for change `<change-id>`.
 - Tasks: `givn/changes/<change-id>/tasks.md`
 - Spec: `givn/changes/<change-id>/specs/`
 - Design: `givn/changes/<change-id>/design.md`
-- Test runner: `givn missing-testrunner`
+- Test runner: `cargo test --test features_runner`
 - Features path: `GIVN_FEATURES=givn/specs`
 
 ## The characterization technique
@@ -20,19 +20,19 @@ Execute the characterization loop for change `<change-id>`.
 GREEN-first, not RED-first:
 
 1. **GREEN**: write tests asserting **observed** behaviour (probe the real
-   code). Remove `@wip` from this scenario only. Run `givn missing-testrunner` →
+   code). Remove `@wip` from this scenario only. Run `cargo test --test features_runner` →
    must pass immediately.
 2. If it fails: diagnose (infrastructure problem → fix plumbing; spec/mismatch
    → correct the spec, never the code).
 3. **REFACTOR**: if design.md calls for a testability seam, apply it. Run
-   `givn missing-testrunner` → must still pass. If red, revert the refactor.
+   `cargo test --test features_runner` → must still pass. If red, revert the refactor.
 4. Check off the task. Move to the next scenario.
 
 ## What not to do
 
 - Do NOT change production code behaviour to satisfy a test.
 - Do NOT fix bugs discovered during characterization. Flag them.
-- Do NOT use `givn check <artifact>` during the loop — run `givn missing-testrunner`
+- Do NOT use `givn check <artifact>` during the loop — run `cargo test --test features_runner`
   directly. `givn check` is only for the review epilogue.
 - Do NOT do general cleanup (rename, dedup, logic simplification) during
   REFACTOR — only testability seams (extract interface, DI, make public).
@@ -72,5 +72,5 @@ When characterization + review are complete, suggest:
 ## Verify command
 
 ```
-givn missing-testrunner
+cargo test --test features_runner
 ```
