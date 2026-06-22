@@ -1,11 +1,26 @@
 ---
-description: Start a new givn change — create it and write the proposal artifact
+description: Plan a givn change end-to-end — runs all planning artifacts in the order the manifest defines
 ---
 
-Start a new givn change.
+Plan a new givn change from start to finish.
 
 **Input**: The argument after `/givn-propose` is the change ID (kebab-case), OR a
 plain description of what to build. If nothing is provided, ask.
+
+This command discovers the artifact sequence from `givn` at runtime — it does not
+hardcode which steps exist or in what order. If the project has customised its
+manifest (added a risk-assessment step, removed review, etc.), this command
+automatically follows the configured sequence.
+
+---
+
+## Role: orchestrator
+
+This command is an **orchestrator**. It creates the change scaffold, collects
+context, and then delegates all planning artifact production to a **thinking
+architect subagent**. The architect subagent produces the complete plan
+(proposal through tasks) in one pass. The orchestrator does not write artifacts
+directly.
 
 ---
 
@@ -14,8 +29,8 @@ plain description of what to build. If nothing is provided, ask.
 ### 1. Resolve the change ID
 
 If the user gave a description rather than a kebab-case ID, derive one
-(e.g. "add user auth" → `add-user-auth`). Confirm with the user before
-proceeding if the name is ambiguous.
+(e.g. "add user auth" → `add-user-auth`). Confirm with the user only if
+multiple reasonable kebab-case IDs could derive from the description.
 
 ### 2. Create the change
 
@@ -23,68 +38,196 @@ proceeding if the name is ambiguous.
 givn new <id>
 ```
 
-This scaffolds `givn/changes/<id>/` with the manifest-defined artifact stubs.
-
-### 3. Get proposal instructions
+### 3. Discover the artifact sequence
 
 ```sh
-givn instructions proposal --change <id>
+givn status --change <id> --json
 ```
 
-Parse the output for:
-- `output`: path to write the proposal (typically `givn/changes/<id>/proposal.md`)
-- `template`: structure to follow
-- `instruction`: guidance on what to produce
-- `context` / `rules`: constraints for you — **do not copy these into the file**
+Parse the JSON:
+- `artifacts`: array in execution order, each with `id`, `status`, `optional`, `gates_archive`
+- `next_required`: the first artifact to write
+- `verify_command`: the configured test runner
 
-### 4. Write the proposal
+### 4. Collect instructions for every planning artifact
 
-Read any existing context (permanent specs at `givn/specs/` if they exist).
-
-Write `givn/changes/<id>/proposal.md` following the template:
-
-1. **Problem / Opportunity** — what is wrong or missing?
-2. **Proposed Solution** — what should the system do?
-3. **Out of Scope** — what is not changing?
-4. **Open Questions** — unresolved decisions before writing specs.
-
-**Rules:**
-- Write from the user's perspective in domain language.
-- Describe observable behaviour only — no class names, routes, DB schemas,
-  function names, framework details, or step-definition mechanics.
-- The only technical details allowed are those that are externally observable
-  (e.g. "response is valid JSON", "persists across restart").
-- If implementation detail surfaces, park it in design.md (not yet written).
-
-### 5. Show progress
+For each artifact in the sequence (up to and including `tasks`, excluding `review`):
 
 ```sh
-givn status
+givn instructions <artifact-id> --change <id>
 ```
 
-Display next step: "Run `/givn-spec` to write the Gherkin spec."
+Capture the full output for each.
+
+### 5. Spawn a thinking architect subagent
+
+Use the **Task tool** to spawn a thinking architect subagent (fall back to
+describing the pattern in prose if the Task tool is not available to you).
+
+The architect subagent is a **deep-thinking planning agent** — give it room to
+reason carefully. It must not rush to produce output; it should think through
+requirements, constraints, and decisions before writing each artifact.
+
+Pass a self-contained prompt:
+
+```
+You are a thinking architect producing the complete plan for a givn change.
+
+## Change ID
+<id>
+
+## What to build
+<user's original description or request>
+
+## Artifact sequence (from givn status --json)
+<paste the artifacts array>
+
+## Your task
+Produce every planning artifact in order — stopping before `review`.
+Do not produce the review artifact; that belongs to a separate step after
+implementation is complete.
+
+For each artifact:
+1. Think carefully about the requirements, constraints, and implications.
+2. Read all previously written artifacts for this change as inputs.
+3. Write the artifact to the path listed in `generates` under givn/changes/<id>/.
+4. Follow the instruction for that artifact precisely.
+
+## Instructions per artifact
+
+<for each artifact, paste the full output of: givn instructions <id> --change <id>>
+
+## Artifact-specific rules
+
+**proposal** (proposal.md):
+- WHAT and WHY in domain language — no implementation detail.
+- Observable behaviour only. No class names, routes, DB schemas, step mechanics.
+- Think about: who benefits, what changes from the user's perspective, what
+  constraints or risks exist.
+
+**specs** (specs/**/*.feature):
+- One .feature file per capability, derived from the proposal.
+- Tags: `@givn.delta @<capability>` on Feature; `@givn.added` + `@wip` on
+  each Scenario (use `@givn.modified` or `@givn.removed` where appropriate).
+- Scenarios assert observable behaviour in Given/When/Then domain language.
+- After writing, validate: run `givn lint --change <id>`
+  Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.
+- Think about: what are the key observable behaviours? What are the edge cases?
+  What existing behaviour might be affected?
+
+**design** (design.md):
+- HOW layer: technology decisions, architecture impact, step def locations,
+  data model changes. Justify non-obvious choices.
+- **Test runner**: decide which runner fits the tech stack (e.g. `cargo test`,
+  `npm test`, `pytest`). Document it in design.md. If `verify.command` in
+  `givn/config.yaml` is still `"givn missing-testrunner"`, update it now:
+  ```yaml
+  verify:
+    command: "<chosen runner>"
+  ```
+- Think about: what is the simplest architecture that delivers the proposal?
+  What are the tradeoffs? What existing code is affected?
+
+**tasks** (tasks.md):
+- **First task must always be test infrastructure setup**: install the runner,
+  configure the project for BDD/TDD (e.g. add Cucumber dependency, create
+  step definitions skeleton), and verify `verify.command` in `givn/config.yaml`
+  is set to the runner chosen in design.md. This task gates all others.
+- Subsequent tasks: one `- [ ]` checkbox per scenario, covering a full
+  RED/GREEN/REFACTOR cycle.
+- **Every scenario task must include a "Design constraints" block** drawn from
+  design.md, specific to that scenario. This is not optional. The coding agent
+  that executes each task reads the task body as its primary architecture
+  reference — if the constraints are absent, it will take the shortest path
+  that makes the test pass, which may not match the design.
+  Example block (adapt to the actual tech stack and scenario):
+  ```
+  Design constraints:
+    - <which module/layer owns this behaviour>
+    - <which protocol, data format, or library to use>
+    - <what response shape / side-effect is required by the design>
+  ```
+- Think about: what is the right order? What setup is needed before features?
+  Are any tasks dependent on each other?
+
+**Any custom artifact**:
+- Follow the instruction returned by `givn instructions <id>`.
+- Write to the path in `generates`.
+- Think before writing.
+
+## After writing tasks (or the last planning artifact)
+
+Run: givn apply --change <id>
+Confirm task tracking is live.
+
+## Report back with
+- A summary of each artifact written (path + one-sentence summary)
+- Any significant decisions or tradeoffs made
+- Any ambiguities that required a judgment call (flag these clearly)
+- Lint result for specs
+- Final givn status --change <id> output
+```
+
+### 6. Wait for the architect subagent to complete
+
+The architect must produce all planning artifacts (through `tasks`) and run
+`givn apply` before the orchestrator proceeds.
+
+If the subagent flags ambiguities that require user input, surface them and
+wait before spawning again (or re-prompting the subagent with the answers).
+
+### 7. Show final status
+
+```sh
+givn status --change <id>
+```
+
+---
+
+## When to stop
+
+Stop after the architect subagent has written the last artifact whose `id`
+appears in the sequence **before** `review`. In the default manifest that is
+`tasks`; in a customised manifest it may be different — the architect follows
+the actual sequence from `givn status --json`.
+
+Do **not** produce the `review` artifact — that belongs to `/givn-review` after
+implementation is done.
 
 ---
 
 ## Output
 
 ```
-## Change created: <id>
+## Change planned: <id>
 
-**Proposal written:** givn/changes/<id>/proposal.md
+**Artifacts written** (in manifest order):
+- proposal:  givn/changes/<id>/proposal.md
+  <one-sentence summary>
+- specs:     givn/changes/<id>/specs/<cap>/<cap>.feature  (N scenarios, all @wip)
+- design:    givn/changes/<id>/design.md
+  Key decisions: <brief summary>
+- tasks:     givn/changes/<id>/tasks.md
+  N tasks (one per scenario)
+[... any additional artifacts from the manifest ...]
 
-### Summary
-<one-paragraph summary of what was captured>
+**Decisions / tradeoffs:** <any flagged by the architect>
 
-**Next:** Run `/givn-spec` to write the Gherkin .feature spec.
+**Ready to implement.** Run `/givn-implement` to start the TDD loop.
 ```
 
 ---
 
 ## Guardrails
 
-- Do not proceed without knowing what the user wants to build.
-- Never put implementation detail (HOW) in the proposal.
-- If context is critically unclear, ask before writing — but prefer making
-  reasonable decisions over stalling.
-- Verify the file exists after writing.
+- The orchestrator does not write any artifact — it delegates to the architect subagent.
+- Always run `givn status --change <id> --json` to get current state and
+  next step — never hardcode the sequence.
+- The architect subagent must not put implementation detail (HOW) in the
+  proposal or specs.
+- All scenarios must be `@wip` — step definitions are not written during planning.
+- The architect must run `givn lint --change <id>` after writing specs and fix
+  parse errors (exit 1) before continuing.
+- Tasks must use `- [ ]` checkboxes so `givn apply` can track progress.
+- If the architect flags critical ambiguities before it can proceed, surface
+  them to the user — do not guess on their behalf.

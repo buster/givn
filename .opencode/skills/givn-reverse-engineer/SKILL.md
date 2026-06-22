@@ -1,0 +1,84 @@
+---
+name: givn-reverse-engineer
+description: Reverse-engineer an existing capability into givn specs — discovery, descriptive specs, testability design, characterization tasks.
+---
+
+# givn-reverse-engineer
+
+Reverse-engineer an existing capability into givn specifications for change
+`<change-id>`.
+
+## Context
+
+- Change: `givn/changes/<change-id>/`
+- Test runner: read `verify.command` from `givn/config.yaml` at runtime (MUST
+  be a Gherkin/Cucumber runner that executes the `.feature` files — see the
+  executable-spec invariant below; never the `givn missing-testrunner`
+  sentinel)
+- Features path: `GIVN_FEATURES=givn/specs`
+
+## Executable-spec invariant (enforced)
+
+The chosen `verify.command` MUST execute the `.feature` files produced by
+the `specs` artifact via a Gherkin/Cucumber runner (e.g. `cucumber-rs` for
+Rust, `behave` for Python, `cucumber-js` for Node). A bare unit-test runner
+(e.g. `cargo test` with only `#[test]` functions, bare `pytest`) is NOT
+acceptable on its own. "Step definitions" always means the bindings the
+Gherkin runner uses to map `.feature` steps to code — never a parallel
+hand-maintained test file. The `.feature` file is the sole source of
+scenario identity.
+
+## Stance: descriptive, not prescriptive
+
+You are capturing what the system **does** today, not what it *should* do.
+Every spec assertion is probed from the real code. Suspected bugs are flagged,
+never fixed. Production code behaviour is never changed — it is refactored
+only for testability seams, with a behaviour-preservation guarantee.
+
+## When to use
+
+- Reverse-engineering an existing codebase that has no givn specs.
+- Creating the initial baseline spec for a capability.
+- Before dogfooding givn on its own repo (or any repo with existing code).
+
+## What not to do
+
+- Do NOT write prescriptive specs (what the system *should* do). Write
+  descriptive specs (what the system *does*).
+- Do NOT change production code behaviour to match a spec. If they disagree,
+  the spec is wrong — correct it.
+- Do NOT fix bugs discovered during characterization. Flag them as follow-up
+  `@givn.modified` candidates.
+- Do NOT delete dead code. Flag it as a follow-up `@givn.removed` candidate.
+- Do NOT skip the discovery phase — it is always interactive.
+
+## Discovery phase
+
+Before writing any artifact, explore the codebase and propose ONE capability
+with a clear black-box boundary. Present the proposal to the user
+interactively. Do not proceed until the user confirms.
+
+One capability per change. If multiple capabilities are needed, suggest
+separate changes.
+
+## Artifacts produced
+
+- `proposal.md` — characterization of the capability, black-box boundary,
+  suspected bugs flagged as out-of-scope.
+- `specs/<cap>/<cap>.feature` — descriptive scenarios (`@givn.added @wip`),
+  all provisional until validated during characterization.
+- `design.md` — seam strategy, testability-only refactor plan, test harness.
+- `tasks.md` — characterization cycles (GREEN-first), one per scenario.
+
+## Transition out
+
+When planning is complete, suggest:
+1. `/givn-design-review` — stress-test the plan (reused as-is).
+2. `/givn-characterize` — execute the characterization loop.
+
+## Verify command
+
+Read `verify.command` from `givn/config.yaml`. It MUST be a Gherkin/Cucumber
+runner that executes the `.feature` files (see the executable-spec invariant
+above). If it is still the `givn missing-testrunner` sentinel, the design
+artifact must set it before characterization begins.

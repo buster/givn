@@ -39,7 +39,8 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 
 - **The `.feature` file is the single source of truth.** No `spec.md`. The same
   file is the delta you write, the cucumber test you run, and (after archive) the
-  permanent spec.
+  permanent spec. `verify.command` MUST execute these `.feature` files via a
+  Gherkin/Cucumber runner — never a parallel hand-maintained test file.
 - **Delta lifecycle with tags.** Deltas are tagged `@givn.delta` (Feature) and
   `@givn.added` / `@givn.modified` / `@givn.removed` (Scenario). On archive they
   are merged into the permanent spec and the tags are stripped, leaving clean,
@@ -64,7 +65,12 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 - **Lint and test are separate, by design.** `givn lint` is a built-in command
   that statically checks your `.feature` files (syntax, `@wip`, delta tags) and
   **runs no tests**. Running the actual tests is a separate command you configure
-  as `verify.command` in `givn/config.yaml` (e.g. `cargo test`).
+  as `verify.command` in `givn/config.yaml`. That command MUST be a
+  Gherkin/Cucumber runner that executes the `.feature` files (e.g.
+  `cargo test --test features_runner` with `cucumber-rs`, `behave`, or
+  `npx cucumber-js "givn/specs/**/*.feature"`) — a bare unit-test runner
+  (`cargo test` alone, bare `pytest`) is not sufficient, because the
+  `.feature` file is the executable spec.
 - **Self-contained gates via hooks.** Artifacts can declare `post` hooks; by
   default `tasks` and `review` run `verify.command` after they complete. `givn
   check <artifact>` runs those hooks, and `givn archive` runs the hooks of every
@@ -162,11 +168,14 @@ givn completions zsh            # print zsh completion script  (eval in ~/.zshrc
 givn completions fish           # print fish completion script (source or save to completions/)
 ```
 
-> **First thing after `init`:** set `verify.command` in `givn/config.yaml` to your
-> project's test runner (e.g. `cargo test`, `mvn test`,
-> `npx cucumber-js "givn/specs/**/*.feature"`, `behave`). Until you do, the default
-> runner is the sentinel `givn missing-testrunner`, which prints setup guidance and
-> fails on purpose so nothing falsely reports green.
+> **First thing after `init`:** set `verify.command` in `givn/config.yaml` to a
+> Gherkin/Cucumber runner that executes your `.feature` files (e.g.
+> `cargo test --test features_runner` with `cucumber-rs`, `behave`,
+> `npx cucumber-js "givn/specs/**/*.feature"`). A bare unit-test runner
+> (`cargo test` alone, `pytest`) is NOT sufficient — the `.feature` file is the
+> executable spec, so the runner must consume it. Until you configure a real
+> runner, the default is the sentinel `givn missing-testrunner`, which prints
+> setup guidance and fails on purpose so nothing falsely reports green.
 
 > `givn/config.yaml` ships **fully commented** — every option is documented inline
 > with its default and allowed values. It is **versioned** (`givn_config_version`);

@@ -21,6 +21,15 @@ today, not what it *should* do.
 - `@givn.removed` and `@givn.modified` are NOT used in reverse-engineering
   changes (there is no existing permanent spec to modify or remove from).
 
+## Executable-spec invariant
+
+The `.feature` file is the executable specification. The chosen
+`verify.command` (see `design-reverse.md`) MUST execute these `.feature` files
+via a Gherkin/Cucumber runner — never a parallel hand-maintained test file.
+Step text is the contract; step definitions are shared glue that the runner
+binds to the scenarios. If a scenario's steps change, the test surface changes
+automatically.
+
 **Merge semantics:**
 - All scenarios are `@givn.added` against an empty permanent spec. On archive,
   the merge creates the initial `givn/specs/<capability>/<capability>.feature`

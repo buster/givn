@@ -1,8 +1,12 @@
 ---
-description: Write Gherkin .feature delta files for a givn change
+description: (Re-)write the Gherkin .feature spec for a givn change
 ---
 
-Write the Gherkin spec for a givn change.
+Write (or re-write) the Gherkin spec for a givn change.
+
+For starting a new change, use `/givn-propose` instead — it writes the
+proposal, spec, design, and tasks in one pass.
+Use this command to redo or extend the spec for an existing change.
 
 **Input**: Optionally specify a change ID after `/givn-spec`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If
@@ -78,13 +82,14 @@ givn lint
 - Exit 1 = parse error (fix before proceeding)
 - Exit 2 = `@wip` or PENDING (expected; does NOT indicate test failure)
 
-### 6. Show progress
+### 6. Show next step
 
 ```sh
-givn status
+givn status --change <id> --json
 ```
 
-Display next step: "Run `/givn-design` to write the technical design."
+Read `next_required.id` from the output and report it as the next step
+(e.g. `/givn-design`, or whatever the manifest defines after `specs`).
 
 ---
 
@@ -98,7 +103,7 @@ Display next step: "Run `/givn-design` to write the technical design."
 
 **Lint:** clean (N @wip scenarios — expected)
 
-**Next:** Run `/givn-design` to write the HOW layer.
+**Next:** Run `/<next-artifact-id>` to continue (from `givn status --change <id> --json` → `next_required.id`).
 ```
 
 ---

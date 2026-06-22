@@ -17,6 +17,15 @@ spec on archive.
 - `@givn.removed` scenarios include exactly one placeholder step so the parser
   accepts them; givn lint suppresses warnings for them.
 
+## Executable-spec invariant
+
+The `.feature` file is the executable specification. The chosen
+`verify.command` (see `design.md`) MUST execute these `.feature` files via a
+Gherkin/Cucumber runner — never a parallel hand-maintained test file. Step
+text is the contract; step definitions are shared glue that the runner binds
+to the scenarios. If a scenario's steps change, the test surface changes
+automatically.
+
 **Merge semantics:**
 - `@givn.added`: appended to the permanent spec (error if title already exists).
 - `@givn.modified`: replaces scenario by title (error if not found).

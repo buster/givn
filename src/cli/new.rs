@@ -42,25 +42,3 @@ fn validate_id(id: &str) -> Result<()> {
     }
     Ok(())
 }
-
-#[cfg(test)]
-mod tests {
-    use super::validate_id;
-
-    #[test]
-    fn valid_ids() {
-        assert!(validate_id("add-user-auth").is_ok());
-        assert!(validate_id("fix-123").is_ok());
-        assert!(validate_id("feature").is_ok());
-    }
-
-    #[test]
-    fn invalid_ids() {
-        assert!(validate_id("").is_err());
-        assert!(validate_id("-starts-with-hyphen").is_err());
-        assert!(validate_id("ends-with-hyphen-").is_err());
-        assert!(validate_id("has SPACES").is_err());
-        assert!(validate_id("has_underscores").is_err());
-        assert!(validate_id("HasUppercase").is_err());
-    }
-}

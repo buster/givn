@@ -14,6 +14,11 @@ language that a non-technical stakeholder can read and validate.
   and framework, it belongs in the spec; otherwise it belongs in design/tasks.
 - Write from the user's perspective. Use domain language (business terms, not
   technical terms).
+- **Executable-spec invariant.** The `.feature` files produced downstream (in
+  the `specs` artifact) are the executable tests. The `verify.command` chosen
+  in `design.md` MUST execute them via a Gherkin/Cucumber runner — never a
+  parallel hand-maintained test file. Keep this in mind: every behaviour you
+  describe here must be expressible as a runnable Gherkin scenario.
 
 **Structure:**
 1. Problem / Opportunity — what is wrong or missing?

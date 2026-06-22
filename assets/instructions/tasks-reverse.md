@@ -7,14 +7,19 @@ normal TDD tasks.
 **First task: test infrastructure setup (or verification)**
 
 Before any characterization task, include a setup task that:
-- If no test runner is configured: install and configure the test runner chosen
-  in design.md. Set `verify.command` in `givn/config.yaml` if still the sentinel.
-  Create the step definition skeleton (if using Cucumber/Gherkin runner) or
-  test module structure.
-- If a test runner already exists (the codebase already has tests): verify the
-  runner exits 0 on the existing test suite. Configure step definition
-  locations or test module structure for the new characterization scenarios.
-  This task is verification, not setup.
+- If no Gherkin runner is configured: run `verify.command` — if it is still
+  the `givn missing-testrunner` sentinel, its output prints setup guidance.
+  Follow that guidance to install and configure a Gherkin/Cucumber runner
+  that executes the `.feature` files under `givn/specs/` (and the change's
+  `specs/` during the change). Set `verify.command` in `givn/config.yaml` to
+  the exact runner invocation (e.g. `cargo test --test features_runner`).
+  Create the Gherkin runner test binary (if not already present) and the
+  step-definition module skeleton that the runner auto-discovers. Step
+  definitions are shared glue — never a parallel hand-maintained test file.
+- If a Gherkin runner already exists (the codebase already has a runner
+  wired to `.feature` files): verify the runner exits 0 on the existing
+  spec suite. Configure step-definition locations for the new
+  characterization scenarios. This task is verification, not setup.
 - Either way: verify the runner exits 0 (or exits with only @wip-related
   failures) before characterization begins.
 
@@ -24,7 +29,9 @@ Before any characterization task, include a setup task that:
 For each scenario:
   GREEN:    Remove @wip from THIS scenario only.
             Write step definitions asserting OBSERVED behaviour (probe the
-              real code to determine what it actually does).
+              real code to determine what it actually does). The Gherkin
+              runner MUST execute the `.feature` file and bind the steps to
+              these definitions — never a parallel `#[test]` fn.
             Run the test runner → this scenario MUST PASS immediately.
             If it fails, do NOT change production code — diagnose:
               1. Infrastructure problem (most common): fix test plumbing only.

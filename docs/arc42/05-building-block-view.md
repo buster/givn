@@ -59,7 +59,7 @@ givn/  (single published binary crate)
 | --- | --- | --- |
 | `main.rs` | Parse args, dispatch to `cli::*`, map errors to exit codes. | `cli`, `error` |
 | `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, generate skills. | `config`, `skills` |
-| `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). | `config`, `state` |
+| `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Validates `<id>` (non-empty, lowercase ASCII letters/digits/hyphens, not starting or ending with a hyphen) before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
 | `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner); block & exit non-zero on failure. | `hooks`, `config::manifest` |

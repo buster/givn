@@ -1,8 +1,12 @@
 ---
-description: Write the technical design for a givn change — HOW layer, technology decisions, architecture impact
+description: (Re-)write the technical design for a givn change — HOW layer, technology decisions, architecture impact
 ---
 
-Write the technical design for a givn change.
+Write (or re-write) the technical design for a givn change.
+
+For starting a new change, use `/givn-propose` instead — it writes the
+proposal, spec, design, and tasks in one pass.
+Use this command to redo or extend the design for an existing change.
 
 **Input**: Optionally specify a change ID after `/givn-design`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If
@@ -48,20 +52,25 @@ Write `givn/changes/<id>/design.md` covering:
 - **Architecture impact** — which modules/components are affected; what is new.
 - **Data model changes** — schema, structs, database changes if any.
 - **Step definition locations** — where Cucumber/Gherkin step defs will live.
-- **Runner command** — confirm `verify.command` in `givn/config.yaml` is correct.
+- **Runner command** — choose the test runner that fits the tech stack
+  (e.g. `cargo test`, `npm test`, `pytest`). Document it in design.md.
+  If `verify.command` in `givn/config.yaml` is still `"givn missing-testrunner"`,
+  update it now to the chosen runner. The tasks artifact will include a
+  setup task to install and configure the runner.
 - **Non-obvious choices** — justify them; obvious choices need no justification.
 
 This is the HOW layer. Everything that was kept out of the proposal and spec
 belongs here: class names, routes, DB schemas, function signatures,
 framework details, step-definition mechanics.
 
-### 5. Show progress
+### 5. Show next step
 
 ```sh
-givn status
+givn status --change <id> --json
 ```
 
-Display next step: "Run `/givn-tasks` to write the implementation task breakdown."
+Read `next_required.id` from the output and report it as the next step
+(e.g. `/givn-tasks`, or whatever the manifest defines after `design`).
 
 ---
 
@@ -76,7 +85,7 @@ Display next step: "Run `/givn-tasks` to write the implementation task breakdown
 - <decision 1>
 - <decision 2>
 
-**Next:** Run `/givn-tasks` to break this down into a scenario-by-scenario task list.
+**Next:** Run `/<next-artifact-id>` to continue (from `givn status --change <id> --json` → `next_required.id`).
 ```
 
 ---

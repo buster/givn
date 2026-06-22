@@ -21,6 +21,12 @@ to design new behaviour.
 - All inferred behaviour is **provisional** — it will be validated during
   characterization. If a spec assertion is proven wrong during characterization,
   it is corrected to match AS-IS behaviour (see `specs-reverse.md`).
+- **Executable-spec invariant.** The `.feature` files produced downstream (in
+  the `specs` artifact) are the executable tests. The `verify.command` chosen
+  in `design-reverse.md` MUST execute them via a Gherkin/Cucumber runner —
+  never a parallel hand-maintained test file. Keep this in mind: every
+  behaviour you describe here must be expressible as a runnable Gherkin
+  scenario.
 
 **Structure:**
 1. Capability — which capability is being characterized, and its black-box

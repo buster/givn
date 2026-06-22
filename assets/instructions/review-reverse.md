@@ -8,6 +8,24 @@ and that all discovered bugs and code smells are documented.
 Run the coverage tool and note the overall percentage (line and/or branch).
 This is a fact recorded in the artifact — not a gate.
 
+**Coverage MUST include the Gherkin runner tests.** The coverage tool must be
+configured to instrument every test binary that `verify.command` executes —
+crucially including the Gherkin/Cucumber runner binary that executes the
+`.feature` files under `givn/specs/`. A coverage run that instruments only
+unit tests (and omits the `.feature` execution) is invalid: it undercounts
+the real coverage and misleads the gap classification below. If the project's
+coverage tool does not automatically pick up the Gherkin runner binary,
+configure it to do so (most tools instrument all test binaries by default
+when invoked over the whole test suite; verify this in the raw output).
+
+**Redundant unit tests.** When a unit test exercises behaviour that is fully
+covered by a `.feature` scenario (the scenario drives the same code path
+through the black-box boundary), the unit test is redundant. The `.feature`
+file is the source of truth. In reverse-engineering, removing redundant unit
+tests is part of characterization — flag each removal in review.md under
+"Spec corrections" or a dedicated "Redundant unit tests removed" list. (Keep
+unit tests only for code paths that no `.feature` scenario reaches.)
+
 **Coverage classification (three buckets — reverse-mode rules):**
 
 1. **Dead code** → flag as follow-up `@givn.removed` candidate. Do NOT delete.
@@ -47,17 +65,25 @@ This is a fact recorded in the artifact — not a gate.
     - Description of observed vs correct behaviour
     - Scenario that captures the buggy AS-IS behaviour
     - Follow-up candidate: `@givn.modified` for that scenario
- 7. **Boundary failures** — scenarios that were commented out because the
-    black-box boundary proved untestable. For each:
-    - Scenario title
-    - What was attempted
-    - Why the boundary failed
-    - Suggested seam or boundary change for a follow-up change
- 8. **Test suite output and result** — final GREEN confirmation.
- 9. **Sign-off checklist** — all items checked.
+  7. **Boundary failures** — scenarios that were commented out because the
+     black-box boundary proved untestable. For each:
+     - Scenario title
+     - What was attempted
+     - Why the boundary failed
+     - Suggested seam or boundary change for a follow-up change
+  8. **Redundant unit tests removed** — unit tests deleted during
+     characterization because a `.feature` scenario covers the same code path
+     through the black-box boundary. For each:
+     - The unit test (file + function name)
+     - The `.feature` scenario that supersedes it
+     - Confirm coverage for the region is unchanged after removal
+  9. **Test suite output and result** — final GREEN confirmation.
+  10. **Sign-off checklist** — all items checked.
 
 **Sign-off checklist:**
 - All scenarios pass (test runner exits 0).
+- Coverage was measured across all test binaries, including the Gherkin
+  runner that executes the `.feature` files (not unit tests alone).
 - Every coverage gap classified and resolved (or justified).
 - No `@wip` tags remain in the delta spec.
 - The delta spec contains no implementation-layer detail.
@@ -65,6 +91,8 @@ This is a fact recorded in the artifact — not a gate.
 - All documentation corrections documented.
 - All code smell markers listed.
 - All suspected bugs flagged as follow-up candidates (NOT fixed).
+- All redundant unit tests removed and listed (with the superseding
+  `.feature` scenario).
 - Behaviour-preservation invariant confirmed (all characterization tests
   GREEN after refactoring).
 

@@ -12,22 +12,19 @@ ambiguous, list changes and ask.
 
 ## Steps
 
-### 1. Resolve the change
+### 1. Resolve the change and run pre-flight checks
 
 ```sh
-givn status
+givn status --change <id> --json
 ```
 
 Identify the active change. Announce: "Using change: <id>".
 
-### 2. Pre-flight checks (you run these; givn also enforces them)
-
-**Tasks:**
-```sh
-givn apply --change <id>
-```
-If any tasks are unchecked (`- [ ]`), warn the user and ask for confirmation
-before continuing.
+From the JSON, check:
+- `artifacts` where `id == "tasks"`: if `status != "done"`, warn and confirm.
+- `artifacts` where `id == "review"`: if `status != "done"`, stop — direct
+  the user to `/givn-review` first.
+- `all_required_done`: if false, list what is missing and stop.
 
 **Review:**
 Check that `givn/changes/<id>/review.md` exists and contains `REVIEW: PASS`.
@@ -42,7 +39,7 @@ givn lint
   archiving. The spec must be fully implemented.
 - Exit 0: proceed.
 
-### 3. Run the archive command
+### 2. Run the archive command
 
 ```sh
 givn archive --change <id>
@@ -58,7 +55,7 @@ givn archive --change <id>
 If any gate check fails, `givn archive` exits non-zero with a clear error.
 Report the error to the user and stop.
 
-### 4. Verify the result
+### 3. Verify the result
 
 On success, `givn archive` will have:
 - Run the test suite via the configured hooks (final GREEN confirmation).
@@ -72,7 +69,7 @@ givn lint
 Exit 0 = permanent specs are clean. Exit non-zero = report to user (the archive
 completed, but a problem in the permanent specs needs attention).
 
-### 5. Show summary
+### 4. Show summary
 
 ```sh
 givn status

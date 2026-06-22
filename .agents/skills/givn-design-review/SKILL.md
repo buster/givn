@@ -1,0 +1,62 @@
+---
+name: givn-design-review
+description: Stress-test the plan before tasks are written — grill the design one question at a time, harden the artifacts, then sign off.
+---
+
+# givn-design-review
+
+Stress-test the complete plan for change `<change-id>` before the task list
+is written. Grill every branch of the design, harden the artifacts with what
+you learn, then sign off.
+
+## Context
+
+- Design review file: `givn/changes/<change-id>/design-review.md`
+- Instructions: run `givn instructions design-review --change <change-id>`
+- Runs after: design
+- Runs before: tasks
+
+## Two phases
+
+### Phase 1: Grilling (subagent → orchestrator → user)
+
+A grilling subagent reads all planning artifacts (proposal, specs, design) and
+the relevant codebase, then returns a ranked question list with recommended
+answers. The orchestrator presents questions to the user one at a time — waiting
+for each answer before the next.
+
+Required branches:
+- **Scope** — spec matches proposal exactly?
+- **Tech choices** — right stack for these scenarios? Simpler alternatives?
+- **Missing scenarios** — observable behaviours without a scenario? Error paths?
+- **Testability** — every scenario can genuinely fail in RED?
+- **Risk** — most likely failure mode and mitigation?
+
+If a question can be answered by exploring the codebase, the subagent does that
+and reports the finding instead of asking the user.
+
+### Phase 2: Hardening (hardening subagent)
+
+Applies decisions reached during grilling:
+- Update `design.md` if tech decisions changed.
+- Add missing scenarios to `specs/**/*.feature` with `@givn.added @wip`.
+- Run `givn lint --change <change-id>` — must exit 0 or 2.
+- Does NOT write `tasks.md` — that is the next step.
+
+## Sign-off
+
+When both phases are complete, `design-review.md` ends with:
+
+```
+DESIGN-REVIEW: PASS
+```
+
+Only if no blocking open questions remain. Otherwise: `DESIGN-REVIEW: FAIL`.
+
+## After sign-off
+
+```
+givn status --change <change-id>
+```
+
+Next step: `/givn-tasks`.

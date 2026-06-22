@@ -5,7 +5,9 @@ This is the architecture documentation for **givn**, following the
 documents focused and reviewable.
 
 > **Status:** Phases 0–5 implemented (core engine complete). Phases 6–7 (distribution,
-> dogfood) pending. All architecture decisions remain binding — see chapter 9.
+> dogfood) pending. Characterization of the `new` command in progress
+> (change `reverse-engineer-new-command`). All architecture decisions remain
+> binding — see chapter 9.
 
 ## Chapters
 

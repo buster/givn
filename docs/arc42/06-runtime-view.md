@@ -27,11 +27,41 @@ Idempotent: existing files are not overwritten unless `--force`.
 
 ```
 user → cli::new
-  1. validate id (kebab-case), ensure givn/changes/<id> absent
-  2. create givn/changes/<id>/
-  3. write proposal.md stub (from cascade: project override or embedded template)
-  4. print: run `givn instructions proposal --change <id> --json`
+  1. validate id:
+       - non-empty
+       - all chars are ASCII lowercase letters, digits, or hyphens
+         (rejects uppercase, underscores, spaces, dots, non-ASCII)
+        - does not start or end with a hyphen
+      (note: a leading-hyphen id passed without `--` is intercepted by clap
+       as an unexpected flag → exit 2, before this validator runs)
+      (note: the empty string `""` is NOT intercepted by clap — it is a valid
+       positional value, so `validate_id` runs and bails with
+       "change id must not be empty" → exit 1, not exit 2)
+  2. compute change_dir = <cwd>/givn/changes/<id>
+  3. if change_dir already exists → bail "change '<id>' already exists at <abs path>"
+  4. if <cwd>/givn/ does not exist → bail "givn/ not found. Run `givn init` first."
+     (the "already exists" check precedes the "not found" check; in practice
+      the already-exists branch is unreachable when givn/ is absent, because
+      its parent cannot exist — see ch.11 TD-5)
+  5. create givn/changes/<id>/
+  6. config::cascade::resolve_template("proposal", "proposal.md"):
+       - project override givn/artifacts/proposal/proposal.md if present
+       - else embedded templates/proposal.md
+       - (else embedded addons/proposal/template.md)
+  7. write the resolved template verbatim to givn/changes/<id>/proposal.md
+     (no placeholder substitution: the embedded template's `{{CHANGE_ID}}`
+      heading is written literally — see ch.11 TD-5)
+  8. print:
+       Created change '<id>'
+         <absolute path to proposal.md>
+
+       Next: fill in proposal.md, then run:
+         givn instructions proposal --change <id>
 ```
+
+Only `proposal.md` is produced — no `specs/`, `design.md`, `tasks.md`, or
+`review.md`. Exit 0 on success; any bail above exits 1 via the main error
+mapper (clap argument errors exit 2 directly).
 
 ## 6.3 `givn instructions <artifact> --change <id> [--json]`
 

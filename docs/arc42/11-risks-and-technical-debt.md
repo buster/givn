@@ -21,6 +21,10 @@
 | D-2 | Only `.agents` + claude + opencode skill targets shipped. | Cover the common cases first. | Users eject/retarget now; add built-ins later. |
 | D-3 | No CI/remote initially (local git only). | OC-1. | Wire up `cargo-dist` pipeline when a remote is added. |
 | D-4 | Overlay may start with replace-only (not deep-merge) for some fields. | Get a working MVP. | **Partially resolved:** field-level deep-merge implemented for artifacts. Richer nested merge can be added as needs surface. |
+| D-5 | `givn new` writes the proposal template verbatim with no `{{CHANGE_ID}}` substitution, so the scaffolded `proposal.md` keeps the literal placeholder text. | Discovered during reverse-engineering characterization of `new-command`; AS-IS behaviour is captured by spec, not fixed. | Future `@givn.modified` delta to substitute the id (or drop the placeholder from the embedded template). Tracked as BUG-1 in change `reverse-engineer-new-command`. |
+| D-6 | `givn new` checks "change already exists" before "givn/ not found"; the already-exists branch is unreachable when `givn/` is absent (its parent cannot exist). No wrong error today, but the ordering is brittle. | Discovered during characterization; AS-IS captured, not reordered. | Future `@givn.modified` delta to swap the check order. Tracked as SMELL-1. |
+| D-7 | `givn new -foo` (leading-hyphen id, natural invocation) is rejected by clap as an unexpected flag (exit 2) before the id validator runs; the dedicated "must not start or end with a hyphen" message is only reachable via `givn new -- -foo`. Split behaviour. | Discovered during characterization; both paths captured as AS-IS. | Future `@givn.modified` delta to unify the two paths. Tracked as SMELL-2. |
+| D-8 | `givn init` does not create `givn/artifacts/`, so project template overrides require manual directory setup. | Discovered during characterization; documented as AS-IS. | Future enhancement (e.g. `givn eject` guidance or init scaffold). Tracked as SMELL-3. |
 
 ## 11.3 Open questions — resolved
 

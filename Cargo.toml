@@ -17,6 +17,17 @@ gherkin = "0.16"
 anyhow = "1.0"
 thiserror = "2.0"
 
+[dev-dependencies]
+tempfile = "3"
+cucumber = "0.23"
+tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
+
+# Cucumber test binary: runs the .feature files under givn/specs/ as the
+# executable spec (harness=false so cucumber owns the output, not libtest).
+[[test]]
+name = "features_runner"
+harness = false
+
 [profile.release]
 strip = true
 opt-level = "z"

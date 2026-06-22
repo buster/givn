@@ -10,15 +10,25 @@ If ambiguous, list changes and ask.
 
 ---
 
+## Role: orchestrator
+
+This command is an **orchestrator**. It does not write code directly. For each
+task it spawns a **coding subagent** that handles the complete RED/GREEN/REFACTOR
+cycle in isolation. The orchestrator manages the loop, passes context, and
+decides when to stop or pause.
+
+---
+
 ## Steps
 
 ### 1. Resolve the change
 
 ```sh
-givn status
+givn status --json
 ```
 
-Identify the active change. Announce: "Using change: <id>".
+Identify the active change from `active[0].id` (or ask if multiple).
+Announce: "Using change: <id>".
 
 ### 2. Check current progress
 
@@ -26,61 +36,106 @@ Identify the active change. Announce: "Using change: <id>".
 givn apply --change <id>
 ```
 
-Shows tasks complete / remaining. If all tasks are already checked, congratulate
-and suggest `/givn-review`. Otherwise continue.
+If all tasks are already checked, suggest `/givn-review`.
+Otherwise continue.
 
 ### 3. Validate the spec
 
 ```sh
-givn lint
+givn lint --change <id>
 ```
 
 - Exit 0 or 2 = proceed (exit 2 means @wip scenarios present — expected).
 - Exit 1 = parse error — fix before implementing.
 
-### 4. Read context
+### 4. Collect context for subagents
 
-Read:
-- `givn/changes/<id>/tasks.md` — task list and order
+Read once; pass to every subagent:
+
+- `givn/changes/<id>/tasks.md` — task list and order (each task includes a
+  "Design constraints" block; if any task is missing it, read design.md and
+  add it before spawning that subagent)
 - `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
-- `givn/changes/<id>/design.md` — architecture, step def locations, verify command
+- `givn/changes/<id>/design.md` — full design document; pass this to every
+  subagent in full, not just "relevant sections"
 - `givn/config.yaml` — resolve the actual `verify.command`
 
-### 5. Implement tasks (loop until done or blocked)
+### 5. Loop: one coding subagent per task
 
-Work through each unchecked task (`- [ ]`) in order:
+For each unchecked task (`- [ ]`) in order:
 
-#### RED phase
+#### 5a. Spawn a coding subagent
 
-1. Remove `@wip` from **this scenario only** (keep it on all others).
-2. Write step definitions with **real assertions** — `Then` steps must check
-   concrete values, not just that the code ran.
-3. Run the test suite:
-   ```sh
-   <verify.command>
-   ```
-   This scenario **must fail** at this point (no production code yet).
-   If it passes, the assertions are not real — fix the step definitions.
+Use the **Task tool** to spawn a coding subagent (fall back to describing the
+pattern in prose if the Task tool is not available to you).
 
-#### GREEN phase
+Pass the subagent a self-contained prompt that includes:
 
-4. Write the **minimum** production code to make this scenario pass.
-5. Run: `<verify.command>` → this scenario passes; others still fail (correct).
+```
+You are a coding agent executing a single TDD task for the givn change '<id>'.
 
-#### REFACTOR phase
+## Your task
+<paste the task line verbatim, including the Design constraints block>
 
+## Scenario to implement
+<paste the relevant scenario(s) from the .feature file>
+
+## Context
+- Verify command: <verify.command>
+- Step definitions location: <from design.md>
+
+## Instructions
+
+### Before any code: read the design
+Read givn/changes/<id>/design.md in full before touching any file.
+The "Design constraints" block in your task summarises the decisions that apply
+to this scenario specifically. The full design.md is the authoritative source.
+Do not substitute a simpler approach that happens to make a test pass —
+implement the architecture as specified.
+
+### RED phase
+1. Remove `@wip` from this scenario only (leave it on all others).
+2. Write step definitions with real assertions — Then steps must check
+   concrete values, not just that code ran.
+3. Run: <verify.command>
+   This scenario MUST fail now (no production code yet).
+   If it passes, the assertions are not real — fix them.
+
+### GREEN phase
+4. Write the minimum production code to make this scenario pass,
+   following the design constraints in the task and the architecture in
+   design.md exactly. "Minimum" means fewest lines that satisfy the
+   scenario — it does not mean a simpler architecture than the one designed.
+5. Run: <verify.command> → this scenario passes; others may still fail.
+
+### REFACTOR phase
 6. Clean up code, names, duplication — without changing behaviour.
-7. Run: `<verify.command>` → still passes.
+7. Run: <verify.command> → still passes.
 
-#### Done with scenario
+### Done
+8. Check off the task in givn/changes/<id>/tasks.md: `- [ ]` → `- [x]`
+9. Report back with:
+   - RED result (pass/fail as expected)
+   - GREEN result
+   - REFACTOR result
+   - Any issues or decisions made
+```
 
-8. Check off the task: `- [ ]` → `- [x]`
-9. Move to the next task.
+#### 5b. Wait for the subagent to report back
 
-**Pause if:**
-- A task is unclear → ask for clarification before touching code.
-- Implementation reveals a design issue → suggest updating design.md, then continue.
-- A blocker is encountered → report and wait for guidance.
+The subagent must complete RED/GREEN/REFACTOR and check off the task before
+the orchestrator proceeds to the next task.
+
+If the subagent reports a blocker, surface it to the user and wait for guidance
+before spawning the next subagent.
+
+#### 5c. After each subagent completes
+
+```sh
+givn apply --change <id>
+```
+
+Confirm the task was checked off. Then move to the next task.
 
 ### 6. On completion
 
@@ -91,7 +146,7 @@ givn apply --change <id>
 Show final progress. If all tasks are checked:
 
 ```sh
-givn status
+givn status --change <id>
 ```
 
 Suggest next step: "Run `/givn-review` to complete the coverage review."
@@ -103,13 +158,14 @@ Suggest next step: "Run `/givn-review` to complete the coverage review."
 ```
 ## Implementing: <id>
 
-Working on task 3/7: <capability>: <Scenario title>
-  RED: removed @wip, wrote assertions, ran tests → FAILED as expected
-  GREEN: wrote production code, ran tests → PASSED
-  REFACTOR: cleaned up, ran tests → still PASSED
-  [x] task marked complete
+Task 3/7: <capability>: <Scenario title>
+  → Spawning coding subagent...
+  RED:      FAILED as expected
+  GREEN:    PASSED
+  REFACTOR: PASSED
+  [x] task checked off
 
-Working on task 4/7: ...
+Task 4/7: ...
 ```
 
 ## Output on completion
@@ -129,23 +185,26 @@ Working on task 4/7: ...
 
 **Progress:** 4/7 tasks complete
 
-**Issue:** <description>
+**Blocker:** <description>
 
-**Options:**
-1. <option>
-2. <option>
+**Waiting for:** <what is needed to continue>
 ```
 
 ---
 
 ## Guardrails
 
-- Work through tasks in order — do not skip or reorder.
-- RED must genuinely fail before writing production code. If it passes, fix the
-  assertions.
-- `givn lint` is a STATIC check only — it does NOT run tests and does NOT
-  confirm GREEN. GREEN comes from `<verify.command>` only.
-- Remove `@wip` from one scenario at a time only.
-- Check off tasks immediately after the REFACTOR phase passes.
-- If a task is ambiguous, ask — do not guess and write the wrong code.
-- Do not batch multiple scenarios into one RED/GREEN cycle.
+- The orchestrator does not write code — it manages the loop and delegates.
+- Each subagent handles exactly one task (one RED/GREEN/REFACTOR cycle).
+- RED must genuinely fail before production code is written. If the subagent
+  reports it passed on RED, reject and re-spawn with corrected instructions.
+- Do not spawn the next subagent until the previous one has checked off its task.
+- Remove `@wip` from one scenario at a time only — pass this constraint to each
+  subagent explicitly.
+- `givn lint` is a STATIC check only — GREEN comes from `<verify.command>` only.
+- If a task is ambiguous, ask the user before spawning its subagent.
+- Do not batch multiple scenarios into one subagent.
+- If a subagent reports GREEN but deviated from the design (e.g. used a simpler
+  architecture that happens to pass the test), reject the result and re-spawn
+  with an explicit instruction to follow the design. GREEN means the scenario
+  passes AND the implementation matches the design.
