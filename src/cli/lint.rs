@@ -37,7 +37,8 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
         files
     };
 
-    let mut max_severity = 0u8;
+    let mut has_parse_error = false;
+    let mut has_wip = false;
     let mut total_files = 0;
     let mut total_errors = 0;
 
@@ -70,11 +71,10 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
 
         for error in &errors {
             total_errors += 1;
-            let severity = match error.kind {
-                LintKind::ParseError => 1u8,
-                LintKind::Wip => 2u8,
-            };
-            max_severity = max_severity.max(severity);
+            match error.kind {
+                LintKind::ParseError => has_parse_error = true,
+                LintKind::Wip => has_wip = true,
+            }
 
             let location = error
                 .line
@@ -103,8 +103,15 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
     }
 
     // Exit with the appropriate code.
-    // (Note: actual process exit is handled by mapping to a non-zero return in main.)
-    match max_severity {
+    // Parse errors (1) outrank @wip/PENDING (2).
+    let exit_code = if has_parse_error {
+        1
+    } else if has_wip {
+        2
+    } else {
+        0
+    };
+    match exit_code {
         0 => Ok(()),
         1 => std::process::exit(1),
         _ => std::process::exit(2),

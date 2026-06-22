@@ -6,7 +6,7 @@
 
 use std::process::Output;
 
-use cucumber::{given, then, when, World};
+use cucumber::{given, gherkin::Step, then, when, World};
 
 use crate::common;
 
@@ -99,6 +99,11 @@ fn init_root(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
 }
 
+#[given("a placeholder step")]
+fn placeholder_step(_world: &mut GivnWorld) {
+    // No-op: used by @givn.removed scenarios that need a single step to parse.
+}
+
 #[given("a project root without a givn/ directory")]
 fn bare_root(world: &mut GivnWorld) {
     world.env = Some(common::make_bare_root());
@@ -122,6 +127,20 @@ fn override_proposal(world: &mut GivnWorld) {
     let content = "# Custom Proposal\nThis is a test override.\n";
     common::write_override(env, "proposal", "proposal.md", content);
     world.override_content = Some(content.to_string());
+}
+
+#[given(regex = r#"^a \.feature file at "([^"]+)" with:$"#)]
+fn feature_file_at(world: &mut GivnWorld, path: String, step: &Step) {
+    let env = world.env.as_ref().expect("a project root is required first");
+    let content = step
+        .docstring
+        .as_ref()
+        .expect("docstring content for .feature file step");
+    let file_path = env.path(&path);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).expect("create parent dirs for .feature file");
+    }
+    std::fs::write(&file_path, content).expect("write .feature file");
 }
 
 // --- When ------------------------------------------------------------------
@@ -155,6 +174,12 @@ fn exits_zero(world: &mut GivnWorld) {
 fn exits_one(world: &mut GivnWorld) {
     let out = output(world);
     assert_eq!(out.status.code(), Some(1), "stderr={}", stderr(world));
+}
+
+#[then("the command exits 2")]
+fn exits_two_generic(world: &mut GivnWorld) {
+    let out = output(world);
+    assert_eq!(out.status.code(), Some(2), "stderr={}", stderr(world));
 }
 
 #[then("the command exits non-zero")]
@@ -254,6 +279,29 @@ fn stdout_mentions(world: &mut GivnWorld, needle: String) {
 fn stderr_contains(world: &mut GivnWorld, needle: String) {
     let s = stderr(world);
     assert!(s.contains(&needle), "stderr missing {:?}: {}", needle, s);
+}
+
+#[then(regex = r"^the (\w+) finding appears before the (\w+) finding on stderr$")]
+fn stderr_finding_order(world: &mut GivnWorld, needle_a: String, needle_b: String) {
+    let s = stderr(world);
+    let idx_a = s.lines().position(|l| l.contains(&needle_a));
+    let idx_b = s.lines().position(|l| l.contains(&needle_b));
+    let (idx_a, idx_b) = match (idx_a, idx_b) {
+        (Some(a), Some(b)) => (a, b),
+        (a, b) => panic!(
+            "stderr missing a finding line: {:?} at {:?}, {:?} at {:?}: {}",
+            needle_a, a, needle_b, b, s,
+        ),
+    };
+    assert!(
+        idx_a < idx_b,
+        "expected {:?} finding before {:?} finding, got indices {} and {}: {}",
+        needle_a,
+        needle_b,
+        idx_a,
+        idx_b,
+        s,
+    );
 }
 
 #[then("stderr mentions an unexpected argument")]

@@ -1,0 +1,1 @@
+../../changes/fix-lint-severity-ranking/specs/lint-command/lint-command.feature
