@@ -36,7 +36,7 @@ Announce: "Using change: <id>".
 givn apply --change <id>
 ```
 
-If all tasks are already checked, congratulate and suggest `/givn-review`.
+If all tasks are already checked, suggest `/givn-review`.
 Otherwise continue.
 
 ### 3. Validate the spec

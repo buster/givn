@@ -75,7 +75,10 @@ Do not write that line until all sign-off conditions are met.
 
 ### 1. Confirm all tests pass
 Run: <verify.command>
-All scenarios must be GREEN (no @wip remaining). If any fail, fix them first.
+All scenarios must be GREEN (no @wip remaining). If any fail, diagnose:
+- Infrastructure problem (fix test plumbing only).
+- Coverage gap (classify and resolve per the bucket rules below).
+Do NOT change production code behaviour to make tests pass.
 
 ### 2. Measure and record coverage
 Run the coverage tool specified in design.md. Record:

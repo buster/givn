@@ -140,10 +140,13 @@ For each question:
    **Q<N> (<branch>):** <question>
    **Recommended:** <recommended answer>
    ```
-2. **Wait for the user's response.** Do not present the next question until the
-   current one is answered.
+2. **Wait for the user's response.** Do not present the next question until
+   the current one is answered.
 3. Record the outcome: agreed / overridden (note what the user decided) /
    deferred (flag as open question).
+4. Ask: "Blocking or non-blocking?" Record the answer. Blocking means this
+   question must be resolved before implementation can proceed. Non-blocking
+   means it can be deferred.
 
 When all questions are answered, summarise:
 

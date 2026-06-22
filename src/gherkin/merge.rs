@@ -20,7 +20,13 @@ use gherkin::{Feature, Scenario};
 /// `permanent_text`: the current content of `givn/specs/<cap>/<cap>.feature`.
 ///                   May be empty/None for a brand-new capability.
 /// `deltas`:         the delta scenarios to apply.
-pub fn apply_deltas(permanent_text: Option<&str>, deltas: &[DeltaScenario<'_>]) -> Result<String> {
+/// `delta_feature_name`: the name of the delta feature — used as the baseline
+///                   header when `permanent_text` is empty (new capability).
+pub fn apply_deltas(
+    permanent_text: Option<&str>,
+    deltas: &[DeltaScenario<'_>],
+    delta_feature_name: &str,
+) -> Result<String> {
     // Parse the permanent feature (or start from an empty scenario list).
     let mut perm_scenarios: Vec<ScenarioText> = match permanent_text {
         Some(text) if !text.trim().is_empty() => {
@@ -31,7 +37,7 @@ pub fn apply_deltas(permanent_text: Option<&str>, deltas: &[DeltaScenario<'_>]) 
 
     let feature_header = match permanent_text {
         Some(text) if !text.trim().is_empty() => extract_feature_header(text),
-        _ => String::new(),
+        _ => format!("Feature: {}\n", delta_feature_name),
     };
 
     // Validate all preconditions BEFORE making any changes (all-or-nothing).
@@ -83,9 +89,6 @@ pub fn apply_deltas(permanent_text: Option<&str>, deltas: &[DeltaScenario<'_>]) 
 
     // Reassemble the file.
     let mut output = feature_header;
-    if output.is_empty() {
-        output.push_str("Feature: (merged)\n");
-    }
     for scenario in &perm_scenarios {
         output.push('\n');
         output.push_str(&scenario.text);
@@ -120,7 +123,7 @@ pub fn merge_file(
         None
     };
 
-    let new_text = apply_deltas(permanent_text.as_deref(), &deltas)?;
+    let new_text = apply_deltas(permanent_text.as_deref(), &deltas, &delta_feature.name)?;
 
     // Ensure parent directory exists.
     if let Some(parent) = permanent_path.parent() {
@@ -269,7 +272,7 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Added,
         };
-        let result = apply_deltas(Some(PERMANENT), &[delta]).unwrap();
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
         assert!(result.contains("User resets password"));
         assert!(result.contains("User logs in"));
     }
@@ -291,7 +294,7 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Modified,
         };
-        let result = apply_deltas(Some(PERMANENT), &[delta]).unwrap();
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
         assert!(result.contains("MFA"));
         assert!(result.contains("User logs in"));
     }
@@ -311,7 +314,7 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Removed,
         };
-        let result = apply_deltas(Some(PERMANENT), &[delta]).unwrap();
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
         assert!(!result.contains("User sees profile"));
         assert!(result.contains("User logs in"));
     }
@@ -333,7 +336,7 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Added,
         };
-        let err = apply_deltas(Some(PERMANENT), &[delta]).unwrap_err();
+        let err = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap_err();
         assert!(err.to_string().contains("already exists"));
     }
 
@@ -354,7 +357,7 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Modified,
         };
-        let err = apply_deltas(Some(PERMANENT), &[delta]).unwrap_err();
+        let err = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap_err();
         assert!(err.to_string().contains("not found"));
     }
 
@@ -373,7 +376,7 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Removed,
         };
-        let err = apply_deltas(Some(PERMANENT), &[delta]).unwrap_err();
+        let err = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap_err();
         assert!(err.to_string().contains("not found"));
     }
 
@@ -394,9 +397,35 @@ Feature: Delta
             scenario: &feature.scenarios[0],
             op: DeltaOp::Added,
         };
-        let result = apply_deltas(None, &[delta]).unwrap();
+        let result = apply_deltas(None, &[delta], "Delta").unwrap();
         // @givn.added should be stripped; @wip and @user-auth should remain.
         assert!(!result.contains("givn.added"));
         assert!(result.contains("@wip") || result.contains("wip"));
+        // Empty baseline uses the delta feature name as the header.
+        assert!(result.contains("Feature: Delta"));
+        assert!(!result.contains("(merged)"));
+    }
+
+    #[test]
+    fn empty_baseline_uses_delta_feature_name_as_header() {
+        let delta_text = r#"
+@givn.delta @new-capability
+Feature: Brand new capability
+
+  @givn.added @wip
+  Scenario: First scenario
+    Given something
+    When it happens
+    Then it works
+"#;
+        let feature = parse_str(delta_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas(None, &[delta], "Brand new capability").unwrap();
+        assert!(result.starts_with("Feature: Brand new capability\n"));
+        assert!(!result.contains("(merged)"));
+        assert!(result.contains("First scenario"));
     }
 }

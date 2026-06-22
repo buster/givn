@@ -29,8 +29,8 @@ directly.
 ### 1. Resolve the change ID
 
 If the user gave a description rather than a kebab-case ID, derive one
-(e.g. "add user auth" → `add-user-auth`). Confirm with the user before
-proceeding only if the name is genuinely ambiguous.
+(e.g. "add user auth" → `add-user-auth`). Confirm with the user only if
+multiple reasonable kebab-case IDs could derive from the description.
 
 ### 2. Create the change
 

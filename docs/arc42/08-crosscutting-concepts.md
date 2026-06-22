@@ -599,3 +599,76 @@ before letting the change proceed to archive.
 Hooks are shell commands declared in the project's own `givn/config.yaml` — the
 same trust level as a `Makefile`/`justfile` committed to the repo. givn does not
 fetch or execute remote commands.
+
+---
+
+## 8.13 Reverse-engineering mode (ADR-032)
+
+Reverse-engineering mode creates the **initial baseline spec** for a capability
+by characterizing its observed black-box behaviour. It is used when an existing
+codebase has no givn specs yet — most notably for the Phase 7 dogfood (givn on
+givn).
+
+### Characterization vs. TDD
+
+| Aspect | Normal TDD (`/givn-implement`) | Characterization (`/givn-characterize`) |
+|---|---|---|
+| Test stance | Prescriptive — test asserts desired behaviour | Descriptive — test asserts **observed** behaviour |
+| First run | RED (must fail — no production code) | GREEN (must pass — matching reality) |
+| If test fails | Good — RED proves the test is real | Diagnose: infrastructure problem or spec/mismatch |
+| Production code | Written during GREEN to satisfy the test | Refactored ONLY for testability seams; never to satisfy a test |
+| Bugs | Fixed as part of the change | Flagged as follow-up `@givn.modified` candidates; never fixed |
+
+### The two commands
+
+- **`/givn-reverse-engineer`** — planning orchestrator with an interactive
+  **discovery phase** (explores the codebase, proposes one capability with a
+  black-box boundary, confirms with the user). Delegates to an architect
+  subagent using reverse-mode instructions (proposal, specs, design, tasks).
+  Reuses `/givn-design-review` as-is for plan stress-testing.
+- **`/givn-characterize`** — execution + review orchestrator. Phase 1:
+  characterization loop (GREEN-first tests, testability seams, spec/implementation
+  mismatch diagnostic). Phase 2: reverse review epilogue (coverage with no
+  dead-code deletion, bug flagging, behaviour-preservation invariant).
+
+### Empty-baseline merge
+
+All scenarios are `@givn.added` against an empty permanent spec. On archive,
+the merge engine creates the initial `givn/specs/<cap>/<cap>.feature` baseline.
+The merge engine uses the delta feature's name as the baseline header (not the
+generic `"Feature: (merged)"` placeholder — fixed in ADR-032).
+
+### Spec/implementation mismatch diagnostic
+
+When `verify.command` fails during characterization (and infrastructure is
+sound), the subagent diagnoses:
+
+1. **Documentation was wrong** — docs said Y, code correctly does Z. Update
+   design.md, tasks.md, the .feature scenario, and the source documentation.
+2. **Code is ambiguous/misleading** — code does Z but reads like Y. Update the
+   .feature scenario to AS-IS behaviour. Add a `REVERSE-ENGINEERING NOTE:`
+   comment (language-agnostic comment syntax) at the misleading point. Do NOT
+   change code behaviour.
+
+### REVERSE-ENGINEERING NOTE markers
+
+Standardized code comment prefix for debt tracking. All markers are grep-able
+(`grep -rn "REVERSE-ENGINEERING NOTE"`) and listed in `review.md`. They are
+intentional — never removed during characterization. Follow-up refactoring
+changes address them.
+
+### Testability-only refactor boundary
+
+Allowed: extract interface, dependency injection, make a function/method public,
+add a test-only constructor, extract a pure function from a side-effectful one.
+
+NOT allowed: rename, deduplicate, simplify logic, restructure for clarity, fix
+bugs, change error messages, change return types, change control flow.
+
+### Prompt-layer only
+
+Reverse-engineering mode is entirely prompt-layer: no new CLI subcommands, no
+manifest changes, no new artifacts. It drives existing `givn new`/`givn
+apply`/`givn archive` with reverse-mode instructions. The reverse-mode
+instruction files (`assets/instructions/*-reverse.md`) are canonical source,
+inlined into command prompts (not served by the CLI today).

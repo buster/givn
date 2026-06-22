@@ -308,6 +308,50 @@ artifact, no state tracking, no gate; 48 tests pass.
 
 ---
 
+## Phase 5.9 — Reverse-engineering mode (ADR-032)
+
+- [x] 5.9.1 Fix `src/gherkin/merge.rs`: `apply_deltas` now takes
+      `delta_feature_name` and uses it for the empty-baseline header (was
+      `"Feature: (merged)\n"`). Update `merge_file` call site. Update all test
+      call sites. Add test: empty baseline uses delta feature name.
+- [x] 5.9.2 Write `assets/instructions/proposal-reverse.md`: descriptive stance,
+      AS-IS behaviour, black-box boundary, suspected bugs flagged as out-of-scope.
+- [x] 5.9.3 Write `assets/instructions/specs-reverse.md`: descriptive scenarios,
+      all `@givn.added`, provisional behaviour, bug handling.
+- [x] 5.9.4 Write `assets/instructions/design-reverse.md`: seam strategy,
+      testability-only refactor constraints, test harness, provisional behaviour.
+- [x] 5.9.5 Write `assets/instructions/tasks-reverse.md`: characterization loop
+      (GREEN-first), spec/implementation mismatch diagnostic, REVERSE-ENGINEERING
+      NOTE markers.
+- [x] 5.9.6 Write `assets/instructions/review-reverse.md`: no dead-code deletion,
+      bug flagging, behaviour-preservation invariant, mandatory reporting sections.
+- [x] 5.9.7 Write `assets/commands/givn-reverse-engineer.md`: planning orchestrator
+      with interactive discovery phase, architect subagent with reverse-mode
+      instructions.
+- [x] 5.9.8 Write `assets/commands/givn-characterize.md`: execution + review
+      orchestrator, characterization loop with failure diagnosis priority,
+      reverse review epilogue.
+- [x] 5.9.9 Write `assets/skills/givn-reverse-engineer/SKILL.md.tmpl` and
+      `assets/skills/givn-characterize/SKILL.md.tmpl`.
+- [x] 5.9.10 Add `givn-reverse-engineer` and `givn-characterize` to
+       `default_skill_names()` and `default_command_names()` in
+       `src/skills/render.rs` and `src/skills/targets.rs`.
+- [x] 5.9.11 Record ADR-032 in `docs/arc42/09-architecture-decisions.md`.
+- [x] 5.9.12 Update `docs/arc42/08-crosscutting-concepts.md`: section 8.13
+       reverse-engineering mode.
+- [x] 5.9.13 Update `docs/TASKS.md`: Phase 5.9 (this section) + Phase 7.
+- [x] 5.9.14 Update `README.md`: quickstart entries for the new commands.
+- [x] 5.9.15 Commit: "feat: reverse-engineering mode — /givn-reverse-engineer
+       and /givn-characterize (ADR-032)".
+
+**Done when:** `/givn-reverse-engineer` runs discovery, produces a plan with
+descriptive specs and characterization tasks; `/givn-characterize` runs the
+GREEN-first loop with spec/implementation mismatch diagnostic, testability
+seams, and reverse review; empty-baseline merge creates a clean permanent spec
+with the delta feature name as header; 49 tests pass.
+
+---
+
 ## Phase 6 — Distribution
 
 - [ ] 6.1 Add `cargo-dist` config; targets: linux x64+arm64 (prefer musl),
@@ -327,16 +371,26 @@ artifact, no state tracking, no gate; 48 tests pass.
 
 ## Phase 7 — Dogfood
 
-- [ ] 7.1 Copy/convert a sample (e.g. gherkintest) to use `givn/` and
-      `GIVN_FEATURES` default `givn/specs`.
-- [ ] 7.2 Run the full loop: `init → new → instructions → (author specs) →
-      lint → run tests (verify.command) → apply → review → archive`.
-- [ ] 7.3 Confirm merged specs are clean Gherkin and the runner passes against
-      `givn/specs`.
-- [ ] 7.4 Capture any rough edges as issues/follow-ups.
-- [ ] 7.5 Commit: "test: end-to-end dogfood validation".
+The dogfood path uses reverse-engineering mode (ADR-032) to create the initial
+baseline specs for givn's own capabilities, then transitions to normal
+`/givn-propose` for future development.
 
-**Done when:** the full workflow works end-to-end on a real project.
+- [ ] 7.1 `givn init` in the givn repo; set `verify.command` to `cargo test`;
+      enable `arc42` addon if not already enabled.
+- [ ] 7.2 Pick a capability (e.g. `gherkin-delta-merge`, `config-cascade-overlay`,
+      `lifecycle-state`, `hooks`). Run `/givn-reverse-engineer <id>` → discovery
+      → plan → `/givn-design-review` → `/givn-characterize` → `/givn-archive`.
+- [ ] 7.3 Confirm the archived change creates a clean `givn/specs/<cap>/<cap>.feature`
+      baseline with the delta feature name as header.
+- [ ] 7.4 Repeat for remaining capabilities until givn's core behaviour is
+      specified.
+- [ ] 7.5 From this point: givn development uses `/givn-propose` (deltas against
+      the reverse-engineered baseline). givn is self-hosted.
+- [ ] 7.6 Capture any rough edges as issues/follow-ups.
+- [ ] 7.7 Commit: "test: end-to-end dogfood validation (reverse-engineering + self-hosting)".
+
+**Done when:** givn's own capabilities have baseline specs in `givn/specs/`,
+created via reverse-engineering mode; future givn development uses givn.
 
 ---
 

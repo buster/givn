@@ -678,3 +678,96 @@ exploration notes, they can write them anywhere; givn doesn't need to track them
 - `assets/skills/givn-explore/SKILL.md.tmpl`: skill template.
 - `docs/arc42/08-crosscutting-concepts.md`: skills list updated.
 - No manifest, state, or binary changes — explore is pure prompt layer.
+
+---
+
+## ADR-032: Reverse-engineering mode — characterization for baseline spec creation
+
+**Context.** givn is delta-centric: every change assumes a permanent spec
+already exists to delta against. But the first dogfood (givn on givn, Phase 7)
+requires creating the initial baseline spec from an existing codebase. There is
+no "create the initial permanent spec" path — `givn new` creates a change
+scaffold, and `archive` merges the delta into the (possibly empty) permanent
+spec.
+
+Reverse-engineering an existing codebase is not a delta — it's producing the
+initial baseline by characterizing observed behaviour. This must work within
+givn's existing lifecycle without parallel paths or bypassed gates.
+
+**Decision.** Reverse-engineering is a **normal givn change** with all
+`@givn.added` scenarios against an empty permanent spec. On archive, the merge
+creates the initial `givn/specs/<cap>/<cap>.feature` baseline. The difference
+from a normal change lives entirely in **prompt-layer instructions**, not in
+the Rust binary or manifest.
+
+Two new prompt-layer commands:
+- `/givn-reverse-engineer` — planning orchestrator with an interactive
+  **discovery phase** (explores the codebase, proposes one capability with a
+  black-box boundary, confirms with the user). Then delegates to an architect
+  subagent using reverse-mode instructions: proposal (descriptive, AS-IS),
+  specs (observed behaviour, `@givn.added @wip`), design (seam strategy,
+  testability-only refactor plan), tasks (characterization cycles, GREEN-first).
+- `/givn-characterize` — execution + review orchestrator. Phase 1:
+  characterization loop (GREEN-first tests, testability seams, spec/implementation
+  mismatch diagnostic). Phase 2: reverse review epilogue (coverage with no
+  dead-code deletion, bug flagging, behaviour-preservation invariant).
+
+Five reverse-mode instruction files in `assets/instructions/`:
+`proposal-reverse.md`, `specs-reverse.md`, `design-reverse.md`,
+`tasks-reverse.md`, `review-reverse.md`.
+
+**Key principles:**
+- **Descriptive, not prescriptive.** Specs capture what the system *does*
+  today, not what it *should* do.
+- **GREEN-first, not RED-first.** Characterization tests are written to match
+  observed behaviour and must pass immediately. If they fail, the spec (or the
+  documentation that informed it) is wrong — never the production code.
+- **No behaviour change.** Production code is refactored only for testability
+  seams (extract interface, DI, make public). General cleanup (rename, dedup,
+  logic simplification) is forbidden.
+- **Bugs are flagged, never fixed.** Suspected bugs are recorded as follow-up
+  `@givn.modified` candidates. Dead code is flagged as `@givn.removed`
+  candidates. Neither is addressed in the reverse-engineering change.
+- **REVERSE-ENGINEERING NOTE markers.** When code is ambiguous/misleading and
+  caused a wrong spec inference, a code comment is added (language-agnostic
+  comment syntax) starting with `REVERSE-ENGINEERING NOTE:`. These are
+  intentional debt markers, grep-able, never removed during characterization.
+
+**Failure diagnosis priority** (when `verify.command` fails during
+characterization):
+1. **Test infrastructure problem** (most common) — fix test plumbing only.
+2. **Spec/implementation mismatch** — diagnose: documentation was wrong
+   (update docs + spec) or code is ambiguous (update spec to AS-IS, add
+   REVERSE-ENGINEERING NOTE comment).
+
+**Rationale.** Option A (normal change, empty-baseline delta) was chosen over
+Option B (bootstrap command, bypass lifecycle) because it dogfoods the *entire*
+lifecycle on givn's first use — which is the point of Phase 7. The delta-tag
+degeneracy (`@givn.added` on everything) is semantically correct and
+cosmetically minor. The merge engine already handles `permanent_text: None`.
+
+Prompt-only (no CLI awareness) was chosen over binary-level reverse mode
+because the lifecycle mechanics already support it. The "reverse mode" is
+enforced by instructions, not by the binary — this is acceptable for v1.
+
+**Consequences.**
+- `assets/commands/givn-reverse-engineer.md`: planning orchestrator with
+  discovery phase.
+- `assets/commands/givn-characterize.md`: execution + review orchestrator.
+- `assets/skills/givn-reverse-engineer/SKILL.md.tmpl`: skill template.
+- `assets/skills/givn-characterize/SKILL.md.tmpl`: skill template.
+- `assets/instructions/proposal-reverse.md`, `specs-reverse.md`,
+  `design-reverse.md`, `tasks-reverse.md`, `review-reverse.md`: canonical
+  reverse-mode instructions (inlined into command prompts; not served by CLI
+  today).
+- `src/skills/render.rs`, `src/skills/targets.rs`: new skills/commands added to
+  sync lists.
+- `src/gherkin/merge.rs`: `apply_deltas` now takes `delta_feature_name` and
+  uses it for the empty-baseline header (was `"Feature: (merged)\n"`).
+- `docs/arc42/08-crosscutting-concepts.md`: reverse-engineering section added.
+- `docs/TASKS.md`: Phase 5.9 added; Phase 7 updated.
+- `README.md`: quickstart entries added.
+- `/givn-design-review` is reused as-is (grilling branches apply equally to
+  reverse-engineering plans).
+- No manifest, state, or CLI subcommand changes — reverse-engineering is pure
+  prompt layer driving existing `givn new`/`givn apply`/`givn archive`.

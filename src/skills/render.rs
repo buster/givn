@@ -62,5 +62,9 @@ pub fn default_skill_names() -> Vec<&'static str> {
         "givn-implement",
         "givn-review",
         "givn-archive",
+        "givn-explore",
+        "givn-design-review",
+        "givn-reverse-engineer",
+        "givn-characterize",
     ]
 }

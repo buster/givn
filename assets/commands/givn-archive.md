@@ -39,7 +39,7 @@ givn lint
   archiving. The spec must be fully implemented.
 - Exit 0: proceed.
 
-### 3. Run the archive command
+### 2. Run the archive command
 
 ```sh
 givn archive --change <id>
@@ -55,7 +55,7 @@ givn archive --change <id>
 If any gate check fails, `givn archive` exits non-zero with a clear error.
 Report the error to the user and stop.
 
-### 4. Verify the result
+### 3. Verify the result
 
 On success, `givn archive` will have:
 - Run the test suite via the configured hooks (final GREEN confirmation).
@@ -69,7 +69,7 @@ givn lint
 Exit 0 = permanent specs are clean. Exit non-zero = report to user (the archive
 completed, but a problem in the permanent specs needs attention).
 
-### 5. Show summary
+### 4. Show summary
 
 ```sh
 givn status

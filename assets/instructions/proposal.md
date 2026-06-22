@@ -10,8 +10,8 @@ language that a non-technical stakeholder can read and validate.
 - The only permitted implementation-flavoured content is an aspect that is
   *itself* an externally observable requirement (e.g. "the response is valid JSON",
   "data persists across restart", "responds within 200 ms"). Heuristic: if it
-  would still be true under a reasonable reimplementation, it belongs in the spec;
-  otherwise it belongs in design/tasks.
+  would still be true if the system were reimplemented in a different language
+  and framework, it belongs in the spec; otherwise it belongs in design/tasks.
 - Write from the user's perspective. Use domain language (business terms, not
   technical terms).
 

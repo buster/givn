@@ -99,6 +99,30 @@ propose → spec → design → design-review → tasks → implement → review
 - **review** is the post-implementation coverage review: run tests, classify
   every gap, resolve. Gate: `REVIEW: PASS`.
 
+### Reverse-engineering an existing codebase
+
+When a codebase has no givn specs yet (e.g. for the first dogfood),
+`/givn-reverse-engineer` creates the **initial baseline spec** by
+characterizing observed behaviour:
+
+```
+reverse-engineer → design-review → characterize → archive (creates baseline spec)
+```
+
+- **reverse-engineer** discovers a capability and its black-box boundary
+  interactively, then produces descriptive specs (AS-IS behaviour), a seam
+  strategy (testability-only refactors), and characterization tasks
+  (GREEN-first, not RED-first).
+- **characterize** executes the loop: writes tests matching observed behaviour,
+  diagnoses spec/implementation mismatches (corrects the spec, never the code),
+  applies testability seams, and runs a reverse review (no dead-code deletion,
+  bugs flagged not fixed).
+- On archive, the all-`@givn.added` delta merges into an empty permanent spec,
+  creating the initial `givn/specs/<cap>/<cap>.feature` baseline.
+
+After the baseline exists, future changes use the normal workflow
+(`/givn-propose` with deltas against the baseline).
+
 ## Install (planned)
 
 No npm. No root. No runtime. Pick whichever you like:
@@ -129,6 +153,8 @@ givn skills sync                # regenerate AGENTS.md + skills after a binary u
 givn upgrade                    # refresh documented config to the new givn version
 givn-explore                    # think through a problem before proposing (run as a skill)
 givn-design-review              # stress-test the plan before implementing (run as a skill)
+givn-reverse-engineer           # reverse-engineer an existing capability into baseline specs (run as a skill)
+givn-characterize               # execute the characterization loop + reverse review (run as a skill)
 givn addons list                # show available addons (e.g. arc42) and their status
 givn addons enable arc42        # enable the arc42 documentation addon
 givn completions bash           # print bash completion script (eval in ~/.bashrc)
