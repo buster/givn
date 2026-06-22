@@ -36,5 +36,5 @@ Write the Gherkin spec delta for change `<change-id>`.
 ## Verify command
 
 ```
-cargo test --test features_runner
+givn missing-testrunner
 ```

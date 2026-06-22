@@ -12,7 +12,7 @@ Write the design for change `<change-id>`.
 - Design file: `givn/changes/<change-id>/design.md`
 - Instructions: run `givn instructions design --change <change-id>`
 - Spec (WHAT): `givn/changes/<change-id>/specs/`
-- Test runner: `cargo test --test features_runner`
+- Test runner: `givn missing-testrunner`
 
 ## This is the HOW layer
 
@@ -28,5 +28,5 @@ Everything technical belongs here — do not add implementation details to the s
 ## Verify command
 
 ```
-cargo test --test features_runner
+givn missing-testrunner
 ```

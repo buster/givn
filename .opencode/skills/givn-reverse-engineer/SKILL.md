@@ -12,7 +12,7 @@ characterization tasks that make them executable.
 ## Context
 
 - Change: `givn/changes/<change-id>/`
-- Test runner: `cargo test --test features_runner`
+- Test runner: `givn missing-testrunner`
 - Features path: `GIVN_FEATURES=givn/specs`
 
 ## Stance: descriptive, not prescriptive
@@ -76,5 +76,5 @@ When planning is complete, suggest:
 ## Verify command
 
 ```
-cargo test --test features_runner
+givn missing-testrunner
 ```
