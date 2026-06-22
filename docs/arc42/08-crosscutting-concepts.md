@@ -288,8 +288,12 @@ Standards-aligned, multi-target emit (see ADR-013):
 - **Rules/context →** `AGENTS.md` at repo root (the ratified standard).
 - **Skills →** neutral `.agents/skills/<name>/SKILL.md` (primary), mirrored to
   `.claude/skills/<name>/SKILL.md` and `.opencode/skills/<name>/SKILL.md`.
-- Default skills, one per workflow action: `givn-propose`, `givn-spec`,
-  `givn-design`, `givn-tasks`, `givn-implement`, `givn-review`, `givn-archive`.
+- Default skills, one per workflow action: `givn-explore`, `givn-propose`,
+  `givn-spec`, `givn-design`, `givn-design-review`, `givn-tasks`,
+  `givn-implement`, `givn-review`, `givn-archive`.
+- `givn-explore` is a pre-lifecycle skill — a thinking stance, not a manifest
+  artifact. It produces no tracked output and has no gate. It runs before
+  `/givn-propose` when the problem is still vague. See ADR-031.
 - Skill templates are **ejectable** (`givn eject skill:<name>`), so users can
   retarget tools givn does not ship support for.
 - `SKILL.md` frontmatter: `name`, `description` (kebab-case name matching the

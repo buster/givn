@@ -290,6 +290,24 @@ pass.
 
 ---
 
+## Phase 5.8 — Explore skill (ADR-031)
+
+- [x] 5.8.1 Write `assets/commands/givn-explore.md`: pre-lifecycle thinking
+      stance; curious, visual, grounded, patient; never implement; offer to
+      formalise via `/givn-propose` when ready; givn tool calls for context.
+- [x] 5.8.2 Write `assets/skills/givn-explore/SKILL.md.tmpl`: skill summarising
+      stance, when to use, what not to do, transition out.
+- [x] 5.8.3 Update `docs/arc42/08-crosscutting-concepts.md` skills list.
+- [x] 5.8.4 Record ADR-031 in `docs/arc42/09-architecture-decisions.md`.
+- [x] 5.8.5 Update `README.md` quickstart with `/givn-explore`.
+- [x] 5.8.6 Commit.
+
+**Done when:** `/givn-explore` enters a thinking stance, explores the codebase,
+and transitions to `/givn-propose <id>` when the user is ready; no manifest
+artifact, no state tracking, no gate; 48 tests pass.
+
+---
+
 ## Phase 6 — Distribution
 
 - [ ] 6.1 Add `cargo-dist` config; targets: linux x64+arm64 (prefer musl),

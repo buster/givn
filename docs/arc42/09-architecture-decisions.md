@@ -640,3 +640,41 @@ context, consistent with how the coverage review works.
 - `assets/skills/givn-design-review/SKILL.md.tmpl`: skill template.
 - `src/state.rs`: `detect_design_review_pass()` parallel to `detect_review_pass()`.
 - `src/cli/archive.rs`: error message covers both sign-off markers.
+
+---
+
+## ADR-031: Explore is a pre-lifecycle skill, not a manifest artifact
+
+**Context.** The workflow starts at `proposal` — the first artifact in the
+manifest. But before a proposal is written, the problem may be too vague to
+formalise: the user might be comparing approaches, investigating feasibility, or
+just thinking out loud. Forcing them into `givn new <id>` + `/givn-propose` to
+start thinking is premature structure.
+
+**Decision.** Add `givn-explore` as a **skill and command only** — not a manifest
+artifact. It has:
+- No entry in `default-manifest.yaml`.
+- No `generates`, no state tracking, no sign-off marker, no gate.
+- No template or instruction (it has no structured output).
+
+Explore is a **stance**: curious, visual, grounded, patient. It reads the
+codebase, asks questions, surfaces options, and visualises. It produces
+*thinking*, not artifacts. When thinking crystallises, the user transitions to
+`/givn-propose <id>` to enter the formal lifecycle.
+
+The relationship to `design-review` is complementary:
+- **explore** (pre-proposal): divergent — "what should we build?"
+- **design-review** (post-design): convergent — "is this plan sound?"
+
+**Rationale.** The value of explore is its lack of structure. Making it an
+artifact with a template and a sign-off marker would kill the stance. givn's
+lifecycle starts at `proposal`; explore is pre-lifecycle, like `givn init` or
+`givn completions` — a utility, not a lifecycle step. If a user wants to keep
+exploration notes, they can write them anywhere; givn doesn't need to track them.
+
+**Consequences.**
+- `assets/commands/givn-explore.md`: command prompt — stance, what you might do,
+  givn awareness, guardrails.
+- `assets/skills/givn-explore/SKILL.md.tmpl`: skill template.
+- `docs/arc42/08-crosscutting-concepts.md`: skills list updated.
+- No manifest, state, or binary changes — explore is pure prompt layer.

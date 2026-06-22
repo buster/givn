@@ -127,6 +127,7 @@ givn archive --change add-user-auth   # merge deltas into givn/specs/, move to a
 givn eject design:template      # pull an embedded default into your project to edit
 givn skills sync                # regenerate AGENTS.md + skills after a binary update
 givn upgrade                    # refresh documented config to the new givn version
+givn-explore                    # think through a problem before proposing (run as a skill)
 givn-design-review              # stress-test the plan before implementing (run as a skill)
 givn addons list                # show available addons (e.g. arc42) and their status
 givn addons enable arc42        # enable the arc42 documentation addon
