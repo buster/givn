@@ -14,7 +14,7 @@ language- and test-runner-agnostic and aimed at the broader open-source communit
 The lifecycle it manages:
 
 ```
-propose → spec → design → tasks → implement → review → archive
+propose → spec → design → design-review → tasks → implement → review → archive
 ```
 
 ## 1.2 Requirements Overview

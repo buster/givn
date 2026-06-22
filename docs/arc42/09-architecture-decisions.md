@@ -350,11 +350,11 @@ through `git diff` against a re-eject; a future enhancement may assist this.
 
 ## ADR-024: Artifacts (the workflow) are first-class configurable data
 
-**Context.** The default lifecycle is propose → spec → design → tasks →
-implement → review → archive. Projects legitimately need to vary this: skip the
-review gate, make review optional, add a dedicated refactor step after
-implementation, or insert custom artifacts (e.g. a risk assessment). Prior tools
-hardcoded the workflow, forcing a source fork to change it.
+**Context.** The default lifecycle is propose → spec → design → design-review
+→ tasks → implement → review → archive. Projects legitimately need to vary
+this: skip the review gate, make review optional, add a dedicated refactor step
+after implementation, or insert custom artifacts (e.g. a risk assessment). Prior
+tools hardcoded the workflow, forcing a source fork to change it.
 
 **Decision.** The lifecycle is **entirely described by the manifest** (artifacts,
 their `requires` graph, the `apply` gate) and is fully reconfigurable per project
@@ -580,51 +580,63 @@ The fix is entirely in the prompt layer (assets/commands/); no binary changes.
 
 ---
 
-## ADR-030: Design-review artifact — plan stress-test before implementation
+## ADR-030: Design-review artifact — plan stress-test before tasks
 
 **Context.** After the first real dogfood run revealed that implementation could
 diverge from the design (ADR-029), the immediate fix was to strengthen the task
 and implement prompts. But a deeper safeguard is to catch design problems before
-a single line of production code is written — when changing a decision costs a
-markdown edit rather than a rewrite.
+the task list is even written — when changing a decision costs a markdown edit
+rather than a rewrite. Reviewing the plan *after* tasks are written is too late:
+the tasks encode the design decisions, so a flawed design produces flawed tasks
+that produce a flawed implementation.
 
 **Decision.** Add a `design-review` artifact to the default manifest, positioned
-after `tasks` and before `review`:
+after `design` and before `tasks`:
 
 ```
-proposal → specs → design → tasks → design-review → implement → review → archive
+proposal → specs → design → design-review → tasks → implement → review → archive
 ```
 
-The artifact runs in two mandatory phases:
+`design-review` requires `[design]` and `tasks` requires `[design-review]`. It
+is NOT in `apply.requires` (still `[tasks, review]`) — it is a planning-layer
+gate that blocks tasks, not an archive gate.
 
-1. **Grilling** — relentless one-question-at-a-time interrogation of the full
-   plan (proposal, spec, design, tasks). Walk every branch of the design tree:
-   scope, tech choices, missing scenarios, task order, design constraints,
-   testability, risk. Provide a recommended answer with each question; wait for
-   confirmation before the next. If a question can be answered by exploring the
-   codebase, explore it instead of asking.
+The artifact runs in two phases via subagents in clean contexts:
 
-2. **Hardening** — apply all decisions reached: update design.md, tasks.md,
-   and/or specs/*.feature with findings. Run `givn lint` after any feature edits.
+1. **Grilling subagent** — reads all planning artifacts (proposal, spec, design)
+   and the relevant codebase, then returns a ranked list of questions with
+   recommended answers. The orchestrator presents questions to the user one at a
+   time, waits for each answer, and records outcomes. If a question can be
+   answered by exploring the codebase, the subagent does so and reports the
+   finding instead of asking the user.
 
-Sign-off requires the string `DESIGN-REVIEW: PASS` in `design-review.md`; the
-archive gate (`apply.requires`) includes `design-review`.
+   Required branches: scope, tech choices, missing scenarios, testability, risk.
+
+2. **Hardening subagent** — applies all decisions reached: update design.md,
+   add missing scenarios to specs/*.feature. Does NOT write tasks.md (that is
+   the next artifact). Runs `givn lint` after any feature edits.
+
+Sign-off requires the string `DESIGN-REVIEW: PASS` in `design-review.md`. If
+blocking open questions remain, the subagent writes `DESIGN-REVIEW: FAIL`.
 
 **Rationale.** The design-review is a plan-layer gate, separate from the
 post-implementation coverage review. It catches architectural decisions that are
-wrong, scope that doesn't match the proposal, scenarios that are untestable,
-and task ordering problems — all before implementation starts.
+wrong, scope that doesn't match the proposal, and scenarios that are untestable
+— all before tasks are written. Running it before tasks (rather than after) means
+the tasks are written against a hardened plan, not a draft. Using subagents
+(rather than running inline) gives the grilling and hardening work a clean
+context, consistent with how the coverage review works.
 
 **Consequences.**
 - `assets/default-manifest.yaml`: new `design-review` artifact, `requires:
-  [tasks]`; `review` now `requires: [design-review]`; `apply.requires` updated
-  to `[tasks, design-review, review]`.
+  [design]`; `tasks` now `requires: [design-review]`; `review` stays
+  `requires: [tasks]`; `apply.requires` unchanged at `[tasks, review]`.
 - `assets/instructions/design-review.md`: grilling branches and hardening rules.
-- `assets/templates/design-review.md`: grilling log, open questions, hardening
-  changes, sign-off checklist, `DESIGN-REVIEW: PASS` marker.
-- `assets/commands/givn-design-review.md`: interactive orchestrator prompt;
-  runs in the current context (no subagent) to preserve the one-question-at-a-
-  time dialogue flow.
+- `assets/templates/design-review.md`: grilling log, codebase findings, open
+  questions, hardening changes, sign-off checklist, `DESIGN-REVIEW: PASS` marker.
+- `assets/commands/givn-design-review.md`: orchestrator prompt — spawns grilling
+  subagent, runs interactive one-question-at-a-time loop, spawns hardening
+  subagent.
 - `assets/skills/givn-design-review/SKILL.md.tmpl`: skill template.
 - `src/state.rs`: `detect_design_review_pass()` parallel to `detect_review_pass()`.
-- `src/cli/archive.rs`: error message updated to cover both sign-off markers.
+- `src/cli/archive.rs`: error message covers both sign-off markers.

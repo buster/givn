@@ -27,32 +27,32 @@ artifacts:
     optional: false
     post: []
 
-  - id: tasks
-    generates: ["tasks.md"]
-    requires: ["design"]
-    template: "tasks.md"
-    instruction: "tasks"
-    optional: false
-    post: ["verify"]
-
   - id: design-review
     generates: ["design-review.md"]
-    requires: ["tasks"]
+    requires: ["design"]
     template: "design-review.md"
     instruction: "design-review"
     optional: false
     post: []
 
+  - id: tasks
+    generates: ["tasks.md"]
+    requires: ["design-review"]
+    template: "tasks.md"
+    instruction: "tasks"
+    optional: false
+    post: ["verify"]
+
   - id: review
     generates: ["review.md"]
-    requires: ["design-review"]
+    requires: ["tasks"]
     template: "review.md"
     instruction: "review"
     optional: false
     post: ["verify"]
 
 apply:
-  requires: ["tasks", "design-review", "review"]
+  requires: ["tasks", "review"]
   tracks: "tasks.md"
 
 verify:

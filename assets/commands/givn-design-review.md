@@ -1,9 +1,10 @@
 ---
-description: Stress-test the plan before implementation — grill the design, harden the artifacts, sign off
+description: Stress-test the plan before tasks are written — grill the design, harden the artifacts, sign off
 ---
 
-Stress-test the complete plan (proposal, spec, design, tasks) before any
-production code is written.
+Stress-test the plan (proposal, spec, design) before the task list is written.
+Catches scope, architecture, and testability problems when they cost a markdown
+edit rather than a rewrite.
 
 **Input**: Optionally specify a change ID after `/givn-design-review`. If
 omitted, infer from conversation context, or auto-select if only one active
@@ -11,15 +12,20 @@ change exists. If ambiguous, list changes and ask.
 
 ---
 
-## Role
+## Role: orchestrator
 
-This command runs **in the current context** — it does not spawn subagents.
-It is an interactive, two-phase process:
+This command is an **orchestrator** with two subagents and an interactive loop
+in between:
 
-1. **Grilling** — relentless one-question-at-a-time interrogation of the plan.
-2. **Hardening** — apply the decisions reached to the existing artifacts.
+1. **Grilling subagent** — reads all planning artifacts and the codebase; returns
+   a ranked list of questions with recommended answers.
+2. **Interactive loop** — the orchestrator presents questions one at a time to
+   the user, records answers.
+3. **Hardening subagent** — applies all decisions reached to the artifacts and
+   writes `design-review.md`.
 
-Both phases must complete before `design-review.md` is written and signed off.
+The interactive loop runs in the orchestrator's own context so the
+one-question-at-a-time dialogue works naturally.
 
 ---
 
@@ -34,155 +40,251 @@ givn status --change <id> --json
 Identify the active change. Announce: "Using change: <id>".
 
 Check the `artifacts` array:
-- `tasks` must be `"status": "done"` — all tasks listed and checked.
-- If `tasks` is not done, warn: "Tasks are not complete. The design-review
-  should run after the full task list is written." Confirm to proceed anyway.
+- `design` must be `"status": "done"` before proceeding.
+- If `design` is not done, stop: "Design must be complete before design-review."
 
-### 2. Read everything
-
-Read all planning artifacts in full before asking a single question:
-
-- `givn/changes/<id>/proposal.md`
-- `givn/changes/<id>/specs/**/*.feature`
-- `givn/changes/<id>/design.md`
-- `givn/changes/<id>/tasks.md`
-- Relevant existing codebase files named in design.md (integration points,
-  patterns, modules that will be affected).
-
-Also run:
+### 2. Collect instructions
 
 ```sh
 givn instructions design-review --change <id>
 ```
 
-Capture `output` path, `template`, and `instruction`.
+Capture `output` path, `template`, `instruction`, `dependencies`.
 
-Do not ask a single question until all reading is done. Grilling from
-incomplete knowledge produces shallow questions.
+### 3. Spawn the grilling subagent
 
-### 3. Grilling — one question at a time
+Use the **Task tool** to spawn a grilling subagent in a clean context.
 
-Work through the plan as a sceptical colleague who has to build and maintain it.
-Walk the design tree branch by branch. For each question:
+Pass a self-contained prompt:
 
-1. State which **branch** you are exploring (e.g. "Scope", "Tech choices",
-   "Task order", "Testability").
-2. Ask **one question** only.
-3. Provide your **recommended answer** — do not ask without a recommendation.
-4. **Wait for the user's response** before moving to the next question.
-5. Record the outcome (agreed / overridden / deferred).
+```
+You are a grilling subagent for givn change '<id>'.
 
-If a question can be answered by exploring the codebase, explore it and report
-the finding instead of asking the user.
+Your job: read the full plan and return a prioritised list of questions that
+must be answered before implementation starts. You do NOT ask the user anything
+directly — you return the questions so the orchestrator can present them one at
+a time.
 
-**Required branches to walk (in any order):**
+## Read everything first
 
-- **Scope** — does the spec contain everything the proposal asked for? Anything
-  extra? Is anything ambiguous about "done"?
-- **Tech choices** — is the stack in design.md the right fit for the scenarios?
-  Are there simpler alternatives that still satisfy all observable behaviours?
-- **Missing scenarios** — are there observable behaviours implied by the
-  proposal but absent from the spec? Error paths? Boundary conditions?
-- **Task order and dependencies** — are tasks ordered by dependency? Will any
-  task require something that a preceding task hasn't built yet?
-- **Design constraints** — does every scenario task have a "Design constraints"
-  block? Are the constraints specific enough that there is no ambiguous shortcut?
+Read all of these in full before forming any questions:
+- givn/changes/<id>/proposal.md
+- givn/changes/<id>/specs/**/*.feature
+- givn/changes/<id>/design.md
+- Existing codebase files named in design.md (integration points, affected
+  modules, patterns). If a question can be answered by exploring the codebase,
+  explore it and record the finding as a resolved item — do not include it as
+  a question for the user.
+
+## Required branches to cover
+
+Walk the design tree and produce at least one question per branch (or record it
+as "no issue found" if genuinely clean):
+
+- **Scope** — does the spec match what the proposal asked for? Anything extra?
+  Anything missing? Is "done" unambiguous?
+- **Tech choices** — is the stack in design.md the right fit? Are there simpler
+  alternatives that satisfy all the observable behaviours in the spec?
+- **Missing scenarios** — are there observable behaviours implied by the proposal
+  but absent from the spec? Error paths? Boundary conditions?
 - **Testability** — can every scenario actually fail in RED with no production
-  code? Do Then-steps assert concrete observable values, or do they just assert
-  "it ran"?
+  code? Do the Then-steps assert concrete values, not just "it ran"?
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
 
-Do not move on from a branch until the current question is answered. Do not ask
-two questions at once.
+## Return format
 
-Grilling is complete when every branch has been walked and every question
-resolved or explicitly flagged as a blocker.
+Return a JSON array of objects, ordered by priority (most critical first):
 
-### 4. Hardening — apply the decisions
+[
+  {
+    "branch": "<branch name>",
+    "question": "<the question>",
+    "recommended": "<your recommended answer>",
+    "codebase_finding": null   // or a string if you resolved it by exploring
+  },
+  ...
+]
 
-After grilling is complete, apply all decisions reached:
+Also return a separate array of items you resolved by codebase exploration
+(so the orchestrator can report them):
 
-- Edit `givn/changes/<id>/design.md` if any tech decisions changed.
-- Edit `givn/changes/<id>/tasks.md` if any task order, constraint blocks, or
-  scenario tasks need updating.
-- Edit `givn/changes/<id>/specs/**/*.feature` if any missing scenarios were
-  identified — add them with `@givn.added @wip`.
-- Do not edit the proposal unless grilling revealed a fundamental scope mismatch
-  — flag that as a blocker instead.
+{
+  "questions": [ ... ],
+  "resolved_by_codebase": [
+    { "branch": "...", "finding": "..." }
+  ]
+}
 
-After hardening edits:
-
-```sh
-givn lint --change <id>
+Return only the JSON — no prose before or after it.
 ```
 
-Exit 0 or 2 = correct. Exit 1 = parse error in a .feature file — fix before
-continuing.
+### 4. Interactive grilling loop
 
-### 5. Write design-review.md
+Wait for the grilling subagent to return.
 
-Write `givn/changes/<id>/design-review.md` following the template from
-`givn instructions design-review --change <id>`:
+If any `resolved_by_codebase` items were found, report them first:
 
-- Grilling log: every question, recommended answer, and outcome.
-- Open questions: any that could not be resolved (with "Blocking? yes/no").
-- Changes made during hardening: a table of artifact edits.
-- Sign-off checklist: all items checked.
-- Final line: `DESIGN-REVIEW: PASS` — only if no blockers remain.
+```
+## Design review: <id>
 
-### 6. Show final status
+**Resolved by codebase exploration:**
+- [Branch]: <finding>
+```
+
+Then work through `questions` one at a time:
+
+For each question:
+1. Present it to the user:
+   ```
+   **Q<N> (<branch>):** <question>
+   **Recommended:** <recommended answer>
+   ```
+2. **Wait for the user's response.** Do not present the next question until the
+   current one is answered.
+3. Record the outcome: agreed / overridden (note what the user decided) /
+   deferred (flag as open question).
+
+When all questions are answered, summarise:
+
+```
+**Grilling complete.** <N> questions answered.
+Open questions (blocking): <list or "none">
+Open questions (non-blocking): <list or "none">
+
+Proceeding to hardening...
+```
+
+If any open question is marked as blocking by the user, stop and report the
+blocker. Do not proceed to hardening until the user resolves it.
+
+### 5. Spawn the hardening subagent
+
+Use the **Task tool** to spawn a hardening subagent in a clean context.
+
+Pass a self-contained prompt that includes the full grilling outcome:
+
+```
+You are a hardening subagent for givn change '<id>'.
+
+The plan has been grilled. Your job: apply the decisions reached to the
+existing artifacts and write design-review.md.
+
+## Grilling outcome
+
+### Resolved by codebase exploration
+<paste resolved_by_codebase items>
+
+### Questions and answers
+<paste each question, recommended answer, and the user's decision>
+
+### Open questions (non-blocking)
+<list, or "none">
+
+## Your tasks
+
+### 1. Apply hardening edits
+
+Based on the grilling outcome, edit the existing artifacts as needed:
+
+- `givn/changes/<id>/design.md` — update if any tech decisions changed.
+- `givn/changes/<id>/specs/**/*.feature` — add missing scenarios with
+  `@givn.added @wip` if any were identified. Then run:
+  ```sh
+  givn lint --change <id>
+  ```
+  Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.
+- Do NOT create tasks.md — tasks has not been written yet and is not your
+  responsibility.
+- Do NOT change proposal.md unless the grilling revealed a fundamental scope
+  mismatch that the user explicitly decided to fix — flag that as a blocker.
+
+### 2. Write design-review.md
+
+Write `givn/changes/<id>/design-review.md` following this template structure:
+
+## Grilling log
+| # | Branch | Question | Recommended | Outcome |
+
+## Resolved by codebase exploration
+| Branch | Finding |
+
+## Open questions
+| # | Question | Blocking? |
+
+## Changes made during hardening
+| Artifact | Change summary |
+
+## Sign-off
+- [ ] All branches walked.
+- [ ] All open questions resolved or flagged as non-blocking.
+- [ ] design.md reflects decisions reached.
+- [ ] specs/*.feature updated for any missing scenarios.
+- [ ] givn lint exits 0 or 2.
+
+DESIGN-REVIEW: PASS
+
+Write `DESIGN-REVIEW: PASS` as the final line ONLY if no questions are marked
+as blocking. If there are blocking open questions, write `DESIGN-REVIEW: FAIL`
+instead and list the blockers.
+
+### 3. Report back with
+- Artifacts edited (list, or "none")
+- Lint result (exit code)
+- Whether DESIGN-REVIEW: PASS or FAIL was written, and why
+- Path written: givn/changes/<id>/design-review.md
+```
+
+### 6. Wait for the hardening subagent to complete
+
+If the subagent reports `DESIGN-REVIEW: FAIL`, surface the blockers to the user
+and stop. Do not suggest next steps until blockers are resolved.
+
+### 7. Show final status
 
 ```sh
 givn status --change <id>
 ```
 
-Display next step: "Run `/givn-implement` to start the TDD loop."
-(Or flag blockers if any open questions are marked as blocking.)
+Display next step: "Run `/givn-tasks` to write the task list."
 
 ---
 
-## Output
-
-### During grilling
-
-```
-## Design review: <id>
-
-### Grilling — Scope
-
-**Q1 (Scope):** <question>
-**Recommended:** <recommended answer>
-
-[waiting for user response]
-```
-
-After each answer, acknowledge briefly and move to the next question.
-
-### On completion
+## Output on completion
 
 ```
 ## Design review complete: <id>
 
 **Grilling:** <N> questions across <M> branches
+**Resolved by codebase:** <N> items
 **Hardening:** <summary of edits, or "no changes needed">
-**Open blockers:** none / <list>
+**Open questions (non-blocking):** <list or "none">
 
 **Review written:** givn/changes/<id>/design-review.md  (DESIGN-REVIEW: PASS)
 
-**Next:** Run `/givn-implement` to start the TDD loop.
+**Next:** Run `/givn-tasks` to write the task list.
+```
+
+## Output on blocker
+
+```
+## Design review blocked: <id>
+
+**Blocking question:** <question>
+**Status:** DESIGN-REVIEW: FAIL
+
+Resolve the blocker before proceeding.
 ```
 
 ---
 
 ## Guardrails
 
-- Do not ask multiple questions at once — it defeats the purpose of grilling.
-- Do not rubber-stamp: if the plan looks fine after reading, look harder. A
-  plan with no issues is a plan that was not read carefully enough.
-- Do not write `DESIGN-REVIEW: PASS` if any open question is marked as blocking.
-- Hardening edits are ordinary artifact edits, not new artifacts — they do not
-  reset the `design` or `tasks` status.
-- If grilling reveals that the proposal scope is fundamentally wrong, do not
-  silently fix it in design — surface it to the user as a blocker.
+- The orchestrator presents exactly one question per turn. Never batch questions.
+- Do not proceed to hardening while any question is unanswered.
+- Do not proceed to hardening while any blocking open question is unresolved.
+- The hardening subagent must not write tasks.md — that is the next artifact.
+- Hardening edits do not reset design or specs status — they are ordinary edits.
+- `DESIGN-REVIEW: PASS` requires no blocking open questions. If blockers remain,
+  write `DESIGN-REVIEW: FAIL` and surface them to the user.
 - `givn lint` must exit 0 or 2 after any .feature edits before signing off.

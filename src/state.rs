@@ -400,9 +400,9 @@ mod tests {
         let pos = |id: &str| ids.iter().position(|&x| x == id).unwrap();
         assert!(pos("proposal") < pos("specs"));
         assert!(pos("specs") < pos("design"));
-        assert!(pos("design") < pos("tasks"));
-        assert!(pos("tasks") < pos("design-review"));
-        assert!(pos("design-review") < pos("review"));
+        assert!(pos("design") < pos("design-review"));
+        assert!(pos("design-review") < pos("tasks"));
+        assert!(pos("tasks") < pos("review"));
     }
 
     #[test]

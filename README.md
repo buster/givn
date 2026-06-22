@@ -87,15 +87,15 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 ## The workflow
 
 ```
-propose → spec → design → tasks → design-review → implement → review → archive
+propose → spec → design → design-review → tasks → implement → review → archive
 ```
 
-`archive` is gated: `apply.requires: [tasks, design-review, review]`.
+`archive` is gated: `apply.requires: [tasks, review]`.
 
-- **design-review** runs after the full plan is written but before implementation
-  starts: it grills the plan one question at a time (scope, tech choices, missing
-  scenarios, task order, testability, risk), then hardens the artifacts with
-  decisions reached. Gate: `DESIGN-REVIEW: PASS`.
+- **design-review** runs after design but before tasks: a grilling subagent reads
+  the full plan and returns ranked questions with recommended answers; the
+  orchestrator presents them one at a time to the user; a hardening subagent
+  applies decisions and writes `design-review.md`. Gate: `DESIGN-REVIEW: PASS`.
 - **review** is the post-implementation coverage review: run tests, classify
   every gap, resolve. Gate: `REVIEW: PASS`.
 

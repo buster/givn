@@ -2,17 +2,21 @@
 
 ## Grilling log
 
-Record each question, the recommended answer, and the outcome (agreed /
-overridden / deferred).
-
 | # | Branch | Question | Recommended answer | Outcome |
 |---|---|---|---|---|
 | 1 | | | | |
 
+## Resolved by codebase exploration
+
+Items answered without user input by exploring the existing codebase.
+
+| Branch | Finding |
+|---|---|
+| | |
+
 ## Open questions
 
-Questions that could not be resolved during grilling and need user input before
-implementation begins.
+Questions that could not be resolved and were flagged explicitly.
 
 | # | Question | Blocking? |
 |---|---|---|
@@ -29,11 +33,9 @@ Edits applied to existing artifacts as a result of grilling.
 ## Sign-off
 
 - [ ] Every branch of the design tree has been walked.
-- [ ] All open questions are resolved or explicitly flagged as blockers.
+- [ ] All blocking questions are resolved.
 - [ ] `design.md` reflects any decisions reached during grilling.
-- [ ] `tasks.md` has populated "Design constraints" blocks for every scenario task.
-- [ ] All scenarios are testable: Then-steps assert concrete observable values.
 - [ ] `specs/**/*.feature` updated if any missing scenarios were identified.
 - [ ] `givn lint --change {{CHANGE_ID}}` exits 0 or 2 (no parse errors).
 
-**DESIGN-REVIEW: PASS** <!-- change to FAIL or remove if any blocker remains -->
+**DESIGN-REVIEW: PASS** <!-- change to FAIL if any blocker remains -->

@@ -52,7 +52,7 @@ Gherkin `.feature` files.
 
 ### In scope (MVP)
 
-- Full lifecycle: propose → spec → design → tasks → implement → review → archive.
+- Full lifecycle: propose → spec → design → design-review → tasks → implement → review → archive.
 - `.feature`-as-spec with delta tags and merge-on-archive.
 - Cascade configuration with per-facet override and `eject`.
 - YAML manifest overlay onto embedded default graph.
