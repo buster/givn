@@ -441,11 +441,12 @@ config), realising the configurable-artifacts mechanism (ADR-024):
 **Rationale.** Gives teams first-class, maintained architecture docs as a
 composable step, demonstrates the addon/extension model, and stays fully optional.
 
-**Consequences.** Adds embedded assets: `assets/addons/arc42/` (chapter
-templates + index + instruction). Adds an "addons" notion in docs/config: an
-addon is simply a pre-packaged artifact (or set of artifacts) the user enables
-via overlay. The arc42 docs it manages are durable (live under `docs/`), updated
-across changes, and are not archived per-change. See ch.8.11.
+**Consequences.** Adds embedded assets: `assets/addons/arc42-docs/` (chapter
+templates + index + instruction; asset directory name matches artifact id). Adds
+an "addons" notion in docs/config: an addon is simply a pre-packaged artifact
+(or set of artifacts) the user enables via overlay. The arc42 docs it manages
+are durable (live under `docs/`), updated across changes, and are not archived
+per-change. See ch.8.11.
 
 ---
 
@@ -522,3 +523,57 @@ one runner definition across all gate points.
 - Security note: hooks execute shell commands from the project's own config
   (same trust level as a Makefile/justfile in the repo); givn does not fetch or
   run remote commands.
+
+---
+
+## ADR-029: Design constraints are baked into task bodies; implement prompt enforces design adherence
+
+**Context.** During the first real dogfood run (a Rust/HTMX/SSE web app), coding
+subagents running `/givn-implement` ignored `design.md`. Each subagent received
+only a bare RED/GREEN/REFACTOR task skeleton and interpreted "minimum production
+code to make the scenario pass" as: take the shortest path that satisfies the
+test assertions, regardless of the architecture specified in design.md. The result
+was a working test suite over an implementation that violated every key design
+decision (no HTMX attributes, no SSE endpoint, no CSS framework, full-page
+redirects instead of HTML fragments, empty `main`).
+
+**Root cause.** The task body was the subagent's primary context. It contained no
+design specifics — only the TDD cycle steps. Nothing in the prompt chain prevented
+a conforming test from being written against a non-conforming implementation.
+
+**Decision.**
+
+1. **Tasks artifact: every scenario task must include a "Design constraints"
+   block** populated from design.md and specific to that scenario — which
+   module/layer owns the behaviour, which protocol or library to use, what
+   response shape or side-effect the design mandates. The block is mandatory; a
+   task body without it is considered incomplete.
+
+2. **Implement prompt: coding subagents must read design.md in full before
+   touching any file.** The subagent prompt has an explicit pre-RED step:
+   "read givn/changes/<id>/design.md — do not substitute a simpler approach that
+   happens to make a test pass."
+
+3. **GREEN definition is sharpened:** "minimum production code that makes this
+   scenario pass, following the design constraints in the task and the
+   architecture in design.md exactly. 'Minimum' means fewest lines that satisfy
+   the scenario — it does not mean a simpler architecture than the one designed."
+
+4. **Orchestrator guardrail:** if a coding subagent reports GREEN but deviated
+   from the design, the orchestrator rejects and re-spawns. GREEN requires the
+   scenario passes AND the implementation matches the design.
+
+**Rationale.** The "minimum code" principle is correct and preserved — it governs
+implementation *size*, not architectural *conformance*. These two concerns were
+conflated; separating them fixes the root cause without weakening TDD discipline.
+The fix is entirely in the prompt layer (assets/commands/); no binary changes.
+
+**Consequences.**
+- `givn-tasks.md`: task template updated with "Design constraints" block and
+  rules; guardrail added.
+- `givn-implement.md`: step 4 requires full design.md; subagent prompt has
+  pre-RED read step; GREEN clarified; orchestrator guardrail added.
+- `givn-propose.md`: architect's tasks section requires "Design constraints"
+  block per scenario task (mandatory, not optional).
+- All changes are technology-neutral — no framework, language, or library names
+  appear in the prompts.
