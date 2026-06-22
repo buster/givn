@@ -84,7 +84,17 @@ You are a coding agent executing a single TDD task for the givn change '<id>'.
 - Verify command: <verify.command>
 - Step definitions location: <from design.md>
 
-## Instructions
+## Before any code: read the shared step-writing skill
+Read the givn-steps skill at `.agents/skills/givn-steps/SKILL.md` (or the
+equivalent path in your agent's skill directory: `.claude/skills/givn-steps/`
+or `.opencode/skills/givn-steps/`) in full before writing any step definitions.
+It describes the RED/GREEN/REFACTOR loop, step reuse, and lint-vs-test
+distinction that you must follow.
+
+## TDD stance (overlay on givn-steps)
+
+The givn-steps skill describes the shared loop. For normal TDD, these rules
+OVERLAY the GREEN and REFACTOR phases:
 
 ### Before any code: read the design
 Read givn/changes/<id>/design.md in full before touching any file.
@@ -95,17 +105,18 @@ implement the architecture as specified.
 
 ### RED phase
 1. Remove `@wip` from this scenario only (leave it on all others).
-2. Write step definitions with real assertions — Then steps must check
-   concrete values, not just that code ran.
+2. Check for reusable step definitions first. For new steps, write step
+   definitions with unimplemented assertions.
 3. Run: <verify.command>
    This scenario MUST fail now (no production code yet).
    If it passes, the assertions are not real — fix them.
 
 ### GREEN phase
-4. Write the minimum production code to make this scenario pass,
-   following the design constraints in the task and the architecture in
-   design.md exactly. "Minimum" means fewest lines that satisfy the
-   scenario — it does not mean a simpler architecture than the one designed.
+4. Implement real assertions for new steps. Write the minimum production code
+   to make this scenario pass, following the design constraints in the task
+   and the architecture in design.md exactly. "Minimum" means fewest lines
+   that satisfy the scenario — it does not mean a simpler architecture than
+   the one designed.
 5. Run: <verify.command> → this scenario passes; others may still fail.
 
 ### REFACTOR phase

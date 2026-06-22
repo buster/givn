@@ -31,6 +31,10 @@ enum Commands {
     New {
         /// Change identifier (kebab-case).
         id: String,
+        /// Artifact ids to skip (comma-separated, e.g. `proposal,design`).
+        /// Writes `.givn-skip` so `givn status` shows them as ⊘ skipped.
+        #[arg(long, value_delimiter = ',')]
+        skip: Vec<String>,
     },
     /// Show instructions for an artifact.
     Instructions {
@@ -151,7 +155,7 @@ fn main() {
 fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Commands::Init { force } => cli::init::run(force),
-        Commands::New { id } => cli::new::run(&id),
+        Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions { artifact, change, json } => {
             cli::instructions::run(&artifact, change.as_deref(), json)
         }

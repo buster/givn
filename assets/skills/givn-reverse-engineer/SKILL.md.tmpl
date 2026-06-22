@@ -1,12 +1,13 @@
 ---
 name: givn-reverse-engineer
-description: Reverse-engineer an existing capability into givn specs — discovery, descriptive specs, testability design, characterization tasks.
+description: Reverse-engineer an existing capability into descriptive Gherkin specs — discovery, feature writing, characterization tasks.
 ---
 
 # givn-reverse-engineer
 
-Reverse-engineer an existing capability into givn specifications for change
-`{{CHANGE_ID}}`.
+Reverse-engineer an existing capability into **descriptive Gherkin specs** for
+change `{{CHANGE_ID}}`. No proposals, no designs — just `.feature` files +
+characterization tasks that make them executable.
 
 ## Context
 
@@ -37,6 +38,8 @@ only for testability seams, with a behaviour-preservation guarantee.
   `@givn.modified` candidates.
 - Do NOT delete dead code. Flag it as a follow-up `@givn.removed` candidate.
 - Do NOT skip the discovery phase — it is always interactive.
+- Do NOT write proposal.md, design.md, or design-review.md. The reverse flow
+  has no such artifacts — they are skipped via `givn new --skip`.
 
 ## Discovery phase
 
@@ -47,20 +50,28 @@ interactively. Do not proceed until the user confirms.
 One capability per change. If multiple capabilities are needed, suggest
 separate changes.
 
-## Artifacts produced
+## Artifacts produced (only 2)
 
-- `proposal.md` — characterization of the capability, black-box boundary,
-  suspected bugs flagged as out-of-scope.
 - `specs/<cap>/<cap>.feature` — descriptive scenarios (`@givn.added @wip`),
-  all provisional until validated during characterization.
-- `design.md` — seam strategy, testability-only refactor plan, test harness.
-- `tasks.md` — characterization cycles (GREEN-first), one per scenario.
+  all provisional until validated during characterization. The Feature:
+  description block contains the black-box boundary and suspected bugs.
+- `tasks.md` — first task is harness setup; subsequent tasks are one
+  RED/GREEN/REFACTOR characterization cycle per scenario (see `givn-steps`
+  skill for the shared loop mechanics).
+
+## What is NOT produced
+
+- No `proposal.md` — the black-box boundary and suspected bugs go in the
+  Feature: description block.
+- No `design.md` — seam strategy goes per-task in `tasks.md`; verify.command
+  choice goes in the first setup task.
+- No `design-review.md` — the discovery phase is already interactive; grilling
+  a descriptive spec is unnecessary.
 
 ## Transition out
 
 When planning is complete, suggest:
-1. `/givn-design-review` — stress-test the plan (reused as-is).
-2. `/givn-characterize` — execute the characterization loop.
+`/givn-characterize` — execute the RED/GREEN/REFACTOR characterization loop.
 
 ## Verify command
 

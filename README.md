@@ -109,20 +109,27 @@ propose → spec → design → design-review → tasks → implement → review
 
 When a codebase has no givn specs yet (e.g. for the first dogfood),
 `/givn-reverse-engineer` creates the **initial baseline spec** by
-characterizing observed behaviour:
+characterizing observed behaviour. Reverse-engineering is a **peer flow** to
+the normal change lifecycle — it does not produce proposals or designs, only
+descriptive Gherkin specs and characterization tasks:
 
 ```
-reverse-engineer → design-review → characterize → archive (creates baseline spec)
+reverse-engineer → characterize → archive (creates baseline spec)
 ```
 
 - **reverse-engineer** discovers a capability and its black-box boundary
-  interactively, then produces descriptive specs (AS-IS behaviour), a seam
-  strategy (testability-only refactors), and characterization tasks
-  (GREEN-first, not RED-first).
-- **characterize** executes the loop: writes tests matching observed behaviour,
+  interactively, then writes descriptive `.feature` scenarios (AS-IS behaviour)
+  and characterization tasks. No proposal, no design, no design-review — the
+  boundary and suspected bugs go in the Feature: description block; seam
+  strategy goes per-task in tasks.md. `givn new --skip proposal,design,design-review`
+  skips the unneeded artifacts so `givn status` shows them as ⊘ skipped.
+- **characterize** executes the RED/GREEN/REFACTOR loop (shared mechanics via
+  the `givn-steps` skill): writes step definitions matching observed behaviour,
   diagnoses spec/implementation mismatches (corrects the spec, never the code),
   applies testability seams, and runs a reverse review (no dead-code deletion,
-  bugs flagged not fixed).
+  bugs flagged not fixed). Suspected bugs and code smells are marked in
+  production code as `TODO: REVERSE-ENGINEERING NOTE:` comments for IDE
+  discoverability.
 - On archive, the all-`@givn.added` delta merges into an empty permanent spec,
   creating the initial `givn/specs/<cap>/<cap>.feature` baseline.
 
@@ -147,6 +154,7 @@ No npm. No root. No runtime. Pick whichever you like:
 ```sh
 givn init                       # scaffold givn/ + generate skills
 givn new add-user-auth          # create a change scaffold
+givn new reverse-cap --skip proposal,design,design-review  # create a change skipping artifacts (reverse-engineering)
 givn instructions proposal --change add-user-auth --json
 givn lint                       # static check of .feature files (exit 0 clean / 1 parse / 2 wip) — runs NO tests
 givn check tasks                # run an artifact's post hooks (e.g. the test suite via verify.command)
@@ -159,6 +167,7 @@ givn skills sync                # regenerate skills after a binary update
 givn upgrade                    # refresh documented config to the new givn version
 givn-explore                    # think through a problem before proposing (run as a skill)
 givn-design-review              # stress-test the plan before implementing (run as a skill)
+givn-steps                      # shared step-writing mechanics reference (read by implement/characterize)
 givn-reverse-engineer           # reverse-engineer an existing capability into baseline specs (run as a skill)
 givn-characterize               # execute the characterization loop + reverse review (run as a skill)
 givn addons list                # show available addons (e.g. arc42) and their status

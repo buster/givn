@@ -1,6 +1,6 @@
 ---
 name: givn-characterize
-description: Execute the characterization loop for a reverse-engineering change — GREEN-first tests, testability refactor, reverse review.
+description: Execute the characterization loop for a reverse-engineering change — RED/GREEN/REFACTOR with step reuse, testability seams, reverse review.
 ---
 
 # givn-characterize
@@ -11,21 +11,24 @@ Execute the characterization loop for change `{{CHANGE_ID}}`.
 
 - Tasks: `givn/changes/{{CHANGE_ID}}/tasks.md`
 - Spec: `givn/changes/{{CHANGE_ID}}/specs/`
-- Design: `givn/changes/{{CHANGE_ID}}/design.md`
 - Test runner: `{{VERIFY_COMMAND}}`
 - Features path: `GIVN_FEATURES={{FEATURES_PATH}}`
+- Shared step mechanics: read the `givn-steps` skill before writing step defs.
 
 ## The characterization technique
 
-GREEN-first, not RED-first:
+RED/GREEN/REFACTOR (same loop structure as normal TDD — see `givn-steps` skill
+for the shared mechanics). What differs is the GREEN and REFACTOR content:
 
-1. **GREEN**: write tests asserting **observed** behaviour (probe the real
-   code). Remove `@wip` from this scenario only. Run `{{VERIFY_COMMAND}}` →
-   must pass immediately.
-2. If it fails: diagnose (infrastructure problem → fix plumbing; spec/mismatch
-   → correct the spec, never the code).
-3. **REFACTOR**: if design.md calls for a testability seam, apply it. Run
-   `{{VERIFY_COMMAND}}` → must still pass. If red, revert the refactor.
+1. **RED**: Remove `@wip` from this scenario only. Check for reusable step
+   definitions first. New steps get unimplemented assertions. Run
+   `{{VERIFY_COMMAND}}` → must fail (or pass if all steps reused).
+2. **GREEN**: Implement real assertions probing **observed** behaviour (read
+   the actual code). Run `{{VERIFY_COMMAND}}` → must pass. No production code
+   changes. If it fails: diagnose (infrastructure → fix plumbing;
+   spec/mismatch → correct the spec, never the code).
+3. **REFACTOR**: if the task's Seam block calls for a testability seam, apply
+   it. Run `{{VERIFY_COMMAND}}` → must still pass. If red, revert the refactor.
 4. Check off the task. Move to the next scenario.
 
 ## What not to do
@@ -36,29 +39,31 @@ GREEN-first, not RED-first:
   directly. `givn check` is only for the review epilogue.
 - Do NOT do general cleanup (rename, dedup, logic simplification) during
   REFACTOR — only testability seams (extract interface, DI, make public).
-- Do NOT remove `REVERSE-ENGINEERING NOTE` markers — they are intentional debt
-  markers.
+- Do NOT remove `TODO: REVERSE-ENGINEERING NOTE` markers — they are
+  intentional debt markers.
 
 ## Spec/implementation mismatch diagnostic
 
 When verify fails and infrastructure is sound:
 
 1. **Diagnose**: documentation was wrong, or code is ambiguous/misleading.
-2. **If docs wrong**: update design.md + tasks.md + the .feature scenario +
-   the source documentation. Re-run verify.
+2. **If docs wrong**: update tasks.md + the .feature scenario + the source
+   documentation. Re-run verify.
 3. **If code ambiguous**: update the .feature scenario to AS-IS behaviour. Add
-   a code comment: `REVERSE-ENGINEERING NOTE: <what was misleading> — actual
-   behaviour: <Z>. Code smell, refactor candidate.` (Use the language's comment
-   syntax.) Do NOT change code behaviour. Re-run verify.
+   a code comment: `TODO: REVERSE-ENGINEERING NOTE: <what was misleading> —
+   actual behaviour: <Z>. Code smell, refactor candidate.` (Use the language's
+   comment syntax.) Do NOT change code behaviour. Re-run verify.
 
 ## Reverse review epilogue
 
 After all tasks are checked, a review subagent:
-- Runs coverage (record the number, classify gaps).
-- Dead code → flag as `@givn.removed` candidate (do NOT delete).
-- Missing test → flag as `@givn.added` candidate (do NOT add during review).
-- Confirms behaviour-preservation invariant (all characterization tests still
-  GREEN after refactoring).
+- Reads the `givn-review` skill for shared coverage mechanics.
+- Applies reverse-mode rules (from `review-reverse.md`):
+  - Runs coverage (record the number, classify gaps).
+  - Dead code → flag as `@givn.removed` candidate (do NOT delete).
+  - Missing test → flag as `@givn.added` candidate (do NOT add during review).
+  - Confirms behaviour-preservation invariant (all characterization tests
+    still GREEN after refactoring).
 - Compiles: spec corrections, documentation corrections, code smell markers,
   suspected bugs.
 - Writes `review.md` with `REVIEW: PASS`.

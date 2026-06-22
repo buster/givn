@@ -602,41 +602,87 @@ fetch or execute remote commands.
 
 ---
 
-## 8.13 Reverse-engineering mode (ADR-032)
+## 8.13 Reverse-engineering flow (ADR-033, supersedes ADR-032)
 
-Reverse-engineering mode creates the **initial baseline spec** for a capability
-by characterizing its observed black-box behaviour. It is used when an existing
+Reverse-engineering creates the **initial baseline spec** for a capability by
+characterizing its observed black-box behaviour. It is used when an existing
 codebase has no givn specs yet — most notably for the Phase 7 dogfood (givn on
-givn).
+givn). Reverse-engineering is a **peer flow** to the normal change lifecycle,
+not a variant of it. It does not produce proposals or designs — only
+descriptive Gherkin specs and characterization tasks.
+
+### Two peer flows
+
+```
+STANDARD:  propose → spec → design → design-review → tasks → implement → review → archive
+REVERSE:   reverse-engineer → characterize → archive
+```
+
+Reverse artifacts (3 only): `specs/<cap>/<cap>.feature`, `tasks.md`,
+`review.md`. No proposal, no design, no design-review.
+
+### Where content lives (vs. the old ADR-032 flow)
+
+| Content | Old home (ADR-032) | New home (ADR-033) |
+|---|---|---|
+| Black-box boundary | `proposal.md` Capability section | `.feature` Feature: description block |
+| Suspected bugs (from discovery) | `proposal.md` Out of Scope | `.feature` Feature: description block |
+| Suspected bugs/smells (from characterization) | `proposal.md` + `review.md` | Production code `TODO: REVERSE-ENGINEERING NOTE:` comments + `review.md` |
+| Seam strategy | `design.md` | Per-task "Seam" blocks in `tasks.md` |
+| verify.command choice | `design.md` Test harness section | First task in `tasks.md` (harness setup) |
 
 ### Characterization vs. TDD
+
+Both flows use the same RED/GREEN/REFACTOR loop structure (shared via the
+`givn-steps` skill). What differs is the GREEN and REFACTOR content:
 
 | Aspect | Normal TDD (`/givn-implement`) | Characterization (`/givn-characterize`) |
 |---|---|---|
 | Test stance | Prescriptive — test asserts desired behaviour | Descriptive — test asserts **observed** behaviour |
-| First run | RED (must fail — no production code) | GREEN (must pass — matching reality) |
-| If test fails | Good — RED proves the test is real | Diagnose: infrastructure problem or spec/mismatch |
-| Production code | Written during GREEN to satisfy the test | Refactored ONLY for testability seams; never to satisfy a test |
+| RED | Unimplemented assertions for new steps; reused steps kept as-is | Same (shared via `givn-steps` skill) |
+| GREEN | Real assertions + write minimum production code | Real assertions probing observed behaviour; no production code changes |
+| If test fails | RED is good (proves test is real); GREEN failure → fix production code | Diagnose: infrastructure problem or spec/mismatch (correct the spec, never the code) |
+| REFACTOR | General cleanup (names, duplication, clarity) | Testability seams only (extract interface, DI, make public) |
 | Bugs | Fixed as part of the change | Flagged as follow-up `@givn.modified` candidates; never fixed |
 
-### The two commands
+### The two reverse commands
 
-- **`/givn-reverse-engineer`** — planning orchestrator with an interactive
-  **discovery phase** (explores the codebase, proposes one capability with a
-  black-box boundary, confirms with the user). Delegates to an architect
-  subagent using reverse-mode instructions (proposal, specs, design, tasks).
-  Reuses `/givn-design-review` as-is for plan stress-testing.
+- **`/givn-reverse-engineer`** — discovery phase (interactive: explores the
+  codebase, proposes one capability with a black-box boundary, confirms with
+  the user). Then writes the `.feature` file directly (descriptive scenarios,
+  boundary + suspected bugs in Feature: description block) and `tasks.md`
+  (harness setup + one RED/GREEN/REFACTOR cycle per scenario). Uses
+  `givn new --skip proposal,design,design-review` to skip unneeded artifacts.
+  No architect subagent, no proposal, no design, no design-review.
 - **`/givn-characterize`** — execution + review orchestrator. Phase 1:
-  characterization loop (GREEN-first tests, testability seams, spec/implementation
-  mismatch diagnostic). Phase 2: reverse review epilogue (coverage with no
-  dead-code deletion, bug flagging, behaviour-preservation invariant).
+  characterization loop (RED/GREEN/REFACTOR with step reuse via `givn-steps`
+  skill, testability seams, spec/implementation mismatch diagnostic). Phase 2:
+  reverse review epilogue (coverage mechanics via `givn-review` skill, reverse
+  gap-classification rules: no dead-code deletion, bug flagging,
+  behaviour-preservation invariant).
+
+### The `givn-steps` skill
+
+Shared step-writing mechanics, referenced by both `/givn-implement` and
+`/givn-characterize`. Contains: the RED/GREEN/REFACTOR loop structure, step
+reuse (check existing definitions first), lint-vs-test distinction, step
+definition location conventions. Each orchestrator overlays what "GREEN" and
+"REFACTOR" mean for its workflow.
+
+### Skipped artifacts and `givn status`
+
+`givn new --skip proposal,design,design-review` writes a per-change
+`.givn-skip` file. `givn status` shows skipped artifacts as ⊘ skipped (not
+pending), so `next_required` skips them. The `ArtifactStatus::Skipped` enum
+variant is treated as satisfied by `all_required_done()` and the archive gate.
 
 ### Empty-baseline merge
 
 All scenarios are `@givn.added` against an empty permanent spec. On archive,
 the merge engine creates the initial `givn/specs/<cap>/<cap>.feature` baseline.
 The merge engine uses the delta feature's name as the baseline header (not the
-generic `"Feature: (merged)"` placeholder — fixed in ADR-032).
+generic `"Feature: (merged)"` placeholder — fixed in ADR-032, retained in
+ADR-033).
 
 ### Spec/implementation mismatch diagnostic
 
@@ -644,16 +690,19 @@ When `verify.command` fails during characterization (and infrastructure is
 sound), the subagent diagnoses:
 
 1. **Documentation was wrong** — docs said Y, code correctly does Z. Update
-   design.md, tasks.md, the .feature scenario, and the source documentation.
+   tasks.md, the .feature scenario, and the source documentation.
 2. **Code is ambiguous/misleading** — code does Z but reads like Y. Update the
-   .feature scenario to AS-IS behaviour. Add a `REVERSE-ENGINEERING NOTE:`
-   comment (language-agnostic comment syntax) at the misleading point. Do NOT
-   change code behaviour.
+   .feature scenario to AS-IS behaviour. Add a `TODO: REVERSE-ENGINEERING
+   NOTE:` comment (language-agnostic comment syntax) at the misleading point.
+   Do NOT change code behaviour.
 
-### REVERSE-ENGINEERING NOTE markers
+### TODO: REVERSE-ENGINEERING NOTE markers
 
-Standardized code comment prefix for debt tracking. All markers are grep-able
-(`grep -rn "REVERSE-ENGINEERING NOTE"`) and listed in `review.md`. They are
+Standardized code comment prefix for debt tracking. The `TODO:` prefix ensures
+IDE discoverability (VS Code, IntelliJ, etc. surface TODOs in task lists). The
+`REVERSE-ENGINEERING NOTE:` suffix is grep-able
+(`grep -rn "REVERSE-ENGINEERING NOTE"`) and distinguishes reverse-engineering
+debt from regular TODOs. All markers are listed in `review.md`. They are
 intentional — never removed during characterization. Follow-up refactoring
 changes address them.
 
@@ -665,10 +714,11 @@ add a test-only constructor, extract a pure function from a side-effectful one.
 NOT allowed: rename, deduplicate, simplify logic, restructure for clarity, fix
 bugs, change error messages, change return types, change control flow.
 
-### Prompt-layer only
+### Prompt-layer with minimal binary support
 
-Reverse-engineering mode is entirely prompt-layer: no new CLI subcommands, no
-manifest changes, no new artifacts. It drives existing `givn new`/`givn
-apply`/`givn archive` with reverse-mode instructions. The reverse-mode
-instruction files (`assets/instructions/*-reverse.md`) are canonical source,
-inlined into command prompts (not served by the CLI today).
+Reverse-engineering is primarily prompt-layer: the reverse-mode instruction
+files (`assets/instructions/*-reverse.md`) are canonical source, inlined into
+command prompts. The only binary changes are: the `--skip` flag on `givn new`,
+the `ArtifactStatus::Skipped` variant in `state.rs`, and the `givn-steps` skill
+added to the sync lists. No manifest changes, no new CLI subcommands for the
+reverse flow itself.

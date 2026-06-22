@@ -15,6 +15,8 @@ pub enum ArtifactStatus {
     Partial,
     /// No `generates` paths exist.
     Pending,
+    /// Intentionally not produced for this change (listed in `.givn-skip`).
+    Skipped,
 }
 
 /// The state of a single artifact within a change, with context.
@@ -100,11 +102,11 @@ impl ChangeState {
         }
     }
 
-    /// The first required artifact that is not yet Done — the immediate next step.
+    /// The first required artifact that is not yet Done or Skipped — the immediate next step.
     pub fn next_required(&self) -> Option<&ArtifactState> {
         self.artifacts
             .iter()
-            .find(|a| !a.optional && a.status != ArtifactStatus::Done)
+            .find(|a| !a.optional && a.status != ArtifactStatus::Done && a.status != ArtifactStatus::Skipped)
     }
 
     /// All optional artifacts that are still Pending.
@@ -115,12 +117,12 @@ impl ChangeState {
             .collect()
     }
 
-    /// Whether all required artifacts are Done (change is complete pending archive).
+    /// Whether all required artifacts are Done or Skipped (change is complete pending archive).
     pub fn all_required_done(&self) -> bool {
         self.artifacts
             .iter()
             .filter(|a| !a.optional)
-            .all(|a| a.status == ArtifactStatus::Done)
+            .all(|a| a.status == ArtifactStatus::Done || a.status == ArtifactStatus::Skipped)
     }
 
     /// Human-readable stage label derived from manifest-aware state.
@@ -164,6 +166,12 @@ impl ChangeState {
 
 /// Determine whether an artifact's output exists in the change directory.
 fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
+    // Check the per-change skip file first. If the artifact id is listed,
+    // the artifact was intentionally not produced for this change.
+    if is_skipped(&artifact.id, change_dir) {
+        return ArtifactStatus::Skipped;
+    }
+
     if artifact.generates.is_empty() {
         return ArtifactStatus::Pending;
     }
@@ -313,6 +321,36 @@ pub fn detect_arc42_done(path: &Path) -> bool {
     content.contains("STATUS: DONE")
 }
 
+/// Per-change skip file name (one artifact-id per line).
+pub const SKIP_FILE: &str = ".givn-skip";
+
+/// Check whether an artifact id is listed in the change's `.givn-skip` file.
+pub fn is_skipped(artifact_id: &str, change_dir: &Path) -> bool {
+    let skip_path = change_dir.join(SKIP_FILE);
+    if let Ok(content) = std::fs::read_to_string(&skip_path) {
+        content
+            .lines()
+            .map(str::trim)
+            .filter(|l| !l.is_empty() && !l.starts_with('#'))
+            .any(|id| id == artifact_id)
+    } else {
+        false
+    }
+}
+
+/// Read the list of skipped artifact ids for a change.
+#[allow(dead_code)]
+pub fn read_skip_list(change_dir: &Path) -> Vec<String> {
+    let skip_path = change_dir.join(SKIP_FILE);
+    std::fs::read_to_string(&skip_path)
+        .unwrap_or_default()
+        .lines()
+        .map(str::trim)
+        .filter(|l| !l.is_empty() && !l.starts_with('#'))
+        .map(String::from)
+        .collect()
+}
+
 /// Find all active changes under `givn/changes/`, manifest-aware.
 pub fn list_changes(project_root: &Path, manifest: &Manifest) -> Vec<ChangeState> {
     let changes_dir = project_root.join("givn/changes");
@@ -451,5 +489,60 @@ mod tests {
             !result.apply.requires.contains(&"arc42-docs".to_string()),
             "arc42-docs must not gate archive by default"
         );
+    }
+
+    #[test]
+    fn is_skipped_reads_skip_file() {
+        let dir = std::env::temp_dir().join("givn_state_skip_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        std::fs::write(dir.join(SKIP_FILE), "proposal\ndesign\n# comment\n\n").unwrap();
+
+        assert!(is_skipped("proposal", &dir));
+        assert!(is_skipped("design", &dir));
+        assert!(!is_skipped("tasks", &dir));
+        assert!(!is_skipped("review", &dir));
+    }
+
+    #[test]
+    fn is_skipped_returns_false_when_no_skip_file() {
+        let dir = std::env::temp_dir().join("givn_state_skip_test2");
+        std::fs::create_dir_all(&dir).unwrap();
+        // No .givn-skip file.
+        assert!(!is_skipped("proposal", &dir));
+    }
+
+    #[test]
+    fn skipped_artifact_is_not_next_required() {
+        let manifest = Manifest::load_embedded().unwrap();
+        let dir = std::env::temp_dir().join("givn_state_skip_next_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        // Skip proposal — no proposal.md, no specs, no design.
+        std::fs::write(dir.join(SKIP_FILE), "proposal\n").unwrap();
+
+        let state = ChangeState::from_manifest(&dir, &manifest);
+        // proposal is skipped, so next_required should skip it and return specs.
+        let next = state.next_required().unwrap();
+        assert_eq!(next.id, "specs");
+        // proposal itself should be Skipped.
+        let proposal = state.artifacts.iter().find(|a| a.id == "proposal").unwrap();
+        assert_eq!(proposal.status, ArtifactStatus::Skipped);
+    }
+
+    #[test]
+    fn all_required_done_treats_skipped_as_satisfied() {
+        let manifest = Manifest::load_embedded().unwrap();
+        let dir = std::env::temp_dir().join("givn_state_skip_all_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        // Skip everything except tasks and review.
+        std::fs::write(dir.join(SKIP_FILE), "proposal\ndesign\ndesign-review\n").unwrap();
+        // Write tasks.md (complete) and review.md (PASS).
+        std::fs::write(dir.join("tasks.md"), "- [x] done\n").unwrap();
+        std::fs::write(dir.join("review.md"), "REVIEW: PASS\n").unwrap();
+        // Also need specs to exist for the specs artifact to be Done.
+        std::fs::create_dir_all(dir.join("specs/cap")).unwrap();
+        std::fs::write(dir.join("specs/cap/cap.feature"), "@givn.delta @cap\nFeature: cap\n  Scenario: s\n    Given x\n").unwrap();
+
+        let state = ChangeState::from_manifest(&dir, &manifest);
+        assert!(state.all_required_done(), "all required should be done or skipped");
     }
 }

@@ -50,7 +50,7 @@ pub fn run(change: &str) -> Result<()> {
         }
     }
 
-    // Report missing apply.requires artifacts.
+    // Report missing apply.requires artifacts (Pending, but not Skipped).
     let missing: Vec<&str> = manifest.apply.requires.iter()
         .filter(|req| {
             state.artifacts.iter()

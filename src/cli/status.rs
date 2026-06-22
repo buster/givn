@@ -99,6 +99,7 @@ fn print_detail(state: &ChangeState) {
             ArtifactStatus::Done    => "✓",
             ArtifactStatus::Partial => "~",
             ArtifactStatus::Pending => "·",
+            ArtifactStatus::Skipped => "⊘",
         };
         let tags = {
             let mut t = Vec::new();
@@ -157,6 +158,7 @@ fn print_json(state: &ChangeState) -> Result<()> {
             ArtifactStatus::Done    => "done",
             ArtifactStatus::Partial => "partial",
             ArtifactStatus::Pending => "pending",
+            ArtifactStatus::Skipped => "skipped",
         };
         let mut v = serde_json::json!({
             "id": a.id,

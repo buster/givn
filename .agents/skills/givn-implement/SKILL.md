@@ -19,10 +19,14 @@ Implement change `<change-id>` using scenario-by-scenario TDD.
 
 1. Check your progress: `givn apply --change <change-id>`
 2. `givn lint` to confirm the spec is well-formed (does NOT run tests).
+3. Read the `givn-steps` skill for shared step-writing mechanics (RED/GREEN/REFACTOR
+   loop, step reuse, lint-vs-test distinction).
 
 ## The loop
 
-Work through tasks.md, one scenario at a time:
+Work through tasks.md, one scenario at a time. The `givn-steps` skill describes
+the shared RED/GREEN/REFACTOR loop. For normal TDD, the GREEN and REFACTOR
+phases are:
 
 ### RED phase
 1. Remove `@wip` from the current scenario only (keep it on others).

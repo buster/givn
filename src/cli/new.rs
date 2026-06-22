@@ -1,7 +1,13 @@
 use anyhow::{bail, Result};
+use crate::config::overlay::load_effective;
 
 /// Create a new change scaffold under `givn/changes/<id>/`.
-pub fn run(id: &str) -> Result<()> {
+///
+/// If `skip` is non-empty, each named artifact id is validated against the
+/// effective manifest, written to `.givn-skip` (one per line), and its
+/// `generates` output is not scaffolded. `givn status` shows skipped artifacts
+/// as ⊘ skipped (not pending), so `next_required` skips them.
+pub fn run(id: &str, skip: &[String]) -> Result<()> {
     validate_id(id)?;
     let project_root = std::env::current_dir()?;
     let change_dir = project_root.join("givn/changes").join(id);
@@ -15,17 +21,49 @@ pub fn run(id: &str) -> Result<()> {
         bail!("givn/ not found. Run `givn init` first.");
     }
 
+    // Validate skip ids against the effective manifest (if any skip requested).
+    if !skip.is_empty() {
+        let manifest = load_effective()?;
+        let known: std::collections::HashSet<&str> =
+            manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+        for s in skip {
+            if !known.contains(s.as_str()) {
+                let mut ids: Vec<&str> = known.iter().copied().collect();
+                ids.sort();
+                bail!(
+                    "unknown artifact '{}' in --skip. Known artifacts: {}",
+                    s,
+                    ids.join(", ")
+                );
+            }
+        }
+    }
+
     std::fs::create_dir_all(&change_dir)?;
 
-    // Write proposal stub from cascade.
-    let proposal = crate::config::cascade::resolve_template("proposal", "proposal.md")?;
-    let proposal_path = change_dir.join("proposal.md");
-    std::fs::write(&proposal_path, proposal)?;
+    // Write proposal stub from cascade, unless skipped.
+    let skip_set: std::collections::HashSet<&str> =
+        skip.iter().map(|s| s.as_str()).collect();
 
-    println!("Created change '{id}'");
-    println!("  {}", proposal_path.display());
-    println!("\nNext: fill in proposal.md, then run:");
-    println!("  givn instructions proposal --change {id}");
+    if !skip_set.contains("proposal") {
+        let proposal = crate::config::cascade::resolve_template("proposal", "proposal.md")?;
+        let proposal_path = change_dir.join("proposal.md");
+        std::fs::write(&proposal_path, proposal)?;
+        println!("Created change '{id}'");
+        println!("  {}", proposal_path.display());
+        println!("\nNext: fill in proposal.md, then run:");
+        println!("  givn instructions proposal --change {id}");
+    } else {
+        println!("Created change '{id}' (proposal skipped)");
+    }
+
+    // Write the skip file if any artifacts were skipped.
+    if !skip.is_empty() {
+        let skip_path = change_dir.join(crate::state::SKIP_FILE);
+        let content = skip.join("\n") + "\n";
+        std::fs::write(&skip_path, content)?;
+        println!("  {} (skipped: {})", skip_path.display(), skip.join(", "));
+    }
 
     Ok(())
 }

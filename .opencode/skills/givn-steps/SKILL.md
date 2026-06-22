@@ -1,0 +1,107 @@
+---
+name: givn-steps
+description: Shared step-writing mechanics for Gherkin scenarios — the RED/GREEN/REFACTOR loop with step reuse. Referenced by givn-implement and givn-characterize.
+---
+
+# givn-steps
+
+Shared step-writing mechanics for Gherkin `.feature` scenarios. This skill is
+a **reference** — it is not a standalone workflow. It is read by
+`/givn-implement` and `/givn-characterize` subagents before writing step
+definitions.
+
+## Context
+
+- Test runner: `cargo test --test features_runner`
+- Features path: `GIVN_FEATURES=givn/specs`
+- Change: `givn/changes/<change-id>/`
+
+## The `.feature` file is the executable spec
+
+The `.feature` file is the sole source of scenario identity. Step text is the
+contract; step definitions are shared glue that the Gherkin runner binds to
+the scenarios. If a scenario's steps change, the test surface changes
+automatically. Never maintain a parallel hand-written test file that
+duplicates scenario logic.
+
+## Step definition locations
+
+Step definitions are the bindings the Gherkin runner uses to map `.feature`
+steps to code. Their location is project-specific (documented in `design.md`
+for normal changes, or in `tasks.md` for reverse-engineering changes). Common
+patterns:
+
+- Rust (`cucumber-rs`): `tests/steps/mod.rs`, auto-discovered by the runner.
+- Python (`behave`): `features/steps/`, auto-discovered.
+- Node (`cucumber-js`): `features/steps/`, configured in `cucumber.js`.
+
+## Step reuse — always check first
+
+Before writing any new step definition, check whether a matching step
+definition already exists. Step reuse across scenarios and capabilities is
+desirable — it reduces duplication and keeps the glue maintainable.
+
+- **Reused step**: keep the existing definition as-is. It already has real
+  assertions (proven by prior use). Do not modify or replace it.
+- **New step**: write a new step definition.
+
+## The RED/GREEN/REFACTOR loop (one scenario at a time)
+
+Work through tasks, one scenario at a time:
+
+### RED — confirm the test CAN fail
+
+1. Remove `@wip` from the current scenario only (leave it on all others).
+2. For each step in the scenario, check if a matching step definition already
+   exists:
+   - **Reused step**: keep the existing definition as-is.
+   - **New step**: write a step definition with an unimplemented assertion
+     (e.g. `unimplemented!()` in Rust, `assert.fail("not implemented")` in
+     JS, `raise NotImplementedError` in Python).
+3. Run: `cargo test --test features_runner`
+   - **Scenario FAILS** → RED confirmed (the test is real). Proceed to GREEN.
+   - **Scenario PASSES (all steps reused)** → legitimate immediate GREEN.
+     The pre-existing assertions already match this scenario's behaviour.
+     Proceed to GREEN confirmation (no code changes needed, just verify).
+   - **Scenario passes but has no real assertions** (all new steps are
+     no-ops) → the assertions are fake. Fix them before continuing.
+
+### GREEN — implement real assertions
+
+4. Implement real assertions for new steps (Then steps must check concrete
+   values, not just that code ran).
+   - **For normal TDD** (`/givn-implement`): also write the minimum
+     production code to make this scenario pass.
+   - **For characterization** (`/givn-characterize`): probe the observed
+     production behaviour. No production code changes. If it fails, run the
+     mismatch diagnostic (see givn-characterize).
+5. Run: `cargo test --test features_runner` → this scenario passes; others may still fail
+   (expected, they still have `@wip`).
+
+### REFACTOR — clean up without changing behaviour
+
+6. Refactor per the workflow's scope:
+   - **Normal TDD**: general cleanup (names, duplication, clarity). No
+     behaviour change.
+   - **Characterization**: testability seams only (extract interface, DI,
+     make public). If red, revert the refactor. If no seam is needed, skip.
+7. Run: `cargo test --test features_runner` → still passes.
+
+### Done with scenario
+
+8. Check off the task in `tasks.md`: `- [ ]` → `- [x]`
+9. Move to the next scenario.
+
+## Lint vs test — do not confuse them
+
+- `givn lint` is a STATIC Gherkin check (syntax, `@wip`, delta tags). It
+  runs NO tests.
+- `cargo test --test features_runner` is what confirms GREEN. Only the test runner can
+  confirm that a scenario passes.
+- Never conflate the two.
+
+## Verify command
+
+```
+cargo test --test features_runner
+```

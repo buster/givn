@@ -311,47 +311,92 @@ artifact, no state tracking, no gate; 48 tests pass.
 
 ---
 
-## Phase 5.9 — Reverse-engineering mode (ADR-032)
+## Phase 5.9 — Reverse-engineering mode (ADR-032, superseded by ADR-033)
+
+### 5.9a Original implementation (ADR-032) — completed, then superseded
 
 - [x] 5.9.1 Fix `src/gherkin/merge.rs`: `apply_deltas` now takes
       `delta_feature_name` and uses it for the empty-baseline header (was
       `"Feature: (merged)\n"`). Update `merge_file` call site. Update all test
       call sites. Add test: empty baseline uses delta feature name.
-- [x] 5.9.2 Write `assets/instructions/proposal-reverse.md`: descriptive stance,
-      AS-IS behaviour, black-box boundary, suspected bugs flagged as out-of-scope.
-- [x] 5.9.3 Write `assets/instructions/specs-reverse.md`: descriptive scenarios,
-      all `@givn.added`, provisional behaviour, bug handling.
-- [x] 5.9.4 Write `assets/instructions/design-reverse.md`: seam strategy,
-      testability-only refactor constraints, test harness, provisional behaviour.
-- [x] 5.9.5 Write `assets/instructions/tasks-reverse.md`: characterization loop
-      (GREEN-first), spec/implementation mismatch diagnostic, REVERSE-ENGINEERING
-      NOTE markers.
-- [x] 5.9.6 Write `assets/instructions/review-reverse.md`: no dead-code deletion,
-      bug flagging, behaviour-preservation invariant, mandatory reporting sections.
-- [x] 5.9.7 Write `assets/commands/givn-reverse-engineer.md`: planning orchestrator
-      with interactive discovery phase, architect subagent with reverse-mode
-      instructions.
-- [x] 5.9.8 Write `assets/commands/givn-characterize.md`: execution + review
-      orchestrator, characterization loop with failure diagnosis priority,
-      reverse review epilogue.
+- [x] 5.9.2 Write `assets/instructions/proposal-reverse.md` (deleted in ADR-033).
+- [x] 5.9.3 Write `assets/instructions/specs-reverse.md` (simplified in ADR-033).
+- [x] 5.9.4 Write `assets/instructions/design-reverse.md` (deleted in ADR-033).
+- [x] 5.9.5 Write `assets/instructions/tasks-reverse.md` (rewritten in ADR-033).
+- [x] 5.9.6 Write `assets/instructions/review-reverse.md` (slimmed in ADR-033).
+- [x] 5.9.7 Write `assets/commands/givn-reverse-engineer.md` (rewritten in ADR-033).
+- [x] 5.9.8 Write `assets/commands/givn-characterize.md` (simplified in ADR-033).
 - [x] 5.9.9 Write `assets/skills/givn-reverse-engineer/SKILL.md.tmpl` and
-      `assets/skills/givn-characterize/SKILL.md.tmpl`.
+      `assets/skills/givn-characterize/SKILL.md.tmpl` (rewritten in ADR-033).
 - [x] 5.9.10 Add `givn-reverse-engineer` and `givn-characterize` to
        `default_skill_names()` and `default_command_names()` in
        `src/skills/render.rs` and `src/skills/targets.rs`.
 - [x] 5.9.11 Record ADR-032 in `docs/arc42/09-architecture-decisions.md`.
-- [x] 5.9.12 Update `docs/arc42/08-crosscutting-concepts.md`: section 8.13
-       reverse-engineering mode.
+- [x] 5.9.12 Update `docs/arc42/08-crosscutting-concepts.md`: section 8.13.
 - [x] 5.9.13 Update `docs/TASKS.md`: Phase 5.9 (this section) + Phase 7.
 - [x] 5.9.14 Update `README.md`: quickstart entries for the new commands.
 - [x] 5.9.15 Commit: "feat: reverse-engineering mode — /givn-reverse-engineer
        and /givn-characterize (ADR-032)".
 
-**Done when:** `/givn-reverse-engineer` runs discovery, produces a plan with
-descriptive specs and characterization tasks; `/givn-characterize` runs the
-GREEN-first loop with spec/implementation mismatch diagnostic, testability
-seams, and reverse review; empty-baseline merge creates a clean permanent spec
-with the delta feature name as header; 49 tests pass.
+### 5.9b ADR-033 — reverse-engineering as a peer flow (supersedes ADR-032)
+
+- [x] 5.9.16 Add `ArtifactStatus::Skipped` to `src/state.rs`; update
+       `next_required()`, `all_required_done()`, `stage_label()` to treat
+       `Skipped` as satisfied. Add `is_skipped()`, `read_skip_list()`,
+       `SKIP_FILE` constant.
+- [x] 5.9.17 Add `--skip <artifact-id>` flag to `givn new` in `src/cli/new.rs`
+       and `src/main.rs`. Validates skip ids against the manifest. Writes
+       `.givn-skip` file. Skips scaffolding for skipped artifacts.
+- [x] 5.9.18 Update `src/cli/status.rs`: ⊘ symbol for skipped, `"skipped"` in
+       JSON output.
+- [x] 5.9.19 Update `src/cli/archive.rs`: gate treats `Skipped` as satisfied.
+- [x] 5.9.20 Update `src/cli/apply.rs`: missing-artifacts report excludes
+       `Skipped`.
+- [x] 5.9.21 Add tests for `Skipped` status: `is_skipped_reads_skip_file`,
+       `is_skipped_returns_false_when_no_skip_file`,
+       `skipped_artifact_is_not_next_required`,
+       `all_required_done_treats_skipped_as_satisfied`.
+- [x] 5.9.22 Create `assets/skills/givn-steps/SKILL.md.tmpl` and
+       `assets/commands/givn-steps.md`: shared step-writing mechanics
+       (RED/GREEN/REFACTOR loop, step reuse, lint-vs-test distinction).
+- [x] 5.9.23 Add `givn-steps` to `default_skill_names()` and
+       `default_command_names()` in `src/skills/render.rs` and
+       `src/skills/targets.rs`.
+- [x] 5.9.24 Rewrite `assets/commands/givn-reverse-engineer.md`: no
+       proposal/design/design-review; writes .feature and tasks.md directly;
+       uses `givn new --skip`.
+- [x] 5.9.25 Rewrite `assets/skills/givn-reverse-engineer/SKILL.md.tmpl`:
+       2 artifacts only (specs + tasks).
+- [x] 5.9.26 Simplify `assets/commands/givn-characterize.md`: references
+       `givn-steps` for step mechanics, `givn-review` for coverage mechanics;
+       RED/GREEN/REFACTOR (not GREEN-first); `TODO: REVERSE-ENGINEERING NOTE:`
+       marker format.
+- [x] 5.9.27 Simplify `assets/skills/givn-characterize/SKILL.md.tmpl`.
+- [x] 5.9.28 Edit `assets/commands/givn-implement.md` and
+       `assets/skills/givn-implement/SKILL.md.tmpl`: reference `givn-steps`.
+- [x] 5.9.29 Simplify `assets/instructions/specs-reverse.md`: remove
+       proposal/design references; boundary + bugs in Feature: description.
+- [x] 5.9.30 Rewrite `assets/instructions/tasks-reverse.md`: RED/GREEN/REFACTOR
+       with step reuse; no design.md references; `TODO: REVERSE-ENGINEERING
+       NOTE:` format.
+- [x] 5.9.31 Slim `assets/instructions/review-reverse.md`: reference givn-review
+       for coverage mechanics; reverse rules only.
+- [x] 5.9.32 Delete `assets/instructions/proposal-reverse.md` and
+       `assets/instructions/design-reverse.md`.
+- [x] 5.9.33 Record ADR-033 in `docs/arc42/09-architecture-decisions.md`;
+       mark ADR-032 as superseded.
+- [x] 5.9.34 Update `docs/arc42/08-crosscutting-concepts.md`: §8.13 rewritten
+       for ADR-033.
+- [x] 5.9.35 Update `README.md`: reverse-engineering section + quickstart.
+- [x] 5.9.36 Update `docs/TASKS.md`: Phase 5.9b (this section).
+
+**Done when:** `/givn-reverse-engineer` runs discovery, writes descriptive
+specs and characterization tasks (no proposal/design/design-review);
+`/givn-characterize` runs the RED/GREEN/REFACTOR loop with step reuse,
+spec/implementation mismatch diagnostic, testability seams, and reverse
+review; `givn new --skip` produces `.givn-skip` and `givn status` shows
+skipped artifacts as ⊘; empty-baseline merge creates a clean permanent spec;
+55 tests pass.
 
 ---
 

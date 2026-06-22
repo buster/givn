@@ -1,8 +1,9 @@
 # Instruction: tasks-reverse
 
 Write the characterization task breakdown. Each task is a characterization
-cycle — GREEN-first, not RED-first. This is the fundamental difference from
-normal TDD tasks.
+cycle — RED/GREEN/REFACTOR (same loop structure as normal TDD). See the
+`givn-steps` skill for the shared step-writing mechanics; what differs for
+characterization is described below.
 
 **First task: test infrastructure setup (or verification)**
 
@@ -25,20 +26,26 @@ Before any characterization task, include a setup task that:
 
 **The characterization loop (one scenario at a time, in .feature order):**
 
+The `givn-steps` skill describes the shared RED/GREEN/REFACTOR loop with step
+reuse. For characterization, the GREEN and REFACTOR phases are overlaid:
+
 ```
 For each scenario:
-  GREEN:    Remove @wip from THIS scenario only.
-            Write step definitions asserting OBSERVED behaviour (probe the
-              real code to determine what it actually does). The Gherkin
-              runner MUST execute the `.feature` file and bind the steps to
-              these definitions — never a parallel `#[test]` fn.
+  RED:      Remove @wip from THIS scenario only.
+            Check for reusable step definitions first. New steps get
+              unimplemented assertions.
+            Run the test runner → must fail (or pass if all steps reused).
+  GREEN:    Implement real assertions for new steps, probing OBSERVED
+              behaviour (read the actual code). The Gherkin runner MUST
+              execute the `.feature` file and bind the steps to these
+              definitions — never a parallel `#[test]` fn.
             Run the test runner → this scenario MUST PASS immediately.
             If it fails, do NOT change production code — diagnose:
               1. Infrastructure problem (most common): fix test plumbing only.
               2. Spec/implementation mismatch: correct the spec (or the
                  documentation that led to the wrong spec), never the code.
-  REFACTOR: If design.md calls for a testability seam on this scenario:
-              Apply the seam (extract interface, DI, make public — per design).
+  REFACTOR: If the task's Seam block calls for a testability seam:
+              Apply the seam (extract interface, DI, make public).
               Run the test runner → MUST still pass.
               If red: the refactor changed behaviour → REVERT the refactor.
             If no seam is needed for this scenario: skip REFACTOR.
@@ -59,31 +66,41 @@ either the documentation was wrong, or the code is ambiguous/misleading.
 
 1. **Diagnose**: re-read the actual code. What does it REALLY do? Re-read the
    documentation that informed the spec (README, arc42, code comments,
-   design.md, tasks.md).
+   tasks.md).
    - (a) Documentation was wrong — docs said Y, code correctly does Z.
    - (b) Code is ambiguous/misleading — code does Z but reads like Y (includes
      bugs: code does Z when it should do Y, but we characterize AS-IS).
 
 2. **Correct**:
-   - If (a): update design.md and tasks.md FIRST to reflect actual behaviour.
-     Update the .feature scenario to assert actual behaviour. Update the source
-     documentation that was wrong (README, arc42, code comments). Re-run verify.
+   - If (a): update tasks.md and the .feature scenario to reflect actual
+     behaviour. Update the source documentation that was wrong (README, arc42,
+     code comments). Re-run verify.
    - If (b): update the .feature scenario to assert actual behaviour (AS-IS).
      Add a code comment in the language's comment syntax starting with
-     `REVERSE-ENGINEERING NOTE: <what was misleading> — actual behaviour: <Z>.
-     Code smell, refactor candidate.` Do NOT change code behaviour. Re-run
-     verify. Flag in tasks/review as a code smell + follow-up candidate.
+     `TODO: REVERSE-ENGINEERING NOTE: <what was misleading> — actual
+     behaviour: <Z>. Code smell, refactor candidate.` Do NOT change code
+     behaviour. Re-run verify. Flag in tasks/review as a code smell +
+     follow-up candidate.
 
 3. **NEVER**: change production code behaviour to match the spec, fix bugs
-   discovered during characterization, or remove REVERSE-ENGINEERING NOTE
-   markers.
+   discovered during characterization, or remove TODO: REVERSE-ENGINEERING
+   NOTE markers.
 
 **Tasks file format:**
 - Use `[ ]` / `[x]` checkboxes.
-- One section per scenario: GREEN / REFACTOR sub-tasks (REFACTOR only if a seam
+- One section per scenario: RED / GREEN sub-tasks (REFACTOR only if a seam
   is needed).
-- Each task includes a "Design constraints" block drawn from design.md,
-  specific to that scenario — listing the seam (if any) and the testability
-  constraints.
+- Each task includes a "Seam" block if a testability seam is needed for that
+  scenario, listing the seam and the testability constraints. If no seam is
+  needed, omit the block.
 - `givn apply` reads these checkboxes to track progress.
 - Done when: all checkboxes checked AND the test runner exits 0.
+
+**Seam constraints (strictly enforced):**
+- Allowed: extract interface, dependency injection, make a function/method
+  public, add a test-only constructor or builder, extract a pure function
+  from a side-effectful one.
+- NOT allowed: rename, deduplicate, simplify logic, restructure for clarity,
+  fix bugs, change error messages, change return types, change control flow.
+- Every seam must be individually justifiable: "This seam enables scenario
+  <title> by allowing <test input>".

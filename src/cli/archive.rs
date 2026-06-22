@@ -37,11 +37,16 @@ pub fn run(change: &str) -> Result<()> {
 
     // === Gate checks (manifest-aware) ===
 
-    // 1. Check all apply.requires artifacts are Done.
+    // 1. Check all apply.requires artifacts are Done (or Skipped).
     for req in &manifest.apply.requires {
         let artifact_state = state.artifacts.iter().find(|a| a.id == *req);
         match artifact_state {
             None => bail!("archive blocked: required artifact '{}' not found in manifest", req),
+            Some(a) if a.status == ArtifactStatus::Skipped => {
+                // Intentionally skipped (e.g. reverse-engineering flow).
+                // A required artifact should not normally be skipped; if it is,
+                // the skip is intentional and the gate allows it.
+            }
             Some(a) if a.status == ArtifactStatus::Pending => bail!(
                 "archive blocked: required artifact '{}' does not exist for change '{}'",
                 req, change

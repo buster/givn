@@ -687,7 +687,14 @@ exploration notes, they can write them anywhere; givn doesn't need to track them
 
 ---
 
-## ADR-032: Reverse-engineering mode — characterization for baseline spec creation
+## ADR-032: Reverse-engineering mode — characterization for baseline spec creation (SUPERSEDED by ADR-033)
+
+> **Superseded.** This ADR described reverse-engineering as a variant of the
+> normal change lifecycle with reverse-mode instruction overrides for every
+> artifact (proposal, design, tasks, review). ADR-033 replaces it with a
+> separate peer flow that produces only Gherkin specs + characterization
+> tasks — no proposal, no design, no design-review. The empty-baseline merge
+> mechanics from this ADR are retained.
 
 **Context.** givn is delta-centric: every change assumes a permanent spec
 already exists to delta against. But the first dogfood (givn on givn, Phase 7)
@@ -777,3 +784,136 @@ enforced by instructions, not by the binary — this is acceptable for v1.
   reverse-engineering plans).
 - No manifest, state, or CLI subcommand changes — reverse-engineering is pure
   prompt layer driving existing `givn new`/`givn apply`/`givn archive`.
+
+---
+
+## ADR-033: Reverse-engineering as a peer flow (supersedes ADR-032)
+
+**Context.** ADR-032 implemented reverse-engineering as a variant of the
+normal change lifecycle: every artifact (proposal, specs, design, tasks,
+review) was produced with "reverse-mode" instruction overrides. Five
+`*-reverse.md` instruction files existed solely to override the normal meaning
+of each artifact.
+
+In practice, this was a semantic stretch:
+- "Proposal" doesn't fit — a proposal describes what *should* be;
+  reverse-engineering documents what *is*. The `proposal-reverse.md`
+  instruction had to lead with "this is not a proposal, it's a
+  characterization" — a smell that the artifact name was wrong.
+- "Design" was mostly test-harness plumbing (runner choice, step locations,
+  seam strategy). Useful, but not "design" in the same sense as designing new
+  behaviour.
+- The 5 reverse-mode instruction files were the proof of the mixing: they
+  existed only to override the normal meaning of each artifact.
+- The deliverable is small: descriptive `.feature` + executable step
+  definitions, with suspected bugs/smells flagged. The 6-artifact pipeline
+  was heavy for that.
+
+**Decision.** Reverse-engineering becomes a **separate peer flow** to the
+normal change lifecycle, not a variant of it. It produces only 3 artifacts:
+`specs/<cap>/<cap>.feature`, `tasks.md`, and `review.md`. No proposal, no
+design, no design-review.
+
+```
+STANDARD:  propose → spec → design → design-review → tasks → implement → review → archive
+REVERSE:   reverse-engineer → characterize → archive
+```
+
+Content that used to live in proposal.md and design.md moves to more
+appropriate homes:
+- **Black-box boundary** → `.feature` Feature: description block.
+- **Suspected bugs (from discovery)** → `.feature` Feature: description block.
+- **Suspected bugs/smells (from characterization)** → production code
+  `TODO: REVERSE-ENGINEERING NOTE:` comments (IDE-discoverable via `TODO:`
+  prefix, grep-able via `REVERSE-ENGINEERING NOTE:`).
+- **Seam strategy** → per-task "Seam" blocks in `tasks.md`.
+- **verify.command choice** → first task in `tasks.md` (harness setup).
+
+A new shared `givn-steps` skill centralizes step-writing mechanics (the
+RED/GREEN/REFACTOR loop, step reuse, lint-vs-test distinction), referenced by
+both `/givn-implement` and `/givn-characterize`. This eliminates duplication
+of step-writing guidance between the two flows.
+
+The characterization loop is **RED/GREEN/REFACTOR** (same structure as normal
+TDD), not "GREEN-first" as in ADR-032. RED confirms the test can fail (new
+steps get unimplemented assertions; reused steps are kept as-is). GREEN
+implements real assertions probing observed behaviour. This catches fake
+GREEN (no-op assertions that pass trivially) and confirms the test harness is
+wired up before investing in real assertions. Step reuse is first-class: if
+all steps in a scenario are reused and already GREEN, the scenario is
+legitimately complete without an artificial RED round-trip.
+
+**Binary changes (minimal):**
+- `givn new --skip <artifact-id>[,<artifact-id>...]` — skips scaffolding for
+  named artifacts, writes `.givn-skip` file.
+- `ArtifactStatus::Skipped` — new enum variant in `state.rs`. Treated as
+  satisfied by `all_required_done()`, `next_required()`, and the archive gate.
+  Displayed as ⊘ in `givn status`.
+- `givn-steps` skill added to sync lists in `render.rs` and `targets.rs`.
+
+**No changes to:** `src/gherkin/merge.rs` (empty-baseline merge retained from
+ADR-032), `src/cli/lint.rs`, `src/cli/instructions.rs`, `src/config/`,
+`givn/config.yaml` (no manifest overlay needed).
+
+**Key principles (retained from ADR-032):**
+- **Descriptive, not prescriptive.** Specs capture what the system *does*
+  today, not what it *should* do.
+- **No behaviour change.** Production code is refactored only for testability
+  seams. General cleanup is forbidden.
+- **Bugs are flagged, never fixed.** Suspected bugs are recorded as follow-up
+  `@givn.modified` candidates. Dead code is flagged as `@givn.removed`
+  candidates.
+- **TODO: REVERSE-ENGINEERING NOTE markers.** The `TODO:` prefix ensures IDE
+  discoverability; `REVERSE-ENGINEERING NOTE:` is grep-able. Never removed
+  during characterization.
+
+**Rationale.** The peer-flow approach was chosen over ADR-032's
+variant-of-normal approach because:
+- It eliminates the semantic stretch of calling a characterization a
+  "proposal" and a test-harness plan a "design."
+- It removes the need for 5 parallel instruction files that existed only to
+  override normal meanings. Only 3 reverse-mode instruction files remain
+  (`specs-reverse.md`, `tasks-reverse.md`, `review-reverse.md`); the other 2
+  (`proposal-reverse.md`, `design-reverse.md`) are deleted.
+- The `givn-steps` skill deduplicates step-writing mechanics between both
+  flows, making the shared RED/GREEN/REFACTOR loop explicit.
+- The `--skip` flag + `Skipped` status provide deterministic, visible state
+  in `givn status` — no informational noise about pending artifacts that will
+  never be produced.
+- The deliverable (descriptive specs + executable step definitions) is
+  proportionate to the 3-artifact pipeline.
+
+**Consequences.**
+- `assets/commands/givn-reverse-engineer.md`: rewritten — no proposal/design/
+  design-review; writes .feature and tasks.md directly.
+- `assets/commands/givn-characterize.md`: simplified — references `givn-steps`
+  for step mechanics, `givn-review` for coverage mechanics.
+- `assets/skills/givn-reverse-engineer/SKILL.md.tmpl`: rewritten.
+- `assets/skills/givn-characterize/SKILL.md.tmpl`: simplified.
+- `assets/skills/givn-steps/SKILL.md.tmpl`: new shared step-writing skill.
+- `assets/commands/givn-steps.md`: new shared step-writing command.
+- `assets/skills/givn-implement/SKILL.md.tmpl`: edited to reference `givn-steps`.
+- `assets/commands/givn-implement.md`: edited to reference `givn-steps`.
+- `assets/instructions/proposal-reverse.md`: deleted.
+- `assets/instructions/design-reverse.md`: deleted.
+- `assets/instructions/specs-reverse.md`: simplified (no proposal/design refs).
+- `assets/instructions/tasks-reverse.md`: rewritten (RED/GREEN/REFACTOR with
+  step reuse, no design.md refs, `TODO: REVERSE-ENGINEERING NOTE:` format).
+- `assets/instructions/review-reverse.md`: slimmed (references givn-review for
+  coverage mechanics, reverse rules only).
+- `src/cli/new.rs`: `--skip` flag, `.givn-skip` file writing.
+- `src/state.rs`: `ArtifactStatus::Skipped`, `is_skipped()`, `read_skip_list()`,
+  `SKIP_FILE` constant.
+- `src/cli/status.rs`: ⊘ symbol for skipped, `"skipped"` in JSON.
+- `src/cli/archive.rs`: gate treats `Skipped` as satisfied.
+- `src/cli/apply.rs`: missing-artifacts report excludes `Skipped`.
+- `src/skills/render.rs`, `src/skills/targets.rs`: `givn-steps` added to sync
+  lists.
+- `docs/arc42/08-crosscutting-concepts.md`: §8.13 rewritten.
+- `docs/arc42/09-architecture-decisions.md`: ADR-032 marked superseded,
+  ADR-033 added.
+- `docs/TASKS.md`: Phase 5.9 updated.
+- `README.md`: reverse-engineering section and quickstart updated.
+- `givn/archive/reverse-engineer-new-command/`: historical archive, unchanged.
+  The permanent spec `givn/specs/new-command/new-command.feature` is valid.
+- Empty-baseline merge mechanics from ADR-032 retained.

@@ -100,6 +100,7 @@ pub fn default_command_names() -> Vec<&'static str> {
         "givn-archive",
         "givn-explore",
         "givn-design-review",
+        "givn-steps",
         "givn-reverse-engineer",
         "givn-characterize",
     ]
