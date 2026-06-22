@@ -11,7 +11,10 @@ use crate::gherkin::delta::is_removed_placeholder;
 ///
 /// Parse errors outrank wip/PENDING.
 /// `@givn.removed` scenarios suppress @wip warnings (they contain placeholder steps).
-pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
+///
+/// Returns the exit code; the caller (`main`) maps non-zero codes to
+/// `std::process::exit`.
+pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
     let project_root = std::env::current_dir()?;
     let feature_files = if !paths.is_empty() {
         paths
@@ -20,11 +23,15 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
             .collect()
     } else if let Some(id) = change {
         // Scope to givn/changes/<id>/specs/
-        let specs_dir = project_root.join("givn/changes").join(id).join("specs");
+        let change_dir = project_root.join("givn/changes").join(id);
+        if !change_dir.exists() {
+            anyhow::bail!("change '{id}' not found");
+        }
+        let specs_dir = change_dir.join("specs");
         let files = collect_feature_files(&specs_dir);
         if files.is_empty() {
             println!("givn lint: no .feature files found under givn/changes/{id}/specs/");
-            return Ok(());
+            return Ok(0);
         }
         files
     } else {
@@ -32,7 +39,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
         let files = collect_feature_files(&project_root.join("givn"));
         if files.is_empty() {
             println!("givn lint: no .feature files found under givn/");
-            return Ok(());
+            return Ok(0);
         }
         files
     };
@@ -58,7 +65,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
                     if let Some(ref feature) = result.feature {
                         let wip_line = e.line.unwrap_or(0);
                         let is_in_removed = feature.scenarios.iter().any(|s| {
-                            is_removed_placeholder(s) && s.position.line <= wip_line
+                            is_removed_placeholder(s) && s.position.line == wip_line
                         });
                         if is_in_removed {
                             return false; // suppress
@@ -102,8 +109,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
         );
     }
 
-    // Exit with the appropriate code.
-    // Parse errors (1) outrank @wip/PENDING (2).
+    // Exit code: parse errors (1) outrank @wip/PENDING (2).
     let exit_code = if has_parse_error {
         1
     } else if has_wip {
@@ -111,9 +117,5 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<()> {
     } else {
         0
     };
-    match exit_code {
-        0 => Ok(()),
-        1 => std::process::exit(1),
-        _ => std::process::exit(2),
-    }
+    Ok(exit_code)
 }

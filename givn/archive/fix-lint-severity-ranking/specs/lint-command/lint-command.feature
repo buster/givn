@@ -1,7 +1,7 @@
 @givn.delta @lint-command
 Feature: lint-command
 
-  @givn.removed @wip
+  @givn.removed
   Scenario: A @wip finding outranks a parse error
     Given  a placeholder step
 

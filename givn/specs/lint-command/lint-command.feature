@@ -58,27 +58,6 @@ Feature: lint-command
     And  stderr contains "[WIP  ]"
     And  stderr contains "has a PENDING step"
 
-  # Temporarily commented out — being removed by fix-lint-severity-ranking delta.
-  # Will be deleted on archive.
-  # Scenario: A @wip finding outranks a parse error
-  #   Given  a project root with givn/ initialised
-  #   And  a .feature file at "givn/specs/aaa/aaa.feature" with:
-  #     """
-  #     Feature: Aaa
-  #       @wip
-  #       Scenario: W
-  #         Given x
-  #     """
-  #   And  a .feature file at "givn/specs/zzz/zzz.feature" with:
-  #     """
-  #     This is not gherkin
-  #     """
-  #   When  the user runs `givn lint`
-  #   Then  the command exits 2
-  #   And  stderr contains "[WIP  ]"
-  #   And  stderr contains "[ERROR]"
-  #   And  stderr contains "givn lint: 2 file(s) checked, 2 finding(s)"
-
   Scenario: Findings across multiple files are aggregated and files are processed in sorted order
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/zzz/zzz.feature" with:
@@ -129,8 +108,8 @@ Feature: lint-command
   Scenario: A non-existent change id is not surfaced
     Given  a project root with givn/ initialised
     When  the user runs `givn lint --change does-not-exist`
-    Then  the command exits 0
-    And  stdout contains a line "givn lint: no .feature files found under givn/changes/does-not-exist/specs/"
+    Then  the command exits 1
+    And  stderr contains "does-not-exist"
 
   Scenario: Explicit paths lint exactly those files without recursive descent
     Given  a project root with givn/ initialised
@@ -151,44 +130,46 @@ Feature: lint-command
     Then  the command exits 0
     And  stdout contains a line "givn lint: 1 file(s) checked — clean"
 
-  # These two scenarios commented out because the merge engine strips
-  # @givn.* tags from docstring content (merge-engine bug). The @givn.removed
-  # tag is test data, not a delta tag, but the merge can't distinguish them.
-  # These scenarios are captured in the archived delta at:
-  # givn/archive/reverse-engineer-lint-command/specs/lint-command/lint-command.feature
-  # The bug-fix change fix-lint-removed-suppression will re-add them as
-  # @givn.modified scenarios with corrected behaviour.
+  Scenario: A parse error outranks a @wip finding
+    Given  a project root with givn/ initialised
+    And  a .feature file at "givn/specs/aaa/aaa.feature" with:
+      """
+      Feature: Aaa
+        @wip
+        Scenario: W
+          Given x
+      """
+    And  a .feature file at "givn/specs/zzz/zzz.feature" with:
+      """
+      This is not gherkin
+      """
+    When  the user runs `givn lint`
+    Then  the command exits 1
+    And  stderr contains "[WIP  ]"
+    And  stderr contains "[ERROR]"
+    And  stderr contains "givn lint: 2 file(s) checked, 2 finding(s)"
+  Scenario: A removed placeholder suppresses the @wip warning on itself
+    Given  a project root with givn/ initialised
+    And  a feature file with a removed-wip placeholder at "givn/specs/foo/foo.feature"
+    When  the user runs `givn lint`
+    Then  the command exits 0
+    And  stdout contains a line "givn lint: 1 file(s) checked — clean"
 
-  # Scenario: A @givn.removed placeholder suppresses the @wip warning on itself
-  #   Given  a project root with givn/ initialised
-  #   And  a .feature file at "givn/specs/foo/foo.feature" with:
-  #     """
-  #     @givn.delta @foo
-  #     Feature: Foo
-  #
-  #       @givn.removed @wip
-  #       Scenario: Old
-  #         Given x
-  #     """
-  #   When  the user runs `givn lint`
-  #   Then  the command exits 0
-  #   And  stdout contains a line "givn lint: 1 file(s) checked — clean"
-
-  # Scenario: A @givn.removed scenario suppresses an unrelated later @wip scenario
-  #   Given  a project root with givn/ initialised
-  #   And  a .feature file at "givn/specs/foo/foo.feature" with:
-  #     """
-  #     @givn.delta @foo
-  #     Feature: Foo
-  #
-  #       @givn.removed
-  #       Scenario: Old
-  #         Given x
-  #
-  #       @wip
-  #       Scenario: NewNotDone
-  #         Given y
-  #     """
-  #   When  the user runs `givn lint`
-  #   Then  the command exits 0
-  #   And  stdout contains a line "givn lint: 1 file(s) checked — clean"
+  Scenario: A removed scenario does not suppress an unrelated later @wip scenario
+    Given  a project root with givn/ initialised
+    And  a feature file with a removed scenario and a separate wip scenario at "givn/specs/foo/foo.feature"
+    When  the user runs `givn lint`
+    Then  the command exits 2
+    And  stderr contains "[WIP  ]"
+    And  stderr contains "scenario 'NewNotDone' is tagged @wip"
+  Scenario: The lint exit-code contract is preserved after refactor
+    Given  a project root with givn/ initialised
+    And  a .feature file at "givn/specs/clean/clean.feature" with:
+      """
+      Feature: Clean
+        Scenario: S
+          Given x
+      """
+    When  the user runs `givn lint`
+    Then  the command exits 0
+    And  stdout contains a line "givn lint: 1 file(s) checked — clean"

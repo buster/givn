@@ -143,6 +143,28 @@ fn feature_file_at(world: &mut GivnWorld, path: String, step: &Step) {
     std::fs::write(&file_path, content).expect("write .feature file");
 }
 
+#[given(regex = r#"^a feature file with a removed-wip placeholder at "([^"]+)"$"#)]
+fn feature_file_removed_wip_placeholder(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("a project root is required first");
+    let content = "@givn.delta @foo\nFeature: Foo\n\n  @givn.removed @wip\n  Scenario: Old\n    Given x\n";
+    let file_path = env.path(&path);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).expect("create parent dirs");
+    }
+    std::fs::write(&file_path, content).expect("write .feature file");
+}
+
+#[given(regex = r#"^a feature file with a removed scenario and a separate wip scenario at "([^"]+)"$"#)]
+fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
+    let env = world.env.as_ref().expect("a project root is required first");
+    let content = "@givn.delta @foo\nFeature: Foo\n\n  @givn.removed\n  Scenario: Old\n    Given x\n\n  @wip\n  Scenario: NewNotDone\n    Given y\n";
+    let file_path = env.path(&path);
+    if let Some(parent) = file_path.parent() {
+        std::fs::create_dir_all(parent).expect("create parent dirs");
+    }
+    std::fs::write(&file_path, content).expect("write .feature file");
+}
+
 // --- When ------------------------------------------------------------------
 
 #[when(regex = r"^the user runs `([^`]+)`$")]
