@@ -35,16 +35,24 @@ artifacts:
     optional: false
     post: ["verify"]
 
+  - id: design-review
+    generates: ["design-review.md"]
+    requires: ["tasks"]
+    template: "design-review.md"
+    instruction: "design-review"
+    optional: false
+    post: []
+
   - id: review
     generates: ["review.md"]
-    requires: ["tasks"]
+    requires: ["design-review"]
     template: "review.md"
     instruction: "review"
     optional: false
     post: ["verify"]
 
 apply:
-  requires: ["tasks", "review"]
+  requires: ["tasks", "design-review", "review"]
   tracks: "tasks.md"
 
 verify:

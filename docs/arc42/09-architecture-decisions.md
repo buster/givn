@@ -577,3 +577,54 @@ The fix is entirely in the prompt layer (assets/commands/); no binary changes.
   block per scenario task (mandatory, not optional).
 - All changes are technology-neutral — no framework, language, or library names
   appear in the prompts.
+
+---
+
+## ADR-030: Design-review artifact — plan stress-test before implementation
+
+**Context.** After the first real dogfood run revealed that implementation could
+diverge from the design (ADR-029), the immediate fix was to strengthen the task
+and implement prompts. But a deeper safeguard is to catch design problems before
+a single line of production code is written — when changing a decision costs a
+markdown edit rather than a rewrite.
+
+**Decision.** Add a `design-review` artifact to the default manifest, positioned
+after `tasks` and before `review`:
+
+```
+proposal → specs → design → tasks → design-review → implement → review → archive
+```
+
+The artifact runs in two mandatory phases:
+
+1. **Grilling** — relentless one-question-at-a-time interrogation of the full
+   plan (proposal, spec, design, tasks). Walk every branch of the design tree:
+   scope, tech choices, missing scenarios, task order, design constraints,
+   testability, risk. Provide a recommended answer with each question; wait for
+   confirmation before the next. If a question can be answered by exploring the
+   codebase, explore it instead of asking.
+
+2. **Hardening** — apply all decisions reached: update design.md, tasks.md,
+   and/or specs/*.feature with findings. Run `givn lint` after any feature edits.
+
+Sign-off requires the string `DESIGN-REVIEW: PASS` in `design-review.md`; the
+archive gate (`apply.requires`) includes `design-review`.
+
+**Rationale.** The design-review is a plan-layer gate, separate from the
+post-implementation coverage review. It catches architectural decisions that are
+wrong, scope that doesn't match the proposal, scenarios that are untestable,
+and task ordering problems — all before implementation starts.
+
+**Consequences.**
+- `assets/default-manifest.yaml`: new `design-review` artifact, `requires:
+  [tasks]`; `review` now `requires: [design-review]`; `apply.requires` updated
+  to `[tasks, design-review, review]`.
+- `assets/instructions/design-review.md`: grilling branches and hardening rules.
+- `assets/templates/design-review.md`: grilling log, open questions, hardening
+  changes, sign-off checklist, `DESIGN-REVIEW: PASS` marker.
+- `assets/commands/givn-design-review.md`: interactive orchestrator prompt;
+  runs in the current context (no subagent) to preserve the one-question-at-a-
+  time dialogue flow.
+- `assets/skills/givn-design-review/SKILL.md.tmpl`: skill template.
+- `src/state.rs`: `detect_design_review_pass()` parallel to `detect_review_pass()`.
+- `src/cli/archive.rs`: error message updated to cover both sign-off markers.

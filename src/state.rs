@@ -217,6 +217,18 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
         }
     }
 
+    // For design-review: check for DESIGN-REVIEW: PASS marker.
+    if artifact.generates.iter().any(|g| g.ends_with("design-review.md")) {
+        let dr_path = change_dir.join("design-review.md");
+        if dr_path.exists() {
+            return if detect_design_review_pass(&dr_path) {
+                ArtifactStatus::Done
+            } else {
+                ArtifactStatus::Partial
+            };
+        }
+    }
+
     // For arc42-docs: check for STATUS: DONE marker in the change-level arc42.md.
     if artifact.generates.iter().any(|g| g.ends_with("arc42.md")) {
         let arc42_path = change_dir.join("arc42.md");
@@ -281,6 +293,12 @@ pub fn parse_tasks_progress(path: &Path) -> TasksProgress {
     let total = content.matches("[ ]").count() + content.matches("[x]").count();
     let done = content.matches("[x]").count();
     TasksProgress { total, done }
+}
+
+/// Detect if design-review.md contains the `DESIGN-REVIEW: PASS` marker.
+pub fn detect_design_review_pass(path: &Path) -> bool {
+    let content = std::fs::read_to_string(path).unwrap_or_default();
+    content.contains("DESIGN-REVIEW: PASS")
 }
 
 /// Detect if review.md contains the `REVIEW: PASS` marker.
@@ -362,6 +380,19 @@ mod tests {
     }
 
     #[test]
+    fn detect_design_review_pass_finds_marker() {
+        let dir = std::env::temp_dir().join("givn_state_dr_test");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("design-review.md");
+
+        std::fs::write(&path, "Some content\n\n**DESIGN-REVIEW: PASS**\n").unwrap();
+        assert!(detect_design_review_pass(&path));
+
+        std::fs::write(&path, "Some content\n\n**DESIGN-REVIEW: FAIL**\n").unwrap();
+        assert!(!detect_design_review_pass(&path));
+    }
+
+    #[test]
     fn topological_sort_respects_requires() {
         let manifest = Manifest::load_embedded().unwrap();
         let sorted = topological_sort(&manifest.artifacts);
@@ -370,7 +401,8 @@ mod tests {
         assert!(pos("proposal") < pos("specs"));
         assert!(pos("specs") < pos("design"));
         assert!(pos("design") < pos("tasks"));
-        assert!(pos("tasks") < pos("review"));
+        assert!(pos("tasks") < pos("design-review"));
+        assert!(pos("design-review") < pos("review"));
     }
 
     #[test]

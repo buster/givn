@@ -87,11 +87,17 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 ## The workflow
 
 ```
-propose → spec → design → tasks → implement → review → archive
+propose → spec → design → tasks → design-review → implement → review → archive
 ```
 
-`archive` is gated: `apply.requires: [tasks, review]` — review must be complete
-before a change can be archived.
+`archive` is gated: `apply.requires: [tasks, design-review, review]`.
+
+- **design-review** runs after the full plan is written but before implementation
+  starts: it grills the plan one question at a time (scope, tech choices, missing
+  scenarios, task order, testability, risk), then hardens the artifacts with
+  decisions reached. Gate: `DESIGN-REVIEW: PASS`.
+- **review** is the post-implementation coverage review: run tests, classify
+  every gap, resolve. Gate: `REVIEW: PASS`.
 
 ## Install (planned)
 
@@ -121,6 +127,7 @@ givn archive --change add-user-auth   # merge deltas into givn/specs/, move to a
 givn eject design:template      # pull an embedded default into your project to edit
 givn skills sync                # regenerate AGENTS.md + skills after a binary update
 givn upgrade                    # refresh documented config to the new givn version
+givn-design-review              # stress-test the plan before implementing (run as a skill)
 givn addons list                # show available addons (e.g. arc42) and their status
 givn addons enable arc42        # enable the arc42 documentation addon
 givn completions bash           # print bash completion script (eval in ~/.bashrc)
@@ -148,7 +155,7 @@ givn/
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md
 │   ├── specs/<cap>/<cap>.feature     # delta: @givn.delta + added|modified|removed
-│   ├── design.md  tasks.md  review.md
+│   ├── design.md  tasks.md  design-review.md  review.md
 │   └── arc42.md                      # optional: arc42-docs addon marker (STATUS: DONE)
 ├── archive/<id>/                     # archived changes
 └── (ejected overrides, on demand)

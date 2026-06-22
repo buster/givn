@@ -1,0 +1,67 @@
+---
+name: givn-design-review
+description: Stress-test the plan before implementation — grill the design one question at a time, harden the artifacts, then sign off.
+---
+
+# givn-design-review
+
+Stress-test the complete plan for change `{{CHANGE_ID}}` before any production
+code is written. Grill every branch of the design, harden the artifacts with
+what you learn, then sign off.
+
+## Context
+
+- Design review file: `givn/changes/{{CHANGE_ID}}/design-review.md`
+- Instructions: run `givn instructions design-review --change {{CHANGE_ID}}`
+- Test runner: `{{VERIFY_COMMAND}}`
+
+## Two phases
+
+### Phase 1: Grilling
+
+Read all planning artifacts (proposal, specs, design, tasks) and the relevant
+codebase before asking a single question.
+
+Then walk every branch of the design tree — one question at a time:
+
+1. State the branch (Scope / Tech choices / Missing scenarios / Task order /
+   Design constraints / Testability / Risk).
+2. Ask one question with a recommended answer.
+3. Wait for confirmation before the next question.
+4. If a question can be answered by exploring the codebase, explore it instead.
+
+Required branches:
+- **Scope** — spec matches proposal? Anything extra or missing?
+- **Tech choices** — right stack for these scenarios? Simpler alternatives?
+- **Missing scenarios** — observable behaviours without a scenario? Error paths?
+- **Task order** — ordered by dependency? Any task blocked by a predecessor?
+- **Design constraints** — every task has a populated constraints block?
+- **Testability** — every scenario can genuinely fail in RED?
+- **Risk** — most likely failure mode and mitigation?
+
+### Phase 2: Hardening
+
+Apply decisions reached during grilling:
+- Update `design.md` if tech decisions changed.
+- Update `tasks.md` if task order, constraints, or scenario tasks changed.
+- Add missing scenarios to `specs/**/*.feature` with `@givn.added @wip`.
+- Run `givn lint --change {{CHANGE_ID}}` — must exit 0 or 2.
+
+## Sign-off
+
+When both phases are complete, write `design-review.md` and end it with:
+
+```
+DESIGN-REVIEW: PASS
+```
+
+Only write that line when all sign-off checklist items are checked and no open
+questions are marked as blocking.
+
+## After sign-off
+
+```
+givn status --change {{CHANGE_ID}}
+```
+
+Next step: `/givn-implement`.

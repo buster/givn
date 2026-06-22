@@ -212,6 +212,7 @@ givn/
 │   ├── specs/<cap>/<cap>.feature     # delta: @givn.delta + added|modified|removed
 │   ├── design.md
 │   ├── tasks.md
+│   ├── design-review.md
 │   └── review.md
 ├── archive/<id>/                     # archived changes (moved here on archive)
 └── artifacts/<id>/                   # OPTIONAL ejected overrides
@@ -259,16 +260,20 @@ There is no state file. Lifecycle state is computed from which files exist:
 | --- | --- |
 | `givn/changes/<id>/proposal.md` exists | proposal done |
 | `givn/changes/<id>/specs/**.feature` exist | spec drafted |
-| `design.md` / `tasks.md` / `review.md` exist | respective stage reached |
+| `design.md` / `tasks.md` / `design-review.md` / `review.md` exist | respective stage reached |
 | all `tasks.md` checkboxes `[x]` | implementation complete |
-| `review.md` contains `REVIEW: PASS` | review signed off |
+| `design-review.md` contains `DESIGN-REVIEW: PASS` | design review signed off |
+| `review.md` contains `REVIEW: PASS` | coverage review signed off |
 | `arc42.md` (in change dir) contains `STATUS: DONE` | arc42-docs update complete |
 | `givn/archive/<id>/` exists | archived |
 
 Benefits: no drift, git-friendly, trivially correct. `apply.requires` (e.g.
-`[tasks, review]`) is checked by file presence (and review PASS) before archive.
+`[tasks, design-review, review]`) is checked by file presence (and marker
+strings) before archive.
 
 Marker conventions for completion signals beyond mere file presence:
+- **`design-review.md`** — must contain the string `DESIGN-REVIEW: PASS`
+  (written by the design-review agent at sign-off; absence or `FAIL` → Partial).
 - **`review.md`** — must contain the string `REVIEW: PASS` (written by the
   review agent at sign-off; `REVIEW: FAIL` or absence → Partial).
 - **`arc42.md`** (change-level) — must contain `STATUS: DONE` (written by the

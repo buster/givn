@@ -247,6 +247,42 @@ before writing code; GREEN means scenario passes AND design is followed.
 
 ---
 
+## Phase 5.7 — Design-review artifact (ADR-030)
+
+- [x] 5.7.1 Add `design-review` artifact to `assets/default-manifest.yaml`:
+      `requires: [tasks]`, `optional: false`, `post: []`. Update `review` to
+      `requires: [design-review]`. Update `apply.requires` to
+      `[tasks, design-review, review]`. (ADR-030)
+- [x] 5.7.2 Write `assets/instructions/design-review.md`: two mandatory phases
+      (grilling + hardening); one-question-at-a-time constraint; required branches
+      (scope, tech, missing scenarios, task order, design constraints,
+      testability, risk); hardening edits; sign-off via `DESIGN-REVIEW: PASS`.
+- [x] 5.7.3 Write `assets/templates/design-review.md`: grilling log table, open
+      questions table, hardening changes table, sign-off checklist,
+      `DESIGN-REVIEW: PASS` marker.
+- [x] 5.7.4 Write `assets/commands/givn-design-review.md`: interactive
+      orchestrator prompt (runs in current context, no subagent); read-everything-
+      first step; grilling loop with required branches; hardening; sign-off.
+- [x] 5.7.5 Write `assets/skills/givn-design-review/SKILL.md.tmpl`: skill
+      summarising both phases.
+- [x] 5.7.6 Add `detect_design_review_pass()` to `src/state.rs` (parallel to
+      `detect_review_pass()`); wire into `artifact_status()`; add unit test;
+      update `topological_sort_respects_requires` test for new order.
+- [x] 5.7.7 Update `src/cli/archive.rs` error message to cover both sign-off
+      markers (`DESIGN-REVIEW: PASS` and `REVIEW: PASS`).
+- [x] 5.7.8 Update `docs/arc42/08-crosscutting-concepts.md`: state table,
+      marker conventions, project layout.
+- [x] 5.7.9 Record ADR-030 in `docs/arc42/09-architecture-decisions.md`.
+- [x] 5.7.10 Commit: "feat: design-review artifact — plan stress-test before
+      implementation".
+
+**Done when:** after tasks are written, `/givn-design-review` grills the plan
+one question at a time, hardens the artifacts, and writes `design-review.md`
+with `DESIGN-REVIEW: PASS`; archive is blocked until the marker is present;
+48 tests pass.
+
+---
+
 ## Phase 6 — Distribution
 
 - [ ] 6.1 Add `cargo-dist` config; targets: linux x64+arm64 (prefer musl),

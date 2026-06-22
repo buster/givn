@@ -53,7 +53,8 @@ pub fn run(change: &str) -> Result<()> {
                 }
                 bail!(
                     "archive blocked: artifact '{}' is incomplete. \
-                     For review: ensure 'REVIEW: PASS' is present.",
+                     Ensure the sign-off marker is present \
+                     (e.g. 'DESIGN-REVIEW: PASS' or 'REVIEW: PASS').",
                     req
                 );
             }
