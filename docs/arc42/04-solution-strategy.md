@@ -16,7 +16,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | TDD | **Scenario-by-scenario** RED/GREEN/REFACTOR loop. |
 | Coverage | **Completeness of gap classification**, not a percentage threshold. |
 | State | **Filesystem-derived** — file presence determines lifecycle state. |
-| Agent integration | `AGENTS.md` for rules; `.agents/skills` (neutral) + claude/opencode mirrors. |
+| Agent integration | `AGENTS.md` is user-owned (never written); `.agents/skills` (neutral) + claude/opencode mirrors. |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 

@@ -32,7 +32,7 @@ propose → spec → design → design-review → tasks → implement → review
 | FR-7 | Emit per-artifact instructions for AI agents (`givn instructions --json`). |
 | FR-8 | Drive a scenario-by-scenario RED/GREEN/REFACTOR TDD loop. |
 | FR-9 | Provide a completeness-based coverage review (not a percentage gate). |
-| FR-10 | Generate agent rules (`AGENTS.md`) and skills (`.agents/skills`, mirrors). |
+| FR-10 | Generate agent skills (`.agents/skills`, mirrors). `AGENTS.md` is user-owned and never written. |
 | FR-11 | Allow per-facet override of all defaults via a CSS-style cascade. |
 | FR-12 | Eject embedded defaults on demand (`givn eject`). |
 | FR-13 | Derive lifecycle state from the filesystem (no separate state file). |
@@ -74,6 +74,6 @@ and AI-agent ergonomics (standards-aligned skill/rule generation).
 | --- | --- |
 | Tool author (Sebastian) | Standalone tool extracted from the OpenSpec fork; owns roadmap. |
 | OSS developers (end users) | Easy install; customise workflow without forking; clear docs. |
-| AI coding agents | Consume `givn instructions`, `AGENTS.md`, and generated skills. |
+| AI coding agents | Consume `givn instructions` and generated skills. `AGENTS.md` (if present) is user-authored. |
 | Contributors | Readable Rust; clear architecture (this document). |
 | CI systems | Run `givn lint` (static) and the project test runner (`verify.command`) deterministically. |

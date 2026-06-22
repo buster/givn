@@ -3,13 +3,14 @@
 /// - `.claude/skills/<name>/SKILL.md`   (Claude Code mirror)
 /// - `.opencode/skills/<name>/SKILL.md` (opencode mirror)
 /// - `.opencode/commands/<name>.md`     (opencode slash commands)
-/// - `AGENTS.md` at repo root
+///
+/// `AGENTS.md` at the repo root is intentionally NOT touched — it is user-owned.
 use anyhow::Result;
 use std::path::Path;
-use crate::skills::render::{SkillContext, render_skill, render_agents_md, resolve_skill_template, default_skill_names};
+use crate::skills::render::{SkillContext, render_skill, resolve_skill_template, default_skill_names};
 use crate::config::overlay::load_effective;
 
-/// Regenerate all skills, commands, and AGENTS.md in the project.
+/// Regenerate all skills and commands in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
     let manifest = load_effective()?;
     let verify_command = &manifest.verify.command;
@@ -44,13 +45,6 @@ pub fn sync(project_root: &Path) -> Result<()> {
         write_opencode_command(project_root, name, &content)?;
         println!("  synced command: /{name}");
     }
-
-    // Render and write AGENTS.md.
-    let skill_refs: Vec<&str> = skill_names.clone();
-    let agents_content = render_agents_md(verify_command, features_path, version, &skill_refs)?;
-    let agents_path = project_root.join("AGENTS.md");
-    std::fs::write(&agents_path, &agents_content)?;
-    println!("  synced AGENTS.md");
 
     Ok(())
 }

@@ -53,10 +53,10 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   Your project's `givn/` directory overrides any facet (template, instructions,
   deps, skill templates) — and only the facets you eject. Binary updates never
   clobber your files.
-- **Standards-aligned agent integration.** Rules/context are emitted to
-  `AGENTS.md` (the Linux-Foundation-stewarded standard). Invokable skills are
-  emitted to the neutral `.agents/skills/<name>/SKILL.md` path, with mirrors for
-  Claude Code and opencode.
+- **Standards-aligned agent integration.** Invokable skills are emitted to the
+  neutral `.agents/skills/<name>/SKILL.md` path, with mirrors for Claude Code
+  and opencode. `AGENTS.md` at the repo root is left for the user to author —
+  givn never writes or overwrites it.
 - **Self-documenting, versioned config.** `givn init` writes `givn/config.yaml`
   with every key present-but-commented, documented inline (description, default,
   allowed values). It carries `givn_config_version`; `givn upgrade` provides a
@@ -139,7 +139,7 @@ No npm. No root. No runtime. Pick whichever you like:
 ## Quickstart
 
 ```sh
-givn init                       # scaffold givn/ + generate AGENTS.md and skills
+givn init                       # scaffold givn/ + generate skills
 givn new add-user-auth          # create a change scaffold
 givn instructions proposal --change add-user-auth --json
 givn lint                       # static check of .feature files (exit 0 clean / 1 parse / 2 wip) — runs NO tests
@@ -149,7 +149,7 @@ givn status --change add-user-auth --json   # machine-readable state for command
 givn apply --change add-user-auth     # track task progress
 givn archive --change add-user-auth   # merge deltas into givn/specs/, move to archive/
 givn eject design:template      # pull an embedded default into your project to edit
-givn skills sync                # regenerate AGENTS.md + skills after a binary update
+givn skills sync                # regenerate skills after a binary update
 givn upgrade                    # refresh documented config to the new givn version
 givn-explore                    # think through a problem before proposing (run as a skill)
 givn-design-review              # stress-test the plan before implementing (run as a skill)
@@ -189,7 +189,6 @@ givn/
     artifacts/<id>/template.*
     artifacts/<id>/instructions.md
     skills/<name>/SKILL.md.tmpl
-AGENTS.md                             # generated rules/context (repo root)
 .agents/skills/<name>/SKILL.md        # neutral skills (primary)
 .claude/skills/<name>/SKILL.md        # mirror for Claude Code
 .opencode/skills/<name>/SKILL.md      # mirror for opencode

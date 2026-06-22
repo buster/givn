@@ -14,10 +14,10 @@ user → cli::init
        - verify.command uncommented as the sentinel "givn missing-testrunner"
        - givn_config_version set to the current binary version
    4. skills::render + skills::targets:
-       - render AGENTS.md from embedded rules template → repo root
-       - render each default skill template → .agents/skills/<name>/SKILL.md
-       - mirror to .claude/skills/ and .opencode/skills/
-       - write each command template → .opencode/commands/<name>.md
+        - render each default skill template → .agents/skills/<name>/SKILL.md
+        - mirror to .claude/skills/ and .opencode/skills/
+        - write each command template → .opencode/commands/<name>.md
+        - AGENTS.md is intentionally not touched (user-owned)
   5. print next steps (incl. "set verify.command to your test runner")
 ```
 
@@ -140,12 +140,12 @@ user → cli::eject
 
 ```
 user → cli::skills
-  1. skills::render all skill templates (cascade-resolved) + AGENTS.md
+  1. skills::render all skill templates (cascade-resolved)
   2. skills::targets:
        - write .agents/skills/<name>/SKILL.md  (primary neutral)
        - mirror to .claude/skills/ and .opencode/skills/
        - write .opencode/commands/<name>.md    (opencode slash commands)
-       - write AGENTS.md at repo root
+       - AGENTS.md is intentionally not touched (user-owned)
   (Used after a binary upgrade or manifest change to refresh generated agent files.)
 ```
 

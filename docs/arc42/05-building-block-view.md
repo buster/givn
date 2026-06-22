@@ -36,7 +36,7 @@ givn/  (single published binary crate)
 │   │   ├── delta.rs            # tag detection, split feature/scenario
 │   │   └── merge.rs            # added/modified/removed merge + tag stripping
 │   ├── skills/
-│   │   ├── render.rs           # template → SKILL.md / AGENTS.md
+│   │   ├── render.rs           # template → SKILL.md
 │   │   └── targets.rs          # emit to .agents, .claude, .opencode
 │   ├── hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
 │   ├── state.rs                # derive lifecycle state from the filesystem
@@ -44,7 +44,6 @@ givn/  (single published binary crate)
 ├── assets/                     # embedded via rust-embed
 │   ├── default-manifest.yaml   # the default artifact graph
 │   ├── config.yaml.tmpl        # documented, versioned project config scaffold
-│   ├── AGENTS.md.tmpl          # project rules/context template
 │   ├── templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
 │   ├── instructions/           # per-artifact instruction files (proposal, specs, design, tasks, review)
 │   ├── commands/               # opencode slash command templates (givn-propose … givn-archive)
@@ -59,7 +58,7 @@ givn/  (single published binary crate)
 | Module | Responsibility | Key collaborators |
 | --- | --- | --- |
 | `main.rs` | Parse args, dispatch to `cli::*`, map errors to exit codes. | `cli`, `error` |
-| `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, generate AGENTS.md + skills. | `config`, `skills` |
+| `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, generate skills. | `config`, `skills` |
 | `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). | `config`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
@@ -69,7 +68,7 @@ givn/  (single published binary crate)
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
-| `cli::skills` | Regenerate AGENTS.md + skills from current templates. | `skills` |
+| `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
@@ -80,8 +79,8 @@ givn/  (single published binary crate)
 | `gherkin::parse` | Parse `.feature` into a typed AST; classify lint findings. | `gherkin` crate |
 | `gherkin::delta` | Detect `@givn.*` tags; split features/scenarios. | `parse` |
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
-| `skills::render` | Render templates with context into SKILL.md / AGENTS.md. | `config::cascade` |
-| `skills::targets` | Write rendered output to the three skill locations + root AGENTS.md + `.opencode/commands/`. | `render` |
+| `skills::render` | Render templates with context into SKILL.md. | `config::cascade` |
+| `skills::targets` | Write rendered output to the three skill locations + `.opencode/commands/`. `AGENTS.md` is intentionally not touched (user-owned). | `render` |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). | `config::manifest`, `cli::lint` |
 | `state` | Compute change state from which files exist. | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |

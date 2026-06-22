@@ -1,6 +1,7 @@
 use anyhow::Result;
 
-/// Regenerate AGENTS.md and skills from current templates.
+/// Regenerate skills and agent commands from current templates.
+/// `AGENTS.md` is intentionally not touched — it is user-owned.
 pub fn run_sync() -> Result<()> {
     let project_root = std::env::current_dir()?;
 
@@ -8,10 +9,9 @@ pub fn run_sync() -> Result<()> {
         anyhow::bail!("givn/ not found. Run `givn init` first.");
     }
 
-    println!("Syncing skills and AGENTS.md...");
+    println!("Syncing skills and agent commands...");
     crate::skills::targets::sync(&project_root)?;
     println!("\nDone. Generated:");
-    println!("  AGENTS.md");
     println!("  .agents/skills/   (primary neutral skills)");
     println!("  .claude/skills/   (Claude Code mirror)");
     println!("  .opencode/skills/ (opencode skills mirror)");

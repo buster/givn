@@ -63,7 +63,7 @@ documentation with:
 
 ```
 givn upgrade        # refresh documented/versioned config scaffold (ch.8.10)
-givn skills sync    # refresh AGENTS.md + generated skills (ch.8.7)
+givn skills sync    # refresh generated skills (ch.8.7)
 ```
 
 Both write into the project repo; the user reviews via `git diff`. User overrides

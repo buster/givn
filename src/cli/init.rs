@@ -13,7 +13,8 @@ const BANNER: &str = r#"
 "#;
 
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
-/// versioned `givn/config.yaml`. Generates AGENTS.md and skills. Idempotent.
+/// versioned `givn/config.yaml`. Generates skills. Idempotent.
+/// `AGENTS.md` is left untouched (user-owned).
 pub fn run(force: bool) -> Result<()> {
     let project_root = std::env::current_dir()?;
 
@@ -44,7 +45,7 @@ pub fn run(force: bool) -> Result<()> {
         println!("  wrote    givn/config.yaml");
     }
 
-    // Generate skills and AGENTS.md.
+    // Generate skills and agent commands.
     println!("\nGenerating skills and agent commands...\n");
     match crate::skills::targets::sync(&project_root) {
         Ok(()) => {}

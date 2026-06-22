@@ -43,7 +43,7 @@ relitigation during implementation (see chapter 9 for rationale).
 
 | ID | Convention |
 | --- | --- |
-| CV-1 | Agent rules emitted to `AGENTS.md` (Linux-Foundation-stewarded standard). |
+| CV-1 | `AGENTS.md` at repo root is user-owned; givn never writes or overwrites it. |
 | CV-2 | Agent skills emitted to neutral `.agents/skills/<name>/SKILL.md` (primary) with `.claude/skills` and `.opencode/skills` mirrors. |
 | CV-3 | Capability names use kebab-case (e.g. `user-auth`). |
 | CV-4 | Test-runner feature path overridable via `GIVN_FEATURES` env var, default `givn/specs`. |

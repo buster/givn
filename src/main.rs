@@ -21,7 +21,7 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Scaffold givn/ and generate AGENTS.md and skills.
+    /// Scaffold givn/ and generate skills.
     Init {
         /// Overwrite existing files.
         #[arg(long)]
@@ -93,7 +93,7 @@ enum Commands {
         #[command(subcommand)]
         command: AddonsCommands,
     },
-    /// Regenerate AGENTS.md and skills.
+    /// Regenerate skills and agent commands.
     Skills {
         #[command(subcommand)]
         command: SkillsCommands,
@@ -134,7 +134,7 @@ enum AddonsCommands {
 
 #[derive(Subcommand)]
 enum SkillsCommands {
-    /// Regenerate AGENTS.md and skills from current templates.
+    /// Regenerate skills and agent commands from current templates.
     Sync,
 }
 

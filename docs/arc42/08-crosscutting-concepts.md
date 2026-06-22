@@ -221,7 +221,6 @@ givn/
 givn/skills/<name>/SKILL.md.tmpl      # OPTIONAL ejected skill template
 
 # Generated agent files (outside givn/):
-AGENTS.md                             # repo root — agent rules/context
 .agents/skills/<name>/SKILL.md        # neutral skills (primary)
 .claude/skills/<name>/SKILL.md        # mirror for Claude Code
 .opencode/skills/<name>/SKILL.md      # mirror for opencode
@@ -285,7 +284,8 @@ Marker conventions for completion signals beyond mere file presence:
 
 Standards-aligned, multi-target emit (see ADR-013):
 
-- **Rules/context →** `AGENTS.md` at repo root (the ratified standard).
+- **`AGENTS.md`** at repo root is **user-owned** — givn never writes or
+  overwrites it. Users author whatever project-level rules/context they need.
 - **Skills →** neutral `.agents/skills/<name>/SKILL.md` (primary), mirrored to
   `.claude/skills/<name>/SKILL.md` and `.opencode/skills/<name>/SKILL.md`.
 - Default skills, one per workflow action: `givn-explore`, `givn-propose`,

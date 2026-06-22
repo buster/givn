@@ -168,26 +168,29 @@ loudly under the sentinel default).
 
 ---
 
-## Phase 5 — Skills & AGENTS.md generation
+## Phase 5 — Skills generation (AGENTS.md is user-owned)
 
 - [x] 5.1 Author default skill templates in `assets/skills/` (one per action:
       `givn-propose`, `givn-spec`, `givn-design`, `givn-tasks`, `givn-implement`,
-      `givn-review`, `givn-archive`) and an `AGENTS.md` rules template. Port the
-      proven SKILL.md content from the gherkinspec prototype.
+      `givn-review`, `givn-archive`). Port the proven SKILL.md content from the
+      gherkinspec prototype.
 - [x] 5.2 Implement `skills/render.rs`: render templates with project context
       (cascade-resolved; ejectable).
 - [x] 5.3 Implement `skills/targets.rs`: write to `.agents/skills/<name>/SKILL.md`
-      (primary) + mirrors `.claude/skills/`, `.opencode/skills/`, and root
-      `AGENTS.md`. Validate SKILL.md frontmatter (name matches dir, description
-      length).
+      (primary) + mirrors `.claude/skills/`, `.opencode/skills/`. Validate
+      SKILL.md frontmatter (name matches dir, description length).
 - [x] 5.4 Wire generation into `cli::init`; implement `cli::skills sync` for
       regeneration after upgrades.
 - [x] 5.5 Make skill templates ejectable (`givn eject skill:<name>`) — confirm
       cascade picks the override.
-- [x] 5.6 Commit: "feat: AGENTS.md + multi-target skill generation".
+- [x] 5.6 Commit: "feat: multi-target skill generation".
+- [x] 5.7 Drop `AGENTS.md` generation — the repo-root `AGENTS.md` is user-owned
+      and never written by givn. Removed `assets/AGENTS.md.tmpl`,
+      `skills::render::render_agents_md`, and the write in `skills::targets`.
+      Updated ADR-013.
 
-**Done when:** `givn init` and `givn skills sync` produce the three skill targets
-+ AGENTS.md; ejected templates override defaults.
+**Done when:** `givn init` and `givn skills sync` produce the three skill
+targets; ejected templates override defaults; `AGENTS.md` is never touched.
 
 ---
 

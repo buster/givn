@@ -150,7 +150,7 @@ visible behaviour is specified, exercised, and covered — or explicitly justifi
 
 ---
 
-## ADR-013: Agent integration — AGENTS.md + neutral skills with mirrors
+## ADR-013: Agent integration — neutral skills with mirrors (AGENTS.md user-owned)
 
 **Context.** Two layers exist: rules/context (well standardised) and invokable
 skills (emerging convention). Research findings:
@@ -161,13 +161,19 @@ skills (emerging convention). Research findings:
 - Slash commands are not standardised (per-tool).
 
 **Decision.**
-- Rules/context → **`AGENTS.md`** at repo root.
+- `AGENTS.md` at repo root is **user-owned** — givn never writes or overwrites
+  it. Users author whatever project-level rules/context they need; givn's
+  workflow content lives entirely in skills and commands (loaded on demand).
 - Skills → primary neutral path **`.agents/skills/<name>/SKILL.md`** (ADR-013a)
   with **built-in mirrors for `.claude/skills/` and `.opencode/skills/`** (ADR-013b).
 - Skill templates are ejectable so users can retarget other tools.
 
-**Rationale.** Maximise reach via the neutral standard while supporting the two
-most common tools out of the box; remain extensible without shipping every target.
+**Rationale.** `AGENTS.md` is loaded into every agent context unconditionally —
+auto-generating it trampled user content on every `givn skills sync` and
+duplicated workflow detail already carried by the skills/commands themselves.
+Leaving it user-owned keeps the always-on context free of givn-specific clutter
+and respects the file as the user's own project entry point. Skills carry the
+real workflow and only load when invoked.
 
 ---
 

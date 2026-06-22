@@ -15,13 +15,13 @@ Gherkin `.feature` files.
                 │               │               │
    reads/writes │       emits   │      reads    │
                 ▼               ▼               ▼
-        ┌───────────────┐ ┌───────────┐ ┌───────────────┐
-        │ givn/ project  │ │ AGENTS.md │ │ embedded       │
-        │ config dir     │ │ + skills  │ │ defaults       │
-        │ (specs,changes,│ │ (.agents, │ │ (baked into    │
-        │  archive,...)  │ │ .claude,  │ │  the binary)   │
-        │                │ │ .opencode)│ │                │
-        └───────────────┘ └───────────┘ └───────────────┘
+         ┌───────────────┐ ┌───────────┐ ┌───────────────┐
+         │ givn/ project  │ │  skills   │ │ embedded       │
+         │ config dir     │ │ (.agents, │ │ defaults       │
+         │ (specs,changes,│ │ .claude,  │ │ (baked into    │
+         │  archive,...)  │ │ .opencode)│ │  the binary)   │
+         │                │ │           │ │                │
+         └───────────────┘ └───────────┘ └───────────────┘
 ```
 
 ### External entities
@@ -29,7 +29,7 @@ Gherkin `.feature` files.
 | Entity | Interaction |
 | --- | --- |
 | Developer | Runs `givn` commands from the terminal. |
-| AI coding agent | Reads `givn instructions --json`, `AGENTS.md`, generated skills; edits artifacts and code. |
+| AI coding agent | Reads `givn instructions --json` and generated skills; `AGENTS.md` (user-authored, if present); edits artifacts and code. |
 | Project filesystem | Holds the `givn/` directory, source code, and generated agent files. |
 | Test runner (cargo/npm/pytest/…) | The `verify.command`; executes step definitions. Invoked by givn via `post` hooks (`givn check`, archive gate) and directly by the agent during the TDD loop. |
 | CI system | Runs `givn lint` (static) and `givn check`/`givn archive` (which run the test runner via hooks); relies on exit codes. |
@@ -42,7 +42,6 @@ Gherkin `.feature` files.
 | `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files. |
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
-| `AGENTS.md` | out | Markdown (the agent-rules standard). |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
 | Exit codes | out | 0 clean / 1 parse error / 2 wip (for `givn lint`); standard 0/non-0 elsewhere. |
 | `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
@@ -58,7 +57,7 @@ Gherkin `.feature` files.
 - YAML manifest overlay onto embedded default graph.
 - `givn lint` (static Gherkin check with exit codes; runs no tests).
 - Filesystem-derived state and task-progress tracking.
-- `AGENTS.md` + skill generation (neutral + claude + opencode).
+- Skill generation (neutral + claude + opencode). `AGENTS.md` is user-owned.
 - Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
 - Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
 - Per-artifact `post` hooks; givn runs `verify.command` at gates (`givn check`, archive).
