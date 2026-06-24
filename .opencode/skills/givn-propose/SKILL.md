@@ -33,5 +33,5 @@ Fill in the proposal template sections:
 ## Verify command
 
 ```
-givn missing-testrunner
+cargo test --test features_runner
 ```

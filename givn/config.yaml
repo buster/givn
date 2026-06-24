@@ -130,3 +130,5 @@ addons:
 #     - risks-and-technical-debt
 #     - glossary
 #   require_for_archive: false   # if true, adds arc42-docs to apply.requires
+
+extras: true

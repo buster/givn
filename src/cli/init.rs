@@ -15,7 +15,7 @@ const BANNER: &str = r#"
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
 /// versioned `givn/config.yaml`. Generates skills. Idempotent.
 /// `AGENTS.md` is left untouched (user-owned).
-pub fn run(force: bool) -> Result<()> {
+pub fn run(force: bool, no_extras: bool) -> Result<()> {
     let project_root = std::env::current_dir()?;
 
     print!("{BANNER}");
@@ -44,6 +44,10 @@ pub fn run(force: bool) -> Result<()> {
         std::fs::write(&config_path, content)?;
         println!("  wrote    givn/config.yaml");
     }
+
+    // Enable extras (default) unless --no-extras. Runs after the config write so
+    // a --force overwrite can't wipe the flag; sync then reads the result.
+    crate::cli::extras::set_extras(!no_extras)?;
 
     // Generate skills and agent commands.
     println!("\nGenerating skills and agent commands...\n");

@@ -20,6 +20,10 @@ pub struct Manifest {
     #[serde(default)]
     pub addons: Addons,
 
+    /// Enable extras skills and commands (default: false).
+    #[serde(default)]
+    pub extras: bool,
+
     /// Config version marker (written to givn/config.yaml by init/upgrade).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub givn_config_version: Option<String>,
@@ -152,7 +156,7 @@ mod tests {
             .expect("config.yaml.tmpl must be embedded");
 
         // The documented top-level keys in the template.
-        let documented_keys = ["verify", "apply", "artifacts", "addons"];
+        let documented_keys = ["verify", "apply", "artifacts", "addons", "extras"];
         for key in &documented_keys {
             assert!(
                 tmpl.contains(key),
@@ -162,7 +166,7 @@ mod tests {
 
         // The manifest schema top-level fields.
         // If you add a new field to Manifest, add it here too.
-        let schema_fields = ["artifacts", "apply", "verify", "addons", "givn_config_version"];
+        let schema_fields = ["artifacts", "apply", "verify", "addons", "extras", "givn_config_version"];
         for field in &schema_fields {
             assert!(
                 tmpl.contains(field),

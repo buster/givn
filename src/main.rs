@@ -26,6 +26,9 @@ enum Commands {
         /// Overwrite existing files.
         #[arg(long)]
         force: bool,
+        /// Do not install extras skills and commands.
+        #[arg(long)]
+        no_extras: bool,
     },
     /// Create a new change scaffold.
     New {
@@ -97,6 +100,11 @@ enum Commands {
         #[command(subcommand)]
         command: AddonsCommands,
     },
+    /// Manage optional project-level extras (skills + commands).
+    Extras {
+        #[command(subcommand)]
+        command: ExtrasCommands,
+    },
     /// Regenerate skills and agent commands.
     Skills {
         #[command(subcommand)]
@@ -136,6 +144,14 @@ enum AddonsCommands {
     },
 }
 
+
+#[derive(Subcommand)]
+enum ExtrasCommands {
+    /// Enable extras in givn/config.yaml and sync skills + commands.
+    Install,
+    /// Disable extras in givn/config.yaml and remove generated extras files.
+    Uninstall,
+}
 #[derive(Subcommand)]
 enum SkillsCommands {
     /// Regenerate skills and agent commands from current templates.
@@ -154,7 +170,7 @@ fn main() {
 
 fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Init { force } => cli::init::run(force),
+        Commands::Init { force, no_extras } => cli::init::run(force, no_extras),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions { artifact, change, json } => {
             cli::instructions::run(&artifact, change.as_deref(), json)
@@ -180,6 +196,10 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         },
         Commands::Skills { command: SkillsCommands::Sync } => cli::skills::run_sync(),
         Commands::Upgrade => cli::upgrade::run(),
+        Commands::Extras { command } => match command {
+            ExtrasCommands::Install => cli::extras::run_install(),
+            ExtrasCommands::Uninstall => cli::extras::run_uninstall(),
+        },
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::Completions { shell } => {
             let mut cmd = Cli::command();

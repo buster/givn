@@ -12,7 +12,7 @@ Archive change `<change-id>`.
 - Change: `givn/changes/<change-id>/`
 - Archive target: `givn/archive/<change-id>/`
 - Permanent specs: `givn/specs/`
-- Test runner: `givn missing-testrunner`
+- Test runner: `cargo test --test features_runner`
 
 ## Archive gate
 
@@ -21,7 +21,7 @@ Archive change `<change-id>`.
 1. All `apply.requires` artifacts exist (tasks.md, review.md by default).
 2. All tasks checked (`[x]`).
 3. `review.md` contains `REVIEW: PASS`.
-4. Hooks of all `apply.requires` artifacts pass (runs `givn missing-testrunner`).
+4. Hooks of all `apply.requires` artifacts pass (runs `cargo test --test features_runner`).
 
 If any gate fails, the archive is refused with a clear error.
 
@@ -50,5 +50,5 @@ This will:
 ## Verify command
 
 ```
-givn missing-testrunner
+cargo test --test features_runner
 ```

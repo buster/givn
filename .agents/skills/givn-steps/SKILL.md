@@ -12,7 +12,7 @@ definitions.
 
 ## Context
 
-- Test runner: `givn missing-testrunner`
+- Test runner: `cargo test --test features_runner`
 - Features path: `GIVN_FEATURES=givn/specs`
 - Change: `givn/changes/<change-id>/`
 
@@ -58,7 +58,7 @@ Work through tasks, one scenario at a time:
    - **New step**: write a step definition with an unimplemented assertion
      (e.g. `unimplemented!()` in Rust, `assert.fail("not implemented")` in
      JS, `raise NotImplementedError` in Python).
-3. Run: `givn missing-testrunner`
+3. Run: `cargo test --test features_runner`
    - **Scenario FAILS** → RED confirmed (the test is real). Proceed to GREEN.
    - **Scenario PASSES (all steps reused)** → legitimate immediate GREEN.
      The pre-existing assertions already match this scenario's behaviour.
@@ -75,7 +75,7 @@ Work through tasks, one scenario at a time:
    - **For characterization** (`/givn-characterize`): probe the observed
      production behaviour. No production code changes. If it fails, run the
      mismatch diagnostic (see givn-characterize).
-5. Run: `givn missing-testrunner` → this scenario passes; others may still fail
+5. Run: `cargo test --test features_runner` → this scenario passes; others may still fail
    (expected, they still have `@wip`).
 
 ### REFACTOR — clean up without changing behaviour
@@ -85,7 +85,7 @@ Work through tasks, one scenario at a time:
      behaviour change.
    - **Characterization**: testability seams only (extract interface, DI,
      make public). If red, revert the refactor. If no seam is needed, skip.
-7. Run: `givn missing-testrunner` → still passes.
+7. Run: `cargo test --test features_runner` → still passes.
 
 ### Done with scenario
 
@@ -96,12 +96,12 @@ Work through tasks, one scenario at a time:
 
 - `givn lint` is a STATIC Gherkin check (syntax, `@wip`, delta tags). It
   runs NO tests.
-- `givn missing-testrunner` is what confirms GREEN. Only the test runner can
+- `cargo test --test features_runner` is what confirms GREEN. Only the test runner can
   confirm that a scenario passes.
 - Never conflate the two.
 
 ## Verify command
 
 ```
-givn missing-testrunner
+cargo test --test features_runner
 ```

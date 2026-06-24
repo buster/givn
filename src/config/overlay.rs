@@ -36,6 +36,11 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
         }
     }
 
+    // Merge extras flag.
+    if let Some(extras) = overlay.extras {
+        result.extras = extras;
+    }
+
     // Merge artifact patches.
     for patch in overlay.artifacts {
         if patch.remove {
@@ -227,6 +232,7 @@ struct OverlayDoc {
     verify: Option<Verify>,
     apply: Option<Apply>,
     addons: Option<Addons>,
+    extras: Option<bool>,
     /// Ignored during overlay processing (used for version tracking).
     #[allow(dead_code)]
     givn_config_version: Option<String>,
