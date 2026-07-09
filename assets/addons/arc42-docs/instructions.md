@@ -8,13 +8,23 @@ the change. Your task is to create missing chapters and update affected ones.
 
 ## What to do
 
-**If a chapter file does not exist:** create it from the corresponding template
-(see `assets/addons/arc42/templates/`). Fill in what is known from the project
-context; leave placeholder text for sections that cannot be answered yet.
+**First: assess impact.** Read the current change's `proposal.md`, `specs/`,
+and `design.md`. Decide which arc42 chapters (if any) are affected using the
+table below.
 
-**If a chapter file already exists:** update only the sections affected by the
-current change. Do not rewrite unrelated sections. Prefer surgical edits that
-preserve existing content.
+**If no chapters are affected:** write `arc42.md` in the change directory with
+`STATUS: DONE` and a one-line note explaining why no chapters were updated
+(e.g. "Pure tooling change — no architectural impact."). You are done.
+
+**If chapters are affected:**
+
+- **If a chapter file does not exist:** create it from the corresponding
+  template (see `assets/addons/arc42/templates/`). Fill in what is known from
+  the project context; leave placeholder text for sections that cannot be
+  answered yet.
+- **If a chapter file already exists:** update only the sections affected by
+  this change. Do not rewrite unrelated sections. Prefer surgical edits that
+  preserve existing content.
 
 ## Which chapters to touch
 

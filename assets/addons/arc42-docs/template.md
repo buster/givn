@@ -1,8 +1,19 @@
 # arc42 Documentation Update: {{CHANGE_ID}}
 
+## Impact assessment
+
+<!-- Did this change affect the architecture documentation? -->
+<!-- Choose one and delete the other: -->
+
+**No architectural impact** — _briefly explain why (e.g. "Pure tooling change", "UI-only change with no structural implications")._
+
+<!-- OR: -->
+
+**Chapters updated** — see table below.
+
 ## Chapters created or updated
 
-<!-- List each chapter file touched and a one-line summary of the change. -->
+<!-- Complete only when chapters were affected. Delete this section if no chapters were updated. -->
 
 | Chapter | File | Action | Summary |
 |---|---|---|---|

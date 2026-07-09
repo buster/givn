@@ -140,11 +140,10 @@ Feature: givn-status-command
     And  stdout mentions "my-feature"
     And  stdout mentions "next: specs"
 
-  Scenario: Optional pending artifacts shown when present
+  Scenario: arc42-docs appears in the artifact checklist when the addon is enabled
     Given  a project root with givn/ initialised
     And  a change "my-feature" exists with artifact "proposal.md"
     And  the effective manifest has an optional artifact "arc42-docs"
     When  the user runs `givn status --change my-feature`
     Then  the command exits 0
-    And  stdout mentions "Optional"
     And  stdout mentions "arc42-docs"

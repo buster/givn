@@ -1,9 +1,9 @@
+use crate::config::manifest::{Artifact, Manifest};
 /// Filesystem-derived lifecycle state (ADR-014, arc42 ch.8.6).
 ///
 /// There is no state file. State is computed entirely from which files exist,
 /// driven by the effective manifest's artifact graph rather than hardcoded fields.
 use std::path::Path;
-use crate::config::manifest::{Artifact, Manifest};
 
 /// The status of a single artifact within a change.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -61,12 +61,8 @@ impl ChangeState {
             .unwrap_or("")
             .to_string();
 
-        let archive_requires: std::collections::HashSet<&str> = manifest
-            .apply
-            .requires
-            .iter()
-            .map(|s| s.as_str())
-            .collect();
+        let archive_requires: std::collections::HashSet<&str> =
+            manifest.apply.requires.iter().map(|s| s.as_str()).collect();
 
         let ordered = topological_sort(&manifest.artifacts);
 
@@ -74,16 +70,17 @@ impl ChangeState {
             .iter()
             .map(|a| {
                 let status = artifact_status(a, change_dir);
-                let tasks_progress = if a.id == "tasks" || a.generates.iter().any(|g| g.ends_with("tasks.md")) {
-                    let tasks_path = change_dir.join("tasks.md");
-                    if tasks_path.exists() {
-                        Some(parse_tasks_progress(&tasks_path))
+                let tasks_progress =
+                    if a.id == "tasks" || a.generates.iter().any(|g| g.ends_with("tasks.md")) {
+                        let tasks_path = change_dir.join("tasks.md");
+                        if tasks_path.exists() {
+                            Some(parse_tasks_progress(&tasks_path))
+                        } else {
+                            None
+                        }
                     } else {
                         None
-                    }
-                } else {
-                    None
-                };
+                    };
 
                 ArtifactState {
                     id: a.id.clone(),
@@ -104,9 +101,9 @@ impl ChangeState {
 
     /// The first required artifact that is not yet Done or Skipped — the immediate next step.
     pub fn next_required(&self) -> Option<&ArtifactState> {
-        self.artifacts
-            .iter()
-            .find(|a| !a.optional && a.status != ArtifactStatus::Done && a.status != ArtifactStatus::Skipped)
+        self.artifacts.iter().find(|a| {
+            !a.optional && a.status != ArtifactStatus::Done && a.status != ArtifactStatus::Skipped
+        })
     }
 
     /// All optional artifacts that are still Pending.
@@ -141,7 +138,10 @@ impl ChangeState {
             } else if next.id == "tasks" {
                 // Check if tasks is partial (in-progress).
                 let tasks = self.artifacts.iter().find(|a| a.id == "tasks");
-                if tasks.map(|t| t.status == ArtifactStatus::Partial).unwrap_or(false) {
+                if tasks
+                    .map(|t| t.status == ArtifactStatus::Partial)
+                    .unwrap_or(false)
+                {
                     "in-progress".to_string()
                 } else {
                     format!("{}-done", self.last_done_id())
@@ -226,7 +226,11 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
     }
 
     // For design-review: check for DESIGN-REVIEW: PASS marker.
-    if artifact.generates.iter().any(|g| g.ends_with("design-review.md")) {
+    if artifact
+        .generates
+        .iter()
+        .any(|g| g.ends_with("design-review.md"))
+    {
         let dr_path = change_dir.join("design-review.md");
         if dr_path.exists() {
             return if detect_design_review_pass(&dr_path) {
@@ -249,7 +253,11 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
         }
     }
 
-    if all_exist { ArtifactStatus::Done } else { ArtifactStatus::Partial }
+    if all_exist {
+        ArtifactStatus::Done
+    } else {
+        ArtifactStatus::Partial
+    }
 }
 
 /// Topological sort of artifacts by their `requires` graph (Kahn's algorithm).
@@ -470,13 +478,20 @@ mod tests {
     }
 
     #[test]
-    fn arc42_addon_artifact_is_optional_and_requires_design() {
+    fn arc42_addon_artifact_is_required_and_requires_design() {
         use crate::config::overlay::apply;
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  arc42: true").unwrap();
-        let arc42 = result.artifacts.iter().find(|a| a.id == "arc42-docs").unwrap();
-        assert!(arc42.optional, "arc42-docs must be optional");
-        assert!(arc42.requires.contains(&"design".to_string()), "arc42-docs must require design");
+        let arc42 = result
+            .artifacts
+            .iter()
+            .find(|a| a.id == "arc42-docs")
+            .unwrap();
+        assert!(!arc42.optional, "arc42-docs must be required (not optional)");
+        assert!(
+            arc42.requires.contains(&"design".to_string()),
+            "arc42-docs must require design"
+        );
         assert_eq!(arc42.generates, vec!["arc42.md"]);
     }
 
@@ -540,9 +555,16 @@ mod tests {
         std::fs::write(dir.join("review.md"), "REVIEW: PASS\n").unwrap();
         // Also need specs to exist for the specs artifact to be Done.
         std::fs::create_dir_all(dir.join("specs/cap")).unwrap();
-        std::fs::write(dir.join("specs/cap/cap.feature"), "@givn.delta @cap\nFeature: cap\n  Scenario: s\n    Given x\n").unwrap();
+        std::fs::write(
+            dir.join("specs/cap/cap.feature"),
+            "@givn.delta @cap\nFeature: cap\n  Scenario: s\n    Given x\n",
+        )
+        .unwrap();
 
         let state = ChangeState::from_manifest(&dir, &manifest);
-        assert!(state.all_required_done(), "all required should be done or skipped");
+        assert!(
+            state.all_required_done(),
+            "all required should be done or skipped"
+        );
     }
 }

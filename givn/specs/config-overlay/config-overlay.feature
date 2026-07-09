@@ -34,7 +34,7 @@ Feature: config-overlay
 
   Scenario: Arc42 addon expands to arc42-docs artifact when enabled
     When  the overlay "addons:\n  arc42: true" is applied to the default manifest
-    Then  the effective manifest has an artifact "arc42-docs" that is optional
+    Then  the effective manifest has an artifact "arc42-docs" that requires "design"
 
   Scenario: Arc42 addon is idempotent when already enabled
     When  the overlay "addons:\n  arc42: true" is applied twice to the default manifest

@@ -1,3 +1,4 @@
+use crate::config::manifest::{Addons, Apply, Artifact, HookEntry, Manifest, Verify};
 /// Apply the project overlay (from `givn/config.yaml`) onto the embedded default manifest.
 ///
 /// Overlay semantics (ADR-010, ADR-024):
@@ -7,8 +8,7 @@
 /// - Scalar fields (e.g. `verify.command`) in the overlay replace the default.
 /// - `addons: { arc42: true }` expands to the arc42-docs artifact definition.
 /// - After merge, the effective graph is validated (Phase 2.3a).
-use anyhow::{bail, Result};
-use crate::config::manifest::{Addons, Apply, Artifact, HookEntry, Manifest, Verify};
+use anyhow::{Result, bail};
 
 /// Parse the project overlay YAML and merge it onto `base`.
 pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
@@ -167,7 +167,13 @@ fn find_cycle(artifacts: &[Artifact]) -> Option<Vec<String>> {
 
     for artifact in artifacts {
         if !visited.contains(artifact.id.as_str()) {
-            if let Some(cycle) = dfs(&artifact.id, &adj, &mut visited, &mut rec_stack, &mut vec![]) {
+            if let Some(cycle) = dfs(
+                &artifact.id,
+                &adj,
+                &mut visited,
+                &mut rec_stack,
+                &mut vec![],
+            ) {
                 return Some(cycle);
             }
         }
@@ -218,7 +224,7 @@ fn arc42_artifact() -> Artifact {
         requires: vec!["design".to_string()],
         template: Some("template.md".to_string()),
         instruction: Some("arc42-docs".to_string()),
-        optional: true,
+        optional: false,
         remove: false,
         post: vec![],
     }
@@ -361,7 +367,11 @@ artifacts:
         // Enabling twice must not insert two arc42-docs entries.
         let base = Manifest::load_embedded().unwrap();
         let once = apply(base, "addons:\n  arc42: true").unwrap();
-        let count = once.artifacts.iter().filter(|a| a.id == "arc42-docs").count();
+        let count = once
+            .artifacts
+            .iter()
+            .filter(|a| a.id == "arc42-docs")
+            .count();
         assert_eq!(count, 1);
     }
 
@@ -369,14 +379,21 @@ artifacts:
     fn addon_instruction_resolves_via_cascade() {
         // The embedded addon instruction must be findable via cascade.
         let instruction = crate::config::cascade::resolve_instruction("arc42-docs").unwrap();
-        assert!(instruction.contains("arc42"), "arc42-docs instruction must reference arc42");
+        assert!(
+            instruction.contains("arc42"),
+            "arc42-docs instruction must reference arc42"
+        );
     }
 
     #[test]
     fn addon_template_resolves_via_cascade() {
         // The embedded addon template must be findable via cascade.
         // arc42-docs template name is "template.md".
-        let template = crate::config::cascade::resolve_template("arc42-docs", "template.md").unwrap();
-        assert!(template.contains("STATUS"), "arc42-docs template must contain STATUS marker");
+        let template =
+            crate::config::cascade::resolve_template("arc42-docs", "template.md").unwrap();
+        assert!(
+            template.contains("STATUS"),
+            "arc42-docs template must contain STATUS marker"
+        );
     }
 }
