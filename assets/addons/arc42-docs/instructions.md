@@ -58,11 +58,11 @@ Base the decision on the current change's `proposal.md`, `specs/`, and
 
 - Write in clear, concise technical prose. Arc42 docs are for humans, not machines.
 - Do not leak implementation detail into specification-layer sections (chapters 1–3).
-- Chapter 9 (architecture decisions) uses MADR format (Markdown Any Decision Records —
-  see https://adr.github.io/madr/). The chapter file contains the full MADR template
-  as a comment block. One decision = one `## ADR-NNNN:` section with its own
-  status/date/decision-makers front-matter, considered options, decision outcome,
-  consequences, confirmation, and pros/cons.
+- Chapter 9 (architecture decisions) uses MADR format (Markdown Any Decision Records).
+  The chapter file contains the full MADR template as a comment block — copy it for
+  each new decision. One decision = one section with its own status/date/decision-makers
+  front-matter, considered options, decision outcome, consequences, confirmation, and
+  pros/cons.
 - Do not delete existing content unless it is factually wrong.
 - The marker file (`arc42.md` in the change dir) must end with a `## Status` section
   containing either `STATUS: DONE` or `STATUS: PARTIAL` on its own line.
