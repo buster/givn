@@ -1,3 +1,5 @@
+use crate::error::GivnError;
+use crate::gherkin::delta::{DeltaOp, DeltaScenario, strip_givn_tags};
 /// Merge engine: apply delta scenarios to a permanent .feature file.
 ///
 /// Semantics (ADR-011, arc42 ch.8.3):
@@ -10,8 +12,6 @@
 /// The merge works at the text level rather than on a parsed AST, to preserve
 /// formatting and comments in the permanent spec files.
 use anyhow::Result;
-use crate::error::GivnError;
-use crate::gherkin::delta::{DeltaOp, DeltaScenario, strip_givn_tags};
 use gherkin::{Feature, Scenario};
 
 /// Apply a set of delta scenarios to the permanent feature text.
@@ -29,9 +29,7 @@ pub fn apply_deltas(
 ) -> Result<String> {
     // Parse the permanent feature (or start from an empty scenario list).
     let mut perm_scenarios: Vec<ScenarioText> = match permanent_text {
-        Some(text) if !text.trim().is_empty() => {
-            parse_scenarios_from_text(text)?
-        }
+        Some(text) if !text.trim().is_empty() => parse_scenarios_from_text(text)?,
         _ => vec![],
     };
 
@@ -102,10 +100,7 @@ pub fn apply_deltas(
 
 /// Merge a delta feature file into a permanent spec file on disk.
 /// All-or-nothing: validates before writing.
-pub fn merge_file(
-    permanent_path: &std::path::Path,
-    delta_feature: &Feature,
-) -> Result<()> {
+pub fn merge_file(permanent_path: &std::path::Path, delta_feature: &Feature) -> Result<()> {
     use crate::gherkin::delta::{delta_scenarios, is_delta_feature};
 
     if !is_delta_feature(delta_feature) {
@@ -196,7 +191,11 @@ fn extract_feature_header(text: &str) -> String {
         header.push(line);
     }
     // Trim trailing blank lines from header.
-    while header.last().map(|l: &&str| l.trim().is_empty()).unwrap_or(false) {
+    while header
+        .last()
+        .map(|l: &&str| l.trim().is_empty())
+        .unwrap_or(false)
+    {
         header.pop();
     }
     if header.is_empty() {
@@ -248,10 +247,7 @@ mod tests {
 "#;
 
     #[allow(dead_code)]
-    fn make_delta_scenario<'a>(
-        scenario: &'a gherkin::Scenario,
-        op: DeltaOp,
-    ) -> DeltaScenario<'a> {
+    fn make_delta_scenario<'a>(scenario: &'a gherkin::Scenario, op: DeltaOp) -> DeltaScenario<'a> {
         DeltaScenario { scenario, op }
     }
 

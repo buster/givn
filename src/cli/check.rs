@@ -1,6 +1,5 @@
-use anyhow::Result;
 use crate::config::overlay::load_effective;
-
+use anyhow::Result;
 
 /// Run an artifact's post hooks (e.g. verify.command, lint).
 ///
@@ -57,7 +56,10 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
 }
 
 /// Check if an artifact's output files exist in the change directory.
-fn artifact_output_exists(artifact: &crate::config::manifest::Artifact, change_dir: &std::path::Path) -> bool {
+fn artifact_output_exists(
+    artifact: &crate::config::manifest::Artifact,
+    change_dir: &std::path::Path,
+) -> bool {
     for pattern in &artifact.generates {
         let path = change_dir.join(pattern);
         if path.exists() {

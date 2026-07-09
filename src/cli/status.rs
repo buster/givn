@@ -1,6 +1,6 @@
-use anyhow::Result;
 use crate::config::overlay::load_effective;
-use crate::state::{ArtifactStatus, ChangeState, list_changes, list_archived};
+use crate::state::{ArtifactStatus, ChangeState, list_archived, list_changes};
+use anyhow::Result;
 
 /// Show lifecycle state derived from the filesystem.
 ///
@@ -23,10 +23,13 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
             let archived_dir = project_root.join("givn/archive").join(id);
             if archived_dir.exists() {
                 if json {
-                    println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                        "id": id,
-                        "archived": true,
-                    }))?);
+                    println!(
+                        "{}",
+                        serde_json::to_string_pretty(&serde_json::json!({
+                            "id": id,
+                            "archived": true,
+                        }))?
+                    );
                 } else {
                     println!("Change '{id}': archived");
                 }
@@ -46,10 +49,13 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
 
         if changes.is_empty() && archived.is_empty() {
             if json {
-                println!("{}", serde_json::to_string_pretty(&serde_json::json!({
-                    "active": [],
-                    "archived": [],
-                }))?);
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(&serde_json::json!({
+                        "active": [],
+                        "archived": [],
+                    }))?
+                );
             } else {
                 println!("No changes found. Run `givn new <id>` to create one.");
             }
@@ -96,16 +102,24 @@ fn print_detail(state: &ChangeState) {
     println!("Artifacts:");
     for a in &state.artifacts {
         let marker = match a.status {
-            ArtifactStatus::Done    => "✓",
+            ArtifactStatus::Done => "✓",
             ArtifactStatus::Partial => "~",
             ArtifactStatus::Pending => "·",
             ArtifactStatus::Skipped => "⊘",
         };
         let tags = {
             let mut t = Vec::new();
-            if a.gates_archive { t.push("gates archive"); }
-            if a.optional       { t.push("optional"); }
-            if t.is_empty() { String::new() } else { format!("  ({})", t.join(", ")) }
+            if a.gates_archive {
+                t.push("gates archive");
+            }
+            if a.optional {
+                t.push("optional");
+            }
+            if t.is_empty() {
+                String::new()
+            } else {
+                format!("  ({})", t.join(", "))
+            }
         };
         let extra = if let Some(ref p) = a.tasks_progress {
             format!("  {}/{} tasks", p.done, p.total)
@@ -153,33 +167,42 @@ fn summary_json(state: &ChangeState) -> serde_json::Value {
 }
 
 fn print_json(state: &ChangeState) -> Result<()> {
-    let artifacts: Vec<serde_json::Value> = state.artifacts.iter().map(|a| {
-        let status_str = match a.status {
-            ArtifactStatus::Done    => "done",
-            ArtifactStatus::Partial => "partial",
-            ArtifactStatus::Pending => "pending",
-            ArtifactStatus::Skipped => "skipped",
-        };
-        let mut v = serde_json::json!({
+    let artifacts: Vec<serde_json::Value> = state
+        .artifacts
+        .iter()
+        .map(|a| {
+            let status_str = match a.status {
+                ArtifactStatus::Done => "done",
+                ArtifactStatus::Partial => "partial",
+                ArtifactStatus::Pending => "pending",
+                ArtifactStatus::Skipped => "skipped",
+            };
+            let mut v = serde_json::json!({
+                "id": a.id,
+                "status": status_str,
+                "optional": a.optional,
+                "gates_archive": a.gates_archive,
+            });
+            if let Some(ref p) = a.tasks_progress {
+                v["tasks_total"] = serde_json::json!(p.total);
+                v["tasks_done"] = serde_json::json!(p.done);
+            }
+            v
+        })
+        .collect();
+
+    let next = state.next_required().map(|a| {
+        serde_json::json!({
             "id": a.id,
-            "status": status_str,
             "optional": a.optional,
-            "gates_archive": a.gates_archive,
-        });
-        if let Some(ref p) = a.tasks_progress {
-            v["tasks_total"] = serde_json::json!(p.total);
-            v["tasks_done"]  = serde_json::json!(p.done);
-        }
-        v
-    }).collect();
+        })
+    });
 
-    let next = state.next_required().map(|a| serde_json::json!({
-        "id": a.id,
-        "optional": a.optional,
-    }));
-
-    let optional_pending: Vec<&str> = state.optional_pending()
-        .iter().map(|a| a.id.as_str()).collect();
+    let optional_pending: Vec<&str> = state
+        .optional_pending()
+        .iter()
+        .map(|a| a.id.as_str())
+        .collect();
 
     let out = serde_json::json!({
         "id": state.id,

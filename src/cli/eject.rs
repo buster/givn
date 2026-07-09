@@ -1,5 +1,5 @@
-use anyhow::{bail, Result};
 use crate::config::embedded::Assets;
+use anyhow::{Result, bail};
 
 /// Write an embedded default facet into the project directory for editing.
 ///
@@ -47,12 +47,16 @@ pub fn run(target: &str, force: bool) -> Result<()> {
 fn eject_template(project_root: &std::path::Path, artifact_id: &str, force: bool) -> Result<()> {
     // Use the effective manifest so addon artifacts (e.g. arc42-docs) are ejectable.
     let manifest = crate::config::overlay::load_effective()?;
-    let artifact = manifest.artifacts.iter().find(|a| a.id == artifact_id).ok_or_else(|| {
-        anyhow::anyhow!(
-            "no artifact '{artifact_id}' in the effective manifest. \
+    let artifact = manifest
+        .artifacts
+        .iter()
+        .find(|a| a.id == artifact_id)
+        .ok_or_else(|| {
+            anyhow::anyhow!(
+                "no artifact '{artifact_id}' in the effective manifest. \
              If this is an addon artifact, enable it in givn/config.yaml first."
-        )
-    })?;
+            )
+        })?;
 
     let template_name = artifact.template.as_deref().unwrap_or(artifact_id);
 
@@ -104,9 +108,7 @@ fn eject_instruction(project_root: &std::path::Path, artifact_id: &str, force: b
 fn eject_skill(project_root: &std::path::Path, skill_name: &str, force: bool) -> Result<()> {
     let embedded_key = format!("skills/{skill_name}/SKILL.md.tmpl");
     let content = Assets::get_str(&embedded_key).ok_or_else(|| {
-        anyhow::anyhow!(
-            "no embedded skill template for '{skill_name}' (tried '{embedded_key}')"
-        )
+        anyhow::anyhow!("no embedded skill template for '{skill_name}' (tried '{embedded_key}')")
     })?;
 
     let dest_dir = project_root.join("givn/skills").join(skill_name);
@@ -127,7 +129,9 @@ fn eject_manifest(project_root: &std::path::Path, force: bool) -> Result<()> {
     let dest = project_root.join("givn/manifest.yaml");
     write_file(&dest, &content, force)?;
     println!("ejected  {}", dest.display());
-    println!("Note: givn/manifest.yaml is for reference only. Use givn/config.yaml overlay to patch it.");
+    println!(
+        "Note: givn/manifest.yaml is for reference only. Use givn/config.yaml overlay to patch it."
+    );
     Ok(())
 }
 

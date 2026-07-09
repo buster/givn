@@ -1,6 +1,6 @@
-use anyhow::Result;
-use crate::gherkin::parse::{collect_feature_files, parse_file, LintKind};
 use crate::gherkin::delta::is_removed_placeholder;
+use crate::gherkin::parse::{LintKind, collect_feature_files, parse_file};
+use anyhow::Result;
 
 /// Static check of .feature files (syntax, @wip, delta tags). Runs NO tests.
 ///
@@ -17,10 +17,7 @@ use crate::gherkin::delta::is_removed_placeholder;
 pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
     let project_root = std::env::current_dir()?;
     let feature_files = if !paths.is_empty() {
-        paths
-            .iter()
-            .map(|p| std::path::PathBuf::from(p))
-            .collect()
+        paths.iter().map(|p| std::path::PathBuf::from(p)).collect()
     } else if let Some(id) = change {
         // Scope to givn/changes/<id>/specs/
         let change_dir = project_root.join("givn/changes").join(id);
@@ -64,9 +61,10 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
                     // at the same line.
                     if let Some(ref feature) = result.feature {
                         let wip_line = e.line.unwrap_or(0);
-                        let is_in_removed = feature.scenarios.iter().any(|s| {
-                            is_removed_placeholder(s) && s.position.line == wip_line
-                        });
+                        let is_in_removed = feature
+                            .scenarios
+                            .iter()
+                            .any(|s| is_removed_placeholder(s) && s.position.line == wip_line);
                         if is_in_removed {
                             return false; // suppress
                         }
@@ -83,10 +81,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
                 LintKind::Wip => has_wip = true,
             }
 
-            let location = error
-                .line
-                .map(|l| format!(":{l}"))
-                .unwrap_or_default();
+            let location = error.line.map(|l| format!(":{l}")).unwrap_or_default();
             let level = match error.kind {
                 LintKind::ParseError => "ERROR",
                 LintKind::Wip => "WIP  ",
@@ -104,9 +99,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
     if total_errors == 0 {
         println!("givn lint: {total_files} file(s) checked — clean");
     } else {
-        eprintln!(
-            "givn lint: {total_files} file(s) checked, {total_errors} finding(s)"
-        );
+        eprintln!("givn lint: {total_files} file(s) checked, {total_errors} finding(s)");
     }
 
     // Exit code: parse errors (1) outrank @wip/PENDING (2).

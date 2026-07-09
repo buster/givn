@@ -1,8 +1,8 @@
-use anyhow::{bail, Result};
 use crate::config::overlay::load_effective;
-use crate::gherkin::parse::collect_feature_files;
 use crate::gherkin::merge::merge_file;
+use crate::gherkin::parse::collect_feature_files;
 use crate::state::{ArtifactStatus, ChangeState};
+use anyhow::{Result, bail};
 use gherkin::GherkinEnv;
 
 /// Archive a completed change.
@@ -41,7 +41,10 @@ pub fn run(change: &str) -> Result<()> {
     for req in &manifest.apply.requires {
         let artifact_state = state.artifacts.iter().find(|a| a.id == *req);
         match artifact_state {
-            None => bail!("archive blocked: required artifact '{}' not found in manifest", req),
+            None => bail!(
+                "archive blocked: required artifact '{}' not found in manifest",
+                req
+            ),
             Some(a) if a.status == ArtifactStatus::Skipped => {
                 // Intentionally skipped (e.g. reverse-engineering flow).
                 // A required artifact should not normally be skipped; if it is,
@@ -49,12 +52,17 @@ pub fn run(change: &str) -> Result<()> {
             }
             Some(a) if a.status == ArtifactStatus::Pending => bail!(
                 "archive blocked: required artifact '{}' does not exist for change '{}'",
-                req, change
+                req,
+                change
             ),
             Some(a) if a.status == ArtifactStatus::Partial => {
                 // For tasks: incomplete checkboxes. For review: missing PASS.
                 if let Some(ref p) = a.tasks_progress {
-                    bail!("archive blocked: tasks not complete ({}/{} done)", p.done, p.total);
+                    bail!(
+                        "archive blocked: tasks not complete ({}/{} done)",
+                        p.done,
+                        p.total
+                    );
                 }
                 bail!(
                     "archive blocked: artifact '{}' is incomplete. \
@@ -68,10 +76,7 @@ pub fn run(change: &str) -> Result<()> {
     }
 
     // 4. Run hooks of all apply.requires artifacts.
-    let features_path = change_dir
-        .join("specs")
-        .to_string_lossy()
-        .into_owned();
+    let features_path = change_dir.join("specs").to_string_lossy().into_owned();
     println!("Running archive gate hooks...");
     crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
     println!("✓ Gate hooks passed");
@@ -86,7 +91,11 @@ pub fn run(change: &str) -> Result<()> {
         for delta_path in &delta_files {
             let env = GherkinEnv::default();
             let delta_feature = gherkin::Feature::parse_path(delta_path, env).map_err(|e| {
-                anyhow::anyhow!("failed to parse delta feature '{}': {}", delta_path.display(), e)
+                anyhow::anyhow!(
+                    "failed to parse delta feature '{}': {}",
+                    delta_path.display(),
+                    e
+                )
             })?;
 
             // Determine the permanent spec path: givn/specs/<cap>/<cap>.feature

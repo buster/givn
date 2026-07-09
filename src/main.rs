@@ -7,7 +7,7 @@ mod skills;
 mod state;
 
 use clap::{CommandFactory, Parser, Subcommand};
-use clap_complete::{generate, Shell};
+use clap_complete::{Shell, generate};
 
 /// givn — from Given to done.
 ///
@@ -144,7 +144,6 @@ enum AddonsCommands {
     },
 }
 
-
 #[derive(Subcommand)]
 enum ExtrasCommands {
     /// Enable extras in givn/config.yaml and sync skills + commands.
@@ -172,9 +171,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
         Commands::Init { force, no_extras } => cli::init::run(force, no_extras),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
-        Commands::Instructions { artifact, change, json } => {
-            cli::instructions::run(&artifact, change.as_deref(), json)
-        }
+        Commands::Instructions {
+            artifact,
+            change,
+            json,
+        } => cli::instructions::run(&artifact, change.as_deref(), json),
         Commands::Lint { change, paths } => {
             let code = cli::lint::run(change.as_deref(), paths)?;
             if code != 0 {
@@ -194,7 +195,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             AddonsCommands::Enable { name } => cli::addons::run_enable(&name),
             AddonsCommands::Disable { name } => cli::addons::run_disable(&name),
         },
-        Commands::Skills { command: SkillsCommands::Sync } => cli::skills::run_sync(),
+        Commands::Skills {
+            command: SkillsCommands::Sync,
+        } => cli::skills::run_sync(),
         Commands::Upgrade => cli::upgrade::run(),
         Commands::Extras { command } => match command {
             ExtrasCommands::Install => cli::extras::run_install(),

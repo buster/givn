@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crate::config::render;
+use anyhow::Result;
 
 const BANNER: &str = r#"
   ________  .__
@@ -23,11 +23,7 @@ pub fn run(force: bool, no_extras: bool) -> Result<()> {
     println!("{}", "─".repeat(52));
 
     // Create directory scaffolding.
-    let dirs = [
-        "givn/specs",
-        "givn/changes",
-        "givn/archive",
-    ];
+    let dirs = ["givn/specs", "givn/changes", "givn/archive"];
     println!("\nScaffolding project...\n");
     for dir in &dirs {
         let path = project_root.join(dir);

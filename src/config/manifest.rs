@@ -166,7 +166,14 @@ mod tests {
 
         // The manifest schema top-level fields.
         // If you add a new field to Manifest, add it here too.
-        let schema_fields = ["artifacts", "apply", "verify", "addons", "extras", "givn_config_version"];
+        let schema_fields = [
+            "artifacts",
+            "apply",
+            "verify",
+            "addons",
+            "extras",
+            "givn_config_version",
+        ];
         for field in &schema_fields {
             assert!(
                 tmpl.contains(field),
@@ -178,7 +185,10 @@ mod tests {
     #[test]
     fn embedded_manifest_deserialises() {
         let manifest = Manifest::load_embedded().expect("should load embedded manifest");
-        assert!(!manifest.artifacts.is_empty(), "manifest must define at least one artifact");
+        assert!(
+            !manifest.artifacts.is_empty(),
+            "manifest must define at least one artifact"
+        );
 
         // Check required built-in artifacts are present.
         let ids: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();

@@ -1,6 +1,6 @@
-use anyhow::Result;
-use crate::state::{ArtifactStatus, ChangeState};
 use crate::config::overlay::load_effective;
+use crate::state::{ArtifactStatus, ChangeState};
+use anyhow::Result;
 
 /// Track task progress for a change (givn tracks, does not execute).
 pub fn run(change: &str) -> Result<()> {
@@ -51,9 +51,14 @@ pub fn run(change: &str) -> Result<()> {
     }
 
     // Report missing apply.requires artifacts (Pending, but not Skipped).
-    let missing: Vec<&str> = manifest.apply.requires.iter()
+    let missing: Vec<&str> = manifest
+        .apply
+        .requires
+        .iter()
         .filter(|req| {
-            state.artifacts.iter()
+            state
+                .artifacts
+                .iter()
                 .find(|a| &a.id == *req)
                 .map(|a| a.status == ArtifactStatus::Pending)
                 .unwrap_or(true)
@@ -62,7 +67,10 @@ pub fn run(change: &str) -> Result<()> {
         .collect();
 
     if !missing.is_empty() {
-        println!("\nMissing required artifacts for archive: {}", missing.join(", "));
+        println!(
+            "\nMissing required artifacts for archive: {}",
+            missing.join(", ")
+        );
     }
 
     Ok(())

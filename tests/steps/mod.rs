@@ -6,7 +6,7 @@
 
 use std::process::Output;
 
-use cucumber::{given, gherkin::Step, then, when, World};
+use cucumber::{World, gherkin::Step, given, then, when};
 
 use crate::common;
 
@@ -120,14 +120,20 @@ fn no_existing_change(_world: &mut GivnWorld, _id: String) {
 
 #[given(regex = r#"^an existing change named "([^"]+)"$"#)]
 fn existing_change(world: &mut GivnWorld, id: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     std::fs::create_dir_all(env.path(&format!("givn/changes/{id}")))
         .expect("pre-create change dir");
 }
 
 #[given("a project override file at givn/artifacts/proposal/proposal.md with custom content")]
 fn override_proposal(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let content = "# Custom Proposal\nThis is a test override.\n";
     common::write_override(env, "proposal", "proposal.md", content);
     world.override_content = Some(content.to_string());
@@ -135,7 +141,10 @@ fn override_proposal(world: &mut GivnWorld) {
 
 #[given(regex = r#"^a \.feature file at "([^"]+)" with:$"#)]
 fn feature_file_at(world: &mut GivnWorld, path: String, step: &Step) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let content = step
         .docstring
         .as_ref()
@@ -149,8 +158,12 @@ fn feature_file_at(world: &mut GivnWorld, path: String, step: &Step) {
 
 #[given(regex = r#"^a feature file with a removed-wip placeholder at "([^"]+)"$"#)]
 fn feature_file_removed_wip_placeholder(world: &mut GivnWorld, path: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
-    let content = "@givn.delta @foo\nFeature: Foo\n\n  @givn.removed @wip\n  Scenario: Old\n    Given x\n";
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content =
+        "@givn.delta @foo\nFeature: Foo\n\n  @givn.removed @wip\n  Scenario: Old\n    Given x\n";
     let file_path = env.path(&path);
     if let Some(parent) = file_path.parent() {
         std::fs::create_dir_all(parent).expect("create parent dirs");
@@ -158,9 +171,14 @@ fn feature_file_removed_wip_placeholder(world: &mut GivnWorld, path: String) {
     std::fs::write(&file_path, content).expect("write .feature file");
 }
 
-#[given(regex = r#"^a feature file with a removed scenario and a separate wip scenario at "([^"]+)"$"#)]
+#[given(
+    regex = r#"^a feature file with a removed scenario and a separate wip scenario at "([^"]+)"$"#
+)]
 fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let content = "@givn.delta @foo\nFeature: Foo\n\n  @givn.removed\n  Scenario: Old\n    Given x\n\n  @wip\n  Scenario: NewNotDone\n    Given y\n";
     let file_path = env.path(&path);
     if let Some(parent) = file_path.parent() {
@@ -174,7 +192,10 @@ fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
 #[when(regex = r"^the user runs `([^`]+)`$")]
 fn user_runs(world: &mut GivnWorld, cmd: String) {
     let args = parse_command(&cmd);
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     let out = common::run_givn(env, &argv);
     if let Some(id) = change_id_from_args(&args) {
@@ -228,21 +249,30 @@ fn exits_two(world: &mut GivnWorld) {
 
 #[then(regex = r"^the directory (givn/changes/[^/]+/) exists$")]
 fn directory_exists(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let p = env.path(&rel);
     assert!(p.is_dir(), "directory not created: {:?}", p);
 }
 
 #[then(regex = r"^the file (givn/changes/[^/]+/proposal\.md) exists$")]
 fn file_exists(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let p = env.path(&rel);
     assert!(p.is_file(), "file not created: {:?}", p);
 }
 
 #[then("no change directory has been created")]
 fn no_change_created(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let changes = env.path("givn/changes");
     if changes.is_dir() {
         let count = std::fs::read_dir(&changes)
@@ -256,7 +286,10 @@ fn no_change_created(world: &mut GivnWorld) {
 
 #[then(regex = r"^no directory (givn/changes/[^/]+/) has been created$")]
 fn no_directory_created(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let p = env.path(&rel);
     assert!(!p.exists(), "directory unexpectedly created: {:?}", p);
 }
@@ -276,10 +309,18 @@ fn stdout_contains_line(world: &mut GivnWorld, needle: String) {
 
 #[then(regex = r"^stdout contains the absolute path to (.+)$")]
 fn stdout_contains_abs_path(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let abs = env.path(rel.trim()).to_string_lossy().into_owned();
     let s = stdout(world);
-    assert!(s.contains(&abs), "stdout missing absolute path {}: {}", abs, s);
+    assert!(
+        s.contains(&abs),
+        "stdout missing absolute path {}: {}",
+        abs,
+        s
+    );
 }
 
 #[then(regex = r#"^stdout contains a line beginning with "(.*)"$"#)]
@@ -355,17 +396,30 @@ fn stderr_mentions_init(world: &mut GivnWorld) {
 
 #[then(regex = r"^stderr contains the absolute path to (.+)$")]
 fn stderr_contains_abs_path(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let abs = env.path(rel.trim()).to_string_lossy().into_owned();
     let s = stderr(world);
-    assert!(s.contains(&abs), "stderr missing absolute path {}: {}", abs, s);
+    assert!(
+        s.contains(&abs),
+        "stderr missing absolute path {}: {}",
+        abs,
+        s
+    );
 }
 
 // --- Then: change directory contents --------------------------------------
 
-#[then(regex = r"^the change directory (givn/changes/[^/]+/) contains exactly one file: proposal\.md$")]
+#[then(
+    regex = r"^the change directory (givn/changes/[^/]+/) contains exactly one file: proposal\.md$"
+)]
 fn change_dir_exactly_proposal(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let dir = env.path(&rel);
     let mut entries: Vec<String> = std::fs::read_dir(&dir)
         .expect("read change dir")
@@ -383,16 +437,24 @@ fn change_dir_exactly_proposal(world: &mut GivnWorld, rel: String) {
 
 #[then(regex = r"^no subdirectory named specs/ exists inside (givn/changes/[^/]+)/$")]
 fn no_specs_subdir(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let p = env.path(&format!("{rel}/specs"));
     assert!(!p.exists(), "specs/ unexpectedly exists: {:?}", p);
 }
 
 // --- Then: proposal.md content --------------------------------------------
 
-#[then(regex = r"^the file (givn/changes/[^/]+/proposal\.md) equals the built-in proposal template byte for byte$")]
+#[then(
+    regex = r"^the file (givn/changes/[^/]+/proposal\.md) equals the built-in proposal template byte for byte$"
+)]
 fn equals_builtin_template(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let actual = std::fs::read(env.path(&rel)).expect("read proposal.md");
     let expected = include_bytes!("../../assets/templates/proposal.md");
     assert_eq!(
@@ -408,10 +470,12 @@ fn proposal_heading_has_change_id(world: &mut GivnWorld) {
         .last_change_id
         .clone()
         .expect("no change id was recorded from a `givn new` command");
-    let env = world.env.as_ref().expect("a project root is required first");
-    let content =
-        std::fs::read_to_string(env.path(&format!("givn/changes/{id}/proposal.md")))
-            .expect("read proposal.md");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content = std::fs::read_to_string(env.path(&format!("givn/changes/{id}/proposal.md")))
+        .expect("read proposal.md");
     assert!(
         content.contains("{{CHANGE_ID}}"),
         "proposal.md missing {{{{CHANGE_ID}}}} placeholder: {}",
@@ -419,9 +483,14 @@ fn proposal_heading_has_change_id(world: &mut GivnWorld) {
     );
 }
 
-#[then(regex = r"^the file (givn/changes/[^/]+/proposal\.md) equals the project override content byte for byte$")]
+#[then(
+    regex = r"^the file (givn/changes/[^/]+/proposal\.md) equals the project override content byte for byte$"
+)]
 fn equals_override(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let actual = std::fs::read(env.path(&rel)).expect("read proposal.md");
     let expected = world
         .override_content
@@ -436,7 +505,10 @@ fn equals_override(world: &mut GivnWorld, rel: String) {
 
 #[then(regex = r#"^the file (givn/changes/[^/]+/proposal\.md) does not contain "(.*)"$"#)]
 fn file_does_not_contain(world: &mut GivnWorld, rel: String, needle: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let content = std::fs::read_to_string(env.path(&rel)).expect("read proposal.md");
     assert!(
         !content.contains(&needle),
@@ -451,17 +523,19 @@ fn file_does_not_contain(world: &mut GivnWorld, rel: String, needle: String) {
 
 #[then(regex = r#"^the file "([^"]+)" exists$"#)]
 fn file_quoted_exists(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
-    assert!(
-        env.path(&rel).exists(),
-        "expected file {:?} to exist",
-        rel,
-    );
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(env.path(&rel).exists(), "expected file {:?} to exist", rel,);
 }
 
 #[then(regex = r#"^the file "([^"]+)" does not exist$"#)]
 fn file_quoted_does_not_exist(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     assert!(
         !env.path(&rel).exists(),
         "expected file {:?} to not exist",
@@ -471,7 +545,10 @@ fn file_quoted_does_not_exist(world: &mut GivnWorld, rel: String) {
 
 #[then(regex = r#"^the directory "([^"]+)" does not exist$"#)]
 fn dir_quoted_does_not_exist(world: &mut GivnWorld, rel: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     assert!(
         !env.path(&rel).exists(),
         "expected directory {:?} to not exist",
@@ -481,9 +558,12 @@ fn dir_quoted_does_not_exist(world: &mut GivnWorld, rel: String) {
 
 #[then(regex = r#"^givn config key "extras" is "([^"]+)"$"#)]
 fn config_extras_key_is(world: &mut GivnWorld, value: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
-    let config = std::fs::read_to_string(env.path("givn/config.yaml"))
-        .expect("read givn/config.yaml");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let config =
+        std::fs::read_to_string(env.path("givn/config.yaml")).expect("read givn/config.yaml");
     let found = config.lines().any(|line| {
         let trimmed = line.trim();
         trimmed == format!("extras: {}", value)
@@ -497,7 +577,10 @@ fn config_extras_key_is(world: &mut GivnWorld, value: String) {
 
 #[given(regex = r#"^givn config key "extras" is "([^"]+)"$"#)]
 fn config_extras_key_set(world: &mut GivnWorld, value: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let path = env.path("givn/config.yaml");
     let config = std::fs::read_to_string(&path).expect("read givn/config.yaml");
     let mut lines: Vec<String> = config.lines().map(|l| l.to_string()).collect();
@@ -528,7 +611,10 @@ fn stdout_does_not_contain(world: &mut GivnWorld, needle: String) {
 
 #[given("extras skills and commands are already generated")]
 fn extras_already_generated(world: &mut GivnWorld) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     // Write files to simulate a prior install — the uninstall scenarios
     // need these to exist so they have something to remove.
     for skill in &["givn-domain-modeling", "givn-dev-principles"] {
@@ -546,7 +632,10 @@ fn extras_already_generated(world: &mut GivnWorld) {
 
 #[given(regex = r#"^a change "([^"]+)" exists with artifact "([^"]+)"$"#)]
 fn change_exists_with_artifact(world: &mut GivnWorld, id: String, file: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     // Create the change via givn new if it doesn't exist yet.
     let change_dir = env.path(&format!("givn/changes/{}", id));
     if !change_dir.exists() {
@@ -568,7 +657,10 @@ fn change_exists_with_artifact(world: &mut GivnWorld, id: String, file: String) 
 
 #[given(regex = r#"^a change "([^"]+)" exists in archive$"#)]
 fn change_exists_in_archive(world: &mut GivnWorld, id: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let dir = env.path(&format!("givn/archive/{}", id));
     std::fs::create_dir_all(&dir).expect("create archive dir");
     // list_archived only checks directory existence, not contents —
@@ -579,18 +671,22 @@ fn change_exists_in_archive(world: &mut GivnWorld, id: String) {
 #[then(regex = r#"^stdout line (\d+) matches "([^"]+)"$"#)]
 fn stdout_line_matches(world: &mut GivnWorld, n: usize, needle: String) {
     let s = stdout(world);
-    let line = s.lines().nth(n.saturating_sub(1))
-        .unwrap_or("");
+    let line = s.lines().nth(n.saturating_sub(1)).unwrap_or("");
     assert!(
         line.contains(&needle),
         "stdout line {} expected to contain {:?}, got: {:?}",
-        n, needle, line,
+        n,
+        needle,
+        line,
     );
 }
 
 #[given(regex = r#"^a change "([^"]+)" exists with all required artifacts complete$"#)]
 fn change_all_required_done(world: &mut GivnWorld, id: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let change_dir = env.path(&format!("givn/changes/{}", id));
     if !change_dir.exists() {
         let out = common::run_givn(env, &["new", &id]);
@@ -598,7 +694,13 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     }
     let change_dir = env.path(&format!("givn/changes/{}", id));
     // Write all manifest artifacts. Uses the default manifest artifact list.
-    for file in &["proposal.md", "design.md", "design-review.md", "tasks.md", "review.md"] {
+    for file in &[
+        "proposal.md",
+        "design.md",
+        "design-review.md",
+        "tasks.md",
+        "review.md",
+    ] {
         std::fs::write(change_dir.join(file), "").expect("write artifact");
     }
     // Write DESIGN-REVIEW: PASS marker.
@@ -613,14 +715,14 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     std::fs::write(specs_dir.join("example.feature"), "Feature: example\n").unwrap();
 }
 
-#[given(regex = r#"^a change "([^"]+)" exists with artifact "tasks\.md" containing "(\d+) done, (\d+) total"$"#)]
-fn change_with_tasks_progress(
-    world: &mut GivnWorld,
-    id: String,
-    done: usize,
-    total: usize,
-) {
-    let env = world.env.as_ref().expect("a project root is required first");
+#[given(
+    regex = r#"^a change "([^"]+)" exists with artifact "tasks\.md" containing "(\d+) done, (\d+) total"$"#
+)]
+fn change_with_tasks_progress(world: &mut GivnWorld, id: String, done: usize, total: usize) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let change_dir = env.path(&format!("givn/changes/{}", id));
     if !change_dir.exists() {
         let out = common::run_givn(env, &["new", &id]);
@@ -640,7 +742,10 @@ fn change_with_tasks_progress(
 
 #[given(regex = r#"^the change "([^"]+)" has "\.givn-skip" listing "([^"]+)"$"#)]
 fn change_has_skip_file(world: &mut GivnWorld, id: String, ids: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let skip_path = env.path(&format!("givn/changes/{}/.givn-skip", id));
     let content = ids.replace(',', "\n");
     std::fs::write(&skip_path, content).expect("write .givn-skip");
@@ -648,7 +753,10 @@ fn change_has_skip_file(world: &mut GivnWorld, id: String, ids: String) {
 
 #[given(regex = r#"^the effective manifest has an optional artifact "([^"]+)"$"#)]
 fn manifest_has_optional_artifact(world: &mut GivnWorld, _id: String) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let out = common::run_givn(env, &["addons", "enable", "arc42"]);
     assert!(
         out.status.success(),
@@ -666,8 +774,12 @@ fn apply_overlay(world: &mut GivnWorld, yaml: String) {
     let base = Manifest::load_embedded().expect("load default manifest");
     let yaml = yaml.replace("\\n", "\n");
     match overlay::apply(base, &yaml) {
-        Ok(m) => { world.overlay_manifest = Some(m); }
-        Err(e) => { world.overlay_error = Some(e.to_string()); }
+        Ok(m) => {
+            world.overlay_manifest = Some(m);
+        }
+        Err(e) => {
+            world.overlay_error = Some(e.to_string());
+        }
     }
 }
 
@@ -677,8 +789,12 @@ fn apply_overlay_twice(world: &mut GivnWorld, yaml: String) {
     let yaml = yaml.replace("\\n", "\n");
     let after = overlay::apply(base, &yaml).expect("first apply");
     match overlay::apply(after, &yaml) {
-        Ok(m) => { world.overlay_manifest = Some(m); }
-        Err(e) => { world.overlay_error = Some(e.to_string()); }
+        Ok(m) => {
+            world.overlay_manifest = Some(m);
+        }
+        Err(e) => {
+            world.overlay_error = Some(e.to_string());
+        }
     }
 }
 
@@ -686,9 +802,19 @@ fn apply_overlay_twice(world: &mut GivnWorld, yaml: String) {
 fn manifest_equals_default(world: &mut GivnWorld) {
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
     let default = Manifest::load_embedded().expect("load default manifest");
-    assert_eq!(m.artifacts.len(), default.artifacts.len(), "artifact count differs");
-    assert_eq!(m.verify.command, default.verify.command, "verify.command differs");
-    assert_eq!(m.apply.requires, default.apply.requires, "apply.requires differs");
+    assert_eq!(
+        m.artifacts.len(),
+        default.artifacts.len(),
+        "artifact count differs"
+    );
+    assert_eq!(
+        m.verify.command, default.verify.command,
+        "verify.command differs"
+    );
+    assert_eq!(
+        m.apply.requires, default.apply.requires,
+        "apply.requires differs"
+    );
     assert_eq!(m.extras, default.extras, "extras differs");
 }
 
@@ -707,9 +833,18 @@ fn manifest_apply_requires(world: &mut GivnWorld, req: String) {
 #[then(regex = r#"^the effective manifest has an artifact "([^"]+)" that requires "([^"]+)"$"#)]
 fn manifest_artifact_requires(world: &mut GivnWorld, id: String, dep: String) {
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
-    let a = m.artifacts.iter().find(|a| a.id == id)
+    let a = m
+        .artifacts
+        .iter()
+        .find(|a| a.id == id)
         .expect(&format!("artifact '{}' not found", id));
-    assert!(a.requires.contains(&dep), "artifact '{}' requires {:?}, expected '{}'", id, a.requires, dep);
+    assert!(
+        a.requires.contains(&dep),
+        "artifact '{}' requires {:?}, expected '{}'",
+        id,
+        a.requires,
+        dep
+    );
 }
 
 #[then(regex = r#"^the effective manifest does not have an artifact "([^"]+)"$"#)]
@@ -718,12 +853,19 @@ fn manifest_no_artifact(world: &mut GivnWorld, id: String) {
         panic!("overlay application failed (expected success): {}", err);
     }
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
-    assert!(m.artifacts.iter().all(|a| a.id != id), "artifact '{}' should not exist", id);
+    assert!(
+        m.artifacts.iter().all(|a| a.id != id),
+        "artifact '{}' should not exist",
+        id
+    );
 }
 #[then(regex = r#"^the effective manifest has an artifact "([^"]+)" that is optional$"#)]
 fn manifest_artifact_optional(world: &mut GivnWorld, id: String) {
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
-    let a = m.artifacts.iter().find(|a| a.id == id)
+    let a = m
+        .artifacts
+        .iter()
+        .find(|a| a.id == id)
         .expect(&format!("artifact '{}' not found", id));
     assert!(a.optional, "artifact '{}' should be optional", id);
 }
@@ -731,16 +873,29 @@ fn manifest_artifact_optional(world: &mut GivnWorld, id: String) {
 #[then(regex = r#"^the effective manifest has an artifact "([^"]+)" that generates "([^"]+)"$"#)]
 fn manifest_artifact_generates(world: &mut GivnWorld, id: String, generates: String) {
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
-    let a = m.artifacts.iter().find(|a| a.id == id)
+    let a = m
+        .artifacts
+        .iter()
+        .find(|a| a.id == id)
         .expect(&format!("artifact '{}' not found", id));
-    assert!(a.generates.contains(&generates), "artifact '{}' generates {:?}, expected '{}'", id, a.generates, generates);
+    assert!(
+        a.generates.contains(&generates),
+        "artifact '{}' generates {:?}, expected '{}'",
+        id,
+        a.generates,
+        generates
+    );
 }
 
 #[then(regex = r#"^the effective manifest has exactly one artifact "([^"]+)"$"#)]
 fn manifest_exactly_one(world: &mut GivnWorld, id: String) {
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
     let count = m.artifacts.iter().filter(|a| a.id == id).count();
-    assert_eq!(count, 1, "expected exactly one artifact '{}', found {}", id, count);
+    assert_eq!(
+        count, 1,
+        "expected exactly one artifact '{}', found {}",
+        id, count
+    );
 }
 
 #[then("the effective manifest has extras enabled")]
@@ -751,6 +906,14 @@ fn manifest_extras_enabled(world: &mut GivnWorld) {
 
 #[then(regex = r#"^the overlay application fails with "([^"]+)"$"#)]
 fn overlay_fails_with(world: &mut GivnWorld, needle: String) {
-    let err = world.overlay_error.as_ref().expect("expected overlay to fail");
-    assert!(err.contains(&needle), "error '{}' does not contain '{}'", err, needle);
+    let err = world
+        .overlay_error
+        .as_ref()
+        .expect("expected overlay to fail");
+    assert!(
+        err.contains(&needle),
+        "error '{}' does not contain '{}'",
+        err,
+        needle
+    );
 }

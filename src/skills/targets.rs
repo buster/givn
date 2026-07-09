@@ -1,3 +1,7 @@
+use crate::config::overlay::load_effective;
+use crate::skills::render::{
+    SkillContext, default_skill_names, render_skill, resolve_skill_template,
+};
 /// Write rendered skills and commands to all target locations:
 /// - `.agents/skills/<name>/SKILL.md`   (primary neutral)
 /// - `.claude/skills/<name>/SKILL.md`   (Claude Code mirror)
@@ -7,8 +11,6 @@
 /// `AGENTS.md` at the repo root is intentionally NOT touched — it is user-owned.
 use anyhow::Result;
 use std::path::Path;
-use crate::skills::render::{SkillContext, render_skill, resolve_skill_template, default_skill_names};
-use crate::config::overlay::load_effective;
 
 /// Regenerate all skills and commands in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
@@ -165,7 +167,9 @@ fn resolve_command_template_for(name: &str) -> Result<String> {
 /// Validate SKILL.md frontmatter (name matches dir, description present and bounded).
 fn validate_frontmatter(content: &str, expected_name: &str) -> Result<()> {
     if !content.starts_with("---") {
-        anyhow::bail!("skill template for '{expected_name}' must start with YAML frontmatter (---)");
+        anyhow::bail!(
+            "skill template for '{expected_name}' must start with YAML frontmatter (---)"
+        );
     }
 
     let fm_end = content[3..].find("\n---").unwrap_or(0) + 3;
@@ -178,7 +182,9 @@ fn validate_frontmatter(content: &str, expected_name: &str) -> Result<()> {
     }
 
     if !frontmatter.contains("description:") {
-        anyhow::bail!("skill template for '{expected_name}' must have a 'description' in frontmatter");
+        anyhow::bail!(
+            "skill template for '{expected_name}' must have a 'description' in frontmatter"
+        );
     }
 
     Ok(())

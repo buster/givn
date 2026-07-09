@@ -1,4 +1,4 @@
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 /// Re-render managed config scaffold, preserve user overrides, bump givn_config_version.
 ///
@@ -15,9 +15,7 @@ pub fn run() -> Result<()> {
     let config_path = project_root.join("givn/config.yaml");
 
     if !config_path.exists() {
-        bail!(
-            "givn/config.yaml not found. Run `givn init` first."
-        );
+        bail!("givn/config.yaml not found. Run `givn init` first.");
     }
 
     let existing = std::fs::read_to_string(&config_path)?;
@@ -29,7 +27,10 @@ pub fn run() -> Result<()> {
     }
 
     std::fs::write(&config_path, &new_content)?;
-    println!("Updated givn/config.yaml to version {}.", env!("CARGO_PKG_VERSION"));
+    println!(
+        "Updated givn/config.yaml to version {}.",
+        env!("CARGO_PKG_VERSION")
+    );
     println!("Review changes with: git diff givn/config.yaml");
     println!("Then run: givn skills sync");
 
@@ -109,6 +110,9 @@ mod tests {
         );
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
         // The user's command should be preserved somewhere in the output.
-        assert!(upgraded.contains("cargo test"), "user verify.command must be preserved");
+        assert!(
+            upgraded.contains("cargo test"),
+            "user verify.command must be preserved"
+        );
     }
 }

@@ -3,7 +3,7 @@
 /// Extras are a curated set of optional, project-level skills and commands
 /// independent of the workflow artifact graph. They are enabled via the
 /// top-level `extras:` key in `givn/config.yaml`. See arc42 ch.8.11.
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 /// Write `extras: <value>` into givn/config.yaml.
 ///

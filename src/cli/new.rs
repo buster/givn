@@ -1,5 +1,5 @@
-use anyhow::{bail, Result};
 use crate::config::overlay::load_effective;
+use anyhow::{Result, bail};
 
 /// Create a new change scaffold under `givn/changes/<id>/`.
 ///
@@ -42,8 +42,7 @@ pub fn run(id: &str, skip: &[String]) -> Result<()> {
     std::fs::create_dir_all(&change_dir)?;
 
     // Write proposal stub from cascade, unless skipped.
-    let skip_set: std::collections::HashSet<&str> =
-        skip.iter().map(|s| s.as_str()).collect();
+    let skip_set: std::collections::HashSet<&str> = skip.iter().map(|s| s.as_str()).collect();
 
     if !skip_set.contains("proposal") {
         let proposal = crate::config::cascade::resolve_template("proposal", "proposal.md")?;
@@ -72,7 +71,10 @@ fn validate_id(id: &str) -> Result<()> {
     if id.is_empty() {
         bail!("change id must not be empty");
     }
-    if !id.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-') {
+    if !id
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
         bail!("change id must be kebab-case (lowercase letters, digits, hyphens): '{id}'");
     }
     if id.starts_with('-') || id.ends_with('-') {

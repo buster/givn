@@ -1,3 +1,4 @@
+use crate::config::manifest::{HookEntry, HookFull, Manifest};
 /// Hook execution engine (ADR-028, arc42 ch.8.12).
 ///
 /// Resolves and executes artifact `post` hooks:
@@ -8,7 +9,6 @@
 /// Hooks run with `GIVN_FEATURES` set to the appropriate features path.
 /// Failure blocks the gate unless `allow_failure: true`.
 use anyhow::Result;
-use crate::config::manifest::{HookEntry, HookFull, Manifest};
 
 /// Run all post hooks for a given artifact.
 ///
@@ -22,9 +22,11 @@ pub fn run_artifact_hooks(
     manifest: &Manifest,
     features_path: &str,
 ) -> Result<()> {
-    let artifact = manifest.artifacts.iter().find(|a| a.id == artifact_id).ok_or_else(|| {
-        anyhow::anyhow!("artifact '{}' not found in manifest", artifact_id)
-    })?;
+    let artifact = manifest
+        .artifacts
+        .iter()
+        .find(|a| a.id == artifact_id)
+        .ok_or_else(|| anyhow::anyhow!("artifact '{}' not found in manifest", artifact_id))?;
 
     if artifact.post.is_empty() {
         return Ok(());
@@ -41,7 +43,10 @@ pub fn run_artifact_hooks(
         let result = match run.as_str() {
             "verify" => run_verify_hook(manifest, features_path),
             "lint" => run_shell_command(
-                &format!("{} lint", std::env::current_exe().unwrap_or_default().display()),
+                &format!(
+                    "{} lint",
+                    std::env::current_exe().unwrap_or_default().display()
+                ),
                 features_path,
             ),
             other => run_shell_command(other, features_path),
@@ -79,9 +84,11 @@ pub fn run_archive_gate_hooks(manifest: &Manifest, features_path: &str) -> Resul
 fn normalise_hook(entry: &HookEntry) -> (String, bool, Option<String>) {
     match entry {
         HookEntry::Short(s) => (s.clone(), false, None),
-        HookEntry::Full(HookFull { run, allow_failure, name }) => {
-            (run.clone(), *allow_failure, name.clone())
-        }
+        HookEntry::Full(HookFull {
+            run,
+            allow_failure,
+            name,
+        }) => (run.clone(), *allow_failure, name.clone()),
     }
 }
 
