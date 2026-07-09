@@ -58,6 +58,20 @@ For each capability, create:
   (default is `@givn.added` if omitted)
 - `@wip` on every Scenario (steps not yet implemented)
 
+Tags go on the line **before** `Scenario:`, never inside the scenario body.
+
+<example caption="Correct tag placement">
+@givn.delta @my-capability
+
+Feature: My Capability
+
+  @givn.added @wip
+  Scenario: Observable outcome when something happens
+    Given some context
+    When an action occurs
+    Then an observable result is visible
+</example>
+
 **Delta tag meanings:**
 | Tag | Meaning |
 |---|---|

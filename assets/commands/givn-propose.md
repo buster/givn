@@ -109,6 +109,14 @@ For each artifact:
 - One .feature file per capability, derived from the proposal.
 - Tags: `@givn.delta @<capability>` on Feature; `@givn.added` + `@wip` on
   each Scenario (use `@givn.modified` or `@givn.removed` where appropriate).
+  Tags go on the line **before** `Scenario:`, never inside the scenario body.
+  <example caption="Correct tag placement">
+  @givn.added @wip
+  Scenario: Observable outcome when something happens
+    Given some context
+    When an action occurs
+    Then an observable result is visible
+  </example>
 - Scenarios assert observable behaviour in Given/When/Then domain language.
 - After writing, validate: run `givn lint --change <id>`
   Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.

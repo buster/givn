@@ -14,8 +14,21 @@ spec on archive.
 - Tag the Feature `@givn.delta @<capability>`.
 - Tag each Scenario `@givn.added` (default), `@givn.modified`, or `@givn.removed`.
 - Tag `@wip` while step definitions are not yet implemented.
+- Tags go on the line **before** `Scenario:`, never inside the scenario body.
 - `@givn.removed` scenarios include exactly one placeholder step so the parser
   accepts them; givn lint suppresses warnings for them.
+
+<example caption="Correct tag placement">
+@givn.delta @my-capability
+
+Feature: My Capability
+
+  @givn.added @wip
+  Scenario: Observable outcome when something happens
+    Given some context
+    When an action occurs
+    Then an observable result is visible
+</example>
 
 ## Executable-spec invariant
 
