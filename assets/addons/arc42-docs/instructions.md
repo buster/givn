@@ -18,10 +18,10 @@ table below.
 
 **If chapters are affected:**
 
-- **If a chapter file does not exist:** create it from the corresponding
-  template (see `assets/addons/arc42/templates/`). Fill in what is known from
-  the project context; leave placeholder text for sections that cannot be
-  answered yet.
+- **If a chapter file does not exist:** it was scaffolded as a blank template
+  when arc42 was enabled (`givn addons enable arc42`). Fill it in from the
+  project context; leave placeholder text for sections that cannot be answered
+  yet.
 - **If a chapter file already exists:** update only the sections affected by
   this change. Do not rewrite unrelated sections. Prefer surgical edits that
   preserve existing content.

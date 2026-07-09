@@ -2,7 +2,7 @@
 ///
 /// Addons are pre-packaged artifact sets embedded in the binary and enabled
 /// via the `addons:` key in `givn/config.yaml`. See arc42 ch.8.11.
-use anyhow::{bail, Result};
+use anyhow::{Result, bail};
 
 /// Registry of all known addons (id, one-line description).
 const KNOWN_ADDONS: &[(&str, &str)] = &[(
@@ -46,18 +46,79 @@ pub fn run_list() -> Result<()> {
     Ok(())
 }
 
-/// `givn addons enable <name>` — set addon to true in givn/config.yaml.
+/// `givn addons enable <name>` — set addon to true in givn/config.yaml
+/// and run any one-time scaffolding for that addon.
 pub fn run_enable(name: &str) -> Result<()> {
     validate_addon_name(name)?;
     set_addon(name, true)?;
     println!("enabled addon '{name}' in givn/config.yaml");
     println!();
+
+    // Addon-specific scaffolding.
+    if name == "arc42" {
+        scaffold_arc42()?;
+    }
+
     println!("The '{name}' artifact is now part of the effective workflow.");
     println!("It will appear after 'design' in `givn status`.");
     println!();
     println!("Next steps:");
     println!("  givn status              — see the updated workflow");
     println!("  givn eject {name}:instruction   — customise the instruction (optional)");
+    Ok(())
+}
+
+/// Scaffold `docs/arc42/` chapter files from the embedded templates.
+///
+/// Each file is written only if it does not already exist — existing content
+/// (including fully-filled chapters) is never overwritten.
+fn scaffold_arc42() -> Result<()> {
+    use crate::config::embedded::Assets;
+
+    let project_root = std::env::current_dir()?;
+    let out_dir = project_root.join("docs/arc42");
+    std::fs::create_dir_all(&out_dir)?;
+
+    // All embedded chapter files live under addons/arc42-docs/chapters/.
+    let prefix = "addons/arc42-docs/chapters/";
+    let mut written = Vec::new();
+    let mut skipped = Vec::new();
+
+    // Iterate embedded assets whose path starts with the chapters prefix.
+    for path in Assets::iter() {
+        let path: &str = &path;
+        let Some(filename) = path.strip_prefix(prefix) else {
+            continue;
+        };
+        // Skip any nested directories (there are none, but be defensive).
+        if filename.contains('/') {
+            continue;
+        }
+        let dest = out_dir.join(filename);
+        if dest.exists() {
+            skipped.push(filename.to_string());
+        } else {
+            let content = Assets::get_str(path)
+                .ok_or_else(|| anyhow::anyhow!("embedded asset missing: {path}"))?;
+            std::fs::write(&dest, content)?;
+            written.push(filename.to_string());
+        }
+    }
+
+    if !written.is_empty() {
+        println!("Scaffolded docs/arc42/:");
+        for f in &written {
+            println!("  created  docs/arc42/{f}");
+        }
+    }
+    if !skipped.is_empty() {
+        println!("Skipped (already exist — content preserved):");
+        for f in &skipped {
+            println!("  exists   docs/arc42/{f}");
+        }
+    }
+    println!();
+
     Ok(())
 }
 
@@ -79,10 +140,7 @@ fn validate_addon_name(name: &str) -> Result<()> {
         Ok(())
     } else {
         let known: Vec<&str> = KNOWN_ADDONS.iter().map(|(id, _)| *id).collect();
-        bail!(
-            "unknown addon '{name}'. Known addons: {}",
-            known.join(", ")
-        )
+        bail!("unknown addon '{name}'. Known addons: {}", known.join(", "))
     }
 }
 
@@ -97,9 +155,7 @@ fn set_addon(name: &str, enabled: bool) -> Result<()> {
     let config_path = project_root.join("givn/config.yaml");
 
     if !config_path.exists() {
-        bail!(
-            "givn/config.yaml not found. Run `givn init` first."
-        );
+        bail!("givn/config.yaml not found. Run `givn init` first.");
     }
 
     let content = std::fs::read_to_string(&config_path)?;
@@ -111,7 +167,9 @@ fn set_addon(name: &str, enabled: bool) -> Result<()> {
     // Case 1: key already exists (uncommented) — replace its value in place.
     for line in &mut lines {
         let trimmed = line.trim_start();
-        if trimmed.starts_with(&format!("{name}:")) && !line.trim_start_matches(' ').starts_with('#') {
+        if trimmed.starts_with(&format!("{name}:"))
+            && !line.trim_start_matches(' ').starts_with('#')
+        {
             // We're inside addons block if the key is indented.
             if line.starts_with("  ") && !line.starts_with("   ") {
                 *line = key_line.clone();
@@ -159,7 +217,9 @@ fn set_addon(name: &str, enabled: bool) -> Result<()> {
             let mut key_set = false;
             for j in (i + 1)..lines.len() {
                 let l = &lines[j];
-                if l.trim_start_matches([' ', '#']).starts_with(&format!("{name}:")) {
+                if l.trim_start_matches([' ', '#'])
+                    .starts_with(&format!("{name}:"))
+                {
                     lines[j] = key_line.clone();
                     key_set = true;
                     break;
