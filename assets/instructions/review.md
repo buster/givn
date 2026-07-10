@@ -4,6 +4,47 @@ Perform a completeness-based coverage review. The goal is not a percentage
 threshold — the goal is that every uncovered region is deliberately classified
 and resolved.
 
+**Step 0 (mandatory, before anything else): the fabrication audit.**
+
+This is a mechanical check, not a judgment call. It exists because a project
+can reach review with every task checked off, the runner exiting 0, and
+still have almost nothing actually implemented — if step definitions were
+left as empty/no-op stubs with `@wip` removed. Do this BEFORE trusting any
+other artifact in this change:
+
+1. **Grep every step definition file for empty or trivial bodies.** Look for:
+   - Empty bodies: `{}`, `() {}`, a method whose entire body is whitespace.
+   - Trivial no-ops: a bare `pass`, a bare `return`, a body containing only
+     a comment.
+   - A step body that never references any assertion library, mock, HTTP
+     client, or domain object at all.
+   Any match is a **fabricated step** — the scenario using it is not actually
+   tested, regardless of what tasks.md or the runner claims.
+2. **Cross-check tasks.md commits.** For every checked-off `[x]` scenario
+   task, confirm a corresponding commit exists (`git log --oneline --grep`
+   or by the recorded commit hash) AND that the commit's diff touches
+   production source files, not only the `.feature` file or the step
+   definition stub. A checked box with no commit, or a commit that touches
+   nothing but the spec, is a fabricated task.
+3. **Cross-check design.md's promised architecture against what exists.**
+   For every class/service/controller/module design.md says will be created,
+   confirm it exists in the source tree. List anything design.md promised
+   that was never created — this is not a "hard to test" gap, it is
+   incomplete implementation and must be resolved before REVIEW: PASS.
+4. **Confirm the runner is strict** (re-run the proof-of-strictness check
+   from the tasks setup task if it is not already recorded with output in
+   tasks.md). If the runner is not strict, every "PASS" in this change is
+   unverified — resolve this first.
+5. If any fabricated step, missing commit, or missing promised component is
+   found: this is NOT a coverage gap to classify — it is unfinished work.
+   Reopen the corresponding task(s) in tasks.md (uncheck them), and drive
+   them through the full RED→GREEN→REFACTOR→COMMIT loop for real before
+   continuing the review. Do not write `REVIEW: PASS` while any exist.
+
+Record the fabrication audit result (files scanned, findings, remediation)
+in review.md even when the result is clean — "0 empty step bodies found
+across N step definition files" is a required, checkable statement.
+
 **First: record the coverage number.**
 Run the coverage tool and note the overall percentage (line and/or branch).
 This is a fact recorded in the artifact — not a gate. A low number is a signal
@@ -48,6 +89,12 @@ scenario reaches.)
 - E2e step definitions are separate from unit/integration step definitions.
 
 **Sign-off checklist:**
+- Fabrication audit complete: 0 empty/no-op step bodies found (or all found
+  ones remediated with real assertions + production code + commits).
+- Every checked-off task in tasks.md has a corresponding commit that touches
+  production source, verified by inspection (not by trusting the checkbox).
+- Every component design.md promised to create actually exists in the tree.
+- The runner's strict-mode proof is present and passing (from tasks.md setup).
 - All non-@e2e scenarios pass (`verify.command` exits 0).
 - All `@e2e` scenarios pass (`verify.e2e_command` exits 0).
 - Coverage was measured across all test binaries, including the Gherkin

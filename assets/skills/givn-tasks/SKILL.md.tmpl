@@ -14,20 +14,45 @@ Write the implementation task breakdown for change `{{CHANGE_ID}}`.
 - Design (HOW): `givn/changes/{{CHANGE_ID}}/design.md`
 - Test runner: `{{VERIFY_COMMAND}}`
 
-## The TDD loop (one scenario at a time)
+## Strict mode must be proven first (mandatory setup task)
+
+The single most important task in the whole file is the first one. Empty or
+unimplemented step definitions are indistinguishable from a PASS in most
+Cucumber runners — this has caused an entire change to be checked off
+complete with every step left as an empty stub and the runner reporting
+100% GREEN. The setup task MUST:
+
+- Configure the runner's strict-mode flag/config from design.md.
+- Include a **proof-of-strictness check**: write a step using the
+  language's not-implemented stub (see design.md's Strict Mode section),
+  run the runner, and confirm a NON-ZERO exit. Paste the command + output
+  in the task. If it exits 0, fix the config and re-prove before continuing.
+- Create step definition skeletons organised **one file per capability**
+  (from design.md's Step Definitions table) — never one file for everything.
+
+## The TDD loop (one scenario at a time, ending in a commit)
 
 Non-@e2e scenarios first:
 
 ```
 For each non-@e2e scenario:
   RED:      Remove @wip from THIS scenario only.
-            Write step definitions WITH real assertions.
-            Run: {{VERIFY_COMMAND}} → MUST FAIL (no production code yet).
-            If it passes, assertions are not real — fix the steps first.
-  GREEN:    Write minimum production code.
-            Run: {{VERIFY_COMMAND}} → this scenario PASSES.
+            Write step definitions — unimplemented steps use the
+              not-implemented stub from design.md, NEVER an empty body.
+            Run: {{VERIFY_COMMAND}}, targeting this scenario only (use the
+              single-scenario run command from design.md) → MUST FAIL with
+              non-zero exit. Paste the output as evidence.
+  GREEN:    Replace stubs with real assertions. Write minimum production
+              code. List every production file created/modified — empty
+              list on a non-reuse scenario means investigate before
+              claiming GREEN.
+            Run: {{VERIFY_COMMAND}}, targeting this scenario only → PASSES.
+              Paste the output as evidence.
   REFACTOR: Clean up without changing behaviour.
-            Run: {{VERIFY_COMMAND}} → still PASSES.
+            Run: {{VERIFY_COMMAND}}, targeting this scenario only → still
+              PASSES. Paste the output as evidence.
+  COMMIT:   One atomic commit for RED+GREEN+REFACTOR, message references the
+              scenario title. Record the commit hash.
 Then move to the next scenario.
 ```
 
@@ -35,21 +60,34 @@ Then @e2e smoke tests (after all non-@e2e scenarios are GREEN):
 
 ```
 For each @e2e scenario:
-  RED:      Remove @wip. Write e2e step definitions with real assertions
-            that drive the actual interface (browser, CLI, API).
-            Run: verify.e2e_command → MUST FAIL.
-  GREEN:    Set up test infrastructure if needed. Write minimum e2e glue.
-            Run: verify.e2e_command → scenario PASSES.
-  REFACTOR: Clean up e2e code. Runner still PASSES.
+  RED:      Remove @wip. Write e2e step definitions — unimplemented steps
+              use the not-implemented stub, never an empty body.
+            Run: verify.e2e_command, targeting this scenario only →
+              MUST FAIL. Paste evidence.
+  GREEN:    Set up test infrastructure if needed. Replace stubs with real
+              assertions driving the actual interface. List files touched.
+            Run: verify.e2e_command, targeting this scenario only →
+              scenario PASSES. Paste evidence.
+  REFACTOR: Clean up e2e code. Runner still PASSES. Paste evidence.
+  COMMIT:   One atomic commit, message references the scenario title.
+              Record the commit hash.
 Then move to the next @e2e scenario.
 ```
 
 ## Important
 
 - `givn lint` is a STATIC Gherkin check only. It does NOT run tests.
-- GREEN for non-@e2e is confirmed by `{{VERIFY_COMMAND}}` only.
-- GREEN for @e2e is confirmed by `verify.e2e_command` only.
+- A step definition body is NEVER empty (`{}`, bare `pass`, bare `return`).
+  Unimplemented steps always use the not-implemented stub from design.md.
+- GREEN for non-@e2e is confirmed by `{{VERIFY_COMMAND}}` only, and only
+  once strict mode has been proven in the setup task.
+- GREEN for @e2e is confirmed by `verify.e2e_command` only, likewise proven.
 - Never conflate lint, verify.command, or verify.e2e_command.
+- Every scenario task ends in a COMMIT sub-task with a recorded hash. A
+  checked task with no commit is not done.
+- Every RED/GREEN/REFACTOR sub-task has a place to paste captured runner
+  output — describing what should happen is not the same as recording what
+  did happen.
 - Track progress: `givn apply --change {{CHANGE_ID}}`
 
 ## Verify command

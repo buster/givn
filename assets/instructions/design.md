@@ -8,13 +8,56 @@ details are welcome and required here.
 - Architecture impact: which modules/components are affected, what is new.
 - Data model changes: schema, structs, database changes.
 - Step definition locations: where Cucumber/Gherkin step definitions live.
+  **One file per capability** (e.g. `CompanyOnboardingSteps`,
+  `AuthenticationSteps`) — never a single file holding every step for the
+  whole change. Name the exact file(s) and package/module path.
 - Test runner: choose the runner that fits the tech stack (e.g. `cargo test
   --test features_runner`, `npm test`, `pytest`). Document the chosen
   command. If `verify.command` in `givn/config.yaml` is still the `givn
   missing-testrunner` sentinel, running it prints setup guidance — follow
   that guidance to configure a real Gherkin/Cucumber runner. The tasks
   artifact will include a setup task to install and configure it.
+- **Strict-mode flag/config for the chosen runner** — the exact flag or
+  configuration key that makes undefined/pending steps FAIL the build
+  instead of silently passing or skipping (see "Strict mode" below). Name it
+  explicitly; do not leave this implicit.
+- **Single-scenario run command** — the exact invocation to run ONE named
+  scenario (not the whole suite), e.g. `cucumber-js --name "<title>"`,
+  `mvn test -Dcucumber.filter.name="<title>"`, `cargo test <name> --
+  --exact`, `behave -n "<title>"`. Tasks will require running each scenario
+  individually during RED and GREEN — the implementer must know this command
+  without guessing.
 - Any other technical decision the implementer needs before writing tasks.
+
+## Strict mode (mandatory)
+
+Most Cucumber/Gherkin runners, by default, treat an **undefined step** or a
+**pending step** (one whose body signals "not implemented") as neither a
+pass nor a hard failure — some report it as a separate "pending"/"skipped"
+count and still exit 0. Some runners go further: an empty step method body
+in a compiled language (e.g. Java) is not detectable as "pending" at all —
+it simply runs, does nothing, and reports PASS. This is the exact defect
+that produces a project where every task is checked off, the runner exits 0,
+and nothing was actually implemented.
+
+The design MUST specify how the chosen runner is put into **strict mode**,
+where undefined/pending steps cause a non-zero exit:
+
+| Runner | Strict-mode mechanism |
+|---|---|
+| `cucumber-rs` | `.fail_on_skipped()` on the `Cucumber` builder |
+| `cucumber-js` | `--strict` flag (default `true` in v9+, but confirm and pin it explicitly in `cucumber.js`) |
+| `cucumber-jvm` (CLI runner) | `--strict` flag |
+| `cucumber-jvm` (JUnit Platform Suite) | No first-class "strict" flag — the discipline is enforced by NEVER leaving a step body empty (see tasks.md rules) plus a plugin/listener that fails the build on any `Result.Type.UNDEFINED` or `PENDING`. Document the plugin/listener class used. |
+| `behave` (Python) | Pending steps must explicitly `raise`; `behave` does not have an empty-body "pass" pattern by convention — but a step decorated and left with a bare `pass` DOES report as passed. Document that every new step body starts with `raise NotImplementedError(...)` until real assertions are added. |
+| `godog` (Go) | Return `godog.ErrPending` from unimplemented steps; godog treats this as a failure by default. |
+
+If the chosen runner cannot fail on undefined/pending steps by
+configuration alone (e.g. `cucumber-jvm` with the JUnit Platform Suite
+runner), the design MUST state explicitly that step-body discipline (never
+an empty body — see tasks.md) is the enforcement mechanism, and MUST name a
+mechanical check (e.g. a grep-based lint script, or a review-time audit) that
+detects empty/no-op step bodies before archive.
 
 ## End-to-end smoke test infrastructure
 
@@ -68,3 +111,6 @@ path.
 - Do not change the WHAT — if you discover the proposal/spec is wrong, update
   those artifacts instead.
 - Justify non-obvious decisions (why this approach over alternatives?).
+- The chosen runner + strict-mode configuration must be proven, not assumed
+  — the tasks artifact's setup task will include a proof-of-strictness check
+  that exercises this exact configuration.

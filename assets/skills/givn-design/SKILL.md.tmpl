@@ -21,9 +21,36 @@ Everything technical belongs here — do not add implementation details to the s
 - Technology decisions: language, framework, libraries, patterns.
 - Architecture impact: which modules/components are affected, what is new.
 - Data model changes: schema, structs, database changes.
-- Step definition locations: where Cucumber/Gherkin step defs live.
+- Step definition locations: where Cucumber/Gherkin step defs live. **One
+  file per capability** — never a single file for the whole change.
 - Runner command: confirm `verify.command` in `givn/config.yaml`.
+- **Strict-mode config**: the exact flag/mechanism that makes the runner
+  fail on undefined/pending steps (see "Strict mode" below).
+- **Single-scenario run command**: the exact invocation to run one named
+  scenario, used by every RED/GREEN check in tasks.md.
 - Justify non-obvious technical choices.
+
+## Strict mode (mandatory)
+
+Most Cucumber runners treat undefined/pending steps as neither pass nor
+hard failure by default — some even treat an empty step method body
+(Java/cucumber-jvm especially) as an outright PASS. This is the exact
+defect that has caused an entire change to be checked off complete while
+nothing was implemented. Document explicitly:
+
+- The strict-mode flag/config for the chosen runner (e.g. `cucumber-rs`:
+  `.fail_on_skipped()`; `cucumber-js`: `--strict`; `cucumber-jvm` CLI:
+  `--strict`; `cucumber-jvm` JUnit Platform Suite: no native flag — enforced
+  by never leaving a step body empty, plus a plugin/listener that fails on
+  UNDEFINED/PENDING results; `behave`: steps must `raise` explicitly).
+- The not-implemented stub pattern for this language (e.g. Java:
+  `throw new io.cucumber.java.PendingException(...)`; Python:
+  `raise NotImplementedError(...)`; Rust: `unimplemented!()`).
+
+If the runner cannot fail on undefined/pending steps via configuration
+alone, state that step-body discipline is the enforcement mechanism and
+name a mechanical check (grep-based lint, review-time audit) that will
+catch empty bodies before archive.
 
 ## E2E smoke test infrastructure
 

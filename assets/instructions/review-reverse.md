@@ -4,6 +4,25 @@ Perform a reverse-engineering coverage review. The goal is to confirm that the
 characterization is complete, that no behaviour was changed during refactoring,
 and that all discovered bugs and code smells are documented.
 
+**Step 0 (mandatory, before anything else): the fabrication audit.**
+
+Same mechanical check as the prescriptive `review` instruction — a
+characterization change can also reach review with every task checked off
+and empty step stubs left behind. Before trusting tasks.md:
+
+1. Grep every step definition file for empty/no-op bodies (`{}`, bare
+   `pass`, bare `return`, no assertion library reference). Any match is a
+   fabricated characterization — the scenario asserts nothing about
+   observed behaviour, regardless of what tasks.md claims.
+2. Cross-check that every checked-off `[x]` characterization task has a
+   corresponding commit, and that the commit's diff contains real assertion
+   code (not just the `.feature` file).
+3. Confirm the runner's strict-mode proof is present and passing.
+4. Any fabricated step or missing commit is unfinished characterization —
+   reopen the task and redo it for real before continuing.
+
+Record the audit result in review.md even when clean.
+
 **Before any work: read the shared coverage mechanics.**
 Read the `givn-review` skill (at `.agents/skills/givn-review/SKILL.md` or the
 equivalent path in your agent's skill directory) in full. It describes the

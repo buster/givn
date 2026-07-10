@@ -95,7 +95,20 @@ reverse-engineering change '<id>'.
 
 ## Context
 - Verify command: <verify.command>
-- Step definitions location: <from the change's test harness>
+- Step definitions location: <from the change's test harness — one file per
+  capability, never a single file for everything>
+- Single-scenario run command: <if known, use it to target this scenario only>
+- Not-implemented stub pattern for this language: <e.g. Java:
+  throw new io.cucumber.java.PendingException("TODO"); Python:
+  raise NotImplementedError(...); Rust: unimplemented!()>
+
+## Absolute rule: never write an empty step definition body
+
+An empty body (`{}`, bare `pass`, bare `return`) is indistinguishable from a
+PASS in most Cucumber runners. This has caused an entire change to be
+checked off complete while nothing was characterized. Any step without a
+real assertion probing observed behaviour yet MUST use the not-implemented
+stub pattern above — never left empty "to fill in later."
 
 ## Before any code: read the shared step-writing skill
 Read the givn-steps skill at `.agents/skills/givn-steps/SKILL.md` (or the
@@ -179,7 +192,8 @@ rules OVERLAY the GREEN and REFACTOR phases:
     - NOT allowed: rename, deduplicate, simplify logic, restructure for
       clarity, fix bugs, change error messages, change return types, change
       control flow.
-  - Run: <verify.command> → MUST still pass.
+  - Run: <verify.command>, targeting this scenario only → MUST still pass.
+    Capture the output verbatim.
     If red: the refactor changed behaviour → REVERT the refactor entirely.
     Do NOT try to fix the test — the test was correct; the refactor broke
     behaviour.
@@ -197,14 +211,23 @@ without design changes), do NOT halt the loop. Instead:
 5. Report all boundary failures at the end (in your report + flag for review.md).
 
 ### Done
-  - Check off the task in givn/changes/<id>/tasks.md: `- [ ]` → `- [x]`
+  - Create ONE atomic commit for this scenario's characterization work
+    (RED+GREEN+REFACTOR together). Message: "characterize(<capability>):
+    <scenario title>". Record the commit hash.
+  - Paste the RED and GREEN (and REFACTOR, if applied) evidence and the
+    commit hash into the task's entry in givn/changes/<id>/tasks.md. Only
+    then check off the task: `- [ ]` → `- [x]`. A checked box with no
+    pasted evidence or commit hash is incomplete, not done.
   - Report back with:
-    - RED result (failed as expected / all steps reused → immediate GREEN)
-    - GREEN result (pass on first try / after diagnosis: <root cause>)
+    - RED result (failed as expected / all steps reused → immediate GREEN),
+      with captured output
+    - GREEN result (pass on first try / after diagnosis: <root cause>),
+      with captured output
     - If diagnosis was needed: root cause (infrastructure / documentation
       wrong / code ambiguous), what was corrected
     - If boundary failure: scenario commented out, reason, suggested follow-up
     - REFACTOR result (applied / not needed / reverted)
+    - Commit hash
     - Any TODO: REVERSE-ENGINEERING NOTE markers added (file, line, content)
     - Any suspected bugs flagged
     - Any issues or decisions made
@@ -219,7 +242,23 @@ If the subagent reports a blocker (e.g. a spec/implementation mismatch it
 cannot resolve), surface it to the user and wait for guidance before spawning
 the next subagent.
 
-#### 5c. After each subagent completes
+#### 5c. Independently verify — do not trust the self-report
+
+Before moving on, the orchestrator itself re-checks the subagent's claim
+rather than trusting the report. This exists because self-reported "PASSED"
+has been wrong before, when step definitions were left as empty stubs.
+
+1. Re-run the scenario yourself (targeted, not whole-suite) and confirm it
+   passes right now.
+2. Confirm a commit exists for this task and its diff contains real
+   assertion code — not an empty step body.
+3. Grep the step definition file(s) touched by this task for empty bodies
+   (`{}`, bare `pass`, bare `return`). Any match means reject this task.
+4. Confirm the task in tasks.md has pasted evidence and a commit hash, not
+   just a checked box.
+
+If any check fails: uncheck the task, do not proceed, and re-spawn a
+subagent with the specific failure called out.
 
 ```sh
 givn apply --change <id>
@@ -301,6 +340,20 @@ resolution:
 <verify.command from givn/config.yaml>
 
 ## Steps
+
+### 0. Fabrication audit (mandatory, before anything else)
+
+A characterization change can also reach review with every task checked off
+and empty step stubs left behind. Before trusting tasks.md:
+
+1. Grep every step definition file for empty/no-op bodies. Any match is a
+   fabricated characterization.
+2. Cross-check every checked-off task has a commit whose diff contains real
+   assertion code.
+3. Any finding is unfinished characterization — reopen the task and redo it
+   for real before continuing this review.
+
+Record the result in review.md even when clean.
 
 ### 1. Confirm all tests pass
 Run: <verify.command>
@@ -430,10 +483,17 @@ Task 4/7: ...
 - The orchestrator does not write code — it manages the loop and delegates.
 - Each subagent handles exactly one task (one characterization cycle).
 - Subagents MUST read the givn-steps skill before writing step definitions.
+- A step definition body is NEVER empty. Unimplemented steps always use the
+  not-implemented stub pattern for the language.
+- **Never trust a subagent's self-reported PASS/FAIL.** Step 5c (independent
+  verification) is mandatory for every task — skipping it is how a whole
+  characterization gets checked off complete with empty stubs left behind.
+- Every task requires an atomic commit before the box is checked.
 - GREEN must genuinely pass. If the subagent reports it failed on first run,
   the subagent must diagnose (infrastructure vs spec/mismatch) before
   proceeding — do NOT change production code behaviour to make it pass.
-- Do not spawn the next subagent until the previous one has checked off its task.
+- Do not spawn the next subagent until the previous one's task has been
+  independently verified and checked off.
 - Remove `@wip` from one scenario at a time only — pass this constraint to each
   subagent explicitly.
 - Do NOT use `givn check <artifact>` during the characterization loop — run

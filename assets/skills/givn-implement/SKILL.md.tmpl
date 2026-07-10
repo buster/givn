@@ -19,61 +19,117 @@ Implement change `{{CHANGE_ID}}` using scenario-by-scenario TDD.
 
 1. Check your progress: `givn apply --change {{CHANGE_ID}}`
 2. `givn lint` to confirm the spec is well-formed (does NOT run tests).
-3. Read the `givn-steps` skill for shared step-writing mechanics (RED/GREEN/REFACTOR
-   loop, step reuse, lint-vs-test distinction).
+3. Read the `givn-steps` skill for shared step-writing mechanics (RED/GREEN/REFACTOR/
+   COMMIT loop, step reuse, never-empty-body rule, lint-vs-test distinction).
+4. Confirm the first (setup) task in tasks.md is checked AND has pasted
+   proof-of-strictness output showing a non-zero exit. If it is missing or
+   shows a zero exit, do the proof-of-strictness check now before touching
+   any scenario — an unproven runner makes every later GREEN meaningless.
+
+## Never trust your own self-report without re-checking
+
+This has failed in practice: a whole change was checked off complete,
+every task claiming "RED failed as expected, GREEN passed", while every
+step definition was an empty stub (`{}`) and the runner never actually
+failed on anything. Cucumber runners (especially cucumber-jvm's JUnit
+Platform Suite mode) treat an empty step body as PASS, not pending. Before
+writing "PASSES" anywhere:
+- Confirm you replaced every stub with a real assertion or real action —
+  grep the file yourself for `{}`, bare `pass`, bare `return`.
+- Confirm you actually created/modified production code for this scenario
+  (list the files) unless it is a genuine pure step-reuse case.
+- Confirm the runner output you captured shows a zero exit for a targeted
+  run of THIS scenario, not an inference from the whole suite.
 
 ## The loop
 
 Work through tasks.md, one scenario at a time. Non-@e2e scenarios first,
 then @e2e smoke tests. The `givn-steps` skill describes the shared
-RED/GREEN/REFACTOR loop.
+RED/GREEN/REFACTOR/COMMIT loop — every phase below runs the runner
+**targeted at this scenario only** and captures the output as evidence.
 
 ### Non-@e2e scenarios (unit/integration)
 
 #### RED phase
 1. Remove `@wip` from the current scenario only (keep it on others).
-2. Write step definitions with **real assertions** (`Then` checks concrete values).
-3. Run: `{{VERIFY_COMMAND}}`
-   - This scenario **must fail** — you have no production code yet.
-   - If it passes, the assertions are fake — fix the steps.
+2. Write step definitions — any step without a real assertion yet uses the
+   language's not-implemented stub from design.md (e.g.
+   `throw new io.cucumber.java.PendingException(...)` in Java,
+   `raise NotImplementedError(...)` in Python, `unimplemented!()` in Rust).
+   NEVER an empty body.
+3. Run: `{{VERIFY_COMMAND}}`, targeting this scenario only (single-scenario
+   run command from design.md). Capture the output.
+   - This scenario **must fail with a non-zero exit** — you have no
+     production code yet.
+   - If it exits 0, either a step is empty or the runner is not strict —
+     STOP and fix before writing any production code.
 
 #### GREEN phase
-4. Write the **minimum** production code to make this scenario pass.
-5. Run: `{{VERIFY_COMMAND}}` — this scenario passes; others still fail (expected).
+4. Replace every stub with a real assertion. Write the **minimum**
+   production code to make this scenario pass. List every production file
+   created/modified — an empty list on a non-reuse scenario means
+   investigate before calling this GREEN.
+5. Run: `{{VERIFY_COMMAND}}`, targeting this scenario only — PASSES with a
+   zero exit. Capture the output.
 
 #### REFACTOR phase
 6. Clean up code, names, duplication — without changing behaviour.
-7. Run: `{{VERIFY_COMMAND}}` — still passes.
+7. Run: `{{VERIFY_COMMAND}}`, targeting this scenario only — still passes.
+   Capture the output.
+
+#### COMMIT phase
+8. One atomic commit for this scenario's RED+GREEN+REFACTOR, message
+   references the scenario title (e.g. `feat(<capability>): <title>`).
+   Record the commit hash.
 
 #### Done with scenario
-8. Check off the task in `tasks.md`: `- [ ]` → `- [x]`
-9. Move to the next scenario.
+9. Paste the RED/GREEN/REFACTOR evidence, files touched, and commit hash
+   into the task entry in `tasks.md`. Only then check it off: `- [ ]` → `- [x]`.
+10. Move to the next scenario.
 
 ### @e2e smoke tests (after all non-@e2e are GREEN)
 
 These test the real interaction surface (browser, CLI, API). They use
-`verify.e2e_command` and e2e-specific step definitions.
+`verify.e2e_command` and e2e-specific step definitions (organised one file
+per capability, same rule as non-@e2e steps).
 
 #### RED phase
 1. Remove `@wip` from the current `@e2e` scenario.
-2. Write e2e step definitions (in the e2e step location from design.md)
-   with **real assertions** that drive the actual interface.
-3. Run: `verify.e2e_command` — must fail.
+2. Write e2e step definitions (in the e2e step location from design.md) —
+   unimplemented steps use the not-implemented stub, never an empty body.
+3. Run: `verify.e2e_command`, targeting this scenario only. Capture output.
+   Must fail with a non-zero exit.
 
 #### GREEN phase
 4. Set up test infrastructure if needed (start server, launch browser, seed DB).
-   Write the minimum e2e glue to make the scenario pass.
-5. Run: `verify.e2e_command` — this scenario passes.
+   Replace stubs with real e2e glue driving the actual interface. List
+   files created/modified.
+5. Run: `verify.e2e_command`, targeting this scenario only — PASSES.
+   Capture output.
 
 #### REFACTOR phase
 6. Clean up e2e infrastructure code.
-7. Run: `verify.e2e_command` — still passes.
+7. Run: `verify.e2e_command`, targeting this scenario only — still passes.
+   Capture output.
+
+#### COMMIT phase
+8. One atomic commit, message references the scenario title (e.g.
+   `test(e2e): <title>`). Record the commit hash.
 
 #### Done with scenario
-8. Check off the task in `tasks.md`: `- [ ]` → `- [x]`
-9. Move to the next `@e2e` scenario.
+9. Paste evidence, files touched, and commit hash into tasks.md. Check it
+   off: `- [ ]` → `- [x]`.
+10. Move to the next `@e2e` scenario.
 
 ## When all tasks are checked
+
+Before proceeding, run a final independent sanity check — do not skip this
+because individual scenarios were already verified:
+1. Run the FULL suite (both `{{VERIFY_COMMAND}}` and `verify.e2e_command`,
+   not scenario-targeted) — confirm both exit 0.
+2. Grep every step definition file touched in this change for empty/no-op
+   bodies. Must be 0.
+3. Confirm the number of commits made matches the number of scenario tasks.
 
 Run `givn apply --change {{CHANGE_ID}}` to confirm progress.
 Then proceed to the review step.

@@ -28,12 +28,15 @@ duplicates scenario logic.
 
 Step definitions are the bindings the Gherkin runner uses to map `.feature`
 steps to code. Their location is project-specific (documented in `design.md`
-for normal changes, or in `tasks.md` for reverse-engineering changes). Common
-patterns:
+for normal changes, or in `tasks.md` for reverse-engineering changes).
+Organise them **one file per capability** — never a single file holding
+every step for the whole change. A giant all-in-one step file is a red flag:
+it makes empty/no-op stubs easy to hide from review. Common patterns:
 
-- Rust (`cucumber-rs`): `tests/steps/mod.rs`, auto-discovered by the runner.
-- Python (`behave`): `features/steps/`, auto-discovered.
-- Node (`cucumber-js`): `features/steps/`, configured in `cucumber.js`.
+- Rust (`cucumber-rs`): `tests/steps/<capability>.rs`, auto-discovered by the runner.
+- Python (`behave`): `features/steps/<capability>_steps.py`, auto-discovered.
+- Node (`cucumber-js`): `features/steps/<capability>.steps.js`, configured in `cucumber.js`.
+- Java (`cucumber-jvm`): `src/test/java/.../steps/<Capability>Steps.java`, one class per capability.
 
 ## E2E step definition locations
 
@@ -59,10 +62,50 @@ desirable — it reduces duplication and keeps the glue maintainable.
   assertions (proven by prior use). Do not modify or replace it.
 - **New step**: write a new step definition.
 
-## The RED/GREEN/REFACTOR loop (one scenario at a time)
+## Never write an empty step definition body — this is not optional
+
+This is the single most important rule in this skill. An empty step
+definition body (`{}`, a bare `pass`, a bare `return`, whitespace only) is
+**indistinguishable from a passing test** in most Cucumber runner
+implementations. This has happened in practice: every step in an entire
+change was left as an empty stub, `@wip` was removed from every scenario,
+and the test runner reported 100% GREEN — because Cucumber-JVM (and most
+other implementations) treat an empty method body as a step that "ran
+successfully," not as pending or undefined.
+
+A step without a real assertion yet MUST use the language's canonical
+"not implemented" primitive so the runner is forced to report it as failing
+or pending:
+
+| Language / framework | Stub for an unimplemented step |
+|---|---|
+| Rust (`cucumber-rs`) | `unimplemented!()` or `todo!()` |
+| Java (`cucumber-jvm`) | `throw new io.cucumber.java.PendingException("TODO: implement");` |
+| Python (`behave`) | `raise NotImplementedError("TODO: implement")` |
+| JavaScript/TS (`cucumber-js`) | `return "pending";` or `throw new Error("TODO: implement")` |
+| Go (`godog`) | `return godog.ErrPending` |
+| Ruby (`cucumber-ruby`) | `pending("TODO: implement")` |
+
+This applies at every phase, not just RED. A step is only exempt from this
+rule once it has a real, concrete assertion (GREEN) or is a genuinely reused
+setup step that performs a real action (not merely exists).
+
+**Before trusting any runner's "PASS" result, confirm the runner is
+strict** — configured so undefined/pending steps produce a non-zero exit,
+not a silent skip. The design.md for this change documents the exact
+strict-mode mechanism and should have been proven once during setup (see
+tasks.md's first task). If you are ever unsure whether the runner is strict,
+re-verify: write a throwaway step using the stub pattern above and confirm
+the runner fails non-zero before trusting any scenario's GREEN.
+
+## The RED/GREEN/REFACTOR/COMMIT loop (one scenario at a time)
 
 Work through tasks, one scenario at a time. Non-@e2e scenarios use
-`{{VERIFY_COMMAND}}`; `@e2e` scenarios use `verify.e2e_command`.
+`{{VERIFY_COMMAND}}`; `@e2e` scenarios use `verify.e2e_command`. Every phase
+below requires running the runner **targeted at this scenario only** (by
+name, line number, or tag — use the single-scenario run command from
+design.md), and **capturing the output verbatim** as evidence. Reading
+whole-suite output and inferring one scenario's result is not acceptable.
 
 ### RED — confirm the test CAN fail
 
@@ -70,33 +113,40 @@ Work through tasks, one scenario at a time. Non-@e2e scenarios use
 2. For each step in the scenario, check if a matching step definition already
    exists (in the appropriate step location — unit/integration or e2e):
    - **Reused step**: keep the existing definition as-is.
-   - **New step**: write a step definition with an unimplemented assertion
-     (e.g. `unimplemented!()` in Rust, `assert.fail("not implemented")` in
-     JS, `raise NotImplementedError` in Python).
-3. Run the appropriate runner:
+   - **New step**: write a step definition using the not-implemented stub
+     pattern (see table above) — never an empty body.
+3. Run the appropriate runner, targeting this scenario only:
    - Non-@e2e scenario: `{{VERIFY_COMMAND}}`
    - @e2e scenario: `verify.e2e_command`
-   - **Scenario FAILS** → RED confirmed (the test is real). Proceed to GREEN.
-   - **Scenario PASSES (all steps reused)** → legitimate immediate GREEN.
-     The pre-existing assertions already match this scenario's behaviour.
-     Proceed to GREEN confirmation (no code changes needed, just verify).
-   - **Scenario passes but has no real assertions** (all new steps are
-     no-ops) → the assertions are fake. Fix them before continuing.
+   - Capture the full output.
+   - **Scenario FAILS with non-zero exit** → RED confirmed (the test is
+     real). Proceed to GREEN.
+   - **Scenario PASSES (all steps reused)** → legitimate immediate GREEN
+     ONLY IF every step was a genuine reuse of an already-proven definition.
+     Record which steps were reused. Proceed to GREEN confirmation.
+   - **Scenario passes but contains a NEW step with no real assertion** →
+     something is wrong: either the step is silently empty, or the runner
+     is not strict. STOP. Confirm strictness and fix the stub before
+     proceeding.
 
 ### GREEN — implement real assertions
 
 4. Implement real assertions for new steps (Then steps must check concrete
-   values, not just that code ran).
+   values, not just that code ran). Replace every stub with either a real
+   assertion or a real action.
    - **For normal TDD** (`/givn-implement`): also write the minimum
-     production code to make this scenario pass.
+     production code to make this scenario pass. List every production
+     source file created or modified. An empty list on a scenario that is
+     not a pure step-reuse case is a red flag — investigate before
+     proceeding, do not report GREEN.
    - **For characterization** (`/givn-characterize`): probe the observed
      production behaviour. No production code changes. If it fails, run the
      mismatch diagnostic (see givn-characterize).
    - **For @e2e scenarios**: set up test infrastructure if needed (start
      server, launch browser, seed database). Write the e2e glue that drives
      the real interaction surface.
-5. Run the appropriate runner → this scenario passes; others may still fail
-   (expected, they still have `@wip`).
+5. Run the appropriate runner, targeting this scenario only → PASSES with a
+   zero exit. Capture the output.
 
 ### REFACTOR — clean up without changing behaviour
 
@@ -106,18 +156,32 @@ Work through tasks, one scenario at a time. Non-@e2e scenarios use
    - **Characterization**: testability seams only (extract interface, DI,
      make public). If red, revert the refactor. If no seam is needed, skip.
    - **E2E**: clean up infrastructure code, extract shared e2e helpers.
-7. Run the appropriate runner → still passes.
+7. Run the appropriate runner, targeting this scenario only → still passes.
+   Capture the output.
+
+### COMMIT — make the work independently auditable
+
+8. Create ONE atomic commit covering this scenario's RED+GREEN+REFACTOR
+   work. Reference the scenario title verbatim in the commit message (e.g.
+   `feat(<capability>): <scenario title>`, `characterize(<capability>):
+   <scenario title>`, or `test(e2e): <scenario title>`). Record the commit
+   hash. A checked task with no matching commit, or a commit that touches
+   nothing but the `.feature` file, is proof the work was not actually done.
 
 ### Done with scenario
 
-8. Check off the task in `tasks.md`: `- [ ]` → `- [x]`
-9. Move to the next scenario.
+9. Paste the RED, GREEN, and REFACTOR evidence, the list of files touched,
+   and the commit hash into the task's entry in `tasks.md`. Only then check
+   off the task: `- [ ]` → `- [x]`. A checked box with no pasted evidence is
+   incomplete, not done.
+10. Move to the next scenario.
 
 ## Lint vs test — do not confuse them
 
 - `givn lint` is a STATIC Gherkin check (syntax, `@wip`, delta tags). It
   runs NO tests.
-- `{{VERIFY_COMMAND}}` confirms GREEN for non-@e2e scenarios.
+- `{{VERIFY_COMMAND}}` confirms GREEN for non-@e2e scenarios — but ONLY once
+  strict mode has been proven.
 - `verify.e2e_command` confirms GREEN for @e2e scenarios.
 - Never conflate the three.
 
