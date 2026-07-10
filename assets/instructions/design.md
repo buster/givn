@@ -58,6 +58,67 @@ surface. Document:
 - **Strict-mode config for the e2e runner** — proven separately from the
   main runner.
 
+## Local runnability & digital twins (mandatory)
+
+The system MUST be runnable and testable locally, in full, with one
+command. "The browser had a cookie problem so I only checked the database"
+is not an acceptable outcome — it is a design gap. If a scenario cannot be
+driven through the real interface, that is a defect in this section to fix,
+not a reason to test something weaker instead.
+
+- **Local run command**: name the exact command that starts the entire
+  system — application, database, queues, and every dependency — in one
+  step (e.g. `docker-compose up`, a `Makefile` target, a devcontainer
+  script). Document it here even though no `givn` command invokes it; it is
+  read by a human (or the e2e setup task) to bring the stack up for manual
+  or automated testing.
+- **Isolated network**: every dependency runs in a docker-compose (or
+  equivalent) network isolated from the host and from other projects — no
+  shared dev database, no assumption that a service is "already running."
+- **Digital twin per external/third-party dependency**: list every service
+  the system talks to that is not part of this codebase (payment processor,
+  email/SMS provider, third-party API, external auth provider). For each
+  one, name its digital twin — a fake/stub/emulator that runs in the same
+  docker-compose network, behaves deterministically, and requires no
+  network access outside the isolated network. No scenario, `@e2e` or
+  otherwise, may depend on a live third-party service. Examples: a
+  Mailhog/Mailpit container for email, a local Stripe mock for payments, a
+  WireMock/Prism container for a third-party REST API, an emulator image
+  for a cloud service (DynamoDB Local, LocalStack, Firebase emulator).
+- **Anticipated interface obstacles get a named fix, not a workaround.** If
+  you can foresee a technical obstacle to driving the real interface (e.g.
+  session cookies not persisting across Playwright navigation steps,
+  redirects losing auth state, a websocket handshake that is hard to
+  automate), the fix belongs here: name the concrete technical approach
+  (e.g. "reuse one browser context across all steps in a scenario," "the
+  e2e harness drives the same routes as the browser via a cookie-jar-aware
+  HTTP client configured identically to the browser's session," "run the
+  browser headed with a persistent user-data-dir in CI"). Do not defer this
+  decision to tasks.md or to the implementer discovering it mid-scenario —
+  a scenario blocked on an undesigned interface problem is a design gap.
+
+## Rule: an `@e2e` scenario asserts through the real interface — not instead
+
+An `@e2e` scenario exists to prove the system works from the outside: a
+browser click, an HTTP request, a CLI invocation, a real login flow. Its
+`Then` steps assert on what that real interface produces (page content, an
+HTTP response, a redirect, a piece of UI state) as the PRIMARY assertion.
+Checking repository/database state is allowed ONLY as an additional,
+secondary assertion alongside a real-interface assertion — never as its
+replacement.
+
+A scenario whose `Then` steps assert only against the repository/database,
+with no assertion on what the browser/API/CLI actually returned or
+displayed, is not an e2e scenario. It is an integration test wearing an
+`@e2e` tag, and it does not prove the feature works end-to-end. This is a
+downgrade, and it happens most often when the real interface hits a
+technical obstacle mid-implementation (a browser cookie/session problem, a
+flaky selector, an auth redirect) and the path of least resistance is to
+assert on the database instead and move on. That obstacle is a defect in
+the Local Runnability & Digital Twins section above, or in this design's
+assumptions about the interface — fix it there before writing the
+scenario's steps. Never fix it by quietly weakening what the scenario proves.
+
 ## Executable-spec invariant
 
 `verify.command` MUST execute the `.feature` files from `givn/specs/**` and

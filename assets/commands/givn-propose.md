@@ -152,14 +152,27 @@ For each artifact:
   language (Java `PendingException`, Python `NotImplementedError`, Rust
   `unimplemented!()`, JS `return "pending"` or `throw new Error(...)`), and
   the single-scenario run command.
+- **Local runnability & digital twins (mandatory)**: a local run command
+  that starts the entire system + every dependency in one step (e.g.
+  `docker-compose up`), in an isolated network; a named digital twin
+  (fake/stub/emulator, same isolated network) for every external/
+  third-party dependency — no scenario may depend on a live third-party
+  service; and any foreseeable real-interface obstacle (browser session/
+  cookie persistence, auth redirects) named with its concrete fix.
+  "The interface had a technical problem so we tested the database
+  instead" is never acceptable — that obstacle must be designed away here.
 - **E2E smoke test infrastructure**: e2e runner command (→
   `verify.e2e_command`), e2e step location (separate, one file per
   capability), local test infrastructure (browser driver, server, test
   DB/Testcontainers/fakes), framework choice + justification (Playwright
   default for browser), strict-mode config for the e2e runner specifically.
+  **Real-interface assertion rule**: every `@e2e` scenario's primary
+  assertion is on what the real interface returned/displayed — repository
+  checks are secondary/additional only, never a replacement.
 - Think about: simplest architecture that delivers the proposal, tradeoffs,
   affected existing code, whether the runner can actually be forced to fail
-  on an unimplemented step or whether step-body discipline must carry that weight.
+  on an unimplemented step or whether step-body discipline must carry that
+  weight, and what could go wrong when actually driving the real interface.
 
 **tasks** (tasks.md):
 - **First task: test infrastructure setup, PROVEN strict.** Install the
@@ -177,10 +190,16 @@ For each artifact:
   stub, never an empty body. GREEN lists every production file
   created/modified — empty list on a non-reuse scenario means investigate.
   COMMIT has a field for the hash; message references the scenario title.
-- **After all non-@e2e scenarios**: e2e setup task (install framework, e2e
-  step skeleton one file per capability, PROVE strict mode for the e2e
-  runner, set `verify.e2e_command`), then one task per @e2e scenario with
-  the same cycle and evidence requirements.
+- **After all non-@e2e scenarios**: e2e setup task — bring up the local
+  environment (local run command from design.md, all dependencies, all
+  digital twins, isolated network) and confirm clean startup; install the
+  e2e framework, e2e step skeleton one file per capability, PROVE strict
+  mode for the e2e runner, set `verify.e2e_command`. Then one task per @e2e
+  scenario with the same cycle and evidence requirements, PLUS: GREEN
+  asserts primarily on the real interface's output, never repository-only.
+  If a real-interface obstacle appears mid-implementation, the task's fix
+  is the one named in design.md's Anticipated Interface Obstacles section —
+  never a downgrade to repository-only assertions.
 - **Every scenario task has a "Design constraints" block** drawn from
   design.md, specific to that scenario — not optional. The executing agent
   reads the task as its primary architecture reference; without constraints
@@ -278,4 +297,11 @@ implementation is done.
 - Every scenario task ends in COMMIT; every RED/GREEN/REFACTOR line has a
   field for pasted output. A tasks.md with nowhere to record what happened
   is incomplete.
+- design.md must name a local run command, a digital twin for every
+  external/third-party dependency, and a fix for any foreseeable
+  real-interface obstacle. Do not accept a plan that defers this to
+  "figure it out during implementation."
+- Every `@e2e` scenario asserts primarily on the real interface's output.
+  Do not accept a plan or a task whose e2e GREEN criteria is
+  repository-state-only.
 - Critical ambiguities go to the user — the architect does not guess.

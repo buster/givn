@@ -78,15 +78,35 @@ For each scenario:
 ## TDD loop — @e2e scenarios (after all non-@e2e are GREEN)
 
 Same loop, e2e runner (`verify.e2e_command`), e2e step location, e2e
-infrastructure setup (browser/server/DB) in GREEN. Commit message:
-`test(e2e): <title>`.
+infrastructure setup (browser/server/DB via docker-compose, from design.md's
+Local Runnability section) in GREEN. Commit message: `test(e2e): <title>`.
+
+**Rule: assert through the real interface, not instead of it.** Each `@e2e`
+scenario's Then steps assert PRIMARILY on what the real interface produced
+(page content, HTTP response, redirect target, CLI output). Repository/
+database checks are allowed only as additional, secondary assertions. If
+implementing a step hits a technical obstacle (browser session/cookie
+issue, flaky navigation, auth redirect losing state), do NOT substitute a
+repository-only assertion and move on — that is a downgrade, not a fix.
+Fix the actual obstacle using the approach named in design.md's "Anticipated
+interface obstacles" section. If no fix was designed for this obstacle,
+STOP: this is a design gap. Update design.md with the fix, then continue.
+A GREEN e2e scenario whose Then steps never touch the real interface's
+output is fabricated GREEN — the same class of defect as an empty step body.
 
 ## E2e setup task
 
-Before the first `@e2e` scenario: install the e2e framework from design.md,
-create e2e step skeletons (one file per capability, separate location),
-configure and prove strict mode for the e2e runner (same procedure as
-above), set `verify.e2e_command`, document local environment start/stop.
+Before the first `@e2e` scenario:
+- Bring up the local environment from design.md's Local Runnability
+  section: run the local run command (docker-compose or equivalent), every
+  dependency and every digital twin for external services, in the isolated
+  network. Confirm it starts cleanly.
+- Install the e2e framework, create e2e step skeletons (one file per
+  capability, separate location).
+- Configure and prove strict mode for the e2e runner (same procedure as
+  above), set `verify.e2e_command`.
+- Confirm the e2e runner can reach the running local environment (health
+  check, or a trivial smoke request) before writing any scenario steps.
 
 ## Distinctions
 

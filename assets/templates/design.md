@@ -51,6 +51,40 @@
 >  Ruby: pending("TODO"))
 > ```
 
+## Local Runnability & Digital Twins (mandatory)
+
+> **Local run command** — the single command that starts the entire system
+> (app + every dependency) for local testing:
+> ```
+> (e.g. docker-compose up, make dev-up, ./scripts/local-env.sh up)
+> ```
+>
+> **Isolated network:** confirm every dependency runs in a docker-compose
+> (or equivalent) network isolated from the host — no shared dev database,
+> no service assumed to already be running.
+>
+> **Digital twin per external/third-party dependency** — one row per
+> service this system talks to that is NOT part of this codebase:
+> | External dependency | Digital twin (fake/stub/emulator) | Runs where |
+> |---|---|---|
+> | (e.g. email provider) | (e.g. Mailpit container) | (e.g. docker-compose service `mailpit`) |
+> | (e.g. payment processor) | (e.g. local Stripe mock) | |
+> | (e.g. third-party REST API) | (e.g. WireMock/Prism container) | |
+>
+> No scenario may depend on a live third-party service. If there are no
+> external dependencies, state that explicitly — do not leave this blank.
+>
+> **Anticipated interface obstacles and their fix** — name any foreseeable
+> technical obstacle to driving the real interface (browser session/cookie
+> persistence across steps, auth redirects, websocket handshakes) and the
+> concrete fix. A scenario blocked on an undesigned interface problem during
+> implementation is a design gap, not an excuse to test something weaker:
+> ```
+> (e.g. "Browser context is created once per scenario and reused across all
+>  steps so session cookies persist; the e2e harness never opens a second
+>  browser context mid-scenario.")
+> ```
+
 ## E2E Smoke Test Infrastructure
 
 > **E2E runner command** (→ `verify.e2e_command`):
@@ -64,6 +98,11 @@
 > data/Testcontainers/fakes.
 >
 > **E2E framework choice and justification:**
+>
+> **Real-interface assertion rule:** every `@e2e` scenario's primary
+> assertions are on what the real interface returned/displayed (page
+> content, HTTP response, redirect, CLI output) — repository/database
+> assertions are secondary and additional only, never a replacement.
 
 ## Architecture Impact
 

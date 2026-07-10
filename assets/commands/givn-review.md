@@ -75,9 +75,18 @@ Mechanical check, before trusting anything else:
    in the tree. Record anything promised but missing.
 4. Confirm the setup task's proof-of-strictness evidence is present with
    non-zero exit. Missing/zero = the whole suite's GREEN is unverified.
-5. Any finding is unfinished implementation, not a coverage gap. Uncheck
-   the task, drive it through RED→GREEN→REFACTOR→COMMIT for real. Do not
-   write REVIEW: PASS while any finding remains.
+5. Read every `@e2e` scenario's step definitions. If its Then steps assert
+   ONLY against a repository/database (no assertion on page content, HTTP
+   response, redirect, or CLI output), record it as a downgraded e2e
+   scenario — an integration test wearing an `@e2e` tag. It does not prove
+   the feature works end-to-end, regardless of the runner reporting GREEN.
+6. Confirm the local run command (design.md's Local Runnability section)
+   still starts the full stack — including every digital twin — cleanly.
+7. Any finding from 1-6 is unfinished implementation, not a coverage gap.
+   Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
+   fixing the real-interface obstacle per design.md, never by leaving the
+   repository-only assertion in place. Do not write REVIEW: PASS while any
+   finding remains.
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
@@ -101,8 +110,9 @@ review.md — a fact, not a threshold gate.
 Per the table above; hard-to-test gaps get a written justification, no code change.
 
 ### 5. Confirm e2e coverage
-Every capability needs at least one `@e2e` scenario. Missing = classify as
-"missing test," add one covering the critical happy path.
+Every capability needs at least one `@e2e` scenario with a real-interface
+primary assertion. Missing, or downgraded to repository-only, = classify as
+"missing test," add or fix one covering the critical happy path.
 
 ### 6. Final GREEN confirmation
 Re-run both runners. Must pass after all gap resolutions.
@@ -133,7 +143,9 @@ trusting the subagent's report:
    fewer than 5). Confirm any "0 findings" claim.
 2. Confirm 2-3 checked-off tasks have commits touching production code, via
    `git show --stat`.
-3. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
+3. Read every `@e2e` scenario's step definitions yourself. Confirm each has
+   a real-interface assertion, not repository-only.
+4. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
    specific discrepancy named.
 
 ### 5. Show final status
@@ -180,5 +192,8 @@ Display: "Run `/givn-archive` to archive this change."
 - `REVIEW: PASS` requires all gaps resolved AND a clean fabrication audit.
 - New scenarios added during review go through the full loop before sign-off.
 - `givn lint` is static only; GREEN comes from the runners.
-- Every capability needs at least one `@e2e` scenario.
+- Every capability needs at least one `@e2e` scenario with a real-interface
+  primary assertion — repository-only assertions never satisfy this.
+- The local run command must start the full stack, digital twins included,
+  cleanly — confirmed during this review, not assumed.
 - Archive hard-blocks if `REVIEW: PASS` is absent or hooks fail.

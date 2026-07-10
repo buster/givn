@@ -47,6 +47,22 @@ design.md's Strict Mode section, proven in tasks.md's setup task).
 browser driver, HTTP client). One file per capability, same reuse rules,
 never mixed with non-e2e steps.
 
+## Rule: `@e2e` asserts the real interface — not instead of it
+
+An `@e2e` scenario's Then steps assert PRIMARILY on what the real interface
+returned or displayed (page content, HTTP response, redirect, CLI output).
+Repository/database checks are allowed only as secondary, additional
+assertions — never the sole assertion. A `@e2e` scenario whose Then steps
+touch only the repository is an integration test wearing the wrong tag; it
+does not prove the feature works end-to-end.
+
+If a technical obstacle blocks the real interface (a browser session/cookie
+not persisting across steps, an auth redirect losing state, a flaky
+selector), that is a design gap, not a reason to test something weaker.
+Apply the fix design.md names in its "Anticipated interface obstacles"
+section. If none is named for this obstacle, STOP and report it as a
+blocker — do not substitute a repository-only assertion and move on.
+
 ## RED → GREEN → REFACTOR → COMMIT (one scenario at a time)
 
 Every phase targets the runner **at this scenario only** (name/line/tag —
@@ -105,3 +121,6 @@ never infer from whole-suite output) and captures output verbatim as evidence.
   hand-maintained parallel test file.
 - Reuse existing steps; never duplicate.
 - Every run targets the single scenario; output is captured, not described.
+- `@e2e` GREEN requires a real-interface assertion. Repository-only
+  assertions never satisfy an `@e2e` scenario, no matter how the
+  interface's obstacle is explained.

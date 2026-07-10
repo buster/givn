@@ -21,9 +21,17 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    incomplete implementation, not a "hard to test" gap.
 4. Confirm the runner's strict-mode proof is present with output in
    tasks.md. Missing = every PASS in this change is unverified.
-5. Any finding from 1-4 is unfinished work, not a coverage gap. Reopen the
-   task, run RED→GREEN→REFACTOR→COMMIT for real. Do not write
-   `REVIEW: PASS` while any finding remains.
+5. **Read every `@e2e` scenario's Then steps.** If a scenario's Then steps
+   assert ONLY against a repository/database (no assertion on page content,
+   HTTP response, redirect, or CLI output), it is a downgraded e2e scenario
+   — an integration test wearing an `@e2e` tag. This is unfinished work,
+   not a coverage gap, regardless of the runner reporting GREEN. Record
+   each downgraded scenario found.
+6. Any finding from 1-5 is unfinished work, not a coverage gap. Reopen the
+   task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
+   interface per design.md's "Anticipated interface obstacles" fix, not by
+   asserting on the repository instead. Do not write `REVIEW: PASS` while
+   any finding remains.
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
@@ -46,8 +54,12 @@ source of truth.
 ## E2e coverage
 
 Every capability needs at least one `@e2e` scenario exercising the real
-interaction surface. Missing = classify as "missing test," add one.
-`verify.e2e_command` must pass alongside `verify.command`.
+interaction surface, with a primary assertion on what that interface
+produced. Missing, or downgraded to repository-only assertions, = classify
+as "missing test," add or fix one. `verify.e2e_command` must pass alongside
+`verify.command`. Confirm the local run command (design.md's Local
+Runnability section) still starts the full stack, including digital twins,
+cleanly.
 
 ## Sign-off checklist
 
@@ -61,7 +73,10 @@ interaction surface. Missing = classify as "missing test," add one.
 - Dead code deleted. Missing tests added. Hard-to-test gaps justified.
 - Redundant unit tests removed.
 - No `@wip` tags remain. No implementation-layer detail in the spec.
-- Every capability has at least one `@e2e` scenario.
+- Every capability has at least one `@e2e` scenario with a real-interface
+  primary assertion — none downgraded to repository-only checks.
+- The local run command starts the full stack (including digital twins)
+  cleanly, verified during this review.
 
 ## Result
 

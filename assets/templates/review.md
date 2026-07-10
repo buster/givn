@@ -32,8 +32,25 @@ be created actually exists:
 re-run it now and paste the output -->
 ```
 
+**Downgraded e2e scenario scan** — every `@e2e` scenario's Then steps
+checked for a real-interface primary assertion (page content, HTTP
+response, redirect, CLI output), not repository-only:
+
+| @e2e Scenario | Real-interface assertion present? | Downgraded? |
+|---|---|---|
+| | | |
+
+**Local environment check** — the local run command (design.md's Local
+Runnability section) starts the full stack, including digital twins,
+cleanly:
+
+```
+<!-- paste local-run command + confirmation of clean startup -->
+```
+
 **Result:** CLEAN / FINDINGS (if findings, list remediation taken — reopened
-tasks, re-run RED/GREEN/REFACTOR/COMMIT — before continuing this review).
+tasks, re-run RED/GREEN/REFACTOR/COMMIT, real-interface obstacle fixed per
+design.md — before continuing this review).
 
 ---
 
@@ -76,10 +93,12 @@ Run `{{VERIFY_COMMAND}}` and paste the summary below.
 ## Sign-off
 
 - [ ] Fabrication audit: CLEAN (0 empty step bodies, all commits verified,
-      all promised components exist).
+      all promised components exist, no downgraded e2e scenarios).
 - [ ] All scenarios pass (`{{VERIFY_COMMAND}}` exits 0).
 - [ ] Every coverage gap is classified and resolved (or justified).
 - [ ] No `@wip` tags remain in the delta spec.
 - [ ] The delta spec contains no implementation-layer detail.
+- [ ] Local run command starts the full stack, including digital twins,
+      cleanly.
 
 **REVIEW: PASS** <!-- change to FAIL if any sign-off item is unchecked -->

@@ -122,8 +122,22 @@ Do not substitute a simpler approach that happens to pass the test.
 
 ## @e2e scenarios: same RED/GREEN/REFACTOR, with:
 - e2e step location, e2e runner (<verify.e2e_command>)
-- GREEN sets up test infrastructure (server/browser/DB) and writes glue
-  driving the real interface
+- GREEN sets up test infrastructure (server/browser/DB, via the local run
+  command from design.md) and writes glue driving the real interface
+- **GREEN's Then steps assert PRIMARILY on the real interface's output**
+  (page content, HTTP response, redirect, CLI output). Repository/database
+  checks are allowed only as secondary, additional assertions alongside a
+  real-interface assertion — never as the only assertion.
+- **If a real-interface obstacle appears** (browser session/cookie not
+  persisting, auth redirect losing state, flaky selector): this is expected
+  and design.md's "Anticipated interface obstacles" section names the fix.
+  Apply that fix. If design.md has no fix for this specific obstacle, STOP
+  — do not substitute a repository-only assertion and continue. Report the
+  blocker: "real-interface obstacle not covered by design.md: <describe>."
+  The orchestrator will get this fixed in design.md before you continue.
+  Silently downgrading to a repository check is fabrication — it produces a
+  GREEN scenario that proves nothing about whether the feature actually
+  works through the interface a real user or client would use.
 
 ## Done
 9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <title>" (or
@@ -150,9 +164,18 @@ Before moving on, the orchestrator itself (not another subagent) checks:
    `pass`/`return`). Any match = reject.
 4. Confirm tasks.md has pasted evidence and the commit hash, not just a
    checked box.
+5. **For `@e2e` tasks only:** read the step definition(s) for this
+   scenario's Then steps. Confirm at least one asserts on the real
+   interface's output (page content, HTTP response, redirect, CLI output) —
+   not exclusively on repository/database state. A `@e2e` GREEN with
+   Then-step assertions that only touch a repository is a downgraded
+   scenario — reject it, regardless of what the subagent reported.
 
 Any failure: uncheck the task, do not proceed, re-spawn with the specific
-failure named (e.g. "`FooSteps.java:42` has an empty body — redo it").
+failure named (e.g. "`FooSteps.java:42` has an empty body — redo it", or
+"this @e2e scenario's Then steps only assert repository state — assert on
+the real interface's response, and if there's an obstacle, name it so
+design.md can be fixed first").
 
 Only if all checks pass:
 
@@ -242,3 +265,11 @@ Task 4/7: ...
 - GREEN requires: test passes AND implementation matches the design AND
   independent verification confirms it. A subagent that deviated from the
   design gets rejected and re-spawned even if the test passes.
+- A `@e2e` scenario whose Then steps assert only against a repository/
+  database, with no assertion on the real interface's output, is a
+  downgraded scenario — reject it (5c.5), regardless of subagent claims.
+- A real-interface obstacle hit during implementation is never a reason to
+  substitute a weaker assertion. If design.md has no fix for it, that is a
+  design gap — surface it as a blocker, get design.md fixed, then continue.
+  "I could not make the browser work so I checked the database" is not an
+  acceptable resolution at any point in this loop.

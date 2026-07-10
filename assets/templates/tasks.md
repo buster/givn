@@ -49,9 +49,16 @@ runner rejects an unimplemented step before any scenario work.
 
 ## E2E Smoke Tests
 
+- [ ] Bring up the local environment (design.md's Local Runnability
+      section): local run command, all dependencies, all digital twins for
+      external services, isolated network. Confirm clean startup.
+      ```
+      <!-- paste local-run command + confirmation of startup -->
+      ```
 - [ ] Set up e2e test infrastructure and step definitions (one file per
       capability, separate location). Configure and prove strict mode for
-      the e2e runner. Set `verify.e2e_command`.
+      the e2e runner. Set `verify.e2e_command`. Confirm the e2e runner can
+      reach the running local environment.
       ```
       <!-- paste e2e proof-of-strictness command + output -->
       ```
@@ -62,7 +69,11 @@ runner rejects an unimplemented step before any scenario work.
         <!-- paste RED evidence -->
         ```
   - [ ] GREEN: set up test infrastructure if needed; replace stubs with real
-        assertions driving the actual interface. Files: <!-- list them -->
+        assertions driving the actual interface (primary) — repository
+        checks are secondary/additional only, never the sole assertion.
+        If a real-interface obstacle appears, fix it per design.md's
+        Anticipated Interface Obstacles section — do not substitute a
+        repository-only check. Files: <!-- list them -->
         Run targeting this scenario only. Must pass.
         ```
         <!-- paste GREEN evidence -->

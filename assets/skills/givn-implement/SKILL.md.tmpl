@@ -74,10 +74,26 @@ at this scenario only** and captures output as evidence.
 
 ### @e2e smoke tests (after all non-@e2e are GREEN)
 
+Before the first @e2e scenario: bring up the local environment from
+design.md's Local Runnability section (local run command, all
+dependencies, all digital twins, isolated network). Confirm clean startup.
+
 Same loop, `verify.e2e_command`, e2e step location (one file per
 capability, separate from non-e2e). GREEN sets up test infrastructure
-(server/browser/DB) and writes glue driving the real interface. Commit
-message: `test(e2e): <title>`.
+(server/browser/DB) and writes glue driving the real interface.
+
+**Rule: assert the real interface, not instead of it.** Then steps assert
+PRIMARILY on what the real interface returned/displayed (page content, HTTP
+response, redirect, CLI output). Repository/database checks are secondary
+and additional only, never the sole assertion. If a real-interface obstacle
+appears (browser session/cookie issue, auth redirect, flaky selector),
+apply the fix design.md names in its Anticipated Interface Obstacles
+section. If none is named for this obstacle, STOP — report it as a
+blocker. Do not substitute a repository-only assertion and continue; that
+produces a GREEN scenario that proves nothing about the feature working
+through the interface a real user or client would use.
+
+Commit message: `test(e2e): <title>`.
 
 ## When all tasks are checked
 
@@ -86,6 +102,8 @@ already verified individually:
 1. Run the FULL suite (both runners, not scenario-targeted). Confirm zero exit.
 2. Grep every step definition file touched for empty/no-op bodies. Must be 0.
 3. Confirm commit count matches scenario task count.
+4. Read every `@e2e` scenario's Then steps. Confirm each has a
+   real-interface assertion — none downgraded to repository-only.
 
 Run `givn apply --change {{CHANGE_ID}}` to confirm progress. Proceed to review.
 
