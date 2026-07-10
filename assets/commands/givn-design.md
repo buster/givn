@@ -49,6 +49,16 @@ Read:
 Write `givn/changes/<id>/design.md` covering:
 
 - **Technology decisions** — language, framework, libraries, patterns chosen and why.
+  **Version freshness (mandatory):** never write a version number from
+  memory — training data has an unknown cutoff and a remembered "current"
+  version can now be outdated or end-of-life. For every versioned choice,
+  either state "latest" or the ecosystem's LTS explicitly as the resolution
+  strategy (e.g. "Node.js: latest LTS"), or look it up now (web search, the
+  package registry, or an existing lockfile) and record the version plus
+  how/when it was checked (e.g. "Playwright 1.49.x — checked
+  npmjs.com/package/playwright"). A bare specific version number with
+  neither a lookup note nor a "latest/LTS" designation is an unverified
+  guess — do not write one.
 - **Architecture impact** — which modules/components are affected; what is new.
 - **Data model changes** — schema, structs, database changes if any.
 - **Step definition locations** — where Cucumber/Gherkin step defs will live.
@@ -124,4 +134,7 @@ Read `next_required.id` from the output and report it as the next step
   isolated" is incomplete. Do not accept a design that defers this to tasks.md.
 - Every external/third-party dependency needs a named digital twin. No
   design may leave a scenario dependent on a live third-party service.
+- Never write a version number from memory. Use "latest"/"LTS", or actually
+  look one up (search, registry, existing lockfile) and note how it was
+  checked. Reject a design with bare version numbers and no lookup note.
 - Verify the file exists after writing.

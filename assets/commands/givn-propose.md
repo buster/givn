@@ -139,6 +139,17 @@ For each artifact:
 - HOW layer: technology decisions, architecture impact, step def locations
   (one file per capability, name the exact files), data model changes.
   Justify non-obvious choices.
+- **Version freshness (mandatory)**: never write a version number for a
+  language, runtime, framework, library, database, or container image from
+  memory — training data has an unknown cutoff and a remembered "current"
+  version may now be outdated or end-of-life. For every versioned choice,
+  either (a) state "latest" or the ecosystem's LTS explicitly as the
+  resolution strategy (tasks.md then pins whatever that resolves to at
+  setup time), or (b) if you have a web search or similar tool available,
+  use it now to check the current version and record it with a note of
+  what was checked (e.g. "checked npmjs.com/package/playwright"). Do not
+  write a bare specific version number with neither a lookup note nor a
+  "latest/LTS" designation — that is an unverified guess, not a decision.
 - **Test runner**: pick one fitting the tech stack, document the command. If
   `verify.command` is still `"givn missing-testrunner"`, set it now.
 - **Strict mode (mandatory)**: most runners treat undefined/pending steps as
@@ -304,4 +315,8 @@ implementation is done.
 - Every `@e2e` scenario asserts primarily on the real interface's output.
   Do not accept a plan or a task whose e2e GREEN criteria is
   repository-state-only.
+- design.md must not contain a version number written from memory. Every
+  versioned technology choice is either "latest"/"LTS" or a looked-up
+  version with a note of what was checked. Reject a plan with bare version
+  numbers and no lookup note or "latest/LTS" designation.
 - Critical ambiguities go to the user — the architect does not guess.

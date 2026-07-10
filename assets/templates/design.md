@@ -8,6 +8,15 @@
 
 > What language, framework, libraries, or patterns will be used?
 > Justify decisions made here (why this approach over alternatives?).
+>
+> **Version freshness (mandatory):** never write a version number from
+> memory. For each versioned choice below, state "latest" / the ecosystem's
+> LTS as the resolution strategy, OR record a looked-up version with how/
+> when it was checked:
+> | Technology | Version | Resolution |
+> |---|---|---|
+> | (e.g. Node.js) | (e.g. latest LTS) | (e.g. resolve via `nvm install --lts` at setup time) |
+> | (e.g. Playwright) | (e.g. 1.49.x) | (e.g. checked npmjs.com/package/playwright at design time) |
 
 ## Step Definitions
 

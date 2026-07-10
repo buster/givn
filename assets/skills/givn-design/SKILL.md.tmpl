@@ -30,6 +30,17 @@ Everything technical belongs here — do not add implementation details to the s
   scenario, used by every RED/GREEN check in tasks.md.
 - Justify non-obvious technical choices.
 
+## Version freshness (mandatory)
+
+Never write a version number for a language, runtime, framework, library,
+database, or container image from memory. Training data has an unknown
+cutoff — a remembered "current" version can now be outdated or
+end-of-life. For every versioned choice, either state "latest" or the
+ecosystem's LTS explicitly (e.g. "Node.js: latest LTS"), or look up a
+current version now and record it with what was checked (e.g. "Playwright
+1.49.x — checked npmjs.com/package/playwright"). A bare specific version
+with no lookup note and no "latest/LTS" designation is an unverified guess.
+
 ## Strict mode (mandatory)
 
 Most runners treat undefined/pending steps as neither pass nor hard failure

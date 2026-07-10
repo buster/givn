@@ -21,6 +21,33 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   `behave -n "<title>"`.
 - Any other technical decision the implementer needs before writing tasks.
 
+## Version freshness (mandatory)
+
+Never write a specific version number for a language, runtime, framework,
+library, database, browser/driver, or container image from memory. Training
+data is a snapshot with an unknown cutoff — a remembered "current" version
+can now be old, superseded, or end-of-life. Confidently wrong is worse than
+explicitly unresolved. For every technology decision that names a version,
+do ONE of:
+
+- **State "latest" or the ecosystem's LTS explicitly**, as the resolution
+  strategy rather than a guess at the number, e.g. "Node.js: latest LTS
+  (resolve via `nvm install --lts` or nodejs.org at setup time)",
+  "PostgreSQL: latest stable major (resolve via the official
+  `postgres:<major>` tag on Docker Hub at setup time)". The tasks setup
+  task then pins whatever version that resolves to at implementation time.
+- **Look up a current version** (web search, the package registry, or — for
+  an existing codebase — its own lockfile) and record the version AND how/
+  when it was verified, e.g. "Playwright 1.49.x (checked
+  npmjs.com/package/playwright — latest stable as of this design)". A
+  version number with no lookup note is treated as an unverified guess.
+
+Applies to every version-bearing decision in this document: language/
+runtime, framework, test runner and Cucumber/Gherkin library, browser/
+driver, digital twin container image tags, database. "Latest"/"LTS" is
+always an acceptable answer; a bare specific number with no lookup and no
+"latest/LTS" designation is not.
+
 ## Strict mode (mandatory)
 
 Most runners treat an undefined or pending step as neither pass nor hard
@@ -134,3 +161,5 @@ steps to code — never a parallel hand-maintained test file.
 - Justify non-obvious decisions only.
 - The runner + strict-mode config must be proven, not assumed — the tasks
   setup task includes a proof-of-strictness check against this exact config.
+- No version number from memory — "latest"/"LTS" or a looked-up, noted
+  version only (see Version Freshness above).
