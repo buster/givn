@@ -14,16 +14,12 @@ change exists. If ambiguous, list changes and ask.
 
 ## Role: orchestrator
 
-This command is an **orchestrator** with two phases:
-
-1. **Characterization loop** — for each task, spawns a **characterization
-   subagent** that writes tests matching observed behaviour, confirms GREEN,
-   and applies testability seams if needed.
-2. **Reverse review epilogue** — after all tasks are checked, spawns a
-   **review subagent** that runs the coverage review with reverse-mode rules
-   (no dead-code deletion, bug flagging, behaviour-preservation invariant).
-
-The orchestrator manages the loop, passes context, and delegates.
+Two phases:
+1. **Characterization loop** — per task, a subagent writes tests matching
+   observed behaviour, confirms GREEN, applies testability seams if needed.
+2. **Reverse review epilogue** — after all tasks are checked, a review
+   subagent runs the coverage review with reverse-mode rules (no dead-code
+   deletion, bug flagging, behaviour-preservation invariant).
 
 ---
 
@@ -35,8 +31,7 @@ The orchestrator manages the loop, passes context, and delegates.
 givn status --json
 ```
 
-Identify the active change from `active[0].id` (or ask if multiple).
-Announce: "Using change: <id>".
+Identify from `active[0].id` (or ask if multiple). Announce: "Using change: <id>".
 
 ### 2. Check current progress
 
@@ -44,8 +39,7 @@ Announce: "Using change: <id>".
 givn apply --change <id>
 ```
 
-If all tasks are already checked, skip to Phase 2 (reverse review epilogue).
-Otherwise continue.
+All tasks checked → skip to Phase 2. Otherwise continue.
 
 ### 3. Validate the spec
 
@@ -53,20 +47,13 @@ Otherwise continue.
 givn lint --change <id>
 ```
 
-- Exit 0 or 2 = proceed (exit 2 means @wip scenarios present — expected).
-- Exit 1 = parse error — fix before characterizing.
+Exit 0 or 2 = proceed. Exit 1 = parse error, fix first.
 
 ### 4. Collect context for subagents
 
-Read once; pass to every subagent:
-
-- `givn/changes/<id>/tasks.md` — task list and order (each task includes a
-  "Seam" block if a testability seam is needed)
-- `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
-  (the Feature: description block contains the black-box boundary and
-  suspected bugs)
-- `givn/config.yaml` — resolve the actual `verify.command` (and
-  `verify.e2e_command` if configured)
+`tasks.md` (each task's "Seam" block if needed), `specs/<capability>/
+<capability>.feature` (Feature: description has the black-box boundary and
+suspected bugs), `verify.command`/`verify.e2e_command`.
 
 ---
 
@@ -74,14 +61,11 @@ Read once; pass to every subagent:
 
 ### 5. Loop: one characterization subagent per task
 
-For each unchecked task (`- [ ]`) in order:
+For each unchecked task, in order:
 
 #### 5a. Spawn a characterization subagent
 
-Use the **Task tool** to spawn a characterization subagent (fall back to
-describing the pattern in prose if the Task tool is not available to you).
-
-Pass the subagent a self-contained prompt that includes:
+Pass a self-contained prompt:
 
 ```
 You are a characterization agent executing a single task for the givn
@@ -91,197 +75,112 @@ reverse-engineering change '<id>'.
 <paste the task line verbatim, including the Seam block if present>
 
 ## Scenario to characterize
-<paste the relevant scenario(s) from the .feature file>
+<paste the relevant scenario(s)>
 
 ## Context
 - Verify command: <verify.command>
-- Step definitions location: <from the change's test harness — one file per
-  capability, never a single file for everything>
-- Single-scenario run command: <if known, use it to target this scenario only>
-- Not-implemented stub pattern for this language: <e.g. Java:
-  throw new io.cucumber.java.PendingException("TODO"); Python:
-  raise NotImplementedError(...); Rust: unimplemented!()>
+- Step definitions location: <one file per capability, never a single file>
+- Single-scenario run command: <if known>
+- Not-implemented stub for this language: <e.g. Java PendingException,
+  Python NotImplementedError, Rust unimplemented!()>
 
-## Absolute rule: never write an empty step definition body
+## Rule: step body is never empty
+`{}`, bare `pass`/`return` = indistinguishable from PASS. This has caused a
+whole change to be checked off complete while nothing was characterized.
+Every step without a real assertion probing observed behaviour uses the
+not-implemented stub.
 
-An empty body (`{}`, bare `pass`, bare `return`) is indistinguishable from a
-PASS in most Cucumber runners. This has caused an entire change to be
-checked off complete while nothing was characterized. Any step without a
-real assertion probing observed behaviour yet MUST use the not-implemented
-stub pattern above — never left empty "to fill in later."
+## Before any code
+Read the givn-steps skill (`.agents/skills/givn-steps/SKILL.md` or your
+harness's equivalent) in full.
 
-## Before any code: read the shared step-writing skill
-Read the givn-steps skill at `.agents/skills/givn-steps/SKILL.md` (or the
-equivalent path in your agent's skill directory: `.claude/skills/givn-steps/`
-or `.opencode/skills/givn-steps/`) in full before writing any step definitions.
-It describes the RED/GREEN/REFACTOR loop, step reuse, and lint-vs-test
-distinction that you must follow.
+## Characterization overlay on givn-steps
 
-## Characterization stance (overlay on givn-steps)
+### GREEN
+- Implement real assertions probing OBSERVED behaviour — read the actual
+  code, never guess from documentation.
+- Do NOT change production code. You are matching reality, not driving new code.
+- All steps reused and already GREEN → confirm assertions match, check off,
+  no code changes.
+- Verify FAILS → diagnose in order:
+  1. **Infrastructure** (most common): wiring, config, imports, build
+     errors, missing deps. Fix infrastructure only. Re-run.
+  2. **Spec/implementation mismatch**: infra is correct, test runs,
+     assertions fail because code doesn't match the spec inferred from
+     docs/code. Re-read the actual code and the source documentation.
+     Root cause: (a) documentation was wrong, or (b) code is
+     ambiguous/misleading (including bugs — characterize AS-IS, do not fix).
+     - (a): update tasks.md, the scenario, and the wrong documentation.
+       Re-run. No code comment needed.
+     - (b): update the scenario to assert actual behaviour. Add a comment
+       (language's syntax) starting `TODO: REVERSE-ENGINEERING NOTE: <what
+       was misleading> — actual behaviour: <Z>. Code smell, refactor
+       candidate.` Do not change code behaviour. Re-run. Flag as code smell.
+  - Never: change code to match the spec, fix bugs found here, remove
+    REVERSE-ENGINEERING NOTE markers.
 
-The givn-steps skill describes the shared loop. For characterization, these
-rules OVERLAY the GREEN and REFACTOR phases:
+### REFACTOR
+- Only if the task's Seam block calls for it. Allowed: extract interface,
+  DI, make public, test-only constructor, extract pure function. Not
+  allowed: rename, dedup, simplify, restructure, fix bugs, change error
+  messages/return types/control flow.
+- Re-run targeting this scenario. Capture output. If red: revert entirely —
+  the test was correct, the refactor broke behaviour.
+- No seam needed → skip.
 
-### GREEN phase (characterization overlay)
-- Implement real assertions for new step definitions, probing the OBSERVED
-  production behaviour. Read the ACTUAL CODEBASE to determine what the code
-  really does. Do NOT guess from documentation — documentation can be wrong.
-- Do NOT change production code behaviour. You are matching reality, not
-  driving new code.
-- If all steps were reused and already GREEN: confirm the assertions match
-  this scenario's expected behaviour, check off the task. No code changes
-  needed.
-- If verify FAILS — diagnose in order:
+## If the black-box boundary proves untestable
+Do not halt the loop. Comment out the scenario (Gherkin `#`), explain why
+the boundary is untestable, check off the task as "untestable — follow-up
+needed," continue. Report all boundary failures at the end.
 
-  #### 1. Test infrastructure problem (most common)
-    - Step definitions not wired up, runner not configured, harness missing,
-      import/path issues, build errors in test code, missing test deps.
-    - Fix the TEST INFRASTRUCTURE only. Do not touch production code.
-    - Do not touch the .feature scenario.
-    - Re-run verify. If still failing, go to step 2.
-
-  #### 2. Spec/implementation mismatch (the characterization signal)
-    - Infrastructure is correct; the test runs; assertions fail because the
-      code does not do what the spec (inferred from docs/code) expected.
-    - The spec was generated by reading documentation and code. A mismatch
-      means either the documentation was wrong, or the code is
-      ambiguous/misleading.
-
-    **Step 1: Diagnose**
-    Re-read the actual code. What does it REALLY do? Re-read the
-    documentation that informed the spec (README, arc42, code comments,
-    tasks.md). Determine the root cause:
-      (a) The documentation was wrong — docs said Y, code correctly does Z.
-      (b) The code is ambiguous/misleading — code does Z but reads like Y.
-          (This includes bugs: code does Z when it should do Y, but we
-          characterize AS-IS and do NOT fix.)
-
-    **Step 2: Correct**
-    If (a) documentation was wrong:
-      1. Update tasks.md and the .feature scenario to reflect actual
-         behaviour (Z).
-      2. Update the source documentation that was wrong (README, arc42,
-         code comments) — this is a documentation fix.
-      3. Re-run verify → must pass.
-      No code comment needed — the code was fine.
-
-    If (b) code is ambiguous/misleading:
-      1. Update the .feature scenario to assert actual behaviour (Z) —
-         we characterize AS-IS, including buggy behaviour.
-      2. Add a code comment at the ambiguous/misleading point. Use the
-         language's comment syntax starting with
-         `TODO: REVERSE-ENGINEERING NOTE:`:
-           // TODO: REVERSE-ENGINEERING NOTE: <what was misleading> — actual
-           // behaviour: <Z>. Code smell, refactor candidate.
-         (Adapt the comment syntax to the language: // for Rust/C/JS, # for
-         Python/Shell/Ruby, -- for SQL/Lua, <!-- --> for HTML/XML, etc.)
-      3. Do NOT change code behaviour. Only add the comment.
-      4. Re-run verify → must pass.
-      5. Flag this as a code smell in your report.
-
-    **NEVER:**
-      - Change production code behaviour to match the spec.
-      - Fix bugs discovered during characterization.
-      - Remove TODO: REVERSE-ENGINEERING NOTE markers.
-
-### REFACTOR phase (characterization overlay)
-  - Only if the task's "Seam" block calls for a testability seam:
-    - Allowed: extract interface, dependency injection, make a function/method
-      public, add a test-only constructor or builder, extract a pure function
-      from a side-effectful one.
-    - NOT allowed: rename, deduplicate, simplify logic, restructure for
-      clarity, fix bugs, change error messages, change return types, change
-      control flow.
-  - Run: <verify.command>, targeting this scenario only → MUST still pass.
-    Capture the output verbatim.
-    If red: the refactor changed behaviour → REVERT the refactor entirely.
-    Do NOT try to fix the test — the test was correct; the refactor broke
-    behaviour.
-  - If no seam is needed for this scenario: skip REFACTOR.
-
-### If the black-box boundary proves untestable:
-If the code is too tightly coupled to exercise through the proposed boundary
-(e.g. no public interface, hidden I/O, deep coupling that a seam can't fix
-without design changes), do NOT halt the loop. Instead:
-1. Comment out the scenario in the .feature file using Gherkin comments (#).
-2. Add a comment explaining why the boundary is untestable for this scenario.
-3. Check off the task (the characterization result is: "untestable via current
-   boundary — follow-up needed").
-4. Continue to the next scenario.
-5. Report all boundary failures at the end (in your report + flag for review.md).
-
-### Done
-  - Create ONE atomic commit for this scenario's characterization work
-    (RED+GREEN+REFACTOR together). Message: "characterize(<capability>):
-    <scenario title>". Record the commit hash.
-  - Paste the RED and GREEN (and REFACTOR, if applied) evidence and the
-    commit hash into the task's entry in givn/changes/<id>/tasks.md. Only
-    then check off the task: `- [ ]` → `- [x]`. A checked box with no
-    pasted evidence or commit hash is incomplete, not done.
-  - Report back with:
-    - RED result (failed as expected / all steps reused → immediate GREEN),
-      with captured output
-    - GREEN result (pass on first try / after diagnosis: <root cause>),
-      with captured output
-    - If diagnosis was needed: root cause (infrastructure / documentation
-      wrong / code ambiguous), what was corrected
-    - If boundary failure: scenario commented out, reason, suggested follow-up
-    - REFACTOR result (applied / not needed / reverted)
-    - Commit hash
-    - Any TODO: REVERSE-ENGINEERING NOTE markers added (file, line, content)
-    - Any suspected bugs flagged
-    - Any issues or decisions made
+## Done
+- One commit for RED+GREEN+REFACTOR: "characterize(<capability>): <title>".
+  Record the hash.
+- Paste RED/GREEN(/REFACTOR) evidence and the commit hash into the task in
+  tasks.md. Only then check it off.
+- Report back: RED result (failed as expected / reused → immediate GREEN)
+  with output, GREEN result with output and root cause if diagnosed,
+  boundary failure details if any, REFACTOR result, commit hash, any
+  REVERSE-ENGINEERING NOTE markers added, suspected bugs, issues/decisions.
 ```
 
-#### 5b. Wait for the subagent to report back
+#### 5b. Wait for the subagent
 
-The subagent must complete the characterization cycle and check off the task
-before the orchestrator proceeds to the next task.
-
-If the subagent reports a blocker (e.g. a spec/implementation mismatch it
-cannot resolve), surface it to the user and wait for guidance before spawning
-the next subagent.
+Must complete the cycle and check off the task. A reported blocker
+(unresolvable mismatch) goes to the user.
 
 #### 5c. Independently verify — do not trust the self-report
 
-Before moving on, the orchestrator itself re-checks the subagent's claim
-rather than trusting the report. This exists because self-reported "PASSED"
-has been wrong before, when step definitions were left as empty stubs.
+Before moving on, the orchestrator itself re-checks:
 
-1. Re-run the scenario yourself (targeted, not whole-suite) and confirm it
-   passes right now.
-2. Confirm a commit exists for this task and its diff contains real
-   assertion code — not an empty step body.
-3. Grep the step definition file(s) touched by this task for empty bodies
-   (`{}`, bare `pass`, bare `return`). Any match means reject this task.
-4. Confirm the task in tasks.md has pasted evidence and a commit hash, not
-   just a checked box.
+1. Re-run the scenario yourself, targeted. Confirm it passes now.
+2. Confirm a commit exists with real assertion code, not an empty body.
+3. Grep the touched step file(s) for empty bodies. Any match = reject.
+4. Confirm tasks.md has pasted evidence and a commit hash, not just a
+   checked box.
 
-If any check fails: uncheck the task, do not proceed, and re-spawn a
-subagent with the specific failure called out.
+Any failure: uncheck the task, re-spawn with the specific failure named.
 
 ```sh
 givn apply --change <id>
 givn lint --change <id>
 ```
 
-Confirm the task was checked off. Confirm lint exits 0 or 2 (exit 1 = parse
-error from a spec correction — surface to the user before continuing). Then
-move to the next task.
+Exit 0 or 2 = OK (1 = parse error from a spec correction, surface to user).
+Move to the next task.
 
-**IMPORTANT:** Do NOT use `givn check <artifact>` during the characterization
-loop — it fires the `post: ["verify"]` hook and treats failure as a gate
-violation. During characterization, verify failures are expected and are
-handled by the subagent. Run `verify.command` directly (via the subagent),
-not through `givn check`.
+**Do not use `givn check <artifact>` during this loop** — it fires the
+verify hook and treats failure as a gate violation. Verify failures during
+characterization are expected and handled by the subagent. Run
+`verify.command` directly. `givn check` is only for the review epilogue.
 
-### 6. On characterization loop completion
+### 6. On loop completion
 
 ```sh
 givn apply --change <id>
 ```
 
-Show progress. If all tasks are checked, proceed to Phase 2.
+All tasks checked → proceed to Phase 2.
 
 ---
 
@@ -289,136 +188,82 @@ Show progress. If all tasks are checked, proceed to Phase 2.
 
 ### 7. Collect review instructions
 
-Read the reverse-mode review instruction (source: `assets/instructions/review-reverse.md`).
-Capture its full content — it will be passed to the review subagent.
+Read `assets/instructions/review-reverse.md` in full (passed to the review
+subagent).
 
 ```sh
 givn instructions review --change <id>
 ```
 
-Also capture the standard review template path from the output.
-
 ### 8. Spawn a review subagent
 
-Use the **Task tool** to spawn a review subagent.
-
-Pass a self-contained prompt:
-
 ```
-You are a review agent completing the reverse-engineering coverage review for
-givn change '<id>'.
+You are a review agent completing the reverse-engineering coverage review
+for givn change '<id>'. Produce review.md at
+givn/changes/<id>/review.md, final line REVIEW: PASS — only once all
+sign-off conditions are met.
 
-## Your objective
-Produce a complete, signed-off review.md at:
-  givn/changes/<id>/review.md
+## Before any work
+Read the givn-review skill in full (coverage gate, gap classification,
+sign-off).
 
-The final line of the file MUST be:
-  REVIEW: PASS
-
-Do not write that line until all sign-off conditions are met.
-
-## Before any work: read the shared coverage mechanics
-Read the givn-review skill at `.agents/skills/givn-review/SKILL.md` (or the
-equivalent path in your agent's skill directory: `.claude/skills/givn-review/`
-or `.opencode/skills/givn-review/`) in full. It describes the coverage gate
-(completeness, not percentage), gap classification, and sign-off process.
-
-## Reverse-mode review instructions (overlay on givn-review)
+## Reverse-mode overlay
 <paste full content of assets/instructions/review-reverse.md>
 
-The givn-review skill describes the shared coverage mechanics. For
-reverse-engineering, these rules OVERLAY the gap classification and
-resolution:
-
-- Dead code → flag as follow-up @givn.removed candidate. Do NOT delete.
-- Missing test → flag as follow-up @givn.added candidate. Do NOT add during review.
-- Hard to test → write concrete technical justification.
-- Behaviour-preservation invariant: all characterization tests must still be
-  GREEN after all refactoring.
+Overlays gap classification: dead code → flag @givn.removed, do NOT delete.
+Missing test → flag @givn.added, do NOT add during review. Hard to test →
+justification. Behaviour-preservation: all characterization tests still
+GREEN after refactoring.
 
 ## Verify command
-<verify.command from givn/config.yaml>
+<verify.command>
 
 ## Steps
 
-### 0. Fabrication audit (mandatory, before anything else)
-
-A characterization change can also reach review with every task checked off
-and empty step stubs left behind. Before trusting tasks.md:
-
-1. Grep every step definition file for empty/no-op bodies. Any match is a
-   fabricated characterization.
-2. Cross-check every checked-off task has a commit whose diff contains real
-   assertion code.
-3. Any finding is unfinished characterization — reopen the task and redo it
-   for real before continuing this review.
-
-Record the result in review.md even when clean.
+### 0. Fabrication audit (mandatory, first)
+A characterization change can also reach review with empty stubs left
+behind. Grep every step file for empty/no-op bodies (fabricated
+characterization). Cross-check every checked task has a commit with real
+assertion code. Any finding = unfinished — reopen and redo it for real.
+Record the result even when clean.
 
 ### 1. Confirm all tests pass
-Run: <verify.command>
-All scenarios must be GREEN (no @wip remaining). If any fail, diagnose:
-- Infrastructure problem (fix test plumbing only — do NOT touch production code).
-- Spec/implementation mismatch (correct the spec, never the code).
-Do NOT change production code behaviour to make tests pass.
+Run <verify.command>. GREEN, no @wip. Failures: infrastructure (fix
+plumbing only) or spec/implementation mismatch (correct the spec, never
+the code).
 
 ### 2. Measure and record coverage
-Run the coverage tool. Record:
-- The overall coverage percentage (line and/or branch)
-- The raw tool output
-Paste both into the Coverage section of review.md.
+Percentage + raw tool output into review.md.
 
-### 3. Classify every gap (reverse-mode rules)
-See the reverse-mode review instructions (pasted above) for the bucket table
-and rules. Key constraint: do NOT delete dead code, do NOT add missing tests
-during review — flag both as follow-up candidates.
-
-### 4. Resolve each gap
-- Dead code: flag as follow-up @givn.removed candidate. Do NOT delete.
-- Missing test: flag as follow-up @givn.added candidate. Do NOT add during review.
-- Hard to test: write the justification in review.md.
+### 3-4. Classify and resolve gaps (reverse-mode)
+Dead code → flag @givn.removed, do NOT delete. Missing test → flag
+@givn.added, do NOT add. Hard to test → justification.
 
 ### 5. Behaviour-preservation invariant
-Re-run: <verify.command>
-All characterization tests must still be GREEN after all refactoring.
-If any went RED during the change, flag it as a blocker.
+Re-run <verify.command>. All characterization tests still GREEN. Any that
+went RED during the change = blocker, flag it.
 
 ### 6. Compile mandatory reporting sections
-- Spec corrections (scenarios updated because initial inference was wrong)
-- Documentation corrections (docs/tasks updated because they were wrong)
-- Code smell markers (all TODO: REVERSE-ENGINEERING NOTE comments, with file/line)
-- Suspected bugs (all bugs discovered, with follow-up @givn.modified candidate)
-- Coverage gap table
-- Test suite output and result
-- Sign-off checklist
+Spec corrections, documentation corrections, code smell markers (TODO:
+REVERSE-ENGINEERING NOTE, file/line), suspected bugs (@givn.modified
+follow-up), coverage gap table, test suite output, sign-off checklist.
 
 ### 7. Write review.md
-Follow the reverse-mode review instruction structure. Include all mandatory
-reporting sections. Final line: REVIEW: PASS
+All mandatory sections. Final line: REVIEW: PASS.
 
 ### 8. Run the review hook
-Run: givn check review --change <id>
-Fix any failures before reporting back.
+`givn check review --change <id>`. Fix failures before reporting back.
 
 ## Report back with
-- Coverage percentage recorded
-- Number of gaps classified (dead code / missing test / hard to test)
-- Number of spec corrections
-- Number of documentation corrections
-- Number of code smell markers added
-- Number of suspected bugs flagged
-- Number of boundary failures (scenarios commented out)
-- Final test run result
-- Path written and confirmation that REVIEW: PASS is the final line
-- Any issues encountered
+Coverage percentage, gaps by bucket, spec/documentation corrections count,
+code smell markers count, suspected bugs count, boundary failures count,
+final test result, path written, confirmation of REVIEW: PASS.
 ```
 
-### 9. Wait for the review subagent to complete
+### 9. Wait for the review subagent
 
-The subagent must finish all gap resolution, write `review.md`, and run
-`givn check review` before the orchestrator proceeds.
-
-If the subagent reports a blocker, surface it to the user and wait.
+Must finish gap resolution, write `review.md`, run `givn check review`
+first. A reported blocker goes to the user.
 
 ### 10. Show final status
 
@@ -426,7 +271,7 @@ If the subagent reports a blocker, surface it to the user and wait.
 givn status --change <id>
 ```
 
-Display next step: "Run `/givn-archive` to archive this change and create the
+Display: "Run `/givn-archive` to archive this change and create the
 baseline spec."
 
 ---
@@ -453,11 +298,11 @@ Task 4/7: ...
 
 **Progress:** 7/7 tasks complete
 
-**Spec corrections:** N (scenarios updated to match AS-IS behaviour)
-**Documentation corrections:** N (docs/tasks fixed)
-**Code smell markers:** N (TODO: REVERSE-ENGINEERING NOTE comments added)
-**Suspected bugs flagged:** N (follow-up @givn.modified candidates)
-**Boundary failures:** N (scenarios commented out — untestable via current boundary)
+**Spec corrections:** N
+**Documentation corrections:** N
+**Code smell markers:** N
+**Suspected bugs flagged:** N
+**Boundary failures:** N
 
 **Review:** givn/changes/<id>/review.md  (REVIEW: PASS)
 
@@ -480,34 +325,24 @@ Task 4/7: ...
 
 ## Guardrails
 
-- The orchestrator does not write code — it manages the loop and delegates.
-- Each subagent handles exactly one task (one characterization cycle).
-- Subagents MUST read the givn-steps skill before writing step definitions.
-- A step definition body is NEVER empty. Unimplemented steps always use the
-  not-implemented stub pattern for the language.
-- **Never trust a subagent's self-reported PASS/FAIL.** Step 5c (independent
-  verification) is mandatory for every task — skipping it is how a whole
-  characterization gets checked off complete with empty stubs left behind.
-- Every task requires an atomic commit before the box is checked.
-- GREEN must genuinely pass. If the subagent reports it failed on first run,
-  the subagent must diagnose (infrastructure vs spec/mismatch) before
-  proceeding — do NOT change production code behaviour to make it pass.
-- Do not spawn the next subagent until the previous one's task has been
-  independently verified and checked off.
-- Remove `@wip` from one scenario at a time only — pass this constraint to each
-  subagent explicitly.
-- Do NOT use `givn check <artifact>` during the characterization loop — run
-  `verify.command` directly via the subagent. `givn check` is only used at the
-  review epilogue (`givn check review --change <id>`).
-- If a task is ambiguous, ask the user before spawning its subagent.
-- Do not batch multiple scenarios into one subagent.
-- REFACTOR is only for testability seams documented in the task's Seam block —
-  never for general cleanup (rename, dedup, logic simplification).
-- If a REFACTOR makes a characterization test go red, REVERT the refactor — do
-  not fix the test. The test was correct; the refactor broke behaviour.
-- Suspected bugs are flagged, never fixed.
-- All TODO: REVERSE-ENGINEERING NOTE markers are intentional debt markers —
-  never removed during characterization.
-- `givn lint` is a static check only — GREEN comes from `<verify.command>` (and
-  `<verify.e2e_command>` for @e2e scenarios, if present).
-- The archive gate will hard-block if `REVIEW: PASS` is absent or hooks fail.
+- Orchestrator manages the loop and delegates; it does not write code.
+- One subagent per task (one characterization cycle).
+- Subagents read the givn-steps skill before writing step definitions.
+- Step body is never empty; unimplemented steps always use the
+  not-implemented stub.
+- Independent verification (5c) is mandatory for every task, never skipped.
+- Every task requires a commit before the box is checked.
+- GREEN must genuinely pass; diagnose infrastructure vs mismatch before
+  proceeding, never change production code to force a pass.
+- Do not spawn the next subagent until the previous task is verified and checked off.
+- Remove `@wip` from one scenario at a time — state this to each subagent.
+- Never use `givn check <artifact>` during the loop; run `verify.command`
+  directly. `givn check` is only for the review epilogue.
+- Ambiguous task → ask the user.
+- Never batch multiple scenarios into one subagent.
+- REFACTOR is testability seams only, per the task's Seam block — never
+  general cleanup. A refactor that goes red gets reverted, not fixed around.
+- Suspected bugs are flagged, never fixed. REVERSE-ENGINEERING NOTE markers
+  are never removed during characterization.
+- `givn lint` is static only; GREEN comes from the runners.
+- Archive hard-blocks if `REVIEW: PASS` is absent or hooks fail.

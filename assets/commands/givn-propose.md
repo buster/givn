@@ -136,93 +136,62 @@ For each artifact:
   look like end-to-end?
 
 **design** (design.md):
-- HOW layer: technology decisions, architecture impact, step def locations,
-  data model changes. Justify non-obvious choices.
-- **Test runner**: decide which runner fits the tech stack (e.g. `cargo test`,
-  `npm test`, `pytest`). Document it in design.md. If `verify.command` in
-  `givn/config.yaml` is still `"givn missing-testrunner"`, update it now:
-  ```yaml
-  verify:
-    command: "<chosen runner>"
-  ```
-- **Step definition locations, one file per capability**: name the exact
-  file(s), never a single file for the whole change — a giant all-in-one
-  step file makes empty/no-op stubs easy to hide.
-- **Strict mode (mandatory)**: most Cucumber runners treat undefined/pending
-  steps as neither a pass nor a hard failure by default, and some (notably
-  cucumber-jvm with an empty step method body) report an outright PASS for
-  a step that does nothing at all. This is the exact defect that has
-  previously caused a whole change to be checked off complete with nothing
-  implemented. Document explicitly:
-  - The strict-mode flag/config for the chosen runner (e.g. `cucumber-rs`:
-    `.fail_on_skipped()`; `cucumber-js`: `--strict`; `cucumber-jvm` CLI:
-    `--strict`; `cucumber-jvm` JUnit Platform Suite: no native flag —
-    enforce via never-empty step bodies plus a plugin/listener that fails
-    the build on UNDEFINED/PENDING; `behave`: steps must `raise` explicitly).
-  - The not-implemented stub pattern for this language (e.g. Java:
-    `throw new io.cucumber.java.PendingException("TODO");`; Python:
-    `raise NotImplementedError("TODO")`; Rust: `unimplemented!()`; JS:
-    `return "pending";` or `throw new Error("TODO")`).
-  - The single-scenario run command (exact invocation to run ONE named
-    scenario, not the whole suite).
-- **E2E smoke test infrastructure**: document the e2e test setup:
-  - E2E runner command (becomes `verify.e2e_command` in `givn/config.yaml`).
-  - E2E step definition location (separate from unit/integration steps, one
-    file per capability).
-  - Test infrastructure needed locally (browser driver, test server, test DB,
-    Testcontainers, fake services).
-  - E2E framework choice and justification (Playwright recommended for browser).
-  - Strict-mode config for the e2e runner specifically.
-- Think about: what is the simplest architecture that delivers the proposal?
-  What are the tradeoffs? What existing code is affected? What does the e2e
-  test infrastructure look like? Can the chosen runner actually be forced to
-  fail on an unimplemented step, or does step-body discipline have to carry
-  that weight instead?
+- HOW layer: technology decisions, architecture impact, step def locations
+  (one file per capability, name the exact files), data model changes.
+  Justify non-obvious choices.
+- **Test runner**: pick one fitting the tech stack, document the command. If
+  `verify.command` is still `"givn missing-testrunner"`, set it now.
+- **Strict mode (mandatory)**: most runners treat undefined/pending steps as
+  neither pass nor hard failure by default; some (notably cucumber-jvm with
+  an empty step body) report an outright PASS for a step that does nothing.
+  Document explicitly: the strict-mode flag/config for the chosen runner
+  (`cucumber-rs`: `.fail_on_skipped()`; `cucumber-js`/`cucumber-jvm` CLI:
+  `--strict`; `cucumber-jvm` JUnit Platform Suite: no native flag — enforce
+  via never-empty bodies plus a plugin/listener failing on UNDEFINED/
+  PENDING; `behave`: steps must `raise`), the not-implemented stub for the
+  language (Java `PendingException`, Python `NotImplementedError`, Rust
+  `unimplemented!()`, JS `return "pending"` or `throw new Error(...)`), and
+  the single-scenario run command.
+- **E2E smoke test infrastructure**: e2e runner command (→
+  `verify.e2e_command`), e2e step location (separate, one file per
+  capability), local test infrastructure (browser driver, server, test
+  DB/Testcontainers/fakes), framework choice + justification (Playwright
+  default for browser), strict-mode config for the e2e runner specifically.
+- Think about: simplest architecture that delivers the proposal, tradeoffs,
+  affected existing code, whether the runner can actually be forced to fail
+  on an unimplemented step or whether step-body discipline must carry that weight.
 
 **tasks** (tasks.md):
-- **First task must always be test infrastructure setup, PROVEN strict**:
-  install the runner, configure it with the strict-mode flag from design.md,
-  create step definition skeletons one file per capability, and verify
-  `verify.command` in `givn/config.yaml` is set to the runner chosen in
-  design.md. Include a mandatory **proof-of-strictness sub-task**: write one
-  step using the not-implemented stub from design.md, run the runner,
-  confirm a NON-ZERO exit, and paste the command + output in the task. This
-  task gates all others — a runner that has not been proven to fail on an
-  undefined/empty step makes every later "GREEN" meaningless. This is not
-  optional and has caused real failures: a prior run of this exact workflow
-  checked off every task with an empty step body left in place, and the
-  runner silently reported 100% GREEN.
-- Subsequent tasks: one `- [ ]` checkbox per non-@e2e scenario, covering a
-  full RED → GREEN → REFACTOR → COMMIT cycle. Each RED/GREEN/REFACTOR
-  sub-item has a place to paste the runner's actual output (targeting that
-  scenario only, via the single-scenario run command from design.md) — not
-  just a description of what should happen. Unimplemented steps in RED use
-  the not-implemented stub from design.md; an empty body is never
-  acceptable. GREEN requires listing every production file created/modified
-  — an empty list on a non-reuse scenario is a signal to investigate before
-  accepting the claim. Each scenario ends in a COMMIT sub-item with a place
-  for the commit hash — one atomic commit per scenario referencing its
-  title in the message.
-- **After all non-@e2e scenarios**: add an e2e infrastructure setup task
-  (install e2e framework, create e2e step definition skeleton one file per
-  capability, configure and PROVE strict mode for the e2e runner
-  specifically, set `verify.e2e_command`), then one task per @e2e scenario
-  with its own RED/GREEN/REFACTOR/COMMIT cycle using the e2e runner, same
-  evidence and commit requirements as above.
-- **Every scenario task must include a "Design constraints" block** drawn from
-  design.md, specific to that scenario. This is not optional. The coding agent
-  that executes each task reads the task body as its primary architecture
-  reference — if the constraints are absent, it will take the shortest path
-  that makes the test pass, which may not match the design.
-  Example block (adapt to the actual tech stack and scenario):
+- **First task: test infrastructure setup, PROVEN strict.** Install the
+  runner, configure the strict-mode flag from design.md, create step
+  skeletons one file per capability, set `verify.command`. Mandatory
+  **proof-of-strictness sub-task**: write one step using the not-implemented
+  stub, run the runner, confirm NON-ZERO exit, paste command + output. This
+  gates all others — an unproven runner makes every later GREEN meaningless.
+  Not optional: this exact failure has happened — every step left an empty
+  body, `@wip` removed, runner silently reporting 100% GREEN.
+- **One checkbox per non-@e2e scenario**, full RED→GREEN→REFACTOR→COMMIT.
+  Each RED/GREEN/REFACTOR sub-item has a field for pasted runner output
+  (targeting that scenario only, via design.md's single-scenario command) —
+  not a description. RED's unimplemented steps use the not-implemented
+  stub, never an empty body. GREEN lists every production file
+  created/modified — empty list on a non-reuse scenario means investigate.
+  COMMIT has a field for the hash; message references the scenario title.
+- **After all non-@e2e scenarios**: e2e setup task (install framework, e2e
+  step skeleton one file per capability, PROVE strict mode for the e2e
+  runner, set `verify.e2e_command`), then one task per @e2e scenario with
+  the same cycle and evidence requirements.
+- **Every scenario task has a "Design constraints" block** drawn from
+  design.md, specific to that scenario — not optional. The executing agent
+  reads the task as its primary architecture reference; without constraints
+  it will take the shortest path, which may not match the design.
   ```
   Design constraints:
     - <which module/layer owns this behaviour>
     - <which protocol, data format, or library to use>
     - <what response shape / side-effect is required by the design>
   ```
-- Think about: what is the right order? What setup is needed before features?
-  Are any tasks dependent on each other?
+- Think about: right order, setup needed before features, task dependencies.
 
 **Any custom artifact**:
 - Follow the instruction returned by `givn instructions <id>`.
@@ -294,24 +263,19 @@ implementation is done.
 
 ## Guardrails
 
-- The orchestrator does not write any artifact — it delegates to the architect subagent.
-- Always run `givn status --change <id> --json` to get current state and
-  next step — never hardcode the sequence.
-- The architect subagent must not put implementation detail (HOW) in the
-  proposal or specs.
-- All scenarios must be `@wip` — step definitions are not written during planning.
-- The architect must run `givn lint --change <id>` after writing specs and fix
-  parse errors (exit 1) before continuing.
-- Tasks must use `- [ ]` checkboxes so `givn apply` can track progress.
-- design.md MUST document a concrete strict-mode mechanism and not-implemented
-  stub pattern for the chosen runner — this is the control that prevents the
-  whole change from being fabricated with empty step stubs during implementation.
-- tasks.md's first task MUST include a proof-of-strictness sub-task with a
-  place to paste evidence of a non-zero exit — do not accept a plan that
-  omits this.
-- Every scenario task must end in a COMMIT sub-item, and every RED/GREEN/
-  REFACTOR sub-item must have a place for pasted runner output. A tasks.md
-  that only describes what should happen, with nowhere to record what did
-  happen, is incomplete.
-- If the architect flags critical ambiguities before it can proceed, surface
-  them to the user — do not guess on their behalf.
+- The orchestrator delegates all artifact writing to the architect subagent.
+- Always run `givn status --change <id> --json` for current state — never
+  hardcode the sequence.
+- No implementation detail (HOW) in proposal or specs.
+- All scenarios `@wip` — step definitions are not written during planning.
+- `givn lint --change <id>` after writing specs; fix parse errors (exit 1).
+- Tasks use `- [ ]` checkboxes for `givn apply` to track.
+- design.md must name a concrete strict-mode mechanism and stub pattern —
+  this is what prevents the change from being fabricated with empty stubs
+  during implementation. Do not accept a plan that omits it.
+- tasks.md's first task must include a proof-of-strictness sub-task with a
+  field for non-zero-exit evidence. Do not accept a plan that omits it.
+- Every scenario task ends in COMMIT; every RED/GREEN/REFACTOR line has a
+  field for pasted output. A tasks.md with nowhere to record what happened
+  is incomplete.
+- Critical ambiguities go to the user — the architect does not guess.

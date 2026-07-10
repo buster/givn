@@ -5,10 +5,16 @@
 use anyhow::{Result, bail};
 
 /// Registry of all known addons (id, one-line description).
-const KNOWN_ADDONS: &[(&str, &str)] = &[(
-    "arc42",
-    "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
-)];
+const KNOWN_ADDONS: &[(&str, &str)] = &[
+    (
+        "arc42",
+        "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",
+    ),
+    (
+        "absolute_mode",
+        "Absolute Mode communication policy — manages a fenced block in AGENTS.md",
+    ),
+];
 
 /// `givn addons list` — print all known addons and their enabled/disabled status.
 pub fn run_list() -> Result<()> {
@@ -57,14 +63,20 @@ pub fn run_enable(name: &str) -> Result<()> {
     // Addon-specific scaffolding.
     if name == "arc42" {
         scaffold_arc42()?;
+        println!("The '{name}' artifact is now part of the effective workflow.");
+        println!("It will appear after 'design' in `givn status`.");
+        println!();
+        println!("Next steps:");
+        println!("  givn status              — see the updated workflow");
+        println!("  givn eject {name}:instruction   — customise the instruction (optional)");
+    } else if name == "absolute_mode" {
+        let project_root = std::env::current_dir()?;
+        crate::cli::absolute_mode::apply(&project_root)?;
+        println!("Wrote the Absolute Mode policy block to AGENTS.md.");
+        println!("Only the fenced <!-- givn:begin:absolute-mode --> block was added;");
+        println!("the rest of AGENTS.md is untouched.");
     }
 
-    println!("The '{name}' artifact is now part of the effective workflow.");
-    println!("It will appear after 'design' in `givn status`.");
-    println!();
-    println!("Next steps:");
-    println!("  givn status              — see the updated workflow");
-    println!("  givn eject {name}:instruction   — customise the instruction (optional)");
     Ok(())
 }
 
@@ -128,8 +140,17 @@ pub fn run_disable(name: &str) -> Result<()> {
     set_addon(name, false)?;
     println!("disabled addon '{name}' in givn/config.yaml");
     println!();
-    println!("The '{name}' artifact is no longer part of the workflow.");
-    println!("Existing docs/arc42/ files are not deleted.");
+
+    if name == "arc42" {
+        println!("The '{name}' artifact is no longer part of the workflow.");
+        println!("Existing docs/arc42/ files are not deleted.");
+    } else if name == "absolute_mode" {
+        let project_root = std::env::current_dir()?;
+        crate::cli::absolute_mode::remove(&project_root)?;
+        println!("Removed the Absolute Mode block from AGENTS.md.");
+        println!("Any other content in AGENTS.md was left untouched.");
+    }
+
     Ok(())
 }
 

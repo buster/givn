@@ -1,3 +1,4 @@
+pub mod absolute_mode;
 pub mod addons;
 pub mod apply;
 pub mod archive;

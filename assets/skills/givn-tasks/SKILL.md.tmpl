@@ -16,19 +16,16 @@ Write the implementation task breakdown for change `{{CHANGE_ID}}`.
 
 ## Strict mode must be proven first (mandatory setup task)
 
-The single most important task in the whole file is the first one. Empty or
-unimplemented step definitions are indistinguishable from a PASS in most
-Cucumber runners — this has caused an entire change to be checked off
-complete with every step left as an empty stub and the runner reporting
-100% GREEN. The setup task MUST:
+Empty/unimplemented steps are indistinguishable from a PASS in most
+Cucumber runners — this has checked off a whole change complete with every
+step an empty stub and the runner reporting 100% GREEN. The setup task MUST:
 
 - Configure the runner's strict-mode flag/config from design.md.
-- Include a **proof-of-strictness check**: write a step using the
-  language's not-implemented stub (see design.md's Strict Mode section),
-  run the runner, and confirm a NON-ZERO exit. Paste the command + output
-  in the task. If it exits 0, fix the config and re-prove before continuing.
-- Create step definition skeletons organised **one file per capability**
-  (from design.md's Step Definitions table) — never one file for everything.
+- **Proof-of-strictness**: write a step using the not-implemented stub (see
+  design.md's Strict Mode section), run the runner, confirm NON-ZERO exit.
+  Paste command + output. Exit 0 → fix the config and re-prove.
+- Create step skeletons **one file per capability** (design.md's Step
+  Definitions table) — never one file for everything.
 
 ## The TDD loop (one scenario at a time, ending in a commit)
 

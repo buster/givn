@@ -32,11 +32,10 @@ Everything technical belongs here — do not add implementation details to the s
 
 ## Strict mode (mandatory)
 
-Most Cucumber runners treat undefined/pending steps as neither pass nor
-hard failure by default — some even treat an empty step method body
-(Java/cucumber-jvm especially) as an outright PASS. This is the exact
-defect that has caused an entire change to be checked off complete while
-nothing was implemented. Document explicitly:
+Most runners treat undefined/pending steps as neither pass nor hard failure
+by default; some (notably Java/cucumber-jvm with an empty step body) report
+an outright PASS. This has checked off whole changes complete with nothing
+implemented. Document explicitly:
 
 - The strict-mode flag/config for the chosen runner (e.g. `cucumber-rs`:
   `.fail_on_skipped()`; `cucumber-js`: `--strict`; `cucumber-jvm` CLI:

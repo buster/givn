@@ -4,9 +4,8 @@ description: (Re-)write the scenario-by-scenario RED/GREEN/REFACTOR task list fo
 
 Write (or re-write) the implementation task breakdown for a givn change.
 
-For starting a new change, use `/givn-propose` instead — it writes the
-proposal, spec, design, and tasks in one pass.
-Use this command to redo or extend the task list for an existing change.
+For starting a new change, use `/givn-propose` instead. Use this command to
+redo or extend the task list for an existing change.
 
 **Input**: Optionally specify a change ID after `/givn-tasks`. If omitted, infer
 from conversation context, or auto-select if only one active change exists. If
@@ -22,7 +21,7 @@ ambiguous, list changes and ask.
 givn status
 ```
 
-Identify the active change. Announce: "Using change: <id>".
+Announce: "Using change: <id>".
 
 ### 2. Get tasks instructions
 
@@ -30,155 +29,102 @@ Identify the active change. Announce: "Using change: <id>".
 givn instructions tasks --change <id>
 ```
 
-Parse the output for:
-- `output`: path to write the tasks (typically `givn/changes/<id>/tasks.md`)
-- `template`: structure to follow
-- `instruction`: guidance on what to produce
-- `context` / `rules`: constraints for you — **do not copy these into the file**
-- `dependencies`: completed artifacts to read (proposal, specs, design)
+Parse `output`, `template`, `instruction`, `context`/`rules` (do not copy
+into the file), `dependencies`.
 
 ### 3. Read the inputs
 
-Read:
-- `givn/changes/<id>/design.md` — HOW layer (which modules, step def locations)
-- `givn/changes/<id>/specs/<capability>/<capability>.feature` — the scenarios to implement
-- `givn/changes/<id>/proposal.md` — WHAT/WHY for context
+`givn/changes/<id>/design.md` (step def locations, strict-mode config, stub
+pattern), `.../specs/<capability>/<capability>.feature`, `.../proposal.md`.
 
 ### 4. Write the task list
 
 Write `givn/changes/<id>/tasks.md` as a checkboxed breakdown.
 
-**First task: test infrastructure setup (always required), including
-proof-of-strictness**
-
-Before any scenario task, add a setup task. This is the single most
-important task in the whole file: it exists because a runner that silently
-passes undefined/empty steps makes every later "GREEN" meaningless. This has
-happened in practice — every step left as an empty stub, `@wip` removed
-from all of them, `verify.command` exiting 0, and 0% of the feature actually
-built.
+**Setup task (first, always). Not done until proof-of-strictness output
+shows non-zero exit** — a silently-passing runner makes every later GREEN
+meaningless.
 
 ```markdown
 - [ ] Setup: configure test infrastructure, strict mode, and verify.command
-      - Install/configure the test runner chosen in design.md
-        (e.g. add Cucumber dependency, create step definitions skeleton,
-        configure test framework). Step definitions go ONE FILE PER
-        CAPABILITY (from design.md's Step Definitions table) — never a
-        single file for the whole change.
-      - Configure the runner's strict-mode flag from design.md (undefined/
-        pending steps must FAIL, not silently pass or skip).
-      - PROOF OF STRICTNESS (mandatory): write one step using the language's
-        "not implemented" stub from design.md (e.g. Java:
-        `throw new io.cucumber.java.PendingException("TODO")`, Python:
-        `raise NotImplementedError`, Rust: `unimplemented!()`). Run the
-        runner. Confirm it exits NON-ZERO. Paste the command + output in
-        this task. If it exits 0, fix the strict-mode config and re-prove —
-        do not proceed until this is non-zero.
-      - Set `verify.command` in `givn/config.yaml` to the runner from design.md
-        if not already done
-      - Run: <verify.command> → must exit 0 with the proof step removed/fixed
-        (even with all real scenarios still @wip)
+      - Install/configure the runner from design.md. Step definitions ONE
+        FILE PER CAPABILITY — never one file for the whole change.
+      - Configure the runner's strict-mode flag from design.md.
+      - PROOF OF STRICTNESS (mandatory): write one step using the
+        not-implemented stub from design.md. Run the runner. Confirm
+        NON-ZERO exit. Paste command + output. If exit 0, fix strict-mode
+        config and re-prove before continuing.
+      - Set `verify.command` in `givn/config.yaml`.
+      - Run: <verify.command> → must exit 0 (proof step removed/fixed,
+        real scenarios still @wip).
 ```
 
-This task gates all others — the runner must be PROVEN strict before any RED
-phase begins. A checked box on this task without pasted proof-of-strictness
-output is incomplete.
-
-**Subsequent tasks: one per non-@e2e scenario, each ending in a commit**
-
-Each task body must embed the design constraints that are relevant to that
-specific scenario. The coding agent that executes the task may not read
-design.md — everything it needs to follow the architecture must be in the task.
+**One task per non-@e2e scenario, ending in a commit.** Embed the design
+constraints relevant to that scenario — the executing agent may not read
+design.md, so everything needed must be in the task.
 
 ```markdown
 - [ ] <capability>: <Scenario title>
       Design constraints:
-        - <copy the architectural decisions from design.md that apply here>
-          e.g. which layer/module handles this, which protocol or data format
-          to use, which framework/library to call, which response shape to
-          return. Be specific enough that there is no ambiguous shortcut.
-      RED:      Remove @wip from this scenario. Write step definitions — any
-                step without a real assertion yet uses the language's
-                "not implemented" stub (see design.md). NEVER an empty body
-                (`{}`, bare `pass`, bare `return`) — that is indistinguishable
-                from a pass and is the exact failure mode this process exists
-                to prevent.
-                Run: <verify.command>, TARGETING THIS SCENARIO ONLY (use the
-                single-scenario run command from design.md) → MUST FAIL.
-                Paste the output in this task as evidence.
-      GREEN:    Replace stubs with real assertions. Write the minimum
-                production code that makes this scenario pass, following the
-                design constraints above exactly. List every production file
-                created/modified — if the list is empty and this is not a
-                pure step-reuse case, STOP and investigate before claiming
-                GREEN.
-                Run: <verify.command>, targeting this scenario only → PASSES.
-                Paste the output as evidence.
-      REFACTOR: Clean up. Run: <verify.command>, targeting this scenario
-                only → still PASSES. Paste the output as evidence.
-      COMMIT:   One atomic commit for this scenario's RED+GREEN+REFACTOR.
-                Message references the scenario title verbatim, e.g.
-                "feat(<capability>): <scenario title>". Record the commit
-                hash in this task.
+        - <architectural decisions from design.md that apply here — layer/
+          module, protocol/data format, library, response shape. Specific
+          enough that no ambiguous shortcut exists.>
+      RED:      Remove @wip. Unimplemented steps use the not-implemented
+                stub — never an empty body. Run <verify.command>, targeting
+                this scenario only (single-scenario command from design.md)
+                → MUST FAIL. Paste output.
+      GREEN:    Replace stubs with real assertions. Write minimum production
+                code per the design constraints. List every production file
+                created/modified — empty list on a non-reuse scenario means
+                stop and investigate. Run targeting this scenario → PASSES.
+                Paste output.
+      REFACTOR: Clean up. Re-run targeting this scenario → still PASSES.
+                Paste output.
+      COMMIT:   One commit for RED+GREEN+REFACTOR, message references the
+                scenario title, e.g. "feat(<capability>): <title>". Record
+                the hash.
 ```
 
-**After all non-@e2e scenarios: e2e infrastructure setup + @e2e scenario tasks**
-
-After all non-@e2e scenario tasks, add the e2e setup and @e2e scenario tasks:
+**After all non-@e2e scenarios: e2e setup + one task per @e2e scenario.**
 
 ```markdown
 - [ ] Setup: configure e2e test infrastructure, strict mode, and verify.e2e_command
-      - Install/configure the e2e framework chosen in design.md
-        (e.g. Playwright, Testcontainers, Cucumber with @e2e tag filtering)
-      - Create the e2e step definition skeleton, one file per capability
-        (separate from unit/integration step definitions)
-      - Configure strict mode for the e2e runner and PROVE IT (same
-        proof-of-strictness check as the main setup task, run against this
-        runner). Paste the command + non-zero-exit output.
-      - Set `verify.e2e_command` in `givn/config.yaml` to the e2e runner
-      - Document how to start/stop local test environment if needed
-      - Run: <verify.e2e_command> → must exit 0
+      - Install the e2e framework from design.md (Playwright, Testcontainers, etc.)
+      - Create e2e step skeleton, one file per capability, separate location.
+      - Configure and PROVE strict mode for the e2e runner (same procedure
+        as main setup). Paste command + non-zero-exit output.
+      - Set `verify.e2e_command`.
+      - Document local environment start/stop if needed.
+      - Run: <verify.e2e_command> → must exit 0.
 
 - [ ] @e2e <capability>: <E2E Scenario title>
       Design constraints:
-        - <copy the e2e infrastructure decisions from design.md>
-          e.g. which browser driver, how the server starts, test database setup,
-          e2e step definition location.
-      RED:      Remove @wip. Write e2e step definitions — unimplemented steps
-                use the language's "not implemented" stub, never an empty
-                body. Run: <verify.e2e_command>, targeting this scenario
-                only → MUST FAIL. Paste evidence.
-      GREEN:    Set up test infrastructure, replace stubs with real
+        - <e2e infrastructure decisions from design.md — browser driver,
+          server startup, test DB, e2e step location.>
+      RED:      Remove @wip. Unimplemented steps use the stub. Run
+                <verify.e2e_command>, targeting this scenario only → MUST
+                FAIL. Paste evidence.
+      GREEN:    Set up test infrastructure. Replace stubs with real
                 assertions driving the actual interface. List files
-                created/modified.
-                Run: <verify.e2e_command>, targeting this scenario only →
-                PASSES. Paste evidence.
-      REFACTOR: Clean up e2e code. Run: <verify.e2e_command>, targeting this
-                scenario only → still PASSES. Paste evidence.
-      COMMIT:   One atomic commit, message references the scenario title.
-                Record the commit hash.
+                touched. Run targeting this scenario → PASSES. Paste evidence.
+      REFACTOR: Clean up. Re-run → still PASSES. Paste evidence.
+      COMMIT:   One commit, message references the scenario title. Record
+                the hash.
 ```
 
 **Rules:**
-- First task is always infrastructure setup, and it is NOT done until
-  proof-of-strictness output is pasted in and shows a non-zero exit.
-- One scenario task = one full RED/GREEN/REFACTOR/COMMIT cycle.
-- Every scenario task must include a "Design constraints" block populated from
-  design.md — never leave it empty or generic.
-- A step definition body is NEVER left empty. Unimplemented steps use the
-  language's "not implemented" stub from design.md.
-- Every RED/GREEN/REFACTOR line requires pasted command output as evidence —
-  not just a description of what should happen.
-- GREEN requires listing production files created/modified. An empty list on
-  a non-reuse scenario is a signal the "pass" is fake.
-- Every scenario ends in a COMMIT sub-task with a recorded hash.
-- Order: non-@e2e scenarios first (by dependency), then e2e setup, then @e2e scenarios.
-- `givn lint` is a static check only — it does NOT run tests.
-- GREEN for non-@e2e is confirmed by `verify.command` only, after strictness
-  is proven.
-- GREEN for @e2e is confirmed by `verify.e2e_command` only, after strictness
-  is proven.
-- Never conflate lint, `verify.command`, or `verify.e2e_command`.
+- Setup task is not done until proof-of-strictness output (non-zero exit)
+  is pasted in.
+- One scenario = one full RED/GREEN/REFACTOR/COMMIT cycle.
+- Every scenario task has a populated Design constraints block — never
+  empty or generic.
+- Step body is never empty; unimplemented steps use the stub from design.md.
+- Every RED/GREEN/REFACTOR line requires pasted output, not a description.
+- GREEN requires a list of production files touched.
+- Every scenario ends in a COMMIT with a recorded hash.
+- Order: non-@e2e scenarios (by dependency), then e2e setup, then @e2e.
+- `givn lint` is static only; GREEN comes from the runners, after
+  strictness is proven.
 
 ### 5. Check status
 
@@ -186,17 +132,15 @@ After all non-@e2e scenario tasks, add the e2e setup and @e2e scenario tasks:
 givn apply --change <id>
 ```
 
-Confirms task tracking is live.
-
 ### 6. Show next step
 
 ```sh
 givn status --change <id> --json
 ```
 
-Read `next_required.id`. If it is `review` (or `all_required_done` is true),
-report: "Ready to implement. Run `/givn-implement`."
-If there are further planning artifacts after `tasks`, report that instead.
+Read `next_required.id`. If `review` (or `all_required_done`), report:
+"Ready to implement. Run `/givn-implement`." Otherwise report the next
+planning artifact.
 
 ---
 
@@ -216,22 +160,13 @@ artifact if the manifest defines one after `tasks`).
 
 ## Guardrails
 
-- One task per scenario — do not collapse multiple scenarios into one task.
-- Read design.md before writing tasks — step def locations, strict-mode
-  config, and the not-implemented stub pattern all matter and must be
-  copied into the setup task verbatim.
-- Every scenario task must have a populated "Design constraints" block drawn
-  from design.md. A task with no constraints, or with placeholder text, is
-  incomplete — the coding agent will have no anchor and will take shortcuts.
-- The setup task MUST include a proof-of-strictness step with a place to
-  paste the command and its non-zero-exit output. Do not omit this — it is
-  the single control that prevents an entire change from being fabricated
-  with empty step stubs while the runner reports GREEN.
-- Every scenario task's RED/GREEN/REFACTOR lines must have a place to paste
-  runner output, and GREEN must have a place to list production files
-  touched. Do not write tasks that only describe what should happen without
-  a place to record what actually happened.
-- Every scenario task ends with a COMMIT sub-task with a place for the
-  commit hash.
-- Tasks must be checkboxes (`- [ ]`) so `givn apply` can track progress.
+- One task per scenario — never collapse multiple scenarios into one.
+- Read design.md before writing tasks; copy its strict-mode config and stub
+  pattern into the setup task verbatim.
+- A task with no Design constraints, or placeholder text, is incomplete.
+- The setup task's proof-of-strictness step is mandatory — it is the single
+  control preventing a change from being fabricated with empty stubs.
+- Every scenario task needs pasted-output fields for RED/GREEN/REFACTOR and
+  a files-touched list for GREEN — not just a description of what should happen.
+- Tasks are checkboxes (`- [ ]`) for `givn apply` to track.
 - Verify the file exists after writing.

@@ -1,7 +1,9 @@
 use anyhow::Result;
 
 /// Regenerate skills and agent commands from current templates.
-/// `AGENTS.md` is intentionally not touched — it is user-owned.
+/// `AGENTS.md` is otherwise user-owned: givn writes to it only inside its
+/// own fenced `<!-- givn:begin:* -->` blocks (e.g. the `absolute_mode`
+/// addon), and only when the corresponding addon is enabled.
 pub fn run_sync() -> Result<()> {
     let project_root = std::env::current_dir()?;
 

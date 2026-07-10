@@ -176,31 +176,18 @@ Write `givn/changes/<id>/tasks.md` with:
 
 **First task: test infrastructure setup (or verification), PROVEN strict**
 
-- If no Gherkin runner is configured: run `verify.command` — if it is still
-  the `givn missing-testrunner` sentinel, its output prints setup guidance.
-  Follow that guidance to install and configure a Gherkin/Cucumber runner
-  that executes the `.feature` files under `givn/specs/`. Configure the
-  runner's strict-mode flag (undefined/pending steps must FAIL, not silently
-  pass or skip). Set `verify.command` in `givn/config.yaml` to the exact
-  runner invocation (e.g. `cargo test --test features_runner`). Create the
-  Gherkin runner test binary and the step-definition module skeleton, one
-  file per capability. Step definitions are shared glue — never a parallel
-  hand-maintained test file.
-- If a Gherkin runner already exists: do not assume it is strict — run the
-  proof-of-strictness check below regardless.
-- **Proof of strictness (mandatory)**: write one step using the language's
-  not-implemented stub (e.g. Java: `throw new
-  io.cucumber.java.PendingException("TODO")`, Python:
-  `raise NotImplementedError(...)`, Rust: `unimplemented!()`). Run the
-  runner. Confirm a NON-ZERO exit. Paste the command + output in this task.
-  If it exits 0, fix the strict-mode config before continuing — this has
-  previously caused an entire characterization to be checked off complete
-  while every step was an empty stub.
-- Verify the runner exits 0 (or exits with only @wip-related failures)
-  before characterization begins.
-- If `verify.e2e_command` is configured and the feature being reverse-engineered
-  has `@e2e` scenarios, verify it exits 0 as well (with its own
-  proof-of-strictness check).
+- No runner configured: install one, configure its strict-mode flag, set
+  `verify.command`, create the runner binary and step skeleton one file per
+  capability.
+- Runner exists: do not assume strict — run the proof below regardless.
+- **Proof of strictness (mandatory)**: write one step using the
+  not-implemented stub for the language. Run the runner, confirm NON-ZERO
+  exit, paste command + output. Exit 0 = fix the strict-mode config before
+  continuing — this exact defect has previously checked off a whole
+  characterization complete with every step an empty stub.
+- Confirm the runner exits 0 (or only @wip-related failures) before
+  characterization begins. If `verify.e2e_command` is configured and the
+  feature has `@e2e` scenarios, prove it strict too.
 
 **Subsequent tasks: one characterization cycle per scenario, in .feature
 order, each ending in a commit**
@@ -294,13 +281,10 @@ RED/GREEN/REFACTOR loop and make the specs executable.
   be guessed from documentation alone.
 - Suspected bugs are flagged in the Feature: description block — never fixed.
 - Production code is never changed during planning. Testability seams are
-  documented per-task in tasks.md but applied during `/givn-characterize`.
-- Tasks must use `- [ ]` checkboxes so `givn apply` can track progress.
-- The setup task MUST include a proof-of-strictness sub-task with a place
-  to paste a non-zero-exit result — omitting this is how an entire
-  characterization can be checked off complete while every step is an
-  empty, silently-passing stub.
-- Every scenario task must have a place to paste RED/GREEN/REFACTOR output
-  and a commit hash — not just a description of the intended steps.
-- Run `givn lint --change <id>` after writing specs and fix parse errors
-  (exit 1) before continuing.
+  documented per-task but applied during `/givn-characterize`.
+- Tasks use `- [ ]` checkboxes for `givn apply` to track.
+- The setup task's proof-of-strictness sub-task is mandatory — omitting it
+  is how a characterization gets checked off complete with empty stubs.
+- Every scenario task needs a field for RED/GREEN/REFACTOR output and a
+  commit hash, not just a description of intended steps.
+- `givn lint --change <id>` after writing specs; fix parse errors (exit 1).

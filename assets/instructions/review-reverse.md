@@ -1,127 +1,83 @@
 # Instruction: review-reverse
 
-Perform a reverse-engineering coverage review. The goal is to confirm that the
-characterization is complete, that no behaviour was changed during refactoring,
-and that all discovered bugs and code smells are documented.
+Confirm characterization is complete, no behaviour changed during
+refactoring, and all discovered bugs/code smells are documented.
 
-**Step 0 (mandatory, before anything else): the fabrication audit.**
+## Step 0 (mandatory, first): fabrication audit
 
-Same mechanical check as the prescriptive `review` instruction — a
-characterization change can also reach review with every task checked off
-and empty step stubs left behind. Before trusting tasks.md:
+Same mechanical check as the prescriptive `review` instruction. Before
+trusting tasks.md:
 
 1. Grep every step definition file for empty/no-op bodies (`{}`, bare
-   `pass`, bare `return`, no assertion library reference). Any match is a
-   fabricated characterization — the scenario asserts nothing about
-   observed behaviour, regardless of what tasks.md claims.
-2. Cross-check that every checked-off `[x]` characterization task has a
-   corresponding commit, and that the commit's diff contains real assertion
-   code (not just the `.feature` file).
+   `pass`/`return`, no assertion reference). Any match = fabricated
+   characterization.
+2. Cross-check every checked `[x]` task has a commit whose diff contains
+   real assertion code, not just the `.feature` file.
 3. Confirm the runner's strict-mode proof is present and passing.
-4. Any fabricated step or missing commit is unfinished characterization —
-   reopen the task and redo it for real before continuing.
+4. Any finding is unfinished characterization — reopen the task, redo it
+   for real.
 
-Record the audit result in review.md even when clean.
+Record the result even when clean.
 
-**Before any work: read the shared coverage mechanics.**
-Read the `givn-review` skill (at `.agents/skills/givn-review/SKILL.md` or the
-equivalent path in your agent's skill directory) in full. It describes the
-coverage gate (completeness, not percentage), gap classification, and sign-off
-process. The rules below OVERLAY the givn-review skill for reverse-engineering.
+## Coverage mechanics (overlays `givn-review` skill)
 
-**First: record the coverage number.**
-Run the coverage tool and note the overall percentage (line and/or branch).
-This is a fact recorded in the artifact — not a gate.
+Read the `givn-review` skill first — it defines the coverage gate
+(completeness, not percentage), gap classification, and sign-off. The
+following overrides its rules for reverse-engineering.
 
-**Coverage MUST include the Gherkin runner tests.** The coverage tool must be
-configured to instrument every test binary that `verify.command` executes —
-crucially including the Gherkin/Cucumber runner binary that executes the
-`.feature` files under `givn/specs/`. A coverage run that instruments only
-unit tests (and omits the `.feature` execution) is invalid: it undercounts
-the real coverage and misleads the gap classification below. If the project's
-coverage tool does not automatically pick up the Gherkin runner binary,
-configure it to do so (most tools instrument all test binaries by default
-when invoked over the whole test suite; verify this in the raw output).
+Record the coverage percentage and raw tool output as a fact. Coverage MUST
+include the Gherkin runner binary — instrumenting unit tests alone
+undercounts and misleads classification.
 
-**Redundant unit tests.** When a unit test exercises behaviour that is fully
-covered by a `.feature` scenario (the scenario drives the same code path
-through the black-box boundary), the unit test is redundant. The `.feature`
-file is the source of truth. In reverse-engineering, removing redundant unit
-tests is part of characterization — flag each removal in review.md under
-"Spec corrections" or a dedicated "Redundant unit tests removed" list. (Keep
-unit tests only for code paths that no `.feature` scenario reaches.)
+Redundant unit tests (behaviour already covered by a `.feature` scenario)
+are removed as part of characterization — flag each removal under "Redundant
+unit tests removed" below.
 
-**Coverage classification (three buckets — reverse-mode rules):**
+## Classification (reverse-mode — overrides `givn-review`)
 
-These rules OVERRIDE the givn-review skill's gap resolution:
+1. Dead code → flag as `@givn.removed` follow-up candidate. Do NOT delete.
+2. Missing test coverage → flag as `@givn.added` follow-up candidate. Do NOT
+   add during review.
+3. Legitimately hard to test → concrete technical justification.
 
-1. **Dead code** → flag as follow-up `@givn.removed` candidate. Do NOT delete.
-2. **Missing test coverage** → flag as follow-up `@givn.added` candidate. Do NOT add during review.
-3. **Legitimately hard to test** → write concrete technical justification.
+## Behaviour-preservation invariant
 
-**Behaviour-preservation invariant:**
-- Re-run `verify.command` after all refactoring. All characterization tests
-  must still be GREEN.
-- If any characterization test went RED during the change (a refactor changed
-  behaviour), the invariant was violated. Flag it in review.md with: which
-  scenario, which refactor, what happened. The refactor should have been
-  reverted during characterization — if it wasn't, flag as a blocker.
+Re-run `verify.command` after all refactoring — all characterization tests
+must still be GREEN. If any went RED during the change, the invariant was
+violated: flag scenario, refactor, and what happened. It should have been
+reverted during characterization; if not, flag as a blocker.
 
-**Mandatory reporting sections in review.md:**
+## Mandatory reporting sections in review.md
 
-1. **Coverage** — percentage and raw tool output.
-2. **Coverage gap table** — bucket, region, action for each gap.
-3. **Spec corrections** — scenarios that were updated during characterization
-   because the initial inference (from reading code/docs) was wrong. For each:
-   - Scenario title
-   - What was originally inferred
-   - What the actual behaviour is
-   - Root cause (documentation wrong / code ambiguous)
-4. **Documentation corrections** — documentation (README, arc42, tasks.md,
-   code comments) that was updated because it was wrong. For each:
-   - Document and section
-   - What it said before
-   - What it says now
-5. **Code smell markers** — all `TODO: REVERSE-ENGINEERING NOTE:` comments
-   added during characterization. For each:
-   - File and line
-   - What was misleading
-   - Actual behaviour
-   - Suggested follow-up refactoring
-6. **Suspected bugs** — all bugs discovered during characterization. For each:
-   - Description of observed vs correct behaviour
-   - Scenario that captures the buggy AS-IS behaviour
-   - Follow-up candidate: `@givn.modified` for that scenario
-7. **Boundary failures** — scenarios that were commented out because the
-   black-box boundary proved untestable. For each:
-   - Scenario title
-   - What was attempted
-   - Why the boundary failed
-   - Suggested seam or boundary change for a follow-up change
-8. **Redundant unit tests removed** — unit tests deleted during
-   characterization because a `.feature` scenario covers the same code path
-   through the black-box boundary. For each:
-   - The unit test (file + function name)
-   - The `.feature` scenario that supersedes it
-   - Confirm coverage for the region is unchanged after removal
-9. **Test suite output and result** — final GREEN confirmation.
-10. **Sign-off checklist** — all items checked.
+1. Coverage — percentage and raw tool output.
+2. Coverage gap table — bucket, region, action.
+3. Spec corrections — scenario title, original inference, actual behaviour,
+   root cause (documentation wrong / code ambiguous).
+4. Documentation corrections — document/section, before, after.
+5. Code smell markers — every `TODO: REVERSE-ENGINEERING NOTE:` added: file,
+   line, what was misleading, actual behaviour, suggested refactor.
+6. Suspected bugs — observed vs correct behaviour, scenario capturing the
+   AS-IS behaviour, `@givn.modified` follow-up candidate.
+7. Boundary failures — scenario title, what was attempted, why the boundary
+   failed, suggested seam/boundary change.
+8. Redundant unit tests removed — test (file + function), superseding
+   scenario, confirmation coverage is unchanged.
+9. Test suite output and result — final GREEN confirmation.
+10. Sign-off checklist — all items checked.
 
-**Sign-off checklist:**
-- All scenarios pass (test runner exits 0).
-- Coverage was measured across all test binaries, including the Gherkin
-  runner that executes the `.feature` files (not unit tests alone).
-- Every coverage gap classified and resolved (or justified).
-- No `@wip` tags remain in the delta spec.
-- The delta spec contains no implementation-layer detail.
-- All spec corrections documented.
-- All documentation corrections documented.
-- All code smell markers listed.
-- All suspected bugs flagged as follow-up candidates (NOT fixed).
-- All redundant unit tests removed and listed (with the superseding
-  `.feature` scenario).
-- Behaviour-preservation invariant confirmed (all characterization tests
-  GREEN after refactoring).
+## Sign-off checklist
 
-**Review result:** End the file with `REVIEW: PASS` or `REVIEW: FAIL`.
-The archive gate reads this marker.
+- Fabrication audit: clean.
+- Test runner exits 0.
+- Coverage measured across all test binaries, including the Gherkin runner.
+- Every coverage gap classified and resolved.
+- No `@wip` tags remain. No implementation-layer detail in the spec.
+- All spec corrections, documentation corrections, code smell markers, and
+  suspected bugs documented (bugs flagged, never fixed).
+- All redundant unit tests removed and listed with their superseding scenario.
+- Behaviour-preservation invariant confirmed.
+
+## Result
+
+End the file with `REVIEW: PASS` or `REVIEW: FAIL`. The archive gate reads
+this marker.

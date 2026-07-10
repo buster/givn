@@ -14,7 +14,9 @@ const BANNER: &str = r#"
 
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
 /// versioned `givn/config.yaml`. Generates skills. Idempotent.
-/// `AGENTS.md` is left untouched (user-owned).
+/// `AGENTS.md` is otherwise user-owned: givn writes to it only inside its
+/// own fenced `<!-- givn:begin:* -->` blocks (e.g. the `absolute_mode`
+/// addon), and only when the corresponding addon is enabled.
 pub fn run(force: bool, no_extras: bool) -> Result<()> {
     let project_root = std::env::current_dir()?;
 

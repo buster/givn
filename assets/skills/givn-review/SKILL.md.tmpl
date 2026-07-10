@@ -15,11 +15,9 @@ Complete the coverage review for change `{{CHANGE_ID}}`.
 
 ## Step 0: fabrication audit (mandatory, before anything else)
 
-A change can reach review with every task checked off and the runner
-exiting 0, while nearly nothing was actually implemented — this happens
-when step definitions are left as empty stubs (indistinguishable from a
-PASS in most Cucumber runners) and `@wip` is removed anyway. This is a
-mechanical check, not a judgment call:
+A change can reach review with every task checked off, the runner exiting
+0, and almost nothing implemented — if step definitions were left as empty
+stubs. Mechanical check, not a judgment call:
 
 1. Grep every step definition file for empty/no-op bodies (`{}`, bare
    `pass`, bare `return`, no assertion library reference). Record findings.

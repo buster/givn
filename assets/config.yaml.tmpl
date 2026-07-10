@@ -128,7 +128,11 @@ verify:
 # Opt-in pre-packaged artifact sets. See arc42 ch.8.11.
 #
 # addons:
-#   arc42: false    # set to true to enable the arc42 documentation artifact
+#   arc42: false           # set to true to enable the arc42 documentation artifact
+#   absolute_mode: false   # set to true to enable the Absolute Mode communication
+#                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
+#                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
+#                          # Toggle with: givn addons enable|disable absolute_mode
 
 # --- arc42 configuration (requires addons.arc42: true) -----------------------
 # arc42:

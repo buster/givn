@@ -8,7 +8,10 @@ use crate::skills::render::{
 /// - `.opencode/skills/<name>/SKILL.md` (opencode mirror)
 /// - `.opencode/commands/<name>.md`     (opencode slash commands)
 ///
-/// `AGENTS.md` at the repo root is intentionally NOT touched — it is user-owned.
+/// `AGENTS.md` at the repo root is otherwise user-owned. The only exception:
+/// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it
+/// (currently just the `absolute_mode` addon block), kept in sync with the
+/// addon flag on every call to `sync`.
 use anyhow::Result;
 use std::path::Path;
 
@@ -52,6 +55,14 @@ pub fn sync(project_root: &Path) -> Result<()> {
         let content = resolve_command_template_for(name)?;
         write_opencode_command(project_root, name, &content)?;
         println!("  synced command: /{name}");
+    }
+
+    // Self-healing AGENTS.md block: keep it present/absent in sync with the
+    // addon flag on every init/sync, independent of how it got out of sync.
+    if manifest.addons.absolute_mode {
+        crate::cli::absolute_mode::apply(project_root)?;
+    } else {
+        crate::cli::absolute_mode::remove(project_root)?;
     }
 
     Ok(())

@@ -134,6 +134,11 @@ pub struct Addons {
     /// Enable the arc42 documentation artifact.
     #[serde(default)]
     pub arc42: bool,
+    /// Enable the Absolute Mode communication policy. When true, givn
+    /// manages a fenced `<!-- givn:begin:absolute-mode -->` block in the
+    /// project's AGENTS.md containing the policy text.
+    #[serde(default)]
+    pub absolute_mode: bool,
 }
 
 impl Manifest {
