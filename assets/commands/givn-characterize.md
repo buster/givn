@@ -65,7 +65,8 @@ Read once; pass to every subagent:
 - `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
   (the Feature: description block contains the black-box boundary and
   suspected bugs)
-- `givn/config.yaml` — resolve the actual `verify.command`
+- `givn/config.yaml` — resolve the actual `verify.command` (and
+  `verify.e2e_command` if configured)
 
 ---
 
@@ -447,5 +448,6 @@ Task 4/7: ...
 - Suspected bugs are flagged, never fixed.
 - All TODO: REVERSE-ENGINEERING NOTE markers are intentional debt markers —
   never removed during characterization.
-- `givn lint` is a static check only — GREEN comes from `<verify.command>`.
+- `givn lint` is a static check only — GREEN comes from `<verify.command>` (and
+  `<verify.e2e_command>` for @e2e scenarios, if present).
 - The archive gate will hard-block if `REVIEW: PASS` is absent or hooks fail.

@@ -32,9 +32,27 @@ Write the Gherkin spec delta for change `{{CHANGE_ID}}`.
 - One scenario = one observable behaviour.
 - `@givn.removed` scenarios include exactly one placeholder step.
 - On archive, all `@givn.*` tags are stripped automatically.
+  The `@e2e` tag is preserved (it is not a `@givn.*` tag).
+
+## End-to-end smoke tests (`@e2e`)
+
+Every capability MUST include at least one `@e2e` smoke-test scenario that
+exercises the real interaction surface (browser, CLI, API, etc.).
+
+- Tag `@e2e` alongside the delta tag: `@givn.added @e2e @wip`.
+- `@e2e` scenarios run via `verify.e2e_command`, not `verify.command`.
+- They use separate step definitions (location documented in `design.md`).
+- They cover the critical happy path through the real external boundary.
+- They are NOT unit tests wrapped in Gherkin, NOT in-process integration tests.
 
 ## Verify command
 
+Unit/integration:
 ```
 {{VERIFY_COMMAND}}
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```

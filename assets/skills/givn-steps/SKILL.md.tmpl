@@ -35,6 +35,20 @@ patterns:
 - Python (`behave`): `features/steps/`, auto-discovered.
 - Node (`cucumber-js`): `features/steps/`, configured in `cucumber.js`.
 
+## E2E step definition locations
+
+`@e2e` scenarios use **separate** step definitions from unit/integration
+scenarios. They drive the real interaction surface (browser, CLI, API) and
+require different infrastructure (browser driver, HTTP client, test harness).
+
+Their location is project-specific (documented in `design.md`). Common
+patterns:
+
+- Rust: `tests/e2e_steps/mod.rs`, used by a separate `e2e_runner` test binary.
+- Python: `features/e2e_steps/`, with `behave --tags=@e2e`.
+- Node: `features/e2e_steps/`, with `cucumber-js --tags @e2e`.
+- Java: `src/test/java/.../e2e/steps/`, with Cucumber + Playwright.
+
 ## Step reuse — always check first
 
 Before writing any new step definition, check whether a matching step
@@ -47,18 +61,21 @@ desirable — it reduces duplication and keeps the glue maintainable.
 
 ## The RED/GREEN/REFACTOR loop (one scenario at a time)
 
-Work through tasks, one scenario at a time:
+Work through tasks, one scenario at a time. Non-@e2e scenarios use
+`{{VERIFY_COMMAND}}`; `@e2e` scenarios use `verify.e2e_command`.
 
 ### RED — confirm the test CAN fail
 
 1. Remove `@wip` from the current scenario only (leave it on all others).
 2. For each step in the scenario, check if a matching step definition already
-   exists:
+   exists (in the appropriate step location — unit/integration or e2e):
    - **Reused step**: keep the existing definition as-is.
    - **New step**: write a step definition with an unimplemented assertion
      (e.g. `unimplemented!()` in Rust, `assert.fail("not implemented")` in
      JS, `raise NotImplementedError` in Python).
-3. Run: `{{VERIFY_COMMAND}}`
+3. Run the appropriate runner:
+   - Non-@e2e scenario: `{{VERIFY_COMMAND}}`
+   - @e2e scenario: `verify.e2e_command`
    - **Scenario FAILS** → RED confirmed (the test is real). Proceed to GREEN.
    - **Scenario PASSES (all steps reused)** → legitimate immediate GREEN.
      The pre-existing assertions already match this scenario's behaviour.
@@ -75,7 +92,10 @@ Work through tasks, one scenario at a time:
    - **For characterization** (`/givn-characterize`): probe the observed
      production behaviour. No production code changes. If it fails, run the
      mismatch diagnostic (see givn-characterize).
-5. Run: `{{VERIFY_COMMAND}}` → this scenario passes; others may still fail
+   - **For @e2e scenarios**: set up test infrastructure if needed (start
+     server, launch browser, seed database). Write the e2e glue that drives
+     the real interaction surface.
+5. Run the appropriate runner → this scenario passes; others may still fail
    (expected, they still have `@wip`).
 
 ### REFACTOR — clean up without changing behaviour
@@ -85,7 +105,8 @@ Work through tasks, one scenario at a time:
      behaviour change.
    - **Characterization**: testability seams only (extract interface, DI,
      make public). If red, revert the refactor. If no seam is needed, skip.
-7. Run: `{{VERIFY_COMMAND}}` → still passes.
+   - **E2E**: clean up infrastructure code, extract shared e2e helpers.
+7. Run the appropriate runner → still passes.
 
 ### Done with scenario
 
@@ -96,12 +117,18 @@ Work through tasks, one scenario at a time:
 
 - `givn lint` is a STATIC Gherkin check (syntax, `@wip`, delta tags). It
   runs NO tests.
-- `{{VERIFY_COMMAND}}` is what confirms GREEN. Only the test runner can
-  confirm that a scenario passes.
-- Never conflate the two.
+- `{{VERIFY_COMMAND}}` confirms GREEN for non-@e2e scenarios.
+- `verify.e2e_command` confirms GREEN for @e2e scenarios.
+- Never conflate the three.
 
 ## Verify command
 
+Unit/integration:
 ```
 {{VERIFY_COMMAND}}
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```

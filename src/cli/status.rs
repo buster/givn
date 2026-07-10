@@ -204,7 +204,7 @@ fn print_json(state: &ChangeState) -> Result<()> {
         .map(|a| a.id.as_str())
         .collect();
 
-    let out = serde_json::json!({
+    let mut out = serde_json::json!({
         "id": state.id,
         "stage": state.stage_label(),
         "all_required_done": state.all_required_done(),
@@ -213,6 +213,9 @@ fn print_json(state: &ChangeState) -> Result<()> {
         "artifacts": artifacts,
         "verify_command": state.verify_command,
     });
+    if !state.e2e_command.is_empty() {
+        out["e2e_command"] = serde_json::json!(state.e2e_command);
+    }
     println!("{}", serde_json::to_string_pretty(&out)?);
     Ok(())
 }

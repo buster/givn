@@ -40,8 +40,16 @@ scenario reaches.)
 - Every missing-test gap has a new scenario + passing test, or a fix.
 - Every hard-to-test gap has a written justification.
 
+**E2e smoke test coverage:**
+- Every capability MUST have at least one `@e2e` scenario that exercises the
+  real interaction surface (browser, CLI, API). If a capability has no `@e2e`
+  scenario, this is a coverage gap — classify it as "missing test" and add one.
+- The e2e runner (`verify.e2e_command`) must pass alongside `verify.command`.
+- E2e step definitions are separate from unit/integration step definitions.
+
 **Sign-off checklist:**
-- All scenarios pass (test runner exits 0).
+- All non-@e2e scenarios pass (`verify.command` exits 0).
+- All `@e2e` scenarios pass (`verify.e2e_command` exits 0).
 - Coverage was measured across all test binaries, including the Gherkin
   runner that executes the `.feature` files (not unit tests alone).
 - Every coverage gap classified and resolved (or justified).
@@ -52,6 +60,7 @@ scenario reaches.)
 - No `@wip` tags remain in the delta spec.
 - The delta spec contains no implementation-layer detail (no class names,
   function names, HTTP routes, etc.).
+- Every capability has at least one `@e2e` smoke-test scenario.
 
 **Review result:** End the file with `REVIEW: PASS` or `REVIEW: FAIL`.
 The archive gate reads this marker.

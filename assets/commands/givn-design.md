@@ -57,6 +57,13 @@ Write `givn/changes/<id>/design.md` covering:
   If `verify.command` in `givn/config.yaml` is still `"givn missing-testrunner"`,
   update it now to the chosen runner. The tasks artifact will include a
   setup task to install and configure the runner.
+- **E2E smoke test infrastructure** — document the e2e setup:
+  - E2E runner command → becomes `verify.e2e_command` in `givn/config.yaml`.
+  - E2E step definition location (separate from unit/integration steps).
+  - Test infrastructure needed locally (browser driver, test server, test DB,
+    Testcontainers, fake services). How it starts/stops.
+  - E2E framework choice and justification (Playwright is the default
+    recommendation for browser-based systems).
 - **Non-obvious choices** — justify them; obvious choices need no justification.
 
 This is the HOW layer. Everything that was kept out of the proposal and spec

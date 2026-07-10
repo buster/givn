@@ -32,6 +32,22 @@ givn_config_version: "0.1.0"
 verify:
   command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
 
+# --- E2E test runner ----------------------------------------------------------
+# The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged
+# scenarios that exercise the real interaction surface (browser, CLI, API).
+# E2e scenarios use separate step definitions and may require local test
+# infrastructure (application server, test database, Testcontainers, etc.).
+#
+# Examples:
+#   npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
+#   behave --tags=@e2e
+#   cargo test --test e2e_runner
+#   mvn test -Dcucumber.filter.tags="@e2e"
+#   pytest --tags=e2e
+#
+# verify:
+#   e2e_command: ""   # <-- set this to your e2e runner
+
 # --- Features path -----------------------------------------------------------
 # Path the test runner reads .feature files from during development. Also
 # exported to the test runner as the GIVN_FEATURES environment variable.
@@ -89,8 +105,9 @@ verify:
 # `givn archive` auto-runs the hooks of all apply.requires artifacts as the gate.
 #
 # Built-in hook names:
-#   verify  -> run verify.command (the test runner)
-#   lint    -> run `givn lint` (static .feature check)
+#   verify      -> run verify.command (the test runner)
+#   verify-e2e  -> run verify.e2e_command (the e2e smoke test runner)
+#   lint        -> run `givn lint` (static .feature check)
 # Or: any shell command string.
 # Object form adds options: { run: verify, allow_failure: false, name: "..." }
 #

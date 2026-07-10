@@ -42,6 +42,7 @@ pub fn run_artifact_hooks(
 
         let result = match run.as_str() {
             "verify" => run_verify_hook(manifest, features_path),
+            "verify-e2e" => run_verify_e2e_hook(manifest, features_path),
             "lint" => run_shell_command(
                 &format!(
                     "{} lint",
@@ -95,6 +96,18 @@ fn normalise_hook(entry: &HookEntry) -> (String, bool, Option<String>) {
 /// Resolve the `verify` built-in to `manifest.verify.command` and run it.
 fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
     let command = &manifest.verify.command;
+    println!("  Running: {command}");
+    run_shell_command(command, features_path)
+}
+
+/// Resolve the `verify-e2e` built-in to `manifest.verify.e2e_command` and run it.
+/// Skips silently if no e2e command is configured (empty string).
+fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
+    let command = &manifest.verify.e2e_command;
+    if command.is_empty() {
+        println!("  (skipped — no verify.e2e_command configured)");
+        return Ok(());
+    }
     println!("  Running: {command}");
     run_shell_command(command, features_path)
 }

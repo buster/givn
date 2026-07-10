@@ -50,6 +50,16 @@ desirable — it reduces duplication and keeps the glue maintainable.
   assertions (proven by prior use). Do not modify or replace it.
 - **New step**: write a new step definition.
 
+## E2E step definitions
+
+`@e2e` scenarios use **separate** step definitions from unit/integration
+scenarios. They drive the real interaction surface (browser, CLI, API) and
+require different infrastructure (browser driver, HTTP client, test harness).
+
+Step reuse within e2e steps follows the same rules: check for existing e2e
+step definitions first. E2e and non-e2e step definitions are separate — do
+not mix them.
+
 ## The RED/GREEN/REFACTOR loop (one scenario at a time)
 
 ### RED — confirm the test CAN fail
@@ -61,7 +71,9 @@ desirable — it reduces duplication and keeps the glue maintainable.
    - **New step**: write a step definition with an unimplemented assertion
      (e.g. `unimplemented!()` in Rust, `assert.fail("not implemented")` in
      JS, `raise NotImplementedError` in Python).
-3. Run the test runner.
+3. Run the appropriate test runner:
+   - Non-@e2e scenario: `verify.command`
+   - @e2e scenario: `verify.e2e_command`
    - **Scenario FAILS** → RED confirmed (the test is real). Proceed to GREEN.
    - **Scenario PASSES (all steps reused)** → legitimate immediate GREEN.
      The pre-existing assertions already match this scenario's behaviour.
@@ -78,8 +90,11 @@ desirable — it reduces duplication and keeps the glue maintainable.
    - **For characterization** (`/givn-characterize`): probe the observed
      production behaviour. No production code changes. If it fails, run the
      mismatch diagnostic (see `/givn-characterize`).
-5. Run the test runner → this scenario passes; others may still fail
-   (expected, they still have `@wip`).
+   - **For @e2e scenarios**: set up test infrastructure if needed (start
+     server, launch browser, seed database). Write the e2e glue that drives
+     the real interaction surface.
+5. Run the appropriate test runner → this scenario passes; others may still
+   fail (expected, they still have `@wip`).
 
 ### REFACTOR — clean up without changing behaviour
 
@@ -88,7 +103,8 @@ desirable — it reduces duplication and keeps the glue maintainable.
      behaviour change.
    - **Characterization**: testability seams only (extract interface, DI,
      make public). If red, revert the refactor. If no seam is needed, skip.
-7. Run the test runner → still passes.
+   - **E2E**: clean up infrastructure code, extract shared e2e helpers.
+7. Run the appropriate test runner → still passes.
 
 ### Done with scenario
 
@@ -99,9 +115,9 @@ desirable — it reduces duplication and keeps the glue maintainable.
 
 - `givn lint` is a STATIC Gherkin check (syntax, `@wip`, delta tags). It
   runs NO tests.
-- The test runner (`verify.command` from `givn/config.yaml`) is what
-  confirms GREEN. Only the test runner can confirm that a scenario passes.
-- Never conflate the two.
+- `verify.command` confirms GREEN for non-@e2e scenarios.
+- `verify.e2e_command` confirms GREEN for @e2e scenarios.
+- Never conflate lint, `verify.command`, or `verify.e2e_command`.
 
 ## Guardrails
 

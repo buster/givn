@@ -64,7 +64,7 @@ Before any scenario task, add a setup task:
 
 This task gates all others — the runner must be working before any RED phase begins.
 
-**Subsequent tasks: one per scenario**
+**Subsequent tasks: one per non-@e2e scenario**
 
 Each task body must embed the design constraints that are relevant to that
 specific scenario. The coding agent that executes the task may not read
@@ -85,14 +85,42 @@ design.md — everything it needs to follow the architecture must be in the task
       REFACTOR: Clean up. Run: <verify.command> → still PASSES.
 ```
 
+**After all non-@e2e scenarios: e2e infrastructure setup + @e2e scenario tasks**
+
+After all non-@e2e scenario tasks, add the e2e setup and @e2e scenario tasks:
+
+```markdown
+- [ ] Setup: configure e2e test infrastructure and verify.e2e_command
+      - Install/configure the e2e framework chosen in design.md
+        (e.g. Playwright, Testcontainers, Cucumber with @e2e tag filtering)
+      - Create the e2e step definition skeleton (separate from unit/integration
+        step definitions)
+      - Set `verify.e2e_command` in `givn/config.yaml` to the e2e runner
+      - Document how to start/stop local test environment if needed
+      - Run: <verify.e2e_command> → must exit 0
+
+- [ ] @e2e <capability>: <E2E Scenario title>
+      Design constraints:
+        - <copy the e2e infrastructure decisions from design.md>
+          e.g. which browser driver, how the server starts, test database setup,
+          e2e step definition location.
+      RED:      Remove @wip. Write e2e step definitions with real assertions
+                that drive the actual interface. Run: <verify.e2e_command> → MUST FAIL.
+      GREEN:    Set up test infrastructure, write e2e glue.
+                Run: <verify.e2e_command> → PASSES.
+      REFACTOR: Clean up e2e code. Run: <verify.e2e_command> → still PASSES.
+```
+
 **Rules:**
 - First task is always infrastructure setup — never skip it.
 - One scenario task = one full RED/GREEN/REFACTOR cycle.
 - Every scenario task must include a "Design constraints" block populated from
   design.md — never leave it empty or generic.
-- Order scenario tasks by dependency (foundational scenarios before edge cases).
+- Order: non-@e2e scenarios first (by dependency), then e2e setup, then @e2e scenarios.
 - `givn lint` is a static check only — it does NOT run tests.
-- GREEN is confirmed by `verify.command` only, never by `givn lint`.
+- GREEN for non-@e2e is confirmed by `verify.command` only.
+- GREEN for @e2e is confirmed by `verify.e2e_command` only.
+- Never conflate lint, `verify.command`, or `verify.e2e_command`.
 
 ### 5. Check status
 

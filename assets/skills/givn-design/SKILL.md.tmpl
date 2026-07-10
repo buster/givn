@@ -25,8 +25,24 @@ Everything technical belongs here — do not add implementation details to the s
 - Runner command: confirm `verify.command` in `givn/config.yaml`.
 - Justify non-obvious technical choices.
 
+## E2E smoke test infrastructure
+
+The design MUST document the e2e test infrastructure for `@e2e` scenarios:
+
+- **E2E runner command** → becomes `verify.e2e_command` in `givn/config.yaml`.
+- **E2E step definition location** (separate from unit/integration steps).
+- **Test infrastructure**: what is needed locally (browser driver, test server,
+  test database, Testcontainers, fake services). How it starts/stops.
+- **E2E framework choice** and justification.
+
 ## Verify command
 
+Unit/integration:
 ```
 {{VERIFY_COMMAND}}
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```

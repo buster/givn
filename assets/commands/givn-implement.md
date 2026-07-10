@@ -58,7 +58,7 @@ Read once; pass to every subagent:
 - `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
 - `givn/changes/<id>/design.md` — full design document; pass this to every
   subagent in full, not just "relevant sections"
-- `givn/config.yaml` — resolve the actual `verify.command`
+- `givn/config.yaml` — resolve the actual `verify.command` and `verify.e2e_command`
 
 ### 5. Loop: one coding subagent per task
 
@@ -81,8 +81,10 @@ You are a coding agent executing a single TDD task for the givn change '<id>'.
 <paste the relevant scenario(s) from the .feature file>
 
 ## Context
-- Verify command: <verify.command>
+- Verify command (non-@e2e): <verify.command>
+- Verify command (@e2e):     <verify.e2e_command>
 - Step definitions location: <from design.md>
+- E2E step definitions location: <from design.md>
 
 ## Before any code: read the shared step-writing skill
 Read the givn-steps skill at `.agents/skills/givn-steps/SKILL.md` (or the
@@ -103,7 +105,9 @@ to this scenario specifically. The full design.md is the authoritative source.
 Do not substitute a simpler approach that happens to make a test pass —
 implement the architecture as specified.
 
-### RED phase
+### For non-@e2e scenarios:
+
+#### RED phase
 1. Remove `@wip` from this scenario only (leave it on all others).
 2. Check for reusable step definitions first. For new steps, write step
    definitions with unimplemented assertions.
@@ -111,7 +115,7 @@ implement the architecture as specified.
    This scenario MUST fail now (no production code yet).
    If it passes, the assertions are not real — fix them.
 
-### GREEN phase
+#### GREEN phase
 4. Implement real assertions for new steps. Write the minimum production code
    to make this scenario pass, following the design constraints in the task
    and the architecture in design.md exactly. "Minimum" means fewest lines
@@ -119,9 +123,30 @@ implement the architecture as specified.
    the one designed.
 5. Run: <verify.command> → this scenario passes; others may still fail.
 
-### REFACTOR phase
+#### REFACTOR phase
 6. Clean up code, names, duplication — without changing behaviour.
 7. Run: <verify.command> → still passes.
+
+### For @e2e scenarios:
+
+#### RED phase
+1. Remove `@wip` from this @e2e scenario only.
+2. Check for reusable e2e step definitions first. For new steps, write e2e
+   step definitions (in the e2e step location from design.md) with
+   unimplemented assertions that drive the real interface (browser, CLI, API).
+3. Run: <verify.e2e_command>
+   This scenario MUST fail now.
+   If it passes, the assertions are not real — fix them.
+
+#### GREEN phase
+4. Set up test infrastructure if needed (start server, launch browser, seed DB).
+   Write the minimum e2e glue to make the scenario pass, following the design
+   constraints exactly.
+5. Run: <verify.e2e_command> → this scenario passes.
+
+#### REFACTOR phase
+6. Clean up e2e infrastructure code, extract shared helpers.
+7. Run: <verify.e2e_command> → still passes.
 
 ### Done
 8. Check off the task in givn/changes/<id>/tasks.md: `- [ ]` → `- [x]`
@@ -212,7 +237,8 @@ Task 4/7: ...
 - Do not spawn the next subagent until the previous one has checked off its task.
 - Remove `@wip` from one scenario at a time only — pass this constraint to each
   subagent explicitly.
-- `givn lint` is a STATIC check only — GREEN comes from `<verify.command>` only.
+- `givn lint` is a STATIC check only — GREEN comes from `<verify.command>` (non-@e2e)
+  or `<verify.e2e_command>` (@e2e scenarios).
 - If a task is ambiguous, ask the user before spawning its subagent.
 - Do not batch multiple scenarios into one subagent.
 - If a subagent reports GREEN but deviated from the design (e.g. used a simpler

@@ -44,11 +44,18 @@ If any gate fails, the archive is refused with a clear error.
 
 This will:
 - Run the gate hooks (test suite must be GREEN).
-- Merge delta `.feature` files into `givn/specs/` (strips `@givn.*` tags).
+- Merge delta `.feature` files into `givn/specs/` (strips `@givn.*` tags;
+  preserves `@e2e` tags — they are not `@givn.*` tags).
 - Move `givn/changes/<change-id>/` to `givn/archive/<change-id>/`.
 
 ## Verify command
 
+Unit/integration:
 ```
 cargo test --test features_runner
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```

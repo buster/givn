@@ -50,6 +50,7 @@ pub struct ChangeState {
     /// Artifacts in topological order with their current status.
     pub artifacts: Vec<ArtifactState>,
     pub verify_command: String,
+    pub e2e_command: String,
 }
 
 impl ChangeState {
@@ -96,6 +97,7 @@ impl ChangeState {
             id,
             artifacts,
             verify_command: manifest.verify.command.clone(),
+            e2e_command: manifest.verify.e2e_command.clone(),
         }
     }
 

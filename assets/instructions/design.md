@@ -16,6 +16,30 @@ details are welcome and required here.
   artifact will include a setup task to install and configure it.
 - Any other technical decision the implementer needs before writing tasks.
 
+## End-to-end smoke test infrastructure
+
+Every capability includes `@e2e` smoke-test scenarios that exercise the real
+interaction surface. The design MUST document:
+
+- **E2E runner command**: the command that executes `@e2e`-tagged scenarios
+  (e.g. `npm run test:e2e`, `behave --tags=@e2e`, a dedicated Cucumber
+  runner binary that filters on `@e2e`). This becomes `verify.e2e_command`
+  in `givn/config.yaml`.
+- **E2E step definition location**: where the e2e-specific step definitions
+  live (separate from unit/integration steps, because they use different
+  infrastructure).
+- **Test infrastructure**: what is needed to run e2e tests locally:
+  - For browser tests: Playwright, Selenium, or equivalent. How the browser
+    is launched (headless by default).
+  - For CLI tests: how the built binary is invoked in a real terminal context.
+  - For API tests: how the server is started, what port, how it is torn down.
+  - For data: test database, seed data, Testcontainers, fake services.
+- **Technology choices**: which e2e framework and why (Playwright for browser
+  is the default recommendation unless there is a reason to choose otherwise).
+
+The e2e runner must load `.feature` files from `givn/specs/**/*.feature` and
+filter to `@e2e`-tagged scenarios only.
+
 ## Executable-spec invariant (enforced)
 
 The chosen `verify.command` MUST execute the `.feature` files produced by

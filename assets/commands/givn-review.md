@@ -37,7 +37,7 @@ Read and assemble:
 - `givn/changes/<id>/tasks.md`
 - `givn/changes/<id>/specs/**/*.feature`
 - `givn/changes/<id>/design.md`
-- `givn/config.yaml` — resolve `verify.command`
+- `givn/config.yaml` — resolve `verify.command` and `verify.e2e_command`
 
 ```sh
 givn instructions review --change <id>
@@ -68,14 +68,17 @@ Do not write that line until all sign-off conditions are met.
 ## Review instructions
 <paste full output of: givn instructions review --change <id>>
 
-## Verify command
-<verify.command from givn/config.yaml>
+## Verify commands
+Unit/integration: <verify.command from givn/config.yaml>
+E2E smoke tests:   <verify.e2e_command from givn/config.yaml>
 
 ## Steps
 
 ### 1. Confirm all tests pass
 Run: <verify.command>
-All scenarios must be GREEN (no @wip remaining). If any fail, diagnose:
+Run: <verify.e2e_command>
+All scenarios (both non-@e2e and @e2e) must be GREEN (no @wip remaining).
+If any fail, diagnose:
 - Infrastructure problem (fix test plumbing only).
 - Coverage gap (classify and resolve per the bucket rules below).
 Do NOT change production code behaviour to make tests pass.
@@ -103,11 +106,17 @@ For every uncovered region, assign exactly one bucket:
   run full RED/GREEN/REFACTOR, confirm GREEN.
 - Hard to test: write the justification in review.md (no code change needed).
 
-### 5. Final GREEN confirmation
-Run: <verify.command>
-All tests must pass after all gap resolutions.
+### 5. Confirm every capability has at least one @e2e scenario
+Check each capability's .feature file for at least one @e2e-tagged scenario.
+If missing, classify as "missing test" and add an @e2e scenario covering the
+critical happy path through the real interaction surface.
 
-### 6. Write review.md
+### 6. Final GREEN confirmation
+Run: <verify.command>
+Run: <verify.e2e_command>
+All tests (both non-@e2e and @e2e) must pass after all gap resolutions.
+
+### 7. Write review.md
 Follow the template from the review instructions. Include:
 - Coverage percentage and tool output
 - Coverage gap table (bucket, region, action taken for each gap)
@@ -115,7 +124,7 @@ Follow the template from the review instructions. Include:
 - Sign-off checklist (all items checked)
 - Final line: REVIEW: PASS
 
-### 7. Run the review hook
+### 8. Run the review hook
 Run: givn check review --change <id>
 Fix any failures before reporting back.
 
@@ -174,5 +183,7 @@ Display next step: "Run `/givn-archive` to archive this change."
 - The subagent must not write `REVIEW: PASS` until all gaps are resolved.
 - If the subagent adds new scenarios during review, they must go through full
   RED/GREEN/REFACTOR before the review can be signed off.
-- `givn lint` is a static check only — GREEN comes from `<verify.command>`.
+- `givn lint` is a static check only — GREEN comes from `<verify.command>` and
+  `<verify.e2e_command>`.
+- Every capability must have at least one `@e2e` smoke-test scenario.
 - The archive gate will hard-block if `REVIEW: PASS` is absent or hooks fail.

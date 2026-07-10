@@ -188,6 +188,8 @@ Write `givn/changes/<id>/tasks.md` with:
   existing spec suite. This task is verification, not setup.
 - Either way: verify the runner exits 0 (or exits with only @wip-related
   failures) before characterization begins.
+- If `verify.e2e_command` is configured and the feature being reverse-engineered
+  has `@e2e` scenarios, verify it exits 0 as well.
 
 **Subsequent tasks: one characterization cycle per scenario, in .feature order**
 

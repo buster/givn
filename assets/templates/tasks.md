@@ -1,6 +1,7 @@
 # Tasks: {{CHANGE_ID}}
 
 Implement each scenario from the spec, one at a time, following strict RED→GREEN→REFACTOR.
+Non-@e2e scenarios first, then @e2e smoke tests last.
 
 Legend: `[ ]` pending · `[x]` done.
 
@@ -8,7 +9,7 @@ Legend: `[ ]` pending · `[x]` done.
 
 ## Scenario-by-scenario TDD plan
 
-For each scenario:
+For each non-@e2e scenario:
 
 1. **RED**: Remove `@wip` from THIS scenario only. Write step definitions with real
    assertions. Run `{{VERIFY_COMMAND}}` — this scenario MUST FAIL (no production code yet).
@@ -17,6 +18,21 @@ For each scenario:
 3. **REFACTOR**: Clean up without changing behaviour. Runner still PASSES.
 
 Then move to the next scenario.
+
+## E2E smoke test plan
+
+After all non-@e2e scenarios are GREEN, implement the @e2e scenarios.
+These exercise the real interaction surface (browser, CLI, API) and use the
+e2e runner (`verify.e2e_command`).
+
+For each @e2e scenario:
+
+1. **RED**: Remove `@wip`. Write e2e step definitions (in the e2e step location
+   from design.md) with real assertions that drive the actual interface.
+   Run e2e runner — MUST FAIL.
+2. **GREEN**: Set up test infrastructure if needed. Write minimum e2e glue.
+   Run e2e runner — scenario PASSES.
+3. **REFACTOR**: Clean up e2e code. Runner still PASSES.
 
 ---
 
@@ -28,8 +44,22 @@ Then move to the next scenario.
   - [ ] GREEN: write minimum production code; runner passes.
   - [ ] REFACTOR: clean up; runner still passes.
 
-<!-- Add one section per scenario from the spec. -->
+<!-- Add one section per non-@e2e scenario from the spec. -->
 
 ---
 
-**Done when:** all checkboxes checked and `{{VERIFY_COMMAND}}` exits 0.
+## E2E Smoke Tests
+
+- [ ] Set up e2e test infrastructure and e2e step definition skeleton.
+- [ ] Set `verify.e2e_command` in `givn/config.yaml`.
+- [ ] @e2e Scenario: `{{FIRST_E2E_SCENARIO_TITLE}}`
+  - [ ] RED: write e2e steps with real assertions; e2e runner fails.
+  - [ ] GREEN: implement e2e glue and infrastructure; e2e runner passes.
+  - [ ] REFACTOR: clean up; e2e runner still passes.
+
+<!-- Add one section per @e2e scenario from the spec. -->
+
+---
+
+**Done when:** all checkboxes checked, `{{VERIFY_COMMAND}}` exits 0, and
+`verify.e2e_command` exits 0.

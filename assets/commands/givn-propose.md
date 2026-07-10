@@ -118,10 +118,22 @@ For each artifact:
     Then an observable result is visible
   </example>
 - Scenarios assert observable behaviour in Given/When/Then domain language.
+- **Every capability MUST include at least one `@e2e` smoke-test scenario** that
+  exercises the real interaction surface (browser, CLI, API). Tag these
+  `@givn.added @e2e @wip`. They test the critical happy path through the real
+  external boundary — not unit-level or in-process behaviour.
+  <example caption="E2e scenario">
+  @givn.added @e2e @wip
+  Scenario: User completes the action through the real interface
+    Given a browser on the application page
+    When the user performs the action
+    Then the expected result is visible in the interface
+  </example>
 - After writing, validate: run `givn lint --change <id>`
   Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.
 - Think about: what are the key observable behaviours? What are the edge cases?
-  What existing behaviour might be affected?
+  What existing behaviour might be affected? What does the real user interaction
+  look like end-to-end?
 
 **design** (design.md):
 - HOW layer: technology decisions, architecture impact, step def locations,
@@ -133,16 +145,27 @@ For each artifact:
   verify:
     command: "<chosen runner>"
   ```
+- **E2E smoke test infrastructure**: document the e2e test setup:
+  - E2E runner command (becomes `verify.e2e_command` in `givn/config.yaml`).
+  - E2E step definition location (separate from unit/integration steps).
+  - Test infrastructure needed locally (browser driver, test server, test DB,
+    Testcontainers, fake services).
+  - E2E framework choice and justification (Playwright recommended for browser).
 - Think about: what is the simplest architecture that delivers the proposal?
-  What are the tradeoffs? What existing code is affected?
+  What are the tradeoffs? What existing code is affected? What does the e2e
+  test infrastructure look like?
 
 **tasks** (tasks.md):
 - **First task must always be test infrastructure setup**: install the runner,
   configure the project for BDD/TDD (e.g. add Cucumber dependency, create
   step definitions skeleton), and verify `verify.command` in `givn/config.yaml`
   is set to the runner chosen in design.md. This task gates all others.
-- Subsequent tasks: one `- [ ]` checkbox per scenario, covering a full
-  RED/GREEN/REFACTOR cycle.
+- Subsequent tasks: one `- [ ]` checkbox per non-@e2e scenario, covering a
+  full RED/GREEN/REFACTOR cycle.
+- **After all non-@e2e scenarios**: add an e2e infrastructure setup task
+  (install e2e framework, create e2e step definition skeleton, set
+  `verify.e2e_command`), then one task per @e2e scenario with its own
+  RED/GREEN/REFACTOR cycle using the e2e runner.
 - **Every scenario task must include a "Design constraints" block** drawn from
   design.md, specific to that scenario. This is not optional. The coding agent
   that executes each task reads the task body as its primary architecture

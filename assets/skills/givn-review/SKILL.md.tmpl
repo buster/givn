@@ -26,16 +26,19 @@ Coverage is complete when every gap is classified and resolved (or justified).
 
 ## Steps
 
-1. Run `{{VERIFY_COMMAND}}` — confirm all tests pass.
-2. Run your coverage tool and list uncovered regions in the review table.
-3. Classify each gap (1, 2, or 3 above).
-4. Resolve each gap:
+1. Run `{{VERIFY_COMMAND}}` — confirm all non-@e2e tests pass.
+2. Run `verify.e2e_command` — confirm all @e2e tests pass.
+3. Run your coverage tool and list uncovered regions in the review table.
+4. Classify each gap (1, 2, or 3 above).
+5. Resolve each gap:
    - Dead code → delete.
    - Missing test → add scenario + RED/GREEN/REFACTOR.
    - Hard to test → write justification.
-5. Run `{{VERIFY_COMMAND}}` again — confirm still GREEN.
-6. Complete the sign-off checklist in review.md.
-7. Write `REVIEW: PASS` at the end of review.md when all items are checked.
+6. Confirm every capability has at least one `@e2e` smoke-test scenario.
+   If missing, classify as "missing test" and add one.
+7. Run both runners again — confirm still GREEN.
+8. Complete the sign-off checklist in review.md.
+9. Write `REVIEW: PASS` at the end of review.md when all items are checked.
 
 ## After sign-off
 
@@ -45,6 +48,12 @@ givn check review --change {{CHANGE_ID}}
 
 ## Verify command
 
+Unit/integration:
 ```
 {{VERIFY_COMMAND}}
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```
