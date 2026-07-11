@@ -16,11 +16,11 @@ specification** — the delta document, the executable test, and the permanent
 archived record, all in one. No parallel `spec.md`, no drift between what was
 planned and what runs.
 
-It distills a proven Gherkin-first workflow into a standalone, configurable,
-easily-installable Rust binary: delta lifecycle → scenario-by-scenario TDD →
-completeness-based coverage review → automatic delta merge on archive.
-Language- and test-runner-agnostic — it drives Cucumber-family runners in any
-stack, it does not replace them.
+It packages a Gherkin-first workflow into a standalone, configurable Rust
+binary: delta lifecycle → scenario-by-scenario TDD → completeness-based
+coverage review → automatic delta merge on archive. Language- and
+test-runner-agnostic — it drives Cucumber-family runners in any stack, it
+does not replace them.
 
 ---
 
@@ -28,7 +28,7 @@ stack, it does not replace them.
 
 - [Why givn](#why-givn)
 - [Core ideas](#core-ideas)
-- [Install](#install-planned)
+- [Install](#install)
 - [Quickstart](#quickstart)
 - [The workflow](#the-workflow)
 - [Reverse-engineering an existing codebase](#reverse-engineering-an-existing-codebase)
@@ -78,10 +78,11 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   captured) → GREEN (minimum production code, files listed) → REFACTOR → one
   atomic COMMIT. The runner's strict mode is proven once, up front, so an
   empty/no-op step can never silently report GREEN.
-- **True end-to-end smoke tests.** Every capability needs at least one `@e2e`
-  scenario that drives the real interface — browser, CLI, or API — and
-  asserts primarily on what that interface returned. A database-only check
-  wearing an `@e2e` tag is treated as unfinished work, not a coverage gap.
+- **End-to-end smoke tests that assert on the real interface.** Every
+  capability needs at least one `@e2e` scenario that drives the real
+  interface — browser, CLI, or API — and asserts primarily on what that
+  interface returned. A database-only check wearing an `@e2e` tag is
+  treated as unfinished work, not a coverage gap.
 - **Local runnability is a design requirement.** The design for a change must
   name a single command that starts the whole system plus a digital twin
   (fake/stub/emulator) for every external dependency, in an isolated network —
@@ -144,26 +145,20 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   enable <name>` — e.g. `arc42` for durable architecture documentation,
   `absolute_mode` for a blunt, no-filler communication policy in AGENTS.md.
 
-## Install (planned)
+## Install
 
-No npm. No root. No runtime. Pick whichever you like:
-
-| Method | Command | Audience |
-| --- | --- | --- |
-| Release binary | download from GitHub releases (linux/macos x64+arm64, windows-x64) | everyone |
-| Shell installer | `curl -fsSL https://.../install.sh \| sh` | anyone with a terminal |
-| Homebrew | `brew install <tap>/givn` | macOS + Linux |
-| Cargo | `cargo install givn` | Rust developers |
-
-> The crate name `givn` is verified available on crates.io and Homebrew.
-
-For now, building from source:
+Not yet published to crates.io, Homebrew, or as release binaries — the only
+way to install it today is to build from source. No npm, no root, no
+runtime beyond a Rust toolchain.
 
 ```sh
-git clone https://github.com/TBD/givn
+git clone <this repository's URL>
 cd givn
 cargo install --path .
 ```
+
+This installs the `givn` binary to `~/.cargo/bin` (make sure that's on your
+`PATH`). Requires a recent stable Rust toolchain (`rustup install stable`).
 
 ## Quickstart
 
@@ -402,4 +397,4 @@ AGENTS.md                             # user-owned; givn only maintains its own
 
 ## License
 
-TBD (intended open source for the broader community).
+Not yet chosen. `Cargo.toml` currently declares `license = "TBD"`.
