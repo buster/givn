@@ -12,10 +12,8 @@ ambiguous, list changes and ask.
 
 ## Role: orchestrator
 
-This command is an **orchestrator**. It collects context and then delegates all
-review work to a **review subagent**. The review subagent runs the test suite,
-measures and records coverage, classifies every gap, resolves them, and writes
-`review.md`.
+Delegates all review work to a **review subagent**: runs the test suite,
+measures coverage, classifies every gap, resolves them, writes `review.md`.
 
 ---
 
@@ -27,29 +25,21 @@ measures and records coverage, classifies every gap, resolves them, and writes
 givn status --change <id> --json
 ```
 
-Identify the active change. Announce: "Using change: <id>".
-Check the `artifacts` array: if the `tasks` entry is not `"status": "done"`,
-warn the user — all tasks should be complete before review. Confirm to proceed.
+Announce: "Using change: <id>". If `tasks` is not `"status": "done"`, warn
+the user and confirm before proceeding.
 
 ### 2. Collect context
 
-Read and assemble:
-- `givn/changes/<id>/tasks.md`
-- `givn/changes/<id>/specs/**/*.feature`
-- `givn/changes/<id>/design.md`
-- `givn/config.yaml` — resolve `verify.command`
+Read `tasks.md`, `specs/**/*.feature`, `design.md`, `verify.command` and
+`verify.e2e_command` from `givn/config.yaml`.
 
 ```sh
 givn instructions review --change <id>
 ```
 
-Capture the full output: `output` path, `template`, `instruction`, `rules`,
-`dependencies`.
+Capture `output`, `template`, `instruction`, `rules`, `dependencies`.
 
 ### 3. Spawn a review subagent
-
-Use the **Task tool** to spawn a review subagent (fall back to describing the
-pattern in prose if the Task tool is not available to you).
 
 Pass a self-contained prompt:
 
@@ -57,83 +47,106 @@ Pass a self-contained prompt:
 You are a review agent completing the coverage review for givn change '<id>'.
 
 ## Your objective
-Produce a complete, signed-off review.md at:
-  givn/changes/<id>/review.md
-
-The final line of the file MUST be:
-  REVIEW: PASS
-
-Do not write that line until all sign-off conditions are met.
+Produce a complete, signed-off review.md at givn/changes/<id>/review.md.
+The final line MUST be REVIEW: PASS. Do not write it until all sign-off
+conditions are met.
 
 ## Review instructions
 <paste full output of: givn instructions review --change <id>>
 
-## Verify command
-<verify.command from givn/config.yaml>
+## Verify commands
+Unit/integration: <verify.command>
+E2E smoke tests:   <verify.e2e_command>
 
 ## Steps
 
+### 0. Fabrication audit (mandatory, first)
+A change can reach review with every task checked off, the runner exiting
+0, and almost nothing implemented — if steps were left as empty stubs.
+Mechanical check, before trusting anything else:
+
+1. Grep every step definition file for empty/trivial bodies (`{}`, bare
+   `pass`/`return`, whitespace-only, no assertion reference). Record files
+   scanned and findings (file:line).
+2. For every checked `[x]` task, confirm a commit exists and `git show
+   --stat <hash>` touches production source, not just spec/stub. Record
+   any checked task with no commit or a spec-only commit.
+3. For every component design.md said would be created, confirm it exists
+   in the tree. Record anything promised but missing.
+4. Confirm the setup task's proof-of-strictness evidence is present with
+   non-zero exit. Missing/zero = the whole suite's GREEN is unverified.
+5. Read every `@e2e` scenario's step definitions. If its Then steps assert
+   ONLY against a repository/database (no assertion on page content, HTTP
+   response, redirect, or CLI output), record it as a downgraded e2e
+   scenario — an integration test wearing an `@e2e` tag. It does not prove
+   the feature works end-to-end, regardless of the runner reporting GREEN.
+6. Confirm the local run command (design.md's Local Runnability section)
+   still starts the full stack — including every digital twin — cleanly.
+7. Any finding from 1-6 is unfinished implementation, not a coverage gap.
+   Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
+   fixing the real-interface obstacle per design.md, never by leaving the
+   repository-only assertion in place. Do not write REVIEW: PASS while any
+   finding remains.
+
+Paste the result into review.md's Fabrication Audit section even when clean.
+
 ### 1. Confirm all tests pass
-Run: <verify.command>
-All scenarios must be GREEN (no @wip remaining). If any fail, diagnose:
-- Infrastructure problem (fix test plumbing only).
-- Coverage gap (classify and resolve per the bucket rules below).
-Do NOT change production code behaviour to make tests pass.
+Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
+Failures: diagnose infrastructure (fix plumbing only) or coverage gap
+(classify below). Never change production code to force a pass.
 
 ### 2. Measure and record coverage
-Run the coverage tool specified in design.md. Record:
-- The overall coverage percentage (line and/or branch)
-- The raw tool output
-
-Paste both into the Coverage section of review.md. The percentage is a fact —
-it is recorded regardless of its value. It is not a threshold gate.
+Run the coverage tool from design.md. Record percentage and raw output in
+review.md — a fact, not a threshold gate.
 
 ### 3. Classify every gap
-For every uncovered region, assign exactly one bucket:
-
 | Bucket | Meaning | Action |
 |---|---|---|
-| Dead code | YAGNI/KISS — should not exist | Delete it; re-run tests. |
-| Missing test | Behaviour not covered by a scenario | Add scenario (@givn.added), RED/GREEN/REFACTOR. |
-| Hard to test | Infrastructure, I/O boundary, etc. | Write concrete technical justification. |
+| Dead code | YAGNI/KISS | Delete; re-run tests. |
+| Missing test | Not covered by a scenario | Add scenario (@givn.added), RED/GREEN/REFACTOR/COMMIT. |
+| Hard to test | Infra/I-O boundary | Concrete technical justification. |
 
 ### 4. Resolve each gap
-- Dead code: delete, re-run tests, confirm GREEN.
-- Missing test: add scenario to the relevant .feature file with @givn.added tag,
-  run full RED/GREEN/REFACTOR, confirm GREEN.
-- Hard to test: write the justification in review.md (no code change needed).
+Per the table above; hard-to-test gaps get a written justification, no code change.
 
-### 5. Final GREEN confirmation
-Run: <verify.command>
-All tests must pass after all gap resolutions.
+### 5. Confirm e2e coverage
+Every capability needs at least one `@e2e` scenario with a real-interface
+primary assertion. Missing, or downgraded to repository-only, = classify as
+"missing test," add or fix one covering the critical happy path.
 
-### 6. Write review.md
-Follow the template from the review instructions. Include:
-- Coverage percentage and tool output
-- Coverage gap table (bucket, region, action taken for each gap)
-- Test suite output and result
-- Sign-off checklist (all items checked)
-- Final line: REVIEW: PASS
+### 6. Final GREEN confirmation
+Re-run both runners. Must pass after all gap resolutions.
 
-### 7. Run the review hook
-Run: givn check review --change <id>
-Fix any failures before reporting back.
+### 7. Write review.md
+Coverage percentage + tool output, gap table, test suite output, sign-off
+checklist, final line REVIEW: PASS.
+
+### 8. Run the review hook
+`givn check review --change <id>`. Fix failures before reporting back.
 
 ## Report back with
-- Coverage percentage recorded
-- Number of gaps classified (dead code / missing test / hard to test)
-- Final test run result
-- Path written and confirmation that REVIEW: PASS is the final line
-- Any issues encountered
+Fabrication audit result, coverage percentage, gaps classified by bucket,
+final test result, path written, confirmation REVIEW: PASS is the final line.
 ```
 
-### 4. Wait for the review subagent to complete
+### 4. Wait for the review subagent
 
-The subagent must finish all gap resolution, write `review.md`, and run
-`givn check review` before the orchestrator proceeds.
+Must finish the fabrication audit, all gap resolution, write `review.md`,
+and run `givn check review` first. A reported blocker goes to the user.
 
-If the subagent reports a blocker (e.g. a gap it cannot classify), surface it
-to the user and wait for guidance.
+### 4a. Orchestrator spot-check (do not skip)
+
+Before accepting `REVIEW: PASS`, independently re-check a sample rather than
+trusting the subagent's report:
+
+1. Grep 2-3 step definition files yourself for empty bodies (or all if
+   fewer than 5). Confirm any "0 findings" claim.
+2. Confirm 2-3 checked-off tasks have commits touching production code, via
+   `git show --stat`.
+3. Read every `@e2e` scenario's step definitions yourself. Confirm each has
+   a real-interface assertion, not repository-only.
+4. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
+   specific discrepancy named.
 
 ### 5. Show final status
 
@@ -141,7 +154,7 @@ to the user and wait for guidance.
 givn status --change <id>
 ```
 
-Display next step: "Run `/givn-archive` to archive this change."
+Display: "Run `/givn-archive` to archive this change."
 
 ---
 
@@ -149,6 +162,8 @@ Display next step: "Run `/givn-archive` to archive this change."
 
 ```
 ## Review complete: <id>
+
+**Fabrication audit:** CLEAN (or: N findings remediated — see review.md)
 
 **Coverage:** <percentage>
 **Coverage gaps classified:** N
@@ -167,12 +182,18 @@ Display next step: "Run `/givn-archive` to archive this change."
 
 ## Guardrails
 
-- The orchestrator does not run coverage tools or write review.md — it delegates.
-- The subagent must record the coverage percentage before classifying gaps.
-- The coverage number is a fact, not a threshold — do not fail the review based
-  on percentage alone.
-- The subagent must not write `REVIEW: PASS` until all gaps are resolved.
-- If the subagent adds new scenarios during review, they must go through full
-  RED/GREEN/REFACTOR before the review can be signed off.
-- `givn lint` is a static check only — GREEN comes from `<verify.command>`.
-- The archive gate will hard-block if `REVIEW: PASS` is absent or hooks fail.
+- The orchestrator delegates coverage tools and review.md writing.
+- Fabrication audit (step 0) is mandatory, always first, never optional.
+- Orchestrator runs its own spot-check (4a) — never trusts the subagent's
+  audit at face value.
+- Any fabrication finding is unfinished implementation, not a coverage gap
+  — remediate with a real RED/GREEN/REFACTOR/COMMIT cycle, never waved through.
+- Coverage percentage is a fact, not a threshold.
+- `REVIEW: PASS` requires all gaps resolved AND a clean fabrication audit.
+- New scenarios added during review go through the full loop before sign-off.
+- `givn lint` is static only; GREEN comes from the runners.
+- Every capability needs at least one `@e2e` scenario with a real-interface
+  primary assertion — repository-only assertions never satisfy this.
+- The local run command must start the full stack, digital twins included,
+  cleanly — confirmed during this review, not assumed.
+- Archive hard-blocks if `REVIEW: PASS` is absent or hooks fail.

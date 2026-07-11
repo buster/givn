@@ -109,46 +109,119 @@ For each artifact:
 - One .feature file per capability, derived from the proposal.
 - Tags: `@givn.delta @<capability>` on Feature; `@givn.added` + `@wip` on
   each Scenario (use `@givn.modified` or `@givn.removed` where appropriate).
+  Tags go on the line **before** `Scenario:`, never inside the scenario body.
+  <example caption="Correct tag placement">
+  @givn.added @wip
+  Scenario: Observable outcome when something happens
+    Given some context
+    When an action occurs
+    Then an observable result is visible
+  </example>
 - Scenarios assert observable behaviour in Given/When/Then domain language.
+- **Every capability MUST include at least one `@e2e` smoke-test scenario** that
+  exercises the real interaction surface (browser, CLI, API). Tag these
+  `@givn.added @e2e @wip`. They test the critical happy path through the real
+  external boundary — not unit-level or in-process behaviour.
+  <example caption="E2e scenario">
+  @givn.added @e2e @wip
+  Scenario: User completes the action through the real interface
+    Given a browser on the application page
+    When the user performs the action
+    Then the expected result is visible in the interface
+  </example>
 - After writing, validate: run `givn lint --change <id>`
   Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.
 - Think about: what are the key observable behaviours? What are the edge cases?
-  What existing behaviour might be affected?
+  What existing behaviour might be affected? What does the real user interaction
+  look like end-to-end?
 
 **design** (design.md):
-- HOW layer: technology decisions, architecture impact, step def locations,
-  data model changes. Justify non-obvious choices.
-- **Test runner**: decide which runner fits the tech stack (e.g. `cargo test`,
-  `npm test`, `pytest`). Document it in design.md. If `verify.command` in
-  `givn/config.yaml` is still `"givn missing-testrunner"`, update it now:
-  ```yaml
-  verify:
-    command: "<chosen runner>"
-  ```
-- Think about: what is the simplest architecture that delivers the proposal?
-  What are the tradeoffs? What existing code is affected?
+- HOW layer: technology decisions, architecture impact, step def locations
+  (one file per capability, name the exact files), data model changes.
+  Justify non-obvious choices.
+- **Version freshness (mandatory)**: never write a version number for a
+  language, runtime, framework, library, database, or container image from
+  memory — training data has an unknown cutoff and a remembered "current"
+  version may now be outdated or end-of-life. For every versioned choice,
+  either (a) state "latest" or the ecosystem's LTS explicitly as the
+  resolution strategy (tasks.md then pins whatever that resolves to at
+  setup time), or (b) if you have a web search or similar tool available,
+  use it now to check the current version and record it with a note of
+  what was checked (e.g. "checked npmjs.com/package/playwright"). Do not
+  write a bare specific version number with neither a lookup note nor a
+  "latest/LTS" designation — that is an unverified guess, not a decision.
+- **Test runner**: pick one fitting the tech stack, document the command. If
+  `verify.command` is still `"givn missing-testrunner"`, set it now.
+- **Strict mode (mandatory)**: most runners treat undefined/pending steps as
+  neither pass nor hard failure by default; some (notably cucumber-jvm with
+  an empty step body) report an outright PASS for a step that does nothing.
+  Document explicitly: the strict-mode flag/config for the chosen runner
+  (`cucumber-rs`: `.fail_on_skipped()`; `cucumber-js`/`cucumber-jvm` CLI:
+  `--strict`; `cucumber-jvm` JUnit Platform Suite: no native flag — enforce
+  via never-empty bodies plus a plugin/listener failing on UNDEFINED/
+  PENDING; `behave`: steps must `raise`), the not-implemented stub for the
+  language (Java `PendingException`, Python `NotImplementedError`, Rust
+  `unimplemented!()`, JS `return "pending"` or `throw new Error(...)`), and
+  the single-scenario run command.
+- **Local runnability & digital twins (mandatory)**: a local run command
+  that starts the entire system + every dependency in one step (e.g.
+  `docker-compose up`), in an isolated network; a named digital twin
+  (fake/stub/emulator, same isolated network) for every external/
+  third-party dependency — no scenario may depend on a live third-party
+  service; and any foreseeable real-interface obstacle (browser session/
+  cookie persistence, auth redirects) named with its concrete fix.
+  "The interface had a technical problem so we tested the database
+  instead" is never acceptable — that obstacle must be designed away here.
+- **E2E smoke test infrastructure**: e2e runner command (→
+  `verify.e2e_command`), e2e step location (separate, one file per
+  capability), local test infrastructure (browser driver, server, test
+  DB/Testcontainers/fakes), framework choice + justification (Playwright
+  default for browser), strict-mode config for the e2e runner specifically.
+  **Real-interface assertion rule**: every `@e2e` scenario's primary
+  assertion is on what the real interface returned/displayed — repository
+  checks are secondary/additional only, never a replacement.
+- Think about: simplest architecture that delivers the proposal, tradeoffs,
+  affected existing code, whether the runner can actually be forced to fail
+  on an unimplemented step or whether step-body discipline must carry that
+  weight, and what could go wrong when actually driving the real interface.
 
 **tasks** (tasks.md):
-- **First task must always be test infrastructure setup**: install the runner,
-  configure the project for BDD/TDD (e.g. add Cucumber dependency, create
-  step definitions skeleton), and verify `verify.command` in `givn/config.yaml`
-  is set to the runner chosen in design.md. This task gates all others.
-- Subsequent tasks: one `- [ ]` checkbox per scenario, covering a full
-  RED/GREEN/REFACTOR cycle.
-- **Every scenario task must include a "Design constraints" block** drawn from
-  design.md, specific to that scenario. This is not optional. The coding agent
-  that executes each task reads the task body as its primary architecture
-  reference — if the constraints are absent, it will take the shortest path
-  that makes the test pass, which may not match the design.
-  Example block (adapt to the actual tech stack and scenario):
+- **First task: test infrastructure setup, PROVEN strict.** Install the
+  runner, configure the strict-mode flag from design.md, create step
+  skeletons one file per capability, set `verify.command`. Mandatory
+  **proof-of-strictness sub-task**: write one step using the not-implemented
+  stub, run the runner, confirm NON-ZERO exit, paste command + output. This
+  gates all others — an unproven runner makes every later GREEN meaningless.
+  Not optional: this exact failure has happened — every step left an empty
+  body, `@wip` removed, runner silently reporting 100% GREEN.
+- **One checkbox per non-@e2e scenario**, full RED→GREEN→REFACTOR→COMMIT.
+  Each RED/GREEN/REFACTOR sub-item has a field for pasted runner output
+  (targeting that scenario only, via design.md's single-scenario command) —
+  not a description. RED's unimplemented steps use the not-implemented
+  stub, never an empty body. GREEN lists every production file
+  created/modified — empty list on a non-reuse scenario means investigate.
+  COMMIT has a field for the hash; message references the scenario title.
+- **After all non-@e2e scenarios**: e2e setup task — bring up the local
+  environment (local run command from design.md, all dependencies, all
+  digital twins, isolated network) and confirm clean startup; install the
+  e2e framework, e2e step skeleton one file per capability, PROVE strict
+  mode for the e2e runner, set `verify.e2e_command`. Then one task per @e2e
+  scenario with the same cycle and evidence requirements, PLUS: GREEN
+  asserts primarily on the real interface's output, never repository-only.
+  If a real-interface obstacle appears mid-implementation, the task's fix
+  is the one named in design.md's Anticipated Interface Obstacles section —
+  never a downgrade to repository-only assertions.
+- **Every scenario task has a "Design constraints" block** drawn from
+  design.md, specific to that scenario — not optional. The executing agent
+  reads the task as its primary architecture reference; without constraints
+  it will take the shortest path, which may not match the design.
   ```
   Design constraints:
     - <which module/layer owns this behaviour>
     - <which protocol, data format, or library to use>
     - <what response shape / side-effect is required by the design>
   ```
-- Think about: what is the right order? What setup is needed before features?
-  Are any tasks dependent on each other?
+- Think about: right order, setup needed before features, task dependencies.
 
 **Any custom artifact**:
 - Follow the instruction returned by `givn instructions <id>`.
@@ -220,14 +293,30 @@ implementation is done.
 
 ## Guardrails
 
-- The orchestrator does not write any artifact — it delegates to the architect subagent.
-- Always run `givn status --change <id> --json` to get current state and
-  next step — never hardcode the sequence.
-- The architect subagent must not put implementation detail (HOW) in the
-  proposal or specs.
-- All scenarios must be `@wip` — step definitions are not written during planning.
-- The architect must run `givn lint --change <id>` after writing specs and fix
-  parse errors (exit 1) before continuing.
-- Tasks must use `- [ ]` checkboxes so `givn apply` can track progress.
-- If the architect flags critical ambiguities before it can proceed, surface
-  them to the user — do not guess on their behalf.
+- The orchestrator delegates all artifact writing to the architect subagent.
+- Always run `givn status --change <id> --json` for current state — never
+  hardcode the sequence.
+- No implementation detail (HOW) in proposal or specs.
+- All scenarios `@wip` — step definitions are not written during planning.
+- `givn lint --change <id>` after writing specs; fix parse errors (exit 1).
+- Tasks use `- [ ]` checkboxes for `givn apply` to track.
+- design.md must name a concrete strict-mode mechanism and stub pattern —
+  this is what prevents the change from being fabricated with empty stubs
+  during implementation. Do not accept a plan that omits it.
+- tasks.md's first task must include a proof-of-strictness sub-task with a
+  field for non-zero-exit evidence. Do not accept a plan that omits it.
+- Every scenario task ends in COMMIT; every RED/GREEN/REFACTOR line has a
+  field for pasted output. A tasks.md with nowhere to record what happened
+  is incomplete.
+- design.md must name a local run command, a digital twin for every
+  external/third-party dependency, and a fix for any foreseeable
+  real-interface obstacle. Do not accept a plan that defers this to
+  "figure it out during implementation."
+- Every `@e2e` scenario asserts primarily on the real interface's output.
+  Do not accept a plan or a task whose e2e GREEN criteria is
+  repository-state-only.
+- design.md must not contain a version number written from memory. Every
+  versioned technology choice is either "latest"/"LTS" or a looked-up
+  version with a note of what was checked. Reject a plan with bare version
+  numbers and no lookup note or "latest/LTS" designation.
+- Critical ambiguities go to the user — the architect does not guess.

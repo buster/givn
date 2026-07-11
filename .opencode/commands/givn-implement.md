@@ -12,10 +12,13 @@ If ambiguous, list changes and ask.
 
 ## Role: orchestrator
 
-This command is an **orchestrator**. It does not write code directly. For each
-task it spawns a **coding subagent** that handles the complete RED/GREEN/REFACTOR
-cycle in isolation. The orchestrator manages the loop, passes context, and
-decides when to stop or pause.
+Spawns one **coding subagent** per task for the complete RED/GREEN/REFACTOR
+cycle. Does not write code directly.
+
+**Never trust subagent self-reports.** A "PASSED" claim is not proof — a
+subagent has previously checked off every task with "PASSED" while every
+step was an empty stub and the runner silently reported GREEN. Step 5c
+(independent verification) is mandatory for every task, not a spot-check.
 
 ---
 
@@ -36,8 +39,7 @@ Announce: "Using change: <id>".
 givn apply --change <id>
 ```
 
-If all tasks are already checked, suggest `/givn-review`.
-Otherwise continue.
+If all tasks are already checked, suggest `/givn-review`. Otherwise continue.
 
 ### 3. Validate the spec
 
@@ -45,108 +47,143 @@ Otherwise continue.
 givn lint --change <id>
 ```
 
-- Exit 0 or 2 = proceed (exit 2 means @wip scenarios present — expected).
-- Exit 1 = parse error — fix before implementing.
+Exit 0 or 2 = proceed (2 means @wip present — expected). Exit 1 = parse
+error, fix first.
 
 ### 4. Collect context for subagents
 
-Read once; pass to every subagent:
-
-- `givn/changes/<id>/tasks.md` — task list and order (each task includes a
-  "Design constraints" block; if any task is missing it, read design.md and
-  add it before spawning that subagent)
+Read once, pass to every subagent in full:
+- `givn/changes/<id>/tasks.md` — task list (each task has a "Design
+  constraints" block; add it from design.md if missing)
 - `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
-- `givn/changes/<id>/design.md` — full design document; pass this to every
-  subagent in full, not just "relevant sections"
-- `givn/config.yaml` — resolve the actual `verify.command`
+- `givn/changes/<id>/design.md` — full document, including Strict Mode
+  section (stub pattern) and single-scenario run command
+- `givn/config.yaml` — `verify.command` and `verify.e2e_command`
+
+### 4a. Confirm proof-of-strictness before looping
+
+Before spawning any scenario subagent, confirm the setup task is checked
+AND has pasted proof-of-strictness output showing non-zero exit. If
+missing or zero, do the proof now — every scenario's RED depends on it.
 
 ### 5. Loop: one coding subagent per task
 
-For each unchecked task (`- [ ]`) in order:
+For each unchecked task, in order:
 
 #### 5a. Spawn a coding subagent
 
-Use the **Task tool** to spawn a coding subagent (fall back to describing the
-pattern in prose if the Task tool is not available to you).
-
-Pass the subagent a self-contained prompt that includes:
+Pass a self-contained prompt:
 
 ```
-You are a coding agent executing a single TDD task for the givn change '<id>'.
+You are a coding agent executing a single TDD task for givn change '<id>'.
 
 ## Your task
-<paste the task line verbatim, including the Design constraints block>
+<paste the task line verbatim, including Design constraints>
 
 ## Scenario to implement
-<paste the relevant scenario(s) from the .feature file>
+<paste the relevant scenario(s)>
 
 ## Context
-- Verify command: <verify.command>
-- Step definitions location: <from design.md>
+- Verify command (non-@e2e / @e2e): <verify.command> / <verify.e2e_command>
+- Single-scenario run command: <from design.md — use for every RED/GREEN/
+  REFACTOR run, never infer from whole-suite output>
+- Step definitions location: <from design.md — one file per capability>
+- E2E step definitions location: <from design.md>
+- Not-implemented stub for this language: <from design.md>
 
-## Before any code: read the shared step-writing skill
-Read the givn-steps skill at `.agents/skills/givn-steps/SKILL.md` (or the
-equivalent path in your agent's skill directory: `.claude/skills/givn-steps/`
-or `.opencode/skills/givn-steps/`) in full before writing any step definitions.
-It describes the RED/GREEN/REFACTOR loop, step reuse, and lint-vs-test
-distinction that you must follow.
+## Rule: step body is never empty
+`{}`, bare `pass`/`return`, whitespace-only = indistinguishable from PASS.
+Every step without a real assertion uses the stub above, at every phase.
 
-## TDD stance (overlay on givn-steps)
+## Before any code
+Read the givn-steps skill (`.agents/skills/givn-steps/SKILL.md` or your
+harness's equivalent path) in full. Read givn/changes/<id>/design.md in
+full — the Design constraints block is a summary, design.md is authoritative.
+Do not substitute a simpler approach that happens to pass the test.
 
-The givn-steps skill describes the shared loop. For normal TDD, these rules
-OVERLAY the GREEN and REFACTOR phases:
+## RED
+1. Remove `@wip` from this scenario only.
+2. New steps use the not-implemented stub. Reused steps kept as-is.
+3. Run, targeting this scenario via the single-scenario command. Capture
+   output verbatim. Must exit non-zero. Exit 0 = runner not strict or a
+   step is empty — STOP, fix before writing production code.
 
-### Before any code: read the design
-Read givn/changes/<id>/design.md in full before touching any file.
-The "Design constraints" block in your task summarises the decisions that apply
-to this scenario specifically. The full design.md is the authoritative source.
-Do not substitute a simpler approach that happens to make a test pass —
-implement the architecture as specified.
+## GREEN
+4. Replace stubs with real assertions. Write minimum production code
+   following the design constraints and design.md exactly. "Minimum" means
+   fewest lines, not a simpler architecture than designed.
+5. List every production file created/modified. Empty list on a non-reuse
+   scenario — STOP, a scenario with no assertions and no code is not GREEN.
+6. Run targeting this scenario → zero exit. Capture output verbatim.
 
-### RED phase
-1. Remove `@wip` from this scenario only (leave it on all others).
-2. Check for reusable step definitions first. For new steps, write step
-   definitions with unimplemented assertions.
-3. Run: <verify.command>
-   This scenario MUST fail now (no production code yet).
-   If it passes, the assertions are not real — fix them.
+## REFACTOR
+7. Clean up, no behaviour change.
+8. Re-run targeting this scenario → still zero exit. Capture output verbatim.
 
-### GREEN phase
-4. Implement real assertions for new steps. Write the minimum production code
-   to make this scenario pass, following the design constraints in the task
-   and the architecture in design.md exactly. "Minimum" means fewest lines
-   that satisfy the scenario — it does not mean a simpler architecture than
-   the one designed.
-5. Run: <verify.command> → this scenario passes; others may still fail.
+## @e2e scenarios: same RED/GREEN/REFACTOR, with:
+- e2e step location, e2e runner (<verify.e2e_command>)
+- GREEN sets up test infrastructure (server/browser/DB, via the local run
+  command from design.md) and writes glue driving the real interface
+- **GREEN's Then steps assert PRIMARILY on the real interface's output**
+  (page content, HTTP response, redirect, CLI output). Repository/database
+  checks are allowed only as secondary, additional assertions alongside a
+  real-interface assertion — never as the only assertion.
+- **If a real-interface obstacle appears** (browser session/cookie not
+  persisting, auth redirect losing state, flaky selector): this is expected
+  and design.md's "Anticipated interface obstacles" section names the fix.
+  Apply that fix. If design.md has no fix for this specific obstacle, STOP
+  — do not substitute a repository-only assertion and continue. Report the
+  blocker: "real-interface obstacle not covered by design.md: <describe>."
+  The orchestrator will get this fixed in design.md before you continue.
+  Silently downgrading to a repository check is fabrication — it produces a
+  GREEN scenario that proves nothing about whether the feature actually
+  works through the interface a real user or client would use.
 
-### REFACTOR phase
-6. Clean up code, names, duplication — without changing behaviour.
-7. Run: <verify.command> → still passes.
-
-### Done
-8. Check off the task in givn/changes/<id>/tasks.md: `- [ ]` → `- [x]`
-9. Report back with:
-   - RED result (pass/fail as expected)
-   - GREEN result
-   - REFACTOR result
-   - Any issues or decisions made
+## Done
+9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <title>" (or
+   "test(e2e): <title>"). Record the hash.
+10. Paste RED/GREEN/REFACTOR evidence, files touched, and commit hash into
+    the task in tasks.md. Only then check it: `- [ ]` → `- [x]`.
+11. Report back: RED/GREEN/REFACTOR output verbatim, files touched, commit
+    hash, any issues.
 ```
 
-#### 5b. Wait for the subagent to report back
+#### 5b. Wait for the subagent
 
-The subagent must complete RED/GREEN/REFACTOR and check off the task before
-the orchestrator proceeds to the next task.
+Must complete RED/GREEN/REFACTOR, commit, and check off the task before
+the orchestrator proceeds. A reported blocker goes to the user.
 
-If the subagent reports a blocker, surface it to the user and wait for guidance
-before spawning the next subagent.
+#### 5c. Independently verify — do not trust the self-report
 
-#### 5c. After each subagent completes
+Before moving on, the orchestrator itself (not another subagent) checks:
+
+1. Re-run the scenario yourself, targeted. Confirm zero exit now.
+2. Check the commit: `git show --stat <hash>`. Exists, and touches
+   production source (not only spec/stub), unless a pure step-reuse case.
+3. Grep the step file(s) touched for empty bodies (`{}`, bare
+   `pass`/`return`). Any match = reject.
+4. Confirm tasks.md has pasted evidence and the commit hash, not just a
+   checked box.
+5. **For `@e2e` tasks only:** read the step definition(s) for this
+   scenario's Then steps. Confirm at least one asserts on the real
+   interface's output (page content, HTTP response, redirect, CLI output) —
+   not exclusively on repository/database state. A `@e2e` GREEN with
+   Then-step assertions that only touch a repository is a downgraded
+   scenario — reject it, regardless of what the subagent reported.
+
+Any failure: uncheck the task, do not proceed, re-spawn with the specific
+failure named (e.g. "`FooSteps.java:42` has an empty body — redo it", or
+"this @e2e scenario's Then steps only assert repository state — assert on
+the real interface's response, and if there's an obstacle, name it so
+design.md can be fixed first").
+
+Only if all checks pass:
 
 ```sh
 givn apply --change <id>
 ```
 
-Confirm the task was checked off. Then move to the next task.
+Confirm checked off. Move to the next task.
 
 ### 6. On completion
 
@@ -154,13 +191,19 @@ Confirm the task was checked off. Then move to the next task.
 givn apply --change <id>
 ```
 
-Show final progress. If all tasks are checked:
+If all tasks checked, run a final independent sanity check (not a repeat of
+5c — whole-suite this time):
+
+1. Run the FULL suite (both runners, not scenario-targeted). Confirm zero exit.
+2. Grep every step definition file for empty/no-op bodies. Must be 0.
+3. Count commits made vs. scenario tasks. Fewer commits than tasks = a task
+   was checked off without a commit — investigate.
 
 ```sh
 givn status --change <id>
 ```
 
-Suggest next step: "Run `/givn-review` to complete the coverage review."
+Suggest: "Run `/givn-review` to complete the coverage review."
 
 ---
 
@@ -205,17 +248,28 @@ Task 4/7: ...
 
 ## Guardrails
 
-- The orchestrator does not write code — it manages the loop and delegates.
-- Each subagent handles exactly one task (one RED/GREEN/REFACTOR cycle).
-- RED must genuinely fail before production code is written. If the subagent
-  reports it passed on RED, reject and re-spawn with corrected instructions.
-- Do not spawn the next subagent until the previous one has checked off its task.
-- Remove `@wip` from one scenario at a time only — pass this constraint to each
-  subagent explicitly.
-- `givn lint` is a STATIC check only — GREEN comes from `<verify.command>` only.
-- If a task is ambiguous, ask the user before spawning its subagent.
-- Do not batch multiple scenarios into one subagent.
-- If a subagent reports GREEN but deviated from the design (e.g. used a simpler
-  architecture that happens to pass the test), reject the result and re-spawn
-  with an explicit instruction to follow the design. GREEN means the scenario
-  passes AND the implementation matches the design.
+- Orchestrator manages the loop and delegates; it does not write code.
+- One subagent per task (one RED/GREEN/REFACTOR/COMMIT cycle).
+- RED must genuinely fail. A subagent reporting it passed on RED gets
+  rejected and re-spawned.
+- Independent verification (5c) is mandatory for every task, never skipped.
+- Step body is never empty. Found during verification → reject regardless
+  of subagent claims.
+- Every task requires a commit before its box is checked.
+- Do not spawn the next subagent until the previous task is verified and checked off.
+- Remove `@wip` from one scenario at a time — state this explicitly to each subagent.
+- `givn lint` is static only; GREEN comes from the runners, only after
+  strict mode is proven (step 4a).
+- Ambiguous task → ask the user before spawning.
+- Never batch multiple scenarios into one subagent.
+- GREEN requires: test passes AND implementation matches the design AND
+  independent verification confirms it. A subagent that deviated from the
+  design gets rejected and re-spawned even if the test passes.
+- A `@e2e` scenario whose Then steps assert only against a repository/
+  database, with no assertion on the real interface's output, is a
+  downgraded scenario — reject it (5c.5), regardless of subagent claims.
+- A real-interface obstacle hit during implementation is never a reason to
+  substitute a weaker assertion. If design.md has no fix for it, that is a
+  design gap — surface it as a blocker, get design.md fixed, then continue.
+  "I could not make the browser work so I checked the database" is not an
+  acceptable resolution at any point in this loop.

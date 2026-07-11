@@ -20,13 +20,13 @@ givn_config_version: "0.1.0"
 # prints setup guidance and exits non-zero — so nothing ever falsely reports
 # GREEN until you configure a real runner.
 #
-# CHANGE ME — set this to a Gherkin/Cucumber runner that executes the .feature
-# files under givn/specs/, e.g.:
-#   cargo test --test features_runner      # cucumber-rs (this project)
+# CHANGE ME — set this to your project's test runner, e.g.:
+#   cargo test
+#   mvn test
 #   npx cucumber-js "givn/specs/**/*.feature"
 #   behave
-# A bare unit-test runner (cargo test alone, pytest) is NOT sufficient — the
-# .feature file is the executable spec, so the runner must consume it.
+#   go test ./...
+#   pytest
 #
 # See arc42 ch.8.10 for details.
 verify:
@@ -127,8 +127,12 @@ verify:
 # --- Addons ------------------------------------------------------------------
 # Opt-in pre-packaged artifact sets. See arc42 ch.8.11.
 #
-addons:
-  arc42: true
+# addons:
+#   arc42: false           # set to true to enable the arc42 documentation artifact
+#   absolute_mode: false   # set to true to enable the Absolute Mode communication
+#                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
+#                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
+#                          # Toggle with: givn addons enable|disable absolute_mode
 
 # --- arc42 configuration (requires addons.arc42: true) -----------------------
 # arc42:
@@ -148,4 +152,16 @@ addons:
 #     - glossary
 #   require_for_archive: false   # if true, adds arc42-docs to apply.requires
 
+# --- Extras ------------------------------------------------------------------
+# Opt-in project-level skills and commands independent of the change lifecycle.
+# When enabled, `givn skills sync` includes them alongside core workflow skills.
+# `givn extras install` enables + syncs; `givn extras uninstall` disables + removes.
+#
+# extras: true   # uncomment and set to false to disable
+
+# --- User overrides preserved from previous version ---
+addons:
+  absolute_mode: true
+  arc42: true
 extras: true
+# ---

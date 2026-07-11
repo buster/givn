@@ -87,8 +87,11 @@ as "no issue found" if genuinely clean):
   alternatives that satisfy all the observable behaviours in the spec?
 - **Missing scenarios** — are there observable behaviours implied by the proposal
   but absent from the spec? Error paths? Boundary conditions?
-- **Testability** — can every scenario actually fail in RED with no production
-  code? Do the Then-steps assert concrete values, not just "it ran"?
+- **Testability** — can every scenario fail in RED with no production code?
+  Do Then-steps assert concrete values, not "it ran"? Does design.md name a
+  concrete strict-mode mechanism, not-implemented stub pattern, and
+  single-scenario run command? Missing or vague on any of the three is a
+  blocking finding — this is the root cause of past fabricated changes.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
 

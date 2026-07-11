@@ -21,12 +21,87 @@ Everything technical belongs here — do not add implementation details to the s
 - Technology decisions: language, framework, libraries, patterns.
 - Architecture impact: which modules/components are affected, what is new.
 - Data model changes: schema, structs, database changes.
-- Step definition locations: where Cucumber/Gherkin step defs live.
+- Step definition locations: where Cucumber/Gherkin step defs live. **One
+  file per capability** — never a single file for the whole change.
 - Runner command: confirm `verify.command` in `givn/config.yaml`.
+- **Strict-mode config**: the exact flag/mechanism that makes the runner
+  fail on undefined/pending steps (see "Strict mode" below).
+- **Single-scenario run command**: the exact invocation to run one named
+  scenario, used by every RED/GREEN check in tasks.md.
 - Justify non-obvious technical choices.
+
+## Version freshness (mandatory)
+
+Never write a version number for a language, runtime, framework, library,
+database, or container image from memory. Training data has an unknown
+cutoff — a remembered "current" version can now be outdated or
+end-of-life. For every versioned choice, either state "latest" or the
+ecosystem's LTS explicitly (e.g. "Node.js: latest LTS"), or look up a
+current version now and record it with what was checked (e.g. "Playwright
+1.49.x — checked npmjs.com/package/playwright"). A bare specific version
+with no lookup note and no "latest/LTS" designation is an unverified guess.
+
+## Strict mode (mandatory)
+
+Most runners treat undefined/pending steps as neither pass nor hard failure
+by default; some (notably Java/cucumber-jvm with an empty step body) report
+an outright PASS. This has checked off whole changes complete with nothing
+implemented. Document explicitly:
+
+- The strict-mode flag/config for the chosen runner (e.g. `cucumber-rs`:
+  `.fail_on_skipped()`; `cucumber-js`: `--strict`; `cucumber-jvm` CLI:
+  `--strict`; `cucumber-jvm` JUnit Platform Suite: no native flag — enforced
+  by never leaving a step body empty, plus a plugin/listener that fails on
+  UNDEFINED/PENDING results; `behave`: steps must `raise` explicitly).
+- The not-implemented stub pattern for this language (e.g. Java:
+  `throw new io.cucumber.java.PendingException(...)`; Python:
+  `raise NotImplementedError(...)`; Rust: `unimplemented!()`).
+
+If the runner cannot fail on undefined/pending steps via configuration
+alone, state that step-body discipline is the enforcement mechanism and
+name a mechanical check (grep-based lint, review-time audit) that will
+catch empty bodies before archive.
+
+## Local runnability & digital twins (mandatory)
+
+The system MUST be runnable and testable locally, fully, with one command.
+"The interface had a technical problem so we tested the database instead"
+is not an acceptable outcome — it is a design gap.
+
+- **Local run command**: the single command that starts the entire system
+  (app + every dependency) in an isolated network (e.g. `docker-compose up`).
+- **Digital twin per external/third-party dependency**: every service this
+  system talks to that is not part of this codebase (email, payments,
+  third-party APIs, cloud services) gets a fake/stub/emulator running in
+  the same isolated network. No scenario may depend on a live third-party
+  service. State explicitly if there are none.
+- **Anticipated interface obstacles get a named fix**: if you can foresee a
+  technical obstacle to driving the real interface (session/cookie
+  persistence across steps, auth redirects, websocket handshakes), name the
+  concrete fix here. A scenario blocked on an undesigned interface problem
+  during implementation is a design gap, not a reason to test something weaker.
+
+## E2E smoke test infrastructure
+
+The design MUST document the e2e test infrastructure for `@e2e` scenarios:
+
+- **E2E runner command** → becomes `verify.e2e_command` in `givn/config.yaml`.
+- **E2E step definition location** (separate from unit/integration steps).
+- **Test infrastructure**: what is needed locally (browser driver, test server,
+  test database, Testcontainers, fake services). How it starts/stops.
+- **E2E framework choice** and justification.
+- **Real-interface assertion rule**: every `@e2e` scenario's primary
+  assertion is on what the real interface returned/displayed — repository/
+  database assertions are secondary and additional only, never a replacement.
 
 ## Verify command
 
+Unit/integration:
 ```
 cargo test --test features_runner
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```

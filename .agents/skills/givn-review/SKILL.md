@@ -13,6 +13,32 @@ Complete the coverage review for change `<change-id>`.
 - Instructions: run `givn instructions review --change <change-id>`
 - Test runner: `cargo test --test features_runner`
 
+## Step 0: fabrication audit (mandatory, before anything else)
+
+A change can reach review with every task checked off, the runner exiting
+0, and almost nothing implemented — if step definitions were left as empty
+stubs. Mechanical check, not a judgment call:
+
+1. Grep every step definition file for empty/no-op bodies (`{}`, bare
+   `pass`, bare `return`, no assertion library reference). Record findings.
+2. For every checked-off `[x]` task, confirm a commit exists and its diff
+   touches production source (not just the `.feature` file or a stub).
+3. For every component design.md promised, confirm it exists in the tree.
+4. Confirm the setup task's proof-of-strictness evidence is present and
+   shows a non-zero exit.
+5. Read every `@e2e` scenario's step definitions. If its Then steps assert
+   ONLY against a repository/database, record it as a downgraded e2e
+   scenario — it does not prove the feature works end-to-end.
+6. Confirm the local run command (design.md's Local Runnability section)
+   starts the full stack, including every digital twin, cleanly.
+7. Any finding is unfinished implementation, not a coverage gap — reopen
+   the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
+   real-interface obstacle per design.md, never leaving a repository-only
+   assertion in place), before continuing.
+
+Record the result (files scanned, findings, remediation) in review.md even
+when clean.
+
 ## Coverage gate (completeness, not percentage)
 
 Classify every uncovered line/branch into exactly one bucket:
@@ -26,16 +52,22 @@ Coverage is complete when every gap is classified and resolved (or justified).
 
 ## Steps
 
-1. Run `cargo test --test features_runner` — confirm all tests pass.
-2. Run your coverage tool and list uncovered regions in the review table.
-3. Classify each gap (1, 2, or 3 above).
-4. Resolve each gap:
+1. Run `cargo test --test features_runner` — confirm all non-@e2e tests pass.
+2. Run `verify.e2e_command` — confirm all @e2e tests pass.
+3. Run your coverage tool and list uncovered regions in the review table.
+4. Classify each gap (1, 2, or 3 above).
+5. Resolve each gap:
    - Dead code → delete.
-   - Missing test → add scenario + RED/GREEN/REFACTOR.
+   - Missing test → add scenario + RED/GREEN/REFACTOR/COMMIT.
    - Hard to test → write justification.
-5. Run `cargo test --test features_runner` again — confirm still GREEN.
-6. Complete the sign-off checklist in review.md.
-7. Write `REVIEW: PASS` at the end of review.md when all items are checked.
+6. Confirm every capability has at least one `@e2e` smoke-test scenario
+   with a real-interface primary assertion. Missing or downgraded =
+   classify as "missing test" and add or fix one.
+7. Run both runners again — confirm still GREEN.
+8. Complete the sign-off checklist in review.md, including the fabrication
+   audit result.
+9. Write `REVIEW: PASS` at the end of review.md when all items are checked
+   AND the fabrication audit is clean.
 
 ## After sign-off
 
@@ -45,6 +77,12 @@ givn check review --change <change-id>
 
 ## Verify command
 
+Unit/integration:
 ```
 cargo test --test features_runner
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```

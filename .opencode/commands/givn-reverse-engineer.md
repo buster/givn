@@ -174,25 +174,26 @@ Exit 1 = parse error — fix before continuing.
 
 Write `givn/changes/<id>/tasks.md` with:
 
-**First task: test infrastructure setup (or verification)**
+**First task: test infrastructure setup (or verification), PROVEN strict**
 
-- If no Gherkin runner is configured: run `verify.command` — if it is still
-  the `givn missing-testrunner` sentinel, its output prints setup guidance.
-  Follow that guidance to install and configure a Gherkin/Cucumber runner
-  that executes the `.feature` files under `givn/specs/`. Set
-  `verify.command` in `givn/config.yaml` to the exact runner invocation
-  (e.g. `cargo test --test features_runner`). Create the Gherkin runner test
-  binary and the step-definition module skeleton. Step definitions are shared
-  glue — never a parallel hand-maintained test file.
-- If a Gherkin runner already exists: verify the runner exits 0 on the
-  existing spec suite. This task is verification, not setup.
-- Either way: verify the runner exits 0 (or exits with only @wip-related
-  failures) before characterization begins.
+- No runner configured: install one, configure its strict-mode flag, set
+  `verify.command`, create the runner binary and step skeleton one file per
+  capability.
+- Runner exists: do not assume strict — run the proof below regardless.
+- **Proof of strictness (mandatory)**: write one step using the
+  not-implemented stub for the language. Run the runner, confirm NON-ZERO
+  exit, paste command + output. Exit 0 = fix the strict-mode config before
+  continuing — this exact defect has previously checked off a whole
+  characterization complete with every step an empty stub.
+- Confirm the runner exits 0 (or only @wip-related failures) before
+  characterization begins. If `verify.e2e_command` is configured and the
+  feature has `@e2e` scenarios, prove it strict too.
 
-**Subsequent tasks: one characterization cycle per scenario, in .feature order**
+**Subsequent tasks: one characterization cycle per scenario, in .feature
+order, each ending in a commit**
 
-Each task is a `- [ ]` checkbox covering a full RED/GREEN/REFACTOR cycle
-(see `givn-steps` skill for the shared loop mechanics). For each task:
+Each task is a `- [ ]` checkbox covering a full RED/GREEN/REFACTOR/COMMIT
+cycle (see `givn-steps` skill for the shared loop mechanics). For each task:
 
 - Include the scenario title.
 - Include a "Seam" block if a testability seam is needed for this scenario
@@ -201,16 +202,30 @@ Each task is a `- [ ]` checkbox covering a full RED/GREEN/REFACTOR cycle
   test-only constructor, extract a pure function from a side-effectful one.
   NOT allowed — rename, deduplicate, simplify logic, fix bugs, change error
   messages, change return types, change control flow.
+- Include a place to paste the RED/GREEN/REFACTOR runner output (a
+  description of what should happen is not evidence — pasted output is).
+- Include a place for the commit hash. One atomic commit per scenario,
+  message references the scenario title.
+- Any step without a real assertion yet uses the not-implemented stub
+  pattern — never an empty body.
 
 **Task format example:**
 
 ```markdown
 - [ ] **Scenario: Valid multi-word kebab-case id creates the change scaffold**
-  - GREEN: write step definitions asserting observed behaviour. Run verify → must pass.
+  - RED: write step definitions using the not-implemented stub for new
+    steps. Run verify, targeting this scenario → must fail (or pass
+    immediately if all steps reused). Paste output.
+  - GREEN: replace stubs with real assertions of observed behaviour. Run
+    verify, targeting this scenario → must pass. Paste output.
   - REFACTOR: no seam needed.
+  - COMMIT: <commit hash>
 - [ ] **Scenario: Id with uppercase letters is rejected**
-  - GREEN: write step definitions asserting observed exit code and stderr.
+  - RED: write step definitions asserting observed exit code and stderr,
+    using the not-implemented stub for anything new. Paste output.
+  - GREEN: replace with real assertions. Paste output.
   - Seam: none.
+  - COMMIT: <commit hash>
 ```
 
 After writing tasks:
@@ -266,7 +281,10 @@ RED/GREEN/REFACTOR loop and make the specs executable.
   be guessed from documentation alone.
 - Suspected bugs are flagged in the Feature: description block — never fixed.
 - Production code is never changed during planning. Testability seams are
-  documented per-task in tasks.md but applied during `/givn-characterize`.
-- Tasks must use `- [ ]` checkboxes so `givn apply` can track progress.
-- Run `givn lint --change <id>` after writing specs and fix parse errors
-  (exit 1) before continuing.
+  documented per-task but applied during `/givn-characterize`.
+- Tasks use `- [ ]` checkboxes for `givn apply` to track.
+- The setup task's proof-of-strictness sub-task is mandatory — omitting it
+  is how a characterization gets checked off complete with empty stubs.
+- Every scenario task needs a field for RED/GREEN/REFACTOR output and a
+  commit hash, not just a description of intended steps.
+- `givn lint --change <id>` after writing specs; fix parse errors (exit 1).

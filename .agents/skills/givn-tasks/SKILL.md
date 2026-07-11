@@ -14,29 +14,99 @@ Write the implementation task breakdown for change `<change-id>`.
 - Design (HOW): `givn/changes/<change-id>/design.md`
 - Test runner: `cargo test --test features_runner`
 
-## The TDD loop (one scenario at a time)
+## Strict mode must be proven first (mandatory setup task)
+
+Empty/unimplemented steps are indistinguishable from a PASS in most
+Cucumber runners — this has checked off a whole change complete with every
+step an empty stub and the runner reporting 100% GREEN. The setup task MUST:
+
+- Configure the runner's strict-mode flag/config from design.md.
+- **Proof-of-strictness**: write a step using the not-implemented stub (see
+  design.md's Strict Mode section), run the runner, confirm NON-ZERO exit.
+  Paste command + output. Exit 0 → fix the config and re-prove.
+- Create step skeletons **one file per capability** (design.md's Step
+  Definitions table) — never one file for everything.
+
+## The TDD loop (one scenario at a time, ending in a commit)
+
+Non-@e2e scenarios first:
 
 ```
-For each scenario:
+For each non-@e2e scenario:
   RED:      Remove @wip from THIS scenario only.
-            Write step definitions WITH real assertions.
-            Run: cargo test --test features_runner → MUST FAIL (no production code yet).
-            If it passes, assertions are not real — fix the steps first.
-  GREEN:    Write minimum production code.
-            Run: cargo test --test features_runner → this scenario PASSES.
+            Write step definitions — unimplemented steps use the
+              not-implemented stub from design.md, NEVER an empty body.
+            Run: cargo test --test features_runner, targeting this scenario only (use the
+              single-scenario run command from design.md) → MUST FAIL with
+              non-zero exit. Paste the output as evidence.
+  GREEN:    Replace stubs with real assertions. Write minimum production
+              code. List every production file created/modified — empty
+              list on a non-reuse scenario means investigate before
+              claiming GREEN.
+            Run: cargo test --test features_runner, targeting this scenario only → PASSES.
+              Paste the output as evidence.
   REFACTOR: Clean up without changing behaviour.
-            Run: cargo test --test features_runner → still PASSES.
+            Run: cargo test --test features_runner, targeting this scenario only → still
+              PASSES. Paste the output as evidence.
+  COMMIT:   One atomic commit for RED+GREEN+REFACTOR, message references the
+              scenario title. Record the commit hash.
 Then move to the next scenario.
+```
+
+Before the first @e2e scenario, bring up the local environment (design.md's
+Local Runnability section: local run command, all dependencies, all
+digital twins, isolated network) and confirm clean startup.
+
+Then @e2e smoke tests (after all non-@e2e scenarios are GREEN):
+
+```
+For each @e2e scenario:
+  RED:      Remove @wip. Write e2e step definitions — unimplemented steps
+              use the not-implemented stub, never an empty body.
+            Run: verify.e2e_command, targeting this scenario only →
+              MUST FAIL. Paste evidence.
+  GREEN:    Set up test infrastructure if needed. Replace stubs with real
+              assertions driving the actual interface AS THE PRIMARY
+              assertion (page content, HTTP response, redirect, CLI
+              output). Repository checks are secondary/additional only —
+              never the sole assertion. If a real-interface obstacle
+              appears, apply the fix design.md names for it; if none is
+              named, STOP — this is a design gap, not a reason to
+              downgrade to a repository-only check. List files touched.
+            Run: verify.e2e_command, targeting this scenario only →
+              scenario PASSES. Paste evidence.
+  REFACTOR: Clean up e2e code. Runner still PASSES. Paste evidence.
+  COMMIT:   One atomic commit, message references the scenario title.
+              Record the commit hash.
+Then move to the next @e2e scenario.
 ```
 
 ## Important
 
 - `givn lint` is a STATIC Gherkin check only. It does NOT run tests.
-- GREEN is confirmed by `cargo test --test features_runner` only, never by `givn lint`.
+- A step definition body is NEVER empty (`{}`, bare `pass`, bare `return`).
+  Unimplemented steps always use the not-implemented stub from design.md.
+- GREEN for non-@e2e is confirmed by `cargo test --test features_runner` only, and only
+  once strict mode has been proven in the setup task.
+- GREEN for @e2e is confirmed by `verify.e2e_command` only, likewise proven.
+- Never conflate lint, verify.command, or verify.e2e_command.
+- Every scenario task ends in a COMMIT sub-task with a recorded hash. A
+  checked task with no commit is not done.
+- Every RED/GREEN/REFACTOR sub-task has a place to paste captured runner
+  output — describing what should happen is not the same as recording what
+  did happen.
+- A `@e2e` scenario whose Then steps assert only against a repository is not
+  done, no matter what the runner reports — it needs a real-interface assertion.
 - Track progress: `givn apply --change <change-id>`
 
 ## Verify command
 
+Unit/integration:
 ```
 cargo test --test features_runner
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
 ```
