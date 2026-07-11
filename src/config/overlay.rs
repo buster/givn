@@ -6,7 +6,9 @@ use crate::config::manifest::{Addons, Apply, Artifact, HookEntry, Manifest, Veri
 /// - `remove: true` on an artifact removes it from the effective graph.
 /// - `optional: true` marks it skippable.
 /// - Scalar fields (e.g. `verify.command`) in the overlay replace the default.
-/// - `addons: { arc42: true }` expands to the arc42-docs artifact definition.
+/// - `addons:` block: every flag is copied onto the effective manifest,
+///   regardless of whether that addon has further side effects. `arc42: true`
+///   additionally expands to the arc42-docs artifact definition.
 /// - After merge, the effective graph is validated (Phase 2.3a).
 use anyhow::{Result, bail};
 
@@ -28,12 +30,21 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
         result.apply = a;
     }
 
-    // Merge addons (expand arc42 if enabled).
+    // Merge addons. Every addon flag on the overlay is copied onto the
+    // effective manifest — this must happen for ALL addons, not just the
+    // ones with artifact-graph side effects, otherwise `load_effective()`
+    // silently reports an addon as disabled even though the user's
+    // `givn/config.yaml` enables it (this broke `absolute_mode`: every
+    // `givn skills sync` re-read the manifest, saw `absolute_mode: false`,
+    // and removed the AGENTS.md block that `givn addons enable` had just
+    // written).
     if let Some(addons) = overlay.addons {
+        // arc42 additionally expands into an artifact-graph node — keep
+        // that side effect here, guarded so enabling twice stays idempotent.
         if addons.arc42 && !result.addons.arc42 {
-            result.addons.arc42 = true;
             result.artifacts.push(arc42_artifact());
         }
+        result.addons = addons;
     }
 
     // Merge extras flag.
@@ -373,6 +384,54 @@ artifacts:
             .filter(|a| a.id == "arc42-docs")
             .count();
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn addons_arc42_flag_is_set_on_effective_manifest() {
+        // Regression: the arc42-docs artifact being present is not the same
+        // as addons.arc42 being true on the effective manifest. Anything
+        // reading manifest.addons.arc42 directly (not just artifact
+        // presence) must also see it enabled.
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: true").unwrap();
+        assert!(result.addons.arc42, "addons.arc42 must be true after overlay");
+    }
+
+    #[test]
+    fn addons_absolute_mode_flag_is_set_on_effective_manifest() {
+        // Regression: enabling absolute_mode in givn/config.yaml must be
+        // visible on the effective manifest returned by load_effective().
+        // Previously only `arc42` was copied from the overlay onto the
+        // result; every other addon flag (here: absolute_mode) was
+        // silently dropped, so `givn skills sync` always saw it as
+        // disabled and deleted the AGENTS.md block on every sync even
+        // though `givn addons enable absolute_mode` had just written it.
+        let base = Manifest::load_embedded().unwrap();
+        assert!(!base.addons.absolute_mode, "must be disabled by default");
+
+        let result = apply(base, "addons:\n  absolute_mode: true").unwrap();
+        assert!(
+            result.addons.absolute_mode,
+            "addons.absolute_mode must be true after overlay enables it"
+        );
+    }
+
+    #[test]
+    fn addons_absolute_mode_and_arc42_can_both_be_enabled() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: true\n  absolute_mode: true").unwrap();
+        assert!(result.addons.arc42);
+        assert!(result.addons.absolute_mode);
+        assert!(result.artifacts.iter().any(|a| a.id == "arc42-docs"));
+    }
+
+    #[test]
+    fn addons_absolute_mode_defaults_to_false_with_no_overlay_addons_block() {
+        // No `addons:` key at all in the overlay must leave the default
+        // (false) untouched, not reset it or panic.
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "{}").unwrap();
+        assert!(!result.addons.absolute_mode);
     }
 
     #[test]
