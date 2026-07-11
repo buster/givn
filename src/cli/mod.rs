@@ -1,5 +1,6 @@
 pub mod absolute_mode;
 pub mod addons;
+pub mod agents_block;
 pub mod apply;
 pub mod archive;
 pub mod check;
@@ -10,6 +11,7 @@ pub mod instructions;
 pub mod lint;
 pub mod missing_testrunner;
 pub mod new;
+pub mod project_hint;
 pub mod skills;
 pub mod status;
 pub mod upgrade;

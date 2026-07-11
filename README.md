@@ -56,8 +56,18 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   clobber your files.
 - **Standards-aligned agent integration.** Invokable skills are emitted to the
   neutral `.agents/skills/<name>/SKILL.md` path, with mirrors for Claude Code
-  and opencode. `AGENTS.md` at the repo root is left for the user to author —
-  givn never writes or overwrites it.
+  and opencode. `AGENTS.md` at the repo root is otherwise left for the user to
+  author. The one exception: `givn init` and `givn skills sync` maintain a
+  short, fenced `<!-- givn:begin:givn-project -->` block in it — a pointer
+  telling any agent that this project uses givn and to run
+  `givn instructions` for what to do next. Nothing outside that block is
+  ever touched. Opt-in addons (e.g. `absolute_mode`) manage their own
+  separate fenced blocks the same way.
+- **Context-aware entry point.** `givn instructions` (no arguments) inspects
+  the project's current state — no `givn/` yet, no active changes, one
+  change mid-workflow, several active changes — and tells you exactly which
+  command or skill to run next. `givn instructions <artifact>` is unchanged:
+  it prints that artifact's writing instructions.
 - **Self-documenting, versioned config.** `givn init` writes `givn/config.yaml`
   with every key present-but-commented, documented inline (description, default,
   allowed values). It carries `givn_config_version`; `givn upgrade` provides a
@@ -153,6 +163,7 @@ No npm. No root. No runtime. Pick whichever you like:
 
 ```sh
 givn init                       # scaffold givn/ + generate skills
+givn instructions               # context-aware: what to do next, given current state
 givn new add-user-auth          # create a change scaffold
 givn new reverse-cap --skip proposal,design,design-review  # create a change skipping artifacts (reverse-engineering)
 givn instructions proposal --change add-user-auth --json
@@ -210,6 +221,10 @@ givn/
 .agents/skills/<name>/SKILL.md        # neutral skills (primary)
 .claude/skills/<name>/SKILL.md        # mirror for Claude Code
 .opencode/skills/<name>/SKILL.md      # mirror for opencode
+AGENTS.md                             # user-owned; givn only maintains its own
+                                       #   fenced <!-- givn:begin:givn-project -->
+                                       #   block (+ <!-- givn:begin:absolute-mode -->
+                                       #   if that addon is enabled)
 ```
 
 ## Documentation

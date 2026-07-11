@@ -39,10 +39,13 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         skip: Vec<String>,
     },
-    /// Show instructions for an artifact.
+    /// Show instructions. With an artifact id, prints that artifact's
+    /// writing instructions (unchanged). Without one, prints context-aware
+    /// generic guidance: what to run next, given the project's current state.
     Instructions {
         /// Artifact id (e.g. proposal, specs, design, tasks, review).
-        artifact: String,
+        /// Omit for context-aware generic guidance on what to do next.
+        artifact: Option<String>,
         /// Change identifier.
         #[arg(long)]
         change: Option<String>,
@@ -175,7 +178,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             artifact,
             change,
             json,
-        } => cli::instructions::run(&artifact, change.as_deref(), json),
+        } => cli::instructions::run(artifact.as_deref(), change.as_deref(), json),
         Commands::Lint { change, paths } => {
             let code = cli::lint::run(change.as_deref(), paths)?;
             if code != 0 {

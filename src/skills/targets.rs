@@ -9,9 +9,11 @@ use crate::skills::render::{
 /// - `.opencode/commands/<name>.md`     (opencode slash commands)
 ///
 /// `AGENTS.md` at the repo root is otherwise user-owned. The only exception:
-/// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it
-/// (currently just the `absolute_mode` addon block), kept in sync with the
-/// addon flag on every call to `sync`.
+/// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it:
+/// - `givn-project` — always present, a short pointer to `givn instructions`.
+/// - `absolute-mode` — present only when that addon is enabled.
+///
+/// Both are kept current on every call to `sync`.
 use anyhow::Result;
 use std::path::Path;
 
@@ -56,6 +58,9 @@ pub fn sync(project_root: &Path) -> Result<()> {
         write_opencode_command(project_root, name, &content)?;
         println!("  synced command: /{name}");
     }
+
+    // Always-on project hint block: unconditional, refreshed every sync.
+    crate::cli::project_hint::apply(project_root)?;
 
     // Self-healing AGENTS.md block: keep it present/absent in sync with the
     // addon flag on every init/sync, independent of how it got out of sync.
