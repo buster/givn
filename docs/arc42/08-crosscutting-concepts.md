@@ -127,6 +127,11 @@ apply:
 **d) Reorder / add any artifact.** Order is derived from `requires`, so changing
 dependencies reorders the graph. New ids are appended and slotted by their deps.
 
+**Never apply (a) or (b) to `design-review`.** It is a planning-layer gate
+that blocks `tasks`, not an archive gate — removing or making it optional
+does not save time, it defers a flawed plan's problems to implementation,
+where they cost a rewrite instead of a markdown edit.
+
 Rules and guarantees:
 - Removing or reordering artifacts must keep the dependency graph acyclic;
   `givn` validates the effective graph and refuses an inconsistent overlay
@@ -613,9 +618,16 @@ descriptive Gherkin specs and characterization tasks.
 
 ### Two peer flows
 
-```
-STANDARD:  propose → spec → design → design-review → tasks → implement → review → archive
-REVERSE:   reverse-engineer → characterize → archive
+```mermaid
+flowchart LR
+    subgraph STANDARD
+        direction LR
+        s1[propose] --> s2[spec] --> s3[design] --> s4[design-review] --> s5[tasks] --> s6[implement] --> s7[review] --> s8[archive]
+    end
+    subgraph REVERSE
+        direction LR
+        r1[reverse-engineer] --> r2[characterize] --> r3[archive]
+    end
 ```
 
 Reverse artifacts (3 only): `specs/<cap>/<cap>.feature`, `tasks.md`,

@@ -6,22 +6,16 @@
 project's source tree. It manages spec-driven changes whose specifications are
 Gherkin `.feature` files.
 
-```
-        ┌─────────────────────────────────────────────────────┐
-        │                      givn (CLI)                       │
-        │  init · new · instructions · lint · check · status ·  │
-        │  apply · archive · eject · skills sync                │
-        └───────┬───────────────┬───────────────┬──────────────┘
-                │               │               │
-   reads/writes │       emits   │      reads    │
-                ▼               ▼               ▼
-         ┌───────────────┐ ┌───────────┐ ┌───────────────┐
-         │ givn/ project  │ │  skills   │ │ embedded       │
-         │ config dir     │ │ (.agents, │ │ defaults       │
-         │ (specs,changes,│ │ .claude,  │ │ (baked into    │
-         │  archive,...)  │ │ .opencode)│ │  the binary)   │
-         │                │ │           │ │                │
-         └───────────────┘ └───────────┘ └───────────────┘
+```mermaid
+graph TB
+    CLI["givn (CLI)<br/>init · new · instructions · lint · check · status ·<br/>apply · archive · eject · skills sync"]
+    PROJECT["givn/ project config dir<br/>(specs, changes, archive, ...)"]
+    SKILLS["skills<br/>(.agents, .claude, .opencode)"]
+    EMBEDDED["embedded defaults<br/>(baked into the binary)"]
+
+    CLI -->|reads/writes| PROJECT
+    CLI -->|emits| SKILLS
+    CLI -->|reads| EMBEDDED
 ```
 
 ### External entities

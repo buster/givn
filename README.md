@@ -219,8 +219,9 @@ givn completions fish                       # print fish completion script (sour
 
 ## The workflow
 
-```
-propose → spec → design → design-review → tasks → implement → review → archive
+```mermaid
+flowchart LR
+    propose --> spec --> design --> design-review --> tasks --> implement --> review --> archive
 ```
 
 `archive` is gated: `apply.requires: [tasks, review]`.
@@ -244,8 +245,9 @@ characterizing observed behaviour. Reverse-engineering is a **peer flow** to
 the normal change lifecycle — it does not produce proposals or designs, only
 descriptive Gherkin specs and characterization tasks:
 
-```
-reverse-engineer → characterize → archive (creates baseline spec)
+```mermaid
+flowchart LR
+    reverse-engineer --> characterize --> archive["archive (creates baseline spec)"]
 ```
 
 - **reverse-engineer** discovers a capability and its black-box boundary

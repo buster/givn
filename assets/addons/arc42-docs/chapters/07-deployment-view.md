@@ -5,8 +5,8 @@
 
 ## Infrastructure level 1
 
-```
-[Diagram or textual description of deployment topology]
+```mermaid
+[Mermaid diagram of deployment topology, e.g. graph TB]
 ```
 
 | Node / Environment | Description |

@@ -599,8 +599,9 @@ that produce a flawed implementation.
 **Decision.** Add a `design-review` artifact to the default manifest, positioned
 after `design` and before `tasks`:
 
-```
-proposal → specs → design → design-review → tasks → implement → review → archive
+```mermaid
+flowchart LR
+    proposal --> specs --> design --> design-review --> tasks --> implement --> review --> archive
 ```
 
 `design-review` requires `[design]` and `tasks` requires `[design-review]`. It
@@ -814,9 +815,16 @@ normal change lifecycle, not a variant of it. It produces only 3 artifacts:
 `specs/<cap>/<cap>.feature`, `tasks.md`, and `review.md`. No proposal, no
 design, no design-review.
 
-```
-STANDARD:  propose → spec → design → design-review → tasks → implement → review → archive
-REVERSE:   reverse-engineer → characterize → archive
+```mermaid
+flowchart LR
+    subgraph STANDARD
+        direction LR
+        s1[propose] --> s2[spec] --> s3[design] --> s4[design-review] --> s5[tasks] --> s6[implement] --> s7[review] --> s8[archive]
+    end
+    subgraph REVERSE
+        direction LR
+        r1[reverse-engineer] --> r2[characterize] --> r3[archive]
+    end
 ```
 
 Content that used to live in proposal.md and design.md moves to more

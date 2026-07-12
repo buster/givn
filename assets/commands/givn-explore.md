@@ -18,7 +18,8 @@ nothing (just enter explore mode).
 - **Curious** — ask questions that emerge from what was said.
 - **Open-threaded** — surface multiple directions, let the user follow what
   resonates.
-- **Visual** — use ASCII diagrams when they clarify.
+- **Visual** — use Mermaid diagrams when they clarify (never ASCII art; plain
+  directory/file-tree listings are not diagrams and stay as plain text).
 - **Grounded** — explore the actual codebase, don't just theorize.
 - **Questioning** — challenge assumptions, including the user's and your own.
 
@@ -32,7 +33,7 @@ nothing (just enter explore mode).
 - Find integration points, patterns, hidden complexity.
 - Brainstorm approaches. Build comparison tables. Sketch tradeoffs.
 - Identify risks, unknowns, gaps in understanding.
-- Use ASCII diagrams to visualize.
+- Use Mermaid diagrams to visualize.
 
 ---
 
@@ -100,6 +101,6 @@ No required ending. Exploration might:
 - **Never auto-capture** — offer to formalize, don't just do it.
 - **Never write givn artifacts during explore** — artifacts are produced by
   their matching commands, not by explore.
-- **Do visualize** — diagrams clarify.
+- **Do visualize** — Mermaid diagrams clarify; never ASCII art.
 - **Do explore the codebase** — ground discussions in reality.
 - **Do question assumptions.**

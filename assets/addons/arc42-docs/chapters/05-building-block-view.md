@@ -8,8 +8,8 @@
 
 <!-- Top-level whitebox: the system and its immediate internal blocks. -->
 
-```
-[Diagram or textual description]
+```mermaid
+[Mermaid diagram of the system decomposition, e.g. graph TB]
 ```
 
 | Building block | Responsibility |

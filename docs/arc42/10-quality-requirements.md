@@ -2,26 +2,32 @@
 
 ## 10.1 Quality Tree
 
-```
-givn quality
-├── Configurability (Goal 1)
-│   ├── Per-facet override
-│   ├── Manifest overlay
-│   └── No source fork required
-├── Installability (Goal 2)
-│   ├── No npm / no root / no runtime
-│   ├── Multiple channels (release, curl|sh, brew, cargo)
-│   └── Multi-platform
-├── Upgradeability (Goal 3)
-│   ├── Project files never clobbered
-│   └── Defaults live only in the binary
-├── Correctness
-│   ├── Gherkin merge integrity (added/modified/removed)
-│   ├── No partial writes on archive
-│   └── Accurate filesystem-derived state
-└── Agent ergonomics
-    ├── Standards-aligned (.agents/skills; AGENTS.md user-owned)
-    └── Machine-readable instructions (--json)
+```mermaid
+graph TD
+    Q["givn quality"]
+
+    Q --> CFG["Configurability (Goal 1)"]
+    CFG --> CFG1["Per-facet override"]
+    CFG --> CFG2["Manifest overlay"]
+    CFG --> CFG3["No source fork required"]
+
+    Q --> INST["Installability (Goal 2)"]
+    INST --> INST1["No npm / no root / no runtime"]
+    INST --> INST2["Multiple channels (release, curl|sh, brew, cargo)"]
+    INST --> INST3["Multi-platform"]
+
+    Q --> UPG["Upgradeability (Goal 3)"]
+    UPG --> UPG1["Project files never clobbered"]
+    UPG --> UPG2["Defaults live only in the binary"]
+
+    Q --> COR["Correctness"]
+    COR --> COR1["Gherkin merge integrity (added/modified/removed)"]
+    COR --> COR2["No partial writes on archive"]
+    COR --> COR3["Accurate filesystem-derived state"]
+
+    Q --> AGE["Agent ergonomics"]
+    AGE --> AGE1["Standards-aligned (.agents/skills; AGENTS.md user-owned)"]
+    AGE --> AGE2["Machine-readable instructions (--json)"]
 ```
 
 ## 10.2 Quality Scenarios

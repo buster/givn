@@ -10,8 +10,8 @@
 
 **Trigger:** <!-- what initiates this flow -->
 
-```
-[Sequence diagram or numbered steps]
+```mermaid
+[Mermaid sequenceDiagram, or a numbered-steps list if no diagram is needed]
 ```
 
 **Steps:**
