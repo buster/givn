@@ -58,8 +58,20 @@ run via `verify.e2e_command` (configured in `givn/config.yaml`), not
   connection — whatever the system exposes.
 - It may require local test infrastructure: a running application server,
   a test database, fake containers (Testcontainers), stub services.
-- It covers the critical happy path ("can a user actually do the thing?")
-  and the most important failure mode.
+- It covers the critical happy path: "can a user actually do the thing?"
+
+**Scope: one `@e2e` scenario per user-facing happy-path action — not one per
+variant.** A capability gets exactly one `@e2e` scenario for each distinct
+action a user takes end-to-end (e.g. "user completes registration," "user
+places an order"). It does NOT get an additional `@e2e` scenario for every
+input variant, error case, validation rule, or enum/dropdown value — those
+belong as regular (non-`@e2e`) scenarios, which are cheaper to run and
+already prove the logic without paying for a real browser/CLI/API round
+trip each time. Before adding a second `@e2e` scenario to the same
+capability, ask: "is this a genuinely different user-facing action, or a
+variant of one already covered?" If it's a variant, it is not `@e2e`.
+Under-covering (zero `@e2e` scenarios) and over-covering (one per variant)
+are both defects — the target is exactly one per distinct happy-path action.
 
 **What an `@e2e` scenario is NOT:**
 - Not a unit test wrapped in Gherkin.

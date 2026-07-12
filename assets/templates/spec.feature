@@ -8,6 +8,7 @@ Feature: {{FEATURE_TITLE}}
   # Tag new scenarios @givn.added, changed ones @givn.modified, deleted ones @givn.removed.
   # Tag @wip while step definitions are not yet implemented.
   # Tag @e2e for end-to-end smoke tests that exercise the real interaction surface.
+  # One @e2e scenario per distinct happy-path action — not one per variant/error case.
 
   @givn.added @wip
   Scenario: {{SCENARIO_TITLE}}

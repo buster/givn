@@ -79,6 +79,11 @@ verify:
 #   # apply:
 #   #   requires: [tasks]
 #
+#   # NEVER do this to design-review (optional: true or remove: true). It is
+#   # a planning-layer gate that catches a flawed plan before tasks and code
+#   # are written from it — removing it does not save time, it defers the
+#   # same problems to implementation where they cost far more to fix.
+#
 #   # c) Add a custom refactor step after implementation:
 #   # artifacts:
 #   #   - id: refactor

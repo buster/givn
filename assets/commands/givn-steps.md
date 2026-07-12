@@ -56,12 +56,22 @@ assertions — never the sole assertion. A `@e2e` scenario whose Then steps
 touch only the repository is an integration test wearing the wrong tag; it
 does not prove the feature works end-to-end.
 
+**The real interface is whichever one a real user/client uses — not
+whichever is easiest to automate.** For a browser-UI capability, the step
+definitions must drive a real browser (click/type/navigate via a real
+driver) — never an HTTP request to the backend route, and never `fetch()`/
+`XMLHttpRequest` called from the page's own JS context. Both only exercise
+the API, never the UI, even if the assertion later checks page content. If
+the capability's real interface IS an API with no UI, an HTTP request
+against it genuinely is the real interface.
+
 If a technical obstacle blocks the real interface (a browser session/cookie
 not persisting across steps, an auth redirect losing state, a flaky
 selector), that is a design gap, not a reason to test something weaker.
 Apply the fix design.md names in its "Anticipated interface obstacles"
 section. If none is named for this obstacle, STOP and report it as a
-blocker — do not substitute a repository-only assertion and move on.
+blocker — do not substitute a repository-only assertion or an HTTP/fetch()
+shortcut and move on.
 
 ## RED → GREEN → REFACTOR → COMMIT (one scenario at a time)
 

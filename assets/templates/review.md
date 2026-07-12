@@ -34,11 +34,20 @@ re-run it now and paste the output -->
 
 **Downgraded e2e scenario scan** — every `@e2e` scenario's Then steps
 checked for a real-interface primary assertion (page content, HTTP
-response, redirect, CLI output), not repository-only:
+response, redirect, CLI output), not repository-only; for a browser-UI
+capability, the step definitions checked for actually driving the browser
+(click/type/navigate), not an HTTP request or in-page `fetch()`:
 
-| @e2e Scenario | Real-interface assertion present? | Downgraded? |
-|---|---|---|
-| | | |
+| @e2e Scenario | Real-interface assertion present? | Driven via real browser (if UI)? | Downgraded? |
+|---|---|---|---|
+| | | | |
+
+**E2e scope check** — each capability has one `@e2e` scenario per distinct
+happy-path action, not one per variant/error case:
+
+| Capability | @e2e scenario count | Distinct actions? | Over-produced? |
+|---|---|---|---|
+| | | | |
 
 **Local environment check** — the local run command (design.md's Local
 Runnability section) starts the full stack, including digital twins,
@@ -93,7 +102,9 @@ Run `{{VERIFY_COMMAND}}` and paste the summary below.
 ## Sign-off
 
 - [ ] Fabrication audit: CLEAN (0 empty step bodies, all commits verified,
-      all promised components exist, no downgraded e2e scenarios).
+      all promised components exist, no downgraded e2e scenarios, no e2e
+      scenario driven via HTTP/fetch() in place of real browser interaction,
+      no over-produced e2e scope).
 - [ ] All scenarios pass (`{{VERIFY_COMMAND}}` exits 0).
 - [ ] Every coverage gap is classified and resolved (or justified).
 - [ ] No `@wip` tags remain in the delta spec.

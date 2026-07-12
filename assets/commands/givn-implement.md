@@ -128,16 +128,22 @@ Do not substitute a simpler approach that happens to pass the test.
   (page content, HTTP response, redirect, CLI output). Repository/database
   checks are allowed only as secondary, additional assertions alongside a
   real-interface assertion — never as the only assertion.
+- **For a browser-UI capability, the glue itself must drive a real browser**
+  (click/type/navigate via the driver design.md names) — never an HTTP
+  request to the backend route, and never `fetch()`/`XMLHttpRequest` called
+  from the page's own JS context. Both only exercise the API, never proving
+  a user can use the UI, even when the assertion later checks page content.
 - **If a real-interface obstacle appears** (browser session/cookie not
   persisting, auth redirect losing state, flaky selector): this is expected
   and design.md's "Anticipated interface obstacles" section names the fix.
   Apply that fix. If design.md has no fix for this specific obstacle, STOP
-  — do not substitute a repository-only assertion and continue. Report the
-  blocker: "real-interface obstacle not covered by design.md: <describe>."
-  The orchestrator will get this fixed in design.md before you continue.
-  Silently downgrading to a repository check is fabrication — it produces a
-  GREEN scenario that proves nothing about whether the feature actually
-  works through the interface a real user or client would use.
+  — do not substitute a repository-only assertion, or an HTTP/fetch()
+  shortcut, and continue. Report the blocker: "real-interface obstacle not
+  covered by design.md: <describe>." The orchestrator will get this fixed
+  in design.md before you continue. Silently downgrading to a repository
+  check or an HTTP/fetch() call is fabrication — it produces a GREEN
+  scenario that proves nothing about whether the feature actually works
+  through the interface a real user or client would use.
 
 ## Done
 9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <title>" (or
@@ -170,6 +176,11 @@ Before moving on, the orchestrator itself (not another subagent) checks:
    not exclusively on repository/database state. A `@e2e` GREEN with
    Then-step assertions that only touch a repository is a downgraded
    scenario — reject it, regardless of what the subagent reported.
+6. **For `@e2e` tasks on a browser-UI capability:** also read the step
+   definition's implementation, not just its assertion. If it sends an
+   HTTP request or calls `fetch()`/`XMLHttpRequest` from the page's JS
+   context instead of driving the browser, reject it even if the assertion
+   checks page content — the interaction was never real.
 
 Any failure: uncheck the task, do not proceed, re-spawn with the specific
 failure named (e.g. "`FooSteps.java:42` has an empty body — redo it", or

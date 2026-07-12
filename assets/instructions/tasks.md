@@ -94,6 +94,18 @@ STOP: this is a design gap. Update design.md with the fix, then continue.
 A GREEN e2e scenario whose Then steps never touch the real interface's
 output is fabricated GREEN — the same class of defect as an empty step body.
 
+**For a browser-UI capability, the same rule applies to HOW the interaction
+happens, not just what is asserted.** If design.md names a browser driver
+(e.g. Playwright), the step definitions MUST click, type, and navigate
+through the rendered page — never send an HTTP request to the backend
+route, and never call `fetch()`/`XMLHttpRequest` from inside the page's JS
+context to hit an API directly. Either shortcut produces a scenario that
+looks like it drove the browser but actually only drove the API, and it
+does not prove a user can use the UI. If driving the real browser hits an
+obstacle, fix it per design.md's "Anticipated interface obstacles" section
+(same as above) — do not quietly swap in an HTTP/fetch() call as the
+easier path.
+
 ## E2e setup task
 
 Before the first `@e2e` scenario:

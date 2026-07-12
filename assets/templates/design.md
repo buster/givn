@@ -96,6 +96,12 @@
 
 ## E2E Smoke Test Infrastructure
 
+> **Interface type** (browser UI / CLI / API-only):
+> ```
+> (e.g. "Browser UI — Playwright drives the rendered page." or
+>  "API-only — no UI consumes this endpoint, an HTTP client is the real
+>  interface.")
+> ```
 > **E2E runner command** (→ `verify.e2e_command`):
 > ```
 > (e.g. npm run test:e2e, behave --tags=@e2e, cargo test --test e2e_runner)
@@ -112,6 +118,16 @@
 > assertions are on what the real interface returned/displayed (page
 > content, HTTP response, redirect, CLI output) — repository/database
 > assertions are secondary and additional only, never a replacement.
+>
+> **Real-interface driving rule:** for a browser-UI capability, step
+> definitions drive the actual browser (click/type/navigate via the driver
+> named above) — never an HTTP request to the backend route, and never
+> `fetch()`/`XMLHttpRequest` called from the page's own JS context. Either
+> shortcut only exercises the API, not the UI. For an API-only capability, a
+> real HTTP client genuinely is the real interface.
+>
+> **E2E scope:** one `@e2e` scenario per distinct happy-path action for
+> this capability, not one per variant/error case.
 
 ## Architecture Impact
 

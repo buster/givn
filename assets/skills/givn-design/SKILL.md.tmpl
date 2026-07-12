@@ -93,6 +93,12 @@ The design MUST document the e2e test infrastructure for `@e2e` scenarios:
 - **Real-interface assertion rule**: every `@e2e` scenario's primary
   assertion is on what the real interface returned/displayed — repository/
   database assertions are secondary and additional only, never a replacement.
+- **The real interface is whichever one a real user/client uses.** For a
+  browser-UI capability, that means a real browser driver clicking/typing/
+  navigating — never an HTTP request or in-page `fetch()` standing in for
+  browser interaction. State explicitly which interface type this
+  capability has (browser UI / CLI / API-only) and name the matching
+  driving mechanism.
 
 ## Verify command
 

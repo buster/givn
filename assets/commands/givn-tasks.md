@@ -18,10 +18,15 @@ ambiguous, list changes and ask.
 ### 1. Resolve the change
 
 ```sh
-givn status
+givn status --change <id> --json
 ```
 
 Announce: "Using change: <id>".
+
+Check the `artifacts` array. If `design-review` appears in the sequence and
+is not `"status": "done"`, stop: "Design-review must be complete before
+tasks. Run `/givn-design-review <id>`." Do not write tasks.md around a
+missing or skipped design-review.
 
 ### 2. Get tasks instructions
 

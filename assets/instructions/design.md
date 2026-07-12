@@ -5,7 +5,10 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
 ## Scope
 
 - Technology decisions: language, framework, libraries, patterns.
-- Architecture impact: modules/components affected, what is new.
+- Architecture impact: modules/components affected, what is new. Any diagram
+  (component, sequence, flow, tree) MUST be Mermaid (` ```mermaid ` fenced
+  code block), never ASCII art. A plain directory/file-tree listing is not a
+  diagram and may stay as plain text.
 - Data model changes: schema, structs, database changes.
 - Step definition locations, **one file per capability** (e.g.
   `CompanyOnboardingSteps`) — never one file for the whole change. Name the
@@ -134,6 +137,23 @@ Checking repository/database state is allowed ONLY as an additional,
 secondary assertion alongside a real-interface assertion — never as its
 replacement.
 
+**The real interface is whichever one an actual user or client uses — not
+whichever one is easiest to automate.** If the system has a browser-based
+UI, "the real interface" means the rendered browser: a real driver (e.g.
+Playwright) clicking buttons, typing into fields, navigating, and reading
+the rendered DOM. It does NOT mean an HTTP request to the page's backend
+route, and it does NOT mean calling `fetch()`/`XMLHttpRequest` from inside
+the page's own JavaScript context to hit an API endpoint directly — both are
+integration tests of the API layer wearing an `@e2e` tag; neither proves a
+user can actually use the UI. Conversely, if the system's real interface IS
+an API (no UI consumes it, or the UI is out of scope for this capability),
+then an HTTP request against that API genuinely is the real interface, and
+using a real browser would be theater, not more rigorous. State explicitly
+in this document which interface type this capability has (browser UI / CLI
+/ API-only) and name the concrete driving mechanism that matches it — never
+default to HTTP/fetch() for a browser-UI capability because it was easier to
+get green.
+
 A scenario whose `Then` steps assert only against the repository/database,
 with no assertion on what the browser/API/CLI actually returned or
 displayed, is not an e2e scenario. It is an integration test wearing an
@@ -163,3 +183,8 @@ steps to code — never a parallel hand-maintained test file.
   setup task includes a proof-of-strictness check against this exact config.
 - No version number from memory — "latest"/"LTS" or a looked-up, noted
   version only (see Version Freshness above).
+- State the interface type (browser UI / CLI / API-only) for every
+  capability with `@e2e` scenarios, and name the driving mechanism that
+  actually matches it — never HTTP/fetch() for a browser-UI capability.
+- Exactly one `@e2e` scenario per distinct happy-path action per
+  capability — not one per variant, error case, or enum value.

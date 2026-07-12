@@ -27,7 +27,22 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    — an integration test wearing an `@e2e` tag. This is unfinished work,
    not a coverage gap, regardless of the runner reporting GREEN. Record
    each downgraded scenario found.
-6. Any finding from 1-5 is unfinished work, not a coverage gap. Reopen the
+6. **For a browser-UI capability, read every `@e2e` step definition's
+   implementation, not just its assertions.** If the step body sends an
+   HTTP request directly, or calls `fetch()`/`XMLHttpRequest` from inside
+   the page's JS context, instead of driving the browser (click/type/
+   navigate) through a real driver, it is a downgraded e2e scenario even if
+   its Then assertion checks page content — the interaction was never real.
+   Record each occurrence found.
+7. **Check `@e2e` scope: one per happy-path action, not one per variant.**
+   If a capability has more than one `@e2e` scenario, confirm each covers a
+   genuinely distinct user-facing action (e.g. registration vs. login), not
+   input variants/error cases/enum values of the same action. Excess `@e2e`
+   scenarios covering variants should be converted to regular (non-`@e2e`)
+   scenarios — flag this as a fabrication-audit finding (wasted e2e budget
+   on the same underlying action, e2e coverage should be reserved for one
+   distinct action).
+8. Any finding from 1-7 is unfinished work, not a coverage gap. Reopen the
    task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
    interface per design.md's "Anticipated interface obstacles" fix, not by
    asserting on the repository instead. Do not write `REVIEW: PASS` while
@@ -53,13 +68,18 @@ source of truth.
 
 ## E2e coverage
 
-Every capability needs at least one `@e2e` scenario exercising the real
-interaction surface, with a primary assertion on what that interface
-produced. Missing, or downgraded to repository-only assertions, = classify
-as "missing test," add or fix one. `verify.e2e_command` must pass alongside
-`verify.command`. Confirm the local run command (design.md's Local
-Runnability section) still starts the full stack, including digital twins,
-cleanly.
+Every capability needs exactly one `@e2e` scenario per distinct user-facing
+happy-path action, exercising the real interaction surface, with a primary
+assertion on what that interface produced. For a browser-UI capability, the
+step definitions must actually drive the browser (click/type/navigate) —
+not an HTTP request or in-page `fetch()` standing in for browser
+interaction. Missing, downgraded to repository-only assertions, or driven
+via HTTP/fetch() instead of the real interface = classify as "missing
+test," add or fix one. More than one `@e2e` scenario per action (one per
+variant/error case) = convert the excess to regular scenarios.
+`verify.e2e_command` must pass alongside `verify.command`. Confirm the local
+run command (design.md's Local Runnability section) still starts the full
+stack, including digital twins, cleanly.
 
 ## Sign-off checklist
 
@@ -73,8 +93,12 @@ cleanly.
 - Dead code deleted. Missing tests added. Hard-to-test gaps justified.
 - Redundant unit tests removed.
 - No `@wip` tags remain. No implementation-layer detail in the spec.
-- Every capability has at least one `@e2e` scenario with a real-interface
-  primary assertion — none downgraded to repository-only checks.
+- Every capability has exactly one `@e2e` scenario per distinct happy-path
+  action, with a real-interface primary assertion — none downgraded to
+  repository-only checks, and none driven via HTTP/fetch() in place of real
+  browser interaction on a browser-UI capability.
+- No capability has more than one `@e2e` scenario per happy-path action
+  (variants/error cases are regular scenarios, not additional `@e2e`).
 - The local run command starts the full stack (including digital twins)
   cleanly, verified during this review.
 

@@ -80,13 +80,23 @@ Mechanical check, before trusting anything else:
    response, redirect, or CLI output), record it as a downgraded e2e
    scenario — an integration test wearing an `@e2e` tag. It does not prove
    the feature works end-to-end, regardless of the runner reporting GREEN.
-6. Confirm the local run command (design.md's Local Runnability section)
+6. For a browser-UI capability, read every `@e2e` step definition's
+   implementation, not just its assertion. If it sends an HTTP request or
+   calls `fetch()`/`XMLHttpRequest` from the page's JS context instead of
+   driving the browser (click/type/navigate via a real driver), record it
+   as a downgraded scenario — the interaction was never real.
+7. Check `@e2e` scope: each capability should have one `@e2e` scenario per
+   distinct happy-path action, not one per input variant/error case/enum
+   value. Record any capability with more than one `@e2e` scenario covering
+   the same action as an over-production finding — convert the excess to
+   regular scenarios.
+8. Confirm the local run command (design.md's Local Runnability section)
    still starts the full stack — including every digital twin — cleanly.
-7. Any finding from 1-6 is unfinished implementation, not a coverage gap.
+9. Any finding from 1-8 is unfinished implementation, not a coverage gap.
    Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
    fixing the real-interface obstacle per design.md, never by leaving the
-   repository-only assertion in place. Do not write REVIEW: PASS while any
-   finding remains.
+   repository-only assertion or HTTP/fetch() shortcut in place. Do not
+   write REVIEW: PASS while any finding remains.
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
@@ -110,9 +120,12 @@ review.md — a fact, not a threshold gate.
 Per the table above; hard-to-test gaps get a written justification, no code change.
 
 ### 5. Confirm e2e coverage
-Every capability needs at least one `@e2e` scenario with a real-interface
-primary assertion. Missing, or downgraded to repository-only, = classify as
-"missing test," add or fix one covering the critical happy path.
+Every capability needs exactly one `@e2e` scenario per distinct happy-path
+action, with a real-interface primary assertion driven through the actual
+interface (real browser for a browser-UI capability — never HTTP/fetch()
+standing in for it). Missing, downgraded, driven via HTTP/fetch() instead
+of the real interface, or over-produced (one per variant) = classify as
+"missing test"/"needs fixing" and add, fix, or convert accordingly.
 
 ### 6. Final GREEN confirmation
 Re-run both runners. Must pass after all gap resolutions.
@@ -144,8 +157,11 @@ trusting the subagent's report:
 2. Confirm 2-3 checked-off tasks have commits touching production code, via
    `git show --stat`.
 3. Read every `@e2e` scenario's step definitions yourself. Confirm each has
-   a real-interface assertion, not repository-only.
-4. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
+   a real-interface assertion, not repository-only, and — for a browser-UI
+   capability — is actually driven through a real browser, not HTTP/fetch().
+4. Confirm no capability has more than one `@e2e` scenario per happy-path
+   action.
+5. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
    specific discrepancy named.
 
 ### 5. Show final status
@@ -192,8 +208,11 @@ Display: "Run `/givn-archive` to archive this change."
 - `REVIEW: PASS` requires all gaps resolved AND a clean fabrication audit.
 - New scenarios added during review go through the full loop before sign-off.
 - `givn lint` is static only; GREEN comes from the runners.
-- Every capability needs at least one `@e2e` scenario with a real-interface
-  primary assertion — repository-only assertions never satisfy this.
+- Every capability needs exactly one `@e2e` scenario per distinct
+  happy-path action, with a real-interface primary assertion —
+  repository-only assertions, and HTTP/fetch() standing in for real browser
+  interaction on a browser-UI capability, never satisfy this. More than one
+  `@e2e` scenario per action is over-production, not thoroughness.
 - The local run command must start the full stack, digital twins included,
   cleanly — confirmed during this review, not assumed.
 - Archive hard-blocks if `REVIEW: PASS` is absent or hooks fail.

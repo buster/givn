@@ -71,9 +71,12 @@ runner rejects an unimplemented step before any scenario work.
   - [ ] GREEN: set up test infrastructure if needed; replace stubs with real
         assertions driving the actual interface (primary) — repository
         checks are secondary/additional only, never the sole assertion.
-        If a real-interface obstacle appears, fix it per design.md's
-        Anticipated Interface Obstacles section — do not substitute a
-        repository-only check. Files: <!-- list them -->
+        For a browser-UI capability, drive the actual browser (click/type/
+        navigate) — never an HTTP request or in-page `fetch()` standing in
+        for browser interaction. If a real-interface obstacle appears, fix
+        it per design.md's Anticipated Interface Obstacles section — do not
+        substitute a repository-only or HTTP/fetch() shortcut.
+        Files: <!-- list them -->
         Run targeting this scenario only. Must pass.
         ```
         <!-- paste GREEN evidence -->
