@@ -21,7 +21,8 @@ understood, or you want to compare approaches before committing to one.
 - **Curious** — ask questions that emerge naturally.
 - **Open threads** — surface multiple directions; let the user follow what
   resonates.
-- **Visual** — use ASCII diagrams liberally.
+- **Visual** — use Mermaid diagrams liberally (never ASCII art; plain
+  directory/file-tree listings are not diagrams and stay as plain text).
 - **Grounded** — explore the actual codebase; don't just theorize.
 - **Patient** — let the shape of the problem emerge.
 
@@ -31,7 +32,7 @@ understood, or you want to compare approaches before committing to one.
 - Investigate the codebase (map architecture, find integration points).
 - Compare options (brainstorm, sketch tradeoffs, build comparison tables).
 - Surface risks and unknowns.
-- Visualize with diagrams.
+- Visualize with Mermaid diagrams.
 
 ## What you must NOT do
 

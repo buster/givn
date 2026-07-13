@@ -80,13 +80,48 @@ Mechanical check, before trusting anything else:
    response, redirect, or CLI output), record it as a downgraded e2e
    scenario — an integration test wearing an `@e2e` tag. It does not prove
    the feature works end-to-end, regardless of the runner reporting GREEN.
-6. Confirm the local run command (design.md's Local Runnability section)
+6. For a browser-UI capability, read every `@e2e` step definition's
+   implementation, not just its assertion. If it sends an HTTP request or
+   calls `fetch()`/`XMLHttpRequest` from the page's JS context instead of
+   driving the browser (click/type/navigate via a real driver), record it
+   as a downgraded scenario — the interaction was never real.
+7. Identify the EXACT file(s) `<verify.e2e_command>` actually invokes — read
+   the command, not just a filename containing "e2e". Then run `git status`
+   and search the tree (including untracked/uncommitted files) for any
+   other `@e2e` step implementation of the same capability. If more than
+   one exists, read all of them. Reviewing a weaker implementation while a
+   stronger, real-interface one already exists elsewhere in the tree is
+   itself a fabrication-audit finding — use and credit the strongest one.
+8. Check `@e2e` scope: each capability should have one `@e2e` scenario per
+   distinct happy-path action, not one per input variant/error case/enum
+   value. Record any capability with more than one `@e2e` scenario covering
+   the same action as an over-production finding — convert the excess to
+   regular scenarios.
+9. Confirm the local run command (design.md's Local Runnability section)
    still starts the full stack — including every digital twin — cleanly.
-7. Any finding from 1-6 is unfinished implementation, not a coverage gap.
-   Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
-   fixing the real-interface obstacle per design.md, never by leaving the
-   repository-only assertion in place. Do not write REVIEW: PASS while any
-   finding remains.
+10. Read `verify.command` and `verify.e2e_command` from `givn/config.yaml`
+    literally, as strings. If they are identical, the "e2e run" re-runs the
+    whole suite and proves nothing about e2e isolation — always a finding,
+    never acceptable even if both exit 0. Prove real isolation: run both,
+    record the reported scenario count for each; `verify.e2e_command`'s
+    count MUST be strictly smaller than `verify.command`'s, unless every
+    in-scope scenario is `@e2e` (state this explicitly if true).
+11. Diff the built implementation against design.md's explicitly named
+    commands, file layout, and framework/driver choices — not just "does
+    the file exist" but "does it match what design.md said." A deviation
+    (different step-file split than design.md named, an unfiltered
+    `verify.e2e_command` where design.md specified a tag filter, a
+    different framework) implemented without first updating design.md and
+    re-running design-review is a fabrication-audit finding: an unreviewed
+    design decision made silently by the tasks/implementation phase. Fix
+    by conforming to design.md as reviewed, or by updating design.md and
+    re-running design-review (reassess arc42 chapters if structural)
+    before accepting the deviation.
+12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
+    Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
+    fixing the real-interface obstacle per design.md, never by leaving the
+    repository-only assertion or HTTP/fetch() shortcut in place. Do not
+    write REVIEW: PASS while any finding remains.
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
@@ -106,13 +141,25 @@ review.md — a fact, not a threshold gate.
 | Missing test | Not covered by a scenario | Add scenario (@givn.added), RED/GREEN/REFACTOR/COMMIT. |
 | Hard to test | Infra/I-O boundary | Concrete technical justification. |
 
+These three buckets are exhaustive — **do not invent a fourth**. Phrases like
+"acceptable for this iteration scope," "sufficient for current scope," or
+"future scope" used to wave off a gap instead of naming one of the three
+buckets above are themselves a fabrication-audit finding. A missing or
+downgraded `@e2e` scenario is always "Missing test," never excused.
+
 ### 4. Resolve each gap
 Per the table above; hard-to-test gaps get a written justification, no code change.
 
 ### 5. Confirm e2e coverage
-Every capability needs at least one `@e2e` scenario with a real-interface
-primary assertion. Missing, or downgraded to repository-only, = classify as
-"missing test," add or fix one covering the critical happy path.
+Every capability needs exactly one `@e2e` scenario per distinct happy-path
+action, with a real-interface primary assertion driven through the actual
+interface (real browser for a browser-UI capability — never HTTP/fetch()
+standing in for it). Missing, downgraded, driven via HTTP/fetch() instead
+of the real interface, or over-produced (one per variant) = classify as
+"missing test"/"needs fixing" and add, fix, or convert accordingly — never
+as an exception outside the three buckets. Before concluding a real driver
+is unavailable or not yet installed, search the tree yourself (including
+untracked files, per step 0.7) — do not take an absence at face value.
 
 ### 6. Final GREEN confirmation
 Re-run both runners. Must pass after all gap resolutions.
@@ -144,8 +191,30 @@ trusting the subagent's report:
 2. Confirm 2-3 checked-off tasks have commits touching production code, via
    `git show --stat`.
 3. Read every `@e2e` scenario's step definitions yourself. Confirm each has
-   a real-interface assertion, not repository-only.
-4. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
+   a real-interface assertion, not repository-only, and — for a browser-UI
+   capability — is actually driven through a real browser, not HTTP/fetch().
+4. Confirm no capability has more than one `@e2e` scenario per happy-path
+   action.
+5. Independently confirm which file(s) `<verify.e2e_command>` invokes, and
+   run `git status` / search the tree yourself for any other e2e
+   implementation (including untracked files) the subagent's report did not
+   mention. A subagent report that never names the exact invoked file(s) or
+   never mentions checking for a parallel implementation is incomplete —
+   reject it.
+6. Read `verify.command` and `verify.e2e_command` yourself from
+   `givn/config.yaml`. If identical, reject `REVIEW: PASS` outright — this
+   is never a passable state, regardless of what the subagent's report
+   claims about scenario counts. If the subagent's report does not include
+   both scenario counts with the e2e count strictly smaller, reject it.
+7. Spot-check one command/file/framework decision design.md names against
+   what was actually built (e.g. open `verify.e2e_command`'s config value
+   and the step-file paths named in design.md's "Step Definition
+   Locations"). Any mismatch not backed by an updated design.md +
+   re-run design-review = reject `REVIEW: PASS`.
+8. Scan review.md itself for invented exception language ("acceptable for
+   now," "future scope," "sufficient for current scope," or similar). Any
+   such phrase = reject `REVIEW: PASS`, regardless of what it excuses.
+9. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
    specific discrepancy named.
 
 ### 5. Show final status
@@ -192,8 +261,29 @@ Display: "Run `/givn-archive` to archive this change."
 - `REVIEW: PASS` requires all gaps resolved AND a clean fabrication audit.
 - New scenarios added during review go through the full loop before sign-off.
 - `givn lint` is static only; GREEN comes from the runners.
-- Every capability needs at least one `@e2e` scenario with a real-interface
-  primary assertion — repository-only assertions never satisfy this.
+- Every capability needs exactly one `@e2e` scenario per distinct
+  happy-path action, with a real-interface primary assertion —
+  repository-only assertions, and HTTP/fetch() standing in for real browser
+  interaction on a browser-UI capability, never satisfy this. More than one
+  `@e2e` scenario per action is over-production, not thoroughness.
 - The local run command must start the full stack, digital twins included,
   cleanly — confirmed during this review, not assumed.
+- The three-bucket classification is exhaustive. No fourth bucket, no
+  invented exception language ("acceptable for now," "future scope,"
+  "sufficient for current scope," etc.) may excuse a gap — this applies with
+  special force to `@e2e` coverage, which is always "Missing test" when
+  absent or downgraded, never waved off as out of scope.
+- `verify.e2e_command` identical to `verify.command` is always a
+  fabrication-audit finding, never a passable configuration, regardless of
+  whether both exit 0 — it means the e2e gate is not isolating anything.
+- Implementation must match what design.md explicitly named (commands,
+  file layout, framework/driver). A silent deviation implemented without
+  first updating design.md and re-running design-review is unfinished
+  implementation — an unreviewed design decision made by the wrong
+  artifact — never something tasks or review may wave through or work
+  around unilaterally.
+- Before declaring a real browser driver "not installed" or "not yet
+  implemented," search the tree yourself (including untracked files) for an
+  existing implementation — do not accept the subagent's or a prior
+  artifact's word for its absence.
 - Archive hard-blocks if `REVIEW: PASS` is absent or hooks fail.

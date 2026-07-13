@@ -12,6 +12,36 @@ change exists. If ambiguous, list changes and ask.
 
 ---
 
+## Mandatory, non-skippable, fresh context
+
+This gate exists to catch a flawed plan before it produces flawed tasks and
+flawed code. Two conditions make it work; violating either one defeats its
+purpose:
+
+- **Never skip it.** Do not let this step be bypassed because "the design
+  looks fine" or "there's no time." A design that looks fine to the person
+  who just wrote it is exactly what this gate exists to check.
+- **Never run it as a continuation of the session that wrote the design.**
+  Both subagents below MUST be spawned via the Task tool into a genuinely
+  fresh context — not the same conversation, not a subagent that has already
+  seen the architect's reasoning. A model that just produced the design
+  cannot credibly grill its own blind spots; it will confirm its own
+  assumptions. If invoked directly after `/givn-propose` in the same
+  conversation, still spawn the grilling subagent fresh — do not let it
+  inherit the orchestrator's or the architect's context.
+- **Use a capable reasoning model with high thinking/reasoning effort for
+  the grilling subagent.** This step depends on catching subtle scope gaps,
+  wrong tech choices, and untestable scenarios — the same failure modes a
+  fast, low-effort model is prone to missing or rubber-stamping. When the
+  harness lets you choose a model or reasoning-effort tier for the spawned
+  subagent, choose the most capable one available and set reasoning/thinking
+  effort to high. Do not spawn the grilling subagent on a fast/cheap/
+  low-reasoning-effort tier to save time — that produces a review that
+  passes everything, which is worse than no review at all because it
+  creates false confidence.
+
+---
+
 ## Role: orchestrator
 
 This command is an **orchestrator** with two subagents and an interactive loop
@@ -53,7 +83,13 @@ Capture `output` path, `template`, `instruction`, `dependencies`.
 
 ### 3. Spawn the grilling subagent
 
-Use the **Task tool** to spawn a grilling subagent in a clean context.
+Use the **Task tool** to spawn a grilling subagent in a genuinely fresh
+context — never a continuation of this conversation or of whatever session
+wrote the design. If the harness exposes a model or reasoning-effort choice
+for the spawned subagent, select the most capable model available with
+reasoning/thinking effort set to high. This subagent's entire value is
+catching what the design's author missed; a low-effort model in the same
+context as the author defeats the purpose.
 
 Pass a self-contained prompt:
 
@@ -75,6 +111,17 @@ Read all of these in full before forming any questions:
   modules, patterns). If a question can be answered by exploring the codebase,
   explore it and record the finding as a resolved item — do not include it as
   a question for the user.
+- If the arc42 addon is enabled (check `givn/config.yaml` for `addons.arc42:
+  true`, or the presence of `givn/changes/<id>/arc42.md`): before opening
+  `arc42.md`, walk all 12 rows of the arc42-docs instruction's chapter-
+  selection table (`givn instructions arc42-docs`) yourself against
+  proposal.md/specs/design.md, and form your own Yes/No per row. Only after
+  that, open `givn/changes/<id>/arc42.md` and every chapter file under
+  `docs/arc42/` (or the configured `arc42.output_dir`) that the marker file
+  claims to have touched. This is required input for the Architecture
+  documentation branch below — do not skip it because arc42.md says
+  `STATUS: DONE`; that marker is a self-report from the same agent that
+  wrote the docs, not verification.
 
 ## Required branches to cover
 
@@ -92,8 +139,52 @@ as "no issue found" if genuinely clean):
   concrete strict-mode mechanism, not-implemented stub pattern, and
   single-scenario run command? Missing or vague on any of the three is a
   blocking finding — this is the root cause of past fabricated changes.
+- **E2E fidelity** — for each capability, does design.md name the actual
+  interface type (browser UI / CLI / API-only) and a matching real driving
+  mechanism? For a browser-UI capability, is a real browser driver named —
+  not an HTTP client or in-page `fetch()` standing in for it? Is there
+  exactly one `@e2e` scenario per distinct happy-path action, not one per
+  variant/error case? Vague interface type, an HTTP/fetch()-based plan for
+  a browser UI, or more than one `@e2e` scenario per action is a blocking
+  finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
+- **Architecture documentation (arc42)** — skip this branch entirely (report
+  "N/A — arc42 addon not enabled") if `addons.arc42` is not `true` in
+  `givn/config.yaml`. Otherwise, this branch is an independent audit, not
+  a review of `arc42.md`'s self-report — do the steps in this order:
+  1. Before opening `arc42.md`, walk all 12 rows of the arc42-docs
+     instruction's chapter-selection table yourself against the actual
+     scope of `proposal.md`/`design.md` (new components/modules →
+     building-block-view, new runtime flows → runtime-view, deployment
+     changes → deployment-view, a new ADR's "Bad, because..." consequence →
+     risks-and-technical-debt, etc.). Record your own Yes/No per row.
+  2. Open `arc42.md` and its 12-row table. Diff row by row against your own
+     assessment. **Any row you marked "Yes" that `arc42.md` marks "No",
+     leaves blank, or omits entirely is a blocking finding** — this
+     omission is the actual failure mode seen in production use (an agent
+     stopping after finding 2-3 obviously-affected chapters instead of
+     checking all 12), and it is more dangerous than a contradiction
+     because nothing points at it. Do not treat "arc42.md only lists 3
+     chapters and doesn't mention the rest" as implicitly meaning "checked
+     and found not applicable" — the instruction requires every row to be
+     explicit; a missing row is unverified, not resolved.
+  3. For every chapter marked "Yes" by either party: open it and confirm the
+     content actually reflects design.md — not placeholder text, not a
+     stale description that contradicts design.md's Architecture Impact or
+     Technology Decisions sections. A contradiction is a blocking finding.
+  4. For every non-trivial architecture/technology decision in design.md
+     (a real tradeoff was made, not a default/obvious choice): confirm
+     chapter 09 (architecture-decisions) has a corresponding MADR entry
+     (status/date/decision-makers, considered options, decision outcome,
+     consequences), and that its consequences are reflected in chapter 11
+     (risks-and-technical-debt). A non-trivial decision with no MADR entry,
+     or an MADR whose "Bad, because..." consequences have no counterpart in
+     chapter 11, is a blocking finding.
+  5. A chapter file still containing only its scaffolded placeholder text,
+     while `arc42.md` claims that chapter was "updated," is a blocking
+     finding — the same fabrication pattern as an empty step body reported
+     as passing.
 
 ## Return format
 
@@ -218,6 +309,17 @@ Write `givn/changes/<id>/design-review.md` following this template structure:
 ## Open questions
 | # | Question | Blocking? |
 
+## Architecture documentation (arc42) check
+N/A if the arc42 addon is not enabled. Otherwise fill in all 12 rows — do not
+leave blank and do not only list the rows arc42.md claims:
+| # | Chapter | Grilling subagent's own Yes/No | arc42.md's Yes/No | Match? | Content matches design.md? |
+(one row per chapter, 1-12)
+- [ ] All 12 rows independently assessed against proposal.md/design.md before opening arc42.md.
+- [ ] No row where the subagent said "Yes" and arc42.md said "No"/omitted it (any such row is a blocker, listed in Open questions).
+- [ ] Every non-trivial architecture/technology decision in design.md has a MADR entry in chapter 09.
+- [ ] Every MADR "Bad, because..." consequence has a counterpart in chapter 11.
+- [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
+
 ## Changes made during hardening
 | Artifact | Change summary |
 
@@ -227,6 +329,8 @@ Write `givn/changes/<id>/design-review.md` following this template structure:
 - [ ] design.md reflects decisions reached.
 - [ ] specs/*.feature updated for any missing scenarios.
 - [ ] givn lint exits 0 or 2.
+- [ ] Architecture documentation (arc42) check completed above, or marked
+      N/A because the addon is not enabled.
 
 DESIGN-REVIEW: PASS
 

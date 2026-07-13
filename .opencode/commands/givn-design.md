@@ -90,6 +90,14 @@ Write `givn/changes/<id>/design.md` covering:
   - **Real-interface assertion rule**: every `@e2e` scenario's primary
     assertion is on what the real interface returned/displayed. Repository/
     database checks are secondary and additional only, never a replacement.
+  - **The real interface is whichever one a real user/client uses — not
+    whichever is easiest to automate.** State explicitly which interface
+    type this capability has (browser UI / CLI / API-only). For a
+    browser-UI capability, name a real browser driver (Playwright default)
+    that clicks/types/navigates through the rendered page — an HTTP request
+    to the backend route, or an in-page `fetch()`/`XMLHttpRequest` call, is
+    NOT the real interface for a browser UI; both only prove the API works,
+    not that a user can use the UI.
 - **Non-obvious choices** — justify them; obvious choices need no justification.
 
 This is the HOW layer. Everything that was kept out of the proposal and spec

@@ -95,10 +95,15 @@ design.md, so everything needed must be in the task.
 ```markdown
 - [ ] Setup: configure e2e test infrastructure, strict mode, and verify.e2e_command
       - Install the e2e framework from design.md (Playwright, Testcontainers, etc.)
-      - Create e2e step skeleton, one file per capability, separate location.
+      - Create e2e step skeleton in the exact location(s) design.md names,
+        one file per capability, separate from non-@e2e steps.
       - Configure and PROVE strict mode for the e2e runner (same procedure
         as main setup). Paste command + non-zero-exit output.
-      - Set `verify.e2e_command`.
+      - Set `verify.e2e_command` to the exact command design.md names,
+        including its tag-filter flag/env var. It must NEVER be identical
+        to `verify.command` — prove isolation: run both, paste both
+        scenario counts, e2e count MUST be strictly smaller (or state
+        explicitly every scenario is `@e2e`).
       - Document local environment start/stop if needed.
       - Run: <verify.e2e_command> → must exit 0.
 
@@ -130,6 +135,15 @@ design.md, so everything needed must be in the task.
 - Order: non-@e2e scenarios (by dependency), then e2e setup, then @e2e.
 - `givn lint` is static only; GREEN comes from the runners, after
   strictness is proven.
+- **Never silently deviate from design.md.** If a command, file layout, or
+  framework design.md names turns out inconvenient during implementation
+  (e.g. one shared step file instead of the two design.md split, or
+  `verify.e2e_command` == `verify.command` because a real tag filter is
+  more work), STOP — do not implement the shortcut as a task. Update
+  design.md with the corrected decision and re-run design-review (reassess
+  arc42 chapters if structural) before resuming. review.md's fabrication
+  audit diffs the built system against design.md's stated decisions
+  specifically to catch an unreviewed shortcut like this.
 
 ### 5. Check status
 

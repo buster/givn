@@ -1,8 +1,8 @@
 ---
-description: Plan a givn change end-to-end — runs all planning artifacts in the order the manifest defines
+description: Plan a givn change through design — proposal, spec, and design in the order the manifest defines; hands off to /givn-design-review next
 ---
 
-Plan a new givn change from start to finish.
+Plan a new givn change from proposal through design.
 
 **Input**: The argument after `/givn-propose` is the change ID (kebab-case), OR a
 plain description of what to build. If nothing is provided, ask.
@@ -17,10 +17,11 @@ automatically follows the configured sequence.
 ## Role: orchestrator
 
 This command is an **orchestrator**. It creates the change scaffold, collects
-context, and then delegates all planning artifact production to a **thinking
-architect subagent**. The architect subagent produces the complete plan
-(proposal through tasks) in one pass. The orchestrator does not write artifacts
-directly.
+context, and then delegates production of the planning artifacts through
+`design` to a **thinking architect subagent**, in one pass. The orchestrator
+does not write artifacts directly. `design-review` and everything after it
+(`tasks`, `review`) are separate steps run in their own fresh contexts — see
+"When to stop" below.
 
 ---
 
@@ -49,15 +50,25 @@ Parse the JSON:
 - `next_required`: the first artifact to write
 - `verify_command`: the configured test runner
 
-### 4. Collect instructions for every planning artifact
+### 4. Collect instructions for every planning artifact up to `design`
 
-For each artifact in the sequence (up to and including `tasks`, excluding `review`):
+For each artifact in the sequence **up to and including `design`** (stop
+before `design-review` if it appears in the sequence; otherwise stop before
+`tasks`):
 
 ```sh
 givn instructions <artifact-id> --change <id>
 ```
 
 Capture the full output for each.
+
+**Do not include `design-review` or anything after it in this pass.**
+`design-review` must run as its own step, in a fresh context, after this
+architect subagent's work is done — never continued from the same session
+that wrote the design (see step 6 below). If the manifest has been
+customised to remove `design-review` entirely, the sequence naturally has no
+such artifact and this restriction does not apply — in that case, continue
+through `tasks` as before.
 
 ### 5. Spawn a thinking architect subagent
 
@@ -83,9 +94,12 @@ You are a thinking architect producing the complete plan for a givn change.
 <paste the artifacts array>
 
 ## Your task
-Produce every planning artifact in order — stopping before `review`.
-Do not produce the review artifact; that belongs to a separate step after
-implementation is complete.
+Produce every planning artifact up to and including `design` — stop there.
+Do NOT produce `design-review`, `tasks`, or `review`. `design-review` is a
+mandatory gate that must run as a separate step, in a fresh context, never
+continued from this session — a subagent that just wrote the design cannot
+credibly stress-test its own plan. `tasks` and `review` depend on
+`design-review` having run first.
 
 For each artifact:
 1. Think carefully about the requirements, constraints, and implications.
@@ -185,53 +199,17 @@ For each artifact:
   on an unimplemented step or whether step-body discipline must carry that
   weight, and what could go wrong when actually driving the real interface.
 
-**tasks** (tasks.md):
-- **First task: test infrastructure setup, PROVEN strict.** Install the
-  runner, configure the strict-mode flag from design.md, create step
-  skeletons one file per capability, set `verify.command`. Mandatory
-  **proof-of-strictness sub-task**: write one step using the not-implemented
-  stub, run the runner, confirm NON-ZERO exit, paste command + output. This
-  gates all others — an unproven runner makes every later GREEN meaningless.
-  Not optional: this exact failure has happened — every step left an empty
-  body, `@wip` removed, runner silently reporting 100% GREEN.
-- **One checkbox per non-@e2e scenario**, full RED→GREEN→REFACTOR→COMMIT.
-  Each RED/GREEN/REFACTOR sub-item has a field for pasted runner output
-  (targeting that scenario only, via design.md's single-scenario command) —
-  not a description. RED's unimplemented steps use the not-implemented
-  stub, never an empty body. GREEN lists every production file
-  created/modified — empty list on a non-reuse scenario means investigate.
-  COMMIT has a field for the hash; message references the scenario title.
-- **After all non-@e2e scenarios**: e2e setup task — bring up the local
-  environment (local run command from design.md, all dependencies, all
-  digital twins, isolated network) and confirm clean startup; install the
-  e2e framework, e2e step skeleton one file per capability, PROVE strict
-  mode for the e2e runner, set `verify.e2e_command`. Then one task per @e2e
-  scenario with the same cycle and evidence requirements, PLUS: GREEN
-  asserts primarily on the real interface's output, never repository-only.
-  If a real-interface obstacle appears mid-implementation, the task's fix
-  is the one named in design.md's Anticipated Interface Obstacles section —
-  never a downgrade to repository-only assertions.
-- **Every scenario task has a "Design constraints" block** drawn from
-  design.md, specific to that scenario — not optional. The executing agent
-  reads the task as its primary architecture reference; without constraints
-  it will take the shortest path, which may not match the design.
-  ```
-  Design constraints:
-    - <which module/layer owns this behaviour>
-    - <which protocol, data format, or library to use>
-    - <what response shape / side-effect is required by the design>
-  ```
-- Think about: right order, setup needed before features, task dependencies.
-
-**Any custom artifact**:
+**Any custom artifact between here and `design-review`/`tasks` (whichever
+comes first in the sequence)**:
 - Follow the instruction returned by `givn instructions <id>`.
 - Write to the path in `generates`.
 - Think before writing.
 
-## After writing tasks (or the last planning artifact)
+## Stop after `design`
 
-Run: givn apply --change <id>
-Confirm task tracking is live.
+Do not write `tasks.md`. Do not run `givn apply`. Those happen after
+`design-review` has run as a separate, fresh-context step — see the
+orchestrator's next steps.
 
 ## Report back with
 - A summary of each artifact written (path + one-sentence summary)
@@ -243,11 +221,34 @@ Confirm task tracking is live.
 
 ### 6. Wait for the architect subagent to complete
 
-The architect must produce all planning artifacts (through `tasks`) and run
-`givn apply` before the orchestrator proceeds.
+The architect must produce all planning artifacts through `design` (and any
+custom artifact preceding `design-review`/`tasks`) before the orchestrator
+proceeds. It must NOT produce `design-review`, `tasks`, or `review`.
 
 If the subagent flags ambiguities that require user input, surface them and
 wait before spawning again (or re-prompting the subagent with the answers).
+
+### 6b. Hand off to design-review
+
+If `design-review` appears in the artifact sequence (the default), tell the
+user:
+
+```
+Design written. Design-review is mandatory and must run in a fresh context —
+run /givn-design-review <id> now before tasks are written.
+```
+
+Do not spawn `/givn-design-review`'s subagents yourself from this
+orchestrator's context — the user (or their agent harness) invokes
+`/givn-design-review` as a new, separate command so the grilling subagent
+starts genuinely fresh, not as a continuation of this conversation. Stop
+here.
+
+If `design-review` has been removed from the manifest (project override),
+tell the user to run `/givn-tasks <id>` next instead. Do not write
+`tasks.md` from this orchestrator's own architect subagent — `/givn-tasks`
+is its own command with its own fresh invocation, kept consistent regardless
+of whether design-review ran.
 
 ### 7. Show final status
 
@@ -259,20 +260,19 @@ givn status --change <id>
 
 ## When to stop
 
-Stop after the architect subagent has written the last artifact whose `id`
-appears in the sequence **before** `review`. In the default manifest that is
-`tasks`; in a customised manifest it may be different — the architect follows
-the actual sequence from `givn status --json`.
-
-Do **not** produce the `review` artifact — that belongs to `/givn-review` after
-implementation is done.
+Stop after the architect subagent has written `design` (and any custom
+artifact preceding `design-review`/`tasks` in the sequence). Never let this
+orchestrator's architect subagent produce `design-review`, `tasks`, or
+`review` — each is a separate command run in its own fresh context:
+`/givn-design-review`, then `/givn-tasks`, then (after implementation)
+`/givn-review`.
 
 ---
 
 ## Output
 
 ```
-## Change planned: <id>
+## Change planned so far: <id>
 
 **Artifacts written** (in manifest order):
 - proposal:  givn/changes/<id>/proposal.md
@@ -280,43 +280,38 @@ implementation is done.
 - specs:     givn/changes/<id>/specs/<cap>/<cap>.feature  (N scenarios, all @wip)
 - design:    givn/changes/<id>/design.md
   Key decisions: <brief summary>
-- tasks:     givn/changes/<id>/tasks.md
-  N tasks (one per scenario)
-[... any additional artifacts from the manifest ...]
+[... any additional artifacts preceding design-review/tasks ...]
 
 **Decisions / tradeoffs:** <any flagged by the architect>
 
-**Ready to implement.** Run `/givn-implement` to start the TDD loop.
+**Next:** Run `/givn-design-review <id>` now, in a fresh context, before
+tasks are written. (Or `/givn-tasks <id>` if design-review has been removed
+from this project's manifest.)
 ```
 
 ---
 
 ## Guardrails
 
-- The orchestrator delegates all artifact writing to the architect subagent.
+- The orchestrator delegates proposal/spec/design writing to the architect
+  subagent — never `design-review`, `tasks`, or `review`.
 - Always run `givn status --change <id> --json` for current state — never
   hardcode the sequence.
 - No implementation detail (HOW) in proposal or specs.
 - All scenarios `@wip` — step definitions are not written during planning.
 - `givn lint --change <id>` after writing specs; fix parse errors (exit 1).
-- Tasks use `- [ ]` checkboxes for `givn apply` to track.
 - design.md must name a concrete strict-mode mechanism and stub pattern —
   this is what prevents the change from being fabricated with empty stubs
   during implementation. Do not accept a plan that omits it.
-- tasks.md's first task must include a proof-of-strictness sub-task with a
-  field for non-zero-exit evidence. Do not accept a plan that omits it.
-- Every scenario task ends in COMMIT; every RED/GREEN/REFACTOR line has a
-  field for pasted output. A tasks.md with nowhere to record what happened
-  is incomplete.
 - design.md must name a local run command, a digital twin for every
   external/third-party dependency, and a fix for any foreseeable
   real-interface obstacle. Do not accept a plan that defers this to
   "figure it out during implementation."
-- Every `@e2e` scenario asserts primarily on the real interface's output.
-  Do not accept a plan or a task whose e2e GREEN criteria is
-  repository-state-only.
 - design.md must not contain a version number written from memory. Every
   versioned technology choice is either "latest"/"LTS" or a looked-up
   version with a note of what was checked. Reject a plan with bare version
   numbers and no lookup note or "latest/LTS" designation.
+- **Never run `/givn-design-review`'s subagents from within this
+  orchestrator's context.** Design-review must start genuinely fresh — tell
+  the user to invoke `/givn-design-review <id>` as its own command.
 - Critical ambiguities go to the user — the architect does not guess.

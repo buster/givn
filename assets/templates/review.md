@@ -66,9 +66,29 @@ cleanly:
 <!-- paste local-run command + confirmation of clean startup -->
 ```
 
+**E2e isolation check** — `verify.command` and `verify.e2e_command` read
+literally from `givn/config.yaml`; if identical, this is always a finding
+(the "e2e run" is not isolating `@e2e` scenarios at all). Prove isolation
+with actual scenario counts from running both:
+
+| `verify.command` value | `verify.e2e_command` value | Identical? | Full-suite scenario count | E2e-only scenario count | E2e count strictly smaller (or all scenarios @e2e)? |
+|---|---|---|---|---|---|
+| | | | | | |
+
+**Design.md conformance check** — implementation's actual commands, file
+layout, and framework/driver choices diffed against what design.md
+explicitly named. Any deviation implemented without first updating
+design.md and re-running design-review is a finding, not an acceptable
+shortcut:
+
+| Decision (from design.md) | design.md says | Actually built | Matches? | If not: was design.md updated + design-review re-run? |
+|---|---|---|---|---|
+| | | | | |
+
 **Result:** CLEAN / FINDINGS (if findings, list remediation taken — reopened
 tasks, re-run RED/GREEN/REFACTOR/COMMIT, real-interface obstacle fixed per
-design.md — before continuing this review).
+design.md, or design.md corrected + design-review re-run — before
+continuing this review).
 
 ---
 
@@ -128,6 +148,11 @@ Run `{{VERIFY_COMMAND}}` and paste the summary below.
 - [ ] The exact file(s) `verify.e2e_command` invokes were identified, and
       the tree (including untracked files) was searched for a parallel e2e
       implementation before accepting a weaker one.
+- [ ] `verify.e2e_command` is not identical to `verify.command`; scenario
+      counts prove real isolation (or "all scenarios are @e2e" is stated).
+- [ ] Implementation (commands, file layout, framework/driver) matches
+      design.md as reviewed; any deviation went through a design.md update
+      + design-review re-run, not a silent shortcut.
 - [ ] No finding anywhere in this report is excused with a classification
       outside the three buckets (no "acceptable for now," "future scope,"
       "sufficient for current scope," or similar invented exception).

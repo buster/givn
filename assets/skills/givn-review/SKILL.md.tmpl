@@ -46,7 +46,21 @@ stubs. Mechanical check, not a judgment call:
    regular scenarios.
 9. Confirm the local run command (design.md's Local Runnability section)
    starts the full stack, including every digital twin, cleanly.
-10. Any finding is unfinished implementation, not a coverage gap — reopen
+10. Read `verify.command` and `verify.e2e_command` literally from
+    `givn/config.yaml`. If they are the same string, the "e2e run" is not
+    isolating `@e2e` at all — always a finding. Prove isolation by running
+    both and comparing scenario counts: `verify.e2e_command` MUST report
+    strictly fewer scenarios, unless every in-scope scenario is `@e2e`
+    (state this explicitly).
+11. Diff the actual implementation (commands, file layout, framework)
+    against what design.md explicitly named. A deviation implemented
+    without updating design.md and re-running design-review first — e.g.
+    reusing one step file design.md split into two, or an unfiltered
+    `verify.e2e_command` where design.md named a tag-filtered one — is a
+    fabrication-audit finding: implementation silently overrode an
+    already-reviewed decision. Fix by either conforming to design.md as
+    reviewed, or updating design.md + re-running design-review first.
+12. Any finding is unfinished implementation, not a coverage gap — reopen
     the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
     real-interface obstacle per design.md, never leaving a repository-only
     or HTTP/fetch() shortcut in place), before continuing.

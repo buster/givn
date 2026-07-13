@@ -86,6 +86,17 @@ Feature: My Capability
 - `@givn.removed` scenarios: include exactly one placeholder step.
 - All `@givn.*` tags are stripped automatically on archive.
 
+**`@e2e` smoke tests (mandatory):** every capability includes at least one
+`@e2e` scenario exercising the real interaction surface (browser, CLI,
+API — whatever the user/client actually touches). Tag it
+`@givn.added @e2e @wip`. It runs via `verify.e2e_command`, not
+`verify.command`, using separate step definitions (location documented in
+`design.md`). **Scope: one `@e2e` scenario per distinct happy-path action —
+not one per variant.** Do not add another `@e2e` scenario for every input
+variant, error case, or enum/dropdown value of the same action; those are
+regular (non-`@e2e`) scenarios. Add a second `@e2e` scenario only when it
+covers a genuinely different user-facing action.
+
 ### 5. Validate syntax
 
 ```sh

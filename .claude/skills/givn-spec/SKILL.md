@@ -44,6 +44,11 @@ exercises the real interaction surface (browser, CLI, API, etc.).
 - They use separate step definitions (location documented in `design.md`).
 - They cover the critical happy path through the real external boundary.
 - They are NOT unit tests wrapped in Gherkin, NOT in-process integration tests.
+- **Scope: one `@e2e` scenario per distinct happy-path action, not per
+  variant.** Do not add a second `@e2e` scenario for every input variant,
+  error case, or enum/dropdown value of the same action — those are regular
+  scenarios. Add another `@e2e` scenario only for a genuinely different
+  user-facing action.
 
 ## Verify command
 

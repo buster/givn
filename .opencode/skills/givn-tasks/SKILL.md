@@ -55,7 +55,12 @@ Then move to the next scenario.
 
 Before the first @e2e scenario, bring up the local environment (design.md's
 Local Runnability section: local run command, all dependencies, all
-digital twins, isolated network) and confirm clean startup.
+digital twins, isolated network) and confirm clean startup. Set
+`verify.e2e_command` to the exact command design.md names, including its
+tag-filter mechanism (`-- --tags @e2e`, `CUCUMBER_FILTER_TAGS`, etc.) — it
+must NEVER be identical to `verify.command`; prove it by running both and
+recording that the e2e scenario count is strictly smaller (or state
+explicitly that every scenario is `@e2e`).
 
 Then @e2e smoke tests (after all non-@e2e scenarios are GREEN):
 
@@ -69,10 +74,13 @@ For each @e2e scenario:
               assertions driving the actual interface AS THE PRIMARY
               assertion (page content, HTTP response, redirect, CLI
               output). Repository checks are secondary/additional only —
-              never the sole assertion. If a real-interface obstacle
-              appears, apply the fix design.md names for it; if none is
-              named, STOP — this is a design gap, not a reason to
-              downgrade to a repository-only check. List files touched.
+              never the sole assertion. For a browser-UI capability, drive
+              the actual browser (click/type/navigate) — never an HTTP
+              request or in-page `fetch()` standing in for browser
+              interaction. If a real-interface obstacle appears, apply the
+              fix design.md names for it; if none is named, STOP — this is
+              a design gap, not a reason to downgrade to a repository-only
+              or HTTP/fetch() shortcut. List files touched.
             Run: verify.e2e_command, targeting this scenario only →
               scenario PASSES. Paste evidence.
   REFACTOR: Clean up e2e code. Runner still PASSES. Paste evidence.
@@ -90,6 +98,15 @@ Then move to the next @e2e scenario.
   once strict mode has been proven in the setup task.
 - GREEN for @e2e is confirmed by `verify.e2e_command` only, likewise proven.
 - Never conflate lint, verify.command, or verify.e2e_command.
+- **Never silently deviate from design.md.** If the exact command, file
+  layout, or framework design.md names turns out inconvenient (e.g.
+  reusing one step file design.md split into two, or pointing
+  `verify.e2e_command` at the same string as `verify.command`), STOP —
+  do not implement the shortcut. Update design.md with the corrected
+  decision, re-run design-review (and reassess arc42 chapters if
+  structural), then resume. A shortcut that never touches design.md is an
+  unreviewed design decision made by the wrong artifact, and review.md's
+  fabrication audit is built to catch it.
 - Every scenario task ends in a COMMIT sub-task with a recorded hash. A
   checked task with no commit is not done.
 - Every RED/GREEN/REFACTOR sub-task has a place to paste captured runner
@@ -97,6 +114,10 @@ Then move to the next @e2e scenario.
   did happen.
 - A `@e2e` scenario whose Then steps assert only against a repository is not
   done, no matter what the runner reports — it needs a real-interface assertion.
+- For a browser-UI capability, an `@e2e` scenario driven via HTTP request or
+  in-page `fetch()` instead of a real browser driver is not done — the
+  interaction was never real, regardless of what the assertion checks.
+- One `@e2e` scenario per distinct happy-path action, not per variant.
 - Track progress: `givn apply --change <change-id>`
 
 ## Verify command

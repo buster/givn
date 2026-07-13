@@ -99,7 +99,25 @@ Mechanical check, before trusting anything else:
    regular scenarios.
 9. Confirm the local run command (design.md's Local Runnability section)
    still starts the full stack — including every digital twin — cleanly.
-10. Any finding from 1-9 is unfinished implementation, not a coverage gap.
+10. Read `verify.command` and `verify.e2e_command` from `givn/config.yaml`
+    literally, as strings. If they are identical, the "e2e run" re-runs the
+    whole suite and proves nothing about e2e isolation — always a finding,
+    never acceptable even if both exit 0. Prove real isolation: run both,
+    record the reported scenario count for each; `verify.e2e_command`'s
+    count MUST be strictly smaller than `verify.command`'s, unless every
+    in-scope scenario is `@e2e` (state this explicitly if true).
+11. Diff the built implementation against design.md's explicitly named
+    commands, file layout, and framework/driver choices — not just "does
+    the file exist" but "does it match what design.md said." A deviation
+    (different step-file split than design.md named, an unfiltered
+    `verify.e2e_command` where design.md specified a tag filter, a
+    different framework) implemented without first updating design.md and
+    re-running design-review is a fabrication-audit finding: an unreviewed
+    design decision made silently by the tasks/implementation phase. Fix
+    by conforming to design.md as reviewed, or by updating design.md and
+    re-running design-review (reassess arc42 chapters if structural)
+    before accepting the deviation.
+12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
     Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
     fixing the real-interface obstacle per design.md, never by leaving the
     repository-only assertion or HTTP/fetch() shortcut in place. Do not
@@ -183,10 +201,20 @@ trusting the subagent's report:
    mention. A subagent report that never names the exact invoked file(s) or
    never mentions checking for a parallel implementation is incomplete —
    reject it.
-6. Scan review.md itself for invented exception language ("acceptable for
+6. Read `verify.command` and `verify.e2e_command` yourself from
+   `givn/config.yaml`. If identical, reject `REVIEW: PASS` outright — this
+   is never a passable state, regardless of what the subagent's report
+   claims about scenario counts. If the subagent's report does not include
+   both scenario counts with the e2e count strictly smaller, reject it.
+7. Spot-check one command/file/framework decision design.md names against
+   what was actually built (e.g. open `verify.e2e_command`'s config value
+   and the step-file paths named in design.md's "Step Definition
+   Locations"). Any mismatch not backed by an updated design.md +
+   re-run design-review = reject `REVIEW: PASS`.
+8. Scan review.md itself for invented exception language ("acceptable for
    now," "future scope," "sufficient for current scope," or similar). Any
    such phrase = reject `REVIEW: PASS`, regardless of what it excuses.
-7. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
+9. Any contradiction: reject `REVIEW: PASS`, re-spawn the subagent with the
    specific discrepancy named.
 
 ### 5. Show final status
@@ -245,6 +273,15 @@ Display: "Run `/givn-archive` to archive this change."
   "sufficient for current scope," etc.) may excuse a gap — this applies with
   special force to `@e2e` coverage, which is always "Missing test" when
   absent or downgraded, never waved off as out of scope.
+- `verify.e2e_command` identical to `verify.command` is always a
+  fabrication-audit finding, never a passable configuration, regardless of
+  whether both exit 0 — it means the e2e gate is not isolating anything.
+- Implementation must match what design.md explicitly named (commands,
+  file layout, framework/driver). A silent deviation implemented without
+  first updating design.md and re-running design-review is unfinished
+  implementation — an unreviewed design decision made by the wrong
+  artifact — never something tasks or review may wave through or work
+  around unilaterally.
 - Before declaring a real browser driver "not installed" or "not yet
   implemented," search the tree yourself (including untracked files) for an
   existing implementation — do not accept the subagent's or a prior

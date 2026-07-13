@@ -53,11 +53,39 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    scenarios — flag this as a fabrication-audit finding (wasted e2e budget
    on the same underlying action, e2e coverage should be reserved for one
    distinct action).
-9. Any finding from 1-8 is unfinished work, not a coverage gap. Reopen the
-   task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
-   interface per design.md's "Anticipated interface obstacles" fix, not by
-   asserting on the repository instead. Do not write `REVIEW: PASS` while
-   any finding remains.
+9. **Confirm `verify.e2e_command` is actually scoped to `@e2e`, not a copy
+   of `verify.command`.** Read both values from `givn/config.yaml`
+   literally. If they are identical strings, the "e2e run" re-runs the
+   entire suite and proves nothing about e2e isolation specifically — this
+   is always a fabrication-audit finding, never an acceptable
+   configuration, regardless of whether both currently exit 0. Confirm by
+   running each and comparing reported scenario counts: `verify.e2e_command`
+   MUST report strictly fewer scenarios than `verify.command`, unless
+   literally every in-scope scenario is tagged `@e2e` (state this
+   explicitly if so). If the counts are equal without that justification,
+   the tag filter is missing or broken — reopen as a fabrication finding.
+10. **Diff the implementation against design.md's stated commands, file
+    layout, and framework choices — do not just check they exist.**
+    design.md names specific things: the exact `verify.e2e_command` value
+    (including its tag-filter flag), exact step-definition file paths (e.g.
+    separate files per capability), exact framework/driver. If the
+    as-built project deviates from what design.md explicitly named — same
+    step file used for both e2e and non-e2e when design.md named two, a
+    different or unfiltered command than design.md specified, a different
+    driver — and `design.md` was never updated to reflect a deliberate,
+    re-reviewed change, this is not a coverage gap or an acceptable
+    "practical" shortcut. It is an implementation that silently overrode an
+    already-reviewed design decision. Record it as a fabrication-audit
+    finding: the fix is to either (a) conform the implementation to
+    design.md as originally reviewed, or (b) update design.md with the
+    corrected decision and re-run design-review (and reassess the arc42
+    chapter table if the change is structural) before the task can be
+    considered done — never to silently keep the deviation.
+11. Any finding from 1-10 is unfinished work, not a coverage gap. Reopen the
+    task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
+    interface per design.md's "Anticipated interface obstacles" fix, not by
+    asserting on the repository instead. Do not write `REVIEW: PASS` while
+    any finding remains.
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
@@ -130,6 +158,12 @@ starts the full stack, including digital twins, cleanly.
 - The exact file(s) `verify.e2e_command` invokes were identified and read;
   the tree (including untracked files) was searched for a second/parallel
   e2e implementation before accepting a weaker one.
+- `verify.e2e_command` is not identical to `verify.command`; its scenario
+  count was proven strictly smaller (or "all scenarios are @e2e" was
+  stated explicitly).
+- Implementation (commands, file layout, framework/driver) matches what
+  design.md explicitly named — any deviation was resolved by updating
+  design.md and re-running design-review, never left as a silent shortcut.
 - No finding was excused with a classification outside the three buckets
   (no "acceptable for now," "future scope," "sufficient for current scope,"
   or similar invented exception anywhere in this report).

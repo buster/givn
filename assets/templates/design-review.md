@@ -25,17 +25,35 @@ Questions that could not be resolved and were flagged explicitly.
 ## Architecture documentation (arc42) check
 
 N/A if the arc42 addon is not enabled (`addons.arc42` in `givn/config.yaml`).
-Otherwise, fill in — do not leave blank if arc42 is enabled:
+Otherwise, fill in **all 12 rows** — this is an independent audit, not a
+transcription of `arc42.md`'s own table. Assess each chapter against
+proposal.md/design.md yourself before reading what `arc42.md` claims, then
+record both:
 
-| Chapter | Claimed touched by arc42.md? | Content matches design.md? | Still placeholder text? |
-|---|---|---|---|
-| | | | |
+| # | Chapter | Reviewer's own assessment (Yes/No) | arc42.md's claim (Yes/No) | Match? | Content matches design.md? |
+|---|---|---|---|---|---|
+| 1 | 01 introduction-and-goals | | | | |
+| 2 | 02 architecture-constraints | | | | |
+| 3 | 03 context-and-scope | | | | |
+| 4 | 04 solution-strategy | | | | |
+| 5 | 05 building-block-view | | | | |
+| 6 | 06 runtime-view | | | | |
+| 7 | 07 deployment-view | | | | |
+| 8 | 08 crosscutting-concepts | | | | |
+| 9 | 09 architecture-decisions | | | | |
+| 10 | 10 quality-requirements | | | | |
+| 11 | 11 risks-and-technical-debt | | | | |
+| 12 | 12 glossary | | | | |
 
-- [ ] `arc42.md`'s "chapters affected" claim (including a "no chapters
-      affected" claim) was checked against the actual scope of
-      proposal.md/design.md and found plausible.
+- [ ] All 12 rows assessed independently against proposal.md/design.md
+      before reading arc42.md's own claims.
+- [ ] No row is "Match? = No" with the reviewer saying "Yes" and arc42.md
+      saying "No" or omitting the row — any such row is a blocking finding,
+      not a note.
 - [ ] Every non-trivial architecture/technology decision in design.md has a
       corresponding MADR entry in chapter 09.
+- [ ] Every MADR "Bad, because..." consequence has a counterpart entry in
+      chapter 11 (risks-and-technical-debt).
 - [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
 
 ## Changes made during hardening

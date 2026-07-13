@@ -28,15 +28,25 @@ Required branches — cover every one (or explicitly record "no issue found"):
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
 - **Architecture documentation (arc42)** — N/A if the arc42 addon is not
-  enabled (`addons.arc42` in `givn/config.yaml`). Otherwise: read `arc42.md`
-  and every chapter it claims to have touched under `docs/arc42/`. Is the
-  "chapters affected" claim (including "no chapters affected") plausible
-  given the actual scope of proposal.md/design.md? Does the chapter content
-  actually match design.md, not placeholder text or a stale contradiction?
-  Does every non-trivial architecture decision in design.md have a MADR
-  entry in chapter 09? `arc42.md`'s `STATUS: DONE` is a self-report from the
-  same agent that wrote the docs — not verification; treat any mismatch as
-  a blocking finding.
+  enabled (`addons.arc42` in `givn/config.yaml`). Otherwise, do not just
+  audit what `arc42.md` claims — independently re-derive the expected
+  chapter set first, then diff against the claim:
+  1. Read proposal.md/specs/design.md yourself and walk all 12 rows of the
+     arc42-docs instruction's chapter-selection table, forming your own
+     Yes/No per row, before opening `arc42.md`.
+  2. Open `arc42.md` and compare its per-row Yes/No against your own. Any
+     row where you say "Yes" and `arc42.md` says "No" (or omits the row) is
+     a blocking finding — an omission, not just a contradiction, is what
+     slips through unnoticed and must block sign-off.
+  3. For every chapter marked "Yes" (by either party): open the chapter file
+     and confirm the content actually matches design.md, not placeholder
+     text or a stale contradiction.
+  4. Confirm every non-trivial architecture decision in design.md has a
+     MADR entry in chapter 09, and that any consequence of that decision
+     (e.g. "Bad, because...") is reflected in chapter 11.
+  `arc42.md`'s `STATUS: DONE` is a self-report from the same agent that
+  wrote the docs — not verification; treat any mismatch, including a
+  missing row, as a blocking finding.
 
 If a question can be answered by exploring the existing codebase, explore it
 and record the finding — do not burden the user with it.
