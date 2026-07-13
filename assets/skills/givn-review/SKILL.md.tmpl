@@ -34,16 +34,22 @@ stubs. Mechanical check, not a judgment call:
    `XMLHttpRequest` from the page's JS context instead of driving the
    browser (click/type/navigate), record it as a downgraded e2e scenario —
    the interaction was never real, regardless of what the assertion checks.
-7. Check `@e2e` scope: confirm each capability has one `@e2e` scenario per
+7. Identify the exact file(s) `verify.e2e_command` actually invokes — read
+   the command, not just a filename containing "e2e". Run `git status` and
+   search the tree (including untracked/uncommitted files) for any other
+   `@e2e` step implementation of the same capability. Reviewing a weaker
+   implementation while a stronger, real-interface one already exists
+   elsewhere (committed or not) is itself a fabrication-audit finding.
+8. Check `@e2e` scope: confirm each capability has one `@e2e` scenario per
    distinct happy-path action, not one per input variant/error case/enum
    value. Flag excess `@e2e` scenarios on the same action for conversion to
    regular scenarios.
-8. Confirm the local run command (design.md's Local Runnability section)
+9. Confirm the local run command (design.md's Local Runnability section)
    starts the full stack, including every digital twin, cleanly.
-9. Any finding is unfinished implementation, not a coverage gap — reopen
-   the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
-   real-interface obstacle per design.md, never leaving a repository-only
-   or HTTP/fetch() shortcut in place), before continuing.
+10. Any finding is unfinished implementation, not a coverage gap — reopen
+    the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
+    real-interface obstacle per design.md, never leaving a repository-only
+    or HTTP/fetch() shortcut in place), before continuing.
 
 Record the result (files scanned, findings, remediation) in review.md even
 when clean.
@@ -55,6 +61,12 @@ Classify every uncovered line/branch into exactly one bucket:
 1. **Dead code** (YAGNI/KISS) → delete it now.
 2. **Missing test coverage** → add a scenario + run RED/GREEN/REFACTOR, or fix steps.
 3. **Legitimately hard to test** — rare; needs concrete technical justification.
+
+These three buckets are exhaustive — **never invent a fourth**. Phrases like
+"acceptable for this iteration scope," "sufficient for current scope," or
+"future scope" that excuse a gap instead of naming one of the three buckets
+are themselves a fabrication-audit finding. A missing or downgraded `@e2e`
+scenario is always bucket 2 (missing test coverage), never an exception.
 
 Coverage is complete when every gap is classified and resolved (or justified).
 **There is no minimum percentage.** A high number is a side effect, not the goal.
@@ -74,7 +86,10 @@ Coverage is complete when every gap is classified and resolved (or justified).
    driven through the actual interface (real browser for a browser-UI
    capability, never HTTP/fetch() standing in for it). Missing, downgraded,
    or over-produced (one per variant) = classify as "missing test"/"needs
-   fixing" and add, fix, or convert accordingly.
+   fixing" and add, fix, or convert accordingly — never as an exception
+   outside the three buckets. Before concluding a real driver is
+   unavailable, search the tree yourself (including untracked files, per
+   fabrication-audit step 7) — do not take an absence at face value.
 7. Run both runners again — confirm still GREEN.
 8. Complete the sign-off checklist in review.md, including the fabrication
    audit result.

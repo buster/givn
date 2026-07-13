@@ -489,7 +489,10 @@ mod tests {
             .iter()
             .find(|a| a.id == "arc42-docs")
             .unwrap();
-        assert!(!arc42.optional, "arc42-docs must be required (not optional)");
+        assert!(
+            !arc42.optional,
+            "arc42-docs must be required (not optional)"
+        );
         assert!(
             arc42.requires.contains(&"design".to_string()),
             "arc42-docs must require design"

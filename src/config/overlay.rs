@@ -394,7 +394,10 @@ artifacts:
         // presence) must also see it enabled.
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  arc42: true").unwrap();
-        assert!(result.addons.arc42, "addons.arc42 must be true after overlay");
+        assert!(
+            result.addons.arc42,
+            "addons.arc42 must be true after overlay"
+        );
     }
 
     #[test]

@@ -101,11 +101,26 @@ fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
 }
 
 /// Resolve the `verify-e2e` built-in to `manifest.verify.e2e_command` and run it.
-/// Skips silently if no e2e command is configured (empty string).
+///
+/// Skips silently ONLY when the in-scope `.feature` files genuinely contain
+/// no `@e2e`-tagged scenario — there is nothing to run. If `@e2e` scenarios
+/// exist but `verify.e2e_command` is empty/unconfigured, this is a hard
+/// failure: a project with browser/CLI/API smoke-test scenarios that has no
+/// configured e2e runner has an unenforced testing gap, not an optional one.
 fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
     let command = &manifest.verify.e2e_command;
+    let has_e2e = crate::gherkin::parse::has_e2e_scenarios(std::path::Path::new(features_path));
+
     if command.is_empty() {
-        println!("  (skipped — no verify.e2e_command configured)");
+        if has_e2e {
+            anyhow::bail!(
+                "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not configured \
+                 in givn/config.yaml. An @e2e scenario without a configured e2e runner is an \
+                 unenforced gap, not an optional one — set verify.e2e_command.",
+                features_path
+            );
+        }
+        println!("  (skipped — no @e2e scenarios in scope, no verify.e2e_command configured)");
         return Ok(());
     }
     println!("  Running: {command}");
@@ -128,5 +143,99 @@ fn run_shell_command(command: &str, features_path: &str) -> Result<()> {
             command,
             status.code().unwrap_or(-1)
         )
+    }
+}
+
+#[cfg(test)]
+mod verify_e2e_hook_tests {
+    use super::*;
+    use crate::config::manifest::{Addons, Apply, Manifest, Verify};
+    use std::fs;
+
+    fn manifest_with(e2e_command: &str) -> Manifest {
+        Manifest {
+            artifacts: vec![],
+            apply: Apply {
+                requires: vec![],
+                tracks: None,
+            },
+            verify: Verify {
+                command: "true".to_string(),
+                e2e_command: e2e_command.to_string(),
+                features_path: "givn/specs".to_string(),
+            },
+            addons: Addons {
+                arc42: false,
+                absolute_mode: false,
+            },
+            extras: false,
+            givn_config_version: None,
+        }
+    }
+
+    #[test]
+    fn hard_fails_when_e2e_scenarios_exist_but_command_unconfigured() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  @e2e\n  Scenario: real interaction\n    Given a browser\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("");
+        let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
+
+        assert!(
+            result.is_err(),
+            "an @e2e scenario with no verify.e2e_command must hard fail, not skip silently"
+        );
+    }
+
+    #[test]
+    fn skips_silently_when_no_e2e_scenarios_and_command_unconfigured() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  Scenario: plain\n    Given a thing\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("");
+        let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
+
+        assert!(
+            result.is_ok(),
+            "no @e2e scenarios in scope must skip silently, not fail"
+        );
+    }
+
+    #[test]
+    fn runs_configured_command_when_e2e_scenarios_exist() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  @e2e\n  Scenario: real interaction\n    Given a browser\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("true");
+        let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
+
+        assert!(result.is_ok(), "a passing configured command must succeed");
+    }
+
+    #[test]
+    fn propagates_failure_of_configured_command() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  @e2e\n  Scenario: real interaction\n    Given a browser\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("false");
+        let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
+
+        assert!(result.is_err(), "a failing configured command must fail");
     }
 }

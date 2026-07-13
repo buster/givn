@@ -224,5 +224,30 @@ mod tests {
             manifest.verify.command, "givn missing-testrunner",
             "default verify.command must be the sentinel"
         );
+
+        // The `review` artifact must run both the main and the e2e verify
+        // hooks — an @e2e scenario reviewed without verify.e2e_command
+        // running is an unenforced gap, not an acceptable default.
+        let review = manifest
+            .artifacts
+            .iter()
+            .find(|a| a.id == "review")
+            .expect("embedded manifest must contain artifact 'review'");
+        let review_hooks: Vec<&str> = review
+            .post
+            .iter()
+            .map(|h| match h {
+                HookEntry::Short(s) => s.as_str(),
+                HookEntry::Full(f) => f.run.as_str(),
+            })
+            .collect();
+        assert!(
+            review_hooks.contains(&"verify"),
+            "review.post must include 'verify'"
+        );
+        assert!(
+            review_hooks.contains(&"verify-e2e"),
+            "review.post must include 'verify-e2e' so @e2e coverage is enforced, not optional"
+        );
     }
 }

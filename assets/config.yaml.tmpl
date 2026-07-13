@@ -111,14 +111,19 @@ verify:
 #
 # Built-in hook names:
 #   verify      -> run verify.command (the test runner)
-#   verify-e2e  -> run verify.e2e_command (the e2e smoke test runner)
+#   verify-e2e  -> run verify.e2e_command (the e2e smoke test runner).
+#                  If any in-scope .feature file has an @e2e-tagged scenario,
+#                  this hook HARD FAILS when verify.e2e_command is empty —
+#                  it only skips silently when there is genuinely no @e2e
+#                  scenario in scope. An @e2e scenario with no configured
+#                  runner is an unenforced gap, never an acceptable default.
 #   lint        -> run `givn lint` (static .feature check)
 # Or: any shell command string.
 # Object form adds options: { run: verify, allow_failure: false, name: "..." }
 #
 # Defaults already in the embedded manifest:
 #   tasks.post:  [verify]
-#   review.post: [verify]
+#   review.post: [verify, verify-e2e]
 #
 # Override examples:
 # artifacts:

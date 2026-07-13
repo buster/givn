@@ -49,6 +49,15 @@ happy-path action, not one per variant/error case:
 |---|---|---|---|
 | | | | |
 
+**Duplicate-implementation check** — the exact file(s) `verify.e2e_command`
+invokes, and confirmation the tree (including untracked files, via `git
+status`) was searched for any other/parallel e2e implementation of the same
+capability that might be stronger than the one being reviewed:
+
+| Capability | File(s) verify.e2e_command invokes | Other implementation found? (incl. untracked) | Stronger one used instead? |
+|---|---|---|---|
+| | | | |
+
 **Local environment check** — the local run command (design.md's Local
 Runnability section) starts the full stack, including digital twins,
 cleanly:
@@ -77,6 +86,11 @@ Every uncovered region must be classified as exactly one of:
 1. **Dead code** (YAGNI/KISS) → delete it.
 2. **Missing test coverage** → fix step definitions, or add a scenario and run RED/GREEN/REFACTOR.
 3. **Legitimately hard to test** — rare; requires concrete technical justification.
+
+These three buckets are exhaustive — **no fourth bucket**. Do not excuse a
+gap with invented language such as "acceptable for this iteration scope,"
+"sufficient for current scope," or "future scope" — a missing or downgraded
+`@e2e` scenario is always bucket 2 (missing test coverage).
 
 Coverage is **complete** when every gap is classified and resolved.
 There is no minimum percentage; a high number is a side effect, not the target.
@@ -111,5 +125,11 @@ Run `{{VERIFY_COMMAND}}` and paste the summary below.
 - [ ] The delta spec contains no implementation-layer detail.
 - [ ] Local run command starts the full stack, including digital twins,
       cleanly.
+- [ ] The exact file(s) `verify.e2e_command` invokes were identified, and
+      the tree (including untracked files) was searched for a parallel e2e
+      implementation before accepting a weaker one.
+- [ ] No finding anywhere in this report is excused with a classification
+      outside the three buckets (no "acceptable for now," "future scope,"
+      "sufficient for current scope," or similar invented exception).
 
 **REVIEW: PASS** <!-- change to FAIL if any sign-off item is unchecked -->

@@ -189,6 +189,29 @@ fn collect_wip(feature: &Feature) -> Vec<LintError> {
     errors
 }
 
+/// Check whether any `.feature` file under `dir` contains a scenario tagged
+/// `@e2e`. Used to decide whether `verify.e2e_command` is mandatory: a
+/// silent skip is only legitimate when there is genuinely no `@e2e`
+/// scenario in scope, never merely because the command is unconfigured.
+///
+/// Mirrors `collect_wip`'s tag-matching approach. Like `collect_wip`, this
+/// only walks `feature.scenarios` directly — scenarios nested under
+/// `Rule:` blocks are not inspected (pre-existing scope limitation shared
+/// with the @wip lint check).
+pub fn has_e2e_scenarios(dir: &Path) -> bool {
+    for path in collect_feature_files(dir) {
+        if let Ok(feature) = Feature::parse_path(&path, GherkinEnv::default())
+            && feature
+                .scenarios
+                .iter()
+                .any(|s| s.tags.iter().any(|t| t == "e2e"))
+        {
+            return true;
+        }
+    }
+    false
+}
+
 /// Collect all .feature files under a directory recursively.
 pub fn collect_feature_files(dir: &Path) -> Vec<std::path::PathBuf> {
     let mut files = Vec::new();
@@ -210,5 +233,62 @@ fn collect_recursive(dir: &Path, acc: &mut Vec<std::path::PathBuf>) {
                 acc.push(path);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod e2e_detection_tests {
+    use super::has_e2e_scenarios;
+    use std::fs;
+
+    #[test]
+    fn detects_e2e_tagged_scenario() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  @e2e\n  Scenario: real interaction\n    Given a browser\n",
+        )
+        .unwrap();
+
+        assert!(has_e2e_scenarios(dir.path()));
+    }
+
+    #[test]
+    fn no_e2e_tag_means_false() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  Scenario: plain\n    Given a thing\n",
+        )
+        .unwrap();
+
+        assert!(!has_e2e_scenarios(dir.path()));
+    }
+
+    #[test]
+    fn missing_directory_means_false() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let missing = dir.path().join("does-not-exist");
+
+        assert!(!has_e2e_scenarios(&missing));
+    }
+
+    #[test]
+    fn empty_directory_means_false() {
+        let dir = tempfile::tempdir().expect("tempdir");
+
+        assert!(!has_e2e_scenarios(dir.path()));
+    }
+
+    #[test]
+    fn e2e_tag_among_other_tags_is_still_detected() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  @givn.added @e2e @wip\n  Scenario: real interaction\n    Given a browser\n",
+        )
+        .unwrap();
+
+        assert!(has_e2e_scenarios(dir.path()));
     }
 }

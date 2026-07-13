@@ -34,7 +34,18 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    navigate) through a real driver, it is a downgraded e2e scenario even if
    its Then assertion checks page content — the interaction was never real.
    Record each occurrence found.
-7. **Check `@e2e` scope: one per happy-path action, not one per variant.**
+7. **Identify the exact file(s) `verify.e2e_command` actually invokes.**
+   Read the command itself from `givn/config.yaml`, not just its name — a
+   file merely containing "e2e" in its path is not evidence it is bound to
+   that command. Then run `git status` and search the tree for any other
+   `@e2e` step implementation for the same capability, including untracked
+   or uncommitted files. If more than one implementation exists, read all
+   of them. A weaker/downgraded implementation being reviewed while a
+   stronger, real-interface implementation already exists elsewhere in the
+   tree (committed or not) is itself a fabrication-audit finding — the
+   review must use and credit the strongest one, not whichever one
+   `verify.e2e_command` happens to point at if that is the wrong one.
+8. **Check `@e2e` scope: one per happy-path action, not one per variant.**
    If a capability has more than one `@e2e` scenario, confirm each covers a
    genuinely distinct user-facing action (e.g. registration vs. login), not
    input variants/error cases/enum values of the same action. Excess `@e2e`
@@ -42,7 +53,7 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    scenarios — flag this as a fabrication-audit finding (wasted e2e budget
    on the same underlying action, e2e coverage should be reserved for one
    distinct action).
-8. Any finding from 1-7 is unfinished work, not a coverage gap. Reopen the
+9. Any finding from 1-8 is unfinished work, not a coverage gap. Reopen the
    task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
    interface per design.md's "Anticipated interface obstacles" fix, not by
    asserting on the repository instead. Do not write `REVIEW: PASS` while
@@ -60,11 +71,21 @@ Redundant unit tests (behaviour already covered by a `.feature` scenario
 through the black-box boundary) are removed — the `.feature` file is the
 source of truth.
 
-## Classification (three buckets)
+## Classification (three buckets — no fourth bucket)
 
 1. Dead code (YAGNI/KISS) → delete.
 2. Missing test coverage → add scenario, run RED→GREEN→REFACTOR→COMMIT.
 3. Legitimately hard to test (rare) → concrete technical justification.
+
+These three buckets are exhaustive. **Any classification outside them is
+itself a fabrication-audit finding, not a valid outcome** — e.g. "acceptable
+for this iteration scope," "sufficient for current scope," "future scope,"
+"good enough for now," or any similar invented exception that waves off a
+required check instead of fixing it or explicitly justifying it under
+bucket 3. A missing or downgraded `@e2e` scenario always classifies as
+bucket 2 (missing test coverage) — it can never be excused into a fourth,
+undefined bucket. If you find yourself writing a sentence that excuses a
+gap without naming one of the three buckets above, stop and reclassify it.
 
 ## E2e coverage
 
@@ -75,11 +96,16 @@ step definitions must actually drive the browser (click/type/navigate) —
 not an HTTP request or in-page `fetch()` standing in for browser
 interaction. Missing, downgraded to repository-only assertions, or driven
 via HTTP/fetch() instead of the real interface = classify as "missing
-test," add or fix one. More than one `@e2e` scenario per action (one per
-variant/error case) = convert the excess to regular scenarios.
-`verify.e2e_command` must pass alongside `verify.command`. Confirm the local
-run command (design.md's Local Runnability section) still starts the full
-stack, including digital twins, cleanly.
+test," add or fix one — never as "acceptable for now" or any other
+exception outside the three buckets above, even if a real-browser
+implementation is reportedly not yet installed or not yet finished
+elsewhere in the tree. Before concluding a real driver is unavailable,
+search the tree yourself (including untracked files, see fabrication-audit
+step 7) — do not take an absence at face value. More than one `@e2e`
+scenario per action (one per variant/error case) = convert the excess to
+regular scenarios. `verify.e2e_command` must pass alongside `verify.command`.
+Confirm the local run command (design.md's Local Runnability section) still
+starts the full stack, including digital twins, cleanly.
 
 ## Sign-off checklist
 
@@ -101,6 +127,12 @@ stack, including digital twins, cleanly.
   (variants/error cases are regular scenarios, not additional `@e2e`).
 - The local run command starts the full stack (including digital twins)
   cleanly, verified during this review.
+- The exact file(s) `verify.e2e_command` invokes were identified and read;
+  the tree (including untracked files) was searched for a second/parallel
+  e2e implementation before accepting a weaker one.
+- No finding was excused with a classification outside the three buckets
+  (no "acceptable for now," "future scope," "sufficient for current scope,"
+  or similar invented exception anywhere in this report).
 
 ## Result
 
