@@ -81,6 +81,17 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
+    /// Show the artifact workflow graph: nodes, dependency edges, optional/
+    /// gates-archive flags. Without --change, prints the general workflow
+    /// from the manifest. With --change, overlays live status per artifact.
+    Graph {
+        /// Change identifier (default: general workflow only).
+        #[arg(long)]
+        change: Option<String>,
+        /// Output as JSON (machine-readable, for use by commands and scripts).
+        #[arg(long)]
+        json: bool,
+    },
     /// Track task progress for a change.
     Apply {
         /// Change identifier.
@@ -197,6 +208,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             cli::check::run(artifact.as_deref(), change.as_deref())
         }
         Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
+        Commands::Graph { change, json } => cli::graph::run(change.as_deref(), json),
         Commands::Apply { change } => cli::apply::run(&change),
         Commands::Archive { change } => cli::archive::run(&change),
         Commands::Eject { target, force } => cli::eject::run(&target, force),

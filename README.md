@@ -275,12 +275,13 @@ Every `givn` subcommand:
 
 | Command | Purpose |
 | --- | --- |
-| `givn init [--force] [--no-extras]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. |
+| `givn init [--force] [--no-extras] [--no-addons]` | Scaffold `givn/{specs,changes,archive}`, write `givn/config.yaml`, generate skills/commands, add the AGENTS.md hint block. Enables all addons and extras by default. |
 | `givn new <id> [--skip a,b,c]` | Create a new change scaffold under `givn/changes/<id>/`. `--skip` marks artifacts as intentionally not produced (reverse-engineering). |
 | `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. |
 | `givn lint [--change <id>] [paths...]` | Static Gherkin check only (syntax, `@wip`, delta tags). Exit 0 clean / 1 parse error / 2 `@wip` present. **Runs no tests.** |
 | `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand (e.g. `verify`, `verify-e2e`, `lint`). |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, next required/optional steps. Filesystem-derived, no separate state file. |
+| `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` dependency edges, optional/gates-archive flags, post hooks. Without `--change`, prints the general workflow from the manifest. With `--change`, overlays live status per artifact. |
 | `givn apply --change <id>` | Track task progress by (re-)scanning `tasks.md` checkboxes. |
 | `givn archive --change <id>` | Archive a completed change. Gated: `apply.requires` artifacts must exist, `REVIEW: PASS` present, all their hooks pass. |
 | `givn eject <target> [--force]` | Write an embedded default facet into the project for editing (`design:template`, `review:instruction`, `skill:givn-propose`, `manifest`). |
