@@ -45,6 +45,15 @@ Required branches:
   a browser UI, a real browser driver named — not HTTP/fetch()? Exactly one
   `@e2e` scenario per distinct happy-path action, not per variant?
 - **Risk** — most likely failure mode and mitigation?
+- **Architecture documentation (arc42)** — N/A if `addons.arc42` is not
+  enabled. Otherwise: read `arc42.md` and every chapter it claims to have
+  touched under `docs/arc42/`. Is the "chapters affected" claim plausible
+  given the actual scope (new modules/runtime flows/deployment changes
+  imply specific chapters, per the arc42-docs instruction's selection
+  table)? Does chapter content actually match design.md, not placeholder
+  text or a stale contradiction? Does chapter 09 have a MADR entry for every
+  non-trivial tech decision in design.md? `arc42.md`'s `STATUS: DONE` is a
+  self-report, not verification — treat any mismatch as a blocking finding.
 
 If a question can be answered by exploring the codebase, the subagent does that
 and reports the finding instead of asking the user.

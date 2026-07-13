@@ -111,6 +111,13 @@ Read all of these in full before forming any questions:
   modules, patterns). If a question can be answered by exploring the codebase,
   explore it and record the finding as a resolved item — do not include it as
   a question for the user.
+- If the arc42 addon is enabled (check `givn/config.yaml` for `addons.arc42:
+  true`, or the presence of `givn/changes/<id>/arc42.md`): also read
+  `givn/changes/<id>/arc42.md` and every chapter file under `docs/arc42/`
+  (or the configured `arc42.output_dir`) that the marker file claims to have
+  touched. This is required input for the Architecture documentation branch
+  below — do not skip it because arc42.md says `STATUS: DONE`; that marker is
+  a self-report from the same agent that wrote the docs, not verification.
 
 ## Required branches to cover
 
@@ -138,6 +145,32 @@ as "no issue found" if genuinely clean):
   finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
+- **Architecture documentation (arc42)** — skip this branch entirely (report
+  "N/A — arc42 addon not enabled") if `addons.arc42` is not `true` in
+  `givn/config.yaml`. Otherwise:
+  - Does `arc42.md`'s claim about which chapters are affected match the
+    actual scope of `proposal.md`/`design.md`? Cross-check against the
+    chapter-selection table in the arc42-docs instruction (new
+    components/modules → building-block-view, new runtime flows →
+    runtime-view, deployment changes → deployment-view, etc.). If
+    `arc42.md` claims "no chapters affected" but design.md describes new
+    modules, new runtime flows, or a non-trivial tech decision, that claim
+    is implausible — treat it as a blocking finding, not a resolved item.
+  - For every chapter `arc42.md` claims to have created/updated: open it and
+    confirm the content actually reflects design.md — not placeholder text,
+    not a stale description that contradicts design.md's Architecture
+    Impact or Technology Decisions sections. A contradiction is a blocking
+    finding.
+  - For every non-trivial architecture/technology decision in design.md
+    (a real tradeoff was made, not a default/obvious choice): confirm
+    chapter 09 (architecture-decisions) has a corresponding MADR entry
+    (status/date/decision-makers, considered options, decision outcome,
+    consequences). A non-trivial decision with no MADR entry is a blocking
+    finding.
+  - A chapter file still containing only its scaffolded placeholder text,
+    while `arc42.md` claims that chapter was "updated," is a blocking
+    finding — the same fabrication pattern as an empty step body reported
+    as passing.
 
 ## Return format
 
@@ -262,6 +295,13 @@ Write `givn/changes/<id>/design-review.md` following this template structure:
 ## Open questions
 | # | Question | Blocking? |
 
+## Architecture documentation (arc42) check
+N/A if the arc42 addon is not enabled. Otherwise fill in — do not leave blank:
+| Chapter | Claimed touched by arc42.md? | Content matches design.md? | Still placeholder text? |
+- [ ] arc42.md's "chapters affected" claim checked against actual scope and found plausible.
+- [ ] Every non-trivial architecture/technology decision in design.md has a MADR entry in chapter 09.
+- [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
+
 ## Changes made during hardening
 | Artifact | Change summary |
 
@@ -271,6 +311,8 @@ Write `givn/changes/<id>/design-review.md` following this template structure:
 - [ ] design.md reflects decisions reached.
 - [ ] specs/*.feature updated for any missing scenarios.
 - [ ] givn lint exits 0 or 2.
+- [ ] Architecture documentation (arc42) check completed above, or marked
+      N/A because the addon is not enabled.
 
 DESIGN-REVIEW: PASS
 

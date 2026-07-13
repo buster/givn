@@ -5,6 +5,28 @@
 /// top-level `extras:` key in `givn/config.yaml`. See arc42 ch.8.11.
 use anyhow::{Result, bail};
 
+/// Registry of all known extras (id, one-line description). Covers both the
+/// extras skills and extras commands installed together when `extras` is
+/// enabled — used for summary output (e.g. `givn init`).
+pub const KNOWN_EXTRAS: &[(&str, &str)] = &[
+    (
+        "givn-domain-modeling",
+        "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
+    ),
+    (
+        "givn-dev-principles",
+        "Skill — apply the team's engineering principles during implementation",
+    ),
+    (
+        "grill-me",
+        "Command — Socratically grill the current plan/design, one question at a time",
+    ),
+    (
+        "grill-with-docs",
+        "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
+    ),
+];
+
 /// Write `extras: <value>` into givn/config.yaml.
 ///
 /// Line-based edit (mirrors `set_addon` in `src/cli/addons.rs`) that preserves

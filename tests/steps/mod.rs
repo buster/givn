@@ -713,6 +713,10 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
     std::fs::write(specs_dir.join("example.feature"), "Feature: example\n").unwrap();
+    // Write STATUS: DONE marker for arc42-docs — `givn init` enables the
+    // arc42 addon by default, which gates archive, so a genuinely
+    // "all required done" fixture must include it.
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 }
 
 #[given(

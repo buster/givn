@@ -29,6 +29,9 @@ enum Commands {
         /// Do not install extras skills and commands.
         #[arg(long)]
         no_extras: bool,
+        /// Do not enable addons (arc42, absolute_mode).
+        #[arg(long)]
+        no_addons: bool,
     },
     /// Create a new change scaffold.
     New {
@@ -172,7 +175,11 @@ fn main() {
 
 fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Init { force, no_extras } => cli::init::run(force, no_extras),
+        Commands::Init {
+            force,
+            no_extras,
+            no_addons,
+        } => cli::init::run(force, no_extras, no_addons),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions {
             artifact,

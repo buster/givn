@@ -135,14 +135,17 @@ verify:
 #       - { run: "scripts/coverage.sh", allow_failure: true }
 
 # --- Addons ------------------------------------------------------------------
-# Opt-in pre-packaged artifact sets. See arc42 ch.8.11.
+# Pre-packaged artifact sets. See arc42 ch.8.11.
+# `givn init` enables ALL addons by default (opt-out via `givn init --no-addons`).
+# This project's actual settings are below, written by `givn init`/`givn addons`:
 #
 # addons:
-#   arc42: false           # set to true to enable the arc42 documentation artifact
-#   absolute_mode: false   # set to true to enable the Absolute Mode communication
+#   arc42: true             # set to false to disable the arc42 documentation artifact
+#   absolute_mode: true     # set to false to disable the Absolute Mode communication
 #                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
 #                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
-#                          # Toggle with: givn addons enable|disable absolute_mode
+#                          # Toggle with: givn addons enable|disable <name>, or
+#                          # `givn addons list` to see all known addons.
 
 # --- arc42 configuration (requires addons.arc42: true) -----------------------
 # arc42:
@@ -160,11 +163,19 @@ verify:
 #     - quality-requirements
 #     - risks-and-technical-debt
 #     - glossary
-#   require_for_archive: false   # if true, adds arc42-docs to apply.requires
+#
+# When addons.arc42 is true, the arc42 document is produced during the
+# design phase and checked in design-review: design-review requires
+# arc42-docs, and arc42-docs itself gates archive (added to
+# apply.requires) -- an enabled-but-unfinished arc42 doc blocks
+# `givn archive`, not just the "ready-to-archive" status label.
 
 # --- Extras ------------------------------------------------------------------
-# Opt-in project-level skills and commands independent of the change lifecycle.
-# When enabled, `givn skills sync` includes them alongside core workflow skills.
-# `givn extras install` enables + syncs; `givn extras uninstall` disables + removes.
+# Project-level skills and commands independent of the change lifecycle:
+# givn-domain-modeling, givn-dev-principles (skills), grill-me, grill-with-docs
+# (commands). `givn init` enables extras by default (opt-out via
+# `givn init --no-extras`). When enabled, `givn skills sync` includes them
+# alongside core workflow skills. `givn extras install` enables + syncs;
+# `givn extras uninstall` disables + removes.
 #
-# extras: true   # uncomment and set to false to disable
+# extras: true   # set to false to disable

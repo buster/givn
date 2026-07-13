@@ -27,6 +27,16 @@ Required branches — cover every one (or explicitly record "no issue found"):
   code? Do the Then-steps assert concrete observable values, not just "it ran"?
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
+- **Architecture documentation (arc42)** — N/A if the arc42 addon is not
+  enabled (`addons.arc42` in `givn/config.yaml`). Otherwise: read `arc42.md`
+  and every chapter it claims to have touched under `docs/arc42/`. Is the
+  "chapters affected" claim (including "no chapters affected") plausible
+  given the actual scope of proposal.md/design.md? Does the chapter content
+  actually match design.md, not placeholder text or a stale contradiction?
+  Does every non-trivial architecture decision in design.md have a MADR
+  entry in chapter 09? `arc42.md`'s `STATUS: DONE` is a self-report from the
+  same agent that wrote the docs — not verification; treat any mismatch as
+  a blocking finding.
 
 If a question can be answered by exploring the existing codebase, explore it
 and record the finding — do not burden the user with it.

@@ -5,7 +5,7 @@
 use anyhow::{Result, bail};
 
 /// Registry of all known addons (id, one-line description).
-const KNOWN_ADDONS: &[(&str, &str)] = &[
+pub const KNOWN_ADDONS: &[(&str, &str)] = &[
     (
         "arc42",
         "Arc42 architecture documentation — creates and maintains durable docs/arc42/ chapters",

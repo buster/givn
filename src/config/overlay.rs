@@ -41,8 +41,24 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
     if let Some(addons) = overlay.addons {
         // arc42 additionally expands into an artifact-graph node — keep
         // that side effect here, guarded so enabling twice stays idempotent.
+        // The arc42 document is produced during the design phase and
+        // checked in design-review: design-review requires arc42-docs, and
+        // arc42-docs itself gates archive (added to apply.requires) so an
+        // enabled-but-unfinished arc42 doc genuinely blocks `givn archive`,
+        // not just the "ready-to-archive" status label.
         if addons.arc42 && !result.addons.arc42 {
             result.artifacts.push(arc42_artifact());
+            if !result.apply.requires.contains(&"arc42-docs".to_string()) {
+                result.apply.requires.push("arc42-docs".to_string());
+            }
+            if let Some(design_review) = result
+                .artifacts
+                .iter_mut()
+                .find(|a| a.id == "design-review")
+                && !design_review.requires.contains(&"arc42-docs".to_string())
+            {
+                design_review.requires.push("arc42-docs".to_string());
+            }
         }
         result.addons = addons;
     }

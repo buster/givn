@@ -501,13 +501,41 @@ mod tests {
     }
 
     #[test]
-    fn arc42_addon_not_in_apply_requires_by_default() {
+    fn arc42_addon_gates_archive_when_enabled() {
         use crate::config::overlay::apply;
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  arc42: true").unwrap();
         assert!(
+            result.apply.requires.contains(&"arc42-docs".to_string()),
+            "arc42-docs must gate archive when the arc42 addon is enabled"
+        );
+    }
+
+    #[test]
+    fn arc42_addon_not_in_apply_requires_when_disabled() {
+        use crate::config::overlay::apply;
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: false").unwrap();
+        assert!(
             !result.apply.requires.contains(&"arc42-docs".to_string()),
-            "arc42-docs must not gate archive by default"
+            "arc42-docs must not appear in apply.requires when the addon is disabled"
+        );
+    }
+
+    #[test]
+    fn arc42_addon_makes_design_review_require_it() {
+        use crate::config::overlay::apply;
+        let base = Manifest::load_embedded().unwrap();
+        let result = apply(base, "addons:\n  arc42: true").unwrap();
+        let design_review = result
+            .artifacts
+            .iter()
+            .find(|a| a.id == "design-review")
+            .unwrap();
+        assert!(
+            design_review.requires.contains(&"arc42-docs".to_string()),
+            "design-review must require arc42-docs once the arc42 addon is enabled, so the \
+             arc42 document is produced during design and checked in design-review"
         );
     }
 
