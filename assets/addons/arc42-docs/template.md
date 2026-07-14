@@ -26,7 +26,9 @@
 ## Notes
 
 <!-- Any observations about gaps in the arc42 docs, decisions not yet captured,
-     or sections that need follow-up in a future change. -->
+     or sections that need follow-up in a future change.
+
+     Diagrams in chapter content MUST be Mermaid (```mermaid), never ASCII art. -->
 
 ---
 

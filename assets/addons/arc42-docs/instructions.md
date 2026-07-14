@@ -6,6 +6,14 @@ These documents live under `docs/arc42/` (or the configured `arc42.output_dir`).
 They are **project-level and evolve across changes** — they are not archived with
 the change. Your task is to create missing chapters and update affected ones.
 
+## Diagram policy
+
+Any diagram in any arc42 chapter (component, context, sequence, quality tree,
+flow, deployment topology) MUST be a Mermaid fenced code block
+(` ```mermaid `). ASCII art — inline box-drawing characters, pre-formatted
+text diagrams — is not permitted. A plain directory/file-tree listing is not a
+diagram and may stay as plain text.
+
 ## What to do
 
 **First: assess impact against every chapter, not just the obvious ones.**
@@ -82,9 +90,8 @@ you can skip re-reading the table for each one.
 ## Rules
 
 - Write in clear, concise technical prose. Arc42 docs are for humans, not machines.
-- Any diagram (component, sequence, context, quality tree, flow) MUST be
-  Mermaid (` ```mermaid ` fenced code block), never ASCII art. A plain
-  directory/file-tree listing is not a diagram and may stay as plain text.
+- Diagram policy: see the `## Diagram policy` section above. No diagram may use
+  ASCII art.
 - Do not leak implementation detail into specification-layer sections (chapters 1–3).
 - Chapter 9 (architecture decisions) uses MADR format (Markdown Any Decision Records).
   The chapter file contains the full MADR template as a comment block — copy it for

@@ -41,7 +41,18 @@ Required branches — cover every one (or explicitly record "no issue found"):
   3. For every chapter marked "Yes" (by either party): open the chapter file
      and confirm the content actually matches design.md, not placeholder
      text or a stale contradiction.
-  4. Confirm every non-trivial architecture decision in design.md has a
+  4. **Chapter file integrity check (all 12 files):** For every one of the 12
+     chapter files under `docs/arc42/`:
+     - Confirm the file exists (not absent after a scaffold).
+     - Confirm the file contains more than just the scaffolded placeholder
+       template — at least some actual content or decision-specific text.
+     - **Scan the file for ASCII art diagrams:** search for Unicode
+       box-drawing characters (`┌┐└┘│─├┤┬┴┼╔╗╚╝║═╠╣╦╩╬╭╮╰╯`) and for
+       multi-line blocks where lines begin with `+` or `|` and contain
+       `---` or `===` (non-table pseudo-diagrams). If any are found, the
+       content violates the diagram policy — treat this as a blocking
+       finding and require the diagram to be converted to Mermaid.
+  5. Confirm every non-trivial architecture decision in design.md has a
      MADR entry in chapter 09, and that any consequence of that decision
      (e.g. "Bad, because...") is reflected in chapter 11.
   `arc42.md`'s `STATUS: DONE` is a self-report from the same agent that
