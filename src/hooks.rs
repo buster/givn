@@ -9,6 +9,7 @@ use crate::config::manifest::{HookEntry, HookFull, Manifest};
 /// Hooks run with `GIVN_FEATURES` set to the appropriate features path.
 /// Failure blocks the gate unless `allow_failure: true`.
 use anyhow::Result;
+use std::path::{Path, PathBuf};
 
 /// Run all post hooks for a given artifact.
 ///
@@ -102,29 +103,89 @@ fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
 
 /// Resolve the `verify-e2e` built-in to `manifest.verify.e2e_command` and run it.
 ///
-/// Skips silently ONLY when the in-scope `.feature` files genuinely contain
-/// no `@e2e`-tagged scenario — there is nothing to run. If `@e2e` scenarios
-/// exist but `verify.e2e_command` is empty/unconfigured, this is a hard
-/// failure: a project with browser/CLI/API smoke-test scenarios that has no
-/// configured e2e runner has an unenforced testing gap, not an optional one.
+/// Skips silently ONLY when:
+///   - the in-scope `.feature` files genuinely contain no `@e2e`-tagged scenario, AND
+///   - there is no evidence in `tasks.md` that `@e2e` scenarios were planned for this change.
+///
+/// If @e2e scenarios exist but `verify.e2e_command` is empty/unconfigured, this is a hard
+/// failure: a project with browser/CLI/API smoke-test scenarios that has no configured e2e
+/// runner has an unenforced testing gap, not an optional one.
+///
+/// If @e2e scenarios do not exist but `tasks.md` references e2e (section heading, task
+/// items with @e2e scenario tags), this is also a hard failure: @e2e tags were planned
+/// then removed to bypass the gate.
 fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
     let command = &manifest.verify.e2e_command;
-    let has_e2e = crate::gherkin::parse::has_e2e_scenarios(std::path::Path::new(features_path));
+    let features_path = Path::new(features_path);
+    let has_e2e = crate::gherkin::parse::has_e2e_scenarios(features_path);
 
     if command.is_empty() {
         if has_e2e {
             anyhow::bail!(
-                "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not configured \
-                 in givn/config.yaml. An @e2e scenario without a configured e2e runner is an \
-                 unenforced gap, not an optional one — set verify.e2e_command.",
-                features_path
+                "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
+                 configured in givn/config.yaml. An @e2e scenario without a configured \
+                 e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.",
+                features_path.display()
             );
         }
+
+        // Cross-reference tasks.md: if tasks.md references @e2e scenarios but the delta
+        // specs have none, the @e2e tags were removed — a gate bypass attempt.
+        if let Some(change_dir) = find_change_dir(features_path) {
+            let tasks_path = change_dir.join("tasks.md");
+            if tasks_path.exists() {
+                let tasks_content = std::fs::read_to_string(&tasks_path).unwrap_or_default();
+                if has_e2e_intent_in_tasks(&tasks_content) {
+                    anyhow::bail!(
+                        "'{}' references @e2e scenarios but no @e2e-tagged scenario exists \
+                         under '{}'. @e2e coverage was planned and then removed — restore \
+                         the @e2e tags and configure verify.e2e_command in givn/config.yaml. \
+                         Removing @e2e tags to bypass the verify-e2e gate is a procedure \
+                         violation.",
+                        tasks_path.display(),
+                        features_path.display()
+                    );
+                }
+            }
+        }
+
         println!("  (skipped — no @e2e scenarios in scope, no verify.e2e_command configured)");
         return Ok(());
     }
     println!("  Running: {command}");
-    run_shell_command(command, features_path)
+    run_shell_command(command, &features_path.to_string_lossy())
+}
+
+/// If `features_path` is inside a change directory (`givn/changes/<id>/specs/`),
+/// return the change directory path. Returns `None` for global specs paths
+/// (e.g. `givn/specs/`).
+fn find_change_dir(features_path: &Path) -> Option<PathBuf> {
+    let path_str = features_path.to_string_lossy();
+    let prefix = "givn/changes/";
+    let pos = path_str.find(prefix)?;
+    let after_prefix = &path_str[pos + prefix.len()..];
+    let slash = after_prefix.find('/')?;
+    let change_id = &after_prefix[..slash];
+    Some(
+        Path::new(&path_str[..pos])
+            .join("givn")
+            .join("changes")
+            .join(change_id),
+    )
+}
+
+/// Check whether `tasks.md` content indicates that `@e2e` scenarios were planned.
+///
+/// Matches section headings and task-item patterns produced by the tasks.md template:
+///   - `E2E Smoke Tests` (section heading)
+///   - `@e2e Scenario:` (task item in checkbox list)
+///   - `## E2e` or `## E2E` (any E2E section heading)
+pub(crate) fn has_e2e_intent_in_tasks(content: &str) -> bool {
+    let lower = content.to_lowercase();
+    lower.contains("e2e smoke tests")
+        || lower.contains("@e2e scenario:")
+        || lower.contains("## @e2e")
+        || lower.contains("## e2e")
 }
 
 /// Execute a shell command with GIVN_FEATURES set.
@@ -222,6 +283,151 @@ mod verify_e2e_hook_tests {
         let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
 
         assert!(result.is_ok(), "a passing configured command must succeed");
+    }
+
+    #[test]
+    fn fails_when_tasks_md_has_e2e_intent_but_delta_has_no_e2e() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        // Create path structure: tempdir/givn/changes/test/specs/
+        let change_dir = dir.path().join("givn/changes/test");
+        let specs_dir = change_dir.join("specs");
+        fs::create_dir_all(&specs_dir).unwrap();
+
+        // Feature file with NO @e2e tag.
+        fs::write(
+            specs_dir.join("thing.feature"),
+            "Feature: thing\n\n  Scenario: plain\n    Given a thing\n",
+        )
+        .unwrap();
+
+        // Tasks.md with e2e section heading (from template).
+        fs::write(
+            change_dir.join("tasks.md"),
+            "## E2E Smoke Tests\n\n- [ ] @e2e Scenario: browser test\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("");
+        let result = run_verify_e2e_hook(&manifest, specs_dir.to_str().unwrap());
+
+        assert!(
+            result.is_err(),
+            "tasks.md with e2e intent but no @e2e scenarios must hard fail"
+        );
+        let err = result.unwrap_err().to_string();
+        assert!(
+            err.contains("procedure violation"),
+            "error must mention procedure violation: {err}"
+        );
+    }
+
+    #[test]
+    fn fails_when_tasks_md_has_e2e_task_items_but_delta_has_no_e2e() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let change_dir = dir.path().join("givn/changes/test");
+        let specs_dir = change_dir.join("specs");
+        fs::create_dir_all(&specs_dir).unwrap();
+
+        fs::write(
+            specs_dir.join("thing.feature"),
+            "Feature: thing\n\n  Scenario: plain\n    Given a thing\n",
+        )
+        .unwrap();
+
+        // Tasks.md with @e2e Scenario: task items but no section heading.
+        fs::write(
+            change_dir.join("tasks.md"),
+            "- [ ] @e2e Scenario: browser test\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("");
+        let result = run_verify_e2e_hook(&manifest, specs_dir.to_str().unwrap());
+
+        assert!(
+            result.is_err(),
+            "tasks.md with @e2e Scenario: items but no @e2e scenarios must hard fail"
+        );
+    }
+
+    #[test]
+    fn skips_when_tasks_md_has_no_e2e_intent_and_delta_has_no_e2e() {
+        let dir = tempfile::tempdir().expect("tempdir");
+        let change_dir = dir.path().join("givn/changes/test");
+        let specs_dir = change_dir.join("specs");
+        fs::create_dir_all(&specs_dir).unwrap();
+
+        fs::write(
+            specs_dir.join("thing.feature"),
+            "Feature: thing\n\n  Scenario: plain\n    Given a thing\n",
+        )
+        .unwrap();
+
+        // Tasks.md without any e2e references.
+        fs::write(
+            change_dir.join("tasks.md"),
+            "- [ ] Set up step definitions\n- [ ] Scenario: plain\n",
+        )
+        .unwrap();
+
+        let manifest = manifest_with("");
+        let result = run_verify_e2e_hook(&manifest, specs_dir.to_str().unwrap());
+
+        assert!(
+            result.is_ok(),
+            "no e2e intent in tasks.md must skip silently"
+        );
+    }
+
+    #[test]
+    fn skips_when_change_dir_not_detectable_has_no_e2e() {
+        // Plain temp path without "givn/changes/" structure should skip tasks.md check.
+        let dir = tempfile::tempdir().expect("tempdir");
+        fs::write(
+            dir.path().join("thing.feature"),
+            "Feature: thing\n\n  Scenario: plain\n    Given a thing\n",
+        )
+        .unwrap();
+
+        // Write a tasks.md here (plain tempdir won't be detected as a change dir).
+        fs::write(dir.path().join("tasks.md"), "## E2E Smoke Tests\n").unwrap();
+
+        let manifest = manifest_with("");
+        let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
+
+        // Should skip because dir is not inside "givn/changes/".
+        assert!(
+            result.is_ok(),
+            "a non-change path should skip the tasks.md cross-reference, not fail"
+        );
+    }
+
+    #[test]
+    fn has_e2e_intent_in_tasks_detects_patterns() {
+        assert!(
+            super::has_e2e_intent_in_tasks("## E2E Smoke Tests"),
+            "must detect E2E Smoke Tests section heading"
+        );
+        assert!(
+            super::has_e2e_intent_in_tasks("- [ ] @e2e Scenario: x"),
+            "must detect @e2e Scenario: task item"
+        );
+        assert!(
+            super::has_e2e_intent_in_tasks("## E2E"),
+            "must detect E2E section heading"
+        );
+        assert!(
+            super::has_e2e_intent_in_tasks("## @e2e browser smoke"),
+            "must detect @e2e section heading"
+        );
+        assert!(
+            !super::has_e2e_intent_in_tasks("Some other content without e2e"),
+            "must not detect plain content"
+        );
+        assert!(
+            !super::has_e2e_intent_in_tasks("- [ ] Set up step definitions"),
+            "must not detect setup tasks"
+        );
     }
 
     #[test]

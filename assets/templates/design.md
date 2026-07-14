@@ -114,6 +114,12 @@
 >
 > **E2E framework choice and justification:**
 >
+> **Interaction Coverage Matrix** — one row per User Interaction Inventory
+> entry, mapping to its matching `@e2e` scenario and driving mechanism:
+> | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
+> |---|---|---|---|
+> | (from spec's inventory) | | | |
+>
 > **Real-interface assertion rule:** every `@e2e` scenario's primary
 > assertions are on what the real interface returned/displayed (page
 > content, HTTP response, redirect, CLI output) — repository/database
@@ -126,8 +132,8 @@
 > shortcut only exercises the API, not the UI. For an API-only capability, a
 > real HTTP client genuinely is the real interface.
 >
-> **E2E scope:** one `@e2e` scenario per distinct happy-path action for
-> this capability, not one per variant/error case.
+> **E2E scope:** one `@e2e` scenario per User Interaction Inventory entry
+> for this capability, not one per variant/error case.
 
 ## Architecture Impact
 

@@ -44,6 +44,13 @@ Required branches:
 - **E2E fidelity** — interface type named (browser UI / CLI / API-only)? For
   a browser UI, a real browser driver named — not HTTP/fetch()? Exactly one
   `@e2e` scenario per distinct happy-path action, not per variant?
+- **Interaction Coverage** — does every entry in the spec's User Interaction
+  Inventory correspond to a row in the design's Interaction Coverage Matrix?
+  Does every matrix row name a valid, non-empty driving mechanism (real
+  browser driver for Web UI; real HTTP client for HTTP API; real subprocess
+  for CLI)? Cross-reference the inventory comment in the `.feature` file
+  against the matrix table in `design.md` — any inventory entry without a
+  matching matrix row is a blocking finding.
 - **Risk** — most likely failure mode and mitigation?
 - **Architecture documentation (arc42)** — N/A if `addons.arc42` is not
   enabled. Otherwise, independently re-derive the expected chapter set

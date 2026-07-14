@@ -19,6 +19,13 @@ A change can reach review with every task checked off, the runner exiting
 0, and almost nothing implemented — if step definitions were left as empty
 stubs. Mechanical check, not a judgment call:
 
+0. **Verify @e2e tag integrity.** Grep every delta `.feature` file in
+   `givn/changes/<change-id>/specs/` for scenario tags. If any scenario
+   contains `@givn.added @e2e` in its git history or tracked state but no
+   longer carries `@e2e`, record this as a fabrication-audit finding:
+   `@e2e` tags were removed to bypass the gate. The fix is to restore the
+   `@e2e` tag and configure `verify.e2e_command`.
+
 1. Grep every step definition file for empty/no-op bodies (`{}`, bare
    `pass`, bare `return`, no assertion library reference). Record findings.
 2. For every checked-off `[x]` task, confirm a commit exists and its diff
@@ -64,6 +71,28 @@ stubs. Mechanical check, not a judgment call:
     the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
     real-interface obstacle per design.md, never leaving a repository-only
     or HTTP/fetch() shortcut in place), before continuing.
+13. **Interaction coverage verification** — cross-reference the spec's
+    User Interaction Inventory against the design's Interaction Coverage
+    Matrix and the actual `.feature` file + step definitions:
+    a. Read the spec `.feature` file and extract the `# User Interaction
+       Inventory:` comment block. List every entry.
+    b. Read the design's `Interaction Coverage Matrix` table. Confirm
+       every inventory entry appears as a row. Flag missing or extra rows
+       as a finding — every interaction must be mapped, no unmapped
+       interaction may exist.
+    c. For each matrix row, confirm an `@e2e` scenario with a matching
+       title exists in the `.feature` file. The scenario title need not be
+       identical to the inventory description, but it must clearly cover
+       the same interaction.
+    d. For each matrix row, grep the e2e step definition file(s) for the
+       promised driving mechanism. If the matrix says "Playwright: click
+       button X", the step file must import/use Playwright (not `reqwest`,
+       not raw HTTP). If the driving mechanism is an HTTP client for an
+       API-only capability, confirm the step file uses that HTTP client.
+       Mismatch = driving-mechanism finding: the implementation silently
+       used a different driver than the reviewed design committed to.
+    e. Record the full cross-reference as a table in the fabrication audit
+       section of review.md.
 
 Record the result (files scanned, findings, remediation) in review.md even
 when clean.
@@ -104,11 +133,12 @@ Coverage is complete when every gap is classified and resolved (or justified).
    outside the three buckets. Before concluding a real driver is
    unavailable, search the tree yourself (including untracked files, per
    fabrication-audit step 7) — do not take an absence at face value.
-7. Run both runners again — confirm still GREEN.
-8. Complete the sign-off checklist in review.md, including the fabrication
+7. Run interaction coverage verification (fabrication-audit step 13).
+8. Run both runners again — confirm still GREEN.
+9. Complete the sign-off checklist in review.md, including the fabrication
    audit result.
-9. Write `REVIEW: PASS` at the end of review.md when all items are checked
-   AND the fabrication audit is clean.
+10. Write `REVIEW: PASS` at the end of review.md when all items are checked
+    AND the fabrication audit is clean.
 
 ## After sign-off
 

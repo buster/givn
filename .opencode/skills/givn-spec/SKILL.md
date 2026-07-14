@@ -34,10 +34,42 @@ Write the Gherkin spec delta for change `<change-id>`.
 - On archive, all `@givn.*` tags are stripped automatically.
   The `@e2e` tag is preserved (it is not a `@givn.*` tag).
 
+## User Interaction Inventory (mandatory, before writing any scenario)
+
+Enumerate every interaction a consumer performs against the system's black-box
+boundary — before writing any scenario text. An interaction is a discrete
+action that triggers an observable state change through the real interface.
+What counts as "the real interface" depends on the system type:
+
+| System type | Real interface | Inventory must include |
+|---|---|---|
+| **Web UI** | Rendered browser (Playwright, Selenium) | Every button click, form submission, navigation link, SSE/WS event that changes visible content. |
+| **CLI / terminal** | Real subprocess invocation | Every subcommand, every flag combination that produces different output. |
+| **HTTP/REST API** | Real HTTP client against deployed server | Every endpoint, every side-effect-permitting operation. |
+| **Library / SDK** | Public API surface from real consumer code | Every public function or method a consumer invokes. |
+| **Message/event bus** | Real producer/consumer against running services | Every message type consumed, every side-effect-producing message published. |
+
+Record the inventory as a comment block at the very top of the `.feature`
+file, before the Feature header. One entry per interaction:
+
+```
+# User Interaction Inventory:
+# - <action description>
+# - <action description>
+```
+
+Each inventory entry MUST have at least one matching `@e2e` scenario in the
+same `.feature` file. The inventory is the exhaustive list — there is no
+second-class interaction that can skip e2e coverage. If an inventory entry
+has no corresponding `@e2e` scenario, the spec is incomplete — fill the gap
+before moving to design.
+
 ## End-to-end smoke tests (`@e2e`)
 
-Every capability MUST include at least one `@e2e` smoke-test scenario that
-exercises the real interaction surface (browser, CLI, API, etc.).
+Every capability MUST include one `@e2e` smoke-test scenario per User
+Interaction Inventory entry, each exercising the real interaction surface
+(browser, CLI, API, etc.). The exact number is determined by the inventory:
+one `@e2e` scenario per entry, not fewer.
 
 - Tag `@e2e` alongside the delta tag: `@givn.added @e2e @wip`.
 - `@e2e` scenarios run via `verify.e2e_command`, not `verify.command`.

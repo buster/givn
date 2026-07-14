@@ -14,6 +14,25 @@ Write the implementation task breakdown for change `<change-id>`.
 - Design (HOW): `givn/changes/<change-id>/design.md`
 - Test runner: `cargo test --test features_runner`
 
+## Verify Interaction Coverage before writing tasks (mandatory)
+
+Before writing any task, cross-reference the spec's User Interaction
+Inventory against the design's Interaction Coverage Matrix:
+
+1. Read the `# User Interaction Inventory:` comment block at the top of
+   every `.feature` file in `givn/specs/`.
+2. Read the Interactive Coverage Matrix in `givn/changes/<CHANGE_ID>/design.md`.
+3. Confirm every inventory entry has a corresponding row in the matrix.
+4. Confirm every matrix row names a valid driving mechanism (real browser
+   driver for Web UI; real HTTP client for HTTP API; real subprocess for
+   CLI). For a Web UI, the mechanism must read like "Playwright: click X" or
+   "Selenium: fill Y" — not "reqwest" or "HTTP client".
+5. Confirm every matrix row's @e2e scenario title appears in the `.feature`
+   file as a `@e2e` scenario.
+
+Any gap is a finding: report it to the user before proceeding. Do not write
+task entries for @e2e scenarios that do not exist in the spec yet.
+
 ## Strict mode must be proven first (mandatory setup task)
 
 Empty/unimplemented steps are indistinguishable from a PASS in most
@@ -64,6 +83,12 @@ explicitly that every scenario is `@e2e`).
 
 Then @e2e smoke tests (after all non-@e2e scenarios are GREEN):
 
+**Rule: @e2e tags are immutable.** Once a scenario is tagged `@e2e` in a
+delta `.feature` file, the tag MUST NOT be removed. If the verify-e2e gate
+fails, configure `verify.e2e_command` — never remove the `@e2e` tag. Tag
+removal is independently detected by `givn check review` and `givn lint
+--change <change-id>`.
+
 ```
 For each @e2e scenario:
   RED:      Remove @wip. Write e2e step definitions — unimplemented steps
@@ -112,6 +137,12 @@ Then move to the next @e2e scenario.
 - Every RED/GREEN/REFACTOR sub-task has a place to paste captured runner
   output — describing what should happen is not the same as recording what
   did happen.
+- **tasks.md must always be up-to-date.** Check each scenario's box
+  immediately after completing it — before starting the next one. An
+  unchecked box means the scenario is incomplete. Never batch-check all
+  boxes at the end. Using `sed` or any text-replacement tool to
+  mass-check boxes without filling in evidence and commit hashes is
+  prohibited — each box is checked individually as each scenario is done.
 - A `@e2e` scenario whose Then steps assert only against a repository is not
   done, no matter what the runner reports — it needs a real-interface assertion.
 - For a browser-UI capability, an `@e2e` scenario driven via HTTP request or

@@ -85,6 +85,16 @@ shortcut:
 |---|---|---|---|---|
 | | | | | |
 
+**Interaction coverage verification** — spec's User Interaction Inventory
+cross-referenced against design's Interaction Coverage Matrix, `.feature`
+file, and step definitions. Every inventory entry must have a matrix row,
+a matching `@e2e` scenario, and step definitions that use the promised
+driving mechanism:
+
+| Inventory entry | Matrix row exists? | @e2e scenario exists? (title) | Promised driving mechanism | Actual driving mechanism (from step defs) | Match? |
+|---|---|---|---|---|---|
+| | | | | | |
+
 **Result:** CLEAN / FINDINGS (if findings, list remediation taken — reopened
 tasks, re-run RED/GREEN/REFACTOR/COMMIT, real-interface obstacle fixed per
 design.md, or design.md corrected + design-review re-run — before
@@ -153,6 +163,9 @@ Run `{{VERIFY_COMMAND}}` and paste the summary below.
 - [ ] Implementation (commands, file layout, framework/driver) matches
       design.md as reviewed; any deviation went through a design.md update
       + design-review re-run, not a silent shortcut.
+- [ ] Interaction coverage verified: every spec inventory entry maps to a
+      design matrix row, an existing `@e2e` scenario, and step definitions
+      using the promised driving mechanism — no mismatches.
 - [ ] No finding anywhere in this report is excused with a classification
       outside the three buckets (no "acceptable for now," "future scope,"
       "sufficient for current scope," or similar invented exception).

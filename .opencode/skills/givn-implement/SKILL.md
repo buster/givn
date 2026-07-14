@@ -69,10 +69,23 @@ at this scenario only** and captures output as evidence.
 
 #### Done
 9. Paste evidence, files touched, and commit hash into the task in
-   `tasks.md`. Only then check it: `- [ ]` → `- [x]`.
+   `tasks.md`. Only then check it: `- [ ]` → `- [x]`. Do this
+   **immediately** — before moving to the next scenario or spawning
+   another subagent. tasks.md must always reflect true state: an
+   unchecked box means the scenario is not complete. Never leave boxes
+   unchecked and batch-check them later. Using `sed` or any
+   text-replacement tool to mass-check boxes is prohibited — each box
+   is checked individually, with evidence and commit hash filled in.
 10. Move to the next scenario.
 
 ### @e2e smoke tests (after all non-@e2e are GREEN)
+
+**Rule: @e2e tags are immutable.** Once a scenario is tagged `@e2e` in a
+delta `.feature` file, the tag MUST NOT be removed. If you cannot run e2e
+tests, configure `verify.e2e_command` in `givn/config.yaml` — never remove
+`@e2e` tags as a workaround. Removing `@e2e` tags to bypass the verify-e2e
+gate is a procedure violation and is independently detected by `givn check
+review` and `givn lint`.
 
 Before the first @e2e scenario: bring up the local environment from
 design.md's Local Runnability section (local run command, all
@@ -110,6 +123,9 @@ already verified individually:
 5. For a browser-UI capability, read every `@e2e` step definition's
    implementation. Confirm it drives a real browser — none downgraded to
    an HTTP request or in-page `fetch()`.
+6. Cross-reference the spec's User Interaction Inventory against the
+   completed tasks: every inventory entry should have a checked `@e2e`
+   task. Flag any inventory entry missing a completed e2e task.
 
 Run `givn apply --change <change-id>` to confirm progress. Proceed to review.
 

@@ -100,6 +100,28 @@ The design MUST document the e2e test infrastructure for `@e2e` scenarios:
   capability has (browser UI / CLI / API-only) and name the matching
   driving mechanism.
 
+### Interaction Coverage Matrix (mandatory)
+
+Map every entry from the spec's User Interaction Inventory to its matching
+`@e2e` scenario and driving mechanism. One row per inventory entry:
+
+| Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
+|---|---|---|---|
+| (e.g. "submit passcode form on login page") | (e.g. "Family member enters the correct passcode") | (e.g. "Web UI") | (e.g. "Playwright: fill input, click submit button") |
+| (e.g. "click 'Add' button on list page") | (e.g. "Family member adds an item") | (e.g. "Web UI") | (e.g. "Playwright: fill form inputs, click 'Add' button") |
+| (e.g. "click 'Check' button on a list item") | (e.g. "Family member marks item as purchased") | (e.g. "Web UI") | (e.g. "Playwright: click 'Check' button on list row") |
+
+**Every row must have a non-empty driving mechanism.** For a Web UI, the
+driving mechanism MUST name a specific browser driver (Playwright, Selenium,
+WebDriverIO) and describe what action it performs (click button X, fill
+input Y, navigate to Z). An HTTP client (`reqwest`, `curl`, etc.) is NOT a
+valid driving mechanism for a Web UI — it cannot click buttons or read the
+DOM. If the interface type is HTTP/REST API, an HTTP client IS the real
+interface and that is the correct driving mechanism.
+
+The matrix is proven at design time and verified at review time. If an
+inventory entry has no matching row, the design is incomplete.
+
 ## Verify command
 
 Unit/integration:

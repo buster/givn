@@ -9,6 +9,14 @@ A change can reach review with every task checked off, the runner exiting
 0, and almost nothing actually implemented — if steps were left as
 empty/no-op stubs. Mechanical check, before trusting any other artifact:
 
+0. **Verify @e2e tag integrity.** Grep every delta `.feature` file in
+   `givn/changes/<change-id>/specs/`. If any scenario's tags were changed
+   from including `@e2e` to excluding it, record this as a
+   fabrication-audit finding: `@e2e` coverage was planned and then removed
+   to bypass the verify-e2e gate. The fix is to restore the `@e2e` tag and
+   configure `verify.e2e_command`. Tag removal is independently detected by
+   `givn check review` and `givn lint` through tasks.md cross-reference.
+
 1. Grep every step definition file for empty/trivial bodies: `{}`, `() {}`,
    whitespace-only, bare `pass`/`return`, or a body with no reference to any
    assertion library, mock, HTTP client, or domain object. Any match =
@@ -81,7 +89,29 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
     corrected decision and re-run design-review (and reassess the arc42
     chapter table if the change is structural) before the task can be
     considered done — never to silently keep the deviation.
-11. Any finding from 1-10 is unfinished work, not a coverage gap. Reopen the
+11. **Interaction coverage verification** — cross-reference the spec's
+    User Interaction Inventory against the design's Interaction Coverage
+    Matrix and the actual `.feature` file + step definitions:
+    a. Read the spec `.feature` file and extract the `# User Interaction
+       Inventory:` comment block. List every entry.
+    b. Read the design's `Interaction Coverage Matrix` table. Confirm
+       every inventory entry appears as a row. Flag missing or extra rows
+       as a finding — every interaction must be mapped, no unmapped
+       interaction may exist.
+    c. For each matrix row, confirm an `@e2e` scenario with a matching
+       title exists in the `.feature` file. The scenario title need not be
+       identical to the inventory description, but it must clearly cover
+       the same interaction.
+    d. For each matrix row, grep the e2e step definition file(s) for the
+       promised driving mechanism. If the matrix says "Playwright: click
+       button X", the step file must import/use Playwright (not `reqwest`,
+       not raw HTTP). If the driving mechanism is an HTTP client for an
+       API-only capability, confirm the step file uses that HTTP client.
+       Mismatch = driving-mechanism finding: the implementation silently
+       used a different driver than the reviewed design committed to.
+    e. Record the full cross-reference as a table in the fabrication audit
+       section of review.md.
+12. Any finding from 1-11 is unfinished work, not a coverage gap. Reopen the
     task, run RED→GREEN→REFACTOR→COMMIT for real — driving the real
     interface per design.md's "Anticipated interface obstacles" fix, not by
     asserting on the repository instead. Do not write `REVIEW: PASS` while
@@ -164,6 +194,9 @@ starts the full stack, including digital twins, cleanly.
 - Implementation (commands, file layout, framework/driver) matches what
   design.md explicitly named — any deviation was resolved by updating
   design.md and re-running design-review, never left as a silent shortcut.
+- Interaction coverage verified: every spec inventory entry maps to a
+  design matrix row, an existing `@e2e` scenario, and step definitions
+  using the promised driving mechanism — no mismatches.
 - No finding was excused with a classification outside the three buckets
   (no "acceptable for now," "future scope," "sufficient for current scope,"
   or similar invented exception anywhere in this report).

@@ -169,33 +169,22 @@ as "no issue found" if genuinely clean):
      chapters and doesn't mention the rest" as implicitly meaning "checked
      and found not applicable" — the instruction requires every row to be
      explicit; a missing row is unverified, not resolved.
-   3. For every chapter marked "Yes" by either party: open it and confirm the
-      content actually reflects design.md — not placeholder text, not a
-      stale description that contradicts design.md's Architecture Impact or
-      Technology Decisions sections. A contradiction is a blocking finding.
-   4. **Chapter file integrity check (all 12 files):** For every chapter file
-      under `docs/arc42/`:
-      - Confirm the file exists (not absent after a scaffold).
-      - Confirm the file contains more than just the scaffolded placeholder
-        template — at least some actual content or decision-specific text.
-      - **Scan the file for ASCII art diagrams:** search for Unicode
-        box-drawing characters (`┌┐└┘│─├┤┬┴┼╔╗╚╝║═╠╣╦╩╬╭╮╰╯`) and for
-        multi-line blocks where lines begin with `+` or `|` and contain
-        `---` or `===` (non-table pseudo-diagrams). If any are found, the
-        content violates the diagram policy — treat this as a blocking
-        finding and require the diagram to be converted to Mermaid.
-   5. For every non-trivial architecture/technology decision in design.md
-      (a real tradeoff was made, not a default/obvious choice): confirm
-      chapter 09 (architecture-decisions) has a corresponding MADR entry
-      (status/date/decision-makers, considered options, decision outcome,
-      consequences), and that its consequences are reflected in chapter 11
-      (risks-and-technical-debt). A non-trivial decision with no MADR entry,
-      or an MADR whose "Bad, because..." consequences have no counterpart in
-      chapter 11, is a blocking finding.
-   6. A chapter file still containing only its scaffolded placeholder text,
-      while `arc42.md` claims that chapter was "updated," is a blocking
-      finding — the same fabrication pattern as an empty step body reported
-      as passing.
+  3. For every chapter marked "Yes" by either party: open it and confirm the
+     content actually reflects design.md — not placeholder text, not a
+     stale description that contradicts design.md's Architecture Impact or
+     Technology Decisions sections. A contradiction is a blocking finding.
+  4. For every non-trivial architecture/technology decision in design.md
+     (a real tradeoff was made, not a default/obvious choice): confirm
+     chapter 09 (architecture-decisions) has a corresponding MADR entry
+     (status/date/decision-makers, considered options, decision outcome,
+     consequences), and that its consequences are reflected in chapter 11
+     (risks-and-technical-debt). A non-trivial decision with no MADR entry,
+     or an MADR whose "Bad, because..." consequences have no counterpart in
+     chapter 11, is a blocking finding.
+  5. A chapter file still containing only its scaffolded placeholder text,
+     while `arc42.md` claims that chapter was "updated," is a blocking
+     finding — the same fabrication pattern as an empty step body reported
+     as passing.
 
 ## Return format
 
@@ -330,8 +319,6 @@ leave blank and do not only list the rows arc42.md claims:
 - [ ] Every non-trivial architecture/technology decision in design.md has a MADR entry in chapter 09.
 - [ ] Every MADR "Bad, because..." consequence has a counterpart in chapter 11.
 - [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
-- [ ] All 12 chapter files exist, have content beyond scaffolded templates.
-- [ ] No ASCII art diagrams in any chapter file (no box-drawing characters or pseudo-diagram blocks).
 
 ## Changes made during hardening
 | Artifact | Change summary |

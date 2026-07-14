@@ -149,7 +149,12 @@ Do not substitute a simpler approach that happens to pass the test.
 9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <title>" (or
    "test(e2e): <title>"). Record the hash.
 10. Paste RED/GREEN/REFACTOR evidence, files touched, and commit hash into
-    the task in tasks.md. Only then check it: `- [ ]` → `- [x]`.
+    the task in tasks.md. Only then check it: `- [ ]` → `- [x]`. Do this
+    **immediately** — the box must be checked before the subagent reports
+    back. Never leave the box unchecked and assume the orchestrator will
+    handle it. tasks.md must always reflect true state: unchecked means
+    not done. Using `sed` or any text-replacement to mass-check boxes is
+    prohibited.
 11. Report back: RED/GREEN/REFACTOR output verbatim, files touched, commit
     hash, any issues.
 ```
@@ -268,6 +273,10 @@ Task 4/7: ...
   of subagent claims.
 - Every task requires a commit before its box is checked.
 - Do not spawn the next subagent until the previous task is verified and checked off.
+- tasks.md must always reflect true state. An unchecked box in tasks.md
+  means the scenario is incomplete. Never use `sed` or text-replacement
+  to mass-check boxes — each box must be checked individually after
+  evidence and commit hash are filled in.
 - Remove `@wip` from one scenario at a time — state this explicitly to each subagent.
 - `givn lint` is static only; GREEN comes from the runners, only after
   strict mode is proven (step 4a).

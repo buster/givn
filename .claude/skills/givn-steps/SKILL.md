@@ -35,6 +35,17 @@ giant all-in-one step file is a red flag: it hides empty/no-op stubs.
 browser driver, HTTP client), same one-file-per-capability rule, never
 mixed with non-e2e steps.
 
+## Rule: `@e2e` tags are immutable — never remove them
+
+Once a scenario is tagged `@e2e` in a delta `.feature` file, the tag MUST
+NOT be removed. If the verify-e2e gate fails because no e2e runner is
+configured, fix the configuration — never delete the `@e2e` tag. Removing
+`@e2e` tags to bypass the gate is a procedure violation and is independently
+detected at review time (`givn check review`) and lint time (`givn lint
+--change <id>`). The procedure: set `verify.e2e_command` in
+`givn/config.yaml`, implement the e2e test infrastructure, and make the
+scenario pass.
+
 ## Rule: `@e2e` asserts the real interface — not instead of it
 
 An `@e2e` scenario's Then steps assert PRIMARILY on what the real interface
@@ -132,7 +143,13 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 ### Done
 
 9. Paste RED/GREEN/REFACTOR evidence, files touched, and commit hash into
-   the task in `tasks.md`. Only then check it: `- [ ]` → `- [x]`.
+   the task in `tasks.md`. Only then check it: `- [ ]` → `- [x]`. Do this
+   **immediately** — before moving to the next scenario. tasks.md must
+   always reflect true state: an unchecked box means the scenario is not
+   complete. Never leave boxes unchecked and batch-check them later.
+   Using `sed` or any text-replacement tool to mass-check boxes is
+   prohibited — each box is checked individually, with evidence and
+   commit hash filled in.
 10. Move to the next scenario.
 
 ## Distinctions
