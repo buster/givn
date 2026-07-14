@@ -19,11 +19,17 @@ Archive change `{{CHANGE_ID}}`.
 `givn archive` automatically checks:
 
 1. All `apply.requires` artifacts exist (tasks.md, review.md by default).
-2. All tasks checked (`[x]`).
+2. All tasks checked (`[x]`) — each with evidence and commit hash
+   filled in. A mass check-in via `sed` or other text replacement is
+   not completion; the review fabrication audit and component diff will
+   catch it and block archive anyway.
 3. `review.md` contains `REVIEW: PASS`.
 4. Hooks of all `apply.requires` artifacts pass (runs `{{VERIFY_COMMAND}}`).
 
-If any gate fails, the archive is refused with a clear error.
+If any gate fails, the archive is refused with a clear error. Do **not**
+bypass a gate failure by mass-checking boxes — go back, genuinely
+complete each task (RED→GREEN→REFACTOR→COMMIT with evidence), then
+re-attempt archive.
 
 ## Steps
 

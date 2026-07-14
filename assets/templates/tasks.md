@@ -2,7 +2,7 @@
 
 RED→GREEN→REFACTOR→COMMIT per scenario. Non-@e2e first, then @e2e.
 
-Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled in.
+Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled in. Check boxes immediately after each scenario — tasks.md must always reflect true state.
 
 ---
 

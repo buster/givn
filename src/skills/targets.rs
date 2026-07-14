@@ -59,7 +59,7 @@ pub fn sync(project_root: &Path) -> Result<()> {
         println!("  synced command: /{name}");
     }
 
-    // Always-on project hint block: unconditional, refreshed every sync.
+    // Always-on blocks: unconditional, refreshed every sync.
     crate::cli::project_hint::apply(project_root)?;
 
     // Self-healing AGENTS.md block: keep it present/absent in sync with the

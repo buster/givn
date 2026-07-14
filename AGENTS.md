@@ -72,3 +72,4 @@ Communication policy for all work in this project.
 - Goal: restore independent, high-fidelity thinking. Success is the user
   needing this model less over time.
 <!-- givn:end:absolute-mode -->
+

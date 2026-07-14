@@ -75,6 +75,15 @@ For each scenario:
               spec/stub = task not done.
 ```
 
+## Rule: @e2e tags are immutable — never remove them
+
+Once `@e2e` is placed on a delta scenario, it MUST NOT be removed. The
+`verify-e2e` hook at review time and `givn lint --change <id>` both
+independently detect tag removal by cross-referencing against tasks.md
+content. If e2e is blocked by infrastructure, configure
+`verify.e2e_command` — never delete the tag. Removing `@e2e` tags to bypass
+a gate is a procedure violation.
+
 ## TDD loop — @e2e scenarios (after all non-@e2e are GREEN)
 
 Same loop, e2e runner (`verify.e2e_command`), e2e step location, e2e
@@ -184,6 +193,12 @@ this.
 - Non-@e2e scenarios first, @e2e last.
 - Check `[x]` only when evidence and commit hash are filled in. Empty fields
   = incomplete.
+- **tasks.md must always be up-to-date.** Check each scenario's box
+  immediately after completing it — before starting the next scenario.
+  An unchecked box means that scenario is not done. Never leave all
+  boxes unchecked and batch-check them at the end. Using `sed` or any
+  text-replacement tool to mass-check boxes without filling in evidence
+  and commit hashes is prohibited.
 - Done when: all boxes checked, every scenario has a commit, both
   `verify.command` and `verify.e2e_command` exit 0 on the full suite, and
   the e2e setup task's scenario-count proof (e2e count strictly less than
