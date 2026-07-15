@@ -200,7 +200,7 @@ fn check_promised_files_exist(change_dir: &Path) -> Result<()> {
         if columns.len() < 2 {
             continue;
         }
-        let file_path_str = columns[1].trim();
+        let file_path_str = columns[1].trim().trim_matches('`').trim();
         if file_path_str.is_empty() || file_path_str == "Step definition file" {
             continue;
         }

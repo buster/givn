@@ -1,13 +1,13 @@
 {
   "active": true,
-  "iteration": 8,
+  "iteration": 1,
   "minIterations": 1,
   "maxIterations": 0,
   "completionPromise": "COMPLETE",
-  "tasksMode": true,
+  "tasksMode": false,
   "taskPromise": "READY_FOR_NEXT_TASK",
-  "prompt": "implement the givn change until completion",
-  "startedAt": "2026-07-15T17:29:48.822Z",
+  "prompt": "implement the givn change until completion and all is reviewed. use givn status and givn instructions",
+  "startedAt": "2026-07-15T18:38:12.735Z",
   "model": "",
   "agent": "opencode"
 }

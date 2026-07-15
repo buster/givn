@@ -20,4 +20,4 @@
 
 ## Verify full suite passes
 
-- [ ] Run `cargo test --test features_runner` and confirm all 13 scenarios pass
+- [x] Run `cargo test --test features_runner` and confirm all 13 scenarios pass
