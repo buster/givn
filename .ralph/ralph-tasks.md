@@ -2,7 +2,7 @@
 
 ## Integrity hook — arc42 conformance
 
-- [ ] Implement arc42 conformance check in src/integrity_hook.rs: parse arc42.md marker table, byte-compare affected chapters against embedded templates
+- [x] Implement arc42 conformance check in src/integrity_hook.rs: parse arc42.md marker table, byte-compare affected chapters against embedded templates
 
 ## Post-archive verify gate
 
