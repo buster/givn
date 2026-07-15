@@ -21,12 +21,16 @@ givn_config_version: "{{GIVN_VERSION}}"
 # GREEN until you configure a real runner.
 #
 # CHANGE ME — set this to your project's test runner, e.g.:
-#   cargo test
-#   mvn test
-#   npx cucumber-js "givn/specs/**/*.feature"
-#   behave
-#   go test ./...
-#   pytest
+#   cargo llvm-cov --test features_runner   (Rust — line/branch coverage via llvm-cov)
+#   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
+#   cargo test --test features_runner       (Rust — test only, no coverage data produced)
+#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature" (Node.js — coverage)
+#   coverage run -m behave givn/specs && coverage report (Python — coverage)
+#   mvn verify                              (Java — with JaCoCo)
+#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, coverage not measured)
+#   behave                                  (Python — test only, coverage not measured)
+#   go test ./...                           (Go — coverage not measured)
+#   pytest                                  (Python — coverage not measured, run with --cov for coverage)
 #
 # See arc42 ch.8.10 for details.
 verify:

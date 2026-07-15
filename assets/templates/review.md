@@ -104,11 +104,16 @@ continuing this review).
 
 ## Coverage
 
-**Coverage result:** <!-- e.g. 84% line, 76% branch — or "not measured" -->
+**Coverage result:** <!-- paste line/branch percentages from verify.command output, or "not measured" -->
 
 ```
-<!-- paste coverage tool output here -->
-```
+<!-- paste coverage summary from verify.command output here.
+
+     The verify.command is configured in givn/config.yaml. If it is a
+     coverage-instrumented runner (e.g. cargo llvm-cov, nyc, coverage.py),
+     run it and paste the coverage summary output below. If verify.command
+     is a bare test runner with no coverage instrumentation, state "not
+     measured" and note that the classification below is an estimate. -->
 
 ## Coverage gap classification
 
@@ -133,13 +138,16 @@ There is no minimum percentage; a high number is a side effect, not the target.
 
 ## Test suite result
 
-Run `{{VERIFY_COMMAND}}` and paste the summary below.
+Run `{{VERIFY_COMMAND}}` and paste the summary below. Extract coverage data
+from this output (if the runner is coverage-instrumented).
 
 ```
-<!-- paste runner output here -->
+<!-- paste runner output + coverage summary here -->
 ```
 
 **Result:** PASS / FAIL
+
+**Coverage measured:** YES / NO (YES = verify.command is coverage-instrumented and output contained coverage data)
 
 ---
 

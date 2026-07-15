@@ -18,27 +18,27 @@ you document, the cucumber test you run, and (after archive) the permanent
 record. verify.command MUST execute them.
 
 Set `verify.command` in givn/config.yaml to a runner that executes the
-.feature files, e.g.:
+.feature files and produces COVERAGE DATA, e.g.:
 
-  # Rust / cucumber-rs
+  # Rust / cucumber-rs (line/branch coverage via llvm-cov)
   verify:
-    command: "cargo test --test features_runner"
+    command: "cargo llvm-cov --test features_runner --test e2e_runner --summary-only"
 
-  # JavaScript / Cucumber.js
-  verify:
-    command: 'npx cucumber-js "givn/specs/**/*.feature"'
+  # Rust / cucumber-rs (test only — no coverage data, not recommended)
+  # verify:
+  #   command: "cargo test --test features_runner"
 
-  # Python / Behave
+  # JavaScript / Cucumber.js (coverage via nyc)
   verify:
-    command: "behave givn/specs"
+    command: 'npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"'
 
-  # Python / pytest-bdd
+  # Python / Behave (coverage via coverage.py)
   verify:
-    command: "pytest"
+    command: "coverage run -m behave givn/specs && coverage report"
 
-  # Java / Cucumber-JVM
+  # Java / Cucumber-JVM (coverage via JaCoCo in verify phase)
   verify:
-    command: "mvn test"
+    command: "mvn verify"
 
 Coverage requirement: when measuring test coverage, configure the coverage
 tool to instrument EVERY test binary — unit tests, integration tests, AND

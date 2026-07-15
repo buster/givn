@@ -111,7 +111,9 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
                             "[WARN] {}  @e2e scenarios referenced in tasks.md but none found in specs/",
                             specs_dir.display()
                         );
-                        eprintln!("       Restore @e2e tags or remove the e2e tasks from tasks.md.");
+                        eprintln!(
+                            "       Restore @e2e tags or remove the e2e tasks from tasks.md."
+                        );
                         total_errors += 1;
                         has_wip = true;
                     }
