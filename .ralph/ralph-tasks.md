@@ -10,7 +10,7 @@
 
 ## Template updates
 
-- [ ] Add `## Internal Primitives` section to assets/templates/design.md
+- [x] Add `## Internal Primitives` section to assets/templates/design.md
 - [ ] Update assets/templates/tasks.md: change COMMIT box to inline format
 - [ ] Update assets/templates/review.md: add sign-off item for internal primitives and arc42 slug-mapping instruction
 
