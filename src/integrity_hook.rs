@@ -88,7 +88,12 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
         }
 
         let lower = hash.to_lowercase();
-        if lower == "___" || lower == "---" || lower == "tbd" || lower == "todo" || hash.contains("<!--") {
+        if lower == "___"
+            || lower == "---"
+            || lower == "tbd"
+            || lower == "todo"
+            || hash.contains("<!--")
+        {
             errors.push(format!(
                 "line {}: commit hash is a placeholder: `{}`",
                 line_idx + 1,
@@ -100,7 +105,10 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
 
     if !found_any {
         // No COMMIT lines found — this is a finding (no commit evidence recorded).
-        errors.push("no `- [x] COMMIT:` lines found in tasks.md — commit hashes must be recorded".to_string());
+        errors.push(
+            "no `- [x] COMMIT:` lines found in tasks.md — commit hashes must be recorded"
+                .to_string(),
+        );
     }
 
     if errors.is_empty() {
@@ -154,7 +162,9 @@ fn check_promised_files_exist(change_dir: &Path) -> Result<()> {
         .collect();
 
     if table_lines.is_empty() {
-        bail!("integrity check failed: `## Step Definitions` section must use a markdown table (found prose/backticks instead)");
+        bail!(
+            "integrity check failed: `## Step Definitions` section must use a markdown table (found prose/backticks instead)"
+        );
     }
 
     // Skip header and separator rows (first two rows: | Cap | File | and |---|---|---|)
@@ -163,9 +173,13 @@ fn check_promised_files_exist(change_dir: &Path) -> Result<()> {
         bail!("integrity check failed: `## Step Definitions` table has no data rows");
     }
 
-    let _project_root = change_dir.parent().unwrap_or(change_dir).parent().unwrap_or(change_dir);
+    let _project_root = change_dir
+        .parent()
+        .unwrap_or(change_dir)
+        .parent()
+        .unwrap_or(change_dir);
     // Strictly: change_dir is `givn/changes/<id>`, so project_root is `change_dir/../../..`
-    // Actually the change_dir is relative to project root or absolute. 
+    // Actually the change_dir is relative to project root or absolute.
     // The step definition file paths are relative to project root.
     // We need the project root path.
     let project_root = if change_dir.ends_with("givn/changes/integrity-hook-and-archive-gate") {
@@ -477,22 +491,14 @@ mod tests {
     #[test]
     fn hash_presence_fails_with_empty_hash() {
         let (_dir, change) = make_change_dir();
-        std::fs::write(
-            change.join("tasks.md"),
-            "- [x] COMMIT: \n",
-        )
-        .unwrap();
+        std::fs::write(change.join("tasks.md"), "- [x] COMMIT: \n").unwrap();
         assert!(check_hash_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_fails_with_no_commit_lines() {
         let (_dir, change) = make_change_dir();
-        std::fs::write(
-            change.join("tasks.md"),
-            "- [x] Some other task\n",
-        )
-        .unwrap();
+        std::fs::write(change.join("tasks.md"), "- [x] Some other task\n").unwrap();
         assert!(check_hash_presence(&change).is_err());
     }
 

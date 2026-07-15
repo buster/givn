@@ -20,11 +20,18 @@ fn stderr(world: &GivnWorld) -> String {
 }
 
 fn change_id(world: &GivnWorld) -> String {
-    world.last_change_id.clone().expect("a change id is required")
+    world
+        .last_change_id
+        .clone()
+        .expect("a change id is required")
 }
 
 fn project_root(world: &GivnWorld) -> std::path::PathBuf {
-    world.env.as_ref().map(|e| e.path("")).expect("a project root is required first")
+    world
+        .env
+        .as_ref()
+        .map(|e| e.path(""))
+        .expect("a project root is required first")
 }
 
 fn change_dir(world: &GivnWorld) -> std::path::PathBuf {
@@ -50,10 +57,7 @@ fn create_valid_step_file(world: &GivnWorld) {
 fn set_verify_true(world: &GivnWorld) {
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace(
-        "command: givn missing-testrunner",
-        "command: \"true\"",
-    );
+    let new_config = config.replace("command: givn missing-testrunner", "command: \"true\"");
     std::fs::write(&config_path, new_config).unwrap();
 }
 
@@ -61,7 +65,11 @@ fn scaffold_init_root_change(world: &mut GivnWorld, id: &str) {
     world.env = Some(common::make_init_root());
     let env_ref = world.env.as_ref().unwrap();
     let out = common::run_givn(env_ref, &["new", id]);
-    assert!(out.status.success(), "givn new failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "givn new failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     world.last_change_id = Some(id.to_string());
 }
 
@@ -92,13 +100,21 @@ fn tasks_md_valid_hashes(world: &mut GivnWorld) {
 
 #[given("the change's design.md contains a Step Definitions table with valid step file paths")]
 fn design_md_valid_table(world: &mut GivnWorld) {
-    std::fs::write(change_dir(world).join("design.md"), default_valid_design_md()).unwrap();
+    std::fs::write(
+        change_dir(world).join("design.md"),
+        default_valid_design_md(),
+    )
+    .unwrap();
     create_valid_step_file(world);
 }
 
 #[given("the change's design.md contains a valid Step Definitions table with existing files")]
 fn design_md_valid_table_existing(world: &mut GivnWorld) {
-    std::fs::write(change_dir(world).join("design.md"), default_valid_design_md()).unwrap();
+    std::fs::write(
+        change_dir(world).join("design.md"),
+        default_valid_design_md(),
+    )
+    .unwrap();
     create_valid_step_file(world);
 }
 
@@ -126,9 +142,12 @@ fn file_exists_zero_bytes(world: &mut GivnWorld, path: String) {
     std::fs::write(&p, "").unwrap();
 }
 
-#[given("the change's design.md Step Definitions section contains prose with backticks instead of a markdown table")]
+#[given(
+    "the change's design.md Step Definitions section contains prose with backticks instead of a markdown table"
+)]
 fn design_md_prose(world: &mut GivnWorld) {
-    let content = "## Step Definitions\n\nThe step definitions are in `tests/steps/my_steps.rs`.\n".to_string();
+    let content = "## Step Definitions\n\nThe step definitions are in `tests/steps/my_steps.rs`.\n"
+        .to_string();
     std::fs::write(change_dir(world).join("design.md"), content).unwrap();
 }
 
@@ -150,7 +169,11 @@ fn project_arc42_enabled(world: &mut GivnWorld) {
 #[given("a change that has passed design-review")]
 fn standalone_change_design_review(world: &mut GivnWorld) {
     let out = common::run_givn(world.env.as_ref().unwrap(), &["new", "test-change"]);
-    assert!(out.status.success(), "givn new failed: {}", String::from_utf8_lossy(&out.stderr));
+    assert!(
+        out.status.success(),
+        "givn new failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
     world.last_change_id = Some("test-change".to_string());
     set_verify_true(world);
     let dr_path = project_root(world).join("givn/changes/test-change/design-review.md");
@@ -182,8 +205,10 @@ fn arc42_marks_chapter_yes(world: &mut GivnWorld, chapter_slug: String) {
 
 #[given("docs/arc42/01-introduction-and-goals.md is byte-identical to the givn template")]
 fn arc42_chapter_byte_identical(world: &mut GivnWorld) {
-    let content = givn::config::embedded::Assets::get_str("addons/arc42-docs/chapters/01-introduction-and-goals.md")
-        .expect("embedded chapter template");
+    let content = givn::config::embedded::Assets::get_str(
+        "addons/arc42-docs/chapters/01-introduction-and-goals.md",
+    )
+    .expect("embedded chapter template");
     let path = project_root(world).join("docs/arc42/01-introduction-and-goals.md");
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(&path, content.as_bytes()).unwrap();
@@ -253,17 +278,15 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
     std::fs::write(
         perm_dir.join("test-cap.feature"),
         "Feature: Test Capability\n",
-    ).unwrap();
+    )
+    .unwrap();
 }
 
 #[given("the project's verify.command exits 0 on the current permanent specs")]
 fn verify_passes(world: &mut GivnWorld) {
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace(
-        "command: givn missing-testrunner",
-        "command: \"true\"",
-    );
+    let new_config = config.replace("command: givn missing-testrunner", "command: \"true\"");
     std::fs::write(&config_path, new_config).unwrap();
 }
 
@@ -272,10 +295,7 @@ fn delta_conflicts(world: &mut GivnWorld) {
     // Set verify.command to fail after merge.
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace(
-        "command: givn missing-testrunner",
-        "command: \"false\"",
-    );
+    let new_config = config.replace("command: givn missing-testrunner", "command: \"false\"");
     std::fs::write(&config_path, new_config).unwrap();
 }
 
@@ -283,10 +303,7 @@ fn delta_conflicts(world: &mut GivnWorld) {
 fn verify_fails_after_merge(world: &mut GivnWorld) {
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace(
-        "command: givn missing-testrunner",
-        "command: \"false\"",
-    );
+    let new_config = config.replace("command: givn missing-testrunner", "command: \"false\"");
     std::fs::write(&config_path, new_config).unwrap();
 }
 
@@ -322,10 +339,7 @@ fn change_new_capability(world: &mut GivnWorld) {
     // Set verify to fail after merge.
     let config_path = root.join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace(
-        "command: givn missing-testrunner",
-        "command: \"false\"",
-    );
+    let new_config = config.replace("command: givn missing-testrunner", "command: \"false\"");
     std::fs::write(&config_path, new_config).unwrap();
 }
 
@@ -356,8 +370,12 @@ fn delta_merged(world: &mut GivnWorld) {
                 std::fs::read_dir(e.path())
                     .ok()
                     .map(|rd| {
-                        rd.filter_map(|f| f.ok())
-                            .any(|f| f.path().extension().map(|ext| ext == "feature").unwrap_or(false))
+                        rd.filter_map(|f| f.ok()).any(|f| {
+                            f.path()
+                                .extension()
+                                .map(|ext| ext == "feature")
+                                .unwrap_or(false)
+                        })
                     })
                     .unwrap_or(false)
             } else {
@@ -365,6 +383,23 @@ fn delta_merged(world: &mut GivnWorld) {
             }
         });
     assert!(has_feature, "no .feature files found under givn/specs/");
+}
+
+#[then("the change directory has been moved to givn/archive/")]
+fn change_moved_to_archive(world: &mut GivnWorld) {
+    let id = change_id(world);
+    let archive_p = project_root(world).join(&format!("givn/archive/{id}"));
+    let changes_p = project_root(world).join(&format!("givn/changes/{id}"));
+    assert!(
+        archive_p.is_dir(),
+        "change not in givn/archive/: {:?}",
+        archive_p
+    );
+    assert!(
+        !changes_p.exists(),
+        "change still in givn/changes/: {:?}",
+        changes_p
+    );
 }
 
 #[then("the change directory still exists under givn/changes/")]
@@ -385,7 +420,10 @@ fn merged_spec_has_conflict(world: &mut GivnWorld) {
     let p = project_root(world).join("givn/specs/test-cap/test-cap.feature");
     if p.exists() {
         let content = std::fs::read_to_string(&p).unwrap();
-        assert!(content.contains("Test scenario"), "merged spec missing delta scenario: {content}");
+        assert!(
+            content.contains("Test scenario"),
+            "merged spec missing delta scenario: {content}"
+        );
     }
 }
 
@@ -393,7 +431,11 @@ fn merged_spec_has_conflict(world: &mut GivnWorld) {
 fn stderr_instructs_delete_new_cap(world: &mut GivnWorld) {
     let s = stderr(world);
     assert!(s.contains("delete"), "stderr missing 'delete': {}", s);
-    assert!(s.contains("givn/specs"), "stderr missing 'givn/specs': {}", s);
+    assert!(
+        s.contains("givn/specs"),
+        "stderr missing 'givn/specs': {}",
+        s
+    );
 }
 
 #[then("the backup directory exists")]
@@ -407,14 +449,20 @@ fn backup_dir_exists(world: &mut GivnWorld) {
 fn design_has_primitives_section(world: &mut GivnWorld) {
     let content = givn::config::embedded::Assets::get_str("templates/design.md")
         .expect("embedded design.md template");
-    assert!(content.contains("Internal Primitives"), "design.md template missing Internal Primitives section");
+    assert!(
+        content.contains("Internal Primitives"),
+        "design.md template missing Internal Primitives section"
+    );
 }
 
 #[then("the section includes a table with columns \"Primitive\", \"Type\", and \"Purpose\"")]
 fn design_has_primitives_table(world: &mut GivnWorld) {
     let content = givn::config::embedded::Assets::get_str("templates/design.md")
         .expect("embedded design.md template");
-    assert!(content.contains("| Primitive | Type | Purpose |"), "design.md template missing primitives table columns");
+    assert!(
+        content.contains("| Primitive | Type | Purpose |"),
+        "design.md template missing primitives table columns"
+    );
 }
 
 #[given("a givn project")]

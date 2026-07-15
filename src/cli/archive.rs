@@ -90,7 +90,11 @@ pub fn run(change: &str) -> Result<()> {
     if specs_dir.exists() {
         std::fs::create_dir_all(&backup_specs)?;
         copy_dir_all(&specs_dir, &backup_specs)?;
-        println!("  backed up {} → {}", specs_dir.display(), backup_specs.display());
+        println!(
+            "  backed up {} → {}",
+            specs_dir.display(),
+            backup_specs.display()
+        );
     }
 
     // === Merge delta features ===
@@ -145,7 +149,10 @@ pub fn run(change: &str) -> Result<()> {
             verify_status.code().unwrap_or(-1),
             specs_dir.display()
         );
-        eprintln!("[archive] backup of pre-merge permanent specs is at {}", backup_specs.display());
+        eprintln!(
+            "[archive] backup of pre-merge permanent specs is at {}",
+            backup_specs.display()
+        );
 
         // Detect newly-created permanent spec files (exist in specs_dir but not in backup).
         if backup_specs.exists() && specs_dir.exists() {
@@ -155,14 +162,14 @@ pub fn run(change: &str) -> Result<()> {
                     let name = entry.file_name();
                     let backup_path = backup_specs.join(&name);
                     if !backup_path.exists() {
-                        new_dirs.push(
-                            format!("  givn/specs/{}", name.to_string_lossy())
-                        );
+                        new_dirs.push(format!("  givn/specs/{}", name.to_string_lossy()));
                     }
                 }
             }
             if !new_dirs.is_empty() {
-                eprintln!("[archive] the following permanent spec directories were newly created and must be deleted to restore the pre-archive state:");
+                eprintln!(
+                    "[archive] the following permanent spec directories were newly created and must be deleted to restore the pre-archive state:"
+                );
                 for d in &new_dirs {
                     eprintln!("{d}");
                 }

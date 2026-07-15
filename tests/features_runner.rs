@@ -14,7 +14,8 @@ use steps::GivnWorld;
 
 #[tokio::main]
 async fn main() {
-    let features_path = std::env::var("GIVN_FEATURES").unwrap_or_else(|_| "givn/specs/".to_string());
+    let features_path =
+        std::env::var("GIVN_FEATURES").unwrap_or_else(|_| "givn/specs/".to_string());
     GivnWorld::cucumber()
         .fail_on_skipped()
         .run_and_exit(features_path)

@@ -6,7 +6,7 @@
 
 ## Post-archive verify gate
 
-- [ ] Implement post-archive verify gate in src/cli/archive.rs: backup specs before merge, run verify, clean up / report on result
+- [x] Implement post-archive verify gate in src/cli/archive.rs: backup specs before merge, run verify, clean up / report on result
 
 ## Template updates
 
