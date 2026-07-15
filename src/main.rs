@@ -3,6 +3,7 @@ mod config;
 mod error;
 mod gherkin;
 mod hooks;
+mod integrity_hook;
 mod skills;
 mod state;
 

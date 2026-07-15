@@ -49,7 +49,7 @@ artifacts:
     template: "review.md"
     instruction: "review"
     optional: false
-    post: ["verify", "verify-e2e"]
+    post: ["verify", "verify-e2e", "integrity"]
 
 apply:
   requires: ["tasks", "review"]

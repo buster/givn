@@ -40,8 +40,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         <!-- paste REFACTOR evidence -->
         ```
-  - [ ] COMMIT: one commit for RED+GREEN+REFACTOR, message references the
-        scenario title. Hash: <!-- commit hash -->
+  - [ ] COMMIT: <hash> — <message>
 
 <!-- One section per non-@e2e scenario. -->
 
@@ -85,8 +84,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         <!-- paste REFACTOR evidence -->
         ```
-  - [ ] COMMIT: one commit, message references the scenario title.
-        Hash: <!-- commit hash -->
+  - [ ] COMMIT: <hash> — <message>
 
 <!-- One section per @e2e scenario. -->
 

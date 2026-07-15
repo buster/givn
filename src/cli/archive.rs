@@ -81,6 +81,18 @@ pub fn run(change: &str) -> Result<()> {
     crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
     println!("✓ Gate hooks passed");
 
+    // Backup permanent specs before merge.
+    let specs_dir = project_root.join("givn/specs");
+    let backup_id = format!(".archive-backup-{change}");
+    let backup_dir = project_root.join("givn").join(&backup_id);
+    let backup_specs = backup_dir.join("specs");
+
+    if specs_dir.exists() {
+        std::fs::create_dir_all(&backup_specs)?;
+        copy_dir_all(&specs_dir, &backup_specs)?;
+        println!("  backed up {} → {}", specs_dir.display(), backup_specs.display());
+    }
+
     // === Merge delta features ===
 
     let delta_feature_dir = change_dir.join("specs");
@@ -98,8 +110,6 @@ pub fn run(change: &str) -> Result<()> {
                 )
             })?;
 
-            // Determine the permanent spec path: givn/specs/<cap>/<cap>.feature
-            // Use the capability tag or the relative path of the delta file.
             let cap = crate::gherkin::delta::capability_tag(&delta_feature)
                 .map(|t| t.to_string())
                 .unwrap_or_else(|| {
@@ -116,6 +126,61 @@ pub fn run(change: &str) -> Result<()> {
             merge_file(&permanent_path, &delta_feature)?;
             println!("  merged → {}", permanent_path.display());
         }
+    }
+
+    // === Post-merge verify gate ===
+
+    let verify_command = &manifest.verify.command;
+    println!("Running post-merge verify: {verify_command}");
+    let verify_status = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(verify_command)
+        .env("GIVN_FEATURES", "givn/specs")
+        .status()?;
+
+    if !verify_status.success() {
+        // Verify failed — print error, detect new capabilities, keep backup.
+        eprintln!(
+            "[archive] post-merge verify failed (exit code {}) against merged permanent specs at {}",
+            verify_status.code().unwrap_or(-1),
+            specs_dir.display()
+        );
+        eprintln!("[archive] backup of pre-merge permanent specs is at {}", backup_specs.display());
+
+        // Detect newly-created permanent spec files (exist in specs_dir but not in backup).
+        if backup_specs.exists() && specs_dir.exists() {
+            let mut new_dirs = Vec::new();
+            if let Ok(entries) = std::fs::read_dir(&specs_dir) {
+                for entry in entries.flatten() {
+                    let name = entry.file_name();
+                    let backup_path = backup_specs.join(&name);
+                    if !backup_path.exists() {
+                        new_dirs.push(
+                            format!("  givn/specs/{}", name.to_string_lossy())
+                        );
+                    }
+                }
+            }
+            if !new_dirs.is_empty() {
+                eprintln!("[archive] the following permanent spec directories were newly created and must be deleted to restore the pre-archive state:");
+                for d in &new_dirs {
+                    eprintln!("{d}");
+                }
+            }
+        }
+
+        bail!(
+            "archive blocked: merged permanent specs failed verify. Pre-merge specs backed up at {}. \
+             Fix the verify failure and re-run archive.",
+            backup_specs.display()
+        );
+    }
+
+    // Verify passed — clean up backup.
+    println!("✓ Post-merge verify passed");
+    if backup_dir.exists() {
+        std::fs::remove_dir_all(&backup_dir)?;
+        println!("  removed backup: {}", backup_dir.display());
     }
 
     // === Move change to archive ===

@@ -1,0 +1,13 @@
+{
+  "active": true,
+  "iteration": 1,
+  "minIterations": 1,
+  "maxIterations": 0,
+  "completionPromise": "COMPLETE",
+  "tasksMode": true,
+  "taskPromise": "READY_FOR_NEXT_TASK",
+  "prompt": "implement the givn change until completion",
+  "startedAt": "2026-07-15T17:29:48.822Z",
+  "model": "",
+  "agent": "opencode"
+}

@@ -1,0 +1,4 @@
+# Integrity hook and archive gate: no arc42 documentation needed
+# This change is purely mechanical (new built-in hook, archive gate extension,
+# template changes). No architecture impact.
+arc42-docs

@@ -12,6 +12,8 @@ use crate::common;
 
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
+pub mod workflow_enforcement_steps;
+
 #[derive(Debug, Default, World)]
 pub struct GivnWorld {
     /// The temp project root (init'd or bare) for this scenario.

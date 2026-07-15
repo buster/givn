@@ -174,6 +174,14 @@ from this output (if the runner is coverage-instrumented).
 - [ ] Interaction coverage verified: every spec inventory entry maps to a
       design matrix row, an existing `@e2e` scenario, and step definitions
       using the promised driving mechanism — no mismatches.
+- [ ] Design.md's `## Internal Primitives` section accurately lists every
+      internal data structure and abstraction this change introduces; no
+      production-code struct/fn/enum that the step definitions rely on is
+      omitted (or the section states "none" if the change has no new
+      primitives).
+- [ ] arc42 slug-mapping verified: every arc42 chapter slug in arc42.md
+      was mapped to a real `docs/arc42/<slug>.md` file per
+      `src/integrity_hook.rs:check_arc42_conformance`.
 - [ ] No finding anywhere in this report is excused with a classification
       outside the three buckets (no "acceptable for now," "future scope,"
       "sufficient for current scope," or similar invented exception).

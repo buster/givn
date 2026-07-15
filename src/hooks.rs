@@ -51,6 +51,7 @@ pub fn run_artifact_hooks(
                 ),
                 features_path,
             ),
+            "integrity" => crate::integrity_hook::run_integrity_hook(features_path, manifest.addons.arc42),
             other => run_shell_command(other, features_path),
         };
 

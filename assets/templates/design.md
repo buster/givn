@@ -34,9 +34,20 @@
 > Single-scenario run command (exact invocation to run ONE named scenario,
 > not the whole suite — used by every RED/GREEN check in tasks.md):
 > ```
-> (e.g. cargo test <name> -- --exact, mvn test -Dcucumber.filter.name="<title>",
->  cucumber-js --name "<title>", behave -n "<title>")
-> ```
+ > (e.g. cargo test <name> -- --exact, mvn test -Dcucumber.filter.name="<title>",
+ >  cucumber-js --name "<title>", behave -n "<title>")
+ > ```
+
+## Internal Primitives
+
+> Internal data structures and abstractions this change introduces or modifies.
+> These are the "what lives inside" — not public API surface, but the internal
+> building blocks the step definitions and production code share:
+>
+> | Primitive | Type | Purpose |
+> |---|---|---|
+> | (e.g. `ChangeState`) | `struct` | Holds per-scenario artifact statuses |
+> | (e.g. `parse_tasks_progress`) | `fn` | Extracts completed/total counts from tasks.md |
 
 ## Strict Mode (mandatory)
 
