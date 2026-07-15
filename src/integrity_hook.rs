@@ -31,18 +31,17 @@ fn find_change_dir(features_path: &str) -> Option<std::path::PathBuf> {
     let p = Path::new(features_path);
     // Walk up from features_path to find a parent named "specs" with grandparent "changes/<id>".
     // The pattern is: `<root>/givn/changes/<id>/specs/`
-    // We canonicalize to handle relative paths like "givn/changes/<id>/specs"
     let components: Vec<_> = p.components().collect();
     let n = components.len();
 
     // Look for "specs" component and check grandparent is "changes/<id>"
     for i in (1..n).rev() {
         if components[i].as_os_str() == "specs" {
-            // Check grandparent is "changes"
+            // Check grandparent is "changes" and parent is the change id
             if i >= 2 && components[i - 2].as_os_str() == "changes" {
-                // The change dir is <root>/givn/changes/<id>
+                // The change dir is <root>/givn/changes/<id>  (up to and including parent of specs)
                 let mut change_dir = std::path::PathBuf::new();
-                for c in &components[..i - 1] {
+                for c in &components[..i] {
                     change_dir.push(c);
                 }
                 return Some(change_dir);
@@ -150,7 +149,12 @@ fn check_promised_files_exist(change_dir: &Path) -> Result<()> {
     // Check if section explicitly states N/A or none
     let combined = section_lines.join(" ");
     let combined_lower = combined.to_lowercase();
-    if combined_lower.contains("n/a") || combined_lower.contains("none") {
+    // Match standalone "n/a" or "none" as a distinct token (not inside a filename).
+    if combined_lower.contains("n/a")
+        || combined_lower
+            .split(|c: char| c.is_whitespace() || c == ',' || c == '\n')
+            .any(|w| w.trim_matches(|c: char| !c.is_alphanumeric()) == "none")
+    {
         return Ok(());
     }
 
@@ -173,33 +177,15 @@ fn check_promised_files_exist(change_dir: &Path) -> Result<()> {
         bail!("integrity check failed: `## Step Definitions` table has no data rows");
     }
 
-    let _project_root = change_dir
+    // change_dir is `<project_root>/givn/changes/<id>`, so project_root is 3 levels up.
+    // For a relative path like `givn/changes/<id>`: 3 parent() calls yields `` (current dir).
+    // For an absolute path: 3 parent() calls yields the absolute project root.
+    let project_root = change_dir
         .parent()
-        .unwrap_or(change_dir)
-        .parent()
-        .unwrap_or(change_dir);
-    // Strictly: change_dir is `givn/changes/<id>`, so project_root is `change_dir/../../..`
-    // Actually the change_dir is relative to project root or absolute.
-    // The step definition file paths are relative to project root.
-    // We need the project root path.
-    let project_root = if change_dir.ends_with("givn/changes/integrity-hook-and-archive-gate") {
-        // During testing, we're in a temp dir. The project root is the change_dir's grandparent's parent
-        // givn/changes/<id> -> project root = the parent of "givn"
-        // This is getting complicated. Let's use a simpler approach:
-        // The change_dir is under the project root. Walk up until we find givn/ as a child?
-        // For now, resolve from the change_dir itself.
-        change_dir
-            .parent()
-            .and_then(|p| p.parent())
-            .map(|p| p.to_path_buf())
-            .unwrap_or_else(|| change_dir.to_path_buf())
-    } else {
-        change_dir
-            .parent()
-            .and_then(|p| p.parent())
-            .map(|p| p.to_path_buf())
-            .unwrap_or_else(|| change_dir.to_path_buf())
-    };
+        .and_then(|p| p.parent())
+        .and_then(|p| p.parent())
+        .map(|p| p.to_path_buf())
+        .unwrap_or_else(|| change_dir.to_path_buf());
 
     let mut errors = Vec::new();
     for row in &data_rows {
@@ -322,6 +308,7 @@ fn check_arc42_conformance(change_dir: &Path) -> Result<()> {
 
     let project_root = change_dir
         .parent()
+        .and_then(|p| p.parent())
         .and_then(|p| p.parent())
         .map(|p| p.to_path_buf())
         .unwrap_or_else(|| change_dir.to_path_buf());

@@ -16,7 +16,7 @@
 
 ## Test configuration fixes
 
-- [ ] Write step definitions to set verify.command properly in test environments so integrity hook and archive scenarios pass
+- [/] Write step definitions to set verify.command properly in test environments so integrity hook and archive scenarios pass
 
 ## Verify full suite passes
 

@@ -12,11 +12,7 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     // Determine features_path: active change's features, or default specs.
     let features_path = if let Some(id) = change {
         let change_dir = project_root.join("givn/changes").join(id);
-        if change_dir.join("specs").exists() {
-            change_dir.join("specs").to_string_lossy().into_owned()
-        } else {
-            manifest.verify.features_path.clone()
-        }
+        change_dir.join("specs").to_string_lossy().into_owned()
     } else {
         manifest.verify.features_path.clone()
     };

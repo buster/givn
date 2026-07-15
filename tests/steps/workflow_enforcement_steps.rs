@@ -54,11 +54,42 @@ fn create_valid_step_file(world: &GivnWorld) {
     std::fs::write(&path, "// test step definitions\n").unwrap();
 }
 
-fn set_verify_true(world: &GivnWorld) {
+fn set_verify_command_in_config(world: &GivnWorld, cmd: &str) {
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace("command: givn missing-testrunner", "command: \"true\"");
-    std::fs::write(&config_path, new_config).unwrap();
+    let mut lines: Vec<String> = config.lines().map(|l| l.to_string()).collect();
+    for line in &mut lines {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("command:") {
+            // Replace the entire command: line but preserve indentation
+            let indent = line.len() - trimmed.len();
+            *line = format!("{:indent$}command: \"{cmd}\"", "");
+            break;
+        }
+    }
+    std::fs::write(&config_path, lines.join("\n")).unwrap();
+}
+
+fn set_verify_true(world: &GivnWorld) {
+    set_verify_command_in_config(world, "true");
+}
+
+/// Create a verify script that exits 0 during gate hooks (GIVN_FEATURES points to
+/// a change specs dir containing "changes") and exits 1 during post-merge verify
+/// (GIVN_FEATURES points to "givn/specs").
+fn set_verify_fails_post_merge(world: &GivnWorld) {
+    let script_path = project_root(world).join(".verify_gate.sh");
+    std::fs::write(
+        &script_path,
+        "#!/bin/sh\ncase \"$GIVN_FEATURES\" in *changes*) exit 0 ;; *) exit 1 ;; esac\n",
+    )
+    .unwrap();
+    std::fs::set_permissions(
+        &script_path,
+        std::os::unix::fs::PermissionsExt::from_mode(0o755),
+    )
+    .unwrap();
+    set_verify_command_in_config(world, &script_path.to_string_lossy());
 }
 
 fn scaffold_init_root_change(world: &mut GivnWorld, id: &str) {
@@ -88,7 +119,7 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
 }
 
-#[given(expr = "the change's tasks.md contains `{string}`")]
+#[given(regex = r"^the change's tasks\.md contains `(.+)`$")]
 fn tasks_md_contains(world: &mut GivnWorld, content: String) {
     std::fs::write(change_dir(world).join("tasks.md"), &content).unwrap();
 }
@@ -118,7 +149,7 @@ fn design_md_valid_table_existing(world: &mut GivnWorld) {
     create_valid_step_file(world);
 }
 
-#[given(expr = "the change's design.md Step Definitions table lists `{string}`")]
+#[given(regex = r"^the change's design\.md Step Definitions table lists `([^`]+)`$")]
 fn design_md_lists_file(world: &mut GivnWorld, file_path: String) {
     let content = format!(
         "## Step Definitions\n\n| Capability | Step definition file |\n|---|---|\n| test-cap | {file_path} |\n"
@@ -126,16 +157,13 @@ fn design_md_lists_file(world: &mut GivnWorld, file_path: String) {
     std::fs::write(change_dir(world).join("design.md"), content).unwrap();
 }
 
-#[given(expr = "the file {string} does not exist")]
+#[given(regex = r"^the file ([^ ]+) does not exist$")]
 fn file_does_not_exist(_world: &mut GivnWorld, path: String) {
-    // We're asserting a negative — the file shouldn't exist.
-    // The step is declarative; the actual assertion happens in Then.
-    // But we verify the file doesn't exist as a precondition.
     let p = project_root(_world).join(&path);
     assert!(!p.exists(), "precondition failed: file {path} exists");
 }
 
-#[given(expr = "the file {string} exists and is zero bytes")]
+#[given(regex = r"^the file ([^ ]+) exists and is zero bytes$")]
 fn file_exists_zero_bytes(world: &mut GivnWorld, path: String) {
     let p = project_root(world).join(&path);
     std::fs::create_dir_all(p.parent().unwrap()).unwrap();
@@ -164,6 +192,15 @@ fn project_arc42_disabled(world: &mut GivnWorld) {
 #[given("a givn project with arc42 addon enabled")]
 fn project_arc42_enabled(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
+    set_verify_true(world);
+    // Create the test change so subsequent steps can write to it.
+    let out = common::run_givn(world.env.as_ref().unwrap(), &["new", "test-change"]);
+    assert!(
+        out.status.success(),
+        "givn new failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.last_change_id = Some("test-change".to_string());
 }
 
 #[given("a change that has passed design-review")]
@@ -268,7 +305,11 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
 
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
-    std::fs::write(change.join("tasks.md"), "- [x] all done\n").unwrap();
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- Implement all tasks\n",
+    )
+    .unwrap();
     std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 
@@ -284,27 +325,19 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
 
 #[given("the project's verify.command exits 0 on the current permanent specs")]
 fn verify_passes(world: &mut GivnWorld) {
-    let config_path = project_root(world).join("givn/config.yaml");
-    let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace("command: givn missing-testrunner", "command: \"true\"");
-    std::fs::write(&config_path, new_config).unwrap();
+    set_verify_command_in_config(world, "true");
 }
 
 #[given("the delta spec introduces a scenario that conflicts with an existing permanent scenario")]
 fn delta_conflicts(world: &mut GivnWorld) {
-    // Set verify.command to fail after merge.
-    let config_path = project_root(world).join("givn/config.yaml");
-    let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace("command: givn missing-testrunner", "command: \"false\"");
-    std::fs::write(&config_path, new_config).unwrap();
+    // verify must pass gate hooks but fail post-merge
+    set_verify_fails_post_merge(world);
 }
 
 #[given("verify.command exits non-zero on the merged permanent spec")]
 fn verify_fails_after_merge(world: &mut GivnWorld) {
-    let config_path = project_root(world).join("givn/config.yaml");
-    let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace("command: givn missing-testrunner", "command: \"false\"");
-    std::fs::write(&config_path, new_config).unwrap();
+    // verify must pass gate hooks but fail post-merge
+    set_verify_fails_post_merge(world);
 }
 
 #[given("a givn project with a completed change that introduces a brand-new capability")]
@@ -332,15 +365,16 @@ fn change_new_capability(world: &mut GivnWorld) {
 
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
-    std::fs::write(change.join("tasks.md"), "- [x] all done\n").unwrap();
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- Implement new capability\n",
+    )
+    .unwrap();
     std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 
-    // Set verify to fail after merge.
-    let config_path = root.join("givn/config.yaml");
-    let config = std::fs::read_to_string(&config_path).unwrap();
-    let new_config = config.replace("command: givn missing-testrunner", "command: \"false\"");
-    std::fs::write(&config_path, new_config).unwrap();
+    // Set verify to fail after merge (pass during gate hooks, fail post-merge).
+    set_verify_fails_post_merge(world);
 }
 
 // ---- When steps (reuse existing) ----
@@ -351,7 +385,7 @@ fn stdout_integrity(world: &mut GivnWorld) {
     let s = stdout(world);
     assert!(s.contains("integrity"), "stdout missing 'integrity': {}", s);
 }
-#[then(expr = "the backup directory {string} does not exist")]
+#[then(regex = r"^the backup directory (.+) does not exist$")]
 fn backup_dir_not_exists(world: &mut GivnWorld, rel: String) {
     let p = project_root(world).join(&rel);
     assert!(!p.exists(), "backup directory should not exist: {:?}", p);
@@ -409,7 +443,7 @@ fn change_still_in_changes(world: &mut GivnWorld) {
     assert!(p.is_dir(), "change missing from givn/changes/: {:?}", p);
 }
 
-#[then(expr = "the backup directory {string} exists with the pre-merge permanent specs")]
+#[then(regex = r"^the backup directory (.+) exists with the pre-merge permanent specs$")]
 fn backup_exists_with_specs(world: &mut GivnWorld, rel: String) {
     let p = project_root(world).join(&rel);
     assert!(p.is_dir(), "backup directory does not exist: {:?}", p);

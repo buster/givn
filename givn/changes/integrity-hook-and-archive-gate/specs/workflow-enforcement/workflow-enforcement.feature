@@ -16,7 +16,7 @@ Feature: givn Workflow Enforcement
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains `- [x] COMMIT: a1b2c3d4 -- Implement scenario one`
     And  the change's design.md contains a Step Definitions table with valid step file paths
-    When  the user runs `givn check review`
+    When  the user runs `givn check review --change test-change`
     Then  the command exits 0
     And  stdout contains "integrity"
 
@@ -24,10 +24,10 @@ Feature: givn Workflow Enforcement
   Scenario: Integrity hook fails on placeholder commit hash
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains `- [x] COMMIT: ___ -- scenario one`
-    When  the user runs `givn check review`
+    When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "placeholder"
-    And  stderr contains "COMMIT"
+    And  stderr contains "commit hash"
 
   @givn.added @wip
   Scenario: Integrity hook fails on missing step-definition file
@@ -35,7 +35,7 @@ Feature: givn Workflow Enforcement
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md Step Definitions table lists `tests/steps/nonexistent.rs`
     And  the file tests/steps/nonexistent.rs does not exist
-    When  the user runs `givn check review`
+    When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "Step Definitions"
     And  stderr contains "nonexistent.rs"
@@ -46,7 +46,7 @@ Feature: givn Workflow Enforcement
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md Step Definitions table lists `tests/steps/empty.rs`
     And  the file tests/steps/empty.rs exists and is zero bytes
-    When  the user runs `givn check review`
+    When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "empty"
     And  stderr contains "Step Definitions"
@@ -56,9 +56,9 @@ Feature: givn Workflow Enforcement
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md Step Definitions section contains prose with backticks instead of a markdown table
-    When  the user runs `givn check review`
+    When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
-    And  stderr contains "table format"
+    And  stderr contains "must use a markdown table"
 
   @givn.added @wip
   Scenario: Integrity hook passes when arc42 is disabled

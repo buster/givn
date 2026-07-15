@@ -336,6 +336,12 @@ fn stdout_line_beginning_with(world: &mut GivnWorld, prefix: String) {
     );
 }
 
+#[then(regex = r#"^stdout contains "(.*)"$"#)]
+fn stdout_contains_quoted_then(world: &mut GivnWorld, needle: String) {
+    let s = stdout(world);
+    assert!(s.contains(&needle), "stdout missing {:?}: {}", needle, s);
+}
+
 #[then(regex = r#"^stdout mentions "(.*)"$"#)]
 fn stdout_mentions(world: &mut GivnWorld, needle: String) {
     let s = stdout(world);
