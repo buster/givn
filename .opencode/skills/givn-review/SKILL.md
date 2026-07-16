@@ -116,15 +116,27 @@ Coverage is complete when every gap is classified and resolved (or justified).
 
 ## Steps
 
-1. Run `cargo test --test features_runner` — confirm all non-@e2e tests pass.
-2. Run `verify.e2e_command` — confirm all @e2e tests pass.
-3. Run your coverage tool and list uncovered regions in the review table.
-4. Classify each gap (1, 2, or 3 above).
-5. Resolve each gap:
+1. Run `givn check review --change <change-id>` — this runs all three
+   mandatory checks automatically:
+   - **verify** — `verify.command` (test suite)
+   - **verify-e2e** — `verify.e2e_command` (e2e smoke tests), or
+     silently skipped if no @e2e scenarios exist and no e2e runner is
+     configured
+   - **integrity** — commit-hash presence, promised files from design.md,
+     arc42 conformance (if enabled)
+   Confirm all three pass before proceeding.
+2. Extract uncovered regions from the test suite output and list them in
+   the review table. If the output contains no coverage data (bare test
+   runner with no coverage instrumentation), run the coverage-instrumented
+   equivalent manually if one exists, or note this as an unmeasured gap —
+   every uncovered region must still be classified using the three-bucket
+   system, but without tool-measured data the classification is an estimate.
+3. Classify each gap (1, 2, or 3 above).
+4. Resolve each gap:
    - Dead code → delete.
    - Missing test → add scenario + RED/GREEN/REFACTOR/COMMIT.
    - Hard to test → write justification.
-6. Confirm every capability has exactly one `@e2e` smoke-test scenario per
+5. Confirm every capability has exactly one `@e2e` smoke-test scenario per
    distinct happy-path action, with a real-interface primary assertion
    driven through the actual interface (real browser for a browser-UI
    capability, never HTTP/fetch() standing in for it). Missing, downgraded,
@@ -133,18 +145,18 @@ Coverage is complete when every gap is classified and resolved (or justified).
    outside the three buckets. Before concluding a real driver is
    unavailable, search the tree yourself (including untracked files, per
    fabrication-audit step 7) — do not take an absence at face value.
-7. Run interaction coverage verification (fabrication-audit step 13).
-8. Run both runners again — confirm still GREEN.
-9. Complete the sign-off checklist in review.md, including the fabrication
+6. Run interaction coverage verification (fabrication-audit step 13).
+7. Run `givn check review --change <change-id>` again — confirm still GREEN.
+8. Complete the sign-off checklist in review.md, including the fabrication
    audit result.
-10. Write `REVIEW: PASS` at the end of review.md when all items are checked
-    AND the fabrication audit is clean.
+9. Write `REVIEW: PASS` at the end of review.md when all items are checked
+   AND the fabrication audit is clean.
 
 ## After sign-off
 
-```
-givn check review --change <change-id>
-```
+The mandatory checks are already built into `givn check review`. No
+additional command needed — the review artifact's sign-off is complete
+with `REVIEW: PASS` written.
 
 ## Verify command
 

@@ -18,15 +18,12 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     };
 
     if let Some(artifact_id) = artifact {
-        // Run hooks for a specific artifact.
+        // Run mandatory checks first, then custom hooks.
+        run_mandatory_checks(artifact_id, &manifest, &features_path)?;
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
-        let change_dir = if let Some(id) = change {
-            Some(project_root.join("givn/changes").join(id))
-        } else {
-            None
-        };
+        let change_dir = change.map(|id| project_root.join("givn/changes").join(id));
 
         let mut ran_any = false;
         for artifact in &manifest.artifacts {
@@ -51,6 +48,37 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     }
 }
 
+/// Run mandatory built-in checks for a given artifact.
+///
+/// These are not user-configurable post hooks — they are required gates
+/// baked into the binary. For `tasks`: verify (test suite). For `review`:
+/// verify, verify-e2e, and integrity. All other artifacts have no
+/// mandatory checks; their behavior comes from post hooks only.
+fn run_mandatory_checks(
+    artifact_id: &str,
+    manifest: &crate::config::manifest::Manifest,
+    features_path: &str,
+) -> anyhow::Result<()> {
+    match artifact_id {
+        "tasks" => {
+            println!("Mandatory checks for 'tasks':");
+            crate::hooks::run_verify_hook(manifest, features_path)?;
+            println!("  ✓ verify passed");
+        }
+        "review" => {
+            println!("Mandatory checks for 'review':");
+            crate::hooks::run_verify_hook(manifest, features_path)?;
+            println!("  ✓ verify passed");
+            crate::hooks::run_verify_e2e_hook(manifest, features_path)?;
+            println!("  ✓ verify-e2e passed");
+            crate::integrity_hook::run_integrity_hook(features_path, manifest.addons.arc42)?;
+            println!("  ✓ integrity passed");
+        }
+        _ => {}
+    }
+    Ok(())
+}
+
 /// Check if an artifact's output files exist in the change directory.
 fn artifact_output_exists(
     artifact: &crate::config::manifest::Artifact,
@@ -62,10 +90,10 @@ fn artifact_output_exists(
             return true;
         }
         // Handle glob patterns like "specs/**/*.feature"
-        if pattern.contains('*') {
-            if crate::gherkin::parse::collect_feature_files(&change_dir.join("specs")).len() > 0 {
-                return true;
-            }
+        if pattern.contains('*')
+            && !crate::gherkin::parse::collect_feature_files(&change_dir.join("specs")).is_empty()
+        {
+            return true;
         }
     }
     false

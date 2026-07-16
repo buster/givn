@@ -86,6 +86,10 @@ pub fn run_archive_gate_hooks(manifest: &Manifest, features_path: &str) -> Resul
 }
 
 /// Normalise a HookEntry into (command_or_builtin, allow_failure, display_name).
+///
+/// Built-in hook names (`verify`, `verify-e2e`, `lint`, `integrity`) always
+/// ignore `allow_failure` — the user may customise the hook list but may not
+/// degrade these gates.
 fn normalise_hook(entry: &HookEntry) -> (String, bool, Option<String>) {
     match entry {
         HookEntry::Short(s) => (s.clone(), false, None),
@@ -93,12 +97,19 @@ fn normalise_hook(entry: &HookEntry) -> (String, bool, Option<String>) {
             run,
             allow_failure,
             name,
-        }) => (run.clone(), *allow_failure, name.clone()),
+        }) => {
+            let is_builtin = matches!(run.as_str(), "verify" | "verify-e2e" | "lint" | "integrity");
+            (
+                run.clone(),
+                if is_builtin { false } else { *allow_failure },
+                name.clone(),
+            )
+        }
     }
 }
 
 /// Resolve the `verify` built-in to `manifest.verify.command` and run it.
-fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
+pub(crate) fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
     let command = &manifest.verify.command;
     println!("  Running: {command}");
     run_shell_command(command, features_path)
@@ -117,7 +128,7 @@ fn run_verify_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
 /// If @e2e scenarios do not exist but `tasks.md` references e2e (section heading, task
 /// items with @e2e scenario tags), this is also a hard failure: @e2e tags were planned
 /// then removed to bypass the gate.
-fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
+pub(crate) fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> Result<()> {
     let command = &manifest.verify.e2e_command;
     let features_path = Path::new(features_path);
     let has_e2e = crate::gherkin::parse::has_e2e_scenarios(features_path);

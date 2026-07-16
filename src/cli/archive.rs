@@ -185,6 +185,42 @@ pub fn run(change: &str) -> Result<()> {
 
     // Verify passed — clean up backup.
     println!("✓ Post-merge verify passed");
+
+    // === Post-merge verify-e2e gate ===
+
+    let e2e_command = &manifest.verify.e2e_command;
+    if !e2e_command.is_empty() {
+        let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
+        if merged_has_e2e {
+            println!("Running post-merge verify-e2e: {e2e_command}");
+            let e2e_status = std::process::Command::new("sh")
+                .arg("-c")
+                .arg(e2e_command)
+                .env("GIVN_FEATURES", "givn/specs")
+                .status()?;
+
+            if !e2e_status.success() {
+                eprintln!(
+                    "[archive] post-merge verify-e2e failed (exit code {}) \
+                     against merged permanent specs at {}",
+                    e2e_status.code().unwrap_or(-1),
+                    specs_dir.display()
+                );
+                eprintln!(
+                    "[archive] backup of pre-merge permanent specs is at {}",
+                    backup_specs.display()
+                );
+                bail!(
+                    "archive blocked: merged permanent specs failed verify-e2e. \
+                     Pre-merge specs backed up at {}. \
+                     Fix the verify-e2e failure and re-run archive.",
+                    backup_specs.display()
+                );
+            }
+            println!("✓ Post-merge verify-e2e passed");
+        }
+    }
+
     if backup_dir.exists() {
         std::fs::remove_dir_all(&backup_dir)?;
         println!("  removed backup: {}", backup_dir.display());

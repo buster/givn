@@ -41,7 +41,7 @@ artifacts:
     template: "tasks.md"
     instruction: "tasks"
     optional: false
-    post: ["verify"]
+    post: []
 
   - id: review
     generates: ["review.md"]
@@ -49,7 +49,7 @@ artifacts:
     template: "review.md"
     instruction: "review"
     optional: false
-    post: ["verify", "verify-e2e", "integrity"]
+    post: []
 
 apply:
   requires: ["tasks", "review"]

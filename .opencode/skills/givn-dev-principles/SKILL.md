@@ -26,6 +26,11 @@ Apply the team's engineering principles while implementing change `<change-id>`.
   re-exports, or commented-out scaffolding.
 - **You are not alone.** Treat unexpected changes as someone else's work and
   adapt; coordinate before editing a file a peer may own.
+- **E2E enforcement is a hard gate.** `@e2e` tags are immutable — never
+  removed to bypass the verify-e2e check. `givn check review` runs
+  `verify`, `verify-e2e`, and `integrity` as mandatory binary checks
+  (not configurable post hooks). A passing e2e run is required before
+  `REVIEW: PASS` can be written.
 
 ## Anti-patterns
 
