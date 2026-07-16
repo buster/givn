@@ -1,3 +1,5 @@
+#[cfg(test)]
+use crate::config::manifest::Coverage;
 use crate::config::manifest::{Artifact, HookEntry, Manifest};
 use crate::config::overlay::load_effective;
 use crate::state::{ArtifactStatus, ChangeState, topological_sort};
@@ -230,7 +232,10 @@ mod tests {
             addons: Addons {
                 arc42: true,
                 absolute_mode: false,
+                readme: false,
+                coverage: false,
             },
+            coverage: Coverage::default(),
             extras: false,
             givn_config_version: None,
         }

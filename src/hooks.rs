@@ -1,8 +1,9 @@
-use crate::config::manifest::{HookEntry, HookFull, Manifest};
+use crate::config::manifest::{Coverage, HookEntry, HookFull, Manifest};
 /// Hook execution engine (ADR-028, arc42 ch.8.12).
 ///
 /// Resolves and executes artifact `post` hooks:
-/// - Named built-ins: `verify` (run `verify.command`) or `lint` (run `givn lint`).
+/// - Named built-ins: `verify` (run `verify.command`), `coverage` (run
+///   `coverage.command` and capture to coverage.md), or `lint` (run `givn lint`).
 /// - Shell command strings.
 /// - Object form with `allow_failure` / `name`.
 ///
@@ -54,6 +55,7 @@ pub fn run_artifact_hooks(
             "integrity" => {
                 crate::integrity_hook::run_integrity_hook(features_path, manifest.addons.arc42)
             }
+            "coverage" => run_coverage_hook(&manifest.coverage, features_path),
             other => run_shell_command(other, features_path),
         };
 
@@ -98,7 +100,10 @@ fn normalise_hook(entry: &HookEntry) -> (String, bool, Option<String>) {
             allow_failure,
             name,
         }) => {
-            let is_builtin = matches!(run.as_str(), "verify" | "verify-e2e" | "lint" | "integrity");
+            let is_builtin = matches!(
+                run.as_str(),
+                "verify" | "verify-e2e" | "lint" | "integrity" | "coverage"
+            );
             (
                 run.clone(),
                 if is_builtin { false } else { *allow_failure },
@@ -202,6 +207,47 @@ pub(crate) fn has_e2e_intent_in_tasks(content: &str) -> bool {
         || lower.contains("## e2e")
 }
 
+/// Execute the coverage built-in hook.
+///
+/// Runs `coverage.command` via `sh -c` with `GIVN_FEATURES` set, captures
+/// stdout, and writes it to `coverage.md` in the change directory.
+pub(crate) fn run_coverage_hook(coverage: &Coverage, features_path: &str) -> Result<()> {
+    let command = &coverage.command;
+    if command == "givn missing-coverage" {
+        anyhow::bail!("coverage.command is still the default sentinel. ");
+    }
+
+    let change_dir = find_change_dir(Path::new(features_path)).ok_or_else(|| {
+        anyhow::anyhow!(
+            "cannot determine change directory from features_path '{}'. \
+             Coverage hooks require a change context (--change <id>).",
+            features_path
+        )
+    })?;
+
+    println!("  Running: {command}");
+    let output = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .env("GIVN_FEATURES", features_path)
+        .output()?;
+
+    let coverage_path = change_dir.join("coverage.md");
+    std::fs::write(&coverage_path, &output.stdout)?;
+
+    if output.status.success() {
+        Ok(())
+    } else {
+        let stderr = String::from_utf8_lossy(&output.stderr);
+        anyhow::bail!(
+            "coverage.command '{}' exited with status: {}\n{}",
+            command,
+            output.status.code().unwrap_or(-1),
+            stderr.trim(),
+        )
+    }
+}
+
 /// Execute a shell command with GIVN_FEATURES set.
 fn run_shell_command(command: &str, features_path: &str) -> Result<()> {
     let status = std::process::Command::new("sh")
@@ -224,7 +270,7 @@ fn run_shell_command(command: &str, features_path: &str) -> Result<()> {
 #[cfg(test)]
 mod verify_e2e_hook_tests {
     use super::*;
-    use crate::config::manifest::{Addons, Apply, Manifest, Verify};
+    use crate::config::manifest::{Addons, Apply, Coverage, Manifest, Verify};
     use std::fs;
 
     fn manifest_with(e2e_command: &str) -> Manifest {
@@ -242,7 +288,10 @@ mod verify_e2e_hook_tests {
             addons: Addons {
                 arc42: false,
                 absolute_mode: false,
+                readme: false,
+                coverage: false,
             },
+            coverage: Coverage::default(),
             extras: false,
             givn_config_version: None,
         }

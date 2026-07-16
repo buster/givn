@@ -16,6 +16,10 @@ pub struct Manifest {
     #[serde(default)]
     pub verify: Verify,
 
+    /// Coverage merge script configuration.
+    #[serde(default)]
+    pub coverage: Coverage,
+
     /// Enabled addons (e.g. `arc42: true`).
     #[serde(default)]
     pub addons: Addons,
@@ -128,6 +132,22 @@ impl Verify {
     }
 }
 
+/// Coverage merge script configuration.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Coverage {
+    /// Command to merge test coverage data from verify + verify-e2e output
+    /// into a unified coverage.md report.
+    pub command: String,
+}
+
+impl Default for Coverage {
+    fn default() -> Self {
+        Self {
+            command: "givn missing-coverage".to_string(),
+        }
+    }
+}
+
 /// Addon switches.
 #[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct Addons {
@@ -139,6 +159,16 @@ pub struct Addons {
     /// project's AGENTS.md containing the policy text.
     #[serde(default)]
     pub absolute_mode: bool,
+    /// Enable the readme scaffolding addon. When true, `givn init` and
+    /// `givn addons enable readme` write an initial README.md to the
+    /// project root from the embedded template.
+    #[serde(default)]
+    pub readme: bool,
+    /// Enable the coverage lifecycle artifact. When true, the coverage
+    /// artifact is inserted into the workflow graph (after tasks, before
+    /// review) and review.requires is extended to include coverage.
+    #[serde(default)]
+    pub coverage: bool,
 }
 
 impl Manifest {
@@ -166,7 +196,14 @@ mod tests {
             .expect("config.yaml.tmpl must be embedded");
 
         // The documented top-level keys in the template.
-        let documented_keys = ["verify", "apply", "artifacts", "addons", "extras"];
+        let documented_keys = [
+            "verify",
+            "apply",
+            "artifacts",
+            "addons",
+            "extras",
+            "coverage",
+        ];
         for key in &documented_keys {
             assert!(
                 tmpl.contains(key),
@@ -180,6 +217,7 @@ mod tests {
             "artifacts",
             "apply",
             "verify",
+            "coverage",
             "addons",
             "extras",
             "givn_config_version",

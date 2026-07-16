@@ -725,6 +725,14 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     // arc42 addon by default, which gates archive, so a genuinely
     // "all required done" fixture must include it.
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+    // Write STATUS: PASS for coverage — `givn init` enables the coverage
+    // addon by default, which gates review (and transitively archive), so
+    // a genuinely "all required done" fixture must include it.
+    std::fs::write(
+        change_dir.join("coverage.md"),
+        "## Result\n\nSTATUS: PASS\n",
+    )
+    .unwrap();
 }
 
 #[given(

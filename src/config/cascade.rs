@@ -33,8 +33,8 @@ pub fn resolve_template(artifact_id: &str, filename: &str) -> Result<String> {
         return Ok(content);
     }
 
-    // 3. Embedded addon template (addons/<artifact_id>/template.md).
-    let addon_key = format!("addons/{artifact_id}/template.md");
+    // 3. Embedded addon template (addons/<artifact_id>/<filename>).
+    let addon_key = format!("addons/{artifact_id}/{filename}");
     crate::config::embedded::Assets::get_str(&addon_key).ok_or_else(|| {
         anyhow::anyhow!(
             "no template found for artifact '{}' (tried project override '{}', \

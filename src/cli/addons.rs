@@ -14,6 +14,14 @@ pub const KNOWN_ADDONS: &[(&str, &str)] = &[
         "absolute_mode",
         "Absolute Mode communication policy — manages a fenced block in AGENTS.md",
     ),
+    (
+        "readme",
+        "README scaffolding — writes an initial README.md to the project root",
+    ),
+    (
+        "coverage",
+        "Coverage lifecycle artifact — inserts a coverage step after tasks, before review",
+    ),
 ];
 
 /// `givn addons list` — print all known addons and their enabled/disabled status.
@@ -75,6 +83,23 @@ pub fn run_enable(name: &str) -> Result<()> {
         println!("Wrote the Absolute Mode policy block to AGENTS.md.");
         println!("Only the fenced <!-- givn:begin:absolute-mode --> block was added;");
         println!("the rest of AGENTS.md is untouched.");
+    } else if name == "readme" {
+        let count = crate::cli::readme::scaffold_readme()?;
+        if count > 0 {
+            println!("Scaffolded project README.md.");
+        } else {
+            println!("README.md already exists (content preserved).");
+        }
+        println!();
+        println!("The 'readme' addon does not modify the workflow graph.");
+        println!("To customise the template, eject and edit it: givn eject readme:template");
+    } else if name == "coverage" {
+        println!("The '{name}' artifact is now part of the effective workflow.");
+        println!("It will appear after 'tasks' in `givn status`.");
+        println!();
+        println!("Next steps:");
+        println!("  givn status              — see the updated workflow");
+        println!("  givn eject {name}:instruction   — customise the instruction (optional)");
     }
 
     Ok(())
@@ -149,6 +174,11 @@ pub fn run_disable(name: &str) -> Result<()> {
         crate::cli::absolute_mode::remove(&project_root)?;
         println!("Removed the Absolute Mode block from AGENTS.md.");
         println!("Any other content in AGENTS.md was left untouched.");
+    } else if name == "readme" {
+        println!("The 'readme' addon is disabled. The existing README.md is not deleted.");
+    } else if name == "coverage" {
+        println!("The 'coverage' artifact is no longer part of the workflow.");
+        println!("Existing coverage.md files are not deleted.");
     }
 
     Ok(())
@@ -270,7 +300,7 @@ fn set_addon(name: &str, enabled: bool) -> Result<()> {
 
 /// Parse which addons are enabled from config YAML (simple line scan,
 /// no full YAML parse — avoids clobbering comments).
-fn parse_enabled_addons(yaml: &str) -> std::collections::HashMap<String, bool> {
+pub(crate) fn parse_enabled_addons(yaml: &str) -> std::collections::HashMap<String, bool> {
     let mut result = std::collections::HashMap::new();
     let mut in_addons = false;
 
@@ -333,5 +363,15 @@ mod tests {
     #[test]
     fn validate_addon_name_accepts_arc42() {
         assert!(validate_addon_name("arc42").is_ok());
+    }
+
+    #[test]
+    fn validate_addon_name_accepts_readme() {
+        assert!(validate_addon_name("readme").is_ok());
+    }
+
+    #[test]
+    fn validate_addon_name_accepts_coverage() {
+        assert!(validate_addon_name("coverage").is_ok());
     }
 }

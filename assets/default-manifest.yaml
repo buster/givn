@@ -61,5 +61,7 @@ verify:
 
 addons:
   arc42: false
+  readme: false
+  coverage: false
 
 extras: false

@@ -36,6 +36,32 @@ givn_config_version: "{{GIVN_VERSION}}"
 verify:
   command: "givn missing-testrunner"   # <-- replace this with your runner
 
+# --- Coverage merge script ----------------------------------------------------
+# The command givn invokes to merge test coverage data produced by
+# `verify.command` (and optionally `verify.e2e_command`) into a unified
+# coverage report. The output is written to `coverage.md` in the change
+# directory and becomes part of the artifact archive gate.
+#
+# The script receives GIVN_FEATURES pointing at the change's specs dir, and
+# should:
+#   1. Locate coverage output files (lcov, junit, etc.) produced by verify
+#   2. Compare against the project's coverage baseline
+#   3. Exit non-zero if coverage regressed
+#   4. Print the unified report to stdout
+#
+# The shipped default is a sentinel that prints setup guidance and exits
+# non-zero — so coverage never falsely reports GREEN without a real script.
+#
+# Examples:
+#   scripts/merge-coverage.sh
+#   cargo llvm-cov report --lcov-path coverage/lcov.info
+#   nyc report --reporter=text-summary
+#
+# See arc42 ch.8.10 for details.
+#
+# coverage:
+#   command: "givn missing-coverage"   # <-- replace this with your coverage merge script
+
 # --- E2E test runner ----------------------------------------------------------
 # The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged
 # scenarios that exercise the real interaction surface (browser, CLI, API).
@@ -148,6 +174,8 @@ verify:
 #   absolute_mode: true     # set to false to disable the Absolute Mode communication
 #                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
 #                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
+#   readme: true            # set to false to disable the readme scaffolding addon
+#   coverage: true          # set to false to disable the coverage lifecycle artifact
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 
