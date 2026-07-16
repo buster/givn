@@ -127,6 +127,22 @@ never infer from whole-suite output) and captures output verbatim as evidence.
      repository-only assertion.
 5. Run targeting this scenario → zero exit. Capture output.
 
+5a. Confirm the new code is covered. Coverage data is embedded in the
+    `cargo test --test features_runner` output when the runner is configured with
+    coverage instrumentation (see config.yaml examples). Extract the
+    coverage summary: every new/modified production file must show
+    non-zero line/branch coverage.
+
+    If coverage data is absent from the output (bare test runner with
+    no coverage instrumentation), state this explicitly as an unmeasured
+    gap — the verify.command does not produce coverage data, so this
+    scenario's coverage is estimated, not tool-measured.
+
+    If new code shows uncovered regions, this is a RED condition for
+    this scenario — the step assertions do not exercise the new
+    production code. Fix the step (add/adjust assertions) or add missing
+    step definitions, then re-run GREEN → COVERAGE. Capture output.
+
 ### REFACTOR
 
 6. Normal TDD: general cleanup. Characterization: testability seams only —

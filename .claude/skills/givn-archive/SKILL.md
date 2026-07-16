@@ -54,6 +54,19 @@ This will:
   preserves `@e2e` tags — they are not `@givn.*` tags).
 - Move `givn/changes/<change-id>/` to `givn/archive/<change-id>/`.
 
+## Post-archive: README coverage update
+
+After archive succeeds, if the project has a README and
+`cargo test --test features_runner` produces coverage data, run it one final time and
+update the README with the latest coverage stats (line and branch
+percentages from the summary output). Example update format:
+
+```markdown
+## Coverage
+
+Current: 87% line, 82% branch (measured via cargo llvm-cov).
+```
+
 ## Verify command
 
 Unit/integration:

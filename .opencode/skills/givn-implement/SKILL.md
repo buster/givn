@@ -127,8 +127,7 @@ Commit message: `test(e2e): <title>`.
 
 Final independent sanity check — do not skip because scenarios were
 already verified individually:
-1. Run `givn check tasks --change <change-id>` — this runs `verify.command`
-   (the full test suite) as a mandatory check to confirm zero exit.
+1. Run the FULL suite (both runners, not scenario-targeted). Confirm zero exit.
 2. Grep every step definition file touched for empty/no-op bodies. Must be 0.
 3. Confirm commit count matches scenario task count.
 4. Confirm coverage. Re-run `cargo test --test features_runner` and extract the coverage
@@ -136,18 +135,16 @@ already verified individually:
    production file must show non-zero line/branch coverage. If coverage
    data is absent from the output, note this as an unmeasured gap — the
    review step will need to classify uncovered regions manually.
-5. Read every `@e2e` scenario's Then steps. Confirm each has a
+4. Read every `@e2e` scenario's Then steps. Confirm each has a
    real-interface assertion — none downgraded to repository-only.
-6. For a browser-UI capability, read every `@e2e` step definition's
+5. For a browser-UI capability, read every `@e2e` step definition's
    implementation. Confirm it drives a real browser — none downgraded to
    an HTTP request or in-page `fetch()`.
-7. Cross-reference the spec's User Interaction Inventory against the
+6. Cross-reference the spec's User Interaction Inventory against the
    completed tasks: every inventory entry should have a checked `@e2e`
    task. Flag any inventory entry missing a completed e2e task.
 
 Run `givn apply --change <change-id>` to confirm progress. Proceed to review.
-Before signing `REVIEW: PASS`, run `givn check review --change <change-id>`
-to confirm verify, verify-e2e, and integrity all pass.
 
 ## Verify command
 

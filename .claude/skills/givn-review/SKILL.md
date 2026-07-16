@@ -117,8 +117,17 @@ Coverage is complete when every gap is classified and resolved (or justified).
 ## Steps
 
 1. Run `cargo test --test features_runner` — confirm all non-@e2e tests pass.
+   Coverage data is embedded in the output if the runner is configured
+   with coverage instrumentation. Extract the coverage summary from the
+   output — do not run a separate coverage tool.
 2. Run `verify.e2e_command` — confirm all @e2e tests pass.
-3. Run your coverage tool and list uncovered regions in the review table.
+3. Extract uncovered regions from the `cargo test --test features_runner` output and
+   list them in the review table. If the output contains no coverage data
+   (bare test runner with no coverage instrumentation), run the coverage-
+   instrumented equivalent manually if one exists, or note this as an
+   unmeasured gap — every uncovered region must still be classified using
+   the three-bucket system, but without tool-measured data the
+   classification is an estimate.
 4. Classify each gap (1, 2, or 3 above).
 5. Resolve each gap:
    - Dead code → delete.
