@@ -35,7 +35,7 @@ re-attempt archive.
 
 1. Confirm all tasks are done:
    ```
-   givn apply --change <change-id>
+   givn status --change <change-id>
    ```
 
 2. Confirm review is signed off:

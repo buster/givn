@@ -148,7 +148,7 @@ design.md, so everything needed must be in the task.
 ### 5. Check status
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
 ### 6. Show next step
@@ -187,5 +187,5 @@ artifact if the manifest defines one after `tasks`).
   control preventing a change from being fabricated with empty stubs.
 - Every scenario task needs pasted-output fields for RED/GREEN/REFACTOR and
   a files-touched list for GREEN — not just a description of what should happen.
-- Tasks are checkboxes (`- [ ]`) for `givn apply` to track.
+- Tasks are checkboxes (`- [ ]`) for `givn status --change` to track.
 - Verify the file exists after writing.

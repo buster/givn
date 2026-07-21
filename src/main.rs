@@ -93,12 +93,6 @@ enum Commands {
         #[arg(long)]
         json: bool,
     },
-    /// Track task progress for a change.
-    Apply {
-        /// Change identifier.
-        #[arg(long)]
-        change: String,
-    },
     /// Archive a completed change (gated: runs hooks of apply.requires artifacts).
     Archive {
         /// Change identifier.
@@ -213,7 +207,6 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         }
         Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
         Commands::Graph { change, json } => cli::graph::run(change.as_deref(), json),
-        Commands::Apply { change } => cli::apply::run(&change),
         Commands::Archive { change } => cli::archive::run(&change),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
         Commands::Addons { command } => match command {

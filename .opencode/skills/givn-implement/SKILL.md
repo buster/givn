@@ -17,7 +17,7 @@ Implement change `<change-id>` using scenario-by-scenario TDD.
 
 ## Before starting
 
-1. Check progress: `givn apply --change <change-id>`
+1. Check progress: `givn status --change <change-id>`
 2. `givn lint` to confirm the spec is well-formed (no tests run).
 3. Read the `givn-steps` skill (RED/GREEN/REFACTOR/COMMIT loop, step reuse,
    never-empty-body rule, lint-vs-test distinction).
@@ -144,7 +144,7 @@ already verified individually:
    completed tasks: every inventory entry should have a checked `@e2e`
    task. Flag any inventory entry missing a completed e2e task.
 
-Run `givn apply --change <change-id>` to confirm progress. Proceed to review.
+Run `givn status --change <change-id>` to confirm progress. Proceed to review.
 
 ## Verify command
 

@@ -36,7 +36,7 @@ Announce: "Using change: <id>".
 ### 2. Check current progress
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
 If all tasks are already checked, suggest `/givn-review`. Otherwise continue.
@@ -196,7 +196,7 @@ design.md can be fixed first").
 Only if all checks pass:
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
 Confirm checked off. Move to the next task.
@@ -204,7 +204,7 @@ Confirm checked off. Move to the next task.
 ### 6. On completion
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
 If all tasks checked, run a final independent sanity check (not a repeat of

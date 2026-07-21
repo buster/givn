@@ -784,7 +784,7 @@ enforced by instructions, not by the binary — this is acceptable for v1.
 - `/givn-design-review` is reused as-is (grilling branches apply equally to
   reverse-engineering plans).
 - No manifest, state, or CLI subcommand changes — reverse-engineering is pure
-  prompt layer driving existing `givn new`/`givn apply`/`givn archive`.
+  prompt layer driving existing `givn new`/`givn status --change`/`givn archive`.
 
 ---
 

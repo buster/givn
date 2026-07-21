@@ -207,7 +207,7 @@ comes first in the sequence)**:
 
 ## Stop after `design`
 
-Do not write `tasks.md`. Do not run `givn apply`. Those happen after
+Do not write `tasks.md`. Do not run `givn status --change`. Those happen after
 `design-review` has run as a separate, fresh-context step — see the
 orchestrator's next steps.
 

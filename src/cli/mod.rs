@@ -1,7 +1,7 @@
 pub mod absolute_mode;
 pub mod addons;
 pub mod agents_block;
-pub mod apply;
+
 pub mod archive;
 pub mod check;
 pub mod eject;

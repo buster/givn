@@ -129,6 +129,31 @@ fn print_detail(state: &ChangeState) {
         println!("  {marker} {}{tags}{extra}", a.id);
     }
 
+    // Pending task descriptions when tasks are Partial (in-progress).
+    if let Some(tasks) = state.artifacts.iter().find(|a| a.id == "tasks")
+        && tasks.status == ArtifactStatus::Partial
+    {
+        let tasks_path = std::env::current_dir()
+            .unwrap_or_default()
+            .join("givn/changes")
+            .join(&state.id)
+            .join("tasks.md");
+        if let Ok(content) = std::fs::read_to_string(&tasks_path) {
+            let pending: Vec<&str> = content
+                .lines()
+                .filter(|l| l.contains("[ ]"))
+                .take(3)
+                .collect();
+            if !pending.is_empty() {
+                println!();
+                println!("Pending tasks:");
+                for task in &pending {
+                    println!("  {}", task.trim());
+                }
+            }
+        }
+    }
+
     println!();
 
     // Next required step.

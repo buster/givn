@@ -231,7 +231,7 @@ cycle (see `givn-steps` skill for the shared loop mechanics). For each task:
 After writing tasks:
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
 Confirm task tracking is live.
@@ -282,7 +282,7 @@ RED/GREEN/REFACTOR loop and make the specs executable.
 - Suspected bugs are flagged in the Feature: description block — never fixed.
 - Production code is never changed during planning. Testability seams are
   documented per-task but applied during `/givn-characterize`.
-- Tasks use `- [ ]` checkboxes for `givn apply` to track.
+- Tasks use `- [ ]` checkboxes for `givn status --change` to track.
 - The setup task's proof-of-strictness sub-task is mandatory — omitting it
   is how a characterization gets checked off complete with empty stubs.
 - Every scenario task needs a field for RED/GREEN/REFACTOR output and a

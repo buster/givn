@@ -36,10 +36,10 @@ Identify from `active[0].id` (or ask if multiple). Announce: "Using change: <id>
 ### 2. Check current progress
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
-All tasks checked → skip to Phase 2. Otherwise continue.
+If all tasks are already checked, suggest restarting.
 
 ### 3. Validate the spec
 
@@ -162,7 +162,7 @@ Before moving on, the orchestrator itself re-checks:
 Any failure: uncheck the task, re-spawn with the specific failure named.
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 givn lint --change <id>
 ```
 
@@ -177,7 +177,7 @@ characterization are expected and handled by the subagent. Run
 ### 6. On loop completion
 
 ```sh
-givn apply --change <id>
+givn status --change <id>
 ```
 
 All tasks checked → proceed to Phase 2.

@@ -91,15 +91,16 @@ user/CI → cli::lint
 
 Exit-code precedence: parse error (1) outranks wip (2) outranks clean (0).
 
-## 6.5 `givn apply --change <id>`
+## 6.5 `givn status --change <id>`
 
 ```
-user/agent → cli::apply
-  1. config::manifest + overlay → read apply.requires, apply.tracks (tasks.md)
-  2. state: check required artifacts exist (e.g. tasks, review per apply.requires)
-  3. parse tasks.md checkboxes: count [ ] vs [x]
-  4. report progress and the next pending task group
-  (Execution of tasks is performed by the developer/agent, not by givn.)
+user/agent → cli::status
+  1. config::manifest + overlay → load effective manifest
+  2. state: walk artifact graph against filesystem → derive status per artifact
+  3. print artifact checklist (✓ Done / ~ Partial / · Pending / ⊘ Skipped)
+  4. if tasks artifact is Partial, read tasks.md and show next 3 pending
+     task lines (the `[ ]` descriptors)
+  5. print next required artifact, optional pending artifacts
 ```
 
 `givn` tracks and reports; it does not drive the per-scenario TDD loop. That loop
