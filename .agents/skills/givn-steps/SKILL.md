@@ -15,6 +15,22 @@ skill, not a standalone workflow — read by `/givn-implement` and
 - Features path: `GIVN_FEATURES=givn/specs`
 - Change: `givn/changes/<change-id>/`
 
+## Before starting
+
+Before writing or executing any step definitions, confirm your orientation:
+
+1. Run `givn instructions --change <change-id>` — this tells you exactly what
+   to do next, derived from the project's current filesystem state. Do not
+   guess, search files, or explore to determine next steps.
+2. Run `givn status --change <change-id>` — this shows the full artifact
+   checklist, task progress, and any pending task descriptions. Check state
+   before acting.
+3. The task you are about to implement: read its full entry in `tasks.md`,
+   including what step definitions already exist, the commit status of previous
+   tasks, and the Design constraints block. An unchecked box means the scenario
+   is not done — tick it off immediately after completing each scenario, with
+   evidence and commit hash filled in. Never batch-check boxes later.
+
 ## The `.feature` file is the executable spec
 
 The `.feature` file is the sole source of scenario identity. Step text is

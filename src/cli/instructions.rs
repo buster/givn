@@ -14,15 +14,38 @@ use anyhow::{Result, bail};
 /// the state right now. This is the entry point an agent runs at the start
 /// of a session, or whenever unsure how to continue.
 pub fn run(artifact: Option<&str>, change: Option<&str>, json: bool) -> Result<()> {
+    let project_root = std::env::current_dir()?;
     match artifact {
-        Some(artifact) => run_artifact(artifact, json),
+        Some(artifact) => run_artifact(artifact, change, &project_root, json),
         None => run_generic(change, json),
     }
 }
 
-/// `givn instructions <artifact>` — unchanged behaviour.
-fn run_artifact(artifact: &str, json: bool) -> Result<()> {
-    // Load effective manifest to validate the artifact id exists.
+/// `givn instructions <artifact>` — prints artifact writing instructions.
+/// When `change` is not provided and exactly one active change exists,
+/// auto-selects it.
+fn run_artifact(
+    artifact: &str,
+    change: Option<&str>,
+    project_root: &std::path::Path,
+    json: bool,
+) -> Result<()> {
+    // Resolve change: use explicit --change, or auto-select single active.
+    let _change = match change {
+        Some(id) => id.to_string(),
+        None => {
+            let manifest = load_effective()?;
+            let changes = list_changes(project_root, &manifest);
+            match changes.len() {
+                0 => bail!("No active changes. Create one with `givn new <id>` first."),
+                1 => changes[0].id.clone(),
+                _ => bail!(
+                    "Multiple active changes. Use `--change <id>` to specify one."
+                ),
+            }
+        }
+    };
+    // --change is validated/resolved; artifact instructions are not change-specific.
     let manifest = load_effective()?;
     if !manifest.artifacts.iter().any(|a| a.id == artifact) {
         let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
@@ -247,7 +270,10 @@ fn describe_next_step(state: &ChangeState) -> (String, String, Option<String>) {
                 let p = next.tasks_progress.as_ref().unwrap();
                 (
                     format!(
-                        "Implementation in progress ({}/{} tasks done).",
+                        "Implementation in progress ({}/{} tasks done). \
+                         Check off each task in tasks.md immediately after \
+                         completing it — an unchecked box means that \
+                         scenario is not done.",
                         p.done, p.total
                     ),
                     format!("givn instructions tasks --change {}", state.id),
@@ -292,8 +318,9 @@ fn generic_overview() -> String {
 development: the `.feature` file is the executable specification. Workflow: \
 propose → spec → design → design-review → tasks → implement → review → \
 archive. Skills/slash-commands are named `/givn-<step>` (e.g. `/givn-propose`, \
-`/givn-implement`). Run `givn status` for a full checklist view, or \
-`givn instructions <artifact>` for that artifact's writing instructions."
+`/givn-implement`). Run `givn status` or `givn status --change <id>` for a \
+full checklist view with pending tasks, or `givn instructions <artifact>` for \
+that artifact's writing instructions."
         .to_string()
 }
 

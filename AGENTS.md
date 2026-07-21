@@ -46,11 +46,17 @@
 This project uses **givn** for spec-driven development. This block is
 auto-maintained by `givn init` / `givn skills sync` — do not edit it by hand.
 
-- Run `givn instructions` (no arguments) at the start of a session, or
-  whenever you are unsure what to do next. It inspects the project's
-  current state and tells you exactly which command or skill to run next.
-- The full workflow, available commands, and skills are documented there —
-  this block is intentionally just a pointer to it.
+- Run `givn instructions` as the first action of every session. Do not
+  search, grep, or explore files to determine what to do next — this command
+  inspects the current project state and tells you exactly what command or
+  skill to run next, including `--change <CHANGE>` for active changes.
+- Run `givn status --change <CHANGE>` for a full artifact checklist of an
+  active change (includes task progress and pending task descriptions).
+- Tick off each task in `tasks.md` immediately after completing it —
+  an unchecked box means that scenario is not done. Never batch-check
+  boxes at the end.
+- The full workflow, available commands, and skills are documented in the
+  output of these commands — this block is intentionally just a pointer.
 <!-- givn:end:givn-project -->
 
 <!-- givn:begin:absolute-mode -->

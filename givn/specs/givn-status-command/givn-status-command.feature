@@ -13,14 +13,14 @@ Feature: givn-status-command
     And  stdout mentions "active"
     And  stdout mentions "archived"
 
-  Scenario: Single active change listing — text mode
+  Scenario: Single active change — auto-defaults to detail view (text)
     Given  a project root with givn/ initialised
     And  a change "my-feature" exists with artifact "proposal.md"
     When  the user runs `givn status`
     Then  the command exits 0
-    And  stdout mentions "Active changes:"
     And  stdout mentions "my-feature"
-    And  stdout mentions "next:"
+    And  stdout mentions "Stage:"
+    And  stdout mentions "Artifacts:"
 
   Scenario: Multiple active changes listed alphabetically — text mode
     Given  a project root with givn/ initialised
@@ -31,15 +31,15 @@ Feature: givn-status-command
     And  stdout line 3 matches "a-feature"
     And  stdout line 4 matches "z-feature"
 
-  Scenario: Active and archived changes — text mode
+  Scenario: Active and archived changes — single active auto-defaults to detail (text)
     Given  a project root with givn/ initialised
     And  a change "current" exists with artifact "proposal.md"
     And  a change "old" exists in archive
     When  the user runs `givn status`
     Then  the command exits 0
-    And  stdout mentions "Active changes:"
+    And  stdout mentions "Change:"
     And  stdout mentions "current"
-    And  stdout mentions "Archived: old"
+    And  stdout does not contain "Archived:"
 
   Scenario: Archived only — text mode (leading newline)
     Given  a project root with givn/ initialised
@@ -49,14 +49,14 @@ Feature: givn-status-command
     And  stdout does not contain "Active changes:"
     And  stdout mentions "Archived: old"
 
-  Scenario: Active and archived changes — JSON mode
+  Scenario: Active and archived changes — single active auto-defaults to detail JSON
     Given  a project root with givn/ initialised
     And  a change "current" exists with artifact "proposal.md"
     And  a change "old" exists in archive
     When  the user runs `givn status --json`
     Then  the command exits 0
-    And  stdout mentions "active"
-    And  stdout mentions "archived"
+    And  stdout mentions "\"id\": \"current\""
+    And  stdout mentions "\"stage\": "
 
   Scenario: Detail mode — unknown change errors
     Given  a project root with givn/ initialised
@@ -132,13 +132,13 @@ Feature: givn-status-command
     Then  the command exits non-zero
     And  stderr contains "givn/ not found"
 
-  Scenario: Summary line includes stage label and next required step
+  Scenario: Detail view includes stage label and next required step
     Given  a project root with givn/ initialised
     And  a change "my-feature" exists with artifact "proposal.md"
-    When  the user runs `givn status`
+    When  the user runs `givn status --change my-feature`
     Then  the command exits 0
     And  stdout mentions "my-feature"
-    And  stdout mentions "next: specs"
+    And  stdout mentions "Next required:"
 
   Scenario: arc42-docs appears in the artifact checklist when the addon is enabled
     Given  a project root with givn/ initialised

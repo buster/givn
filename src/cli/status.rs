@@ -47,6 +47,16 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
         let changes = list_changes(&project_root, &manifest);
         let archived = list_archived(&project_root);
 
+        // Auto-default to detail view when exactly one active change exists.
+        if changes.len() == 1 {
+            if json {
+                print_json(&changes[0])?;
+            } else {
+                print_detail(&changes[0]);
+            }
+            return Ok(());
+        }
+
         if changes.is_empty() && archived.is_empty() {
             if json {
                 println!(
@@ -152,6 +162,9 @@ fn print_detail(state: &ChangeState) {
                 }
             }
         }
+        println!();
+        println!("Check off each task in tasks.md immediately after completing it.");
+        println!("An unchecked box means that scenario is not done.");
     }
 
     println!();
