@@ -255,6 +255,22 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
         }
     }
 
+    // For coverage: check for measured data (not placeholder text).
+    if artifact
+        .generates
+        .iter()
+        .any(|g| g.ends_with("coverage.md"))
+    {
+        let coverage_path = change_dir.join("coverage.md");
+        if coverage_path.exists() {
+            return if detect_coverage_valid(&coverage_path) {
+                ArtifactStatus::Done
+            } else {
+                ArtifactStatus::Partial
+            };
+        }
+    }
+
     if all_exist {
         ArtifactStatus::Done
     } else {
@@ -329,6 +345,47 @@ pub fn detect_review_pass(path: &Path) -> bool {
 pub fn detect_arc42_done(path: &Path) -> bool {
     let content = std::fs::read_to_string(path).unwrap_or_default();
     content.contains("STATUS: DONE")
+}
+
+/// Detect if coverage.md contains measured coverage data (not placeholder text).
+///
+/// Rejects files that contain known anti-patterns used when coverage is
+/// fabricated rather than measured: "not measured", "NOT_CONFIGURED",
+/// "N/A" in a coverage-absent context, or empty/whitespace-only content.
+/// A file with only the sentinel comment ("<!-- coverage not configured -->")
+/// is also invalid — coverage must be measured, never assumed.
+pub fn detect_coverage_valid(path: &Path) -> bool {
+    let content = match std::fs::read_to_string(path) {
+        Ok(c) => c,
+        Err(_) => return false,
+    };
+
+    let trimmed = content.trim();
+    if trimmed.is_empty() {
+        return false;
+    }
+
+    // Reject known placeholder anti-patterns.
+    let lower = trimmed.to_lowercase();
+    if lower.contains("not measured") {
+        return false;
+    }
+    if lower.contains("not_config") || lower.contains("not_configured") {
+        return false;
+    }
+    // "n/a" as standalone (not part of a filename or path).
+    if lower.starts_with("n/a") || lower.starts_with("n/a ") || trimmed == "N/A" {
+        return false;
+    }
+    // Reject files whose entire content is an HTML comment block.
+    let comment_only = content
+        .lines()
+        .all(|l| l.trim().starts_with("<!--") || l.trim().is_empty());
+    if comment_only {
+        return false;
+    }
+
+    true
 }
 
 /// Per-change skip file name (one artifact-id per line).

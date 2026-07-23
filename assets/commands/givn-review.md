@@ -134,6 +134,10 @@ Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 Run the coverage tool from design.md. Record percentage and raw output in
 review.md — a fact, not a threshold gate.
 
+If `coverage.command` is still the sentinel (`givn missing-coverage`),
+the review gate is blocked. Install and configure a coverage tool before
+continuing. Do not write "not measured" or any placeholder text.
+
 ### 3. Classify every gap
 | Bucket | Meaning | Action |
 |---|---|---|

@@ -4,7 +4,11 @@ use std::path::{Path, PathBuf};
 use crate::config::embedded::Assets;
 
 /// Run all integrity checks for a change.
-pub fn run_integrity_hook(features_path: &str, arc42_enabled: bool) -> Result<()> {
+pub fn run_integrity_hook(
+    features_path: &str,
+    arc42_enabled: bool,
+    coverage_enabled: bool,
+) -> Result<()> {
     let change_dir = find_change_dir(features_path);
     let change_dir = match change_dir {
         Some(d) => d,
@@ -19,6 +23,9 @@ pub fn run_integrity_hook(features_path: &str, arc42_enabled: bool) -> Result<()
     check_promised_files_exist(&change_dir)?;
     if arc42_enabled {
         check_arc42_conformance(&change_dir)?;
+    }
+    if coverage_enabled {
+        check_coverage_valid(&change_dir)?;
     }
 
     Ok(())
@@ -406,6 +413,66 @@ fn check_arc42_conformance(change_dir: &Path) -> Result<()> {
         }
         bail!("integrity check failed: arc42 conformance");
     }
+}
+
+/// Check that coverage.md contains measured coverage data, not placeholder text.
+///
+/// Scenarios rejected:
+/// - File does not exist (coverage artifact not produced).
+/// - File contains only "not measured" or similar anti-pattern text.
+/// - File is empty or whitespace-only.
+/// - File contains only an HTML comment with no coverage data.
+fn check_coverage_valid(change_dir: &Path) -> Result<()> {
+    let coverage_path = change_dir.join("coverage.md");
+    if !coverage_path.exists() {
+        bail!(
+            "integrity check failed: coverage.md does not exist — coverage was expected \
+             (addons.coverage: true) but the artifact was never produced"
+        );
+    }
+
+    let content = std::fs::read_to_string(&coverage_path)?;
+    let trimmed = content.trim();
+
+    if trimmed.is_empty() {
+        bail!(
+            "integrity check failed: coverage.md is empty — coverage must be measured, \
+             not assumed"
+        );
+    }
+
+    let lower = trimmed.to_lowercase();
+
+    let anti_patterns = [
+        "not measured",
+        "not_config",
+        "not_configured",
+        "n/a",
+        "coverage not configured",
+    ];
+
+    for pattern in &anti_patterns {
+        if lower.contains(pattern) {
+            bail!(
+                "integrity check failed: coverage.md contains anti-pattern `{}` — \
+                 coverage must be measured, not fabricated",
+                pattern
+            );
+        }
+    }
+
+    // If the entire file is an HTML comment block, reject it.
+    let comment_only = content
+        .lines()
+        .all(|l| l.trim().starts_with("<!--") || l.trim().is_empty());
+    if comment_only {
+        bail!(
+            "integrity check failed: coverage.md contains only HTML comments — \
+             no measured coverage data"
+        );
+    }
+
+    Ok(())
 }
 
 /// Find a file by name in a directory (non-recursive, case-insensitive prefix match).

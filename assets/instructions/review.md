@@ -125,6 +125,11 @@ Record the percentage (line/branch) and raw tool output as a fact, not a
 gate. Coverage MUST include the Gherkin runner binary — a run that
 instruments only unit tests undercounts and misleads classification below.
 
+Coverage marked "not measured", "NOT_CONFIGURED", "N/A", or any other
+placeholder text where measurement was possible is a fabrication-audit
+finding. Do not proceed through the review gate without instrumented
+coverage output. Classification without measurement is guessing.
+
 Redundant unit tests (behaviour already covered by a `.feature` scenario
 through the black-box boundary) are removed — the `.feature` file is the
 source of truth.

@@ -104,16 +104,16 @@ continuing this review).
 
 ## Coverage
 
-**Coverage result:** <!-- paste line/branch percentages from verify.command output, or "not measured" -->
+**Coverage result:** <!-- paste line/branch percentages from coverage.command output. If coverage.command is still the sentinel (givn missing-coverage), leave this section empty — the review gate will block until measurement is configured. -->
 
 ```
-<!-- paste coverage summary from verify.command output here.
+<!-- paste coverage summary from coverage.command output here.
 
-     The verify.command is configured in givn/config.yaml. If it is a
-     coverage-instrumented runner (e.g. cargo llvm-cov, nyc, coverage.py),
-     run it and paste the coverage summary output below. If verify.command
-     is a bare test runner with no coverage instrumentation, state "not
-     measured" and note that the classification below is an estimate. -->
+     The coverage.command is configured in givn/config.yaml. This tool
+     captures stdout, so run it and paste the coverage summary below.
+     Coverage must be measured — do not write "not measured" or any
+     placeholder text. Classification without instrumented data is
+     guessing, not review. -->
 
 ## Coverage gap classification
 

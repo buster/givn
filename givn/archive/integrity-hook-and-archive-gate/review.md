@@ -115,16 +115,11 @@ file, and step definitions:
 
 ## Coverage
 
-**Coverage result:** not measured
+<!-- Coverage was not configured for this change (addons.coverage was
+     disabled). The review gate did not require it at the time.
 
-```
-N/A — verify.command is set to cargo test without coverage instrumentation
-(cargo llvm-cov).
-```
-
-## Coverage gap classification
-
-N/A — coverage not measured.
+     Policy now: unmeasured coverage is a fabrication-audit finding.
+     See assets/templates/review.md and assets/instructions/review.md. -->
 
 ---
 

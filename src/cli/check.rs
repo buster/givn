@@ -71,7 +71,11 @@ fn run_mandatory_checks(
             println!("  ✓ verify passed");
             crate::hooks::run_verify_e2e_hook(manifest, features_path)?;
             println!("  ✓ verify-e2e passed");
-            crate::integrity_hook::run_integrity_hook(features_path, manifest.addons.arc42)?;
+            crate::integrity_hook::run_integrity_hook(
+                features_path,
+                manifest.addons.arc42,
+                manifest.addons.coverage,
+            )?;
             println!("  ✓ integrity passed");
         }
         _ => {}

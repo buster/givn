@@ -117,6 +117,8 @@ fn change_passed_design_review(world: &mut GivnWorld) {
     // Write design-review.md with PASS marker.
     let dr_path = change_dir_for(world, "test-change").join("design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
+    // Write a valid coverage.md (needed because givn init enables the coverage addon).
+    write_coverage_md(world, "test-change");
 }
 
 #[given(regex = r"^the change's tasks\.md contains `(.+)`$")]
@@ -201,6 +203,8 @@ fn project_arc42_enabled(world: &mut GivnWorld) {
         String::from_utf8_lossy(&out.stderr)
     );
     world.last_change_id = Some("test-change".to_string());
+    // Write a valid coverage.md (needed because givn init enables the coverage addon).
+    write_coverage_md(world, "test-change");
 }
 
 #[given("a change that has passed design-review")]
@@ -215,6 +219,21 @@ fn standalone_change_design_review(world: &mut GivnWorld) {
     set_verify_true(world);
     let dr_path = project_root(world).join("givn/changes/test-change/design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
+    // Write a valid coverage.md (needed because givn init enables the coverage addon).
+    write_coverage_md(world, "test-change");
+}
+
+/// Write a minimal valid coverage.md to the change directory.
+fn write_coverage_md(world: &GivnWorld, change_id: &str) {
+    let cov_path = project_root(world)
+        .join("givn/changes")
+        .join(change_id)
+        .join("coverage.md");
+    std::fs::write(
+        &cov_path,
+        "# Coverage\n\n**Coverage result:** 85% line, 72% branch\n",
+    )
+    .unwrap();
 }
 
 #[given(expr = "the change's arc42.md marks chapter {string} as Affected: Yes")]
