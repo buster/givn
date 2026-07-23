@@ -54,18 +54,20 @@ This will:
   preserves `@e2e` tags — they are not `@givn.*` tags).
 - Move `givn/changes/{{CHANGE_ID}}/` to `givn/archive/{{CHANGE_ID}}/`.
 
-## Post-archive: README coverage update
+## Post-archive: README update
 
-After archive succeeds, if the project has a README and
-`{{VERIFY_COMMAND}}` produces coverage data, run it one final time and
-update the README with the latest coverage stats (line and branch
-percentages from the summary output). Example update format:
+After archive succeeds, if the project has a README, update it to reflect
+the current project state:
 
-```markdown
-## Coverage
-
-Current: 87% line, 82% branch (measured via cargo llvm-cov).
-```
+1. **Project name**: If the README still contains `{{PROJECT_NAME}}`,
+   replace it with the actual project name (from `Cargo.toml`,
+   `package.json`, or the directory name).
+2. **Coverage section**: If coverage data is available (via
+   `coverage.command` or a coverage-instrumented `{{VERIFY_COMMAND}}`),
+   update the coverage section with the latest line and branch
+   percentages. If coverage measurement is not configured, state this
+   explicitly. Use `<!-- givn:begin:coverage -->` /
+   `<!-- givn:end:coverage -->` blocks to allow idempotent updates.
 
 ## Verify command
 

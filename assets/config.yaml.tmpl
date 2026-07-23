@@ -20,17 +20,27 @@ givn_config_version: "{{GIVN_VERSION}}"
 # prints setup guidance and exits non-zero — so nothing ever falsely reports
 # GREEN until you configure a real runner.
 #
-# CHANGE ME — set this to your project's test runner, e.g.:
-#   cargo llvm-cov --test features_runner   (Rust — line/branch coverage via llvm-cov)
+# CHANGE ME — set this to your project's test runner.
+#
+# RECOMMENDED — coverage-instrumented runners (the review gate requires
+# coverage data to measure gaps):
+#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
 #   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
-#   cargo test --test features_runner       (Rust — test only, no coverage data produced)
-#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature" (Node.js — coverage)
-#   coverage run -m behave givn/specs && coverage report (Python — coverage)
-#   mvn verify                              (Java — with JaCoCo)
-#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, coverage not measured)
-#   behave                                  (Python — test only, coverage not measured)
-#   go test ./...                           (Go — coverage not measured)
-#   pytest                                  (Python — coverage not measured, run with --cov for coverage)
+#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js — coverage)
+#   coverage run -m behave givn/specs && coverage report  (Python — coverage)
+#   mvn verify                                            (Java — with JaCoCo)
+#
+# Fallback — bare test runners (no coverage data produced; use only while
+# prototyping, then switch to a coverage-instrumented runner above):
+#   cargo test --test features_runner       (Rust — test only, no coverage)
+#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, no coverage)
+#   behave                                  (Python — test only, no coverage)
+#   go test ./...                           (Go — no coverage)
+#   pytest                                  (Python — test only, no coverage)
+#
+# WARNING: If your verify.command does NOT produce coverage data, you MUST
+# also set coverage.command below to an instrumented runner. Without coverage
+# data the review gate cannot measure gaps and will reject the change.
 #
 # See arc42 ch.8.10 for details.
 verify:
@@ -41,6 +51,10 @@ verify:
 # `verify.command` (and optionally `verify.e2e_command`) into a unified
 # coverage report. The output is written to `coverage.md` in the change
 # directory and becomes part of the artifact archive gate.
+#
+# If your verify.command already produces coverage data (e.g. cargo llvm-cov),
+# set coverage.command to the command that extracts a unified summary from
+# the same output data. Otherwise, set it to run coverage-instrumented tests.
 #
 # The script receives GIVN_FEATURES pointing at the change's specs dir, and
 # should:
@@ -53,14 +67,16 @@ verify:
 # non-zero — so coverage never falsely reports GREEN without a real script.
 #
 # Examples:
+#   cargo llvm-cov --test features_runner --summary-only   (Rust — run instrumented and print summary)
 #   scripts/merge-coverage.sh
 #   cargo llvm-cov report --lcov-path coverage/lcov.info
 #   nyc report --reporter=text-summary
 #
-# See arc42 ch.8.10 for details.
-#
-# coverage:
-#   command: "givn missing-coverage"   # <-- replace this with your coverage merge script
+# WARNING: Do not leave this as the sentinel. Without a working
+# coverage.command, the review gate cannot measure coverage and review.md
+# will fail the fabrication audit. See arc42 ch.8.10 for details.
+coverage:
+  command: "givn missing-coverage"   # <-- replace this with your coverage command
 
 # --- E2E test runner ----------------------------------------------------------
 # The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged

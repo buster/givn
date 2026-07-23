@@ -74,6 +74,15 @@ and reports the finding instead of asking the user.
 Applies decisions reached during grilling:
 - Update `design.md` if tech decisions changed.
 - Add missing scenarios to `specs/**/*.feature` with `@givn.added @wip`.
+- **Never remove `@e2e` tags from any scenario.** If the e2e infrastructure
+  (`verify.e2e_command`) is not configured yet, leave the `@e2e` tags in
+  place. The verify-e2e hook will fail at check/archive time — that failure
+  is correct: an `@e2e` scenario without a configured runner IS an unenforced
+  gap. Removing `@e2e` tags to bypass the gate is a procedure violation and
+  will be caught by the review fabrication audit. If the e2e infrastructure
+  is genuinely not buildable yet, record this as a tracked open question in
+  `design-review.md` with a concrete date or condition for resolving it —
+  never as a tag removal.
 - Run `givn lint --change {{CHANGE_ID}}` — must exit 0 or 2.
 - Does NOT write `tasks.md` — that is the next step.
 

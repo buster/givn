@@ -12,7 +12,7 @@
 # ============================================================================
 
 # Managed by givn. Do not delete the next line.
-givn_config_version: "0.1.0"
+givn_config_version: "0.2.0"
 
 # --- Test runner -------------------------------------------------------------
 # The command givn invokes to run your test suite. This is the ONLY value
@@ -21,12 +21,16 @@ givn_config_version: "0.1.0"
 # GREEN until you configure a real runner.
 #
 # CHANGE ME — set this to your project's test runner, e.g.:
-#   cargo test
-#   mvn test
-#   npx cucumber-js "givn/specs/**/*.feature"
-#   behave
-#   go test ./...
-#   pytest
+#   cargo llvm-cov --test features_runner   (Rust — line/branch coverage via llvm-cov)
+#   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
+#   cargo test --test features_runner       (Rust — test only, no coverage data produced)
+#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature" (Node.js — coverage)
+#   coverage run -m behave givn/specs && coverage report (Python — coverage)
+#   mvn verify                              (Java — with JaCoCo)
+#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, coverage not measured)
+#   behave                                  (Python — test only, coverage not measured)
+#   go test ./...                           (Go — coverage not measured)
+#   pytest                                  (Python — coverage not measured, run with --cov for coverage)
 #
 # See arc42 ch.8.10 for details.
 verify:
@@ -79,6 +83,11 @@ verify:
 #   # apply:
 #   #   requires: [tasks]
 #
+#   # NEVER do this to design-review (optional: true or remove: true). It is
+#   # a planning-layer gate that catches a flawed plan before tasks and code
+#   # are written from it — removing it does not save time, it defers the
+#   # same problems to implementation where they cost far more to fix.
+#
 #   # c) Add a custom refactor step after implementation:
 #   # artifacts:
 #   #   - id: refactor
@@ -106,14 +115,19 @@ verify:
 #
 # Built-in hook names:
 #   verify      -> run verify.command (the test runner)
-#   verify-e2e  -> run verify.e2e_command (the e2e smoke test runner)
+#   verify-e2e  -> run verify.e2e_command (the e2e smoke test runner).
+#                  If any in-scope .feature file has an @e2e-tagged scenario,
+#                  this hook HARD FAILS when verify.e2e_command is empty —
+#                  it only skips silently when there is genuinely no @e2e
+#                  scenario in scope. An @e2e scenario with no configured
+#                  runner is an unenforced gap, never an acceptable default.
 #   lint        -> run `givn lint` (static .feature check)
 # Or: any shell command string.
 # Object form adds options: { run: verify, allow_failure: false, name: "..." }
 #
 # Defaults already in the embedded manifest:
 #   tasks.post:  [verify]
-#   review.post: [verify]
+#   review.post: [verify, verify-e2e]
 #
 # Override examples:
 # artifacts:
@@ -125,14 +139,17 @@ verify:
 #       - { run: "scripts/coverage.sh", allow_failure: true }
 
 # --- Addons ------------------------------------------------------------------
-# Opt-in pre-packaged artifact sets. See arc42 ch.8.11.
+# Pre-packaged artifact sets. See arc42 ch.8.11.
+# `givn init` enables ALL addons by default (opt-out via `givn init --no-addons`).
+# This project's actual settings are below, written by `givn init`/`givn addons`:
 #
 # addons:
-#   arc42: false           # set to true to enable the arc42 documentation artifact
-#   absolute_mode: false   # set to true to enable the Absolute Mode communication
+#   arc42: true             # set to false to disable the arc42 documentation artifact
+#   absolute_mode: true     # set to false to disable the Absolute Mode communication
 #                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
 #                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
-#                          # Toggle with: givn addons enable|disable absolute_mode
+#                          # Toggle with: givn addons enable|disable <name>, or
+#                          # `givn addons list` to see all known addons.
 
 # --- arc42 configuration (requires addons.arc42: true) -----------------------
 # arc42:
@@ -150,14 +167,22 @@ verify:
 #     - quality-requirements
 #     - risks-and-technical-debt
 #     - glossary
-#   require_for_archive: false   # if true, adds arc42-docs to apply.requires
+#
+# When addons.arc42 is true, the arc42 document is produced during the
+# design phase and checked in design-review: design-review requires
+# arc42-docs, and arc42-docs itself gates archive (added to
+# apply.requires) -- an enabled-but-unfinished arc42 doc blocks
+# `givn archive`, not just the "ready-to-archive" status label.
 
 # --- Extras ------------------------------------------------------------------
-# Opt-in project-level skills and commands independent of the change lifecycle.
-# When enabled, `givn skills sync` includes them alongside core workflow skills.
-# `givn extras install` enables + syncs; `givn extras uninstall` disables + removes.
+# Project-level skills and commands independent of the change lifecycle:
+# givn-domain-modeling, givn-dev-principles (skills), grill-me, grill-with-docs
+# (commands). `givn init` enables extras by default (opt-out via
+# `givn init --no-extras`). When enabled, `givn skills sync` includes them
+# alongside core workflow skills. `givn extras install` enables + syncs;
+# `givn extras uninstall` disables + removes.
 #
-# extras: true   # uncomment and set to false to disable
+# extras: true   # set to false to disable
 
 # --- User overrides preserved from previous version ---
 addons:

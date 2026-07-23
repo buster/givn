@@ -114,10 +114,13 @@ Map every entry from the spec's User Interaction Inventory to its matching
 **Every row must have a non-empty driving mechanism.** For a Web UI, the
 driving mechanism MUST name a specific browser driver (Playwright, Selenium,
 WebDriverIO) and describe what action it performs (click button X, fill
-input Y, navigate to Z). An HTTP client (`reqwest`, `curl`, etc.) is NOT a
-valid driving mechanism for a Web UI — it cannot click buttons or read the
-DOM. If the interface type is HTTP/REST API, an HTTP client IS the real
-interface and that is the correct driving mechanism.
+input Y, navigate to Z). An HTTP client (`reqwest`, `curl`, `fetch()`,
+etc.) is NOT a valid driving mechanism for a Web UI — it cannot click
+buttons or read the DOM. Specifying "HTTP client via unit steps" in a Web
+UI matrix row is a design deficiency that will be caught by design-review's
+E2E fidelity branch. If the interface type is HTTP/REST API (no browser
+involved), an HTTP client IS the real interface and that is the correct
+driving mechanism.
 
 The matrix is proven at design time and verified at review time. If an
 inventory entry has no matching row, the design is incomplete.
