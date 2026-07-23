@@ -39,9 +39,7 @@ fn run_artifact(
             match changes.len() {
                 0 => bail!("No active changes. Create one with `givn new <id>` first."),
                 1 => changes[0].id.clone(),
-                _ => bail!(
-                    "Multiple active changes. Use `--change <id>` to specify one."
-                ),
+                _ => bail!("Multiple active changes. Use `--change <id>` to specify one."),
             }
         }
     };
