@@ -62,6 +62,24 @@ fn run_mandatory_checks(
     match artifact_id {
         "tasks" => {
             println!("Mandatory checks for 'tasks':");
+            // When running against delta specs (under givn/changes/<id>/specs/),
+            // block if any non-removed scenario is still tagged @wip.
+            if features_path.contains("givn/changes/") {
+                let specs_path = std::path::Path::new(features_path);
+                for path in crate::gherkin::parse::collect_feature_files(specs_path) {
+                    let env = gherkin::GherkinEnv::default();
+                    let feature = gherkin::Feature::parse_path(&path, env).map_err(|e| {
+                        anyhow::anyhow!("failed to parse '{}': {}", path.display(), e)
+                    })?;
+                    if let Some(msg) = crate::gherkin::delta::find_wip_in_feature(&feature) {
+                        anyhow::bail!(
+                            "{} in '{}' — remove @wip before marking tasks complete",
+                            msg,
+                            path.display(),
+                        );
+                    }
+                }
+            }
             crate::hooks::run_verify_hook(manifest, features_path)?;
             println!("  ✓ verify passed");
         }

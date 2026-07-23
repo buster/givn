@@ -130,3 +130,25 @@ Feature: givn Workflow Enforcement
     When  the user runs `givn new change-with-primitives`
     Then  the change's design.md template contains a section named "Internal Primitives"
     And  the section includes a table with columns "Primitive", "Type", and "Purpose"
+
+  @wip
+  Scenario: Archive blocked when delta spec has non-removed @wip scenario
+    Given  a givn project with an archive-ready change whose delta spec contains @wip
+    When  the user runs `givn archive --change wip-change`
+    Then  the command exits non-zero
+    And  stderr contains "@wip"
+
+  @wip
+  Scenario: Archive allowed when @wip only on a @givn.removed placeholder
+    Given  a givn project with an archive-ready change whose @wip is only on a @givn.removed scenario
+    When  the user runs `givn archive --change wip-removed-change`
+    Then  the command exits 0
+    And  the change directory has been moved to givn/archive/
+
+  @wip
+  Scenario: Check tasks blocked when delta spec has @wip
+    Given  a givn project
+    And  a change whose delta spec contains @wip
+    When  the user runs `givn check tasks --change wip-check-change`
+    Then  the command exits non-zero
+    And  stderr contains "@wip"

@@ -522,3 +522,105 @@ fn design_has_primitives_table(world: &mut GivnWorld) {
 fn givn_project(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
 }
+
+#[given("a givn project with an archive-ready change whose delta spec contains @wip")]
+fn archive_ready_change_with_wip(world: &mut GivnWorld) {
+    scaffold_init_root_change(world, "wip-change");
+    let root = project_root(world);
+    let change = root.join("givn/changes/wip-change");
+
+    // Write all required artifacts for the archive gate.
+    std::fs::write(change.join("proposal.md"), "# Proposal\n").unwrap();
+
+    // Delta spec with a @wip scenario.
+    let specs_dir = change.join("specs").join("test-cap");
+    std::fs::create_dir_all(&specs_dir).unwrap();
+    std::fs::write(
+        specs_dir.join("test-cap.feature"),
+        "@givn.delta @test-cap\nFeature: Test Capability\n\n  @givn.added @wip\n  Scenario: Not done yet\n    Given x\n    Then y\n",
+    ).unwrap();
+
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- Implement all tasks\n",
+    )
+    .unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+    set_verify_true(world);
+
+    // Create a corresponding permanent spec so merging works.
+    let perm_dir = root.join("givn/specs/test-cap");
+    std::fs::create_dir_all(&perm_dir).unwrap();
+    std::fs::write(
+        perm_dir.join("test-cap.feature"),
+        "Feature: Test Capability\n",
+    )
+    .unwrap();
+}
+
+#[given(
+    "a givn project with an archive-ready change whose @wip is only on a @givn.removed scenario"
+)]
+fn archive_ready_change_wip_only_on_removed(world: &mut GivnWorld) {
+    scaffold_init_root_change(world, "wip-removed-change");
+    let root = project_root(world);
+    let change = root.join("givn/changes/wip-removed-change");
+
+    // Write all required artifacts for the archive gate.
+    std::fs::write(change.join("proposal.md"), "# Proposal\n").unwrap();
+
+    // Delta spec with @wip on a @givn.removed placeholder only.
+    let specs_dir = change.join("specs").join("test-cap");
+    std::fs::create_dir_all(&specs_dir).unwrap();
+    std::fs::write(
+        specs_dir.join("test-cap.feature"),
+        "@givn.delta @test-cap\nFeature: Test Capability\n\n  @givn.removed @wip\n  Scenario: Old\n    Given x\n",
+    ).unwrap();
+
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- Implement all tasks\n",
+    )
+    .unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+    set_verify_true(world);
+
+    // No permanent spec directory matters since the removed scenario is just a placeholder.
+    let perm_dir = root.join("givn/specs/test-cap");
+    std::fs::create_dir_all(&perm_dir).unwrap();
+    std::fs::write(
+        perm_dir.join("test-cap.feature"),
+        "Feature: Test Capability\n",
+    )
+    .unwrap();
+}
+
+#[given("a change whose delta spec contains @wip")]
+fn change_with_wip_spec(world: &mut GivnWorld) {
+    scaffold_init_root_change(world, "wip-check-change");
+    let root = project_root(world);
+    let change = root.join("givn/changes/wip-check-change");
+
+    // Create a delta spec with @wip.
+    let specs_dir = change.join("specs").join("test-cap");
+    std::fs::create_dir_all(&specs_dir).unwrap();
+    std::fs::write(
+        specs_dir.join("test-cap.feature"),
+        "@givn.delta @test-cap\nFeature: Test Capability\n\n  @givn.added @wip\n  Scenario: Not done\n    Given x\n    Then y\n",
+    ).unwrap();
+
+    // Write other minimal artifacts.
+    std::fs::write(change.join("proposal.md"), "# Proposal\n").unwrap();
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("tasks.md"), "- [x] COMMIT: a1b2c3d4 -- Task\n").unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+    set_verify_true(world);
+}

@@ -114,6 +114,14 @@ pub fn run(change: &str) -> Result<()> {
                 )
             })?;
 
+            if let Some(wip_msg) = crate::gherkin::delta::find_wip_in_feature(&delta_feature) {
+                bail!(
+                    "archive blocked: {} in '{}' — remove @wip from completed scenarios",
+                    wip_msg,
+                    delta_path.display(),
+                );
+            }
+
             let cap = crate::gherkin::delta::capability_tag(&delta_feature)
                 .map(|t| t.to_string())
                 .unwrap_or_else(|| {

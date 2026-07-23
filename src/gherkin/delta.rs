@@ -66,6 +66,16 @@ pub fn is_removed_placeholder(scenario: &Scenario) -> bool {
     scenario.tags.iter().any(|t| t == "givn.removed")
 }
 
+/// Returns Some(message) if the feature contains any non-removed @wip scenarios.
+pub fn find_wip_in_feature(feature: &Feature) -> Option<String> {
+    for scenario in &feature.scenarios {
+        if !is_removed_placeholder(scenario) && scenario.tags.iter().any(|t| t == "wip") {
+            return Some(format!("scenario '{}' is still tagged @wip", scenario.name));
+        }
+    }
+    None
+}
+
 /// Strip all `@givn.*` tags from a list of tags.
 pub fn strip_givn_tags(tags: &[String]) -> Vec<String> {
     tags.iter()
@@ -146,5 +156,47 @@ Feature: Plain feature
         let feature = parse_str(input).unwrap();
         let deltas = delta_scenarios(&feature);
         assert_eq!(deltas[0].op, DeltaOp::Added);
+    }
+
+    #[test]
+    fn find_wip_detects_non_removed_wip() {
+        let input = r#"
+Feature: Test
+
+  @wip
+  Scenario: Not done yet
+    Given x
+    Then y
+"#;
+        let feature = parse_str(input).unwrap();
+        let msg = find_wip_in_feature(&feature);
+        assert!(msg.is_some());
+        assert!(msg.unwrap().contains("Not done yet"));
+    }
+
+    #[test]
+    fn find_wip_allows_wip_on_removed_placeholder() {
+        let input = r#"
+Feature: Test
+
+  @givn.removed @wip
+  Scenario: Old
+    Given x
+"#;
+        let feature = parse_str(input).unwrap();
+        assert!(find_wip_in_feature(&feature).is_none());
+    }
+
+    #[test]
+    fn find_wip_clean_when_no_wip() {
+        let input = r#"
+Feature: Test
+
+  Scenario: Complete
+    Given x
+    Then y
+"#;
+        let feature = parse_str(input).unwrap();
+        assert!(find_wip_in_feature(&feature).is_none());
     }
 }
