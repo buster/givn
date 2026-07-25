@@ -63,7 +63,7 @@ pub fn run() -> Result<()> {
 ///    place rather than duplicating the key — a duplicate top-level key is
 ///    invalid YAML and breaks every downstream `givn` command.
 /// 4. Any user group whose key is not active in the fresh scaffold (e.g.
-///    `addons:`, `extras:`, which ship commented-out) is appended at the end.
+///    `addons:`, which ships commented-out) is appended at the end.
 pub fn upgrade_config(existing: &str, version: &str) -> Result<String> {
     // Extract user-owned lines (uncommented, non-empty, not the version marker).
     let user_lines: Vec<String> = existing
@@ -249,13 +249,13 @@ mod tests {
     }
 
     #[test]
-    fn upgrade_preserves_addons_and_extras_alongside_custom_verify_command() {
+    fn upgrade_preserves_addons_alongside_custom_verify_command() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
         let mut user_config = fresh.replace(
             r#"command: "givn missing-testrunner"   # <-- replace this with your runner"#,
             r#"command: "./gradlew test""#,
         );
-        user_config.push_str("\naddons:\n  arc42: true\nextras: true\n");
+        user_config.push_str("\naddons:\n  arc42: true\n");
 
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
 
@@ -267,6 +267,5 @@ mod tests {
         );
         assert!(upgraded.contains("./gradlew test"));
         assert!(upgraded.contains("arc42: true"));
-        assert!(upgraded.contains("extras: true"));
     }
 }

@@ -28,9 +28,6 @@ enum Commands {
         /// Overwrite existing files.
         #[arg(long)]
         force: bool,
-        /// Do not install extras skills and commands.
-        #[arg(long)]
-        no_extras: bool,
         /// Do not enable addons (arc42, absolute_mode).
         #[arg(long)]
         no_addons: bool,
@@ -113,11 +110,6 @@ enum Commands {
         #[command(subcommand)]
         command: AddonsCommands,
     },
-    /// Manage optional project-level extras (skills + commands).
-    Extras {
-        #[command(subcommand)]
-        command: ExtrasCommands,
-    },
     /// Regenerate skills and agent commands.
     Skills {
         #[command(subcommand)]
@@ -159,13 +151,6 @@ enum AddonsCommands {
 }
 
 #[derive(Subcommand)]
-enum ExtrasCommands {
-    /// Enable extras in givn/config.yaml and sync skills + commands.
-    Install,
-    /// Disable extras in givn/config.yaml and remove generated extras files.
-    Uninstall,
-}
-#[derive(Subcommand)]
 enum SkillsCommands {
     /// Regenerate skills and agent commands from current templates.
     Sync,
@@ -183,11 +168,7 @@ fn main() {
 
 fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Init {
-            force,
-            no_extras,
-            no_addons,
-        } => cli::init::run(force, no_extras, no_addons),
+        Commands::Init { force, no_addons } => cli::init::run(force, no_addons),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions {
             artifact,
@@ -217,10 +198,6 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             command: SkillsCommands::Sync,
         } => cli::skills::run_sync(),
         Commands::Upgrade => cli::upgrade::run(),
-        Commands::Extras { command } => match command {
-            ExtrasCommands::Install => cli::extras::run_install(),
-            ExtrasCommands::Uninstall => cli::extras::run_uninstall(),
-        },
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::Completions { shell } => {
             let mut cmd = Cli::command();

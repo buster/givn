@@ -25,8 +25,11 @@ pub fn sync(project_root: &Path) -> Result<()> {
     let version = env!("CARGO_PKG_VERSION");
 
     let mut skill_names = default_skill_names();
-    if manifest.extras {
-        skill_names.extend(extras_skill_names());
+    if manifest.addons.domain_modeling {
+        skill_names.push("givn-domain-modeling");
+    }
+    if manifest.addons.dev_principles {
+        skill_names.push("givn-dev-principles");
     }
 
     // Render and write each skill to all targets.
@@ -50,8 +53,11 @@ pub fn sync(project_root: &Path) -> Result<()> {
 
     // Write opencode slash commands.
     let mut command_names = default_command_names();
-    if manifest.extras {
-        command_names.extend(extras_command_names());
+    if manifest.addons.grill_me {
+        command_names.push("grill-me");
+    }
+    if manifest.addons.grill_with_docs {
+        command_names.push("grill-with-docs");
     }
     for name in &command_names {
         let content = resolve_command_template_for(name)?;
@@ -130,54 +136,14 @@ pub fn default_command_names() -> Vec<&'static str> {
     ]
 }
 
-/// Extras skill names — installed alongside core skills when `manifest.extras` is enabled.
-pub fn extras_skill_names() -> Vec<&'static str> {
-    vec!["givn-domain-modeling", "givn-dev-principles"]
-}
-
-/// Extras command names — installed alongside core commands when `manifest.extras` is enabled.
-pub fn extras_command_names() -> Vec<&'static str> {
-    vec!["grill-me", "grill-with-docs"]
-}
-
-/// Resolve an extras skill template: project override wins over embedded default.
-/// Project override path: `givn/extras/skills/<name>/SKILL.md.tmpl`
-/// Embedded path: `extras/skills/<name>/SKILL.md.tmpl`
-fn resolve_extras_skill_template(name: &str) -> Result<String> {
-    crate::config::cascade::resolve_asset(
-        &format!("extras/skills/{name}/SKILL.md.tmpl"),
-        &format!("givn/extras/skills/{name}/SKILL.md.tmpl"),
-    )
-}
-
-/// Resolve an extras command template: project override wins over embedded default.
-/// Project override path: `givn/extras/commands/<name>.md`
-/// Embedded path: `extras/commands/<name>.md`
-fn resolve_extras_command_template(name: &str) -> Result<String> {
-    crate::config::cascade::resolve_asset(
-        &format!("extras/commands/{name}.md"),
-        &format!("givn/extras/commands/{name}.md"),
-    )
-}
-
-/// Resolve a skill template by name: extras skills use the extras cascade,
-/// everything else uses the core skill cascade.
+/// Resolve a skill template by name.
 fn resolve_skill_template_for(name: &str) -> Result<String> {
-    if extras_skill_names().contains(&name) {
-        resolve_extras_skill_template(name)
-    } else {
-        resolve_skill_template(name)
-    }
+    resolve_skill_template(name)
 }
 
-/// Resolve a command template by name: extras commands use the extras cascade,
-/// everything else uses the core command cascade.
+/// Resolve a command template by name.
 fn resolve_command_template_for(name: &str) -> Result<String> {
-    if extras_command_names().contains(&name) {
-        resolve_extras_command_template(name)
-    } else {
-        resolve_command_template(name)
-    }
+    resolve_command_template(name)
 }
 
 /// Validate SKILL.md frontmatter (name matches dir, description present and bounded).

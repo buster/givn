@@ -231,12 +231,9 @@ mod tests {
             },
             addons: Addons {
                 arc42: true,
-                absolute_mode: false,
-                readme: false,
-                coverage: false,
+                ..Default::default()
             },
             coverage: Coverage::default(),
-            extras: false,
             givn_config_version: None,
         }
     }

@@ -24,10 +24,6 @@ pub struct Manifest {
     #[serde(default)]
     pub addons: Addons,
 
-    /// Enable extras skills and commands (default: false).
-    #[serde(default)]
-    pub extras: bool,
-
     /// Config version marker (written to givn/config.yaml by init/upgrade).
     #[serde(skip_serializing_if = "Option::is_none")]
     pub givn_config_version: Option<String>,
@@ -213,6 +209,20 @@ pub struct Addons {
     /// rolled back if coverage fails.
     #[serde(default)]
     pub coverage: bool,
+    /// Skill — model a change's domain (ubiquitous language, aggregates,
+    /// invariants) before design.
+    #[serde(default)]
+    pub domain_modeling: bool,
+    /// Skill — apply the team's engineering principles during implementation.
+    #[serde(default)]
+    pub dev_principles: bool,
+    /// Command — Socratically grill the current plan/design, one question at a time.
+    #[serde(default)]
+    pub grill_me: bool,
+    /// Command — grill the plan/design, citing a source in the project's own
+    /// docs for every challenge.
+    #[serde(default)]
+    pub grill_with_docs: bool,
 }
 
 impl Manifest {
@@ -240,14 +250,7 @@ mod tests {
             .expect("config.yaml.tmpl must be embedded");
 
         // The documented top-level keys in the template.
-        let documented_keys = [
-            "verify",
-            "apply",
-            "artifacts",
-            "addons",
-            "extras",
-            "coverage",
-        ];
+        let documented_keys = ["verify", "apply", "artifacts", "addons", "coverage"];
         for key in &documented_keys {
             assert!(
                 tmpl.contains(key),
@@ -263,7 +266,6 @@ mod tests {
             "verify",
             "coverage",
             "addons",
-            "extras",
             "givn_config_version",
         ];
         for field in &schema_fields {

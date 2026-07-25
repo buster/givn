@@ -131,8 +131,7 @@ Final independent sanity check — do not skip because scenarios were
 already verified individually:
 1. Run the FULL suite (both runners, not scenario-targeted). Confirm zero exit.
 2. Grep every step definition file touched for empty/no-op bodies. Must be 0.
-3. Confirm commit count matches scenario task count. Run `givn check integrity`
-   to verify all COMMIT hashes are distinct, non-placeholder, and present.
+3. Confirm commit count matches scenario task count.
 4. Confirm coverage. Re-run `cargo test --test features_runner` and extract the coverage
    summary. If the runner is coverage-instrumented, every new/modified
    production file must show non-zero line/branch coverage. If coverage

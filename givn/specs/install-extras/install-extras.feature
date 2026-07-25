@@ -1,6 +1,6 @@
 Feature: install-extras
 
-  Scenario: givn init defaults to extras enabled and generates extras skills
+  Scenario: givn init defaults to all addons enabled and generates their files
     Given  a project root without a givn/ directory
     When  the user runs `givn init`
     Then  the command exits 0
@@ -8,58 +8,54 @@ Feature: install-extras
     And  the file ".agents/skills/givn-dev-principles/SKILL.md" exists
     And  the file ".opencode/commands/grill-me.md" exists
     And  the file ".opencode/commands/grill-with-docs.md" exists
-    And  givn config key "extras" is "true"
 
-  Scenario: givn init --no-extras produces no extras skills or commands
+  Scenario: givn init --no-addons produces no skill or command addon files
     Given  a project root without a givn/ directory
-    When  the user runs `givn init --no-extras`
+    When  the user runs `givn init --no-addons`
     Then  the command exits 0
     And  the directory ".agents/skills/givn-domain-modeling" does not exist
     And  the directory ".agents/skills/givn-dev-principles" does not exist
     And  the file ".opencode/commands/grill-me.md" does not exist
     And  the file ".opencode/commands/grill-with-docs.md" does not exist
-    And  givn config key "extras" is "false"
 
-  Scenario: givn extras install enables extras and syncs skills
+  Scenario: givn addons enable generates skill and command files
     Given  a project root with givn/ initialised
-    And  givn config key "extras" is "false"
-    When  the user runs `givn extras install`
+    And  givn addon "domain_modeling" is "false"
+    When  the user runs `givn addons enable domain_modeling`
     Then  the command exits 0
-    And  givn config key "extras" is "true"
     And  the file ".agents/skills/givn-domain-modeling/SKILL.md" exists
-    And  the file ".opencode/commands/grill-me.md" exists
-
-  Scenario: givn extras install when already enabled is idempotent
-    Given  a project root with givn/ initialised
-    And  givn config key "extras" is "true"
-    And  extras skills and commands are already generated
-    When  the user runs `givn extras install`
-    Then  the command exits 0
-    And  givn config key "extras" is "true"
-    And  the file ".agents/skills/givn-domain-modeling/SKILL.md" exists
-
-  Scenario: givn extras uninstall disables extras and removes generated files
-    Given  a project root with givn/ initialised
-    And  givn config key "extras" is "true"
-    And  extras skills and commands are already generated
-    When  the user runs `givn extras uninstall`
-    Then  the command exits 0
-    And  givn config key "extras" is "false"
-    And  the directory ".agents/skills/givn-domain-modeling" does not exist
-    And  the directory ".agents/skills/givn-dev-principles" does not exist
     And  the file ".opencode/commands/grill-me.md" does not exist
-    And  the file ".opencode/commands/grill-with-docs.md" does not exist
 
-  Scenario: givn extras uninstall when already disabled is idempotent
+  Scenario: givn addons disable removes generated skill files
     Given  a project root with givn/ initialised
-    And  givn config key "extras" is "false"
-    When  the user runs `givn extras uninstall`
+    And  givn addon "domain_modeling" is "true"
+    And  the skill "givn-domain-modeling" exists in all targets
+    When  the user runs `givn addons disable domain_modeling`
     Then  the command exits 0
-    And  givn config key "extras" is "false"
+    And  the directory ".agents/skills/givn-domain-modeling" does not exist
+    And  the directory ".claude/skills/givn-domain-modeling" does not exist
+    And  the directory ".opencode/skills/givn-domain-modeling" does not exist
 
-  Scenario: givn skills sync includes extras skills and commands when enabled
+  Scenario: givn addons disable removes generated command files
     Given  a project root with givn/ initialised
-    And  givn config key "extras" is "true"
+    And  givn addon "grill_me" is "true"
+    And  the command "grill-me" exists in .opencode/commands
+    When  the user runs `givn addons disable grill_me`
+    Then  the command exits 0
+    And  the file ".opencode/commands/grill-me.md" does not exist
+
+  Scenario: givn addons disable when already disabled is idempotent
+    Given  a project root with givn/ initialised
+    And  givn addon "domain_modeling" is "false"
+    When  the user runs `givn addons disable domain_modeling`
+    Then  the command exits 0
+
+  Scenario: givn skills sync includes skill and command addons when enabled
+    Given  a project root with givn/ initialised
+    And  givn addon "domain_modeling" is "true"
+    And  givn addon "dev_principles" is "true"
+    And  givn addon "grill_me" is "true"
+    And  givn addon "grill_with_docs" is "true"
     When  the user runs `givn skills sync`
     Then  the command exits 0
     And  stdout contains a line "synced skill: givn-domain-modeling"
@@ -67,31 +63,32 @@ Feature: install-extras
     And  stdout contains a line "synced command: /grill-me"
     And  stdout contains a line "synced command: /grill-with-docs"
 
-  Scenario: givn skills sync excludes extras skills and commands when disabled
+  Scenario: givn skills sync excludes addon skills and commands when disabled
     Given  a project root with givn/ initialised
-    And  givn config key "extras" is "false"
+    And  givn addon "domain_modeling" is "false"
+    And  givn addon "grill_me" is "false"
     When  the user runs `givn skills sync`
     Then  the command exits 0
     And  stdout does not contain "givn-domain-modeling"
     And  stdout does not contain "grill-me"
 
-  Scenario: extras skills are written to all target directories
+  Scenario: addon skills are written to all target directories
     Given  a project root with givn/ initialised
-    And  givn config key "extras" is "true"
+    And  givn addon "domain_modeling" is "true"
     When  the user runs `givn skills sync`
     Then  the command exits 0
     And  the file ".agents/skills/givn-domain-modeling/SKILL.md" exists
     And  the file ".claude/skills/givn-domain-modeling/SKILL.md" exists
     And  the file ".opencode/skills/givn-domain-modeling/SKILL.md" exists
 
-  Scenario: givn extras install errors when givn/ is not initialised
+  Scenario: givn addons enable errors when givn/ is not initialised
     Given  a project root without a givn/ directory
-    When  the user runs `givn extras install`
+    When  the user runs `givn addons enable domain_modeling`
     Then  the command exits non-zero
-    And  stderr contains "givn/ not found"
+    And  stderr contains "givn/config.yaml not found"
 
-  Scenario: givn extras uninstall errors when givn/ is not initialised
+  Scenario: givn addons disable errors when givn/ is not initialised
     Given  a project root without a givn/ directory
-    When  the user runs `givn extras uninstall`
+    When  the user runs `givn addons disable domain_modeling`
     Then  the command exits non-zero
-    And  stderr contains "givn/ not found"
+    And  stderr contains "givn/config.yaml not found"

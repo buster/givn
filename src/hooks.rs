@@ -241,14 +241,8 @@ mod verify_e2e_hook_tests {
                 e2e_command: e2e_command.to_string(),
                 features_path: "givn/specs".to_string(),
             },
-            addons: Addons {
-                arc42: false,
-                absolute_mode: false,
-                readme: false,
-                coverage: false,
-            },
+            addons: Addons::default(),
             coverage: Coverage::default(),
-            extras: false,
             givn_config_version: None,
         }
     }

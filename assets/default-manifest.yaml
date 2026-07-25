@@ -63,5 +63,7 @@ addons:
   arc42: false
   readme: false
   coverage: false
-
-extras: false
+  domain_modeling: false
+  dev_principles: false
+  grill_me: false
+  grill_with_docs: false

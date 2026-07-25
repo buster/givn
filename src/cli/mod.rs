@@ -5,7 +5,6 @@ pub mod agents_block;
 pub mod archive;
 pub mod check;
 pub mod eject;
-pub mod extras;
 pub mod graph;
 pub mod init;
 pub mod instructions;

@@ -523,8 +523,7 @@ fn file_does_not_contain(world: &mut GivnWorld, rel: String, needle: String) {
     );
 }
 
-// --- New steps for install-extras -----------------------------------------
-// Skeletons — real assertions filled in during Scenario implementation.
+// --- Steps for install-extras -----------------------------------------------
 
 #[then(regex = r#"^the file "([^"]+)" exists$"#)]
 fn file_quoted_exists(world: &mut GivnWorld, rel: String) {
@@ -561,8 +560,45 @@ fn dir_quoted_does_not_exist(world: &mut GivnWorld, rel: String) {
     );
 }
 
-#[then(regex = r#"^givn config key "extras" is "([^"]+)"$"#)]
-fn config_extras_key_is(world: &mut GivnWorld, value: String) {
+#[given(regex = r#"^givn addon "([^"]+)" is "([^"]+)"$"#)]
+fn givn_addon_key_is_set(world: &mut GivnWorld, name: String, value: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&path).expect("read givn/config.yaml");
+    let target_line = format!("  {name}: {value}");
+    let mut lines: Vec<String> = config.lines().map(|l| l.to_string()).collect();
+    let mut found = false;
+    for line in &mut lines {
+        let trimmed = line.trim();
+        if trimmed.starts_with(&format!("{name}:")) && !line.trim_start().starts_with('#') {
+            *line = target_line.clone();
+            found = true;
+            break;
+        }
+    }
+    if !found {
+        // Insert inside the addons block or add it.
+        let mut inserted = false;
+        for i in 0..lines.len() {
+            if lines[i].trim() == "addons:" {
+                lines.insert(i + 1, target_line.clone());
+                inserted = true;
+                break;
+            }
+        }
+        if !inserted {
+            lines.push("addons:".to_string());
+            lines.push(target_line);
+        }
+    }
+    std::fs::write(&path, lines.join("\n") + "\n").expect("write givn/config.yaml");
+}
+
+#[then(regex = r#"^givn addon "([^"]+)" is "([^"]+)"$"#)]
+fn givn_addon_key_is(world: &mut GivnWorld, name: String, value: String) {
     let env = world
         .env
         .as_ref()
@@ -571,36 +607,12 @@ fn config_extras_key_is(world: &mut GivnWorld, value: String) {
         std::fs::read_to_string(env.path("givn/config.yaml")).expect("read givn/config.yaml");
     let found = config.lines().any(|line| {
         let trimmed = line.trim();
-        trimmed == format!("extras: {}", value)
+        trimmed == format!("{name}: {value}")
     });
     assert!(
         found,
-        "expected givn/config.yaml to contain 'extras: {}'",
-        value,
+        "expected givn/config.yaml to contain '  {name}: {value}'",
     );
-}
-
-#[given(regex = r#"^givn config key "extras" is "([^"]+)"$"#)]
-fn config_extras_key_set(world: &mut GivnWorld, value: String) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
-    let path = env.path("givn/config.yaml");
-    let config = std::fs::read_to_string(&path).expect("read givn/config.yaml");
-    let mut lines: Vec<String> = config.lines().map(|l| l.to_string()).collect();
-    let mut found = false;
-    for line in &mut lines {
-        if line.trim().starts_with("extras:") {
-            *line = format!("extras: {}", value);
-            found = true;
-            break;
-        }
-    }
-    if !found {
-        lines.push(format!("extras: {}", value));
-    }
-    std::fs::write(&path, lines.join("\n") + "\n").expect("write givn/config.yaml");
 }
 
 #[then(regex = r#"^stdout does not contain "([^"]+)"$"#)]
@@ -614,25 +626,28 @@ fn stdout_does_not_contain(world: &mut GivnWorld, needle: String) {
     );
 }
 
-#[given("extras skills and commands are already generated")]
-fn extras_already_generated(world: &mut GivnWorld) {
+#[given(regex = r#"^the skill "([^"]+)" exists in all targets$"#)]
+fn skill_exists_in_all_targets(world: &mut GivnWorld, skill: String) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    // Write files to simulate a prior install — the uninstall scenarios
-    // need these to exist so they have something to remove.
-    for skill in &["givn-domain-modeling", "givn-dev-principles"] {
-        for target in &[".agents", ".claude", ".opencode"] {
-            let dir = env.path(&format!("{target}/skills/{skill}"));
-            std::fs::create_dir_all(&dir).expect("create extras skill dir");
-            std::fs::write(dir.join("SKILL.md"), "# stub\n").expect("write stub");
-        }
+    for target in &[".agents", ".claude", ".opencode"] {
+        let dir = env.path(&format!("{target}/skills/{skill}"));
+        std::fs::create_dir_all(&dir).expect("create skill dir");
+        std::fs::write(dir.join("SKILL.md"), "# stub\n").expect("write stub");
     }
-    for cmd in &["grill-me", "grill-with-docs"] {
-        let p = env.path(&format!(".opencode/commands/{cmd}.md"));
-        std::fs::create_dir_all(p.parent().unwrap()).expect("create commands dir");
-    }
+}
+
+#[given(regex = r#"^the command "([^"]+)" exists in \.opencode/commands$"#)]
+fn command_exists_in_opencode(world: &mut GivnWorld, cmd: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let p = env.path(&format!(".opencode/commands/{cmd}.md"));
+    std::fs::create_dir_all(p.parent().unwrap()).expect("create commands dir");
+    std::fs::write(&p, "# stub\n").expect("write stub");
 }
 
 #[given(regex = r#"^a change "([^"]+)" exists with artifact "([^"]+)"$"#)]
@@ -824,7 +839,22 @@ fn manifest_equals_default(world: &mut GivnWorld) {
         m.apply.requires, default.apply.requires,
         "apply.requires differs"
     );
-    assert_eq!(m.extras, default.extras, "extras differs");
+    assert_eq!(
+        m.addons.domain_modeling, default.addons.domain_modeling,
+        "addons.domain_modeling differs"
+    );
+    assert_eq!(
+        m.addons.dev_principles, default.addons.dev_principles,
+        "addons.dev_principles differs"
+    );
+    assert_eq!(
+        m.addons.grill_me, default.addons.grill_me,
+        "addons.grill_me differs"
+    );
+    assert_eq!(
+        m.addons.grill_with_docs, default.addons.grill_with_docs,
+        "addons.grill_with_docs differs"
+    );
 }
 
 #[then(regex = r#"^the effective manifest has verify command "([^"]+)"$"#)]
@@ -907,10 +937,22 @@ fn manifest_exactly_one(world: &mut GivnWorld, id: String) {
     );
 }
 
-#[then("the effective manifest has extras enabled")]
-fn manifest_extras_enabled(world: &mut GivnWorld) {
+#[then("the effective manifest has the skill addons enabled")]
+fn manifest_skill_addons_enabled(world: &mut GivnWorld) {
     let m = world.overlay_manifest.as_ref().expect("no overlay result");
-    assert!(m.extras, "expected extras to be enabled");
+    assert!(
+        m.addons.domain_modeling,
+        "expected domain_modeling addon to be enabled"
+    );
+    assert!(
+        m.addons.dev_principles,
+        "expected dev_principles addon to be enabled"
+    );
+    assert!(m.addons.grill_me, "expected grill_me addon to be enabled");
+    assert!(
+        m.addons.grill_with_docs,
+        "expected grill_with_docs addon to be enabled"
+    );
 }
 
 #[then(regex = r#"^the overlay application fails with "([^"]+)"$"#)]

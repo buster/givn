@@ -22,6 +22,22 @@ pub const KNOWN_ADDONS: &[(&str, &str)] = &[
         "coverage",
         "Archive-level coverage gate — runs coverage.*_command during archive, merges Cobertura XML, updates README",
     ),
+    (
+        "domain_modeling",
+        "Skill — model a change's domain (ubiquitous language, aggregates, invariants) before design",
+    ),
+    (
+        "dev_principles",
+        "Skill — apply the team's engineering principles during implementation",
+    ),
+    (
+        "grill_me",
+        "Command — Socratically grill the current plan/design, one question at a time",
+    ),
+    (
+        "grill_with_docs",
+        "Command — grill the plan/design, citing a source in the project's own docs for every challenge",
+    ),
 ];
 
 /// `givn addons list` — print all known addons and their enabled/disabled status.
@@ -100,6 +116,8 @@ pub fn run_enable(name: &str) -> Result<()> {
         println!("Next steps:");
         println!("  Edit givn/config.yaml to set coverage.non_e2e_command");
         println!("  and coverage.e2e_command to produce Cobertura XML.");
+    } else if is_skill_addon(name) || is_command_addon(name) {
+        println!("Run 'givn skills sync' to install the skill/command files.");
     }
 
     Ok(())
@@ -179,6 +197,12 @@ pub fn run_disable(name: &str) -> Result<()> {
     } else if name == "coverage" {
         println!("The 'coverage' gate is now disabled.");
         println!("The coverage fence in README.md is preserved.");
+    } else if is_skill_addon(name) {
+        remove_skill_addon_files(name);
+        println!("Removed the '{name}' skill files from .agents/, .claude/, .opencode/.");
+    } else if is_command_addon(name) {
+        remove_command_addon_files(name);
+        println!("Removed the '{name}' command file from .opencode/commands/.");
     }
 
     Ok(())
@@ -329,6 +353,58 @@ pub(crate) fn parse_enabled_addons(yaml: &str) -> std::collections::HashMap<Stri
     result
 }
 
+/// Map from addon name to the generated skill name (or None if not a skill addon).
+fn addon_skill_name(name: &str) -> Option<&'static str> {
+    match name {
+        "domain_modeling" => Some("givn-domain-modeling"),
+        "dev_principles" => Some("givn-dev-principles"),
+        _ => None,
+    }
+}
+
+/// Map from addon name to the generated command name (or None if not a command addon).
+fn addon_command_name(name: &str) -> Option<&'static str> {
+    match name {
+        "grill_me" => Some("grill-me"),
+        "grill_with_docs" => Some("grill-with-docs"),
+        _ => None,
+    }
+}
+
+fn is_skill_addon(name: &str) -> bool {
+    addon_skill_name(name).is_some()
+}
+
+fn is_command_addon(name: &str) -> bool {
+    addon_command_name(name).is_some()
+}
+
+/// Delete generated skill directories from all target locations for a skill addon.
+fn remove_skill_addon_files(addon: &str) {
+    let Some(skill_name) = addon_skill_name(addon) else {
+        return;
+    };
+    let project_root = std::env::current_dir().expect("current dir");
+    for base in &[".agents", ".claude", ".opencode"] {
+        let dir = project_root.join(format!("{base}/skills/{skill_name}"));
+        if dir.exists() {
+            let _ = std::fs::remove_dir_all(&dir);
+        }
+    }
+}
+
+/// Delete the generated command file for a command addon.
+fn remove_command_addon_files(addon: &str) {
+    let Some(cmd_name) = addon_command_name(addon) else {
+        return;
+    };
+    let project_root = std::env::current_dir().expect("current dir");
+    let file = project_root.join(format!(".opencode/commands/{cmd_name}.md"));
+    if file.exists() {
+        let _ = std::fs::remove_file(&file);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -372,5 +448,37 @@ mod tests {
     #[test]
     fn validate_addon_name_accepts_coverage() {
         assert!(validate_addon_name("coverage").is_ok());
+    }
+
+    #[test]
+    fn validate_addon_name_accepts_new_addons() {
+        assert!(validate_addon_name("domain_modeling").is_ok());
+        assert!(validate_addon_name("dev_principles").is_ok());
+        assert!(validate_addon_name("grill_me").is_ok());
+        assert!(validate_addon_name("grill_with_docs").is_ok());
+    }
+
+    #[test]
+    fn addon_skill_name_maps_correctly() {
+        assert_eq!(
+            addon_skill_name("domain_modeling"),
+            Some("givn-domain-modeling")
+        );
+        assert_eq!(
+            addon_skill_name("dev_principles"),
+            Some("givn-dev-principles")
+        );
+        assert_eq!(addon_skill_name("grill_me"), None);
+        assert_eq!(addon_skill_name("arc42"), None);
+    }
+
+    #[test]
+    fn addon_command_name_maps_correctly() {
+        assert_eq!(addon_command_name("grill_me"), Some("grill-me"));
+        assert_eq!(
+            addon_command_name("grill_with_docs"),
+            Some("grill-with-docs")
+        );
+        assert_eq!(addon_command_name("domain_modeling"), None);
     }
 }

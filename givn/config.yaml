@@ -214,21 +214,13 @@ coverage:
 # apply.requires) -- an enabled-but-unfinished arc42 doc blocks
 # `givn archive`, not just the "ready-to-archive" status label.
 
-# --- Extras ------------------------------------------------------------------
-# Project-level skills and commands independent of the change lifecycle:
-# givn-domain-modeling, givn-dev-principles (skills), grill-me, grill-with-docs
-# (commands). `givn init` enables extras by default (opt-out via
-# `givn init --no-extras`). When enabled, `givn skills sync` includes them
-# alongside core workflow skills. `givn extras install` enables + syncs;
-# `givn extras uninstall` disables + removes.
-#
-# extras: true   # set to false to disable
-
-# --- User overrides preserved from previous version ---
 addons:
-  coverage: true
-  readme: true
-  absolute_mode: true
   arc42: true
-extras: true
-# ---
+  absolute_mode: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  grill_me: true
+  grill_with_docs: true
+
