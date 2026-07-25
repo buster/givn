@@ -13,5 +13,6 @@ const BLOCK_NAME: &str = "givn-project";
 pub fn apply(project_root: &std::path::Path) -> Result<()> {
     let hint = crate::config::embedded::Assets::get_str("agents-project-hint.md")
         .ok_or_else(|| anyhow::anyhow!("embedded agents-project-hint.md not found"))?;
-    crate::cli::agents_block::apply(project_root, BLOCK_NAME, &hint)
+    let agents_path = project_root.join("AGENTS.md");
+    crate::cli::agents_block::apply(&agents_path, BLOCK_NAME, &hint)
 }

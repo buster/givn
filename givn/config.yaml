@@ -20,21 +20,59 @@ givn_config_version: "0.2.0"
 # prints setup guidance and exits non-zero — so nothing ever falsely reports
 # GREEN until you configure a real runner.
 #
-# CHANGE ME — set this to your project's test runner, e.g.:
-#   cargo llvm-cov --test features_runner   (Rust — line/branch coverage via llvm-cov)
+# CHANGE ME — set this to your project's test runner.
+#
+# RECOMMENDED — coverage-instrumented runners (the review gate requires
+# coverage data to measure gaps):
+#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
 #   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
-#   cargo test --test features_runner       (Rust — test only, no coverage data produced)
-#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature" (Node.js — coverage)
-#   coverage run -m behave givn/specs && coverage report (Python — coverage)
-#   mvn verify                              (Java — with JaCoCo)
-#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, coverage not measured)
-#   behave                                  (Python — test only, coverage not measured)
-#   go test ./...                           (Go — coverage not measured)
-#   pytest                                  (Python — coverage not measured, run with --cov for coverage)
+#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js — coverage)
+#   coverage run -m behave givn/specs && coverage report  (Python — coverage)
+#   mvn verify                                            (Java — with JaCoCo)
+#
+# Fallback — bare test runners (no coverage data produced; use only while
+# prototyping, then switch to a coverage-instrumented runner above):
+#   cargo test --test features_runner       (Rust — test only, no coverage)
+#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, no coverage)
+#   behave                                  (Python — test only, no coverage)
+#   go test ./...                           (Go — no coverage)
+#   pytest                                  (Python — test only, no coverage)
+#
+# WARNING: If your verify.command does NOT produce coverage data, you MUST
+# also set coverage.command below to an instrumented runner. Without coverage
+# data the review gate cannot measure gaps and will reject the change.
 #
 # See arc42 ch.8.10 for details.
 verify:
   command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
+
+# --- Coverage gate (archive-level, requires addons.coverage: true) ------------
+# Commands that run tests with coverage instrumentation. Each must produce a
+# Cobertura XML file (default paths: coverage/non-e2e-cobertura.xml and
+# coverage/e2e-cobertura.xml). givn merges them into a unified summary written
+# to README.md.
+#
+# non_e2e_command: runs non-e2e tests with coverage instrumentation.
+# e2e_command:     runs @e2e tests with coverage instrumentation.
+#
+# E2e coverage typically requires running the application server with code
+# instrumentation (e.g. c8 --all, nyc instrument, JaCoCo agent), then running
+# the e2e test harness against the instrumented server — the coverage data is
+# collected from the server's output, not the test harness itself.
+#
+# The archive gate validates that both reports come from distinct
+# instrumentation runs — do not copy the non-e2e XML to the e2e path.
+#
+# Examples:
+#   npx c8 --reporter=cobertura npx cucumber-js "givn/specs/**/*.feature"
+#   npx c8 --reporter=cobertura npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
+#   cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner
+#
+# WARNING: Do not leave the sentinels. Without working coverage commands,
+# the coverage gate will block archive.
+coverage:
+  non_e2e_command: "givn missing-coverage"   # <-- replace this with your non-e2e coverage command
+  e2e_command: "givn missing-coverage"   # <-- replace this with your e2e coverage command
 
 # --- E2E test runner ----------------------------------------------------------
 # The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged
@@ -148,6 +186,8 @@ verify:
 #   absolute_mode: true     # set to false to disable the Absolute Mode communication
 #                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
 #                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
+#   readme: true            # set to false to disable the readme scaffolding addon
+#   coverage: true          # set to false to disable the coverage lifecycle artifact
 #                          # Toggle with: givn addons enable|disable <name>, or
 #                          # `givn addons list` to see all known addons.
 
@@ -186,6 +226,8 @@ verify:
 
 # --- User overrides preserved from previous version ---
 addons:
+  coverage: true
+  readme: true
   absolute_mode: true
   arc42: true
 extras: true

@@ -5,6 +5,7 @@
 //! subsystems at module boundaries (e.g. `config::overlay::apply`).
 
 pub mod cli;
+pub mod cobertura;
 pub mod config;
 pub mod error;
 pub mod gherkin;

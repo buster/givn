@@ -113,7 +113,7 @@ Feature: givn Workflow Enforcement
     And  stderr contains "backup"
     And  the change directory still exists under givn/changes/
     And  the backup directory givn/.archive-backup-integrity-hook-and-archive-gate exists with the pre-merge permanent specs
-    And  the conflicting scenario appears in the merged permanent spec under givn/specs/
+    And  the merged permanent spec has been rolled back to its pre-archive state
 
   @wip
   Scenario: New-capability merge failure produces clear recovery instructions
@@ -121,7 +121,7 @@ Feature: givn Workflow Enforcement
     And  verify.command exits non-zero on the merged permanent spec
     When  the user runs `givn archive --change integrity-hook-and-archive-gate`
     Then  the command exits non-zero
-    And  stderr instructs the user to delete the newly-created givn/specs/capability directory
+    And  stderr says the specs have been rolled back
     And  the backup directory exists
 
   @wip

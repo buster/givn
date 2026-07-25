@@ -159,8 +159,7 @@ impl ChangeState {
     fn last_done_id(&self) -> &str {
         self.artifacts
             .iter()
-            .filter(|a| !a.optional && a.status == ArtifactStatus::Done)
-            .last()
+            .rfind(|a| !a.optional && a.status == ArtifactStatus::Done)
             .map(|a| a.id.as_str())
             .unwrap_or("unknown")
     }
@@ -186,7 +185,7 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
             // Glob: check if any matching file exists.
             let base = pattern.split('*').next().unwrap_or("");
             let base_dir = change_dir.join(base.trim_end_matches('/'));
-            crate::gherkin::parse::collect_feature_files(&base_dir).len() > 0
+            !crate::gherkin::parse::collect_feature_files(&base_dir).is_empty()
         } else {
             change_dir.join(pattern).exists()
         };
@@ -248,22 +247,6 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
         let arc42_path = change_dir.join("arc42.md");
         if arc42_path.exists() {
             return if detect_arc42_done(&arc42_path) {
-                ArtifactStatus::Done
-            } else {
-                ArtifactStatus::Partial
-            };
-        }
-    }
-
-    // For coverage: check for measured data (not placeholder text).
-    if artifact
-        .generates
-        .iter()
-        .any(|g| g.ends_with("coverage.md"))
-    {
-        let coverage_path = change_dir.join("coverage.md");
-        if coverage_path.exists() {
-            return if detect_coverage_valid(&coverage_path) {
                 ArtifactStatus::Done
             } else {
                 ArtifactStatus::Partial
@@ -347,47 +330,6 @@ pub fn detect_arc42_done(path: &Path) -> bool {
     content.contains("STATUS: DONE")
 }
 
-/// Detect if coverage.md contains measured coverage data (not placeholder text).
-///
-/// Rejects files that contain known anti-patterns used when coverage is
-/// fabricated rather than measured: "not measured", "NOT_CONFIGURED",
-/// "N/A" in a coverage-absent context, or empty/whitespace-only content.
-/// A file with only the sentinel comment ("<!-- coverage not configured -->")
-/// is also invalid — coverage must be measured, never assumed.
-pub fn detect_coverage_valid(path: &Path) -> bool {
-    let content = match std::fs::read_to_string(path) {
-        Ok(c) => c,
-        Err(_) => return false,
-    };
-
-    let trimmed = content.trim();
-    if trimmed.is_empty() {
-        return false;
-    }
-
-    // Reject known placeholder anti-patterns.
-    let lower = trimmed.to_lowercase();
-    if lower.contains("not measured") {
-        return false;
-    }
-    if lower.contains("not_config") || lower.contains("not_configured") {
-        return false;
-    }
-    // "n/a" as standalone (not part of a filename or path).
-    if lower.starts_with("n/a") || lower.starts_with("n/a ") || trimmed == "N/A" {
-        return false;
-    }
-    // Reject files whose entire content is an HTML comment block.
-    let comment_only = content
-        .lines()
-        .all(|l| l.trim().starts_with("<!--") || l.trim().is_empty());
-    if comment_only {
-        return false;
-    }
-
-    true
-}
-
 /// Per-change skip file name (one artifact-id per line).
 pub const SKIP_FILE: &str = ".givn-skip";
 
@@ -441,10 +383,10 @@ pub fn list_archived(project_root: &Path) -> Vec<String> {
     if let Ok(entries) = std::fs::read_dir(&archive_dir) {
         for entry in entries.flatten() {
             let path = entry.path();
-            if path.is_dir() {
-                if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
-                    ids.push(name.to_string());
-                }
+            if path.is_dir()
+                && let Some(name) = path.file_name().and_then(|n| n.to_str())
+            {
+                ids.push(name.to_string());
             }
         }
     }

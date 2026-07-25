@@ -1,4 +1,5 @@
 mod cli;
+mod cobertura;
 mod config;
 mod error;
 mod gherkin;
@@ -127,9 +128,7 @@ enum Commands {
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
-    /// Sentinel default coverage.command: prints setup guidance and exits non-zero.
-    #[command(name = "missing-coverage", hide = true)]
-    MissingCoverage,
+
     /// Generate shell completion script and print it to stdout.
     ///
     /// Add to your shell profile:
@@ -223,7 +222,6 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             ExtrasCommands::Uninstall => cli::extras::run_uninstall(),
         },
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
-        Commands::MissingCoverage => cli::missing_coverage::run(),
         Commands::Completions { shell } => {
             let mut cmd = Cli::command();
             generate(shell, &mut cmd, "givn", &mut std::io::stdout());

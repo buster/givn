@@ -1,48 +1,46 @@
-/// Generic manager for fenced `<!-- givn:begin:<name> -->` /
-/// `<!-- givn:end:<name> -->` blocks inside a project's `AGENTS.md`.
-///
-/// This is the one deliberate, narrow exception to "givn never writes
-/// AGENTS.md" — givn owns exactly the content between its own markers and
-/// never touches anything else in the file. Multiple named blocks can
-/// coexist (e.g. `givn-project`, `absolute-mode`); each is independent.
 use anyhow::Result;
+/// Generic manager for fenced `<!-- givn:begin:<name> -->` /
+/// `<!-- givn:end:<name> -->` blocks inside a project file.
+///
+/// givn owns exactly the content between its own markers and never touches
+/// anything else in the file. Multiple named blocks can coexist in the same
+/// file; each is independent.
+use std::path::Path;
 
-/// Ensure a named block is present in AGENTS.md with the given body.
-/// Creates AGENTS.md if it does not exist. Idempotent: re-running with the
+/// Ensure a named block is present in the given file with the given body.
+/// Creates the file if it does not exist. Idempotent: re-running with the
 /// same body is a no-op; re-running with a changed body updates only that block.
-pub fn apply(project_root: &std::path::Path, name: &str, body: &str) -> Result<()> {
-    let path = project_root.join("AGENTS.md");
+pub fn apply(path: &Path, name: &str, body: &str) -> Result<()> {
     let existing = if path.exists() {
-        std::fs::read_to_string(&path)?
+        std::fs::read_to_string(path)?
     } else {
         String::new()
     };
 
     let updated = upsert_block(&existing, name, body.trim_end());
     if updated != existing {
-        std::fs::write(&path, updated)?;
+        std::fs::write(path, updated)?;
     }
     Ok(())
 }
 
-/// Remove a named block from AGENTS.md. Leaves all other content untouched,
-/// including any other named block. If AGENTS.md becomes empty as a result
-/// AND it contained nothing but givn-managed blocks (i.e. no user content
-/// was ever added), delete the file. Otherwise leave it, even if empty — an
-/// empty file the user created is still theirs.
-pub fn remove(project_root: &std::path::Path, name: &str) -> Result<()> {
-    let path = project_root.join("AGENTS.md");
+/// Remove a named block from the given file. Leaves all other content
+/// untouched, including any other named block. If the file becomes empty as a
+/// result AND it contained nothing but givn-managed blocks (i.e. no user
+/// content was ever added), delete the file. Otherwise leave it, even if
+/// empty — an empty file the user created is still theirs.
+pub fn remove(path: &Path, name: &str) -> Result<()> {
     if !path.exists() {
         return Ok(());
     }
 
-    let existing = std::fs::read_to_string(&path)?;
+    let existing = std::fs::read_to_string(path)?;
     let updated = remove_block(&existing, name);
 
     if updated.trim().is_empty() && only_ever_contained_block(&existing, name) {
-        std::fs::remove_file(&path)?;
+        std::fs::remove_file(path)?;
     } else if updated != existing {
-        std::fs::write(&path, updated)?;
+        std::fs::write(path, updated)?;
     }
     Ok(())
 }
@@ -80,7 +78,7 @@ fn upsert_block(content: &str, name: &str, body: &str) -> String {
 
 /// Remove the named block (and one adjacent blank line, if any) from `content`.
 /// Surrounding content is preserved exactly.
-fn remove_block(content: &str, name: &str) -> String {
+pub fn remove_block(content: &str, name: &str) -> String {
     let begin = begin_marker(name);
     let end = end_marker(name);
 

@@ -20,7 +20,7 @@ pub const KNOWN_ADDONS: &[(&str, &str)] = &[
     ),
     (
         "coverage",
-        "Coverage lifecycle artifact — inserts a coverage step after tasks, before review",
+        "Archive-level coverage gate — runs coverage.*_command during archive, merges Cobertura XML, updates README",
     ),
 ];
 
@@ -94,12 +94,12 @@ pub fn run_enable(name: &str) -> Result<()> {
         println!("The 'readme' addon does not modify the workflow graph.");
         println!("To customise the template, eject and edit it: givn eject readme:template");
     } else if name == "coverage" {
-        println!("The '{name}' artifact is now part of the effective workflow.");
-        println!("It will appear after 'tasks' in `givn status`.");
+        println!("The '{name}' gate is now enabled.");
+        println!("Coverage is measured at archive time (not per-change).");
         println!();
         println!("Next steps:");
-        println!("  givn status              — see the updated workflow");
-        println!("  givn eject {name}:instruction   — customise the instruction (optional)");
+        println!("  Edit givn/config.yaml to set coverage.non_e2e_command");
+        println!("  and coverage.e2e_command to produce Cobertura XML.");
     }
 
     Ok(())
@@ -177,8 +177,8 @@ pub fn run_disable(name: &str) -> Result<()> {
     } else if name == "readme" {
         println!("The 'readme' addon is disabled. The existing README.md is not deleted.");
     } else if name == "coverage" {
-        println!("The 'coverage' artifact is no longer part of the workflow.");
-        println!("Existing coverage.md files are not deleted.");
+        println!("The 'coverage' gate is now disabled.");
+        println!("The coverage fence in README.md is preserved.");
     }
 
     Ok(())
@@ -237,15 +237,14 @@ fn set_addon(name: &str, enabled: bool) -> Result<()> {
             // Check if the key exists commented-out on the next few lines.
             // Uncomment it, or insert after `addons:`.
             let mut inserted = false;
-            for j in (i + 1)..lines.len() {
-                let l = &lines[j];
+            for (_, line) in lines.iter_mut().enumerate().skip(i + 1) {
                 // Stop if we hit a new top-level key.
-                if !l.is_empty() && !l.starts_with(' ') && !l.starts_with('#') {
+                if !line.is_empty() && !line.starts_with(' ') && !line.starts_with('#') {
                     break;
                 }
                 // Uncomment or replace a commented version of this key.
-                if l.contains(&format!("{name}:")) {
-                    lines[j] = key_line.clone();
+                if line.contains(&format!("{name}:")) {
+                    *line = key_line.clone();
                     inserted = true;
                     break;
                 }
@@ -266,17 +265,17 @@ fn set_addon(name: &str, enabled: bool) -> Result<()> {
             lines[i] = "addons:".to_string();
             // Uncomment or insert the specific key on the next line.
             let mut key_set = false;
-            for j in (i + 1)..lines.len() {
-                let l = &lines[j];
-                if l.trim_start_matches([' ', '#'])
+            for (_, line) in lines.iter_mut().enumerate().skip(i + 1) {
+                if line
+                    .trim_start_matches([' ', '#'])
                     .starts_with(&format!("{name}:"))
                 {
-                    lines[j] = key_line.clone();
+                    *line = key_line.clone();
                     key_set = true;
                     break;
                 }
                 // Stop at next non-comment, non-blank, non-indented line.
-                if !l.is_empty() && !l.starts_with(' ') && !l.starts_with('#') {
+                if !line.is_empty() && !line.starts_with(' ') && !line.starts_with('#') {
                     break;
                 }
             }

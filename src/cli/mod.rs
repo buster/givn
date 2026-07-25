@@ -10,7 +10,6 @@ pub mod graph;
 pub mod init;
 pub mod instructions;
 pub mod lint;
-pub mod missing_coverage;
 pub mod missing_testrunner;
 pub mod new;
 pub mod project_hint;

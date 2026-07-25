@@ -132,18 +132,61 @@ impl Verify {
     }
 }
 
-/// Coverage merge script configuration.
+/// Coverage instrumentation configuration.
+///
+/// When the coverage addon is enabled (`addons.coverage: true`), givn runs
+/// these commands during archive to measure full-project coverage. Each
+/// command must produce a Cobertura XML file. givn merges the two Cobertura
+/// files into a single report and updates the project README.
 #[derive(Debug, Clone, Deserialize, Serialize)]
+#[serde(deny_unknown_fields)]
 pub struct Coverage {
-    /// Command to merge test coverage data from verify + verify-e2e output
-    /// into a unified coverage.md report.
-    pub command: String,
+    /// Command to run non-e2e tests with coverage instrumentation.
+    /// Must produce a Cobertura XML at `non_e2e_path`.
+    #[serde(default = "sentinel")]
+    pub non_e2e_command: String,
+    /// Command to run e2e tests with coverage instrumentation.
+    /// Must produce a Cobertura XML at `e2e_path`.
+    #[serde(default = "sentinel")]
+    pub e2e_command: String,
+    /// Path (relative to project root) where non_e2e_command writes its
+    /// Cobertura XML.
+    #[serde(default = "default_non_e2e_path")]
+    pub non_e2e_path: String,
+    /// Path (relative to project root) where e2e_command writes its Cobertura
+    /// XML.
+    #[serde(default = "default_e2e_path")]
+    pub e2e_path: String,
+    /// Path (relative to project root) where givn writes the merged Cobertura
+    /// XML.
+    #[serde(default = "default_cobertura_output")]
+    pub output_path: String,
+}
+
+fn sentinel() -> String {
+    "givn missing-coverage".to_string()
+}
+
+fn default_non_e2e_path() -> String {
+    "coverage/non-e2e-cobertura.xml".to_string()
+}
+
+fn default_e2e_path() -> String {
+    "coverage/e2e-cobertura.xml".to_string()
+}
+
+fn default_cobertura_output() -> String {
+    "coverage/cobertura-coverage.xml".to_string()
 }
 
 impl Default for Coverage {
     fn default() -> Self {
         Self {
-            command: "givn missing-coverage".to_string(),
+            non_e2e_command: sentinel(),
+            e2e_command: sentinel(),
+            non_e2e_path: default_non_e2e_path(),
+            e2e_path: default_e2e_path(),
+            output_path: default_cobertura_output(),
         }
     }
 }
@@ -164,9 +207,10 @@ pub struct Addons {
     /// project root from the embedded template.
     #[serde(default)]
     pub readme: bool,
-    /// Enable the coverage lifecycle artifact. When true, the coverage
-    /// artifact is inserted into the workflow graph (after tasks, before
-    /// review) and review.requires is extended to include coverage.
+    /// Enable the archive-level coverage gate. When true, givn measures
+    /// full-project coverage during archive (runs coverage.*_command, merges
+    /// Cobertura XML, updates README). The archive will be blocked and
+    /// rolled back if coverage fails.
     #[serde(default)]
     pub coverage: bool,
 }

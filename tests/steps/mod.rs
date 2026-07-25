@@ -91,11 +91,7 @@ fn change_id_from_args(args: &[String]) -> Option<String> {
     if args.first()?.as_str() != "new" {
         return None;
     }
-    args.iter()
-        .skip(1)
-        .filter(|a| a.as_str() != "--")
-        .last()
-        .cloned()
+    args.iter().skip(1).rfind(|a| a.as_str() != "--").cloned()
 }
 
 // --- Given -----------------------------------------------------------------
@@ -349,6 +345,7 @@ fn stdout_mentions(world: &mut GivnWorld, needle: String) {
     let unescaped = needle.replace("\\\"", "\"");
     assert!(s.contains(&unescaped), "stdout missing {:?}: {}", needle, s);
 }
+#[allow(dead_code)]
 fn stdout_contains_quoted(world: &mut GivnWorld, needle: String) {
     let s = stdout(world);
     let unescaped = needle.replace("\\\"", "\"");
@@ -725,14 +722,6 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     // arc42 addon by default, which gates archive, so a genuinely
     // "all required done" fixture must include it.
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
-    // Write STATUS: PASS for coverage — `givn init` enables the coverage
-    // addon by default, which gates review (and transitively archive), so
-    // a genuinely "all required done" fixture must include it.
-    std::fs::write(
-        change_dir.join("coverage.md"),
-        "## Result\n\nSTATUS: PASS\n",
-    )
-    .unwrap();
 }
 
 #[given(
@@ -857,7 +846,7 @@ fn manifest_artifact_requires(world: &mut GivnWorld, id: String, dep: String) {
         .artifacts
         .iter()
         .find(|a| a.id == id)
-        .expect(&format!("artifact '{}' not found", id));
+        .unwrap_or_else(|| panic!("artifact '{}' not found", id));
     assert!(
         a.requires.contains(&dep),
         "artifact '{}' requires {:?}, expected '{}'",
@@ -886,7 +875,7 @@ fn manifest_artifact_optional(world: &mut GivnWorld, id: String) {
         .artifacts
         .iter()
         .find(|a| a.id == id)
-        .expect(&format!("artifact '{}' not found", id));
+        .unwrap_or_else(|| panic!("artifact '{}' not found", id));
     assert!(a.optional, "artifact '{}' should be optional", id);
 }
 
@@ -897,7 +886,7 @@ fn manifest_artifact_generates(world: &mut GivnWorld, id: String, generates: Str
         .artifacts
         .iter()
         .find(|a| a.id == id)
-        .expect(&format!("artifact '{}' not found", id));
+        .unwrap_or_else(|| panic!("artifact '{}' not found", id));
     assert!(
         a.generates.contains(&generates),
         "artifact '{}' generates {:?}, expected '{}'",

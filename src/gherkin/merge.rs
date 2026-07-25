@@ -158,8 +158,8 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
             }
             // Extract title.
             let title = trimmed
-                .splitn(2, ':')
-                .nth(1)
+                .split_once(':')
+                .map(|x| x.1)
                 .unwrap_or("")
                 .trim()
                 .to_string();

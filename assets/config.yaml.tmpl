@@ -46,37 +46,33 @@ givn_config_version: "{{GIVN_VERSION}}"
 verify:
   command: "givn missing-testrunner"   # <-- replace this with your runner
 
-# --- Coverage merge script ----------------------------------------------------
-# The command givn invokes to merge test coverage data produced by
-# `verify.command` (and optionally `verify.e2e_command`) into a unified
-# coverage report. The output is written to `coverage.md` in the change
-# directory and becomes part of the artifact archive gate.
+# --- Coverage gate (archive-level, requires addons.coverage: true) ------------
+# Commands that run tests with coverage instrumentation. Each must produce a
+# Cobertura XML file (default paths: coverage/non-e2e-cobertura.xml and
+# coverage/e2e-cobertura.xml). givn merges them into a unified summary written
+# to README.md.
 #
-# If your verify.command already produces coverage data (e.g. cargo llvm-cov),
-# set coverage.command to the command that extracts a unified summary from
-# the same output data. Otherwise, set it to run coverage-instrumented tests.
+# non_e2e_command: runs non-e2e tests with coverage instrumentation.
+# e2e_command:     runs @e2e tests with coverage instrumentation.
 #
-# The script receives GIVN_FEATURES pointing at the change's specs dir, and
-# should:
-#   1. Locate coverage output files (lcov, junit, etc.) produced by verify
-#   2. Compare against the project's coverage baseline
-#   3. Exit non-zero if coverage regressed
-#   4. Print the unified report to stdout
+# E2e coverage typically requires running the application server with code
+# instrumentation (e.g. c8 --all, nyc instrument, JaCoCo agent), then running
+# the e2e test harness against the instrumented server — the coverage data is
+# collected from the server's output, not the test harness itself.
 #
-# The shipped default is a sentinel that prints setup guidance and exits
-# non-zero — so coverage never falsely reports GREEN without a real script.
+# The archive gate validates that both reports come from distinct
+# instrumentation runs — do not copy the non-e2e XML to the e2e path.
 #
 # Examples:
-#   cargo llvm-cov --test features_runner --summary-only   (Rust — run instrumented and print summary)
-#   scripts/merge-coverage.sh
-#   cargo llvm-cov report --lcov-path coverage/lcov.info
-#   nyc report --reporter=text-summary
+#   npx c8 --reporter=cobertura npx cucumber-js "givn/specs/**/*.feature"
+#   npx c8 --reporter=cobertura npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
+#   cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner
 #
-# WARNING: Do not leave this as the sentinel. Without a working
-# coverage.command, the review gate cannot measure coverage and review.md
-# will fail the fabrication audit. See arc42 ch.8.10 for details.
+# WARNING: Do not leave the sentinels. Without working coverage commands,
+# the coverage gate will block archive.
 coverage:
-  command: "givn missing-coverage"   # <-- replace this with your coverage command
+  non_e2e_command: "givn missing-coverage"   # <-- replace this with your non-e2e coverage command
+  e2e_command: "givn missing-coverage"   # <-- replace this with your e2e coverage command
 
 # --- E2E test runner ----------------------------------------------------------
 # The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged

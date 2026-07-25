@@ -163,7 +163,7 @@ fn resolve_extras_command_template(name: &str) -> Result<String> {
 /// Resolve a skill template by name: extras skills use the extras cascade,
 /// everything else uses the core skill cascade.
 fn resolve_skill_template_for(name: &str) -> Result<String> {
-    if extras_skill_names().iter().any(|n| *n == name) {
+    if extras_skill_names().contains(&name) {
         resolve_extras_skill_template(name)
     } else {
         resolve_skill_template(name)
@@ -173,7 +173,7 @@ fn resolve_skill_template_for(name: &str) -> Result<String> {
 /// Resolve a command template by name: extras commands use the extras cascade,
 /// everything else uses the core command cascade.
 fn resolve_command_template_for(name: &str) -> Result<String> {
-    if extras_command_names().iter().any(|n| *n == name) {
+    if extras_command_names().contains(&name) {
         resolve_extras_command_template(name)
     } else {
         resolve_command_template(name)

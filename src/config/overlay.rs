@@ -65,14 +65,6 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
                 design_review.requires.push("arc42-docs".to_string());
             }
         }
-        if addons.coverage && !result.addons.coverage {
-            result.artifacts.push(coverage_artifact());
-            if let Some(review) = result.artifacts.iter_mut().find(|a| a.id == "review")
-                && !review.requires.contains(&"coverage".to_string())
-            {
-                review.requires.push("coverage".to_string());
-            }
-        }
         result.addons = addons;
     }
 
@@ -206,16 +198,16 @@ fn find_cycle(artifacts: &[Artifact]) -> Option<Vec<String>> {
     let mut rec_stack = std::collections::HashSet::new();
 
     for artifact in artifacts {
-        if !visited.contains(artifact.id.as_str()) {
-            if let Some(cycle) = dfs(
+        if !visited.contains(artifact.id.as_str())
+            && let Some(cycle) = dfs(
                 &artifact.id,
                 &adj,
                 &mut visited,
                 &mut rec_stack,
                 &mut vec![],
-            ) {
-                return Some(cycle);
-            }
+            )
+        {
+            return Some(cycle);
         }
     }
     None
@@ -250,23 +242,6 @@ fn dfs<'a>(
     path.pop();
     rec_stack.remove(node);
     None
-}
-
-/// The default coverage artifact definition (used when addon is enabled).
-///
-/// `generates` is the change-level `coverage.md` file. The hook runs
-/// `coverage.command` and pipes stdout into `coverage.md`.
-fn coverage_artifact() -> Artifact {
-    Artifact {
-        id: "coverage".to_string(),
-        generates: vec!["coverage.md".to_string()],
-        requires: vec!["tasks".to_string()],
-        template: Some("template.md".to_string()),
-        instruction: Some("coverage".to_string()),
-        optional: false,
-        remove: false,
-        post: vec![HookEntry::Short("coverage".to_string())],
-    }
 }
 
 /// The default arc42-docs artifact definition (used when addon is enabled).
@@ -476,27 +451,6 @@ artifacts:
     }
 
     #[test]
-    fn addons_coverage_inserts_artifact() {
-        let base = Manifest::load_embedded().unwrap();
-        let result = apply(base, "addons:\n  coverage: true").unwrap();
-        assert!(result.artifacts.iter().any(|a| a.id == "coverage"));
-    }
-
-    #[test]
-    fn addons_coverage_not_present_by_default() {
-        let base = Manifest::load_embedded().unwrap();
-        assert!(!base.artifacts.iter().any(|a| a.id == "coverage"));
-    }
-
-    #[test]
-    fn addons_coverage_idempotent() {
-        let base = Manifest::load_embedded().unwrap();
-        let once = apply(base, "addons:\n  coverage: true").unwrap();
-        let count = once.artifacts.iter().filter(|a| a.id == "coverage").count();
-        assert_eq!(count, 1);
-    }
-
-    #[test]
     fn addons_coverage_flag_is_set_on_effective_manifest() {
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  coverage: true").unwrap();
@@ -507,40 +461,12 @@ artifacts:
     }
 
     #[test]
-    fn addons_coverage_updates_review_requires() {
-        let base = Manifest::load_embedded().unwrap();
-        let result = apply(base, "addons:\n  coverage: true").unwrap();
-        let review = result.artifacts.iter().find(|a| a.id == "review").unwrap();
-        assert!(
-            review.requires.contains(&"coverage".to_string()),
-            "review must require coverage when the coverage addon is enabled"
-        );
-    }
-
-    #[test]
-    fn addons_coverage_artifact_is_required() {
-        let base = Manifest::load_embedded().unwrap();
-        let result = apply(base, "addons:\n  coverage: true").unwrap();
-        let coverage = result
-            .artifacts
-            .iter()
-            .find(|a| a.id == "coverage")
-            .unwrap();
-        assert!(
-            !coverage.optional,
-            "coverage must be required (not optional)"
-        );
-        assert!(coverage.requires.contains(&"tasks".to_string()));
-        assert_eq!(coverage.generates, vec!["coverage.md"]);
-    }
-
-    #[test]
-    fn addons_coverage_does_not_gate_archive_directly() {
+    fn addons_coverage_does_not_insert_artifact() {
         let base = Manifest::load_embedded().unwrap();
         let result = apply(base, "addons:\n  coverage: true").unwrap();
         assert!(
-            !result.apply.requires.contains(&"coverage".to_string()),
-            "coverage should not appear in apply.requires (it gates transitively through review)"
+            !result.artifacts.iter().any(|a| a.id == "coverage"),
+            "coverage addon must no longer create a change-level artifact"
         );
     }
 
@@ -551,7 +477,6 @@ artifacts:
         assert!(result.addons.arc42);
         assert!(result.addons.coverage);
         assert!(result.artifacts.iter().any(|a| a.id == "arc42-docs"));
-        assert!(result.artifacts.iter().any(|a| a.id == "coverage"));
     }
 
     #[test]

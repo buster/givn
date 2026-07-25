@@ -20,6 +20,7 @@ rust-embed = "8.11"
 gherkin = "0.16"
 anyhow = "1.0"
 thiserror = "2.0"
+quick-xml = { version = "0.37", features = ["serialize"] }
 
 [dev-dependencies]
 tempfile = "3"

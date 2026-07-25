@@ -213,7 +213,9 @@ If all tasks checked, run a final independent sanity check (not a repeat of
 1. Run the FULL suite (both runners, not scenario-targeted). Confirm zero exit.
 2. Grep every step definition file for empty/no-op bodies. Must be 0.
 3. Count commits made vs. scenario tasks. Fewer commits than tasks = a task
-   was checked off without a commit — investigate.
+    was checked off without a commit — investigate. Run `givn check integrity`
+    (which checks that all COMMIT hashes are distinct, non-placeholder, and
+    present) — if it fails, at least one task lacks a valid atomic commit.
 
 ```sh
 givn status --change <id>

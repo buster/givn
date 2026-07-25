@@ -17,7 +17,7 @@ use anyhow::Result;
 pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
     let project_root = std::env::current_dir()?;
     let feature_files = if !paths.is_empty() {
-        paths.iter().map(|p| std::path::PathBuf::from(p)).collect()
+        paths.iter().map(std::path::PathBuf::from).collect()
     } else if let Some(id) = change {
         // Scope to givn/changes/<id>/specs/
         let change_dir = project_root.join("givn/changes").join(id);
@@ -97,26 +97,24 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
 
     // Cross-reference tasks.md for @e2e intent: if tasks.md plans e2e but no
     // @e2e-tagged scenarios exist in the specs, the tags may have been removed.
-    if let Some(id) = change {
-        if !has_parse_error {
-            let change_dir = project_root.join("givn/changes").join(id);
-            let tasks_path = change_dir.join("tasks.md");
-            if tasks_path.exists() {
-                let tasks_content = std::fs::read_to_string(&tasks_path).unwrap_or_default();
-                if crate::hooks::has_e2e_intent_in_tasks(&tasks_content) {
-                    let specs_dir = change_dir.join("specs");
-                    let has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
-                    if !has_e2e {
-                        eprintln!(
-                            "[WARN] {}  @e2e scenarios referenced in tasks.md but none found in specs/",
-                            specs_dir.display()
-                        );
-                        eprintln!(
-                            "       Restore @e2e tags or remove the e2e tasks from tasks.md."
-                        );
-                        total_errors += 1;
-                        has_wip = true;
-                    }
+    if let Some(id) = change
+        && !has_parse_error
+    {
+        let change_dir = project_root.join("givn/changes").join(id);
+        let tasks_path = change_dir.join("tasks.md");
+        if tasks_path.exists() {
+            let tasks_content = std::fs::read_to_string(&tasks_path).unwrap_or_default();
+            if crate::hooks::has_e2e_intent_in_tasks(&tasks_content) {
+                let specs_dir = change_dir.join("specs");
+                let has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
+                if !has_e2e {
+                    eprintln!(
+                        "[WARN] {}  @e2e scenarios referenced in tasks.md but none found in specs/",
+                        specs_dir.display()
+                    );
+                    eprintln!("       Restore @e2e tags or remove the e2e tasks from tasks.md.");
+                    total_errors += 1;
+                    has_wip = true;
                 }
             }
         }

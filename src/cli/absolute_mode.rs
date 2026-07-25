@@ -9,11 +9,13 @@ const BLOCK_NAME: &str = "absolute-mode";
 pub fn apply(project_root: &std::path::Path) -> Result<()> {
     let policy = crate::config::embedded::Assets::get_str("addons/absolute-mode/policy.md")
         .ok_or_else(|| anyhow::anyhow!("embedded addons/absolute-mode/policy.md not found"))?;
-    crate::cli::agents_block::apply(project_root, BLOCK_NAME, &policy)
+    let agents_path = project_root.join("AGENTS.md");
+    crate::cli::agents_block::apply(&agents_path, BLOCK_NAME, &policy)
 }
 
 /// Remove the absolute-mode block from AGENTS.md. Leaves all other content,
 /// including any other named block, untouched.
 pub fn remove(project_root: &std::path::Path) -> Result<()> {
-    crate::cli::agents_block::remove(project_root, BLOCK_NAME)
+    let agents_path = project_root.join("AGENTS.md");
+    crate::cli::agents_block::remove(&agents_path, BLOCK_NAME)
 }

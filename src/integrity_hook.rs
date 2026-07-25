@@ -7,14 +7,12 @@ use crate::config::embedded::Assets;
 pub fn run_integrity_hook(
     features_path: &str,
     arc42_enabled: bool,
-    coverage_enabled: bool,
+    _coverage_enabled: bool,
 ) -> Result<()> {
     let change_dir = find_change_dir(features_path);
     let change_dir = match change_dir {
         Some(d) => d,
         None => {
-            // No change dir found (e.g. global features_path like "givn/specs");
-            // integrity checks require a change context.
             return Ok(());
         }
     };
@@ -23,9 +21,6 @@ pub fn run_integrity_hook(
     check_promised_files_exist(&change_dir)?;
     if arc42_enabled {
         check_arc42_conformance(&change_dir)?;
-    }
-    if coverage_enabled {
-        check_coverage_valid(&change_dir)?;
     }
 
     Ok(())
@@ -70,6 +65,7 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
     let content = std::fs::read_to_string(&tasks_path)?;
     let mut found_any = false;
     let mut errors = Vec::new();
+    let mut seen_hashes: std::collections::HashSet<String> = std::collections::HashSet::new();
 
     for (line_idx, line) in content.lines().enumerate() {
         let trimmed = line.trim();
@@ -106,6 +102,16 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
                 hash
             ));
             continue;
+        }
+
+        // Check for duplicate hashes — each scenario requires its own atomic commit.
+        if !seen_hashes.insert(hash.to_string()) {
+            errors.push(format!(
+                "line {}: commit hash `{}` is also used by another task — \
+                 each scenario needs its own atomic commit",
+                line_idx + 1,
+                hash
+            ));
         }
     }
 
@@ -415,76 +421,16 @@ fn check_arc42_conformance(change_dir: &Path) -> Result<()> {
     }
 }
 
-/// Check that coverage.md contains measured coverage data, not placeholder text.
-///
-/// Scenarios rejected:
-/// - File does not exist (coverage artifact not produced).
-/// - File contains only "not measured" or similar anti-pattern text.
-/// - File is empty or whitespace-only.
-/// - File contains only an HTML comment with no coverage data.
-fn check_coverage_valid(change_dir: &Path) -> Result<()> {
-    let coverage_path = change_dir.join("coverage.md");
-    if !coverage_path.exists() {
-        bail!(
-            "integrity check failed: coverage.md does not exist — coverage was expected \
-             (addons.coverage: true) but the artifact was never produced"
-        );
-    }
-
-    let content = std::fs::read_to_string(&coverage_path)?;
-    let trimmed = content.trim();
-
-    if trimmed.is_empty() {
-        bail!(
-            "integrity check failed: coverage.md is empty — coverage must be measured, \
-             not assumed"
-        );
-    }
-
-    let lower = trimmed.to_lowercase();
-
-    let anti_patterns = [
-        "not measured",
-        "not_config",
-        "not_configured",
-        "n/a",
-        "coverage not configured",
-    ];
-
-    for pattern in &anti_patterns {
-        if lower.contains(pattern) {
-            bail!(
-                "integrity check failed: coverage.md contains anti-pattern `{}` — \
-                 coverage must be measured, not fabricated",
-                pattern
-            );
-        }
-    }
-
-    // If the entire file is an HTML comment block, reject it.
-    let comment_only = content
-        .lines()
-        .all(|l| l.trim().starts_with("<!--") || l.trim().is_empty());
-    if comment_only {
-        bail!(
-            "integrity check failed: coverage.md contains only HTML comments — \
-             no measured coverage data"
-        );
-    }
-
-    Ok(())
-}
-
 /// Find a file by name in a directory (non-recursive, case-insensitive prefix match).
 /// Accepts e.g. "01-introduction-and-goals.md" matching "01-introduction-and-goals.md".
 fn find_file_in_dir(dir: &Path, file_name: &str) -> Option<PathBuf> {
     let entries = std::fs::read_dir(dir).ok()?;
     for entry in entries {
         let entry = entry.ok()?;
-        if entry.file_type().map(|t| t.is_file()).unwrap_or(false) {
-            if entry.file_name().to_string_lossy() == file_name {
-                return Some(entry.path());
-            }
+        if entry.file_type().map(|t| t.is_file()).unwrap_or(false)
+            && entry.file_name().to_string_lossy() == file_name
+        {
+            return Some(entry.path());
         }
     }
     None
@@ -560,6 +506,28 @@ mod tests {
     fn hash_presence_skips_when_no_tasks_md() {
         let (_dir, change) = make_change_dir();
         // Don't create tasks.md
+        assert!(check_hash_presence(&change).is_ok());
+    }
+
+    #[test]
+    fn hash_presence_fails_with_duplicate_hash() {
+        let (_dir, change) = make_change_dir();
+        std::fs::write(
+            change.join("tasks.md"),
+            "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: a1b2c3d4 -- Scenario two\n",
+        )
+        .unwrap();
+        assert!(check_hash_presence(&change).is_err());
+    }
+
+    #[test]
+    fn hash_presence_passes_with_distinct_hashes() {
+        let (_dir, change) = make_change_dir();
+        std::fs::write(
+            change.join("tasks.md"),
+            "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: e5f6g7h8 -- Scenario two\n",
+        )
+        .unwrap();
         assert!(check_hash_presence(&change).is_ok());
     }
 
