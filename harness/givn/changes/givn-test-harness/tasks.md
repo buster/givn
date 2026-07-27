@@ -903,10 +903,56 @@
         - Report records the interruption as termination reason.
         - Workspace preservation logic from prior scenario applies.
       RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Add SIGINT handler in `cli.py`. Files: `cli.py`. Run → PASSES. Paste output.
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Interrupted run preserves workspace on SIGINT                  # tests/features/harness/test-harness.feature:218
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            And the process receives SIGINT                                        # tests/features/steps/harness/test_harness_steps.py:678
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+            Then the workspace directory is not deleted                            # None
+            And the report records the interruption as the termination reason      # None
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        Took 0min 0.014s
+        ```
+      GREEN:    SIGINT handler in `cli.py` + step definitions. Run → PASSES. Paste output.
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Interrupted run preserves workspace on SIGINT                  # tests/features/harness/test-harness.feature:218
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            And the process receives SIGINT                                        # tests/features/steps/harness/test_harness_steps.py:678
+            Then the workspace directory is not deleted                            # tests/features/steps/harness/test_harness_steps.py:433
+            And the report records the interruption as the termination reason      # tests/features/steps/harness/test_harness_steps.py:699
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        5 steps passed, 0 failed, 122 skipped
+        Took 0min 4.175s
+        ```
+        Files modified: `src/givn_harness/cli.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
       REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Interrupted run preserves workspace on SIGINT". Record hash.
-      COMMIT: `7a672dc`
+        ```
+        15 scenarios passed, 0 failed, 10 skipped
+        71 steps passed, 0 failed, 56 skipped
+        Took 0min 23.353s
+        ```
+      COMMIT: `0be60d7` — feat(test-harness): Interrupted run preserves workspace on SIGINT
 
 ## Phase 4 — Agent execution and sandbox integration
 
