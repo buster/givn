@@ -1,4 +1,5 @@
 import os
+import shutil
 import subprocess
 import tempfile
 
@@ -23,3 +24,9 @@ def init_workspace(workspace_path: str) -> None:
         capture_output=True,
         check=True,
     )
+
+
+def copy_task(workspace_path: str, task_path: str) -> str:
+    dest = os.path.join(workspace_path, "task.md")
+    shutil.copy(task_path, dest)
+    return dest

@@ -30,7 +30,7 @@ Feature: test-harness
     When the user runs `givn-harness run --task task.md --output reports/`
     Then the workspace's givn/config.yaml contains the verify.command sentinel "givn missing-testrunner"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The task prompt is delivered to the workspace as a file
     Given a task prompt file at "tasks/shopping-list.md" with a task description
     When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/`

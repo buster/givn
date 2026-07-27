@@ -1,6 +1,6 @@
 import click
 
-from givn_harness.workspace import create_workspace, init_workspace
+from givn_harness.workspace import copy_task, create_workspace, init_workspace
 
 
 @click.group()
@@ -15,4 +15,5 @@ def main():
 def run(task: str, output: str, workspace_root: str) -> None:
     workspace_path = create_workspace(workspace_root)
     init_workspace(workspace_path)
+    copy_task(workspace_path, task)
     click.echo(workspace_path)

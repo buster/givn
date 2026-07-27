@@ -94,6 +94,46 @@ def _rmtree(path: str) -> None:
         shutil.rmtree(path, ignore_errors=True)
 
 
+@given('a task prompt file at "{path}" with a task description')
+def step_task_prompt_file(context, path):
+    context.workspace_root = "/tmp/givn-harness-workspaces"
+    os.makedirs(context.workspace_root, exist_ok=True)
+    context.task_content = "# Shopping List\n\nBuild a shopping list web application."
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write(context.task_content)
+        context.task_file = f.name
+    context.output_dir = tempfile.mkdtemp()
+    context.add_cleanup(lambda: os.unlink(context.task_file))
+    context.add_cleanup(lambda: _rmtree(context.output_dir))
+
+
+@when('the user runs `givn-harness run --task tasks/shopping-list.md --output reports/`')
+def step_user_runs_harness_shopping_list(context):
+    result = subprocess.run(
+        [
+            "uv", "run", "givn-harness", "run",
+            "--task", context.task_file,
+            "--output", os.path.join(context.output_dir, "reports"),
+            "--workspace-root", context.workspace_root,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    context.cli_result = result
+    context.workspace_path = result.stdout.strip()
+
+
+@then('the workspace contains a file "{path}" with the task description content')
+def step_workspace_contains_task_file(context, path):
+    file_path = os.path.join(context.workspace_path, path)
+    assert os.path.isfile(file_path), f"expected file {file_path} not found"
+    with open(file_path) as f:
+        content = f.read()
+    assert content == context.task_content, (
+        f"task.md content mismatch:\nexpected: {context.task_content!r}\nactual:   {content!r}"
+    )
+
+
 @then('the workspace\'s givn/config.yaml contains the verify.command sentinel "givn missing-testrunner"')
 def step_config_yaml_contains_sentinel(context):
     config_path = os.path.join(context.workspace_path, "givn", "config.yaml")
