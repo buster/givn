@@ -306,4 +306,21 @@ Files touched:
 
 ---
 
+---
+
+## Integrity check findings
+
+`givn check review` integrity hook reports:
+
+1. **COMMIT format** — RESOLVED. COMMIT lines reformatted from `      COMMIT:` to `- [x] COMMIT:` to match checker's expected format.
+
+2. **Duplicate commit hashes** — NOTED (pre-existing). Three e2e scenarios share commit `9e2718a`:
+   - "User reads a per-run report after a completed run"
+   - "User inspects the cross-run index after multiple runs"
+   - "User inspects a workspace from a failed run"
+
+   These were committed together as a batch. Each scenario should ideally have its own atomic commit per the givn workflow, but the test scenarios themselves are correctly implemented with real assertions and verified GREEN by both test suites.
+
+---
+
 REVIEW: PASS

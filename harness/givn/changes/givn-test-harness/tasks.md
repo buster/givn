@@ -52,7 +52,7 @@
         1 scenario passed, 0 failed, 24 skipped
         4 steps passed, 0 failed, 123 skipped
         ```
-      COMMIT: `3b3d643` — feat(test-harness): Harness creates an isolated workspace outside the repository
+- [x] COMMIT: `3b3d643` — feat(test-harness): Harness creates an isolated workspace outside the repository
 
 - [x] test-harness: Workspace is initialized with git init and givn init
       Design constraints:
@@ -100,7 +100,7 @@
         5 steps passed, 0 failed, 122 skipped
         Took 0min 0.063s
         ```
-      COMMIT: `0c24647` — feat(test-harness): Workspace is initialized with git init and givn init
+- [x] COMMIT: `0c24647` — feat(test-harness): Workspace is initialized with git init and givn init
 
 - [x] test-harness: verify.command is at the sentinel default after initialization
       Design constraints:
@@ -167,7 +167,7 @@
         3 steps passed, 0 failed, 124 skipped
         Took 0min 0.061s
         ```
-      COMMIT: `0a6b4e1` — feat(test-harness): verify.command is at the sentinel default after initialization
+- [x] COMMIT: `0a6b4e1` — feat(test-harness): verify.command is at the sentinel default after initialization
 
 - [x] test-harness: The task prompt is delivered to the workspace as a file
       Design constraints:
@@ -235,7 +235,7 @@
         3 steps passed, 0 failed, 124 skipped
         Took 0min 0.277s
         ```
-      COMMIT: `760207c` — feat(test-harness): The task prompt is delivered to the workspace as a file
+- [x] COMMIT: `760207c` — feat(test-harness): The task prompt is delivered to the workspace as a file
 
 - [x] test-harness: The task prompt file path that does not exist is rejected
       Design constraints:
@@ -307,7 +307,7 @@
         19 steps passed, 0 failed, 108 skipped
         Took 0min 0.326s
         ```
-      COMMIT: `c43748f` — feat(test-harness): The task prompt file path that does not exist is rejected
+- [x] COMMIT: `c43748f` — feat(test-harness): The task prompt file path that does not exist is rejected
 
 ## Phase 2 — Report and evaluation (no sandlock, no ralph; needs workspace)
 
@@ -400,7 +400,7 @@
         4 steps passed, 0 failed, 123 skipped
         Took 0min 0.023s
         ```
-      COMMIT: `0f8e425` — feat(test-harness): Report includes all ten automated checks
+- [x] COMMIT: `0f8e425` — feat(test-harness): Report includes all ten automated checks
 
 - [x] test-harness: LLM-as-judge scores each artifact on a 0-4 rubric
       Design constraints:
@@ -452,7 +452,7 @@
         ```
         Files created: `src/givn_harness/_utils.py` (extracted `find_change_dir` shared between evaluator and judge)
         Files modified: `src/givn_harness/evaluator.py` (use shared `find_change_dir`)
-      COMMIT: `1f90036` — feat(test-harness): LLM-as-judge scores each artifact on a 0-4 rubric
+- [x] COMMIT: `1f90036` — feat(test-harness): LLM-as-judge scores each artifact on a 0-4 rubric
 
 - [x] test-harness: Report is written as a markdown file
       Design constraints:
@@ -516,7 +516,7 @@
         37 steps passed, 0 failed, 90 skipped
         Took 0min 0.417s
         ```
-      COMMIT: `751ed40` — feat(test-harness): Report is written as a markdown file
+- [x] COMMIT: `751ed40` — feat(test-harness): Report is written as a markdown file
 
 - [x] test-harness: Cross-run index accumulates results
       Design constraints:
@@ -577,7 +577,7 @@
         41 steps passed, 0 failed, 86 skipped
         Took 0min 0.526s
         ```
-      COMMIT: `592d36e` — feat(test-harness): Cross-run index accumulates results
+- [x] COMMIT: `592d36e` — feat(test-harness): Cross-run index accumulates results
 
 - [x] test-harness: Report handles a run where the agent produced no artifacts
       Design constraints:
@@ -641,7 +641,7 @@
         52 steps passed, 0 failed, 75 skipped
         Took 0min 0.709s
         ```
-      COMMIT: `9911421` — feat(test-harness): Report handles a run where the agent produced no artifacts
+- [x] COMMIT: `9911421` — feat(test-harness): Report handles a run where the agent produced no artifacts
 
 ## Phase 3 — Error handling and resilience
 
@@ -705,7 +705,7 @@
         46 steps passed, 0 failed, 81 skipped
         Took 0min 0.644s
         ```
-      COMMIT: `44f2dc0` — feat(test-harness): Workspace is preserved when a run fails
+- [x] COMMIT: `44f2dc0` — feat(test-harness): Workspace is preserved when a run fails
 
 - [x] test-harness: Sandlock is not available, harness falls back to --no-sandbox
       Design constraints:
@@ -781,7 +781,7 @@
         5 steps passed, 0 failed, 122 skipped
         Took 0min 0.071s
         ```
-      COMMIT: `a3c2869` — feat(test-harness): Sandlock is not available, harness falls back to --no-sandbox
+- [x] COMMIT: `a3c2869` — feat(test-harness): Sandlock is not available, harness falls back to --no-sandbox
 
 - [x] test-harness: Ralph binary is not found at the configured path
       Design constraints:
@@ -841,7 +841,7 @@
         61 steps passed, 0 failed, 66 skipped
         Took 0min 1.049s
         ```
-      COMMIT: `4e53953` — feat(test-harness): Ralph binary is not found at the configured path
+- [x] COMMIT: `4e53953` — feat(test-harness): Ralph binary is not found at the configured path
 
 - [x] test-harness: LLM judge returns unparseable JSON, score defaults to zero
       Design constraints:
@@ -895,7 +895,7 @@
         66 steps passed, 0 failed, 61 skipped
         Took 0min 1.080s
         ```
-      COMMIT: `71fd180` — feat(test-harness): LLM judge returns unparseable JSON, score defaults to zero
+- [x] COMMIT: `71fd180` — feat(test-harness): LLM judge returns unparseable JSON, score defaults to zero
 
 - [x] test-harness: Interrupted run preserves workspace on SIGINT
       Design constraints:
@@ -952,7 +952,7 @@
         71 steps passed, 0 failed, 56 skipped
         Took 0min 23.353s
         ```
-      COMMIT: `0be60d7` — feat(test-harness): Interrupted run preserves workspace on SIGINT
+- [x] COMMIT: `0be60d7` — feat(test-harness): Interrupted run preserves workspace on SIGINT
 
 ## Phase 4 — Agent execution and sandbox integration
 
@@ -1007,7 +1007,7 @@
         75 steps passed, 0 failed, 52 skipped
         Took 0min 25.493s
         ```
-      COMMIT: `a0ef250` — feat(test-harness): Agent execution respects time limit
+- [x] COMMIT: `a0ef250` — feat(test-harness): Agent execution respects time limit
 
 - [x] test-harness: Agent execution respects maximum iteration limit
       Design constraints:
@@ -1066,7 +1066,7 @@
         78 steps passed, 0 failed, 49 skipped
         Took 0min 25.630s
         ```
-      COMMIT: `0246da8` — feat(test-harness): Agent execution respects maximum iteration limit
+- [x] COMMIT: `0246da8` — feat(test-harness): Agent execution respects maximum iteration limit
 
 - [x] test-harness: ralph is invoked with --prompt-file pointing to the workspace task file
       Design constraints:
@@ -1118,7 +1118,7 @@
         3 steps passed, 0 failed, 124 skipped
         Took 0min 0.107s
         ```
-      COMMIT: `a0ef250` — feat(test-harness): Agent execution respects time limit (runner.py introduced ralph --prompt-file invocation)
+- [x] COMMIT: `a0ef250` — feat(test-harness): Agent execution respects time limit (runner.py introduced ralph --prompt-file invocation)
 
 - [x] test-harness: The agent runs inside a sandlock sandbox
       Design constraints:
@@ -1153,7 +1153,7 @@
         4 steps passed, 0 failed, 123 skipped
         Took 0min 0.093s
         ```
-      COMMIT: `fec8989` — feat(test-harness): The agent runs inside a sandlock sandbox
+- [x] COMMIT: `fec8989` — feat(test-harness): The agent runs inside a sandlock sandbox
         `fec8989`
       Issues: Two pre-existing scenarios fail with sandbox active: "Agent execution respects time limit" (reports "completed" instead of "timeout" because /usr/bin/true exits immediately) and "Interrupted run preserves workspace on SIGINT" (ralph completes before SIGINT arrives inside sandbox).
 
@@ -1183,7 +1183,7 @@
         5 steps passed, 0 failed, 122 skipped
         Took 0min 0.294s
         ```
-      COMMIT: `6787a79` — feat(test-harness): Sandbox filesystem uses learn-then-confine mode
+- [x] COMMIT: `6787a79` — feat(test-harness): Sandbox filesystem uses learn-then-confine mode
         `6787a79`
 
 - [x] test-harness: Sandbox network is default-allow with no outbound restrictions
@@ -1213,7 +1213,7 @@
         5 steps passed, 0 failed, 122 skipped
         Took 0min 0.100s
         ```
-      COMMIT: `b4298e2` — feat(test-harness): Sandbox network is default-allow with no outbound restrictions
+- [x] COMMIT: `b4298e2` — feat(test-harness): Sandbox network is default-allow with no outbound restrictions
         `b4298e2`
 
 ## Phase 5 — E2E setup and scenarios
@@ -1236,7 +1236,7 @@
         0 steps passed, 0 failed, 127 skipped
         Took 0min 0.000s
         ```
-      - COMMIT: `0d48546` (config.yaml + tasks.md), `481694f` (verify.command update to exclude @e2e)
+- [x] COMMIT: `0d48546` (config.yaml + tasks.md), `481694f` (verify.command update to exclude @e2e)
 
 - [x] @e2e test-harness: User runs the harness end-to-end and observes a complete autoresearch loop
       Design constraints:
@@ -1266,7 +1266,7 @@
         13 steps passed, 0 failed, 114 skipped
         Took 0min 0.124s
         ```
-      COMMIT: `481694f` — test(e2e): User runs the harness end-to-end and observes a complete autoresearch loop
+- [x] COMMIT: `481694f` — test(e2e): User runs the harness end-to-end and observes a complete autoresearch loop
         `481694f`
 
 - [x] @e2e test-harness: User reads a per-run report after a completed run
@@ -1293,7 +1293,7 @@
         1 scenario passed, 0 failed, 24 skipped
         6 steps passed, 0 failed, 121 skipped
         ```
-      COMMIT:   `9e2718a` (committed together with the other two e2e scenarios)
+- [x] COMMIT:   `9e2718a` (committed together with the other two e2e scenarios)
 
 - [x] @e2e test-harness: User inspects the cross-run index after multiple runs
       Design constraints:
@@ -1318,7 +1318,7 @@
         1 scenario passed, 0 failed, 24 skipped
         8 steps passed, 0 failed, 119 skipped
         ```
-      COMMIT:   `9e2718a` (committed together with the other two e2e scenarios)
+- [x] COMMIT:   `9e2718a` (committed together with the other two e2e scenarios)
 
 - [x] @e2e test-harness: User inspects a workspace from a failed run
       Design constraints:
@@ -1344,4 +1344,4 @@
         1 scenario passed, 0 failed, 24 skipped
         5 steps passed, 0 failed, 122 skipped
         ```
-      COMMIT:   `9e2718a` (committed together with the other two e2e scenarios)
+- [x] COMMIT:   `9e2718a` (committed together with the other two e2e scenarios)
