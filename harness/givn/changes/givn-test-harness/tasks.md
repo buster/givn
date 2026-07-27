@@ -169,35 +169,238 @@
         ```
       COMMIT: `0a6b4e1` — feat(test-harness): verify.command is at the sentinel default after initialization
 
-- [ ] test-harness: The task prompt is delivered to the workspace as a file
+- [x] test-harness: The task prompt is delivered to the workspace as a file
       Design constraints:
         - Task file read from `--task` argument and copied to `<workspace>/task.md`.
         - File content is preserved byte-for-byte.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Extend `workspace.py` to copy task file. Files: `workspace.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): The task prompt is delivered to the workspace as a file". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
 
-- [ ] test-harness: The task prompt file path that does not exist is rejected
+          @givn.added
+          Scenario: The task prompt is delivered to the workspace as a file                       # tests/features/harness/test-harness.feature:34
+            Given a task prompt file at "tasks/shopping-list.md" with a task description          # tests/features/steps/harness/test_harness_steps.py:97
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: step: a task prompt file at 'tasks/shopping-list.md' with a task description
+
+            When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/` # None
+            Then the workspace contains a file "task.md" with the task description content        # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:34  The task prompt is delivered to the workspace as a file
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        0 steps passed, 0 failed, 1 error, 126 skipped
+        Took 0min 0.001s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: The task prompt is delivered to the workspace as a file                       # tests/features/harness/test-harness.feature:34
+            Given a task prompt file at "tasks/shopping-list.md" with a task description          # tests/features/steps/harness/test_harness_steps.py:97
+            When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:110
+            Then the workspace contains a file "task.md" with the task description content        # tests/features/steps/harness/test_harness_steps.py:126
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        3 steps passed, 0 failed, 124 skipped
+        Took 0min 0.067s
+        ```
+        Files modified: `src/givn_harness/workspace.py`, `src/givn_harness/cli.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: The task prompt is delivered to the workspace as a file                       # tests/features/harness/test-harness.feature:34
+            Given a task prompt file at "tasks/shopping-list.md" with a task description          # tests/features/steps/harness/test_harness_steps.py:97
+            When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:110
+            Then the workspace contains a file "task.md" with the task description content        # tests/features/steps/harness/test_harness_steps.py:126
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        3 steps passed, 0 failed, 124 skipped
+        Took 0min 0.277s
+        ```
+      COMMIT: `760207c` — feat(test-harness): The task prompt is delivered to the workspace as a file
+
+- [x] test-harness: The task prompt file path that does not exist is rejected
       Design constraints:
         - Missing file → non-zero exit, error message on stderr.
         - click handles argument validation; error message produced via click.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Add file-existence check in `cli.py` before workspace creation. Files: `cli.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): The task prompt file path that does not exist is rejected". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: The task prompt file path that does not exist is rejected             # tests/features/harness/test-harness.feature:40
+            Given a workspace directory at "/tmp/givn-harness-workspaces"                 # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task nonexistent.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:110
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            Then the command exits non-zero                                               # None
+            And stderr reports that the task file does not exist                          # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:40  The task prompt file path that does not exist is rejected
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        1 step passed, 0 failed, 1 error, 125 skipped
+        Took 0min 0.001s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: The task prompt file path that does not exist is rejected             # tests/features/harness/test-harness.feature:40
+            Given a workspace directory at "/tmp/givn-harness-workspaces"                 # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task nonexistent.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:110
+            Then the command exits non-zero                                               # tests/features/steps/harness/test_harness_steps.py:125
+            And stderr reports that the task file does not exist                          # tests/features/steps/harness/test_harness_steps.py:132
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        4 steps passed, 0 failed, 123 skipped
+        Took 0min 0.065s
+        ```
+        No new production code — click's `exists=True` on `--task` already handles file existence validation.
+        Files modified: `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: The task prompt file path that does not exist is rejected             # tests/features/harness/test-harness.feature:40
+            Given a workspace directory at "/tmp/givn-harness-workspaces"                 # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task nonexistent.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:110
+            Then the command exits non-zero                                               # tests/features/steps/harness/test_harness_steps.py:125
+            And stderr reports that the task file does not exist                          # tests/features/steps/harness/test_harness_steps.py:132
+
+        1 feature passed, 0 failed, 0 skipped
+        5 scenarios passed, 0 failed, 20 skipped
+        19 steps passed, 0 failed, 108 skipped
+        Took 0min 0.326s
+        ```
+      COMMIT: `c43748f` — feat(test-harness): The task prompt file path that does not exist is rejected
 
 ## Phase 2 — Report and evaluation (no sandlock, no ralph; needs workspace)
 
-- [ ] test-harness: Report includes all ten automated checks
+- [x] test-harness: Report includes all ten automated checks
       Design constraints:
         - `evaluator.py` runs 10 checks (artifact_existence, lint_clean, tasks_all_done, valid_commits, archive_succeeded, specs_clean, step_files_nonempty, review_pass, design_review_pass, verify_green).
         - Each check produces a `Check` (name, passed, detail).
         - Evaluation reads from the workspace filesystem — this scenario uses pre-existing workspace content, not a live agent run.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Implement `evaluator.py` with all 10 checks, `types.py` for `Check`. Files: `evaluator.py`, `types.py` (extend). Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Report includes all ten automated checks". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report includes all ten automated checks    # tests/features/harness/test-harness.feature:89
+            Given a completed test run at "reports/run-001/"    # tests/features/steps/harness/test_harness_steps.py:175
+              Traceback (most recent call last):
+                ...
+                File "tests/features/steps/harness/test_harness_steps.py", line 177, in step_completed_test_run
+                  raise NotImplementedError("TODO")
+              NotImplementedError: TODO
+
+            When the harness evaluates the workspace            # None
+            Then the run report lists all ten automated checks: # None
+              | check                                   |
+              | artifact existence                      |
+              ...
+            And each check has a pass or fail result            # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:89  Report includes all ten automated checks
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        0 steps passed, 0 failed, 1 error, 126 skipped
+        Took 0min 0.001s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report includes all ten automated checks    # tests/features/harness/test-harness.feature:89
+            Given a completed test run at "reports/run-001/"    # tests/features/steps/harness/test_harness_steps.py:175
+            When the harness evaluates the workspace            # tests/features/steps/harness/test_harness_steps.py:267
+            Then the run report lists all ten automated checks: # tests/features/steps/harness/test_harness_steps.py:276
+              | check                                   |
+              | artifact existence                      |
+              | lint clean                              |
+              | tasks all done                          |
+              | valid commits present                   |
+              | archive succeeded                       |
+              | permanent specs are clean Gherkin       |
+              | step definition files are non-empty     |
+              | REVIEW: PASS marker present             |
+              | DESIGN-REVIEW: PASS marker present      |
+              | verify.command exits zero after archive |
+            And each check has a pass or fail result            # tests/features/steps/harness/test_harness_steps.py:298
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        4 steps passed, 0 failed, 123 skipped
+        Took 0min 0.024s
+        ```
+        Files modified: `src/givn_harness/evaluator.py`, `src/givn_harness/types.py`, `src/givn_harness/report.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report includes all ten automated checks    # tests/features/harness/test-harness.feature:89
+            Given a completed test run at "reports/run-001/"    # tests/features/steps/harness/test_harness_steps.py:175
+            When the harness evaluates the workspace            # tests/features/steps/harness/test_harness_steps.py:267
+            Then the run report lists all ten automated checks: # tests/features/steps/harness/test_harness_steps.py:276
+              | check                                   |
+              | artifact existence                      |
+              ...
+            And each check has a pass or fail result            # tests/features/steps/harness/test_harness_steps.py:298
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        4 steps passed, 0 failed, 123 skipped
+        Took 0min 0.023s
+        ```
+      COMMIT: `0f8e425` — feat(test-harness): Report includes all ten automated checks
 
 - [ ] test-harness: LLM-as-judge scores each artifact on a 0-4 rubric
       Design constraints:
