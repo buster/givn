@@ -579,15 +579,69 @@
         ```
       COMMIT: `592d36e` — feat(test-harness): Cross-run index accumulates results
 
-- [ ] test-harness: Report handles a run where the agent produced no artifacts
+- [x] test-harness: Report handles a run where the agent produced no artifacts
       Design constraints:
         - When agent produces zero artifacts (crash before givn init), all 10 checks show FAIL with detail explaining what was expected vs. found.
         - Judge scores default to 0 for all artifacts (not missing — explicit 0).
         - Termination reason recorded as the actual cause (timeout/error/crash).
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Extend `evaluator.py` and `judge.py` for zero-artifact resilience. Files: `evaluator.py`, `judge.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Report handles a run where the agent produced no artifacts". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report handles a run where the agent produced no artifacts     # tests/features/harness/test-harness.feature:186
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            And the agent crashes before producing any artifacts                   # tests/features/steps/harness/test_harness_steps.py:431
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            Then all ten automated checks report FAIL with detail                  # None
+            And the LLM judge scores default to 0                                  # None
+            And the termination reason is recorded in the report                   # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:186  Report handles a run where the agent produced no artifacts
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        Took 0min 0.070s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report handles a run where the agent produced no artifacts     # tests/features/harness/test-harness.feature:186
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            And the agent crashes before producing any artifacts                   # tests/features/steps/harness/test_harness_steps.py:431
+            Then all ten automated checks report FAIL with detail                  # tests/features/steps/harness/test_harness_steps.py:458
+            And the LLM judge scores default to 0                                  # tests/features/steps/harness/test_harness_steps.py:472
+            And the termination reason is recorded in the report                   # tests/features/steps/harness/test_harness_steps.py:483
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        6 steps passed, 0 failed, 121 skipped
+        Took 0min 0.099s
+        ```
+        Files modified: `src/givn_harness/evaluator.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        11 scenarios passed, 0 failed, 14 skipped
+        52 steps passed, 0 failed, 75 skipped
+        Took 0min 0.709s
+        ```
+      COMMIT: `9911421` — feat(test-harness): Report handles a run where the agent produced no artifacts
 
 ## Phase 3 — Error handling and resilience
 
