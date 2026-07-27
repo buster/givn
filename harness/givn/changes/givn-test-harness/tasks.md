@@ -591,15 +591,67 @@
 
 ## Phase 3 — Error handling and resilience
 
-- [ ] test-harness: Workspace is preserved when a run fails
+- [x] test-harness: Workspace is preserved when a run fails
       Design constraints:
         - On agent failure (archive never completed), workspace dir is not deleted.
         - Report includes the path to the preserved workspace.
         - Cleanup only on successful runs; preserve on any non-zero exit or exception.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Modify workspace lifecycle: defer cleanup to explicit success path. Files: `workspace.py`, `cli.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Workspace is preserved when a run fails". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Workspace is preserved when a run fails                        # tests/features/harness/test-harness.feature:134
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            And the agent fails to archive the change                              # tests/features/steps/harness/test_harness_steps.py:395
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            Then the workspace directory is not deleted                            # None
+            And the report includes the path to the preserved workspace            # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:134  Workspace is preserved when a run fails
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        Took 0min 0.073s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Workspace is preserved when a run fails                        # tests/features/harness/test-harness.feature:134
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            And the agent fails to archive the change                              # tests/features/steps/harness/test_harness_steps.py:395
+            Then the workspace directory is not deleted                            # tests/features/steps/harness/test_harness_steps.py:412
+            And the report includes the path to the preserved workspace            # tests/features/steps/harness/test_harness_steps.py:419
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        5 steps passed, 0 failed, 122 skipped
+        Took 0min 0.152s
+        ```
+        Files modified: `src/givn_harness/cli.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        10 scenarios passed, 0 failed, 15 skipped
+        46 steps passed, 0 failed, 81 skipped
+        Took 0min 0.644s
+        ```
+      COMMIT: `44f2dc0` — feat(test-harness): Workspace is preserved when a run fails
 
 - [ ] test-harness: Sandlock is not available, harness falls back to --no-sandbox
       Design constraints:
