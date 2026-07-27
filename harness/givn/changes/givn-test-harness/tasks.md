@@ -54,24 +54,120 @@
         ```
       COMMIT: `3b3d643` — feat(test-harness): Harness creates an isolated workspace outside the repository
 
-- [ ] test-harness: Workspace is initialized with git init and givn init
+- [x] test-harness: Workspace is initialized with git init and givn init
       Design constraints:
         - `workspace.py` runs `git init` and `givn init` as subprocesses in the workspace dir.
         - `givn init` scaffolds `givn/` with `config.yaml`, `specs/`, `changes/`, `archive/`.
         - `GIVN_BINARY` env var for givn binary path (defaults to `givn` on PATH).
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Extend `workspace.py` for git/givn init. Files: `workspace.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Workspace is initialized with git init and givn init". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
 
-- [ ] test-harness: verify.command is at the sentinel default after initialization
+          @givn.added
+          Scenario: Workspace is initialized with git init and givn init           # tests/features/harness/test-harness.feature:20
+            Given a workspace directory at "/tmp/givn-harness-workspaces"          # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            Then the workspace contains an initialized git repository              # tests/features/steps/harness/test_harness_steps.py:67
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: step: Then the workspace contains an initialized git repository
+
+            And the workspace contains a givn/ directory scaffolded by givn init   # None
+            And the workspace contains givn/config.yaml                            # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:20  Workspace is initialized with git init and givn init
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        ```
+      GREEN:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        5 steps passed, 0 failed, 122 skipped
+        Took 0min 0.068s
+        ```
+        Files modified: `src/givn_harness/workspace.py`, `src/givn_harness/cli.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        5 steps passed, 0 failed, 122 skipped
+        Took 0min 0.063s
+        ```
+      COMMIT: `0c24647` — feat(test-harness): Workspace is initialized with git init and givn init
+
+- [x] test-harness: verify.command is at the sentinel default after initialization
       Design constraints:
         - After `givn init`, `givn/config.yaml` contains `command: "givn missing-testrunner"` (sentinel).
         - This is a givn behavior assertion, NOT a harness behavior assertion — the harness calls `givn init` and the sentinel is givn's default.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Assert on workspace `givn/config.yaml` content. File: `test_harness_steps.py` (step definition only, reuses prior workspace.py). Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): verify.command is at the sentinel default after initialization". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: verify.command is at the sentinel default after initialization                               # tests/features/harness/test-harness.feature:28
+            Given a workspace directory at "/tmp/givn-harness-workspaces"                                        # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/`                               # tests/features/steps/harness/test_harness_steps.py:25
+            Then the workspace's givn/config.yaml contains the verify.command sentinel "givn missing-testrunner" # tests/features/steps/harness/test_harness_steps.py:97
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: step: the workspace's givn/config.yaml contains the verify.command sentinel "givn missing-testrunner"
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:28  verify.command is at the sentinel default after initialization
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        Took 0min 0.062s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: verify.command is at the sentinel default after initialization                               # tests/features/harness/test-harness.feature:28
+            Given a workspace directory at "/tmp/givn-harness-workspaces"                                        # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/`                               # tests/features/steps/harness/test_harness_steps.py:25
+            Then the workspace's givn/config.yaml contains the verify.command sentinel "givn missing-testrunner" # tests/features/steps/harness/test_harness_steps.py:97
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        3 steps passed, 0 failed, 124 skipped
+        Took 0min 0.074s
+        ```
+        Files modified: `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: verify.command is at the sentinel default after initialization                               # tests/features/harness/test-harness.feature:28
+            Given a workspace directory at "/tmp/givn-harness-workspaces"                                        # tests/features/steps/harness/test_harness_steps.py:12
+            When the user runs `givn-harness run --task task.md --output reports/`                               # tests/features/steps/harness/test_harness_steps.py:25
+            Then the workspace's givn/config.yaml contains the verify.command sentinel "givn missing-testrunner" # tests/features/steps/harness/test_harness_steps.py:97
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        3 steps passed, 0 failed, 124 skipped
+        Took 0min 0.061s
+        ```
+      COMMIT: `0a6b4e1` — feat(test-harness): verify.command is at the sentinel default after initialization
 
 - [ ] test-harness: The task prompt is delivered to the workspace as a file
       Design constraints:
