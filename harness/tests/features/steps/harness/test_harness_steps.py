@@ -107,6 +107,34 @@ def step_task_prompt_file(context, path):
     context.add_cleanup(lambda: _rmtree(context.output_dir))
 
 
+@when('the user runs `givn-harness run --task nonexistent.md --output reports/`')
+def step_user_runs_harness_nonexistent_task(context):
+    result = subprocess.run(
+        [
+            "uv", "run", "givn-harness", "run",
+            "--task", "nonexistent.md",
+            "--output", os.path.join(context.output_dir, "reports"),
+            "--workspace-root", context.workspace_root,
+        ],
+        capture_output=True,
+        text=True,
+    )
+    context.cli_result = result
+
+
+@then('the command exits non-zero')
+def step_command_exits_non_zero(context):
+    assert context.cli_result.returncode != 0, (
+        f"expected non-zero exit, got {context.cli_result.returncode}"
+    )
+
+
+@then('stderr reports that the task file does not exist')
+def step_stderr_reports_task_file_not_exist(context):
+    stderr = context.cli_result.stderr
+    assert "does not exist" in stderr, (
+        f"expected stderr to report missing file, got: {stderr!r}"
+    )
 @when('the user runs `givn-harness run --task tasks/shopping-list.md --output reports/`')
 def step_user_runs_harness_shopping_list(context):
     result = subprocess.run(

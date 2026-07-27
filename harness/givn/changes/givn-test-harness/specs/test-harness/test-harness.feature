@@ -36,7 +36,7 @@ Feature: test-harness
     When the user runs `givn-harness run --task tasks/shopping-list.md --output reports/`
     Then the workspace contains a file "task.md" with the task description content
 
-  @givn.added @wip
+  @givn.added
   Scenario: The task prompt file path that does not exist is rejected
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task nonexistent.md --output reports/`
