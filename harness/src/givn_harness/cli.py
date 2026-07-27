@@ -1,14 +1,11 @@
 import os
-import signal
-import subprocess
-import time
 
 import click
 
 from givn_harness.index import update_index
 from givn_harness.report import write_report
 from givn_harness.runner import check_ralph_binary, run_agent
-from givn_harness.sandbox import check_sandlock
+from givn_harness.sandbox import check_sandlock, create_sandbox
 from givn_harness.types import Check
 from givn_harness.workspace import copy_task, create_workspace, init_workspace
 
@@ -43,35 +40,28 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
     if not sandboxed:
         click.echo("WARNING: sandlock is not available, running without sandbox", err=True)
 
+    sandbox = create_sandbox(workspace_path) if sandboxed else None
+
     checks: list[Check] = []
-    termination = "completed"
+    agent_log = ""
 
-    def _handle_sigint(*_: object) -> None:
-        nonlocal termination
-        termination = "interrupted"
-
-    original_handler = signal.signal(signal.SIGINT, _handle_sigint)
-    try:
-        if fail:
-            checks = [
-                Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
-            ]
-            termination = "agent failure"
-        if timeout is not None or max_iterations is not None:
-            try:
-                run_agent(workspace_path, timeout=timeout, max_iterations=max_iterations)
-            except subprocess.TimeoutExpired:
-                termination = "timeout"
-        else:
-            time.sleep(2)
-    finally:
-        signal.signal(signal.SIGINT, original_handler)
+    if fail:
+        checks = [
+            Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
+        ]
+        termination = "agent failure"
+    else:
+        agent_log, termination = run_agent(
+            workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
+            sandbox=sandbox,
+        )
 
     write_report(
         checks=checks,
         workspace_path=workspace_path,
         sandboxed=sandboxed,
         termination=termination,
+        agent_log=agent_log,
     )
     update_index(
         output_dir=output,

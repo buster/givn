@@ -43,13 +43,13 @@ Feature: test-harness
     Then the command exits non-zero
     And stderr reports that the task file does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: ralph is invoked with --prompt-file pointing to the workspace task file
     Given a workspace directory at "/tmp/givn-harness-workspaces"
-    When the user runs `givn-harness run --task task.md --output reports/`
+    When the user runs `givn-harness run --task task.md --output reports/` with the ralph binary at "/usr/bin/true"
     Then ralph is invoked with the --prompt-file argument pointing to the task.md in the workspace
 
-  @givn.added @wip
+  @givn.added
   Scenario: The agent runs inside a sandlock sandbox
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`

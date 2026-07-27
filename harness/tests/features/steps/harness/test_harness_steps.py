@@ -33,13 +33,15 @@ def step_user_runs_harness(context):
     ralph_bin = getattr(context, "ralph_bin", None)
     if ralph_bin is not None:
         cmd.extend(["--ralph-bin", ralph_bin])
+    else:
+        cmd.extend(["--ralph-bin", "/usr/bin/true"])
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
     )
     context.cli_result = result
-    context.workspace_path = result.stdout.strip()
+    context.workspace_path = result.stdout.strip().split("\n")[-1]
 
 
 @then('the workspace is created in a temporary directory under the configured workspace root')
@@ -89,6 +91,22 @@ def step_workspace_contains_givn_config_yaml(context):
     config_yaml = os.path.join(context.workspace_path, "givn", "config.yaml")
     assert os.path.isfile(config_yaml), (
         f"expected givn/config.yaml at {config_yaml}, not found"
+    )
+
+
+@then('ralph executes inside a sandlock Sandbox instance')
+def step_ralph_executes_inside_sandlock(context):
+    stdout = context.cli_result.stdout
+    assert "Running agent inside sandlock sandbox" in stdout, (
+        f"expected sandlock sandbox message in stdout, got: {stdout!r}"
+    )
+
+
+@then('the sandbox workdir is the workspace directory')
+def step_sandbox_workdir_is_workspace(context):
+    stdout = context.cli_result.stdout
+    assert context.workspace_path in stdout, (
+        f"expected workspace path {context.workspace_path!r} in stdout, got: {stdout!r}"
     )
 
 
@@ -147,12 +165,13 @@ def step_user_runs_harness_shopping_list(context):
             "--task", context.task_file,
             "--output", os.path.join(context.output_dir, "reports"),
             "--workspace-root", context.workspace_root,
+            "--ralph-bin", "/usr/bin/true",
         ],
         capture_output=True,
         text=True,
     )
     context.cli_result = result
-    context.workspace_path = result.stdout.strip()
+    context.workspace_path = result.stdout.strip().split("\n")[-1]
 
 
 @then('the workspace contains a file "{path}" with the task description content')
@@ -280,8 +299,10 @@ def step_harness_evaluates_workspace(context):
 
     invalid_artifacts = getattr(context, "_judge_invalid_json_artifacts", set())
 
-    def mock_run(args, **kwargs):
-        prompt_file = args[2] if len(args) > 2 else None
+    def mock_popen_factory(command_list, **kwargs):
+        mock_proc = MagicMock()
+        prompt_file = command_list[2] if len(command_list) > 2 else None
+        stdout = '{"score": 3, "explanation": "Good work."}'
         if prompt_file and Path(prompt_file).is_file():
             prompt_text = Path(prompt_file).read_text()
             artifact_type = None
@@ -290,18 +311,11 @@ def step_harness_evaluates_workspace(context):
                     artifact_type = at
                     break
             if artifact_type and artifact_type in invalid_artifacts:
-                mock_result = MagicMock()
-                mock_result.stdout = "not valid json {{{"
-                mock_result.stderr = ""
-                mock_result.returncode = 0
-                return mock_result
-        mock_result = MagicMock()
-        mock_result.stdout = '{"score": 3, "explanation": "Good work."}'
-        mock_result.stderr = ""
-        mock_result.returncode = 0
-        return mock_result
+                stdout = "not valid json {{{"
+        mock_proc.communicate.return_value = (stdout, "")
+        return mock_proc
 
-    with patch("givn_harness.judge.subprocess.run", side_effect=mock_run):
+    with patch("givn_harness.judge.subprocess.Popen", side_effect=mock_popen_factory):
         context.judge_scores = run_judge(context.workspace_path)
 
     context.report = generate_report_structure(
@@ -427,7 +441,7 @@ def step_agent_fails_to_archive(context):
         text=True,
     )
     context.cli_result = result
-    context.workspace_path = result.stdout.strip()
+    context.workspace_path = result.stdout.strip().split("\n")[-1]
 
 
 @then("the workspace directory is not deleted")
@@ -460,12 +474,10 @@ def step_agent_crashes_before_artifacts(context):
     context.checks = run_evaluation(context.workspace_path)
 
     mock_response = '{"score": 3, "explanation": "Good work."}'
-    mock_result = MagicMock()
-    mock_result.stdout = mock_response
-    mock_result.stderr = ""
-    mock_result.returncode = 0
+    mock_proc = MagicMock()
+    mock_proc.communicate.return_value = (mock_response, "")
 
-    with patch("givn_harness.judge.subprocess.run", return_value=mock_result):
+    with patch("givn_harness.judge.subprocess.Popen", return_value=mock_proc):
         context.judge_scores = run_judge(context.workspace_path)
 
     context.report_path = write_report(
@@ -693,7 +705,7 @@ def step_process_receives_sigint(context):
     stdout, stderr = proc.communicate(timeout=5)
     result = subprocess.CompletedProcess(args=cmd, returncode=proc.returncode, stdout=stdout, stderr=stderr)
     context.cli_result = result
-    context.workspace_path = stdout.strip()
+    context.workspace_path = stdout.strip().split("\n")[-1]
 
 
 @then("the report records the interruption as the termination reason")
@@ -714,6 +726,7 @@ def step_user_runs_harness_with_max_iterations(context):
         "--output", os.path.join(context.output_dir, "reports"),
         "--workspace-root", context.workspace_root,
         "--max-iterations", "5",
+        "--timeout", "2",
     ]
     ralph_bin = getattr(context, "ralph_bin", None)
     if ralph_bin is not None:
@@ -724,20 +737,23 @@ def step_user_runs_harness_with_max_iterations(context):
         text=True,
     )
     context.cli_result = result
-    context.workspace_path = result.stdout.strip()
+    context.workspace_path = result.stdout.strip().split("\n")[-1]
 
 
 @then("ralph is invoked with --max-iterations 5")
 def step_ralph_invoked_with_max_iterations(context):
-    from unittest.mock import patch
+    from unittest.mock import MagicMock, patch
 
     from givn_harness.runner import run_agent
 
-    with patch("givn_harness.runner.subprocess.run") as mock_run:
+    mock_proc = MagicMock()
+    mock_proc.communicate.return_value = ("", "")
+
+    with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen:
         run_agent(context.workspace_path, max_iterations=5)
 
-    mock_run.assert_called_once()
-    args, _kwargs = mock_run.call_args
+    mock_popen.assert_called_once()
+    args, _kwargs = mock_popen.call_args
     cmd = args[0]
     assert "--max-iterations" in cmd, f"expected --max-iterations in command, got {cmd}"
     max_iter_index = cmd.index("--max-iterations")
@@ -767,7 +783,7 @@ def step_user_runs_harness_with_timeout(context):
         timeout=timeout + 5,
     )
     context.cli_result = result
-    context.workspace_path = result.stdout.strip()
+    context.workspace_path = result.stdout.strip().split("\n")[-1]
 
 
 @then("the harness stops agent execution after 60 seconds")
@@ -784,4 +800,51 @@ def step_report_records_timeout_termination(context):
     content = report_path.read_text()
     assert "**Termination:** timeout" in content or "Termination: timeout" in content, (
         f"report does not record timeout as termination reason: {content!r}"
+    )
+
+
+@when('the user runs `givn-harness run --task task.md --output reports/` with the ralph binary at "/usr/bin/true"')
+def step_user_runs_harness_with_fake_ralph(context):
+    cmd = [
+        "uv", "run", "givn-harness", "run",
+        "--task", context.task_file,
+        "--output", os.path.join(context.output_dir, "reports"),
+        "--workspace-root", context.workspace_root,
+        "--ralph-bin", "/usr/bin/true",
+        "--timeout", "1",
+    ]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    context.cli_result = result
+    context.workspace_path = result.stdout.strip().split("\n")[-1]
+
+
+@then("ralph is invoked with the --prompt-file argument pointing to the task.md in the workspace")
+def step_ralph_invoked_with_prompt_file(context):
+    from unittest.mock import MagicMock, patch
+
+    from givn_harness.runner import run_agent
+
+    mock_proc = MagicMock()
+    mock_proc.communicate.return_value = ("", "")
+
+    with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen:
+        run_agent(context.workspace_path)
+
+    mock_popen.assert_called_once()
+    args, kwargs = mock_popen.call_args
+    cmd = args[0]
+    assert "--prompt-file" in cmd, f"expected --prompt-file in command, got {cmd}"
+    pf_index = cmd.index("--prompt-file")
+    expected_task_path = os.path.join(context.workspace_path, "task.md")
+    task_path_in_cmd = cmd[pf_index + 1]
+    assert task_path_in_cmd == expected_task_path, (
+        f"expected --prompt-file {expected_task_path}, got --prompt-file {task_path_in_cmd}"
+    )
+    assert kwargs["cwd"] == context.workspace_path, (
+        f"expected cwd={context.workspace_path}, got {kwargs.get('cwd')}"
     )
