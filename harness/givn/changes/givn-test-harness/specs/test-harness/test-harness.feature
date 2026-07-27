@@ -123,7 +123,7 @@ Feature: test-harness
     And the report contains a section for LLM judge scores
     And the report contains the workspace path
 
-  @givn.added @wip
+  @givn.added
   Scenario: Cross-run index accumulates results
     Given an existing cross-run index at "reports/index.json" with one prior entry
     When the user runs `givn-harness run --task task.md --output reports/`

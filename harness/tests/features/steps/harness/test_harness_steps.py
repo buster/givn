@@ -392,6 +392,59 @@ def step_report_contains_workspace_path(context):
     )
 
 
+@given('an existing cross-run index at "{path}" with one prior entry')
+def step_existing_cross_run_index(context, path):
+    import json
+
+    context.workspace_root = "/tmp/givn-harness-workspaces"
+    os.makedirs(context.workspace_root, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write("task content")
+        context.task_file = f.name
+    context.output_dir = tempfile.mkdtemp()
+    context.add_cleanup(lambda: os.unlink(context.task_file))
+    context.add_cleanup(lambda: _rmtree(context.output_dir))
+
+    reports_dir = os.path.join(context.output_dir, "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    index_path = os.path.join(reports_dir, "index.json")
+    existing_entry = {
+        "run_id": "prior-run-001",
+        "task": "prior-task.md",
+        "timestamp": "2026-07-27T00:00:00Z",
+        "overall_pass": True,
+        "check_pass_count": 10,
+        "judge_avg_score": 3.0,
+        "report_path": "reports/prior-run-001/report.md",
+    }
+    with open(index_path, "w") as f:
+        json.dump([existing_entry], f)
+    context.index_path = index_path
+
+
+@then('the index file at "{path}" contains two entries')
+def step_index_file_contains_two_entries(context, path):
+    import json
+
+    index_path = os.path.join(context.output_dir, "reports", "index.json")
+    assert os.path.isfile(index_path), f"index file {index_path} does not exist"
+    with open(index_path) as f:
+        data = json.load(f)
+    assert isinstance(data, list), "index is not a JSON array"
+    assert len(data) == 2, f"expected 2 entries, got {len(data)}"
+    context.index_data = data
+
+
+@then("the new entry includes the run identifier, task name, timestamp, and overall pass/fail")
+def step_new_entry_has_fields(context):
+    new_entry = context.index_data[-1]
+    assert "run_id" in new_entry, "new entry missing run_id"
+    assert "task" in new_entry, "new entry missing task"
+    assert "timestamp" in new_entry, "new entry missing timestamp"
+    assert "overall_pass" in new_entry, "new entry missing overall_pass"
+    assert isinstance(new_entry["overall_pass"], bool), "overall_pass is not a bool"
+
+
 def _check_judge_score(context, artifact_name):
     scores = context.judge_scores
     matching = [s for s in scores if s.artifact == artifact_name]
