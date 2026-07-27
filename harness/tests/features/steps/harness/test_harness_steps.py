@@ -170,3 +170,134 @@ def step_config_yaml_contains_sentinel(context):
     assert '"givn missing-testrunner"' in content, (
         f'config.yaml does not contain the verify.command sentinel "givn missing-testrunner"'
     )
+
+
+@given('a completed test run at "{path}"')
+def step_completed_test_run(context, path):
+    import shutil
+    from pathlib import Path
+
+    context.workspace_root = tempfile.mkdtemp(prefix="givn-harness-test-")
+    context.add_cleanup(lambda: shutil.rmtree(context.workspace_root, ignore_errors=True))
+
+    ws = Path(context.workspace_root)
+    change_dir = ws / "givn" / "changes" / "test-change"
+    specs_cd = change_dir / "specs" / "test"
+    specs_cd.mkdir(parents=True)
+    archive_dir = ws / "givn" / "archive" / "test-change"
+    archive_specs = archive_dir / "specs" / "test"
+    archive_specs.mkdir(parents=True)
+    permanent_specs = ws / "givn" / "specs" / "test"
+    permanent_specs.mkdir(parents=True)
+    steps_dir = ws / "tests" / "features" / "steps"
+    steps_dir.mkdir(parents=True)
+
+    (change_dir / "proposal.md").write_text("# Proposal\n\nThis is a test proposal.\n")
+    (change_dir / "design.md").write_text("# Design\n\nThis is a test design.\n")
+    (change_dir / "design-review.md").write_text("# Design Review\n\nDESIGN-REVIEW: PASS\n")
+    (change_dir / "tasks.md").write_text("# Tasks\n\n- [x] task one\n- [x] task two\n")
+    (change_dir / "review.md").write_text("# Review\n\nREVIEW: PASS\n")
+
+    feature_content = (
+        "Feature: Test\n"
+        "  Scenario: A test\n"
+        "    Given something\n"
+        "    When something\n"
+        "    Then something\n"
+    )
+    (specs_cd / "test.feature").write_text(feature_content)
+    (archive_specs / "archived.feature").write_text(feature_content)
+    (permanent_specs / "permanent.feature").write_text(feature_content)
+
+    (archive_dir / "proposal.md").write_text("# Proposal\n\nArchived proposal.\n")
+    (archive_dir / "design.md").write_text("# Design\n\nArchived design.\n")
+
+    (steps_dir / "test_steps.py").write_text(
+        "from behave import given, when, then\n"
+        "\n"
+        "@given('something')\n"
+        "def step_given_something(context):\n"
+        '    context.x = 1\n'
+        "\n"
+        "@when('something')\n"
+        "def step_when_something(context):\n"
+        '    context.x += 1\n'
+        "\n"
+        "@then('something')\n"
+        "def step_then_something(context):\n"
+        "    assert context.x == 2\n"
+    )
+
+    config_dir = ws / "givn"
+    config_dir.mkdir(parents=True, exist_ok=True)
+    (config_dir / "config.yaml").write_text(
+        'verify:\n  command: "true"\n'
+        'givn_config_version: "0.2.0"\n'
+    )
+
+    subprocess.run(
+        ["git", "init"],
+        cwd=str(ws),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.email", "test@example.com"],
+        cwd=str(ws),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "config", "user.name", "Test User"],
+        cwd=str(ws),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "add", "-A"],
+        cwd=str(ws),
+        capture_output=True,
+    )
+    subprocess.run(
+        ["git", "commit", "-m", "feat(test): initial scaffold"],
+        cwd=str(ws),
+        capture_output=True,
+    )
+
+    context.workspace_path = str(ws)
+
+
+@when("the harness evaluates the workspace")
+def step_harness_evaluates_workspace(context):
+    from givn_harness.evaluator import run_evaluation
+    from givn_harness.report import generate_report_structure
+
+    context.checks = run_evaluation(context.workspace_path)
+    context.report = generate_report_structure(context.checks, context.workspace_path)
+
+
+@then("the run report lists all ten automated checks:")
+def step_report_lists_all_ten_checks(context):
+    expected_names = {
+        "artifact existence",
+        "lint clean",
+        "tasks all done",
+        "valid commits present",
+        "archive succeeded",
+        "permanent specs are clean Gherkin",
+        "step definition files are non-empty",
+        "REVIEW: PASS marker present",
+        "DESIGN-REVIEW: PASS marker present",
+        "verify.command exits zero after archive",
+    }
+    actual_names = {c.name for c in context.checks}
+    missing = expected_names - actual_names
+    assert not missing, f"missing checks: {missing}"
+    assert len(context.checks) == 10, (
+        f"expected 10 checks, got {len(context.checks)}"
+    )
+
+
+@then("each check has a pass or fail result")
+def step_each_check_has_pass_or_fail(context):
+    for c in context.checks:
+        assert isinstance(c.passed, bool), (
+            f"check '{c.name}' passed is not bool: {c.passed!r}"
+        )

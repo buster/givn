@@ -85,7 +85,7 @@ Feature: test-harness
     When the user runs `givn-harness run --task task.md --output reports/ --max-iterations 5`
     Then ralph is invoked with --max-iterations 5
 
-  @givn.added @wip
+  @givn.added
   Scenario: Report includes all ten automated checks
     Given a completed test run at "reports/run-001/"
     When the harness evaluates the workspace

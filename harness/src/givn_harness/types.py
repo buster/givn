@@ -2,6 +2,13 @@ from dataclasses import dataclass, field
 
 
 @dataclass
+class Check:
+    name: str
+    passed: bool
+    detail: str
+
+
+@dataclass
 class RunResult:
     run_id: str
     task: str
