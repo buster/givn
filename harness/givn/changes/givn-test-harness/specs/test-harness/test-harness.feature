@@ -206,7 +206,7 @@ Feature: test-harness
     Then the harness exits with a non-zero exit code
     And stderr reports that the ralph binary was not found
 
-  @givn.added @wip
+  @givn.added
   Scenario: LLM judge returns unparseable JSON, score defaults to zero
     Given a completed test run at "reports/run-001/"
     And the LLM judge returns invalid JSON for the proposal artifact

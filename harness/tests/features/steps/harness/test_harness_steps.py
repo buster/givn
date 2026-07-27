@@ -278,13 +278,30 @@ def step_harness_evaluates_workspace(context):
 
     context.checks = run_evaluation(context.workspace_path)
 
-    mock_response = '{"score": 3, "explanation": "Good work."}'
-    mock_result = MagicMock()
-    mock_result.stdout = mock_response
-    mock_result.stderr = ""
-    mock_result.returncode = 0
+    invalid_artifacts = getattr(context, "_judge_invalid_json_artifacts", set())
 
-    with patch("givn_harness.judge.subprocess.run", return_value=mock_result):
+    def mock_run(args, **kwargs):
+        prompt_file = args[2] if len(args) > 2 else None
+        if prompt_file and Path(prompt_file).is_file():
+            prompt_text = Path(prompt_file).read_text()
+            artifact_type = None
+            for at in ["proposal", "specs", "design", "tasks", "review"]:
+                if f"Artifact type: {at}" in prompt_text:
+                    artifact_type = at
+                    break
+            if artifact_type and artifact_type in invalid_artifacts:
+                mock_result = MagicMock()
+                mock_result.stdout = "not valid json {{{"
+                mock_result.stderr = ""
+                mock_result.returncode = 0
+                return mock_result
+        mock_result = MagicMock()
+        mock_result.stdout = '{"score": 3, "explanation": "Good work."}'
+        mock_result.stderr = ""
+        mock_result.returncode = 0
+        return mock_result
+
+    with patch("givn_harness.judge.subprocess.run", side_effect=mock_run):
         context.judge_scores = run_judge(context.workspace_path)
 
     context.report = generate_report_structure(
@@ -628,4 +645,31 @@ def step_stderr_reports_ralph_not_found(context):
     stderr = context.cli_result.stderr
     assert "ralph binary not found" in stderr, (
         f"expected stderr to report ralph binary not found, got: {stderr!r}"
+    )
+
+
+@given("the LLM judge returns invalid JSON for the proposal artifact")
+def step_judge_returns_invalid_json(context):
+    context._judge_invalid_json_artifacts = {"proposal"}
+
+
+@then("the proposal artifact judge score is 0")
+def step_proposal_score_is_zero(context):
+    scores = context.judge_scores
+    matching = [s for s in scores if s.artifact == "proposal"]
+    assert len(matching) == 1, (
+        f"expected 1 score for proposal, got {len(matching)}"
+    )
+    assert matching[0].score == 0, (
+        f"expected proposal score 0, got {matching[0].score}"
+    )
+
+
+@then('the explanation is "judge output unparseable"')
+def step_explanation_is_unparseable(context):
+    scores = context.judge_scores
+    matching = [s for s in scores if s.artifact == "proposal"]
+    assert len(matching) == 1
+    assert matching[0].explanation == "judge output unparseable", (
+        f"expected explanation 'judge output unparseable', got {matching[0].explanation!r}"
     )
