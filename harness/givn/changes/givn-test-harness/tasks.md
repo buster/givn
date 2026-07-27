@@ -518,15 +518,66 @@
         ```
       COMMIT: `751ed40` — feat(test-harness): Report is written as a markdown file
 
-- [ ] test-harness: Cross-run index accumulates results
+- [x] test-harness: Cross-run index accumulates results
       Design constraints:
         - `index.py` reads/writes `reports/index.json` as a JSON array of summaries.
         - Each entry: run_id, task, timestamp, overall_pass, check_pass_count, judge_avg_score, report_path.
         - New run appends entry; existing entries preserved.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Implement `index.py`. Files: `index.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Cross-run index accumulates results". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Cross-run index accumulates results                                                # tests/features/harness/test-harness.feature:127
+            Given an existing cross-run index at "reports/index.json" with one prior entry             # tests/features/steps/harness/test_harness_steps.py:395
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            When the user runs `givn-harness run --task task.md --output reports/`                     # None
+            Then the index file at "reports/index.json" contains two entries                           # None
+            And the new entry includes the run identifier, task name, timestamp, and overall pass/fail # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:127  Cross-run index accumulates results
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        0 steps passed, 0 failed, 1 error, 126 skipped
+        Took 0min 0.001s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Cross-run index accumulates results                                                # tests/features/harness/test-harness.feature:127
+            Given an existing cross-run index at "reports/index.json" with one prior entry             # tests/features/steps/harness/test_harness_steps.py:395
+            When the user runs `givn-harness run --task task.md --output reports/`                     # tests/features/steps/harness/test_harness_steps.py:25
+            Then the index file at "reports/index.json" contains two entries                           # tests/features/steps/harness/test_harness_steps.py:425
+            And the new entry includes the run identifier, task name, timestamp, and overall pass/fail # tests/features/steps/harness/test_harness_steps.py:438
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        4 steps passed, 0 failed, 123 skipped
+        Took 0min 0.075s
+        ```
+        Files created: `src/givn_harness/index.py`
+        Files modified: `src/givn_harness/cli.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        9 scenarios passed, 0 failed, 16 skipped
+        41 steps passed, 0 failed, 86 skipped
+        Took 0min 0.526s
+        ```
+      COMMIT: `592d36e` — feat(test-harness): Cross-run index accumulates results
 
 - [ ] test-harness: Report handles a run where the agent produced no artifacts
       Design constraints:
