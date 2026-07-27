@@ -1,0 +1,184 @@
+---
+name: givn-review
+description: Complete the coverage review for a givn change — classify every gap, sign off, and confirm GREEN.
+---
+
+# givn-review
+
+Complete the coverage review for change `<change-id>`.
+
+## Context
+
+- Review file: `givn/changes/<change-id>/review.md`
+- Instructions: run `givn instructions review --change <change-id>`
+- Test runner: `givn missing-testrunner`
+
+## Step 0: fabrication audit (mandatory, before anything else)
+
+A change can reach review with every task checked off, the runner exiting
+0, and almost nothing implemented — if step definitions were left as empty
+stubs. Mechanical check, not a judgment call:
+
+0. **Verify @e2e tag integrity.** Grep every delta `.feature` file in
+   `givn/changes/<change-id>/specs/` for scenario tags. If any scenario
+   contains `@givn.added @e2e` in its git history or tracked state but no
+   longer carries `@e2e`, record this as a fabrication-audit finding:
+   `@e2e` tags were removed to bypass the gate. The fix is to restore the
+   `@e2e` tag and configure `verify.e2e_command`.
+
+1. Grep every step definition file for empty/no-op bodies (`{}`, bare
+   `pass`, bare `return`, no assertion library reference). Record findings.
+2. For every checked-off `[x]` task, confirm a commit exists and its diff
+   touches production source (not just the `.feature` file or a stub).
+3. For every component design.md promised, confirm it exists in the tree.
+4. Confirm the setup task's proof-of-strictness evidence is present and
+   shows a non-zero exit.
+5. Read every `@e2e` scenario's step definitions. If its Then steps assert
+   ONLY against a repository/database, record it as a downgraded e2e
+   scenario — it does not prove the feature works end-to-end.
+6. For a browser-UI capability, read every `@e2e` step definition's
+   implementation. If it sends an HTTP request or calls `fetch()`/
+   `XMLHttpRequest` from the page's JS context instead of driving the
+   browser (click/type/navigate), record it as a downgraded e2e scenario —
+   the interaction was never real, regardless of what the assertion checks.
+7. Identify the exact file(s) `verify.e2e_command` actually invokes — read
+   the command, not just a filename containing "e2e". Run `git status` and
+   search the tree (including untracked/uncommitted files) for any other
+   `@e2e` step implementation of the same capability. Reviewing a weaker
+   implementation while a stronger, real-interface one already exists
+   elsewhere (committed or not) is itself a fabrication-audit finding.
+8. Check `@e2e` scope: confirm each capability has one `@e2e` scenario per
+   distinct happy-path action, not one per input variant/error case/enum
+   value. Flag excess `@e2e` scenarios on the same action for conversion to
+   regular scenarios.
+9. Confirm the local run command (design.md's Local Runnability section)
+   starts the full stack, including every digital twin, cleanly.
+10. Read `verify.command` and `verify.e2e_command` literally from
+    `givn/config.yaml`. If they are the same string, the "e2e run" is not
+    isolating `@e2e` at all — always a finding. Prove isolation by running
+    both and comparing scenario counts: `verify.e2e_command` MUST report
+    strictly fewer scenarios, unless every in-scope scenario is `@e2e`
+    (state this explicitly).
+11. Diff the actual implementation (commands, file layout, framework)
+    against what design.md explicitly named. A deviation implemented
+    without updating design.md and re-running design-review first — e.g.
+    reusing one step file design.md split into two, or an unfiltered
+    `verify.e2e_command` where design.md named a tag-filtered one — is a
+    fabrication-audit finding: implementation silently overrode an
+    already-reviewed decision. Fix by either conforming to design.md as
+    reviewed, or updating design.md + re-running design-review first.
+12. Any finding is unfinished implementation, not a coverage gap — reopen
+    the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
+    real-interface obstacle per design.md, never leaving a repository-only
+    or HTTP/fetch() shortcut in place), before continuing.
+13. **Interaction coverage verification** — cross-reference the spec's
+    User Interaction Inventory against the design's Interaction Coverage
+    Matrix and the actual `.feature` file + step definitions:
+    a. Read the spec `.feature` file and extract the `# User Interaction
+       Inventory:` comment block. List every entry.
+    b. Read the design's `Interaction Coverage Matrix` table. Confirm
+       every inventory entry appears as a row. Flag missing or extra rows
+       as a finding — every interaction must be mapped, no unmapped
+       interaction may exist.
+    c. For each matrix row, confirm an `@e2e` scenario with a matching
+       title exists in the `.feature` file. The scenario title need not be
+       identical to the inventory description, but it must clearly cover
+       the same interaction.
+    d. For each matrix row, grep the e2e step definition file(s) for the
+       promised driving mechanism. If the matrix says "Playwright: click
+       button X", the step file must import/use Playwright (not `reqwest`,
+       not raw HTTP). If the driving mechanism is an HTTP client for an
+       API-only capability, confirm the step file uses that HTTP client.
+       Mismatch = driving-mechanism finding: the implementation silently
+       used a different driver than the reviewed design committed to.
+    e. Record the full cross-reference as a table in the fabrication audit
+       section of review.md.
+14. **Coverage instrumentation check.** Confirm that `verify.command` (or
+    `coverage.command` if the coverage addon is enabled) produces coverage
+    data. Inspect the test runner output for line/branch coverage metrics.
+    If no coverage data is present in the output, and `coverage.command`
+    is still the default sentinel `givn missing-coverage`, this is a
+    fabrication-audit finding — the review cannot proceed until coverage
+    is measurable. Set `coverage.command` to a coverage-instrumented
+    runner (e.g. `cargo llvm-cov --test features_runner --summary-only`
+    for Rust) and re-run `givn check coverage --change <change-id>` to
+    generate `coverage.md`. An uninstrumented test runner producing no
+    coverage data is indistinguishable from zero coverage — the gate
+    cannot close on that uncertainty.
+
+Record the result (files scanned, findings, remediation) in review.md even
+when clean.
+
+## Coverage gate (completeness, not percentage)
+
+Classify every uncovered line/branch into exactly one bucket:
+
+1. **Dead code** (YAGNI/KISS) → delete it now.
+2. **Missing test coverage** → add a scenario + run RED/GREEN/REFACTOR, or fix steps.
+3. **Legitimately hard to test** — rare; needs concrete technical justification.
+
+These three buckets are exhaustive — **never invent a fourth**. Phrases like
+"acceptable for this iteration scope," "sufficient for current scope," or
+"future scope" that excuse a gap instead of naming one of the three buckets
+are themselves a fabrication-audit finding. A missing or downgraded `@e2e`
+scenario is always bucket 2 (missing test coverage), never an exception.
+
+Coverage is complete when every gap is classified and resolved (or justified).
+**There is no minimum percentage.** A high number is a side effect, not the goal.
+
+## Steps
+
+1. Run `givn missing-testrunner` — confirm all non-@e2e tests pass.
+   Coverage data is embedded in the output if the runner is configured
+   with coverage instrumentation. Extract the coverage summary from the
+   output — do not run a separate coverage tool.
+2. Run `verify.e2e_command` — confirm all @e2e tests pass.
+3. Extract uncovered regions from the coverage output. If the coverage
+   addon is enabled, read `givn/changes/<change-id>/coverage.md` —
+   this was generated by `givn check coverage` and contains the measured
+   coverage data. If it says `COVERAGE: NOT_CONFIGURED` or does not
+   exist, this is a fabrication-audit finding (see Step 0, check 14) —
+   go back and configure coverage instrumentation, then generate
+   `coverage.md`. If the coverage addon is not enabled, extract coverage
+   from the `givn missing-testrunner` output directly. Under no circumstances
+   may the review proceed without measured coverage data — do not write
+   "unmeasured" or "NOT_CONFIGURED" as a resolution. The three-bucket
+   classification requires tool-measured data to be meaningful.
+4. Classify each gap (1, 2, or 3 above).
+5. Resolve each gap:
+   - Dead code → delete.
+   - Missing test → add scenario + RED/GREEN/REFACTOR/COMMIT.
+   - Hard to test → write justification.
+6. Confirm every capability has exactly one `@e2e` smoke-test scenario per
+   distinct happy-path action, with a real-interface primary assertion
+   driven through the actual interface (real browser for a browser-UI
+   capability, never HTTP/fetch() standing in for it). Missing, downgraded,
+   or over-produced (one per variant) = classify as "missing test"/"needs
+   fixing" and add, fix, or convert accordingly — never as an exception
+   outside the three buckets. Before concluding a real driver is
+   unavailable, search the tree yourself (including untracked files, per
+   fabrication-audit step 7) — do not take an absence at face value.
+7. Run interaction coverage verification (fabrication-audit step 13).
+8. Run both runners again — confirm still GREEN.
+9. Complete the sign-off checklist in review.md, including the fabrication
+   audit result.
+10. Write `REVIEW: PASS` at the end of review.md when all items are checked
+    AND the fabrication audit is clean.
+
+## After sign-off
+
+```
+givn check review --change <change-id>
+```
+
+## Verify command
+
+Unit/integration:
+```
+givn missing-testrunner
+```
+
+E2E smoke tests:
+```
+verify.e2e_command (configured in givn/config.yaml)
+```

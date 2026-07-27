@@ -64,6 +64,30 @@ def step_workspace_not_within_repo(context):
         pass
 
 
+@then('the workspace contains an initialized git repository')
+def step_workspace_contains_git_repo(context):
+    git_dir = os.path.join(context.workspace_path, ".git")
+    assert os.path.isdir(git_dir), (
+        f"expected .git directory at {git_dir}, not found"
+    )
+
+
+@then('the workspace contains a givn/ directory scaffolded by givn init')
+def step_workspace_contains_givn_dir(context):
+    givn_dir = os.path.join(context.workspace_path, "givn")
+    assert os.path.isdir(givn_dir), (
+        f"expected givn/ directory at {givn_dir}, not found"
+    )
+
+
+@then('the workspace contains givn/config.yaml')
+def step_workspace_contains_givn_config_yaml(context):
+    config_yaml = os.path.join(context.workspace_path, "givn", "config.yaml")
+    assert os.path.isfile(config_yaml), (
+        f"expected givn/config.yaml at {config_yaml}, not found"
+    )
+
+
 def _rmtree(path: str) -> None:
     import shutil
     if os.path.isdir(path):

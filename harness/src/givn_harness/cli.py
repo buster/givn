@@ -1,6 +1,6 @@
 import click
 
-from givn_harness.workspace import create_workspace
+from givn_harness.workspace import create_workspace, init_workspace
 
 
 @click.group()
@@ -14,4 +14,5 @@ def main():
 @click.option("--workspace-root", default="/tmp/givn-harness-workspaces", type=click.Path())
 def run(task: str, output: str, workspace_root: str) -> None:
     workspace_path = create_workspace(workspace_root)
+    init_workspace(workspace_path)
     click.echo(workspace_path)

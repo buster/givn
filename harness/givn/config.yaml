@@ -1,0 +1,225 @@
+# ============================================================================
+#  givn configuration  —  https://github.com/TBD/givn
+#  See arc42 chapter 8 (cross-cutting concepts) for detailed explanations.
+#
+#  How this file works:
+#    - Commented lines (# ...) are the givn-managed documentation scaffold.
+#      They may be refreshed by `givn upgrade` (which preserves your overrides).
+#    - Uncommented key/value lines are user-owned and are never touched by
+#      `givn upgrade`.
+#    - To override a setting: uncomment the relevant key and edit its value.
+#    - After `givn upgrade`: review changes via `git diff` and resolve there.
+# ============================================================================
+
+# Managed by givn. Do not delete the next line.
+givn_config_version: "0.2.0"
+
+# --- Test runner -------------------------------------------------------------
+# The command givn invokes to run your test suite. This is the ONLY value
+# you MUST set for a working project. The shipped default is a sentinel that
+# prints setup guidance and exits non-zero — so nothing ever falsely reports
+# GREEN until you configure a real runner.
+#
+# CHANGE ME — set this to your project's test runner.
+#
+# RECOMMENDED — coverage-instrumented runners (the review gate requires
+# coverage data to measure gaps):
+#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
+#   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
+#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js — coverage)
+#   coverage run -m behave givn/specs && coverage report  (Python — coverage)
+#   mvn verify                                            (Java — with JaCoCo)
+#
+# Fallback — bare test runners (no coverage data produced; use only while
+# prototyping, then switch to a coverage-instrumented runner above):
+#   cargo test --test features_runner       (Rust — test only, no coverage)
+#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, no coverage)
+#   behave                                  (Python — test only, no coverage)
+#   go test ./...                           (Go — no coverage)
+#   pytest                                  (Python — test only, no coverage)
+#
+# WARNING: If your verify.command does NOT produce coverage data, you MUST
+# also set coverage.command below to an instrumented runner. Without coverage
+# data the review gate cannot measure gaps and will reject the change.
+#
+# See arc42 ch.8.10 for details.
+verify:
+  command: "uv run behave tests/features/ --no-capture --tags=-wip"
+
+# --- Coverage gate (archive-level, requires addons.coverage: true) ------------
+# Commands that run tests with coverage instrumentation. Each must produce a
+# Cobertura XML file (default paths: coverage/non-e2e-cobertura.xml and
+# coverage/e2e-cobertura.xml). givn merges them into a unified summary written
+# to README.md.
+#
+# non_e2e_command: runs non-e2e tests with coverage instrumentation.
+# e2e_command:     runs @e2e tests with coverage instrumentation.
+#
+# E2e coverage typically requires running the application server with code
+# instrumentation (e.g. c8 --all, nyc instrument, JaCoCo agent), then running
+# the e2e test harness against the instrumented server — the coverage data is
+# collected from the server's output, not the test harness itself.
+#
+# The archive gate validates that both reports come from distinct
+# instrumentation runs — do not copy the non-e2e XML to the e2e path.
+#
+# Examples:
+#   npx c8 --reporter=cobertura npx cucumber-js "givn/specs/**/*.feature"
+#   npx c8 --reporter=cobertura npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
+#   cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner
+#
+# WARNING: Do not leave the sentinels. Without working coverage commands,
+# the coverage gate will block archive.
+coverage:
+  non_e2e_command: "givn missing-coverage"   # <-- replace this with your non-e2e coverage command
+  e2e_command: "givn missing-coverage"   # <-- replace this with your e2e coverage command
+
+# --- E2E test runner ----------------------------------------------------------
+# The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged
+# scenarios that exercise the real interaction surface (browser, CLI, API).
+# E2e scenarios use separate step definitions and may require local test
+# infrastructure (application server, test database, Testcontainers, etc.).
+#
+# Examples:
+#   npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
+#   behave --tags=@e2e
+#   cargo test --test e2e_runner
+#   mvn test -Dcucumber.filter.tags="@e2e"
+#   pytest --tags=e2e
+#
+# verify:
+#   e2e_command: ""   # <-- set this to your e2e runner
+
+# --- Features path -----------------------------------------------------------
+# Path the test runner reads .feature files from during development. Also
+# exported to the test runner as the GIVN_FEATURES environment variable.
+#
+# Default: givn/specs
+# After archive, GIVN_FEATURES points here for the permanent merged specs.
+#
+# verify:
+#   features_path: "givn/specs"
+
+# --- Artifact graph overlay --------------------------------------------------
+# Patch the embedded default artifact graph without replacing it. Declare only
+# the additions, modifications, or removals you want. Everything else keeps its
+# default. See arc42 ch.8.2 for examples and full semantics.
+#
+# Examples:
+#
+#   # a) Remove the review gate entirely:
+#   # artifacts:
+#   #   - id: review
+#   #     remove: true
+#   # apply:
+#   #   requires: [tasks]
+#
+#   # b) Make review optional (skip without blocking):
+#   # artifacts:
+#   #   - id: review
+#   #     optional: true
+#   # apply:
+#   #   requires: [tasks]
+#
+#   # NEVER do this to design-review (optional: true or remove: true). It is
+#   # a planning-layer gate that catches a flawed plan before tasks and code
+#   # are written from it — removing it does not save time, it defers the
+#   # same problems to implementation where they cost far more to fix.
+#
+#   # c) Add a custom refactor step after implementation:
+#   # artifacts:
+#   #   - id: refactor
+#   #     generates: refactor.md
+#   #     requires: [tasks]
+#   #     template: refactor.md
+#   #     instruction: |
+#   #       Record refactorings: what was cleaned up, why, and confirmation
+#   #       that all scenarios still pass. No behaviour change.
+#   # apply:
+#   #   requires: [tasks, refactor, review]
+
+# --- Archive gate ------------------------------------------------------------
+# Control which artifacts must be complete before `givn archive` succeeds.
+# Default: [tasks, review]  — both must be done and their hooks must pass.
+#
+# apply:
+#   requires: [tasks, review]
+#   tracks: "tasks.md"         # file whose checkboxes givn tracks
+
+# --- Hooks (post-artifact gate checks) ---------------------------------------
+# Each artifact may declare `post:` hooks that run after it is completed.
+# `givn check <artifact>` runs them on demand.
+# `givn archive` auto-runs the hooks of all apply.requires artifacts as the gate.
+#
+# Built-in hook names:
+#   verify      -> run verify.command (the test runner)
+#   verify-e2e  -> run verify.e2e_command (the e2e smoke test runner).
+#                  If any in-scope .feature file has an @e2e-tagged scenario,
+#                  this hook HARD FAILS when verify.e2e_command is empty —
+#                  it only skips silently when there is genuinely no @e2e
+#                  scenario in scope. An @e2e scenario with no configured
+#                  runner is an unenforced gap, never an acceptable default.
+#   lint        -> run `givn lint` (static .feature check)
+# Or: any shell command string.
+# Object form adds options: { run: verify, allow_failure: false, name: "..." }
+#
+# Defaults already in the embedded manifest:
+#   tasks.post:  [verify]
+#   review.post: [verify, verify-e2e]
+#
+# Override examples:
+# artifacts:
+#   - id: tasks
+#     post: [lint, verify]
+#   - id: review
+#     post:
+#       - { run: verify, name: "full suite green" }
+#       - { run: "scripts/coverage.sh", allow_failure: true }
+
+# --- Addons ------------------------------------------------------------------
+# Pre-packaged artifact sets. See arc42 ch.8.11.
+# `givn init` enables ALL addons by default (opt-out via `givn init --no-addons`).
+# This project's actual settings are below, written by `givn init`/`givn addons`:
+#
+addons:
+  arc42: true
+  absolute_mode: true
+#                          # policy. Manages a fenced <!-- givn:begin:absolute-mode -->
+#                          # block in AGENTS.md; the rest of AGENTS.md is untouched.
+  readme: true
+  coverage: true
+#                          # Toggle with: givn addons enable|disable <name>, or
+#                          # `givn addons list` to see all known addons.
+
+# --- arc42 configuration (requires addons.arc42: true) -----------------------
+# arc42:
+#   output_dir: "docs/arc42"     # where durable arc42 docs live (not per-change)
+#   chapters:                    # subset/superset of the 12 standard chapters
+#     - introduction-and-goals
+#     - architecture-constraints
+#     - context-and-scope
+#     - solution-strategy
+#     - building-block-view
+#     - runtime-view
+#     - deployment-view
+#     - crosscutting-concepts
+#     - architecture-decisions
+#     - quality-requirements
+#     - risks-and-technical-debt
+#     - glossary
+#
+# When addons.arc42 is true, the arc42 document is produced during the
+# design phase and checked in design-review: design-review requires
+# arc42-docs, and arc42-docs itself gates archive (added to
+# apply.requires) -- an enabled-but-unfinished arc42 doc blocks
+# `givn archive`, not just the "ready-to-archive" status label.
+
+# --- Extras ------------------------------------------------------------------
+# Project-level skills and commands independent of the change lifecycle:
+# givn-domain-modeling, givn-dev-principles (skills), grill-me, grill-with-docs
+# (commands). `givn init` enables extras by default (opt-out via
+# `givn init --no-extras`). When enabled, `givn skills sync` includes them
+# alongside core workflow skills. `givn extras install` enables + syncs;
+# `givn extras uninstall` disables + removes.
+#
+extras: true

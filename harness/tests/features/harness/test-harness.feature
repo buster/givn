@@ -16,7 +16,7 @@ Feature: test-harness
     Then the workspace is created in a temporary directory under the configured workspace root
     And the workspace directory is not within the givn repository
 
-  @givn.added @wip
+  @givn.added
   Scenario: Workspace is initialized with git init and givn init
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
