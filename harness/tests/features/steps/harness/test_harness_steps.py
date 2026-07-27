@@ -699,7 +699,8 @@ def step_process_receives_sigint(context):
         "--output", os.path.join(context.output_dir, "reports"),
         "--workspace-root", context.workspace_root,
     ]
-    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
+                            env={**os.environ, "GIVN_HARNESS_NO_SANDLOCK": "1"})
     time.sleep(1.0)
     proc.send_signal(signal.SIGINT)
     stdout, stderr = proc.communicate(timeout=5)
@@ -781,6 +782,7 @@ def step_user_runs_harness_with_timeout(context):
         capture_output=True,
         text=True,
         timeout=timeout + 5,
+        env={**os.environ, "GIVN_HARNESS_NO_SANDLOCK": "1"},
     )
     context.cli_result = result
     context.workspace_path = result.stdout.strip().split("\n")[-1]
