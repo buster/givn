@@ -1,12 +1,13 @@
 import os
 import signal
+import subprocess
 import time
 
 import click
 
 from givn_harness.index import update_index
 from givn_harness.report import write_report
-from givn_harness.runner import check_ralph_binary
+from givn_harness.runner import check_ralph_binary, run_agent
 from givn_harness.sandbox import check_sandlock
 from givn_harness.types import Check
 from givn_harness.workspace import copy_task, create_workspace, init_workspace
@@ -23,7 +24,8 @@ def main() -> None:
 @click.option("--workspace-root", default="/tmp/givn-harness-workspaces", type=click.Path())
 @click.option("--ralph-bin", default="/usr/local/bin/ralph", type=click.Path())
 @click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool) -> None:
+@click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
@@ -54,7 +56,13 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool)
                 Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
             ]
             termination = "agent failure"
-        time.sleep(2)
+        if timeout is not None:
+            try:
+                run_agent(workspace_path, timeout)
+            except subprocess.TimeoutExpired:
+                termination = "timeout"
+        else:
+            time.sleep(2)
     finally:
         signal.signal(signal.SIGINT, original_handler)
 

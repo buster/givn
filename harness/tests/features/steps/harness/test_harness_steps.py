@@ -704,3 +704,43 @@ def step_report_records_interruption_termination(context):
     assert "**Termination:** interrupted" in content or "Termination: interrupted" in content, (
         f"report does not record interruption as termination reason: {content!r}"
     )
+
+
+@when('the user runs `givn-harness run --task task.md --output reports/ --timeout 60`')
+def step_user_runs_harness_with_timeout(context):
+    timeout = getattr(context, "timeout", 2)
+    cmd = [
+        "uv", "run", "givn-harness", "run",
+        "--task", context.task_file,
+        "--output", os.path.join(context.output_dir, "reports"),
+        "--workspace-root", context.workspace_root,
+        "--timeout", str(timeout),
+    ]
+    ralph_bin = getattr(context, "ralph_bin", None)
+    if ralph_bin is not None:
+        cmd.extend(["--ralph-bin", ralph_bin])
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=timeout + 5,
+    )
+    context.cli_result = result
+    context.workspace_path = result.stdout.strip()
+
+
+@then("the harness stops agent execution after 60 seconds")
+def step_harness_stops_agent_after_timeout(context):
+    assert context.cli_result.returncode == 0, (
+        f"expected exit 0, got {context.cli_result.returncode}"
+    )
+
+
+@then("the report records the timeout as the termination reason")
+def step_report_records_timeout_termination(context):
+    report_path = Path(context.workspace_path) / "report.md"
+    assert report_path.is_file(), f"report file {report_path} does not exist"
+    content = report_path.read_text()
+    assert "**Termination:** timeout" in content or "Termination: timeout" in content, (
+        f"report does not record timeout as termination reason: {content!r}"
+    )

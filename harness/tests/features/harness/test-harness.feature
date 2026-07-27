@@ -72,7 +72,7 @@ Feature: test-harness
     And Docker commands succeed inside the sandbox
     And Playwright browser launches succeed inside the sandbox
 
-  @givn.added @wip
+  @givn.added
   Scenario: Agent execution respects time limit
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/ --timeout 60`
