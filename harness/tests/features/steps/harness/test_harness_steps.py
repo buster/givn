@@ -541,6 +541,51 @@ def step_new_entry_has_fields(context):
     assert isinstance(new_entry["overall_pass"], bool), "overall_pass is not a bool"
 
 
+@given("the sandlock SDK is not importable")
+def step_sandlock_not_importable(context):
+    context.workspace_root = "/tmp/givn-harness-workspaces"
+    os.makedirs(context.workspace_root, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write("task content")
+        context.task_file = f.name
+    context.output_dir = tempfile.mkdtemp()
+    context._cleanup_paths = [context.task_file]
+    context.add_cleanup(lambda: os.unlink(context.task_file))
+    context.add_cleanup(lambda: _rmtree(context.output_dir))
+    os.environ["GIVN_HARNESS_NO_SANDLOCK"] = "1"
+    context.add_cleanup(lambda: os.environ.pop("GIVN_HARNESS_NO_SANDLOCK", None))
+
+
+@then("the harness logs a warning that sandlock is unavailable")
+def step_harness_sandlock_warning(context):
+    stderr = context.cli_result.stderr
+    assert "sandlock" in stderr.lower(), (
+        f"expected stderr to mention sandlock, got: {stderr!r}"
+    )
+
+
+@then("the harness runs the agent without sandbox confinement")
+def step_harness_runs_without_sandbox(context):
+    assert os.path.isdir(context.workspace_path), (
+        f"workspace {context.workspace_path} does not exist"
+    )
+    assert context.cli_result.returncode == 0, (
+        f"expected exit 0, got {context.cli_result.returncode}"
+    )
+
+
+@then("the report notes that the run was unsandboxed")
+def step_report_notes_unsandboxed(context):
+    report_path = os.path.join(context.workspace_path, "report.md")
+    assert os.path.isfile(report_path), (
+        f"report file {report_path} does not exist"
+    )
+    content = Path(report_path).read_text()
+    assert "**Sandboxed:** No" in content or "Sandboxed: No" in content, (
+        f"report does not indicate unsandboxed run: {content!r}"
+    )
+
+
 def _check_judge_score(context, artifact_name):
     scores = context.judge_scores
     matching = [s for s in scores if s.artifact == artifact_name]

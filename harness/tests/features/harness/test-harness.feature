@@ -191,7 +191,7 @@ Feature: test-harness
     And the LLM judge scores default to 0
     And the termination reason is recorded in the report
 
-  @givn.added @wip
+  @givn.added
   Scenario: Sandlock is not available, harness falls back to --no-sandbox
     Given the sandlock SDK is not importable
     When the user runs `givn-harness run --task task.md --output reports/`

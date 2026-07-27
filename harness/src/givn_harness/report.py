@@ -26,11 +26,12 @@ def write_report(
     task: str = "",
     agent_log: str = "",
     termination: str = "completed",
+    sandboxed: bool = True,
 ) -> Path:
     report_path = Path(workspace_path) / "report.md"
     run_id = Path(workspace_path).name
     timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
-    all_pass = all(c.passed for c in checks)
+    all_pass = all(c.passed for c in checks) if checks else True
 
     lines: list[str] = []
 
@@ -43,6 +44,7 @@ def write_report(
     lines.append(f"- **Timestamp:** {timestamp}")
     lines.append(f"- **Workspace:** {workspace_path}")
     lines.append(f"- **Termination:** {termination}")
+    lines.append(f"- **Sandboxed:** {'Yes' if sandboxed else 'No'}")
     lines.append(f"- **Overall:** {'PASS' if all_pass else 'FAIL'}")
     lines.append("")
 
