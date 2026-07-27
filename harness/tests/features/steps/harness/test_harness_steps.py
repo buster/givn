@@ -706,6 +706,47 @@ def step_report_records_interruption_termination(context):
     )
 
 
+@when('the user runs `givn-harness run --task task.md --output reports/ --max-iterations 5`')
+def step_user_runs_harness_with_max_iterations(context):
+    cmd = [
+        "uv", "run", "givn-harness", "run",
+        "--task", context.task_file,
+        "--output", os.path.join(context.output_dir, "reports"),
+        "--workspace-root", context.workspace_root,
+        "--max-iterations", "5",
+    ]
+    ralph_bin = getattr(context, "ralph_bin", None)
+    if ralph_bin is not None:
+        cmd.extend(["--ralph-bin", ralph_bin])
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+    )
+    context.cli_result = result
+    context.workspace_path = result.stdout.strip()
+
+
+@then("ralph is invoked with --max-iterations 5")
+def step_ralph_invoked_with_max_iterations(context):
+    from unittest.mock import patch
+
+    from givn_harness.runner import run_agent
+
+    with patch("givn_harness.runner.subprocess.run") as mock_run:
+        run_agent(context.workspace_path, max_iterations=5)
+
+    mock_run.assert_called_once()
+    args, _kwargs = mock_run.call_args
+    cmd = args[0]
+    assert "--max-iterations" in cmd, f"expected --max-iterations in command, got {cmd}"
+    max_iter_index = cmd.index("--max-iterations")
+    value_index = cmd.index("5")
+    assert value_index == max_iter_index + 1, (
+        f"expected --max-iterations followed by 5, got {cmd}"
+    )
+
+
 @when('the user runs `givn-harness run --task task.md --output reports/ --timeout 60`')
 def step_user_runs_harness_with_timeout(context):
     timeout = getattr(context, "timeout", 2)

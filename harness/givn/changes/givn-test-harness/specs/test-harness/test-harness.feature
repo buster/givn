@@ -79,7 +79,7 @@ Feature: test-harness
     Then the harness stops agent execution after 60 seconds
     And the report records the timeout as the termination reason
 
-  @givn.added @wip
+  @givn.added
   Scenario: Agent execution respects maximum iteration limit
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/ --max-iterations 5`

@@ -25,7 +25,8 @@ def main() -> None:
 @click.option("--ralph-bin", default="/usr/local/bin/ralph", type=click.Path())
 @click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
 @click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None) -> None:
+@click.option("--max-iterations", type=int, default=None, help="Maximum agent iterations")
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
@@ -56,9 +57,9 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
                 Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
             ]
             termination = "agent failure"
-        if timeout is not None:
+        if timeout is not None or max_iterations is not None:
             try:
-                run_agent(workspace_path, timeout)
+                run_agent(workspace_path, timeout=timeout, max_iterations=max_iterations)
             except subprocess.TimeoutExpired:
                 termination = "timeout"
         else:
