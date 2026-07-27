@@ -402,16 +402,57 @@
         ```
       COMMIT: `0f8e425` — feat(test-harness): Report includes all ten automated checks
 
-- [ ] test-harness: LLM-as-judge scores each artifact on a 0-4 rubric
+- [x] test-harness: LLM-as-judge scores each artifact on a 0-4 rubric
       Design constraints:
         - `judge.py` scores 5 artifacts (proposal, specs, design, tasks, review) on 0-4 scale.
         - Judge prompt delivered as a file, passed to opencode (single-turn, not ralph loop).
         - Each score has a written explanation.
         - `JudgeScore` dataclass in `types.py`.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Implement `judge.py` with opencode invocation per artifact. Files: `judge.py`, `types.py` (extend). Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): LLM-as-judge scores each artifact on a 0-4 rubric". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: LLM-as-judge scores each artifact on a 0-4 rubric     # tests/features/harness/test-harness.feature:107
+            Given a completed test run at "reports/run-001/"              # tests/features/steps/harness/test_harness_steps.py:175
+            When the harness evaluates the workspace                      # tests/features/steps/harness/test_harness_steps.py:267
+            Then an LLM judge scores the proposal artifact on a 0-4 scale # tests/features/steps/harness/test_harness_steps.py:306
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            And an LLM judge scores the specs artifact on a 0-4 scale     # None
+            ...
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:107  LLM-as-judge scores each artifact on a 0-4 rubric
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        Took 0min 0.022s
+        ```
+      GREEN:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        8 steps passed, 0 failed, 119 skipped
+        Took 0min 0.044s
+        ```
+        Files modified: `src/givn_harness/judge.py`, `src/givn_harness/types.py`, `src/givn_harness/report.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        8 steps passed, 0 failed, 119 skipped
+        Took 0min 0.032s
+        ```
+        Files created: `src/givn_harness/_utils.py` (extracted `find_change_dir` shared between evaluator and judge)
+        Files modified: `src/givn_harness/evaluator.py` (use shared `find_change_dir`)
+      COMMIT: `1f90036` — feat(test-harness): LLM-as-judge scores each artifact on a 0-4 rubric
 
 - [ ] test-harness: Report is written as a markdown file
       Design constraints:

@@ -114,7 +114,7 @@ Feature: test-harness
     And an LLM judge scores the review artifact on a 0-4 scale
     And each score is accompanied by a written explanation
 
-  @givn.added @wip
+  @givn.added
   Scenario: Report is written as a markdown file
     Given a completed test run at "reports/run-001/"
     When the harness evaluates the workspace

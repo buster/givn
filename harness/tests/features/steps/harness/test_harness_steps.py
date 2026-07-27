@@ -270,7 +270,7 @@ def step_harness_evaluates_workspace(context):
 
     from givn_harness.evaluator import run_evaluation
     from givn_harness.judge import run_judge
-    from givn_harness.report import generate_report_structure
+    from givn_harness.report import generate_report_structure, write_report
 
     context.checks = run_evaluation(context.workspace_path)
 
@@ -285,6 +285,12 @@ def step_harness_evaluates_workspace(context):
 
     context.report = generate_report_structure(
         context.checks, context.workspace_path, context.judge_scores
+    )
+
+    context.report_path = write_report(
+        context.checks,
+        context.workspace_path,
+        judge_scores=context.judge_scores,
     )
 
 
@@ -352,6 +358,38 @@ def step_each_score_has_explanation(context):
         assert isinstance(score.explanation, str), (
             f"explanation is not a string for {score.artifact}"
         )
+
+
+@then('a report file "{path}" exists')
+def step_report_file_exists(context, path):
+    report_path = context.report_path
+    assert report_path.is_file(), (
+        f"report file {report_path} does not exist"
+    )
+
+
+@then("the report contains a section for automated checks")
+def step_report_contains_automated_checks_section(context):
+    content = context.report_path.read_text()
+    assert "## Automated Checks" in content, (
+        "report does not contain '## Automated Checks' section"
+    )
+
+
+@then("the report contains a section for LLM judge scores")
+def step_report_contains_judge_scores_section(context):
+    content = context.report_path.read_text()
+    assert "## LLM Judge Scores" in content, (
+        "report does not contain '## LLM Judge Scores' section"
+    )
+
+
+@then("the report contains the workspace path")
+def step_report_contains_workspace_path(context):
+    content = context.report_path.read_text()
+    assert context.workspace_path in content, (
+        f"report does not contain workspace path {context.workspace_path}"
+    )
 
 
 def _check_judge_score(context, artifact_name):
