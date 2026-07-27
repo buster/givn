@@ -23,7 +23,8 @@ def main() -> None:
 @click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
 @click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
 @click.option("--max-iterations", type=int, default=None, help="Maximum agent iterations")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None) -> None:
+@click.option("--profile", type=str, default=None, help="Sandlock learn-then-confine profile name")
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, profile: str | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
@@ -40,7 +41,7 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
     if not sandboxed:
         click.echo("WARNING: sandlock is not available, running without sandbox", err=True)
 
-    sandbox = create_sandbox(workspace_path) if sandboxed else None
+    profile_info = create_sandbox(workspace_path, profile_name=profile) if sandboxed else None
 
     checks: list[Check] = []
     agent_log = ""
@@ -53,7 +54,7 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
     else:
         agent_log, termination = run_agent(
             workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
-            sandbox=sandbox,
+            profile_info=profile_info,
         )
 
     write_report(

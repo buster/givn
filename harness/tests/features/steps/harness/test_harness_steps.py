@@ -850,3 +850,68 @@ def step_ralph_invoked_with_prompt_file(context):
     assert kwargs["cwd"] == context.workspace_path, (
         f"expected cwd={context.workspace_path}, got {kwargs.get('cwd')}"
     )
+
+
+@given("the sandlock profile storage directory exists")
+def step_sandlock_profile_dir_exists(context):
+    import os
+    from sandlock._profile import profiles_dir
+
+    profiles = profiles_dir()
+    os.makedirs(profiles, exist_ok=True)
+    context.profiles_dir = profiles
+
+    profile_file = profiles / "shopping-list.toml"
+    profile_file.unlink(missing_ok=True)
+
+
+@when('the user runs `givn-harness run --task task.md --output reports/ --profile shopping-list`')
+def step_user_runs_harness_with_profile(context):
+    import os
+    import subprocess
+
+    cmd = [
+        "uv", "run", "givn-harness", "run",
+        "--task", context.task_file,
+        "--output", os.path.join(context.output_dir, "reports"),
+        "--workspace-root", context.workspace_root,
+        "--profile", "shopping-list",
+    ]
+    ralph_bin = getattr(context, "ralph_bin", None)
+    if ralph_bin is not None:
+        cmd.extend(["--ralph-bin", ralph_bin])
+    else:
+        cmd.extend(["--ralph-bin", "/usr/bin/true"])
+
+    env = {"GIVN_HARNESS_NO_SANDLOCK": "0"}
+    env.update(os.environ)
+
+    result1 = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    context.first_run_result = result1
+    context.first_workspace_path = result1.stdout.strip().split("\n")[-1]
+
+    result2 = subprocess.run(cmd, capture_output=True, text=True, env=env)
+    context.second_run_result = result2
+    context.second_workspace_path = result2.stdout.strip().split("\n")[-1]
+
+
+@then("on the first run the sandbox learns the workload profile")
+def step_first_run_learns_profile(context):
+    from sandlock._profile import profiles_dir
+
+    stdout = context.first_run_result.stdout
+    assert "Learning profile 'shopping-list'" in stdout, (
+        f"expected learning profile message in first run stdout, got: {stdout!r}"
+    )
+    profile_path = profiles_dir() / "shopping-list.toml"
+    assert profile_path.exists(), (
+        f"expected profile file at {profile_path}, but it does not exist"
+    )
+
+
+@then("on the second run with the same profile the sandbox enforces the learned filesystem profile")
+def step_second_run_enforces_profile(context):
+    stdout = context.second_run_result.stdout
+    assert "Enforcing profile 'shopping-list'" in stdout, (
+        f"expected enforcing profile message in second run stdout, got: {stdout!r}"
+    )

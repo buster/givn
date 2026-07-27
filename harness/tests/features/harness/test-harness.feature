@@ -56,7 +56,7 @@ Feature: test-harness
     Then ralph executes inside a sandlock Sandbox instance
     And the sandbox workdir is the workspace directory
 
-  @givn.added @wip
+  @givn.added
   Scenario: Sandbox filesystem uses learn-then-confine mode
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     And the sandlock profile storage directory exists
