@@ -1118,7 +1118,7 @@
         3 steps passed, 0 failed, 124 skipped
         Took 0min 0.107s
         ```
-      COMMIT:   One commit. Message: "feat(test-harness): ralph is invoked with --prompt-file pointing to the workspace task file". Record hash.
+      COMMIT: `a0ef250` — feat(test-harness): Agent execution respects time limit (runner.py introduced ralph --prompt-file invocation)
 
 - [x] test-harness: The agent runs inside a sandlock sandbox
       Design constraints:
@@ -1153,7 +1153,7 @@
         4 steps passed, 0 failed, 123 skipped
         Took 0min 0.093s
         ```
-      COMMIT:   One commit. Message: "feat(test-harness): The agent runs inside a sandlock sandbox". Record hash.
+      COMMIT: `fec8989` — feat(test-harness): The agent runs inside a sandlock sandbox
         `fec8989`
       Issues: Two pre-existing scenarios fail with sandbox active: "Agent execution respects time limit" (reports "completed" instead of "timeout" because /usr/bin/true exits immediately) and "Interrupted run preserves workspace on SIGINT" (ralph completes before SIGINT arrives inside sandbox).
 
@@ -1183,7 +1183,7 @@
         5 steps passed, 0 failed, 122 skipped
         Took 0min 0.294s
         ```
-      COMMIT:   One commit. Message: "feat(test-harness): Sandbox filesystem uses learn-then-confine mode". Record hash.
+      COMMIT: `6787a79` — feat(test-harness): Sandbox filesystem uses learn-then-confine mode
         `6787a79`
 
 - [x] test-harness: Sandbox network is default-allow with no outbound restrictions
@@ -1213,7 +1213,7 @@
         5 steps passed, 0 failed, 122 skipped
         Took 0min 0.100s
         ```
-      COMMIT:   One commit. Message: "feat(test-harness): Sandbox network is default-allow with no outbound restrictions". Record hash.
+      COMMIT: `b4298e2` — feat(test-harness): Sandbox network is default-allow with no outbound restrictions
         `b4298e2`
 
 ## Phase 5 — E2E setup and scenarios
@@ -1266,7 +1266,7 @@
         13 steps passed, 0 failed, 114 skipped
         Took 0min 0.124s
         ```
-      COMMIT:   One commit. Message: "test(e2e): User runs the harness end-to-end and observes a complete autoresearch loop". Record hash.
+      COMMIT: `481694f` — test(e2e): User runs the harness end-to-end and observes a complete autoresearch loop
         `481694f`
 
 - [x] @e2e test-harness: User reads a per-run report after a completed run

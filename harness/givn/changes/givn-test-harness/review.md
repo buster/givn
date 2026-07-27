@@ -272,9 +272,24 @@ Lines 6-12, 46-48, 52-78.
 
 ### Resolution: index.py corrupt JSON / non-list root (Bucket 2 → RESOLVED)
 
-Added scenario: "Corrupt or non-list index.json is handled gracefully" covering both code paths (corrupt JSON → reset to empty list; valid JSON but non-list root → reset to empty list).
+Added scenario: "Index gracefully handles corrupt or non-list JSON". Two code paths tested:
+1. Corrupt JSON ("not json at all") → update_index catches JSONDecodeError, resets to empty list, appends new entry.
+2. Non-list JSON root (`{"key":"not a list"}`) → update_index catches non-list type, resets to empty list, appends new entry.
 
-RED/GREEN/REFACTOR evidence inline.
+RED/GREEN/REFACTOR evidence:
+- GREEN: 1 scenario passed, 5 steps, 0.002s (immediate GREEN — index.py already handled these cases correctly)
+- Full non-e2e suite: 22 passed, 0 failed, 4 skipped (5.001s) — no regressions
+- E2e suite: 4 passed, 0 failed, 22 skipped (0.142s) — no regressions
+
+Commit: `2926ae7` — review(test-harness): coverage gap — index handles corrupt/non-list JSON
+
+Files touched:
+- `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+- `tests/features/harness/test-harness.feature`
+- `tests/features/steps/harness/test_harness_steps.py`
+- `givn/config.yaml` (coverage commands)
+- `pyproject.toml` (coverage dependency)
+- `givn/changes/givn-test-harness/review.md`
 
 ---
 
@@ -288,3 +303,7 @@ RED/GREEN/REFACTOR evidence inline.
 - [x] No browser-UI capability (N/A)
 - [x] Interaction coverage cross-referenced (verified in 0.13)
 - [x] Fabrication audit clean (verified in section 0)
+
+---
+
+REVIEW: PASS
