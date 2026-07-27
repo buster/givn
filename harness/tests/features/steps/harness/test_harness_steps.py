@@ -428,6 +428,66 @@ def step_report_includes_preserved_workspace(context):
     )
 
 
+@when("the agent crashes before producing any artifacts")
+def step_agent_crashes_before_artifacts(context):
+    from unittest.mock import MagicMock, patch
+
+    from givn_harness.evaluator import run_evaluation
+    from givn_harness.judge import run_judge
+    from givn_harness.report import write_report
+
+    context.checks = run_evaluation(context.workspace_path)
+
+    mock_response = '{"score": 3, "explanation": "Good work."}'
+    mock_result = MagicMock()
+    mock_result.stdout = mock_response
+    mock_result.stderr = ""
+    mock_result.returncode = 0
+
+    with patch("givn_harness.judge.subprocess.run", return_value=mock_result):
+        context.judge_scores = run_judge(context.workspace_path)
+
+    context.report_path = write_report(
+        context.checks,
+        context.workspace_path,
+        judge_scores=context.judge_scores,
+        termination="crash before artifacts",
+    )
+
+
+@then("all ten automated checks report FAIL with detail")
+def step_all_checks_fail_with_detail(context):
+    assert len(context.checks) == 10, (
+        f"expected 10 checks, got {len(context.checks)}"
+    )
+    for c in context.checks:
+        assert not c.passed, (
+            f"check '{c.name}' should have failed but passed"
+        )
+        assert c.detail, (
+            f"check '{c.name}' has no detail"
+        )
+
+
+@then("the LLM judge scores default to 0")
+def step_judge_scores_default_to_zero(context):
+    assert len(context.judge_scores) == 5, (
+        f"expected 5 judge scores, got {len(context.judge_scores)}"
+    )
+    for s in context.judge_scores:
+        assert s.score == 0, (
+            f"judge score for {s.artifact} is {s.score}, expected 0"
+        )
+
+
+@then("the termination reason is recorded in the report")
+def step_termination_reason_in_report(context):
+    content = context.report_path.read_text()
+    assert "crash before artifacts" in content, (
+        "report does not contain termination reason 'crash before artifacts'"
+    )
+
+
 @given('an existing cross-run index at "{path}" with one prior entry')
 def step_existing_cross_run_index(context, path):
     import json

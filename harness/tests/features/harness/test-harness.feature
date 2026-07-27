@@ -182,7 +182,7 @@ Feature: test-harness
     And the workspace contains a givn/ directory with the agent's partial progress
     And the workspace contains a .git directory with the agent's commits
 
-  @givn.added @wip
+  @givn.added
   Scenario: Report handles a run where the agent produced no artifacts
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`

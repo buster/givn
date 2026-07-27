@@ -55,6 +55,13 @@ def _check_artifact_existence(ws: Path) -> Check:
 
 
 def _check_lint_clean(ws: Path) -> Check:
+    change_dir = find_change_dir(ws)
+    if change_dir is None:
+        return Check(
+            name="lint clean",
+            passed=False,
+            detail="no change directory found — nothing to lint",
+        )
     try:
         result = subprocess.run(
             [GIVN_BINARY, "lint"],
