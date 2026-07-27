@@ -1,4 +1,6 @@
 import json
+import os
+import signal
 import subprocess
 import tempfile
 from pathlib import Path
@@ -73,20 +75,35 @@ def run_judge(workspace_path: str) -> list[JudgeScore]:
             f.write(prompt)
             prompt_file = f.name
 
+        proc: subprocess.Popen | None = None
         try:
-            result = subprocess.run(
+            proc = subprocess.Popen(
                 ["opencode", "--prompt-file", prompt_file],
-                capture_output=True,
+                start_new_session=True,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
                 text=True,
-                timeout=300,
             )
-            parsed = json.loads(result.stdout.strip())
+            stdout, _stderr = proc.communicate(timeout=300)
+            parsed = json.loads(stdout.strip())
             scores.append(JudgeScore(
                 artifact=artifact_type,
                 score=parsed["score"],
                 explanation=parsed["explanation"],
             ))
-        except (json.JSONDecodeError, KeyError, subprocess.TimeoutExpired):
+        except subprocess.TimeoutExpired:
+            if proc is not None:
+                try:
+                    os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+                except (ProcessLookupError, OSError):
+                    pass
+                proc.communicate()
+            scores.append(JudgeScore(
+                artifact=artifact_type,
+                score=0,
+                explanation="judge output unparseable",
+            ))
+        except (json.JSONDecodeError, KeyError):
             scores.append(JudgeScore(
                 artifact=artifact_type,
                 score=0,
