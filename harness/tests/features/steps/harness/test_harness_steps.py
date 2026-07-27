@@ -1346,3 +1346,84 @@ def step_e2e_workspace_has_git(context):
     )
     git_path = os.path.join(context.e2e_workspace_path, ".git")
     assert os.path.isdir(git_path), ".git is not a directory"
+
+
+# === coverage gap: index.py corrupt JSON handling ===
+
+
+@given('a corrupt JSON file at "{path}" containing "{content}"')
+def step_corrupt_json_file(context, path, content):
+    output_dir = tempfile.mkdtemp()
+    if not hasattr(context, "_cleanup_paths"):
+        context._cleanup_paths = []
+    context._cleanup_paths.append(output_dir)
+    context.add_cleanup(lambda: _rmtree(output_dir))
+    context.index_output_dir = output_dir
+    reports_dir = os.path.join(output_dir, "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    index_path = os.path.join(reports_dir, "index.json")
+    with open(index_path, "w") as f:
+        f.write(content)
+    context.index_path = index_path
+
+
+@when('the harness writes a run entry for task "{task}" to "{output_dir}"')
+def step_harness_writes_run_entry(context, task, output_dir):
+    from givn_harness.index import update_index
+
+    full_output = os.path.join(context.index_output_dir, output_dir.rstrip("/"))
+    context.index_result = update_index(
+        output_dir=full_output,
+        run_id="test-run-001",
+        task=task,
+    )
+
+
+@then("the index contains exactly one entry")
+def step_index_contains_exactly_one_entry(context):
+    import json
+
+    with open(context.index_result) as f:
+        data = json.load(f)
+    assert isinstance(data, list), f"expected list, got {type(data)}"
+    assert len(data) == 1, f"expected 1 entry, got {len(data)}"
+
+
+@then('a non-list JSON root at "{path}" is reset to an empty array')
+def step_non_list_json_root_reset(context, path):
+    output_dir = tempfile.mkdtemp()
+    if not hasattr(context, "_cleanup_paths"):
+        context._cleanup_paths = []
+    context._cleanup_paths.append(output_dir)
+    context.add_cleanup(lambda: _rmtree(output_dir))
+    context.index2_output_dir = output_dir
+    reports_dir = os.path.join(output_dir, "reports")
+    os.makedirs(reports_dir, exist_ok=True)
+    index_path = os.path.join(reports_dir, "index.json")
+    with open(index_path, "w") as f:
+        f.write('{"key": "not a list"}')
+
+    from givn_harness.index import update_index
+
+    context.index2_result = update_index(
+        output_dir=os.path.join(output_dir, "reports"),
+        run_id="test-run-002",
+        task="task.md",
+    )
+
+    import json
+
+    with open(context.index2_result) as f:
+        data = json.load(f)
+    assert isinstance(data, list), f"expected list, got {type(data)}"
+    assert len(data) == 1, f"expected 1 entry, got {len(data)}"
+
+
+@then("a new entry is appended to the reset index")
+def step_new_entry_appended_to_reset_index(context):
+    import json
+
+    with open(context.index2_result) as f:
+        data = json.load(f)
+    assert len(data) == 1
+    assert data[0]["run_id"] == "test-run-002"

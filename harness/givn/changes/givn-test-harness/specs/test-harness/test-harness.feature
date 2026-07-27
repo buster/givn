@@ -131,6 +131,14 @@ Feature: test-harness
     And the new entry includes the run identifier, task name, timestamp, and overall pass/fail
 
   @givn.added
+  Scenario: Index gracefully handles corrupt or non-list JSON
+    Given a corrupt JSON file at "reports/index.json" containing "not json at all"
+    When the harness writes a run entry for task "test.md" to "reports/"
+    Then the index contains exactly one entry
+    And a non-list JSON root at "reports/index.json" is reset to an empty array
+    And a new entry is appended to the reset index
+
+  @givn.added
   Scenario: Workspace is preserved when a run fails
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`

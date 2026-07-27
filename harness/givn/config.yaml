@@ -72,8 +72,8 @@ verify:
 # WARNING: Do not leave the sentinels. Without working coverage commands,
 # the coverage gate will block archive.
 coverage:
-  non_e2e_command: "givn missing-coverage"   # <-- replace this with your non-e2e coverage command
-  e2e_command: "givn missing-coverage"   # <-- replace this with your e2e coverage command
+  non_e2e_command: "uv run coverage run -m behave tests/features/ --no-capture --tags=-wip --tags=-e2e && uv run coverage report --skip-empty"
+  e2e_command: "uv run coverage run -m behave tests/features/ --no-capture --tags=@e2e --tags=-wip && uv run coverage report --skip-empty"
 
 # --- E2E test runner ----------------------------------------------------------
 # The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged

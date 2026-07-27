@@ -24,3 +24,8 @@ where = ["src"]
 
 [tool.uv.sources]
 sandlock = { git = "https://github.com/multikernel/sandlock", rev = "6a4ec66", subdirectory = "python/" }
+
+[dependency-groups]
+dev = [
+    "coverage>=7.15.2",
+]
