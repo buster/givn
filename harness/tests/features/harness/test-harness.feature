@@ -154,7 +154,7 @@ Feature: test-harness
     And stdout shows evaluation progress for each automated check
     And stdout shows LLM judge scoring progress
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: User reads a per-run report after a completed run
     Given a completed test run at "reports/run-001/"
     When the user reads the file "reports/run-001/report.md"
@@ -163,7 +163,7 @@ Feature: test-harness
     And the report contains a "Workspace" section with the path to the workspace directory
     And the report contains an "Agent Log" section with ralph output
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: User inspects the cross-run index after multiple runs
     Given a cross-run index at "reports/index.json" with entries from two prior runs
     When the user reads the file "reports/index.json"
@@ -174,7 +174,7 @@ Feature: test-harness
     And each entry has a "timestamp" field
     And each entry has an "overall_pass" field
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: User inspects a workspace from a failed run
     Given a failed test run whose workspace was preserved at "/tmp/givn-harness-workspaces/run-002"
     When the user lists the contents of the preserved workspace

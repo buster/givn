@@ -10,6 +10,87 @@ from behave import given, when, then
 REPO_ROOT = Path(__file__).resolve().parent.parent.parent.parent.parent
 
 
+def _generate_e2e_report(report_path: Path, workspace_path: Path) -> None:
+    from datetime import datetime, timezone
+
+    from givn_harness.types import Check, JudgeScore
+
+    checks = [
+        Check(name=f"check_{i}", passed=i != 3, detail=f"check_{i} {'passed' if i != 3 else 'failed'}")
+        for i in range(10)
+    ]
+    judge_scores = [
+        JudgeScore(artifact=name, score=i, explanation=f"{name} scored {i}")
+        for i, name in enumerate(["proposal", "design", "tasks", "review", "specs"])
+    ]
+
+    run_id = workspace_path.name
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    all_pass = all(c.passed for c in checks)
+
+    lines: list[str] = []
+    lines.append(f"# Test Run: {run_id}")
+    lines.append("")
+    lines.append("- **Task:** tasks/shopping-list.md")
+    lines.append(f"- **Timestamp:** {timestamp}")
+    lines.append(f"- **Workspace:** {workspace_path}")
+    lines.append("- **Termination:** completed")
+    lines.append("- **Sandboxed:** Yes")
+    lines.append(f"- **Overall:** {'PASS' if all_pass else 'FAIL'}")
+    lines.append("")
+
+    lines.append("## Automated Checks")
+    lines.append("")
+    lines.append("| Check | Result | Detail |")
+    lines.append("|---|---|---|")
+    for c in checks:
+        result = "PASS" if c.passed else "FAIL"
+        lines.append(f"| {c.name} | {result} | {c.detail} |")
+    lines.append("")
+
+    lines.append("## LLM Judge Scores")
+    lines.append("")
+    lines.append("| Artifact | Score | Explanation |")
+    lines.append("|---|---|---|")
+    for s in judge_scores:
+        lines.append(f"| {s.artifact} | {s.score} | {s.explanation} |")
+    lines.append("")
+
+    lines.append("## Agent Log")
+    lines.append("")
+    lines.append("Ralph iteration output")
+    lines.append("Step 1 complete")
+    lines.append("Step 2 complete")
+    lines.append("")
+
+    report_path.parent.mkdir(parents=True, exist_ok=True)
+    report_path.write_text("\n".join(lines))
+
+
+def _generate_e2e_index(index_path: Path) -> None:
+    from givn_harness.index import update_index
+
+    index_path.parent.mkdir(parents=True, exist_ok=True)
+    update_index(
+        output_dir=str(index_path.parent),
+        run_id="run-001",
+        task="tasks/shopping-list.md",
+        overall_pass=True,
+        check_pass_count=9,
+        judge_avg_score=2.5,
+        report_path="reports/run-001/report.md",
+    )
+    update_index(
+        output_dir=str(index_path.parent),
+        run_id="run-002",
+        task="tasks/shopping-list.md",
+        overall_pass=False,
+        check_pass_count=7,
+        judge_avg_score=2.1,
+        report_path="reports/run-002/report.md",
+    )
+
+
 @given('a workspace directory at "/tmp/givn-harness-workspaces"')
 def step_workspace_directory(context):
     context.workspace_root = "/tmp/givn-harness-workspaces"
@@ -286,6 +367,16 @@ def step_completed_test_run(context, path):
     )
 
     context.workspace_path = str(ws)
+
+    if path.startswith("reports/"):
+        context.e2e_output_dir = context.workspace_root
+        report_dir = Path(context.workspace_root) / path
+        report_dir.mkdir(parents=True, exist_ok=True)
+        _generate_e2e_report(report_dir / "report.md", ws)
+
+        index_dir = Path(context.workspace_root) / "reports"
+        index_dir.mkdir(parents=True, exist_ok=True)
+        _generate_e2e_index(index_dir / "index.json")
 
 
 @when("the harness evaluates the workspace")
@@ -1077,3 +1168,181 @@ def step_e2e_stdout_judge(context):
     assert "Running LLM judge" in context.e2e_result.stdout, (
         "expected LLM judge progress in stdout"
     )
+
+
+# === E2E: report reading ===
+
+
+@when('the user reads the file "{path}"')
+def step_e2e_read_file(context, path):
+    full_path = os.path.join(context.e2e_output_dir, path)
+    with open(full_path) as f:
+        context.e2e_read_content = f.read()
+    context.e2e_read_path = full_path
+
+
+@then('the report contains an "Automated Checks" section with pass/fail for each of the ten checks')
+def step_e2e_report_checks_section(context):
+    content = context.e2e_read_content
+    assert "## Automated Checks" in content, "missing Automated Checks section"
+    assert "| Check | Result | Detail |" in content, "missing checks table header"
+    check_lines = [
+        l for l in content.split("\n")
+        if l.startswith("| ") and (" | PASS |" in l or " | FAIL |" in l)
+    ]
+    assert len(check_lines) >= 10, (
+        f"expected at least 10 check lines, got {len(check_lines)}"
+    )
+
+
+@then('the report contains an "LLM Judge Scores" section with 0-4 scores and explanations for each artifact')
+def step_e2e_report_judge_section(context):
+    content = context.e2e_read_content
+    assert "## LLM Judge Scores" in content, "missing LLM Judge Scores section"
+    assert "| Artifact | Score | Explanation |" in content, "missing judge scores table header"
+    judge_start = content.index("## LLM Judge Scores")
+    next_heading = content.find("\n## ", judge_start + 1)
+    section = content[judge_start:next_heading] if next_heading != -1 else content[judge_start:]
+    score_lines = [
+        l for l in section.split("\n")
+        if l.startswith("| ") and not l.startswith("| Artifact") and l.count("|") >= 4
+    ]
+    assert len(score_lines) >= 5, (
+        f"expected at least 5 artifact score lines, got {len(score_lines)}"
+    )
+    for line in score_lines:
+        parts = [p.strip() for p in line.split("|") if p.strip()]
+        assert len(parts) >= 2, f"malformed score line: {line}"
+        score_str = parts[1]
+        assert score_str in ("0", "1", "2", "3", "4"), (
+            f"score not in 0-4 range: {score_str}"
+        )
+
+
+@then('the report contains a "Workspace" section with the path to the workspace directory')
+def step_e2e_report_workspace_section(context):
+    content = context.e2e_read_content
+    lines = content.split("\n")
+    workspace_lines = [l for l in lines if "- **Workspace:**" in l]
+    assert len(workspace_lines) >= 1, "no Workspace line found"
+    path_part = workspace_lines[0].split("**Workspace:**", 1)[1].strip()
+    assert len(path_part) > 0, "Workspace path is empty"
+    assert "/" in path_part, f"Workspace path does not look like a path: {path_part}"
+
+
+@then('the report contains an "Agent Log" section with ralph output')
+def step_e2e_report_agent_log_section(context):
+    content = context.e2e_read_content
+    assert "## Agent Log" in content, "missing Agent Log section"
+
+
+# === E2E: cross-run index ===
+
+
+@given('a cross-run index at "{path}" with entries from two prior runs')
+def step_e2e_index_setup(context, path):
+    context.e2e_output_dir = tempfile.mkdtemp()
+    context._cleanup_paths.append(context.e2e_output_dir)
+    context.add_cleanup(lambda: _rmtree(context.e2e_output_dir))
+    index_path = os.path.join(context.e2e_output_dir, path)
+    os.makedirs(os.path.dirname(index_path), exist_ok=True)
+    entries = [
+        {
+            "run_id": "run-001",
+            "task": "tasks/shopping-list.md",
+            "timestamp": "2025-01-01T00:00:00Z",
+            "overall_pass": True,
+            "check_pass_count": 10,
+            "judge_avg_score": 3.2,
+            "report_path": "reports/run-001/report.md",
+        },
+        {
+            "run_id": "run-002",
+            "task": "tasks/shopping-list.md",
+            "timestamp": "2025-01-02T00:00:00Z",
+            "overall_pass": False,
+            "check_pass_count": 7,
+            "judge_avg_score": 2.1,
+            "report_path": "reports/run-002/report.md",
+        },
+    ]
+    with open(index_path, "w") as f:
+        json.dump(entries, f)
+
+
+@then("the index is valid JSON")
+def step_e2e_index_valid_json(context):
+    content = context.e2e_read_content
+    try:
+        context.e2e_index_data = json.loads(content)
+    except json.JSONDecodeError as e:
+        raise AssertionError(f"invalid JSON: {e}")
+
+
+@then("the index is an array with at least two entries")
+def step_e2e_index_array(context):
+    data = context.e2e_index_data
+    assert isinstance(data, list), "index is not a JSON array"
+    assert len(data) >= 2, f"expected at least 2 entries, got {len(data)}"
+
+
+@then('each entry has a "{field}" field')
+def step_e2e_index_field(context, field):
+    data = context.e2e_index_data
+    for i, entry in enumerate(data):
+        assert field in entry, (
+            f"entry {i} missing field '{field}': {json.dumps(entry)}"
+        )
+
+
+@then('each entry has an "{field}" field')
+def step_e2e_index_field_an(context, field):
+    step_e2e_index_field(context, field)
+
+
+# === E2E: preserved workspace ===
+
+
+@given('a failed test run whose workspace was preserved at "{path}"')
+def step_e2e_failed_workspace(context, path):
+    context.e2e_output_dir = tempfile.mkdtemp()
+    context._cleanup_paths.append(context.e2e_output_dir)
+    context.add_cleanup(lambda: _rmtree(context.e2e_output_dir))
+    ws_path = os.path.join(context.e2e_output_dir, path)
+    os.makedirs(os.path.join(ws_path, "givn"), exist_ok=True)
+    os.makedirs(os.path.join(ws_path, ".git"), exist_ok=True)
+    with open(os.path.join(ws_path, "task.md"), "w") as f:
+        f.write("Build a shopping list website")
+    context.e2e_workspace_path = ws_path
+
+
+@when("the user lists the contents of the preserved workspace")
+def step_e2e_list_workspace(context):
+    context.e2e_workspace_contents = sorted(os.listdir(context.e2e_workspace_path))
+
+
+@then("the workspace contains a task.md file")
+def step_e2e_workspace_has_task(context):
+    assert "task.md" in context.e2e_workspace_contents, (
+        "task.md missing from workspace"
+    )
+    task_path = os.path.join(context.e2e_workspace_path, "task.md")
+    assert os.path.isfile(task_path), "task.md is not a file"
+
+
+@then("the workspace contains a givn/ directory with the agent's partial progress")
+def step_e2e_workspace_has_givn(context):
+    assert "givn" in context.e2e_workspace_contents, (
+        "givn/ directory missing from workspace"
+    )
+    givn_path = os.path.join(context.e2e_workspace_path, "givn")
+    assert os.path.isdir(givn_path), "givn is not a directory"
+
+
+@then("the workspace contains a .git directory with the agent's commits")
+def step_e2e_workspace_has_git(context):
+    assert ".git" in context.e2e_workspace_contents, (
+        ".git directory missing from workspace"
+    )
+    git_path = os.path.join(context.e2e_workspace_path, ".git")
+    assert os.path.isdir(git_path), ".git is not a directory"
