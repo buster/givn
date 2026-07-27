@@ -130,7 +130,7 @@ Feature: test-harness
     Then the index file at "reports/index.json" contains two entries
     And the new entry includes the run identifier, task name, timestamp, and overall pass/fail
 
-  @givn.added @wip
+  @givn.added
   Scenario: Workspace is preserved when a run fails
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`

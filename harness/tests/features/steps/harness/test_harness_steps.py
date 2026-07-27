@@ -392,6 +392,42 @@ def step_report_contains_workspace_path(context):
     )
 
 
+@when("the agent fails to archive the change")
+def step_agent_fails_to_archive(context):
+    result = subprocess.run(
+        [
+            "uv", "run", "givn-harness", "run",
+            "--task", context.task_file,
+            "--output", os.path.join(context.output_dir, "reports"),
+            "--workspace-root", context.workspace_root,
+            "--fail",
+        ],
+        capture_output=True,
+        text=True,
+    )
+    context.cli_result = result
+    context.workspace_path = result.stdout.strip()
+
+
+@then("the workspace directory is not deleted")
+def step_workspace_not_deleted(context):
+    assert os.path.isdir(context.workspace_path), (
+        f"workspace {context.workspace_path} was deleted"
+    )
+
+
+@then("the report includes the path to the preserved workspace")
+def step_report_includes_preserved_workspace(context):
+    report_path = os.path.join(context.workspace_path, "report.md")
+    assert os.path.isfile(report_path), (
+        f"report file {report_path} does not exist"
+    )
+    content = Path(report_path).read_text()
+    assert context.workspace_path in content, (
+        f"report does not contain workspace path {context.workspace_path}"
+    )
+
+
 @given('an existing cross-run index at "{path}" with one prior entry')
 def step_existing_cross_run_index(context, path):
     import json
