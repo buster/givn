@@ -2,7 +2,9 @@ import os
 
 import click
 
+from givn_harness.evaluator import run_evaluation
 from givn_harness.index import update_index
+from givn_harness.judge import run_judge
 from givn_harness.report import write_report
 from givn_harness.runner import check_ralph_binary, run_agent
 from givn_harness.sandbox import check_sandlock, create_sandbox
@@ -29,7 +31,11 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
 
+    click.echo(f"Creating workspace at {workspace_root} ...")
     workspace_path = create_workspace(workspace_root)
+
+    click.echo("Running git init ...")
+    click.echo("Running givn init ...")
     init_workspace(workspace_path)
     copy_task(workspace_path, task)
 
@@ -44,6 +50,7 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
     profile_info = create_sandbox(workspace_path, profile_name=profile) if sandboxed else None
 
     checks: list[Check] = []
+    judge_scores = None
     agent_log = ""
 
     if fail:
@@ -52,14 +59,28 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
         ]
         termination = "agent failure"
     else:
+        click.echo("Starting agent execution ...")
         agent_log, termination = run_agent(
             workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
             profile_info=profile_info,
         )
+        click.echo(agent_log)
+
+        click.echo("Running automated checks ...")
+        checks = run_evaluation(workspace_path)
+        for c in checks:
+            result = "PASS" if c.passed else "FAIL"
+            click.echo(f"  {c.name}: {result}")
+
+        click.echo("Running LLM judge ...")
+        judge_scores = run_judge(workspace_path)
+        for s in judge_scores:
+            click.echo(f"  {s.artifact}: {s.score}/4 - {s.explanation[:80] if s.explanation else ''}")
 
     write_report(
         checks=checks,
         workspace_path=workspace_path,
+        judge_scores=judge_scores,
         sandboxed=sandboxed,
         termination=termination,
         agent_log=agent_log,

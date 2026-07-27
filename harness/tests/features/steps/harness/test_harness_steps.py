@@ -1,3 +1,4 @@
+import json
 import os
 import subprocess
 import tempfile
@@ -953,4 +954,126 @@ def step_playwright_succeeds(context):
     )
     assert args.get("max_processes", 0) >= 32, (
         "Playwright needs high process limit for browser subprocesses"
+    )
+
+
+# === @e2e step definitions ===
+
+
+@given('a task file "tasks/shopping-list.md" describing a shopping list website')
+def step_e2e_task_file(context):
+    task_path = REPO_ROOT / "tasks" / "shopping-list.md"
+    assert task_path.exists(), f"task file not found: {task_path}"
+    context.e2e_task_file = str(task_path)
+
+
+@when('the user runs `givn-harness run --task tasks/shopping-list.md --output reports/ --profile shopping-list`')
+def step_e2e_run_harness(context):
+    output_dir = tempfile.mkdtemp()
+    context._cleanup_paths.append(output_dir)
+    context.add_cleanup(lambda: _rmtree(output_dir))
+
+    cmd = [
+        "uv", "run", "givn-harness", "run",
+        "--task", context.e2e_task_file,
+        "--output", os.path.join(output_dir, "reports"),
+        "--profile", "shopping-list",
+    ]
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True,
+        timeout=1800,
+    )
+    context.e2e_result = result
+    context.e2e_output_dir = output_dir
+
+    for line in result.stdout.strip().split("\n"):
+        if line.startswith("/tmp/givn-harness-workspaces/"):
+            context.e2e_workspace_path = line
+            break
+    else:
+        context.e2e_workspace_path = None
+
+
+@then("the harness creates an isolated workspace")
+def step_e2e_creates_workspace(context):
+    assert context.e2e_workspace_path is not None, "no workspace path found in output"
+    assert os.path.isdir(context.e2e_workspace_path), (
+        f"workspace {context.e2e_workspace_path} does not exist"
+    )
+
+
+@then("initializes the workspace with git and givn")
+def step_e2e_workspace_initialized(context):
+    assert os.path.isdir(os.path.join(context.e2e_workspace_path, ".git")), (
+        ".git directory missing"
+    )
+    assert os.path.isdir(os.path.join(context.e2e_workspace_path, "givn")), (
+        "givn directory missing"
+    )
+    assert os.path.isfile(os.path.join(context.e2e_workspace_path, "givn", "config.yaml")), (
+        "givn/config.yaml missing"
+    )
+
+
+@then("invokes ralph to drive the agent through the full givn workflow")
+def step_e2e_ralph_invoked(context):
+    assert os.path.isfile(os.path.join(context.e2e_workspace_path, "task.md")), (
+        "task.md missing in workspace"
+    )
+
+
+@then('produces a run report at "reports/<run-id>/report.md"')
+def step_e2e_run_report(context):
+    report_path = os.path.join(context.e2e_workspace_path, "report.md")
+    assert os.path.isfile(report_path), (
+        f"report.md not found at {report_path}"
+    )
+
+
+@then('updates the cross-run index at "reports/index.json"')
+def step_e2e_index_updated(context):
+    index_path = os.path.join(context.e2e_output_dir, "reports", "index.json")
+    assert os.path.isfile(index_path), (
+        f"index.json not found at {index_path}"
+    )
+    with open(index_path) as f:
+        data = json.load(f)
+    assert isinstance(data, list), "index.json is not a JSON array"
+    assert len(data) > 0, "index.json is empty"
+
+
+@then("stdout shows the workspace creation message")
+def step_e2e_stdout_workspace(context):
+    assert "Creating workspace" in context.e2e_result.stdout, (
+        "expected workspace creation message in stdout"
+    )
+
+
+@then('stdout shows "git init" and "givn init" progress')
+def step_e2e_stdout_init(context):
+    stdout = context.e2e_result.stdout
+    assert "git init" in stdout, f"expected 'git init' in stdout, got: {stdout}"
+    assert "givn init" in stdout, f"expected 'givn init' in stdout"
+
+
+@then("stdout shows ralph iteration progress")
+def step_e2e_stdout_ralph(context):
+    assert "Starting agent execution" in context.e2e_result.stdout, (
+        "expected agent execution start in stdout"
+    )
+
+
+@then("stdout shows evaluation progress for each automated check")
+def step_e2e_stdout_evaluation(context):
+    assert "Running automated checks" in context.e2e_result.stdout, (
+        "expected evaluation progress in stdout"
+    )
+
+
+@then("stdout shows LLM judge scoring progress")
+def step_e2e_stdout_judge(context):
+    assert "Running LLM judge" in context.e2e_result.stdout, (
+        "expected LLM judge progress in stdout"
     )

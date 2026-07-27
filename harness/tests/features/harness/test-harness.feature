@@ -138,7 +138,7 @@ Feature: test-harness
     Then the workspace directory is not deleted
     And the report includes the path to the preserved workspace
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: User runs the harness end-to-end and observes a complete autoresearch loop
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     And a task file "tasks/shopping-list.md" describing a shopping list website
