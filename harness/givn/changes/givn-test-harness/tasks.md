@@ -454,15 +454,69 @@
         Files modified: `src/givn_harness/evaluator.py` (use shared `find_change_dir`)
       COMMIT: `1f90036` — feat(test-harness): LLM-as-judge scores each artifact on a 0-4 rubric
 
-- [ ] test-harness: Report is written as a markdown file
+- [x] test-harness: Report is written as a markdown file
       Design constraints:
         - `report.py` writes `reports/<run-id>/report.md`.
         - Markdown structure: Run metadata, Automated Checks table, LLM Judge Scores table, Agent Log section, Workspace path.
         - Report format from design.md entry 392-427.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Implement `report.py` with markdown rendering. Files: `report.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Report is written as a markdown file". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report is written as a markdown file           # tests/features/harness/test-harness.feature:118
+            Given a completed test run at "reports/run-001/"       # tests/features/steps/harness/test_harness_steps.py:175
+            When the harness evaluates the workspace               # tests/features/steps/harness/test_harness_steps.py:267
+            Then a report file "reports/run-001/report.md" exists  # tests/features/steps/harness/test_harness_steps.py:357
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            And the report contains a section for automated checks # None
+            And the report contains a section for LLM judge scores # None
+            And the report contains the workspace path             # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:118  Report is written as a markdown file
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        2 steps passed, 0 failed, 1 error, 124 skipped
+        Took 0min 0.029s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Report is written as a markdown file           # tests/features/harness/test-harness.feature:118
+            Given a completed test run at "reports/run-001/"       # tests/features/steps/harness/test_harness_steps.py:175
+            When the harness evaluates the workspace               # tests/features/steps/harness/test_harness_steps.py:267
+            Then a report file "reports/run-001/report.md" exists  # tests/features/steps/harness/test_harness_steps.py:363
+            And the report contains a section for automated checks # tests/features/steps/harness/test_harness_steps.py:371
+            And the report contains a section for LLM judge scores # tests/features/steps/harness/test_harness_steps.py:379
+            And the report contains the workspace path             # tests/features/steps/harness/test_harness_steps.py:387
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        6 steps passed, 0 failed, 121 skipped
+        Took 0min 0.032s
+        ```
+        Files modified: `src/givn_harness/report.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        8 scenarios passed, 0 failed, 17 skipped
+        37 steps passed, 0 failed, 90 skipped
+        Took 0min 0.417s
+        ```
+      COMMIT: `751ed40` — feat(test-harness): Report is written as a markdown file
 
 - [ ] test-harness: Cross-run index accumulates results
       Design constraints:
