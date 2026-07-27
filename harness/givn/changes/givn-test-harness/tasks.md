@@ -707,15 +707,81 @@
         ```
       COMMIT: `44f2dc0` — feat(test-harness): Workspace is preserved when a run fails
 
-- [ ] test-harness: Sandlock is not available, harness falls back to --no-sandbox
+- [x] test-harness: Sandlock is not available, harness falls back to --no-sandbox
       Design constraints:
         - `sandbox.py` attempts `import sandlock`. If ImportError: log warning, set `--no-sandbox` mode.
         - Agent runs without sandbox confinement (straight subprocess, no sandlock).
         - Report notes that the run was unsandboxed.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Implement `sandbox.py` with import-time fallback. Files: `sandbox.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Sandlock is not available, harness falls back to --no-sandbox". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Sandlock is not available, harness falls back to --no-sandbox  # tests/features/harness/test-harness.feature:195
+            Given the sandlock SDK is not importable                               # tests/features/steps/harness/test_harness_steps.py:544
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            When the user runs `givn-harness run --task task.md --output reports/` # None
+            Then the harness logs a warning that sandlock is unavailable           # None
+            And the harness runs the agent without sandbox confinement             # None
+            And the report notes that the run was unsandboxed                      # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:195  Sandlock is not available, harness falls back to --no-sandbox
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        0 steps passed, 0 failed, 1 error, 126 skipped
+        Took 0min 0.001s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Sandlock is not available, harness falls back to --no-sandbox  # tests/features/harness/test-harness.feature:195
+            Given the sandlock SDK is not importable                               # tests/features/steps/harness/test_harness_steps.py:544
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            Then the harness logs a warning that sandlock is unavailable           # tests/features/steps/harness/test_harness_steps.py:559
+            And the harness runs the agent without sandbox confinement             # tests/features/steps/harness/test_harness_steps.py:567
+            And the report notes that the run was unsandboxed                      # tests/features/steps/harness/test_harness_steps.py:577
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        5 steps passed, 0 failed, 122 skipped
+        Took 0min 0.076s
+        ```
+        Files created: `src/givn_harness/sandbox.py`
+        Files modified: `src/givn_harness/cli.py`, `src/givn_harness/report.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Sandlock is not available, harness falls back to --no-sandbox  # tests/features/harness/test-harness.feature:195
+            Given the sandlock SDK is not importable                               # tests/features/steps/harness/test_harness_steps.py:544
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            Then the harness logs a warning that sandlock is unavailable           # tests/features/steps/harness/test_harness_steps.py:559
+            And the harness runs the agent without sandbox confinement             # tests/features/steps/harness/test_harness_steps.py:567
+            And the report notes that the run was unsandboxed                      # tests/features/steps/harness/test_harness_steps.py:577
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        5 steps passed, 0 failed, 122 skipped
+        Took 0min 0.071s
+        ```
+      COMMIT: `a3c2869` — feat(test-harness): Sandlock is not available, harness falls back to --no-sandbox
 
 - [ ] test-harness: Ralph binary is not found at the configured path
       Design constraints:

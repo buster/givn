@@ -199,7 +199,7 @@ Feature: test-harness
     And the harness runs the agent without sandbox confinement
     And the report notes that the run was unsandboxed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Ralph binary is not found at the configured path
     Given the ralph binary is not present at "/usr/local/bin/ralph"
     When the user runs `givn-harness run --task task.md --output reports/`

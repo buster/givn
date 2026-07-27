@@ -24,13 +24,17 @@ def step_workspace_directory(context):
 
 @when('the user runs `givn-harness run --task task.md --output reports/`')
 def step_user_runs_harness(context):
+    cmd = [
+        "uv", "run", "givn-harness", "run",
+        "--task", context.task_file,
+        "--output", os.path.join(context.output_dir, "reports"),
+        "--workspace-root", context.workspace_root,
+    ]
+    ralph_bin = getattr(context, "ralph_bin", None)
+    if ralph_bin is not None:
+        cmd.extend(["--ralph-bin", ralph_bin])
     result = subprocess.run(
-        [
-            "uv", "run", "givn-harness", "run",
-            "--task", context.task_file,
-            "--output", os.path.join(context.output_dir, "reports"),
-            "--workspace-root", context.workspace_root,
-        ],
+        cmd,
         capture_output=True,
         text=True,
     )
@@ -595,4 +599,33 @@ def _check_judge_score(context, artifact_name):
     score = matching[0]
     assert 0 <= score.score <= 4, (
         f"{artifact_name} score {score.score} not in 0-4"
+    )
+
+
+@given('the ralph binary is not present at "{path}"')
+def step_ralph_binary_not_present(context, path):
+    context.workspace_root = "/tmp/givn-harness-workspaces"
+    os.makedirs(context.workspace_root, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write("task content")
+        context.task_file = f.name
+    context.output_dir = tempfile.mkdtemp()
+    context._cleanup_paths = [context.task_file]
+    context.add_cleanup(lambda: os.unlink(context.task_file))
+    context.add_cleanup(lambda: _rmtree(context.output_dir))
+    context.ralph_bin = "/tmp/nonexistent-ralph-xyz"
+
+
+@then("the harness exits with a non-zero exit code")
+def step_harness_exits_non_zero(context):
+    assert context.cli_result.returncode != 0, (
+        f"expected non-zero exit, got {context.cli_result.returncode}"
+    )
+
+
+@then("stderr reports that the ralph binary was not found")
+def step_stderr_reports_ralph_not_found(context):
+    stderr = context.cli_result.stderr
+    assert "ralph binary not found" in stderr, (
+        f"expected stderr to report ralph binary not found, got: {stderr!r}"
     )

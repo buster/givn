@@ -4,6 +4,7 @@ import click
 
 from givn_harness.index import update_index
 from givn_harness.report import write_report
+from givn_harness.runner import check_ralph_binary
 from givn_harness.sandbox import check_sandlock
 from givn_harness.types import Check
 from givn_harness.workspace import copy_task, create_workspace, init_workspace
@@ -18,8 +19,13 @@ def main():
 @click.option("--task", required=True, type=click.Path(exists=True))
 @click.option("--output", required=True, type=click.Path())
 @click.option("--workspace-root", default="/tmp/givn-harness-workspaces", type=click.Path())
+@click.option("--ralph-bin", default="/usr/local/bin/ralph", type=click.Path())
 @click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
-def run(task: str, output: str, workspace_root: str, fail: bool) -> None:
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool) -> None:
+    if not check_ralph_binary(ralph_bin):
+        click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
+        raise SystemExit(1)
+
     workspace_path = create_workspace(workspace_root)
     init_workspace(workspace_path)
     copy_task(workspace_path, task)
