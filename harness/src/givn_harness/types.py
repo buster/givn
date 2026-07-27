@@ -9,6 +9,13 @@ class Check:
 
 
 @dataclass
+class JudgeScore:
+    artifact: str
+    score: int
+    explanation: str
+
+
+@dataclass
 class RunResult:
     run_id: str
     task: str

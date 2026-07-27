@@ -103,7 +103,7 @@ Feature: test-harness
       | verify.command exits zero after archive      |
     And each check has a pass or fail result
 
-  @givn.added @wip
+  @givn.added
   Scenario: LLM-as-judge scores each artifact on a 0-4 rubric
     Given a completed test run at "reports/run-001/"
     When the harness evaluates the workspace

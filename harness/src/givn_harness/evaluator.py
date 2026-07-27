@@ -3,6 +3,7 @@ import re
 import subprocess
 from pathlib import Path
 
+from givn_harness._utils import find_change_dir
 from givn_harness.types import Check
 
 GIVN_BINARY = os.environ.get("GIVN_BINARY", "givn")
@@ -11,16 +12,6 @@ CONVENTIONAL_COMMIT_RE = re.compile(
     r"^(build|chore|ci|docs|feat|fix|perf|refactor|revert|style|test)"
     r"(\([a-zA-Z0-9_.-]+\))?!?: .+"
 )
-
-
-def _find_change_dir(ws: Path) -> Path | None:
-    changes_dir = ws / "givn" / "changes"
-    if not changes_dir.is_dir():
-        return None
-    for entry in sorted(changes_dir.iterdir()):
-        if entry.is_dir():
-            return entry
-    return None
 
 
 def _find_archive_dir(ws: Path) -> Path | None:
@@ -34,7 +25,7 @@ def _find_archive_dir(ws: Path) -> Path | None:
 
 
 def _check_artifact_existence(ws: Path) -> Check:
-    change_dir = _find_change_dir(ws)
+    change_dir = find_change_dir(ws)
     if change_dir is None:
         return Check(
             name="artifact existence",
@@ -87,7 +78,7 @@ def _check_lint_clean(ws: Path) -> Check:
 
 
 def _check_tasks_all_done(ws: Path) -> Check:
-    change_dir = _find_change_dir(ws)
+    change_dir = find_change_dir(ws)
     if change_dir is None:
         return Check(
             name="tasks all done",
@@ -293,7 +284,7 @@ def _check_step_files_nonempty(ws: Path) -> Check:
 
 
 def _check_review_pass(ws: Path) -> Check:
-    change_dir = _find_change_dir(ws)
+    change_dir = find_change_dir(ws)
     if change_dir is None:
         return Check(
             name="REVIEW: PASS marker present",
@@ -318,7 +309,7 @@ def _check_review_pass(ws: Path) -> Check:
 
 
 def _check_design_review_pass(ws: Path) -> Check:
-    change_dir = _find_change_dir(ws)
+    change_dir = find_change_dir(ws)
     if change_dir is None:
         return Check(
             name="DESIGN-REVIEW: PASS marker present",

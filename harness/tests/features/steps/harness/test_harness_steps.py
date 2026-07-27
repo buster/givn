@@ -266,11 +266,26 @@ def step_completed_test_run(context, path):
 
 @when("the harness evaluates the workspace")
 def step_harness_evaluates_workspace(context):
+    from unittest.mock import MagicMock, patch
+
     from givn_harness.evaluator import run_evaluation
+    from givn_harness.judge import run_judge
     from givn_harness.report import generate_report_structure
 
     context.checks = run_evaluation(context.workspace_path)
-    context.report = generate_report_structure(context.checks, context.workspace_path)
+
+    mock_response = '{"score": 3, "explanation": "Good work."}'
+    mock_result = MagicMock()
+    mock_result.stdout = mock_response
+    mock_result.stderr = ""
+    mock_result.returncode = 0
+
+    with patch("givn_harness.judge.subprocess.run", return_value=mock_result):
+        context.judge_scores = run_judge(context.workspace_path)
+
+    context.report = generate_report_structure(
+        context.checks, context.workspace_path, context.judge_scores
+    )
 
 
 @then("the run report lists all ten automated checks:")
@@ -301,3 +316,51 @@ def step_each_check_has_pass_or_fail(context):
         assert isinstance(c.passed, bool), (
             f"check '{c.name}' passed is not bool: {c.passed!r}"
         )
+
+
+@then("an LLM judge scores the proposal artifact on a 0-4 scale")
+def step_judge_scores_proposal(context):
+    _check_judge_score(context, "proposal")
+
+
+@then("an LLM judge scores the specs artifact on a 0-4 scale")
+def step_judge_scores_specs(context):
+    _check_judge_score(context, "specs")
+
+
+@then("an LLM judge scores the design artifact on a 0-4 scale")
+def step_judge_scores_design(context):
+    _check_judge_score(context, "design")
+
+
+@then("an LLM judge scores the tasks artifact on a 0-4 scale")
+def step_judge_scores_tasks(context):
+    _check_judge_score(context, "tasks")
+
+
+@then("an LLM judge scores the review artifact on a 0-4 scale")
+def step_judge_scores_review(context):
+    _check_judge_score(context, "review")
+
+
+@then("each score is accompanied by a written explanation")
+def step_each_score_has_explanation(context):
+    for score in context.judge_scores:
+        assert score.explanation, (
+            f"missing explanation for {score.artifact}"
+        )
+        assert isinstance(score.explanation, str), (
+            f"explanation is not a string for {score.artifact}"
+        )
+
+
+def _check_judge_score(context, artifact_name):
+    scores = context.judge_scores
+    matching = [s for s in scores if s.artifact == artifact_name]
+    assert len(matching) == 1, (
+        f"expected 1 score for {artifact_name}, got {len(matching)}"
+    )
+    score = matching[0]
+    assert 0 <= score.score <= 4, (
+        f"{artifact_name} score {score.score} not in 0-4"
+    )
