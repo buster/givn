@@ -92,3 +92,13 @@ def _rmtree(path: str) -> None:
     import shutil
     if os.path.isdir(path):
         shutil.rmtree(path, ignore_errors=True)
+
+
+@then('the workspace\'s givn/config.yaml contains the verify.command sentinel "givn missing-testrunner"')
+def step_config_yaml_contains_sentinel(context):
+    config_path = os.path.join(context.workspace_path, "givn", "config.yaml")
+    with open(config_path) as f:
+        content = f.read()
+    assert '"givn missing-testrunner"' in content, (
+        f'config.yaml does not contain the verify.command sentinel "givn missing-testrunner"'
+    )

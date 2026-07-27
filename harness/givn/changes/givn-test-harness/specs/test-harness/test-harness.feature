@@ -24,7 +24,7 @@ Feature: test-harness
     And the workspace contains a givn/ directory scaffolded by givn init
     And the workspace contains givn/config.yaml
 
-  @givn.added @wip
+  @givn.added
   Scenario: verify.command is at the sentinel default after initialization
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
