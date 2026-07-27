@@ -1,4 +1,6 @@
 import os
+import signal
+import time
 
 import click
 
@@ -11,7 +13,7 @@ from givn_harness.workspace import copy_task, create_workspace, init_workspace
 
 
 @click.group()
-def main():
+def main() -> None:
     pass
 
 
@@ -41,11 +43,20 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool)
     checks: list[Check] = []
     termination = "completed"
 
-    if fail:
-        checks = [
-            Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
-        ]
-        termination = "agent failure"
+    def _handle_sigint(*_: object) -> None:
+        nonlocal termination
+        termination = "interrupted"
+
+    original_handler = signal.signal(signal.SIGINT, _handle_sigint)
+    try:
+        if fail:
+            checks = [
+                Check(name="archive succeeded", passed=False, detail="agent failed to archive"),
+            ]
+            termination = "agent failure"
+        time.sleep(2)
+    finally:
+        signal.signal(signal.SIGINT, original_handler)
 
     write_report(
         checks=checks,

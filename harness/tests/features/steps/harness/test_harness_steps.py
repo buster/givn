@@ -673,3 +673,34 @@ def step_explanation_is_unparseable(context):
     assert matching[0].explanation == "judge output unparseable", (
         f"expected explanation 'judge output unparseable', got {matching[0].explanation!r}"
     )
+
+
+@when("the process receives SIGINT")
+def step_process_receives_sigint(context):
+    import signal
+    import time
+
+    python = os.path.join(REPO_ROOT, ".venv", "bin", "givn-harness")
+    cmd = [
+        python, "run",
+        "--task", context.task_file,
+        "--output", os.path.join(context.output_dir, "reports"),
+        "--workspace-root", context.workspace_root,
+    ]
+    proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+    time.sleep(1.0)
+    proc.send_signal(signal.SIGINT)
+    stdout, stderr = proc.communicate(timeout=5)
+    result = subprocess.CompletedProcess(args=cmd, returncode=proc.returncode, stdout=stdout, stderr=stderr)
+    context.cli_result = result
+    context.workspace_path = stdout.strip()
+
+
+@then("the report records the interruption as the termination reason")
+def step_report_records_interruption_termination(context):
+    report_path = Path(context.workspace_path) / "report.md"
+    assert report_path.is_file(), f"report file {report_path} does not exist"
+    content = report_path.read_text()
+    assert "**Termination:** interrupted" in content or "Termination: interrupted" in content, (
+        f"report does not record interruption as termination reason: {content!r}"
+    )

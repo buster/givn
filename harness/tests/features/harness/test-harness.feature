@@ -214,7 +214,7 @@ Feature: test-harness
     Then the proposal artifact judge score is 0
     And the explanation is "judge output unparseable"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Interrupted run preserves workspace on SIGINT
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
