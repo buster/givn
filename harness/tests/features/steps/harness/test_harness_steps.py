@@ -915,3 +915,42 @@ def step_second_run_enforces_profile(context):
     assert "Enforcing profile 'shopping-list'" in stdout, (
         f"expected enforcing profile message in second run stdout, got: {stdout!r}"
     )
+
+
+@then("the sandbox allows unrestricted outbound network access")
+def step_sandbox_network_default_allow(context):
+    from givn_harness.sandbox import _base_sandbox_args
+
+    args = _base_sandbox_args("/tmp/test")
+    assert "net_allow" not in args, (
+        f"expected no net_allow in sandbox args, got: {args.get('net_allow')!r}"
+    )
+    assert "net_deny" not in args, (
+        f"expected no net_deny in sandbox args, got: {args.get('net_deny')!r}"
+    )
+
+
+@then("Docker commands succeed inside the sandbox")
+def step_docker_commands_succeed(context):
+    from givn_harness.sandbox import _base_sandbox_args
+
+    args = _base_sandbox_args("/tmp/test")
+    assert "/tmp" in args.get("fs_writable", []), (
+        "Docker needs /tmp writable in sandbox config"
+    )
+    assert args.get("port_remap") is True, (
+        "Docker needs port_remap enabled in sandbox config"
+    )
+
+
+@then("Playwright browser launches succeed inside the sandbox")
+def step_playwright_succeeds(context):
+    from givn_harness.sandbox import _base_sandbox_args
+
+    args = _base_sandbox_args("/tmp/test")
+    assert "/tmp" in args.get("fs_writable", []), (
+        "Playwright needs /tmp writable for browser profiles"
+    )
+    assert args.get("max_processes", 0) >= 32, (
+        "Playwright needs high process limit for browser subprocesses"
+    )

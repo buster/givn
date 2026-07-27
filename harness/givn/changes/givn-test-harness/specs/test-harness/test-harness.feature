@@ -64,7 +64,7 @@ Feature: test-harness
     Then on the first run the sandbox learns the workload profile
     And on the second run with the same profile the sandbox enforces the learned filesystem profile
 
-  @givn.added @wip
+  @givn.added
   Scenario: Sandbox network is default-allow with no outbound restrictions
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
