@@ -783,14 +783,65 @@
         ```
       COMMIT: `a3c2869` — feat(test-harness): Sandlock is not available, harness falls back to --no-sandbox
 
-- [ ] test-harness: Ralph binary is not found at the configured path
+- [x] test-harness: Ralph binary is not found at the configured path
       Design constraints:
         - `runner.py` checks for ralph binary at `--ralph-bin` (default `/usr/local/bin/ralph`). If not found: non-zero exit, stderr message.
         - Check happens before any workspace creation.
-      RED:      Remove @wip. Stubs. Run targeting this scenario → MUST FAIL. Paste output.
-      GREEN:    Implement `runner.py` binary check. Files: `runner.py`. Run → PASSES. Paste output.
-      REFACTOR: Clean up. Re-run → PASSES. Paste output.
-      COMMIT:   One commit. Message: "feat(test-harness): Ralph binary is not found at the configured path". Record hash.
+      RED:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Ralph binary is not found at the configured path               # tests/features/harness/test-harness.feature:203
+            Given the ralph binary is not present at "/usr/local/bin/ralph"        # tests/features/steps/harness/test_harness_steps.py:601
+              Traceback (most recent call last):
+                ...
+              NotImplementedError: TODO
+
+            When the user runs `givn-harness run --task task.md --output reports/` # None
+            Then the harness exits with a non-zero exit code                       # None
+            And stderr reports that the ralph binary was not found                 # None
+
+        Errored scenarios:
+          tests/features/harness/test-harness.feature:203  Ralph binary is not found at the configured path
+
+        0 features passed, 0 failed, 1 error, 0 skipped
+        0 scenarios passed, 0 failed, 1 error, 24 skipped
+        0 steps passed, 0 failed, 1 error, 125 skipped, 1 undefined
+        Took 0min 0.001s
+        ```
+      GREEN:
+        ```
+        USING RUNNER: behave.runner:Runner
+        USE_NESTED_STEP_MODULES: yes
+        @givn.delta @test-harness
+        Feature: test-harness # tests/features/harness/test-harness.feature:10
+
+          @givn.added
+          Scenario: Ralph binary is not found at the configured path               # tests/features/harness/test-harness.feature:203
+            Given the ralph binary is not present at "/usr/local/bin/ralph"        # tests/features/steps/harness/test_harness_steps.py:605
+            When the user runs `givn-harness run --task task.md --output reports/` # tests/features/steps/harness/test_harness_steps.py:25
+            Then the harness exits with a non-zero exit code                       # tests/features/steps/harness/test_harness_steps.py:619
+            And stderr reports that the ralph binary was not found                 # tests/features/steps/harness/test_harness_steps.py:626
+
+        1 feature passed, 0 failed, 0 skipped
+        1 scenario passed, 0 failed, 24 skipped
+        4 steps passed, 0 failed, 123 skipped
+        Took 0min 0.069s
+        ```
+        Files created: `src/givn_harness/runner.py`
+        Files modified: `src/givn_harness/cli.py`, `tests/features/steps/harness/test_harness_steps.py`, `tests/features/harness/test-harness.feature`, `givn/changes/givn-test-harness/specs/test-harness/test-harness.feature`
+      REFACTOR:
+        ```
+        1 feature passed, 0 failed, 0 skipped
+        13 scenarios passed, 0 failed, 12 skipped
+        61 steps passed, 0 failed, 66 skipped
+        Took 0min 1.049s
+        ```
+      COMMIT: `4e53953` — feat(test-harness): Ralph binary is not found at the configured path
 
 - [ ] test-harness: LLM judge returns unparseable JSON, score defaults to zero
       Design constraints:
