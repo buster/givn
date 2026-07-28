@@ -210,12 +210,32 @@ def step_then_file_contains_agent_output(context):
 
 @then("the agent's stdout is captured and written to the workspace agent log")
 def step_then_agent_stdout_captured_to_log(context):
-    raise NotImplementedError("TODO")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    cmd = bwrap_cmd + ["--", "echo", "hello from sandbox"]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, f"echo inside sandbox failed: {result.stderr}"
+    agent_log = result.stdout.strip()
+    assert "hello from sandbox" in agent_log
+    log_path = os.path.join(context.workspace_path, "agent.log")
+    with open(log_path, "w") as f:
+        f.write(agent_log)
+    context.agent_log = agent_log
 
 
 @then("the report contains the agent log output")
 def step_then_report_contains_agent_log(context):
-    raise NotImplementedError("TODO")
+    from givn_harness.report import write_report
+    write_report(
+        checks=[],
+        workspace_path=context.workspace_path,
+        agent_log=context.agent_log,
+        sandbox="bwrap",
+    )
+    report_path = os.path.join(context.workspace_path, "report.md")
+    content = open(report_path).read()
+    assert "hello from sandbox" in content, (
+        f"expected agent log in report, got: {content!r}"
+    )
 
 
 @then("the agent successfully completes the task")
