@@ -4,7 +4,6 @@ import tempfile
 from pathlib import Path
 
 from behave import given, when, then
-from behave.api.pending_step import StepNotImplementedError
 
 from givn_harness.sandbox import build_bwrap_cmd, _wrap_with_limits
 
