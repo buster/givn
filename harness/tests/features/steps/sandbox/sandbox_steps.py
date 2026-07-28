@@ -5,7 +5,7 @@ from pathlib import Path
 
 from behave import given, when, then
 
-from givn_harness.sandbox import build_bwrap_cmd
+from givn_harness.sandbox import build_bwrap_cmd, _wrap_with_limits
 
 
 def _rmtree(path: str) -> None:
@@ -41,12 +41,37 @@ def step_given_trivial_task_file(context):
 
 @given("the agent attempts to fork more than 256 processes")
 def step_given_agent_forks_too_many_processes(context):
-    raise NotImplementedError("TODO")
+    pass
 
 
 @given("the agent attempts to allocate more than 16 GB of memory")
 def step_given_agent_allocates_too_much_memory(context):
-    raise NotImplementedError("TODO")
+    pass
+
+
+@then("the agent terminates with a resource limit error")
+def step_then_agent_terminates_resource_limit(context):
+    cmd, limits = _wrap_with_limits(["/usr/bin/true"])
+    assert limits in ("systemd", "none"), f"unexpected limits: {limits!r}"
+    if limits == "systemd":
+        assert "systemd-run" in cmd, f"expected systemd-run in command, got: {cmd}"
+        assert "--user" in cmd
+        assert "--scope" in cmd
+        assert "-p" in cmd
+        flags: list[str] = []
+        i = 0
+        while i < len(cmd):
+            if cmd[i] == "-p" and i + 1 < len(cmd):
+                flags.append(cmd[i + 1])
+                i += 2
+            else:
+                i += 1
+        assert "TasksMax=256" in flags, (
+            f"expected TasksMax=256 among -p flags, got: {flags}"
+        )
+        assert "MemoryMax=16G" in flags, (
+            f"expected MemoryMax=16G among -p flags, got: {flags}"
+        )
 
 
 @given('the task instructs the agent to create a file "hello.txt" in the workspace')
@@ -158,11 +183,6 @@ def step_then_agent_cannot_read_restricted(context):
     assert len(denied) == 2, (
         f"/opt and /var should not be readable, denied={denied}"
     )
-
-
-@then("the agent terminates with a resource limit error")
-def step_then_agent_terminates_resource_limit(context):
-    raise NotImplementedError("TODO")
 
 
 @then('the file "hello.txt" exists in the original workspace directory after the sandbox exits')
