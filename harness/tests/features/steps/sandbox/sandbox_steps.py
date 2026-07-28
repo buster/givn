@@ -1,0 +1,106 @@
+from behave import given, when, then
+
+
+@given('the bubblewrap binary is not present in PATH')
+def step_given_bubblewrap_not_in_path(context):
+    raise NotImplementedError("TODO")
+
+
+@when('the user runs `givn-harness run --task tasks/trivial.md --output reports/`')
+def step_when_user_runs_harness_with_trivial_task(context):
+    raise NotImplementedError("TODO")
+
+
+@given('a task file "tasks/trivial.md" describing a trivial task using the givn workflow')
+def step_given_trivial_task_file(context):
+    raise NotImplementedError("TODO")
+
+
+@given("the agent attempts to fork more than 256 processes")
+def step_given_agent_forks_too_many_processes(context):
+    raise NotImplementedError("TODO")
+
+
+@given("the agent attempts to allocate more than 16 GB of memory")
+def step_given_agent_allocates_too_much_memory(context):
+    raise NotImplementedError("TODO")
+
+
+@given('the task instructs the agent to create a file "hello.txt" in the workspace')
+def step_given_task_instructs_create_file(context):
+    raise NotImplementedError("TODO")
+
+
+@then("ralph executes inside a bubblewrap sandbox")
+def step_then_ralph_executes_inside_bubblewrap(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the harness logs a warning that bubblewrap is unavailable")
+def step_then_harness_logs_bubblewrap_unavailable_warning(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the agent can write files inside the workspace directory")
+def step_then_agent_can_write_workspace(context):
+    raise NotImplementedError("TODO")
+
+
+@then('the agent can write files to "/tmp"')
+def step_then_agent_can_write_tmp(context):
+    raise NotImplementedError("TODO")
+
+
+@then('the agent cannot write files to "/home" or "/var" or "/opt"')
+def step_then_agent_cannot_write_restricted(context):
+    raise NotImplementedError("TODO")
+
+
+@then('the agent can read files from "/usr", "/bin", "/lib", "/lib64", and "/etc"')
+def step_then_agent_can_read_system_paths(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the agent cannot read files outside the configured readable paths")
+def step_then_agent_cannot_read_restricted(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the agent terminates with a resource limit error")
+def step_then_agent_terminates_resource_limit(context):
+    raise NotImplementedError("TODO")
+
+
+@then('the file "hello.txt" exists in the original workspace directory after the sandbox exits')
+def step_then_hello_txt_exists_in_workspace(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the file contains the agent's output")
+def step_then_file_contains_agent_output(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the agent's stdout is captured and written to the workspace agent log")
+def step_then_agent_stdout_captured_to_log(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the report contains the agent log output")
+def step_then_report_contains_agent_log(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the agent successfully completes the task")
+def step_then_agent_completes_task(context):
+    raise NotImplementedError("TODO")
+
+
+@then('the run report shows the sandboxed flag as "bwrap"')
+def step_then_report_shows_sandboxed_bwrap(context):
+    raise NotImplementedError("TODO")
+
+
+@then("the agent's workspace changes are visible to the harness evaluator")
+def step_then_workspace_changes_visible_to_evaluator(context):
+    raise NotImplementedError("TODO")
