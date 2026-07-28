@@ -1,4 +1,3 @@
-# Task: Trivial File
+# Task: Simple File Creation
 
-Create a file called `hello.txt` containing the exact text `hello world`.
-Use the givn workflow framework until changes are archived.
+Write a file named `result.txt` in the current working directory containing the exact text `success`.

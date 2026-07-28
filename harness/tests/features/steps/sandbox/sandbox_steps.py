@@ -31,12 +31,34 @@ def step_given_bubblewrap_not_in_path(context):
 
 @when('the user runs `givn-harness run --task tasks/trivial.md --output reports/`')
 def step_when_user_runs_harness_with_trivial_task(context):
-    raise NotImplementedError("TODO")
+    project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(__file__)))))
+    task_path = os.path.join(project_root, "tasks", "trivial.md")
+    output_dir = tempfile.mkdtemp()
+    result = subprocess.run(
+        ["givn-harness", "run",
+         "--task", task_path,
+         "--output", output_dir,
+         "--timeout", "180"],
+        capture_output=True,
+        text=True,
+        timeout=240,
+        env={**os.environ, "GIVN_HARNESS_WORKSPACE_ROOT": context.workspace_root},
+    )
+    context.cli_result = result
+    context.output_dir = output_dir
+    context.add_cleanup(lambda: _rmtree(output_dir))
+    # find workspace dir from harness output
+    for line in result.stdout.splitlines():
+        if "workdir:" in line:
+            context.workspace_path = line.split("workdir:")[1].strip().rstrip(")")
+            break
+    else:
+        context.workspace_path = os.path.join(context.workspace_root, "trivial-e2e")
 
 
 @given('a task file "tasks/trivial.md" describing a trivial task using the givn workflow')
 def step_given_trivial_task_file(context):
-    raise NotImplementedError("TODO")
+    pass
 
 
 @given("the agent attempts to fork more than 256 processes")
@@ -240,14 +262,25 @@ def step_then_report_contains_agent_log(context):
 
 @then("the agent successfully completes the task")
 def step_then_agent_completes_task(context):
-    raise NotImplementedError("TODO")
+    assert context.cli_result.returncode == 0, (
+        f"agent failed with exit code {context.cli_result.returncode}: "
+        f"stderr={context.cli_result.stderr[:500]}"
+    )
 
 
 @then('the run report shows the sandboxed flag as "bwrap"')
 def step_then_report_shows_sandboxed_bwrap(context):
-    raise NotImplementedError("TODO")
+    report_path = os.path.join(context.workspace_path, "report.md")
+    content = open(report_path).read()
+    assert "- **Sandbox:** bwrap" in content, (
+        f"expected Sandbox: bwrap in report, got: {content[:500]!r}"
+    )
 
 
 @then("the agent's workspace changes are visible to the harness evaluator")
 def step_then_workspace_changes_visible_to_evaluator(context):
-    raise NotImplementedError("TODO")
+    ws_path = context.workspace_path
+    entries = os.listdir(ws_path)
+    assert len(entries) > 0, (
+        f"workspace should contain agent output, got: {entries!r}"
+    )
