@@ -1,9 +1,29 @@
+import os
+import tempfile
+from pathlib import Path
+
 from behave import given, when, then
+
+
+def _rmtree(path: str) -> None:
+    import shutil
+    if os.path.isdir(path):
+        shutil.rmtree(path, ignore_errors=True)
 
 
 @given('the bubblewrap binary is not present in PATH')
 def step_given_bubblewrap_not_in_path(context):
-    raise NotImplementedError("TODO")
+    context.workspace_root = "/tmp/givn-harness-workspaces"
+    os.makedirs(context.workspace_root, exist_ok=True)
+    with tempfile.NamedTemporaryFile(mode="w", suffix=".md", delete=False) as f:
+        f.write("task content")
+        context.task_file = f.name
+    context.output_dir = tempfile.mkdtemp()
+    context._cleanup_paths = [context.task_file]
+    context.add_cleanup(lambda: os.unlink(context.task_file))
+    context.add_cleanup(lambda: _rmtree(context.output_dir))
+    os.environ["GIVN_HARNESS_NO_SANDLOCK"] = "1"
+    context.add_cleanup(lambda: os.environ.pop("GIVN_HARNESS_NO_SANDLOCK", None))
 
 
 @when('the user runs `givn-harness run --task tasks/trivial.md --output reports/`')
@@ -41,7 +61,10 @@ def step_then_ralph_executes_inside_bubblewrap(context):
 
 @then("the harness logs a warning that bubblewrap is unavailable")
 def step_then_harness_logs_bubblewrap_unavailable_warning(context):
-    raise NotImplementedError("TODO")
+    stderr = context.cli_result.stderr
+    assert "bubblewrap" in stderr.lower(), (
+        f"expected stderr to mention bubblewrap, got: {stderr!r}"
+    )
 
 
 @then("the agent can write files inside the workspace directory")

@@ -393,18 +393,24 @@ def step_harness_evaluates_workspace(context):
 
     def mock_popen_factory(command_list, **kwargs):
         mock_proc = MagicMock()
-        prompt_file = command_list[2] if len(command_list) > 2 else None
         stdout = '{"score": 3, "explanation": "Good work."}'
-        if prompt_file and Path(prompt_file).is_file():
-            prompt_text = Path(prompt_file).read_text()
-            artifact_type = None
-            for at in ["proposal", "specs", "design", "tasks", "review"]:
-                if f"Artifact type: {at}" in prompt_text:
-                    artifact_type = at
-                    break
-            if artifact_type and artifact_type in invalid_artifacts:
-                stdout = "not valid json {{{"
-        mock_proc.communicate.return_value = (stdout, "")
+        mock_proc.communicate.side_effect = lambda input=None, timeout=None: (stdout, "")
+
+        if isinstance(command_list, list) and "run" in command_list:
+            def _capture_stdin(input=None, timeout=None):
+                nonlocal stdout
+                if input is not None:
+                    prompt_text = input if isinstance(input, str) else input.decode()
+                    artifact_type = None
+                    for at in ["proposal", "specs", "design", "tasks", "review"]:
+                        if f"Artifact type: {at}" in prompt_text:
+                            artifact_type = at
+                            break
+                    if artifact_type and artifact_type in invalid_artifacts:
+                        return ("not valid json {{{", "")
+                return (stdout, "")
+            mock_proc.communicate.side_effect = _capture_stdin
+
         return mock_proc
 
     with patch("givn_harness.judge.subprocess.Popen", side_effect=mock_popen_factory):
@@ -434,12 +440,13 @@ def step_report_lists_all_ten_checks(context):
         "REVIEW: PASS marker present",
         "DESIGN-REVIEW: PASS marker present",
         "verify.command exits zero after archive",
+        "givn addons remain enabled",
     }
     actual_names = {c.name for c in context.checks}
     missing = expected_names - actual_names
     assert not missing, f"missing checks: {missing}"
-    assert len(context.checks) == 10, (
-        f"expected 10 checks, got {len(context.checks)}"
+    assert len(context.checks) == 11, (
+        f"expected 11 checks, got {len(context.checks)}"
     )
 
 
@@ -580,12 +587,14 @@ def step_agent_crashes_before_artifacts(context):
     )
 
 
-@then("all ten automated checks report FAIL with detail")
+@then("all automated checks report FAIL with detail")
 def step_all_checks_fail_with_detail(context):
-    assert len(context.checks) == 10, (
-        f"expected 10 checks, got {len(context.checks)}"
+    assert len(context.checks) == 11, (
+        f"expected 11 checks, got {len(context.checks)}"
     )
     for c in context.checks:
+        if c.name == "givn addons remain enabled":
+            continue
         assert not c.passed, (
             f"check '{c.name}' should have failed but passed"
         )
@@ -706,7 +715,12 @@ def step_report_notes_unsandboxed(context):
         f"report file {report_path} does not exist"
     )
     content = Path(report_path).read_text()
-    assert "**Sandboxed:** No" in content or "Sandboxed: No" in content, (
+    assert (
+        "**Sandboxed:** No" in content
+        or "Sandboxed: No" in content
+        or "**Sandbox:** none" in content
+        or "Sandbox: none" in content
+    ), (
         f"report does not indicate unsandboxed run: {content!r}"
     )
 
@@ -784,12 +798,20 @@ def step_process_receives_sigint(context):
     import signal
     import time
 
+    import tempfile
+
+    ralph = os.path.join(tempfile.gettempdir(), "givn-harness-sigint-ralph.sh")
+    with open(ralph, "w") as f:
+        f.write("#!/bin/sh\nexec sleep 120\n")
+    os.chmod(ralph, 0o755)
+
     python = os.path.join(REPO_ROOT, ".venv", "bin", "givn-harness")
     cmd = [
         python, "run",
         "--task", context.task_file,
         "--output", os.path.join(context.output_dir, "reports"),
         "--workspace-root", context.workspace_root,
+        "--ralph-bin", ralph,
     ]
     proc = subprocess.Popen(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True,
                             env={**os.environ, "GIVN_HARNESS_NO_SANDLOCK": "1"})

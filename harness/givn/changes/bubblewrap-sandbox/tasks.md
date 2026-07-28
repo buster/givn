@@ -20,14 +20,35 @@
 
 - [ ] **Scenario 1: The agent runs inside a sandlock sandbox** (`@givn.modified`)
   - RED: Remove `@wip` if present. Existing step defs at `tests/features/steps/harness/test_harness_steps.py`. Update the step that checks sandlock to check bubblewrap instead (`ralph executes inside a bubblewrap sandbox`, `sandbox workdir is the workspace directory`). Run `uv run behave tests/features/ --no-capture -n "The agent runs inside a sandlock sandbox"` — MUST FAIL.
-  - Output: `________`
+  - Output:
+    ```
+    0 features passed, 2 failed, 0 skipped
+    0 scenarios passed, 2 failed, 34 skipped
+    4 steps passed, 2 failed, 168 skipped
+    Took 0min 0.179s
+    EXIT: 1
+    ```
   - GREEN: Implement: modify `sandbox.py` (`check_bubblewrap`, `build_bwrap_cmd`), `runner.py` (`_run_with_bwrap`, modify `run_agent` dispatch), `cli.py` (replace `check_sandlock` with `check_bubblewrap`, remove `--profile`), `report.py` (change `sandboxed: bool` to `sandbox: str`, add `resource_limits: str`). Run single scenario — PASSES.
   - Files: `src/givn_harness/sandbox.py`, `src/givn_harness/runner.py`, `src/givn_harness/cli.py`, `src/givn_harness/report.py`
-  - Output: `________`
-  - REFACTOR: Clean up. Run single scenario — still PASSES.
-  - Output: `________`
+  - Output:
+    ```
+    1 feature passed, 0 failed, 1 skipped
+    1 scenario passed, 0 failed, 35 skipped
+    4 steps passed, 0 failed, 170 skipped
+    Took 0min 0.141s
+    EXIT: 0
+    ```
+  - REFACTOR: Removed unused imports (`pathlib.Path` from sandbox.py, `from pathlib import Path` from runner.py). Run single scenario — still PASSES.
+  - Output:
+    ```
+    1 feature passed, 0 failed, 1 skipped
+    1 scenario passed, 0 failed, 35 skipped
+    4 steps passed, 0 failed, 170 skipped
+    Took 0min 0.153s
+    EXIT: 0
+    ```
   - Commit: `feat(sandbox): replace sandlock with bubblewrap sandbox`
-  - Hash: `________`
+  - Hash: `fd041b6`
 
 - [ ] **Scenario 2: Sandbox filesystem uses learn-then-confine mode** (`@givn.removed`) — No implementation. Placeholder scenario removed on archive.
 
