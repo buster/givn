@@ -26,7 +26,8 @@ def write_report(
     task: str = "",
     agent_log: str = "",
     termination: str = "completed",
-    sandboxed: bool = True,
+    sandbox: str = "none",
+    resource_limits: str = "none",
 ) -> Path:
     report_path = Path(workspace_path) / "report.md"
     run_id = Path(workspace_path).name
@@ -44,7 +45,8 @@ def write_report(
     lines.append(f"- **Timestamp:** {timestamp}")
     lines.append(f"- **Workspace:** {workspace_path}")
     lines.append(f"- **Termination:** {termination}")
-    lines.append(f"- **Sandboxed:** {'Yes' if sandboxed else 'No'}")
+    lines.append(f"- **Sandbox:** {sandbox}")
+    lines.append(f"- **Resource Limits:** {resource_limits}")
     lines.append(f"- **Overall:** {'PASS' if all_pass else 'FAIL'}")
     lines.append("")
 

@@ -64,7 +64,7 @@ Feature: test-harness
     Then on the first run the sandbox learns the workload profile
     And on the second run with the same profile the sandbox enforces the learned filesystem profile
 
-  @givn.added
+  @givn.added @needs-sandlock
   Scenario: Sandbox network is default-allow with no outbound restrictions
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
@@ -101,6 +101,7 @@ Feature: test-harness
       | REVIEW: PASS marker present                 |
       | DESIGN-REVIEW: PASS marker present          |
       | verify.command exits zero after archive      |
+      | givn addons remain enabled                 |
     And each check has a pass or fail result
 
   @givn.added
@@ -195,11 +196,11 @@ Feature: test-harness
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
     And the agent crashes before producing any artifacts
-    Then all ten automated checks report FAIL with detail
+    Then all automated checks report FAIL with detail
     And the LLM judge scores default to 0
     And the termination reason is recorded in the report
 
-  @givn.added
+  @givn.added @needs-sandlock
   Scenario: Sandlock is not available, harness falls back to --no-sandbox
     Given the sandlock SDK is not importable
     When the user runs `givn-harness run --task task.md --output reports/`

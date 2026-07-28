@@ -1,5 +1,6 @@
 import os
-from pathlib import Path
+import shutil
+import subprocess
 
 
 def _deduplicate_paths(paths: list[str]) -> list[str]:
@@ -17,106 +18,69 @@ def _deduplicate_paths(paths: list[str]) -> list[str]:
     return sorted(result)
 
 
-def check_sandlock() -> bool:
+def check_bubblewrap() -> bool:
     if os.environ.get("GIVN_HARNESS_NO_SANDLOCK") == "1":
         return False
+    if shutil.which("bwrap") is None:
+        return False
     try:
-        import sandlock  # noqa: F401
+        subprocess.run(
+            [
+                "bwrap", "--unshare-user",
+                "--ro-bind", "/usr", "/usr",
+                "--ro-bind-try", "/lib64", "/lib64",
+                "--ro-bind-try", "/lib", "/lib",
+                "--", "true",
+            ],
+            capture_output=True, timeout=5, check=True,
+        )
         return True
-    except ImportError:
+    except Exception:
         return False
 
 
-def _base_sandbox_args(workspace_path: str) -> dict:
-    return dict(
-        name="givn-harness",
-        workdir=workspace_path,
-        cwd=workspace_path,
-        fs_writable=_deduplicate_paths([
-            workspace_path,
-            "/tmp",
-            os.path.expanduser("~/.npm"),
-            os.path.expanduser("~/.cache"),
-            os.path.expanduser("~/.bun"),
-            os.path.expanduser("~/.config"),
-            os.path.expanduser("~/.local"),
-        ]),
-        fs_readable=_deduplicate_paths([
-            "/dev/null",
-            "/dev/zero",
-            "/dev/urandom",
-            "/dev/random",
-            "/dev/fd",
-            "/usr",
-            "/bin",
-            "/lib",
-            "/lib64",
-            "/etc",
-            os.path.expanduser("~"),
-        ]),
-        clean_env=False,
-        max_processes=256,
-        max_memory="16G",
-        max_disk="20G",
-        port_remap=True,
-        on_exit=None,
-        allow_degraded=[4, 5, 3],  # SIGNAL_SCOPE, ABSTRACT_UNIX_SOCKET_SCOPE, FS_IOCTL_DEV
+def build_bwrap_cmd(workspace_path: str) -> list[str]:
+    home = os.path.expanduser("~")
+    return [
+        "bwrap",
+        "--unshare-all",
+        "--share-net",
+        "--new-session",
+        "--die-with-parent",
+        "--as-pid-1",
+        "--chdir", workspace_path,
+        "--ro-bind", "/usr", "/usr",
+        "--ro-bind", "/bin", "/bin",
+        "--ro-bind-try", "/lib", "/lib",
+        "--ro-bind-try", "/lib64", "/lib64",
+        "--ro-bind", "/etc", "/etc",
+        "--ro-bind-try", os.path.join(home, "bin"), os.path.join(home, "bin"),
+        "--ro-bind-try", os.path.join(home, ".cargo"), os.path.join(home, ".cargo"),
+        "--ro-bind-try", os.path.join(home, ".opencode"), os.path.join(home, ".opencode"),
+        "--ro-bind-try", os.path.join(home, ".gitconfig"), os.path.join(home, ".gitconfig"),
+        "--ro-bind-try", os.path.join(home, ".config", "opencode"), os.path.join(home, ".config", "opencode"),
+        "--bind", workspace_path, workspace_path,
+        "--bind", "/tmp", "/tmp",
+        "--bind-try", os.path.join(home, ".npm"), os.path.join(home, ".npm"),
+        "--bind-try", os.path.join(home, ".cache"), os.path.join(home, ".cache"),
+        "--bind-try", os.path.join(home, ".bun"), os.path.join(home, ".bun"),
+        "--bind-try", os.path.join(home, ".local"), os.path.join(home, ".local"),
+        "--proc", "/proc",
+        "--dev", "/dev",
+        "--tmpfs", "/run",
+        "--tmpfs", "/var/tmp",
+    ]
+
+
+def _wrap_with_limits(cmd: list[str]) -> tuple[list[str], str]:
+    if shutil.which("systemd-run") is None:
+        return (cmd, "none")
+    return (
+        [
+            "systemd-run", "--user", "--scope",
+            "-p", "MemoryMax=16G",
+            "-p", "TasksMax=256",
+            "--",
+        ] + cmd,
+        "systemd",
     )
-
-
-def _profiles_dir() -> Path:
-    import sandlock._profile
-
-    return sandlock._profile.profiles_dir()
-
-
-def create_sandbox(workspace_path: str, profile_name: str | None = None) -> dict:
-    from sandlock import BranchAction, Sandbox
-
-    args = _base_sandbox_args(workspace_path)
-    args["on_exit"] = BranchAction.COMMIT
-
-    if profile_name is None:
-        return {
-            "sandbox": Sandbox(**args),
-            "mode": "basic",
-            "profile_path": None,
-            "profile_name": None,
-        }
-
-    profile_path = _profiles_dir() / f"{profile_name}.toml"
-
-    if profile_path.exists():
-        import sandlock._profile as sp
-
-        sandbox = sp.load_profile_path(profile_path)
-        sandbox.name = "givn-harness"
-        sandbox.workdir = workspace_path
-        sandbox.cwd = workspace_path
-        sandbox.fs_readable = _deduplicate_paths(
-            list(sandbox.fs_readable) + args["fs_readable"]
-        )
-        sandbox.fs_writable = _deduplicate_paths(
-            list(sandbox.fs_writable) + args["fs_writable"]
-        )
-        if workspace_path not in sandbox.fs_readable:
-            sandbox.fs_readable.append(workspace_path)
-        if workspace_path not in sandbox.fs_writable:
-            sandbox.fs_writable.append(workspace_path)
-        sandbox.clean_env = args["clean_env"]
-        sandbox.port_remap = args["port_remap"]
-        sandbox.on_exit = args["on_exit"]
-        sandbox.allow_degraded = args["allow_degraded"]
-        return {
-            "sandbox": sandbox,
-            "mode": "enforce",
-            "profile_path": profile_path,
-            "profile_name": profile_name,
-        }
-
-    return {
-        "sandbox": Sandbox(**args),
-        "mode": "learn",
-        "profile_path": profile_path,
-        "profile_name": profile_name,
-    }

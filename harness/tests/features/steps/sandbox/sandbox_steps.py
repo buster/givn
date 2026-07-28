@@ -33,7 +33,10 @@ def step_given_task_instructs_create_file(context):
 
 @then("ralph executes inside a bubblewrap sandbox")
 def step_then_ralph_executes_inside_bubblewrap(context):
-    raise NotImplementedError("TODO")
+    stdout = context.cli_result.stdout
+    assert "Running agent inside bubblewrap sandbox" in stdout, (
+        f"expected bubblewrap sandbox message in stdout, got: {stdout!r}"
+    )
 
 
 @then("the harness logs a warning that bubblewrap is unavailable")

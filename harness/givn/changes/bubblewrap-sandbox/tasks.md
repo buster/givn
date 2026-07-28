@@ -14,7 +14,7 @@
     EXIT: 1
     ```
   - Commit: `chore(sandbox): scaffold step stubs and prove strict mode`
-  - Hash: `________`
+  - Hash: `b949595`
 
 ## Modified scenarios (update existing `test_harness_steps.py`)
 

@@ -3,7 +3,8 @@ import signal
 import subprocess
 import sys
 import threading
-from pathlib import Path
+
+from givn_harness.sandbox import build_bwrap_cmd, check_bubblewrap, _wrap_with_limits
 
 LOG_FILENAME = "agent.log"
 
@@ -38,32 +39,10 @@ def run_agent(
         sys.stderr.write(f"  ralph: {' '.join(cmd)}\n")
         sys.stderr.flush()
 
-    if profile_info is not None:
-        return _run_with_profile(cmd, timeout, workspace_path, profile_info, log_path, verbose)
+    if check_bubblewrap():
+        return _run_with_bwrap(cmd, timeout, workspace_path, log_path, verbose)
 
     return _run_without_sandbox(cmd, timeout, workspace_path, log_path, verbose)
-
-
-def _result_to_termination(result: object) -> tuple[str, str, int, str]:
-    from sandlock import ExitReason
-
-    stdout = result.stdout.decode("utf-8") if isinstance(result.stdout, bytes) else result.stdout
-    stderr = result.stderr.decode("utf-8") if isinstance(result.stderr, bytes) else result.stderr
-    exit_code = result.exit_code
-    detail = ""
-
-    if result.reason == ExitReason.TIMEOUT:
-        detail = f"agent timed out (exit code {exit_code})"
-        return stdout, "timeout", exit_code, detail
-    if result.reason == ExitReason.EXITED:
-        detail = f"agent completed (exit code {exit_code})"
-        return stdout, "completed", exit_code, detail
-    if result.reason in (ExitReason.SIGNALED, ExitReason.KILLED):
-        error_msg = stderr.strip() if stderr else f"exit code {exit_code}"
-        detail = f"agent killed by sandbox: {error_msg}"
-        return stdout, "interrupted", exit_code, detail
-    detail = str(result.reason) if result.reason else ""
-    return stdout, "completed", exit_code, detail
 
 
 def _write_log(log_path: str, stdout: str) -> None:
@@ -74,134 +53,64 @@ def _write_log(log_path: str, stdout: str) -> None:
         print(f"warning: could not write agent log to {log_path}")
 
 
-def _run_with_profile(
-    cmd: list[str], timeout: int | None, workspace_path: str, profile_info: dict, log_path: str,
+def _run_with_bwrap(
+    cmd: list[str], timeout: int | None, workspace_path: str, log_path: str,
     verbose: bool = False,
 ) -> tuple[str, str]:
-    from sandlock import presets
+    bwrap_cmd = build_bwrap_cmd(workspace_path)
+    full_cmd, resource_limits = _wrap_with_limits(bwrap_cmd + ["--"] + cmd)
 
-    sandbox = profile_info["sandbox"]
-    mode = profile_info["mode"]
-    profile_path: Path | None = profile_info.get("profile_path")
-    profile_name: str = profile_info["profile_name"]
+    print(f"Running agent inside bubblewrap sandbox (workdir: {workspace_path})")
 
-    if mode == "learn":
-        print(f"Learning profile '{profile_name}' ...")
-        print(f"  sandlock profiles dir: {_profiles_dir()}")
+    env = os.environ.copy()
+    env["PWD"] = workspace_path
+    proc = subprocess.Popen(
+        full_cmd,
+        start_new_session=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        text=True,
+        cwd=workspace_path,
+        env=env,
+    )
 
-        learned_paths: list[str] = []
+    termination: str = "completed"
 
-        def _record(path: str | None, _ctx: object) -> None:
-            if path is not None:
-                learned_paths.append(path)
+    def _handle_sigint(*_: object) -> None:
+        nonlocal termination
+        termination = "interrupted"
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, OSError):
+            pass
 
-        audit = presets.AuditPathsHandler(callback=_record)
-        handlers = [
-            (sc, audit) for sc in presets.COMMON_PATH_SYSCALLS
-            if sc not in ("execve", "execveat")
-        ]
+    original_handler = signal.signal(signal.SIGINT, _handle_sigint)
 
-        result = sandbox.run_with_handlers(cmd, handlers)
-        if profile_path is not None:
-            _save_learned_profile(profile_path, learned_paths)
-            learned_count = len(set(os.path.dirname(p) for p in learned_paths if os.path.dirname(p)))
-            print(f"  captured {len(learned_paths)} path accesses across ~{learned_count} directories")
+    try:
+        stdout, stderr_data = proc.communicate(timeout=timeout)
+    except subprocess.TimeoutExpired:
+        termination = "timeout"
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, OSError):
+            pass
+        stdout, stderr_data = proc.communicate()
+    finally:
+        signal.signal(signal.SIGINT, original_handler)
 
-        stdout, termination, exit_code, detail = _result_to_termination(result)
-        _write_log(log_path, stdout)
-        print(f"  learn phase {detail}")
-        return stdout, termination
+    exit_code = proc.returncode
+    if exit_code != 0:
+        bwrap_error = stderr_data.strip() if stderr_data else ""
+        if "bwrap:" in bwrap_error:
+            print(f"  sandbox failure: {bwrap_error}")
+            termination = "interrupted"
+        else:
+            print(f"  agent {termination} (exit code {exit_code})")
+    else:
+        print(f"  agent {termination} (exit code {exit_code})")
 
-    if mode == "enforce":
-        print(f"Enforcing profile '{profile_name}' ...")
-        print(f"  profile: {profile_path}")
-
-        result = sandbox.run(cmd, timeout=timeout)
-        stdout, termination, exit_code, detail = _result_to_termination(result)
-        _write_log(log_path, stdout)
-        print(f"  enforce phase {detail}")
-        return stdout, termination
-
-    print(f"Running agent inside sandlock sandbox (workdir: {workspace_path})")
-    result = sandbox.run(cmd, timeout=timeout)
-    stdout, termination, exit_code, detail = _result_to_termination(result)
     _write_log(log_path, stdout)
-    print(f"  agent {detail}")
     return stdout, termination
-
-
-def _save_learned_profile(profile_path: Path, paths: list[str]) -> None:
-    import os as _os
-
-    from givn_harness.sandbox import _deduplicate_paths
-
-    profile_path.parent.mkdir(parents=True, exist_ok=True)
-
-    dirs: set[str] = set()
-    for p in paths:
-        parent = _os.path.dirname(p)
-        if parent and parent != "/":
-            dirs.add(parent)
-
-    home = _os.path.expanduser("~")
-
-    readable = _deduplicate_paths(
-        [
-            "/dev/null",
-            "/dev/zero",
-            "/dev/urandom",
-            "/dev/random",
-            "/dev/fd",
-            "/usr",
-            "/usr/bin",
-            "/usr/local",
-            "/usr/local/bin",
-            "/usr/local/lib",
-            "/bin",
-            "/lib",
-            "/lib64",
-            "/etc",
-            home,
-            _os.path.join(home, ".config"),
-            _os.path.join(home, ".config/opencode"),
-            _os.path.join(home, ".local"),
-            _os.path.join(home, ".cargo"),
-            _os.path.join(home, ".npm"),
-            _os.path.join(home, ".cache"),
-            _os.path.join(home, ".bun"),
-            _os.path.join(home, "bin"),
-        ]
-        + list(dirs)
-    )
-    writable = _deduplicate_paths(
-        [
-            "/tmp",
-            _os.path.join(home, ".npm"),
-            _os.path.join(home, ".cache"),
-            _os.path.join(home, ".bun"),
-            _os.path.join(home, ".config"),
-            _os.path.join(home, ".local"),
-        ]
-        + [d for d in dirs if d.startswith("/tmp")]
-    )
-
-    content = f"""\
-[filesystem]
-read = {readable!r}
-write = {writable!r}
-
-[limits]
-memory = "16G"
-processes = 256
-disk = "20G"
-"""
-    profile_path.write_text(content)
-
-
-def _profiles_dir() -> Path:
-    import sandlock._profile
-
-    return sandlock._profile.profiles_dir()
 
 
 def _run_without_sandbox(
@@ -233,7 +142,10 @@ def _run_without_sandbox(
     original_handler = signal.signal(signal.SIGINT, _handle_sigint)
 
     if verbose:
-        stdout = _stream_output(proc, timeout)
+        stream_stdout, stream_termination = _stream_output(proc, timeout)
+        stdout = stream_stdout
+        if termination != "interrupted":
+            termination = stream_termination
     else:
         try:
             stdout, stderr_data = proc.communicate(timeout=timeout)
@@ -253,9 +165,10 @@ def _run_without_sandbox(
     return stdout, termination
 
 
-def _stream_output(proc: subprocess.Popen[str], timeout: int | None) -> str:
+def _stream_output(proc: subprocess.Popen[str], timeout: int | None) -> tuple[str, str]:
     lines: list[str] = []
     deadline = None if timeout is None else (__import__("time").monotonic() + timeout)
+    termination: str = "completed"
 
     def _reader(pipe, label: str) -> None:
         for line in iter(pipe.readline, ""):
@@ -272,12 +185,14 @@ def _stream_output(proc: subprocess.Popen[str], timeout: int | None) -> str:
         stdout_thread.join(timeout=0.25)
         stderr_thread.join(timeout=0.25)
         if deadline is not None and __import__("time").monotonic() > deadline:
+            termination = "timeout"
             break
 
-    try:
-        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-    except (ProcessLookupError, OSError):
-        pass
-    proc.wait()
+    if termination == "timeout":
+        try:
+            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+        except (ProcessLookupError, OSError):
+            pass
+        proc.wait()
 
-    return "".join(lines)
+    return "".join(lines), termination
