@@ -867,7 +867,8 @@ def step_ralph_invoked_with_max_iterations(context):
     mock_proc = MagicMock()
     mock_proc.communicate.return_value = ("", "")
 
-    with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen:
+    with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen, \
+         patch("givn_harness.runner.check_bubblewrap", return_value=True):
         run_agent(context.workspace_path, max_iterations=5)
 
     mock_popen.assert_called_once()
@@ -951,7 +952,8 @@ def step_ralph_invoked_with_prompt_file(context):
     mock_proc = MagicMock()
     mock_proc.communicate.return_value = ("", "")
 
-    with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen:
+    with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen, \
+         patch("givn_harness.runner.check_bubblewrap", return_value=True):
         run_agent(context.workspace_path)
 
     mock_popen.assert_called_once()
