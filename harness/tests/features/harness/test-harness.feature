@@ -49,14 +49,14 @@ Feature: test-harness
     When the user runs `givn-harness run --task task.md --output reports/` with the ralph binary at "/usr/bin/true"
     Then ralph is invoked with the --prompt-file argument pointing to the task.md in the workspace
 
-  @givn.added
+  @givn.added @needs-sandlock
   Scenario: The agent runs inside a sandlock sandbox
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`
     Then ralph executes inside a sandlock Sandbox instance
     And the sandbox workdir is the workspace directory
 
-  @givn.added
+  @givn.added @needs-sandlock
   Scenario: Sandbox filesystem uses learn-then-confine mode
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     And the sandlock profile storage directory exists

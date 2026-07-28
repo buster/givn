@@ -2,6 +2,21 @@ import os
 from pathlib import Path
 
 
+def _deduplicate_paths(paths: list[str]) -> list[str]:
+    if not paths:
+        return []
+    normalized = [p.rstrip("/") for p in paths if p and p != "/"]
+    if not normalized:
+        return []
+    normalized.sort(key=lambda p: p.count("/"))
+    result: list[str] = []
+    for p in normalized:
+        if any(p == kept or p.startswith(kept + "/") for kept in result):
+            continue
+        result.append(p)
+    return sorted(result)
+
+
 def check_sandlock() -> bool:
     if os.environ.get("GIVN_HARNESS_NO_SANDLOCK") == "1":
         return False
@@ -17,7 +32,7 @@ def _base_sandbox_args(workspace_path: str) -> dict:
         name="givn-harness",
         workdir=workspace_path,
         cwd=workspace_path,
-        fs_writable=[
+        fs_writable=_deduplicate_paths([
             workspace_path,
             "/tmp",
             os.path.expanduser("~/.npm"),
@@ -25,23 +40,20 @@ def _base_sandbox_args(workspace_path: str) -> dict:
             os.path.expanduser("~/.bun"),
             os.path.expanduser("~/.config"),
             os.path.expanduser("~/.local"),
-        ],
-        fs_readable=[
+        ]),
+        fs_readable=_deduplicate_paths([
+            "/dev/null",
+            "/dev/zero",
+            "/dev/urandom",
+            "/dev/random",
+            "/dev/fd",
             "/usr",
             "/bin",
             "/lib",
             "/lib64",
             "/etc",
             os.path.expanduser("~"),
-            os.path.expanduser("~/.config"),
-            os.path.expanduser("~/.config/opencode"),
-            os.path.expanduser("~/.local"),
-            os.path.expanduser("~/.cargo"),
-            os.path.expanduser("~/.npm"),
-            os.path.expanduser("~/.bun"),
-            os.path.expanduser("~/.cache"),
-            os.path.expanduser("~/bin"),
-        ],
+        ]),
         clean_env=False,
         max_processes=256,
         max_memory="16G",
@@ -81,6 +93,20 @@ def create_sandbox(workspace_path: str, profile_name: str | None = None) -> dict
         sandbox.name = "givn-harness"
         sandbox.workdir = workspace_path
         sandbox.cwd = workspace_path
+        sandbox.fs_readable = _deduplicate_paths(
+            list(sandbox.fs_readable) + args["fs_readable"]
+        )
+        sandbox.fs_writable = _deduplicate_paths(
+            list(sandbox.fs_writable) + args["fs_writable"]
+        )
+        if workspace_path not in sandbox.fs_readable:
+            sandbox.fs_readable.append(workspace_path)
+        if workspace_path not in sandbox.fs_writable:
+            sandbox.fs_writable.append(workspace_path)
+        sandbox.clean_env = args["clean_env"]
+        sandbox.port_remap = args["port_remap"]
+        sandbox.on_exit = args["on_exit"]
+        sandbox.allow_degraded = args["allow_degraded"]
         return {
             "sandbox": sandbox,
             "mode": "enforce",

@@ -1,6 +1,8 @@
 import os
 import signal
 import subprocess
+import sys
+import threading
 from pathlib import Path
 
 LOG_FILENAME = "agent.log"
@@ -16,18 +18,30 @@ def run_agent(
     timeout: int | None = None,
     max_iterations: int | None = None,
     profile_info: dict | None = None,
+    verbose: bool = False,
+    verbose_tools: bool = False,
+    model: str | None = None,
 ) -> tuple[str, str]:
     task_path = os.path.join(workspace_path, "task.md")
     cmd = [ralph_bin, "--prompt-file", task_path]
     if max_iterations is not None:
         cmd.extend(["--max-iterations", str(max_iterations)])
+    if verbose_tools:
+        cmd.append("--verbose-tools")
+
+    if model is not None:
+        cmd.extend(["--model", model])
 
     log_path = os.path.join(workspace_path, LOG_FILENAME)
 
-    if profile_info is not None:
-        return _run_with_profile(cmd, timeout, workspace_path, profile_info, log_path)
+    if verbose:
+        sys.stderr.write(f"  ralph: {' '.join(cmd)}\n")
+        sys.stderr.flush()
 
-    return _run_without_sandbox(cmd, timeout, workspace_path, log_path)
+    if profile_info is not None:
+        return _run_with_profile(cmd, timeout, workspace_path, profile_info, log_path, verbose)
+
+    return _run_without_sandbox(cmd, timeout, workspace_path, log_path, verbose)
 
 
 def _result_to_termination(result: object) -> tuple[str, str, int, str]:
@@ -61,7 +75,8 @@ def _write_log(log_path: str, stdout: str) -> None:
 
 
 def _run_with_profile(
-    cmd: list[str], timeout: int | None, workspace_path: str, profile_info: dict, log_path: str
+    cmd: list[str], timeout: int | None, workspace_path: str, profile_info: dict, log_path: str,
+    verbose: bool = False,
 ) -> tuple[str, str]:
     from sandlock import presets
 
@@ -81,7 +96,10 @@ def _run_with_profile(
                 learned_paths.append(path)
 
         audit = presets.AuditPathsHandler(callback=_record)
-        handlers = [(sc, audit) for sc in presets.COMMON_PATH_SYSCALLS]
+        handlers = [
+            (sc, audit) for sc in presets.COMMON_PATH_SYSCALLS
+            if sc not in ("execve", "execveat")
+        ]
 
         result = sandbox.run_with_handlers(cmd, handlers)
         if profile_path is not None:
@@ -115,18 +133,25 @@ def _run_with_profile(
 def _save_learned_profile(profile_path: Path, paths: list[str]) -> None:
     import os as _os
 
+    from givn_harness.sandbox import _deduplicate_paths
+
     profile_path.parent.mkdir(parents=True, exist_ok=True)
 
     dirs: set[str] = set()
     for p in paths:
         parent = _os.path.dirname(p)
-        if parent:
+        if parent and parent != "/":
             dirs.add(parent)
 
     home = _os.path.expanduser("~")
 
-    readable = sorted(
-        {
+    readable = _deduplicate_paths(
+        [
+            "/dev/null",
+            "/dev/zero",
+            "/dev/urandom",
+            "/dev/random",
+            "/dev/fd",
             "/usr",
             "/usr/bin",
             "/usr/local",
@@ -145,19 +170,19 @@ def _save_learned_profile(profile_path: Path, paths: list[str]) -> None:
             _os.path.join(home, ".cache"),
             _os.path.join(home, ".bun"),
             _os.path.join(home, "bin"),
-        }
-        | dirs
+        ]
+        + list(dirs)
     )
-    writable = sorted(
-        {
+    writable = _deduplicate_paths(
+        [
             "/tmp",
             _os.path.join(home, ".npm"),
             _os.path.join(home, ".cache"),
             _os.path.join(home, ".bun"),
             _os.path.join(home, ".config"),
             _os.path.join(home, ".local"),
-        }
-        | {d for d in dirs if d.startswith("/tmp")}
+        ]
+        + [d for d in dirs if d.startswith("/tmp")]
     )
 
     content = f"""\
@@ -180,8 +205,11 @@ def _profiles_dir() -> Path:
 
 
 def _run_without_sandbox(
-    cmd: list[str], timeout: int | None, workspace_path: str, log_path: str
+    cmd: list[str], timeout: int | None, workspace_path: str, log_path: str,
+    verbose: bool = False,
 ) -> tuple[str, str]:
+    env = os.environ.copy()
+    env["PWD"] = workspace_path
     proc = subprocess.Popen(
         cmd,
         start_new_session=True,
@@ -189,6 +217,7 @@ def _run_without_sandbox(
         stderr=subprocess.PIPE,
         text=True,
         cwd=workspace_path,
+        env=env,
     )
 
     termination: str = "completed"
@@ -202,19 +231,53 @@ def _run_without_sandbox(
             pass
 
     original_handler = signal.signal(signal.SIGINT, _handle_sigint)
-    try:
-        stdout, stderr = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
-        termination = "timeout"
+
+    if verbose:
+        stdout = _stream_output(proc, timeout)
+    else:
         try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        except (ProcessLookupError, OSError):
-            pass
-        stdout, stderr = proc.communicate()
-    finally:
-        signal.signal(signal.SIGINT, original_handler)
+            stdout, stderr_data = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            termination = "timeout"
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except (ProcessLookupError, OSError):
+                pass
+            stdout, stderr_data = proc.communicate()
+        finally:
+            signal.signal(signal.SIGINT, original_handler)
 
     _write_log(log_path, stdout)
     exit_code = proc.returncode
     print(f"  agent {termination} (exit code {exit_code})")
     return stdout, termination
+
+
+def _stream_output(proc: subprocess.Popen[str], timeout: int | None) -> str:
+    lines: list[str] = []
+    deadline = None if timeout is None else (__import__("time").monotonic() + timeout)
+
+    def _reader(pipe, label: str) -> None:
+        for line in iter(pipe.readline, ""):
+            sys.stderr.write(f"  {label} {line}")
+            sys.stderr.flush()
+            lines.append(line)
+
+    stdout_thread = threading.Thread(target=_reader, args=(proc.stdout, "|"), daemon=True)
+    stderr_thread = threading.Thread(target=_reader, args=(proc.stderr, "E"), daemon=True)
+    stdout_thread.start()
+    stderr_thread.start()
+
+    while stdout_thread.is_alive() or stderr_thread.is_alive():
+        stdout_thread.join(timeout=0.25)
+        stderr_thread.join(timeout=0.25)
+        if deadline is not None and __import__("time").monotonic() > deadline:
+            break
+
+    try:
+        os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+    except (ProcessLookupError, OSError):
+        pass
+    proc.wait()
+
+    return "".join(lines)

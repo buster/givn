@@ -824,10 +824,13 @@ def step_user_runs_harness_with_max_iterations(context):
     ralph_bin = getattr(context, "ralph_bin", None)
     if ralph_bin is not None:
         cmd.extend(["--ralph-bin", ralph_bin])
+    else:
+        cmd.extend(["--ralph-bin", "/usr/bin/true"])
     result = subprocess.run(
         cmd,
         capture_output=True,
         text=True,
+        env={**os.environ, "GIVN_HARNESS_NO_SANDLOCK": "1"},
     )
     context.cli_result = result
     context.workspace_path = result.stdout.strip().split("\n")[-1]

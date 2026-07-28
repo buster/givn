@@ -44,7 +44,7 @@ givn_config_version: "0.2.0"
 #
 # See arc42 ch.8.10 for details.
 verify:
-  command: "uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e"
+  command: "uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock"
   e2e_command: "uv run behave tests/features/ --no-capture --tags=@e2e --tags=-wip"
 
 # --- Coverage gate (archive-level, requires addons.coverage: true) ------------

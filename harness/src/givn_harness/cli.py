@@ -26,7 +26,10 @@ def main() -> None:
 @click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
 @click.option("--max-iterations", type=int, default=None, help="Maximum agent iterations")
 @click.option("--profile", type=str, default=None, help="Sandlock learn-then-confine profile name")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, profile: str | None) -> None:
+@click.option("--verbose", is_flag=True, default=False, help="Stream agent output in real-time")
+@click.option("--verbose-tools", is_flag=True, default=False, help="Print every ralph tool invocation")
+@click.option("--model", type=str, default=None, help="OpenCode model (e.g. openai/gpt-4o)")
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, profile: str | None, verbose: bool, verbose_tools: bool, model: str | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
@@ -62,7 +65,7 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
         click.echo("Starting agent execution ...")
         agent_log, termination = run_agent(
             workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
-            profile_info=profile_info,
+            profile_info=profile_info, verbose=verbose, verbose_tools=verbose_tools, model=model,
         )
         click.echo(agent_log)
 
