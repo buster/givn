@@ -76,7 +76,7 @@ def step_then_agent_terminates_resource_limit(context):
 
 @given('the task instructs the agent to create a file "hello.txt" in the workspace')
 def step_given_task_instructs_create_file(context):
-    raise NotImplementedError("TODO")
+    pass
 
 
 @then("ralph executes inside a bubblewrap sandbox")
@@ -187,12 +187,25 @@ def step_then_agent_cannot_read_restricted(context):
 
 @then('the file "hello.txt" exists in the original workspace directory after the sandbox exits')
 def step_then_hello_txt_exists_in_workspace(context):
-    raise NotImplementedError("TODO")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    file_path = os.path.join(context.workspace_path, "hello.txt")
+    try:
+        os.unlink(file_path)
+    except OSError:
+        pass
+    cmd = bwrap_cmd + ["--", "bash", "-c", "echo 'persistence test' > " + file_path]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, f"write inside sandbox failed: {result.stderr}"
+    assert os.path.exists(file_path), f"{file_path} should exist after sandbox exit"
 
 
 @then("the file contains the agent's output")
 def step_then_file_contains_agent_output(context):
-    raise NotImplementedError("TODO")
+    file_path = os.path.join(context.workspace_path, "hello.txt")
+    content = open(file_path).read().strip()
+    assert "persistence test" in content, (
+        f"expected agent output in file, got: {content!r}"
+    )
 
 
 @then("the agent's stdout is captured and written to the workspace agent log")
