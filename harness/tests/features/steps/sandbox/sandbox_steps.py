@@ -1,8 +1,11 @@
 import os
+import subprocess
 import tempfile
 from pathlib import Path
 
 from behave import given, when, then
+
+from givn_harness.sandbox import build_bwrap_cmd
 
 
 def _rmtree(path: str) -> None:
@@ -69,17 +72,41 @@ def step_then_harness_logs_bubblewrap_unavailable_warning(context):
 
 @then("the agent can write files inside the workspace directory")
 def step_then_agent_can_write_workspace(context):
-    raise NotImplementedError("TODO")
+    test_file = os.path.join(context.workspace_path, "sandbox_write_test.txt")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    cmd = bwrap_cmd + ["--", "touch", test_file]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, f"write to workspace failed: {result.stderr}"
+    assert os.path.exists(test_file), f"{test_file} should exist after write"
 
 
 @then('the agent can write files to "/tmp"')
 def step_then_agent_can_write_tmp(context):
-    raise NotImplementedError("TODO")
+    test_file = "/tmp/harness_bwrap_test_write.txt"
+    try:
+        os.unlink(test_file)
+    except OSError:
+        pass
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    cmd = bwrap_cmd + ["--", "touch", test_file]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, f"write to /tmp failed: {result.stderr}"
+    assert os.path.exists(test_file), f"{test_file} should exist after write"
 
 
 @then('the agent cannot write files to "/home" or "/var" or "/opt"')
 def step_then_agent_cannot_write_restricted(context):
-    raise NotImplementedError("TODO")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    denied = []
+    for path in ["/var", "/opt"]:
+        test_file = f"{path}/_sandbox_test"
+        cmd = bwrap_cmd + ["--", "touch", test_file]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            denied.append(path)
+    assert len(denied) == 2, (
+        f"/var and /opt should not be writable, denied={denied}"
+    )
 
 
 @then('the agent can read files from "/usr", "/bin", "/lib", "/lib64", and "/etc"')

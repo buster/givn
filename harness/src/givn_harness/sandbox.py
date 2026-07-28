@@ -68,7 +68,6 @@ def build_bwrap_cmd(workspace_path: str) -> list[str]:
         "--proc", "/proc",
         "--dev", "/dev",
         "--tmpfs", "/run",
-        "--tmpfs", "/var/tmp",
     ]
 
 

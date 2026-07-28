@@ -54,14 +54,21 @@
 
 - [ ] **Scenario 3: Sandlock is not available, harness falls back to --no-sandbox** (`@givn.modified`)
   - RED: Update existing step defs in `test_harness_steps.py`. The Given now checks bubblewrap not in PATH (was: sandlock not installed). Run `uv run behave tests/features/ --no-capture -n "Sandlock is not available, harness falls back to --no-sandbox"` — MUST FAIL.
-  - Output: `________`
+  - No RED phase: scenario GREEN immediately (all steps reused or already implemented).
   - GREEN: `check_bubblewrap()` already returns False when bwrap not in PATH (implemented in Scenario 1). Step defs updated to assert `sandbox: "none"` in report. Run single scenario — PASSES.
-  - Files: `tests/features/steps/harness/test_harness_steps.py`
-  - Output: `________`
+  - Files: `tests/features/steps/harness/test_harness_steps.py`, `tests/features/steps/sandbox/sandbox_steps.py`
+  - Output:
+    ```
+    1 feature passed, 0 failed, 1 skipped
+    1 scenario passed, 0 failed, 35 skipped
+    5 steps passed, 0 failed, 169 skipped
+    Took 0min 0.082s
+    EXIT: 0
+    ```
   - REFACTOR: Clean up. Run single scenario — still PASSES.
-  - Output: `________`
+  - Output: (same as GREEN — step reuse, no refactor needed)
   - Commit: `feat(sandbox): fall back to unsandboxed when bubblewrap not available`
-  - Hash: `________`
+  - Hash: `9b1f53f`
 
 ## New scenarios (new `sandbox_steps.py`)
 
