@@ -22,6 +22,9 @@ def _base_sandbox_args(workspace_path: str) -> dict:
             "/tmp",
             os.path.expanduser("~/.npm"),
             os.path.expanduser("~/.cache"),
+            os.path.expanduser("~/.bun"),
+            os.path.expanduser("~/.config"),
+            os.path.expanduser("~/.local"),
         ],
         fs_readable=[
             "/usr",
@@ -29,9 +32,15 @@ def _base_sandbox_args(workspace_path: str) -> dict:
             "/lib",
             "/lib64",
             "/etc",
+            os.path.expanduser("~"),
+            os.path.expanduser("~/.config"),
             os.path.expanduser("~/.config/opencode"),
-            os.path.expanduser("~/.cargo"),
             os.path.expanduser("~/.local"),
+            os.path.expanduser("~/.cargo"),
+            os.path.expanduser("~/.npm"),
+            os.path.expanduser("~/.bun"),
+            os.path.expanduser("~/.cache"),
+            os.path.expanduser("~/bin"),
         ],
         clean_env=False,
         max_processes=256,
@@ -39,6 +48,7 @@ def _base_sandbox_args(workspace_path: str) -> dict:
         max_disk="20G",
         port_remap=True,
         on_exit=None,
+        allow_degraded=[4, 5, 3],  # SIGNAL_SCOPE, ABSTRACT_UNIX_SOCKET_SCOPE, FS_IOCTL_DEV
     )
 
 
@@ -68,6 +78,9 @@ def create_sandbox(workspace_path: str, profile_name: str | None = None) -> dict
         import sandlock._profile as sp
 
         sandbox = sp.load_profile_path(profile_path)
+        sandbox.name = "givn-harness"
+        sandbox.workdir = workspace_path
+        sandbox.cwd = workspace_path
         return {
             "sandbox": sandbox,
             "mode": "enforce",
