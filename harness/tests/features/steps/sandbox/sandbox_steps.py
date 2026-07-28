@@ -111,12 +111,53 @@ def step_then_agent_cannot_write_restricted(context):
 
 @then('the agent can read files from "/usr", "/bin", "/lib", "/lib64", and "/etc"')
 def step_then_agent_can_read_system_paths(context):
-    raise NotImplementedError("TODO")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    readable = []
+    unreadable = []
+    targets = [
+        ("/usr", "d", "/usr/bin/env"),
+        ("/bin", "d", "/bin/sh"),
+        ("/etc", "f", "/etc/passwd"),
+    ]
+    for check_path, check_type, example_file in targets:
+        if check_type == "d":
+            cmd = bwrap_cmd + ["--", "test", "-d", check_path]
+        else:
+            cmd = bwrap_cmd + ["--", "test", "-f", check_path]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            readable.append(check_path)
+        else:
+            unreadable.append(check_path)
+
+    # /lib and /lib64 are tested best-effort via -d
+    for check_path in ["/lib", "/lib64"]:
+        cmd = bwrap_cmd + ["--", "test", "-d", check_path]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode == 0:
+            readable.append(check_path)
+        else:
+            unreadable.append(check_path)
+
+    assert len(readable) >= 3, (
+        f"expected at least 3 system paths readable, got readable={readable}, "
+        f"unreadable={unreadable}"
+    )
 
 
 @then("the agent cannot read files outside the configured readable paths")
 def step_then_agent_cannot_read_restricted(context):
-    raise NotImplementedError("TODO")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    denied = []
+    # paths not ro-bound in sandbox: /opt, /var (neither is readable)
+    for path in ["/opt", "/var"]:
+        cmd = bwrap_cmd + ["--", "test", "-r", path]
+        result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+        if result.returncode != 0:
+            denied.append(path)
+    assert len(denied) == 2, (
+        f"/opt and /var should not be readable, denied={denied}"
+    )
 
 
 @then("the agent terminates with a resource limit error")

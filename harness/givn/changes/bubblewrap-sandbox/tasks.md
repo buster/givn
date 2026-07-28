@@ -18,7 +18,7 @@
 
 ## Modified scenarios (update existing `test_harness_steps.py`)
 
-- [ ] **Scenario 1: The agent runs inside a sandlock sandbox** (`@givn.modified`)
+- [x] **Scenario 1: The agent runs inside a sandlock sandbox** (`@givn.modified`)
   - RED: Remove `@wip` if present. Existing step defs at `tests/features/steps/harness/test_harness_steps.py`. Update the step that checks sandlock to check bubblewrap instead (`ralph executes inside a bubblewrap sandbox`, `sandbox workdir is the workspace directory`). Run `uv run behave tests/features/ --no-capture -n "The agent runs inside a sandlock sandbox"` — MUST FAIL.
   - Output:
     ```
@@ -50,9 +50,9 @@
   - Commit: `feat(sandbox): replace sandlock with bubblewrap sandbox`
   - Hash: `fd041b6`
 
-- [ ] **Scenario 2: Sandbox filesystem uses learn-then-confine mode** (`@givn.removed`) — No implementation. Placeholder scenario removed on archive.
+- [x] **Scenario 2: Sandbox filesystem uses learn-then-confine mode** (`@givn.removed`) — No implementation. Placeholder scenario removed on archive.
 
-- [ ] **Scenario 3: Sandlock is not available, harness falls back to --no-sandbox** (`@givn.modified`)
+- [x] **Scenario 3: Sandlock is not available, harness falls back to --no-sandbox** (`@givn.modified`)
   - RED: Update existing step defs in `test_harness_steps.py`. The Given now checks bubblewrap not in PATH (was: sandlock not installed). Run `uv run behave tests/features/ --no-capture -n "Sandlock is not available, harness falls back to --no-sandbox"` — MUST FAIL.
   - No RED phase: scenario GREEN immediately (all steps reused or already implemented).
   - GREEN: `check_bubblewrap()` already returns False when bwrap not in PATH (implemented in Scenario 1). Step defs updated to assert `sandbox: "none"` in report. Run single scenario — PASSES.
@@ -72,7 +72,7 @@
 
 ## New scenarios (new `sandbox_steps.py`)
 
-- [ ] **Scenario 4: Bubblewrap sandbox restricts filesystem write access** (`@givn.added`)
+- [x] **Scenario 4: Bubblewrap sandbox restricts filesystem write access** (`@givn.added`)
   - RED: Remove `@wip`. Run `uv run behave tests/features/ --no-capture -n "Bubblewrap sandbox restricts filesystem write access to configured writable paths"` — MUST FAIL.
   - Output: `________`
   - GREEN: Implement step defs: execute harness with an agent that writes to workspace (succeeds), `/tmp` (succeeds), `/home` (fails with bwrap access error), `/var` (fails), `/opt` (fails). Verify via bwrap stderr for access-denied on disallowed paths.
