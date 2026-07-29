@@ -21,6 +21,7 @@ def run_agent(
     profile_info: dict | None = None,
     show_output: bool = True,
     model: str | None = None,
+    prompt_template: str | None = None,
 ) -> tuple[str, str]:
     task_path = os.path.join(workspace_path, "task.md")
     cmd = [ralph_bin, "--prompt-file", task_path]
@@ -28,9 +29,10 @@ def run_agent(
         cmd.extend(["--max-iterations", str(max_iterations)])
     if show_output:
         cmd.append("--verbose-tools")
-
     if model is not None:
         cmd.extend(["--model", model])
+    if prompt_template is not None:
+        cmd.extend(["--prompt-template", prompt_template])
 
     log_path = os.path.join(workspace_path, LOG_FILENAME)
 

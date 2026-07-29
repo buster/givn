@@ -27,7 +27,8 @@ def main() -> None:
 @click.option("--max-iterations", type=int, default=None, help="Maximum agent iterations")
 @click.option("--no-agent-output", is_flag=True, default=False, help="Suppress streaming agent output")
 @click.option("--model", type=str, default=None, help="OpenCode model (e.g. openai/gpt-4o)")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, no_agent_output: bool, model: str | None) -> None:
+@click.option("--prompt-template", type=click.Path(exists=True), default=None, help="Ralph prompt template file")
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, no_agent_output: bool, model: str | None, prompt_template: str | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
@@ -63,7 +64,7 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
         show_output = not no_agent_output
         agent_log, termination = run_agent(
             workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
-            show_output=show_output, model=model,
+            show_output=show_output, model=model, prompt_template=prompt_template,
         )
 
         click.echo("Running automated checks ...")
