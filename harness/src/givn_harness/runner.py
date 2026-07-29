@@ -1,4 +1,5 @@
 import os
+import shutil
 import signal
 import subprocess
 import sys
@@ -7,6 +8,20 @@ import threading
 from givn_harness.sandbox import build_bwrap_cmd, check_bubblewrap, _wrap_with_limits
 
 LOG_FILENAME = "agent.log"
+
+
+def _read_blocked(workspace_path: str) -> str:
+    blocked_path = os.path.join(workspace_path, "BLOCKED.md")
+    if not os.path.isfile(blocked_path):
+        return ""
+    return open(blocked_path).read()
+
+
+def _prepare_template(template_path: str, dest_path: str, workspace_path: str) -> None:
+    content = open(template_path).read()
+    content = content.replace("{{blocked}}", _read_blocked(workspace_path))
+    with open(dest_path, "w") as f:
+        f.write(content)
 
 
 def check_ralph_binary(ralph_bin: str) -> bool:
@@ -32,7 +47,9 @@ def run_agent(
     if model is not None:
         cmd.extend(["--model", model])
     if prompt_template is not None:
-        cmd.extend(["--prompt-template", prompt_template])
+        tmpl_dest = os.path.join(workspace_path, ".ralph-prompt-template.md")
+        _prepare_template(prompt_template, tmpl_dest, workspace_path)
+        cmd.extend(["--prompt-template", tmpl_dest])
 
     log_path = os.path.join(workspace_path, LOG_FILENAME)
 

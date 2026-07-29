@@ -62,4 +62,24 @@ promise:
 - If a command or skill asks you a question, answer it. Answer ONE question
   at a time.
 
-{{context}}{{tasks}}
+## Blocked — when you need human input
+
+If a givn command asks a question that cannot be answered from the task alone
+(design-review grilling, missing spec decisions, ambiguous requirements):
+
+1. Write the question to `BLOCKED.md` in this workspace:
+
+```
+## Question: <short topic>
+
+<exact question text>
+
+---
+```
+
+2. Then output exactly: COMPLETE
+
+When you restart and `BLOCKED.md` contains answers below the `---` separator
+(see the blocked context below), use those answers and continue.
+
+{{blocked}}{{context}}{{tasks}}

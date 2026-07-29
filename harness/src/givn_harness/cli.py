@@ -6,10 +6,27 @@ from givn_harness.evaluator import run_evaluation
 from givn_harness.index import update_index
 from givn_harness.judge import run_judge
 from givn_harness.report import write_report
-from givn_harness.runner import check_ralph_binary, run_agent
+from givn_harness.runner import _read_blocked, check_ralph_binary, run_agent
 from givn_harness.sandbox import check_bubblewrap
 from givn_harness.types import Check
 from givn_harness.workspace import configure_commands, copy_task, create_workspace, init_workspace
+
+
+def _check_blocked(workspace_path: str) -> bool:
+    blocked_path = os.path.join(workspace_path, "BLOCKED.md")
+    if not os.path.isfile(blocked_path):
+        return False
+    content = open(blocked_path).read()
+    if "## ANSWERED" in content:
+        return False
+    click.echo("")
+    click.echo("=== BLOCKED — agent needs human input ===")
+    click.echo("")
+    click.echo(content)
+    click.echo("")
+    click.echo("Edit BLOCKED.md with your answers, add '## ANSWERED' at the top,")
+    click.echo(f"then re-run with --workspace {workspace_path}")
+    return True
 
 
 @click.group()
@@ -21,6 +38,7 @@ def main() -> None:
 @click.option("--task", required=True, type=click.Path(exists=True))
 @click.option("--output", required=True, type=click.Path())
 @click.option("--workspace-root", default="/tmp/givn-harness-workspaces", type=click.Path())
+@click.option("--workspace", default=None, type=click.Path(exists=True), help="Resume an existing workspace")
 @click.option("--ralph-bin", default="/usr/local/bin/ralph", type=click.Path())
 @click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
 @click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
@@ -28,19 +46,23 @@ def main() -> None:
 @click.option("--no-agent-output", is_flag=True, default=False, help="Suppress streaming agent output")
 @click.option("--model", type=str, default=None, help="OpenCode model (e.g. openai/gpt-4o)")
 @click.option("--prompt-template", type=click.Path(exists=True), default=None, help="Ralph prompt template file")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, no_agent_output: bool, model: str | None, prompt_template: str | None) -> None:
+def run(task: str, output: str, workspace_root: str, workspace: str | None, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, no_agent_output: bool, model: str | None, prompt_template: str | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
 
-    click.echo(f"Creating workspace at {workspace_root} ...")
-    workspace_path = create_workspace(workspace_root)
+    if workspace:
+        workspace_path = workspace
+        click.echo(f"Resuming workspace at {workspace_path}")
+    else:
+        click.echo(f"Creating workspace at {workspace_root} ...")
+        workspace_path = create_workspace(workspace_root)
 
-    click.echo("Running git init ...")
-    click.echo("Running givn init ...")
-    init_workspace(workspace_path)
-    configure_commands(workspace_path)
-    copy_task(workspace_path, task)
+        click.echo("Running git init ...")
+        click.echo("Running givn init ...")
+        init_workspace(workspace_path)
+        configure_commands(workspace_path)
+        copy_task(workspace_path, task)
 
     run_id = os.path.basename(workspace_path)
     task_name = os.path.basename(task)
@@ -66,6 +88,9 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
             workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
             show_output=show_output, model=model, prompt_template=prompt_template,
         )
+
+        if _check_blocked(workspace_path):
+            raise SystemExit(0)
 
         click.echo("Running automated checks ...")
         checks = run_evaluation(workspace_path)
