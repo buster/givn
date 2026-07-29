@@ -44,6 +44,16 @@ pub fn run(force: bool, no_addons: bool) -> Result<()> {
         println!("  wrote    givn/config.yaml");
     }
 
+    // Write givn/commands.yaml (test runner + coverage, separate from config).
+    let commands_path = project_root.join("givn/commands.yaml");
+    if commands_path.exists() && !force {
+        println!("  exists   givn/commands.yaml  (use --force to overwrite)");
+    } else {
+        let commands_content = include_str!("../../assets/commands.yaml.tmpl");
+        std::fs::write(&commands_path, commands_content)?;
+        println!("  wrote    givn/commands.yaml");
+    }
+
     // Enable every known addon (default) unless --no-addons. Each addon's
     // own scaffolding (arc42 docs, absolute_mode's AGENTS.md block) runs as
     // part of `addons::run_enable`, so the effect is identical to running

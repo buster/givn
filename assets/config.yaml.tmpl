@@ -15,90 +15,24 @@
 givn_config_version: "{{GIVN_VERSION}}"
 
 # --- Test runner -------------------------------------------------------------
-# The command givn invokes to run your test suite. This is the ONLY value
-# you MUST set for a working project. The shipped default is a sentinel that
-# prints setup guidance and exits non-zero — so nothing ever falsely reports
-# GREEN until you configure a real runner.
+# The command givn invokes to run your test suite. Configured in
+# givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
+# verify.command and verify.e2e_command keys.
 #
-# CHANGE ME — set this to your project's test runner.
+# The shipped default is a sentinel that prints setup guidance and exits
+# non-zero — so nothing ever falsely reports GREEN until you configure a
+# real runner in givn/commands.yaml.
 #
-# RECOMMENDED — coverage-instrumented runners (the review gate requires
-# coverage data to measure gaps):
-#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
-#   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
-#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js — coverage)
-#   coverage run -m behave givn/specs && coverage report  (Python — coverage)
-#   mvn verify                                            (Java — with JaCoCo)
-#
-# Fallback — bare test runners (no coverage data produced; use only while
-# prototyping, then switch to a coverage-instrumented runner above):
-#   cargo test --test features_runner       (Rust — test only, no coverage)
-#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, no coverage)
-#   behave                                  (Python — test only, no coverage)
-#   go test ./...                           (Go — no coverage)
-#   pytest                                  (Python — test only, no coverage)
-#
-# WARNING: If your verify.command does NOT produce coverage data, you MUST
-# also set coverage.command below to an instrumented runner. Without coverage
-# data the review gate cannot measure gaps and will reject the change.
-#
-# See arc42 ch.8.10 for details.
-verify:
-  command: "givn missing-testrunner"   # <-- replace this with your runner
 
 # --- Coverage gate (archive-level, requires addons.coverage: true) ------------
-# Commands that run tests with coverage instrumentation. Each must produce a
-# Cobertura XML file (default paths: coverage/non-e2e-cobertura.xml and
-# coverage/e2e-cobertura.xml). givn merges them into a unified summary written
-# to README.md.
+# Commands that run tests with coverage instrumentation. Configured in
+# givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
+# coverage.non_e2e_command and coverage.e2e_command keys.
 #
-# non_e2e_command: runs non-e2e tests with coverage instrumentation.
-# e2e_command:     runs @e2e tests with coverage instrumentation.
-#
-# E2e coverage typically requires running the application server with code
-# instrumentation (e.g. c8 --all, nyc instrument, JaCoCo agent), then running
-# the e2e test harness against the instrumented server — the coverage data is
-# collected from the server's output, not the test harness itself.
-#
-# The archive gate validates that both reports come from distinct
-# instrumentation runs — do not copy the non-e2e XML to the e2e path.
-#
-# Examples:
-#   npx c8 --reporter=cobertura npx cucumber-js "givn/specs/**/*.feature"
-#   npx c8 --reporter=cobertura npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
-#   cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner
-#
-# WARNING: Do not leave the sentinels. Without working coverage commands,
-# the coverage gate will block archive.
-coverage:
-  non_e2e_command: "givn missing-coverage"   # <-- replace this with your non-e2e coverage command
-  e2e_command: "givn missing-coverage"   # <-- replace this with your e2e coverage command
 
 # --- E2E test runner ----------------------------------------------------------
-# The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged
-# scenarios that exercise the real interaction surface (browser, CLI, API).
-# E2e scenarios use separate step definitions and may require local test
-# infrastructure (application server, test database, Testcontainers, etc.).
+# Configured in givn/commands.yaml — see verify.e2e_command there.
 #
-# Examples:
-#   npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
-#   behave --tags=@e2e
-#   cargo test --test e2e_runner
-#   mvn test -Dcucumber.filter.tags="@e2e"
-#   pytest --tags=e2e
-#
-# verify:
-#   e2e_command: ""   # <-- set this to your e2e runner
-
-# --- Features path -----------------------------------------------------------
-# Path the test runner reads .feature files from during development. Also
-# exported to the test runner as the GIVN_FEATURES environment variable.
-#
-# Default: givn/specs
-# After archive, GIVN_FEATURES points here for the permanent merged specs.
-#
-# verify:
-#   features_path: "givn/specs"
 
 # --- Artifact graph overlay --------------------------------------------------
 # Patch the embedded default artifact graph without replacing it. Declare only

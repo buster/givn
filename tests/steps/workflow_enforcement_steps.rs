@@ -56,13 +56,27 @@ fn create_valid_step_file(world: &GivnWorld) {
 }
 
 fn set_verify_command_in_config(world: &GivnWorld, cmd: &str) {
+    let commands_path = project_root(world).join("givn/commands.yaml");
+    if commands_path.exists() {
+        let config = std::fs::read_to_string(&commands_path).unwrap();
+        let mut lines: Vec<String> = config.lines().map(|l| l.to_string()).collect();
+        for line in &mut lines {
+            let trimmed = line.trim_start();
+            if trimmed.starts_with("command:") {
+                let indent = line.len() - trimmed.len();
+                *line = format!("{:indent$}command: \"{cmd}\"", "");
+                break;
+            }
+        }
+        std::fs::write(&commands_path, lines.join("\n")).unwrap();
+        return;
+    }
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
     let mut lines: Vec<String> = config.lines().map(|l| l.to_string()).collect();
     for line in &mut lines {
         let trimmed = line.trim_start();
         if trimmed.starts_with("command:") {
-            // Replace the entire command: line but preserve indentation
             let indent = line.len() - trimmed.len();
             *line = format!("{:indent$}command: \"{cmd}\"", "");
             break;

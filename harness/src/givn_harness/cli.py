@@ -10,7 +10,7 @@ from givn_harness.report import write_report
 from givn_harness.runner import _read_blocked, check_ralph_binary, run_agent
 from givn_harness.sandbox import check_bubblewrap
 from givn_harness.types import Check
-from givn_harness.workspace import configure_commands, copy_task, create_workspace, init_workspace
+from givn_harness.workspace import copy_task, create_workspace, init_workspace
 
 RUN_STATE_FILE = ".givn-harness-run.json"
 
@@ -102,7 +102,6 @@ def run(task: str | None, output: str, workspace_root: str, workspace: str | Non
         click.echo("Running git init ...")
         click.echo("Running givn init ...")
         init_workspace(workspace_path)
-        configure_commands(workspace_path)
         copy_task(workspace_path, task)
 
     _save_run_state({

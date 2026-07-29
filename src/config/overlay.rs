@@ -95,12 +95,19 @@ pub fn load_effective() -> Result<Manifest> {
     let project_root = std::env::current_dir()?;
     let config_path = project_root.join("givn/config.yaml");
 
-    if config_path.exists() {
+    let manifest = if config_path.exists() {
         let yaml = std::fs::read_to_string(&config_path)?;
-        apply(base, &yaml)
+        apply(base, &yaml)?
     } else {
-        // No project overlay: return embedded defaults as-is.
-        Ok(base)
+        base
+    };
+
+    let commands_path = project_root.join("givn/commands.yaml");
+    if commands_path.exists() {
+        let yaml = std::fs::read_to_string(&commands_path)?;
+        apply(manifest, &yaml)
+    } else {
+        Ok(manifest)
     }
 }
 

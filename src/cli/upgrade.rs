@@ -186,30 +186,25 @@ mod tests {
     }
 
     #[test]
-    fn upgrade_preserves_user_verify_command() {
+    fn upgrade_preserves_user_verify_as_override() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
-        // Simulate a user who set a custom verify.command.
-        let user_config = fresh.replace(
-            r#"command: "givn missing-testrunner"   # <-- replace this with your runner"#,
-            r#"command: "cargo test""#,
-        );
+        // Simulate an older project config that still has verify.command set.
+        // The template no longer ships verify: (it moved to commands.yaml),
+        // so append the old-school verify block as the user would have had it.
+        let mut user_config = fresh.clone();
+        user_config.push_str("\nverify:\n  command: \"cargo test\"\n");
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
-        // The user's command should be preserved somewhere in the output.
         assert!(
             upgraded.contains("cargo test"),
-            "user verify.command must be preserved"
+            "user verify.command must be preserved as override, got:\n{}", upgraded
         );
     }
 
     #[test]
-    fn upgrade_produces_valid_yaml_with_custom_verify_command() {
-        // Regression test: a duplicate top-level `verify:` key is invalid
-        // YAML and broke every downstream `givn` command after upgrade.
+    fn upgrade_produces_valid_yaml_with_user_overrides() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
-        let user_config = fresh.replace(
-            r#"command: "givn missing-testrunner"   # <-- replace this with your runner"#,
-            r#"command: "./gradlew test""#,
-        );
+        let mut user_config = fresh.clone();
+        user_config.push_str("\nverify:\n  command: \"./gradlew test\"\n");
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
 
         let parsed: Result<serde_yaml_ng::Value, _> = serde_yaml_ng::from_str(&upgraded);
@@ -218,43 +213,30 @@ mod tests {
             "upgraded config.yaml must be valid YAML, got error: {:?}\n---\n{upgraded}",
             parsed.err()
         );
-
-        assert_eq!(
-            upgraded.matches("\nverify:").count() + usize::from(upgraded.starts_with("verify:")),
-            1,
-            "verify: must appear exactly once as a top-level key"
+        assert!(
+            upgraded.contains("./gradlew test"),
+            "user override must be preserved"
         );
     }
 
     #[test]
-    fn upgrade_replaces_verify_block_in_place_not_at_end() {
+    fn upgrade_migrates_verify_to_user_overrides() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
-        let user_config = fresh.replace(
-            r#"command: "givn missing-testrunner"   # <-- replace this with your runner"#,
-            r#"command: "./gradlew test""#,
-        );
+        let mut user_config = fresh.clone();
+        user_config.push_str("\nverify:\n  command: \"./gradlew test\"\n");
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
 
-        // The replaced verify: block should still be near the top (inside
-        // the managed scaffold section), not appended after the "User
-        // overrides preserved" marker with everything else.
-        let verify_pos = upgraded.find("verify:").unwrap();
-        let overrides_marker_pos = upgraded.find("User overrides preserved");
-        if let Some(marker_pos) = overrides_marker_pos {
-            assert!(
-                verify_pos < marker_pos,
-                "verify: block should be replaced in place, not appended after the overrides marker"
-            );
-        }
+        assert!(
+            upgraded.contains("./gradlew test"),
+            "user verify.command must be in the upgraded output"
+        );
     }
 
     #[test]
-    fn upgrade_preserves_addons_alongside_custom_verify_command() {
+    fn upgrade_preserves_addons_with_user_overrides() {
         let fresh = crate::config::render::config_yaml("0.1.0").unwrap();
-        let mut user_config = fresh.replace(
-            r#"command: "givn missing-testrunner"   # <-- replace this with your runner"#,
-            r#"command: "./gradlew test""#,
-        );
+        let mut user_config = fresh.clone();
+        user_config.push_str("\nverify:\n  command: \"./gradlew test\"\n");
         user_config.push_str("\naddons:\n  arc42: true\n");
 
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
