@@ -402,18 +402,21 @@ def _check_readme_substance(ws: Path) -> Check:
         content,
         flags=re.DOTALL,
     )
-    meaningful = "".join(stripped.split())
+    # Strip all HTML comments (placeholder instructions) and markdown headers.
+    stripped = re.sub(r"<!--.*?-->", "", stripped, flags=re.DOTALL)
+    body = re.sub(r"^#+\s+.*$", "", stripped, flags=re.MULTILINE)
+    meaningful = "".join(body.split())
     threshold = 200
     if len(meaningful) >= threshold:
         return Check(
             name="readme substance",
             passed=True,
-            detail=f"README.md has {len(meaningful)} significant chars (threshold: {threshold})",
+            detail=f"README.md has {len(meaningful)} significant body chars (threshold: {threshold})",
         )
     return Check(
         name="readme substance",
         passed=False,
-        detail=f"README.md has only {len(meaningful)} significant chars (threshold: {threshold}); likely a placeholder",
+        detail=f"README.md has only {len(meaningful)} significant body chars (threshold: {threshold}); likely a placeholder",
     )
 
 
