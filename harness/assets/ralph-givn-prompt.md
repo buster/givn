@@ -4,63 +4,64 @@
 
 {{prompt}}
 
-## Givn workflow — one step at a time
+## Your ONE job this iteration
 
-You are executing the **givn** spec-driven workflow. Each Ralph iteration does
-EXACTLY ONE givn lifecycle step. Do NOT jump ahead. Do NOT write production code
-before the design says you should.
+You have EXACTLY ONE action this iteration. Read everything below
+before doing anything.
 
-### Step 1 — Start
+### 1. Discover what to do
 
-Run this command and do exactly what it tells you:
-
-```
-givn instructions
-```
-
-If the output tells you to run `givn propose`, do that. If it tells you to run
-`givn design`, do that. If it tells you to run `givn implement --change <X>`,
-do that. Only run the EXACT command givn instructions gives you.
-
-### Step 2 — Follow the command's skill
-
-Each givn command loads a skill with detailed instructions. Follow the skill's
-workflow precisely. In particular:
-
-- **givn implement**: Work through ONE scenario from `tasks.md` at a time.
-  Write the RED test first, watch it fail, then write the minimal GREEN
-  implementation, then REFACTOR. Commit after each scenario.
-- **givn archive**: Only run when all tasks are checked off and all tests pass.
-  The archive command runs gate hooks — do NOT skip them.
-
-### Step 3 — Verify and signal
-
-After completing one lifecycle step or one scenario (for implement):
+Run this command and read its output carefully:
 
 ```
 givn instructions
 ```
 
-If `givn instructions` tells you the work is NOT done, output this promise and
-let the next iteration continue:
+It will tell you exactly ONE command to run — for example
+`givn propose`, `givn spec --change <X>`, `givn implement --change <X>`,
+or `givn archive --change <X>`.
 
-<promise>{{task_promise}}</promise>
+### 2. Execute THAT ONE command
 
-If `givn instructions` tells you all changes are archived, output the final
-promise:
+Run the exact command `givn instructions` told you. Follow the skill's
+workflow. But remember:
 
-<promise>{{completion_promise}}</promise>
+- **propose / spec / design / design-review / tasks / review**:
+  Complete the artifact and commit. That is ONE step.
+
+- **givn implement**:
+  Work through ONE scenario from `tasks.md` — RED first (watch it fail),
+  then minimal GREEN, then REFACTOR. Commit after that ONE scenario.
+
+- **givn archive**:
+  Only run when all tasks are checked off and all tests pass.
+
+### 3. STOP and signal
+
+After completing that ONE step (one artifact or one scenario):
+
+- If `givn instructions` would tell you there is more work to do,
+  output this EXACT text and STOP:
+
+  <promise>{{task_promise}}</promise>
+
+- If all changes are archived and done, output:
+
+  <promise>{{completion_promise}}</promise>
+
+Do NOT run `givn instructions` again in this iteration.
+Do NOT start the next lifecycle step.
+Do NOT peek ahead at what comes next.
+The NEXT iteration will run `givn instructions` fresh.
 
 ## Rules
 
-- One scenario per iteration during `givn implement`. Never batch scenarios.
-- Always run `givn instructions` at the start of every iteration.
+- ONE givn lifecycle step per iteration. Never batch.
+- ONE scenario per iteration during `givn implement`.
 - Never write production code before a failing RED test.
 - Always commit after each scenario with Conventional Commits.
-- Do NOT edit givn specs, design, or task files unless a givn command tells
-  you to.
-- If a command or skill asks you a question, answer it. Answer ONE question
-  at a time.
+- Do NOT edit givn specs, design, or task files unless a givn command
+  tells you to.
 
 ## Blocked — when you need human input
 
