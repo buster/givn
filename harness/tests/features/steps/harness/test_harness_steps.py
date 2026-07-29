@@ -427,8 +427,8 @@ def step_harness_evaluates_workspace(context):
     )
 
 
-@then("the run report lists all ten automated checks:")
-def step_report_lists_all_ten_checks(context):
+@then("the run report lists all twelve automated checks:")
+def step_report_lists_all_twelve_checks(context):
     expected_names = {
         "artifact existence",
         "lint clean",
@@ -441,12 +441,13 @@ def step_report_lists_all_ten_checks(context):
         "DESIGN-REVIEW: PASS marker present",
         "verify.command exits zero after archive",
         "givn addons remain enabled",
+        "readme substance",
     }
     actual_names = {c.name for c in context.checks}
     missing = expected_names - actual_names
     assert not missing, f"missing checks: {missing}"
-    assert len(context.checks) == 11, (
-        f"expected 11 checks, got {len(context.checks)}"
+    assert len(context.checks) == 12, (
+        f"expected 12 checks, got {len(context.checks)}"
     )
 
 
@@ -589,11 +590,11 @@ def step_agent_crashes_before_artifacts(context):
 
 @then("all automated checks report FAIL with detail")
 def step_all_checks_fail_with_detail(context):
-    assert len(context.checks) == 11, (
-        f"expected 11 checks, got {len(context.checks)}"
+    assert len(context.checks) == 12, (
+        f"expected 12 checks, got {len(context.checks)}"
     )
     for c in context.checks:
-        if c.name == "givn addons remain enabled":
+        if c.name in ("givn addons remain enabled", "readme substance"):
             continue
         assert not c.passed, (
             f"check '{c.name}' should have failed but passed"

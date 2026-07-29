@@ -86,10 +86,10 @@ Feature: test-harness
     Then ralph is invoked with --max-iterations 5
 
   @givn.added
-  Scenario: Report includes all ten automated checks
+  Scenario: Report includes all twelve automated checks
     Given a completed test run at "reports/run-001/"
     When the harness evaluates the workspace
-    Then the run report lists all ten automated checks:
+    Then the run report lists all twelve automated checks:
       | check                                       |
       | artifact existence                          |
       | lint clean                                  |
@@ -102,6 +102,7 @@ Feature: test-harness
       | DESIGN-REVIEW: PASS marker present          |
       | verify.command exits zero after archive      |
       | givn addons remain enabled                 |
+      | readme substance                            |
     And each check has a pass or fail result
 
   @givn.added

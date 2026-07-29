@@ -363,6 +363,60 @@ def _check_verify_green(ws: Path) -> Check:
         )
 
 
+def _check_addons_intact(ws: Path) -> Check:
+    config_path = ws / "givn" / "config.yaml"
+    if not config_path.exists():
+        return Check(
+            name="givn addons remain enabled",
+            passed=False,
+            detail="givn/config.yaml not found",
+        )
+    import re
+
+    content = config_path.read_text()
+    disabled: list[str] = []
+    for addon in ("coverage", "arc42", "readme", "absolute_mode", "domain_modeling", "dev_principles"):
+        if re.search(rf"^\s*{addon}\s*:\s*false", content, re.MULTILINE):
+            disabled.append(addon)
+    if disabled:
+        return Check(
+            name="givn addons remain enabled",
+            passed=False,
+            detail=f"addon(s) disabled by agent: {', '.join(disabled)}. Re-enable with: givn addons enable <name>",
+        )
+    return Check(name="givn addons remain enabled", passed=True, detail="all addons enabled")
+
+
+def _check_readme_substance(ws: Path) -> Check:
+    readme_path = ws / "README.md"
+    if not readme_path.is_file():
+        return Check(
+            name="readme substance",
+            passed=False,
+            detail="README.md not found at workspace root",
+        )
+    content = readme_path.read_text()
+    stripped = re.sub(
+        r"<!--\s*givn:begin:.*?-->\n.*?<!--\s*givn:end:.*?-->\n?",
+        "",
+        content,
+        flags=re.DOTALL,
+    )
+    meaningful = "".join(stripped.split())
+    threshold = 200
+    if len(meaningful) >= threshold:
+        return Check(
+            name="readme substance",
+            passed=True,
+            detail=f"README.md has {len(meaningful)} significant chars (threshold: {threshold})",
+        )
+    return Check(
+        name="readme substance",
+        passed=False,
+        detail=f"README.md has only {len(meaningful)} significant chars (threshold: {threshold}); likely a placeholder",
+    )
+
+
 def run_evaluation(workspace_path: str) -> list[Check]:
     ws = Path(workspace_path).resolve()
     checks: list[Check] = []
@@ -376,4 +430,6 @@ def run_evaluation(workspace_path: str) -> list[Check]:
     checks.append(_check_review_pass(ws))
     checks.append(_check_design_review_pass(ws))
     checks.append(_check_verify_green(ws))
+    checks.append(_check_addons_intact(ws))
+    checks.append(_check_readme_substance(ws))
     return checks
