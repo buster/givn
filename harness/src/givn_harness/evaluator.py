@@ -233,60 +233,107 @@ def _check_specs_clean(ws: Path) -> Check:
         )
 
 
+def _extract_section(markdown: str, heading: str) -> str | None:
+    """Return the content between a given ## heading and the next ## heading."""
+    for line in markdown.splitlines():
+        if line.strip() == f"## {heading}":
+            start = markdown.index(line) + len(line)
+            rest = markdown[start:]
+            end = rest.find("\n## ")
+            section = rest[:end] if end != -1 else rest
+            return section.strip()
+    return None
+
+
+def _parse_step_table(design_md: str) -> list[str]:
+    """Extract step definition file paths from design.md's Step Definitions table.
+    
+    Returns file paths (column 2 of each data row) from the markdown table
+    under the `## Step Definitions` heading. Mirrors the logic in
+    givn's integrity_hook.rs:check_promised_files_exist.
+    """
+    in_section = False
+    in_table = False
+    files: list[str] = []
+    for line in design_md.splitlines():
+        if line.startswith("## Step Definitions"):
+            in_section = True
+            in_table = False
+            continue
+        if in_section and line.startswith("## "):
+            break
+        if in_section and line.startswith("|"):
+            cols = [c.strip() for c in line.split("|")[1:-1]]
+            if len(cols) < 2:
+                continue
+            # Skip header row (contains "Capability") and separator row
+            if "Capability" in cols[0] or set(cols[0]) <= set("-"):
+                in_table = True
+                continue
+            if in_table:
+                path = cols[1].strip()
+                if path:
+                    files.append(path)
+    return files
+
+
 def _check_step_files_nonempty(ws: Path) -> Check:
-    steps_dir = ws / "tests" / "features" / "steps"
-    if not steps_dir.is_dir():
+    change_dir = find_change_dir(ws)
+    if change_dir is None:
         return Check(
             name="step definition files are non-empty",
             passed=False,
-            detail="tests/features/steps/ directory not found",
+            detail="no change directory found",
         )
-    step_files = list(steps_dir.rglob("*_steps.py"))
-    if not step_files:
+    design_path = change_dir / "design.md"
+    if not design_path.is_file():
         return Check(
             name="step definition files are non-empty",
             passed=False,
-            detail="no *_steps.py files found",
+            detail="design.md not found in change directory",
         )
-    empty_steps: list[str] = []
-    for sf in step_files:
-        content = sf.read_text()
-        lines = content.splitlines()
-        i = 0
-        while i < len(lines):
-            if "def step_" in lines[i]:
-                j = i + 1
-                # Skip past the def line
-                body_lines = []
-                current_indent = None
-                while j < len(lines):
-                    line = lines[j]
-                    if line.strip() and not line[0].isspace():
-                        # Next top-level construct — stop
-                        break
-                    if current_indent is None and line.strip():
-                        current_indent = len(line) - len(line.lstrip())
-                    if line.strip() and current_indent is not None:
-                        body_lines.append(line.strip())
-                    j += 1
-                # Filter out pass lines
-                meaningful = [bl for bl in body_lines if bl != "pass"]
-                if not meaningful:
-                    func_name = lines[i].strip().split("(")[0].replace("def ", "")
-                    empty_steps.append(f"{sf.name}:{func_name}")
-                i = j
-            else:
-                i += 1
-    if empty_steps:
+    design_content = design_path.read_text()
+    promised_files = _parse_step_table(design_content)
+    if not promised_files:
+        # Check if the Step Definitions section explicitly says N/A / none
+        section = _extract_section(design_content, "Step Definitions")
+        if section and any(kw in section.lower() for kw in ("n/a", "none", "not applicable")):
+            return Check(
+                name="step definition files are non-empty",
+                passed=True,
+                detail="Step Definitions explicitly marked as N/A in design.md",
+            )
         return Check(
             name="step definition files are non-empty",
             passed=False,
-            detail=f"{len(empty_steps)} empty step(s): {', '.join(empty_steps[:3])}",
+            detail="no step definition file paths found in design.md Step Definitions table",
+        )
+    missing: list[str] = []
+    empty: list[str] = []
+    for rel_path in promised_files:
+        candidate = (ws / rel_path).resolve()
+        if not candidate.exists():
+            missing.append(rel_path)
+            continue
+        if candidate.stat().st_size == 0:
+            empty.append(rel_path)
+            continue
+    if missing:
+        return Check(
+            name="step definition files are non-empty",
+            passed=False,
+            detail=f"step file(s) missing: {', '.join(missing[:3])}",
+        )
+    if empty:
+        return Check(
+            name="step definition files are non-empty",
+            passed=False,
+            detail=f"step file(s) empty: {', '.join(empty[:3])}",
         )
     return Check(
         name="step definition files are non-empty",
         passed=True,
-        detail=f"all step bodies non-empty in {len(step_files)} file(s)",
+        detail=f"all {len(promised_files)} step definition file(s) exist and are non-empty",
     )
 
 

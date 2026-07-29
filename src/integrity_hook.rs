@@ -2,12 +2,13 @@ use anyhow::{Result, bail};
 use std::path::{Path, PathBuf};
 
 use crate::config::embedded::Assets;
+use crate::config::overlay::load_effective;
 
 /// Run all integrity checks for a change.
 pub fn run_integrity_hook(
     features_path: &str,
     arc42_enabled: bool,
-    _coverage_enabled: bool,
+    coverage_enabled: bool,
 ) -> Result<()> {
     let change_dir = find_change_dir(features_path);
     let change_dir = match change_dir {
@@ -22,7 +23,25 @@ pub fn run_integrity_hook(
     if arc42_enabled {
         check_arc42_conformance(&change_dir)?;
     }
+    if coverage_enabled {
+        check_coverage_config()?;
+    }
 
+    Ok(())
+}
+
+/// Check that coverage commands are configured when the addon is enabled.
+fn check_coverage_config() -> Result<()> {
+    let manifest = load_effective()?;
+    let cov = &manifest.coverage;
+    let sentinel = "givn missing-coverage";
+    if cov.non_e2e_command == sentinel || cov.e2e_command == sentinel {
+        anyhow::bail!(
+            "coverage addon is enabled but coverage commands are not configured. \
+             Set coverage.non_e2e_command and coverage.e2e_command in givn/commands.yaml. \
+             Or disable the addon with: givn addons disable coverage"
+        );
+    }
     Ok(())
 }
 

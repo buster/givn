@@ -92,6 +92,24 @@ fn set_verify_true(world: &GivnWorld) {
 /// Create a verify script that exits 0 during gate hooks (GIVN_FEATURES points to
 /// a change specs dir containing "changes") and exits 1 during post-merge verify
 /// (GIVN_FEATURES points to "givn/specs").
+fn set_coverage_true(world: &GivnWorld) {
+    let cmds_path = project_root(world).join("givn/commands.yaml");
+    let content = std::fs::read_to_string(&cmds_path).unwrap_or_default();
+    let sentinel = "givn missing-coverage";
+    let updated = content
+        .replace(
+            &format!("non_e2e_command: \"{sentinel}\""),
+            "non_e2e_command: \"true\"",
+        )
+        .replace(
+            &format!("e2e_command: \"{sentinel}\""),
+            "e2e_command: \"true\"",
+        );
+    if updated != content {
+        std::fs::write(&cmds_path, updated).unwrap();
+    }
+}
+
 fn disable_coverage_addon(world: &GivnWorld) {
     let config_path = project_root(world).join("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).unwrap();
@@ -136,6 +154,7 @@ fn change_dir_for(world: &GivnWorld, id: &str) -> std::path::PathBuf {
 fn change_passed_design_review(world: &mut GivnWorld) {
     scaffold_init_root_change(world, "test-change");
     set_verify_true(world);
+    set_coverage_true(world);
     // Write design-review.md with PASS marker.
     let dr_path = change_dir_for(world, "test-change").join("design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
@@ -215,6 +234,7 @@ fn project_arc42_disabled(world: &mut GivnWorld) {
 fn project_arc42_enabled(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     set_verify_true(world);
+    set_coverage_true(world);
     // Create the test change so subsequent steps can write to it.
     let out = common::run_givn(world.env.as_ref().unwrap(), &["new", "test-change"]);
     assert!(
@@ -235,6 +255,7 @@ fn standalone_change_design_review(world: &mut GivnWorld) {
     );
     world.last_change_id = Some("test-change".to_string());
     set_verify_true(world);
+    set_coverage_true(world);
     let dr_path = project_root(world).join("givn/changes/test-change/design-review.md");
     std::fs::write(&dr_path, "DESIGN-REVIEW: PASS\n").unwrap();
 }

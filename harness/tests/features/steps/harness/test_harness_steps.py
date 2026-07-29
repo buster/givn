@@ -298,7 +298,13 @@ def step_completed_test_run(context, path):
     steps_dir.mkdir(parents=True)
 
     (change_dir / "proposal.md").write_text("# Proposal\n\nThis is a test proposal.\n")
-    (change_dir / "design.md").write_text("# Design\n\nThis is a test design.\n")
+    (change_dir / "design.md").write_text(
+        "# Design\n\nThis is a test design.\n"
+        "## Step Definitions\n\n"
+        "| Capability | File |\n"
+        "|---|---|\n"
+        "| test | tests/features/steps/test_steps.py |\n"
+    )
     (change_dir / "design-review.md").write_text("# Design Review\n\nDESIGN-REVIEW: PASS\n")
     (change_dir / "tasks.md").write_text("# Tasks\n\n- [x] task one\n- [x] task two\n")
     (change_dir / "review.md").write_text("# Review\n\nREVIEW: PASS\n")

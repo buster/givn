@@ -196,7 +196,8 @@ mod tests {
         let upgraded = upgrade_config(&user_config, "0.2.0").unwrap();
         assert!(
             upgraded.contains("cargo test"),
-            "user verify.command must be preserved as override, got:\n{}", upgraded
+            "user verify.command must be preserved as override, got:\n{}",
+            upgraded
         );
     }
 

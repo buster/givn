@@ -80,23 +80,30 @@ pub fn run(change: &str) -> Result<()> {
     println!("✓ Gate hooks passed");
 
     // Backup permanent specs and README before merge/coverage.
+    // Always create a backup marker even if specs_dir doesn't exist yet,
+    // so rollback can distinguish "nothing to restore" from "merge created
+    // specs_dir and then failed".
     let specs_dir = project_root.join("givn/specs");
     let readme_path = project_root.join("README.md");
     let backup_id = format!(".archive-backup-{change}");
     let backup_dir = project_root.join("givn").join(&backup_id);
     let backup_specs = backup_dir.join("specs");
+    let backup_marker = backup_dir.join(".backup-state");
+    std::fs::create_dir_all(&backup_dir)?;
 
     if specs_dir.exists() {
         std::fs::create_dir_all(&backup_specs)?;
         copy_dir_all(&specs_dir, &backup_specs)?;
+        std::fs::write(&backup_marker, "present")?;
         println!(
             "  backed up {} → {}",
             specs_dir.display(),
             backup_specs.display()
         );
+    } else {
+        std::fs::write(&backup_marker, "absent")?;
     }
     if readme_path.exists() {
-        std::fs::create_dir_all(&backup_dir)?;
         let backup_readme = backup_dir.join("README.md");
         std::fs::copy(&readme_path, &backup_readme)?;
     }
@@ -155,7 +162,7 @@ pub fn run(change: &str) -> Result<()> {
         .status()?;
 
     if !verify_status.success() {
-        rollback_specs(&specs_dir, &backup_specs)?;
+        rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
         bail!(
             "archive blocked: merged permanent specs failed verify (exit code {}). \
              Specs have been rolled back to their pre-archive state.",
@@ -178,7 +185,7 @@ pub fn run(change: &str) -> Result<()> {
                 .status()?;
 
             if !e2e_status.success() {
-                rollback_specs(&specs_dir, &backup_specs)?;
+                rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
                 bail!(
                     "archive blocked: merged permanent specs failed verify-e2e (exit code {}). \
                      Specs have been rolled back to their pre-archive state.",
@@ -232,7 +239,7 @@ fn run_coverage_gate(
     let sentinel = "givn missing-coverage";
     if cov.non_e2e_command == sentinel || cov.e2e_command == sentinel {
         let backup_specs = backup_dir.join("specs");
-        rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+        rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
         rollback_readme(project_root, backup_dir)?;
         bail!(
             "archive blocked: coverage commands are not configured. \
@@ -250,7 +257,7 @@ fn run_coverage_gate(
         .status()?;
     if !non_e2e_status.success() {
         let backup_specs = backup_dir.join("specs");
-        rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+        rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
         rollback_readme(project_root, backup_dir)?;
         bail!(
             "archive blocked: non-e2e coverage command failed (exit code {}). \
@@ -268,7 +275,7 @@ fn run_coverage_gate(
         .status()?;
     if !e2e_status.success() {
         let backup_specs = backup_dir.join("specs");
-        rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+        rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
         rollback_readme(project_root, backup_dir)?;
         bail!(
             "archive blocked: e2e coverage command failed (exit code {}). \
@@ -285,7 +292,7 @@ fn run_coverage_gate(
         Ok(r) => r,
         Err(e) => {
             let backup_specs = backup_dir.join("specs");
-            rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+            rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
             rollback_readme(project_root, backup_dir)?;
             bail!(
                 "archive blocked: failed to parse non-e2e Cobertura XML: {e}. \
@@ -297,7 +304,7 @@ fn run_coverage_gate(
         Ok(r) => r,
         Err(e) => {
             let backup_specs = backup_dir.join("specs");
-            rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+            rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
             rollback_readme(project_root, backup_dir)?;
             bail!(
                 "archive blocked: failed to parse e2e Cobertura XML: {e}. \
@@ -309,7 +316,7 @@ fn run_coverage_gate(
     // Validate individual reports.
     if let Err(e) = crate::cobertura::validate(&non_e2e_report) {
         let backup_specs = backup_dir.join("specs");
-        rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+        rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
         rollback_readme(project_root, backup_dir)?;
         bail!(
             "archive blocked: non-e2e coverage validation failed: {e}. \
@@ -318,7 +325,7 @@ fn run_coverage_gate(
     }
     if let Err(e) = crate::cobertura::validate(&e2e_report) {
         let backup_specs = backup_dir.join("specs");
-        rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+        rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
         rollback_readme(project_root, backup_dir)?;
         bail!(
             "archive blocked: e2e coverage validation failed: {e}. \
@@ -331,7 +338,7 @@ fn run_coverage_gate(
     // server run — duplicating the non-e2e output is a configuration error.
     if let Err(e) = crate::cobertura::assert_distinct(&non_e2e_report, &e2e_report) {
         let backup_specs = backup_dir.join("specs");
-        rollback_specs(&project_root.join("givn/specs"), &backup_specs)?;
+        rollback_specs(&project_root.join("givn/specs"), &backup_specs, backup_dir)?;
         rollback_readme(project_root, backup_dir)?;
         bail!(
             "archive blocked: {e} \
@@ -377,14 +384,46 @@ fn run_coverage_gate(
 }
 
 /// Roll back permanent specs from backup (if it exists).
-fn rollback_specs(specs_dir: &std::path::Path, backup_specs: &std::path::Path) -> Result<()> {
-    if backup_specs.exists() {
+/// Uses a copy-to-temp-then-rename approach so that if the copy fails,
+/// the original specs_dir is never left deleted.
+fn rollback_specs(
+    specs_dir: &std::path::Path,
+    backup_specs: &std::path::Path,
+    backup_dir: &std::path::Path,
+) -> Result<()> {
+    let marker = backup_dir.join(".backup-state");
+    let was_present =
+        marker.exists() && std::fs::read_to_string(&marker).ok().as_deref() == Some("present");
+
+    if !was_present {
+        // Specs did not exist pre-archive — remove whatever merge left behind.
         if specs_dir.exists() {
             std::fs::remove_dir_all(specs_dir)?;
         }
-        copy_dir_all(backup_specs, specs_dir)?;
-        eprintln!("[archive] rolled back specs from backup");
+        return Ok(());
     }
+
+    if !backup_specs.exists() {
+        bail!(
+            "backup specs directory '{}' is missing (was present pre-archive)",
+            backup_specs.display()
+        );
+    }
+
+    // Copy backup to a temp location first, then swap.
+    let parent = specs_dir.parent().unwrap();
+    let tmp = parent.join(format!(".rollback-tmp-{}", std::process::id()));
+    if tmp.exists() {
+        std::fs::remove_dir_all(&tmp)?;
+    }
+    copy_dir_all(backup_specs, &tmp)?;
+
+    if specs_dir.exists() {
+        std::fs::remove_dir_all(specs_dir)?;
+    }
+    std::fs::rename(&tmp, specs_dir)?;
+
+    eprintln!("[archive] rolled back specs from backup");
     Ok(())
 }
 
