@@ -1,5 +1,6 @@
 import json
 import os
+import re
 import signal
 import subprocess
 import tempfile
@@ -19,12 +20,38 @@ working on a task. Rate the artifact on a 0-4 scale:
 3 - Good (substantive, follows givn conventions, minor issues only)
 4 - Excellent (complete, well-structured, follows all givn artifact instructions)
 
-Respond ONLY with a JSON object: {{"score": <int>, "explanation": "<text>"}}
+Output ONLY a raw JSON object on a single line. No markdown. No preamble.
+No explanation outside the JSON. No code fences.
+
+Correct:
+{{"score": 3, "explanation": "Clear proposal with measurable outcomes. Scope is defined but could be tighter."}}
+
+Correct:
+{{"score": 1, "explanation": "Minimal proposal. States the goal but provides no rationale or constraints."}}
+
+Correct:
+{{"score": 0, "explanation": "proposal.md is empty."}}
+
+Wrong (do NOT do this):
+```json
+{{"score": 3, "explanation": "..."}}
+```
+
+Wrong (do NOT do this):
+The proposal is decent. {{"score": 3, "explanation": "Good."}}
 
 Task: {task}
 Artifact type: {artifact_type}
 Artifact content:
 {content}"""
+
+
+def _extract_json(text: str) -> dict:
+    text = text.strip()
+    m = re.search(r'\{[^{}]*"score"\s*:\s*\d+[^{}]*"explanation"\s*:\s*"[^"]*"[^{}]*\}', text, re.DOTALL)
+    if m:
+        return json.loads(m.group())
+    return json.loads(text)
 
 
 def _get_artifact_content(change_dir: Path, artifact_type: str) -> str:
@@ -41,7 +68,7 @@ def _get_artifact_content(change_dir: Path, artifact_type: str) -> str:
         return ""
 
 
-def run_judge(workspace_path: str) -> list[JudgeScore]:
+def run_judge(workspace_path: str, model: str | None = None) -> list[JudgeScore]:
     ws = Path(workspace_path).resolve()
     change_dir = find_change_dir(ws)
 
@@ -77,15 +104,18 @@ def run_judge(workspace_path: str) -> list[JudgeScore]:
 
         proc: subprocess.Popen | None = None
         try:
+            cmd = ["opencode", "--prompt-file", prompt_file]
+            if model:
+                cmd.extend(["--model", model])
             proc = subprocess.Popen(
-                ["opencode", "--prompt-file", prompt_file],
+                cmd,
                 start_new_session=True,
                 stdout=subprocess.PIPE,
                 stderr=subprocess.PIPE,
                 text=True,
             )
             stdout, _stderr = proc.communicate(timeout=300)
-            parsed = json.loads(stdout.strip())
+            parsed = _extract_json(stdout)
             scores.append(JudgeScore(
                 artifact=artifact_type,
                 score=parsed["score"],
