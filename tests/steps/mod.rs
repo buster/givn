@@ -101,6 +101,18 @@ fn init_root(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
 }
 
+#[given("a project root with givn/ initialised without addons")]
+fn init_root_no_addons(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let out = common::run_givn(&env, &["init", "--no-addons"]);
+    assert!(
+        out.status.success(),
+        "givn init --no-addons failed: {}",
+        String::from_utf8_lossy(&out.stderr),
+    );
+    world.env = Some(env);
+}
+
 #[given("a placeholder step")]
 fn placeholder_step(_world: &mut GivnWorld) {
     // No-op: used by @givn.removed scenarios that need a single step to parse.
@@ -935,6 +947,12 @@ fn manifest_exactly_one(world: &mut GivnWorld, id: String) {
         "expected exactly one artifact '{}', found {}",
         id, count
     );
+}
+
+#[then("the effective manifest has extras enabled")]
+fn manifest_extras_enabled(world: &mut GivnWorld) {
+    let m = world.overlay_manifest.as_ref().expect("no overlay result");
+    assert!(m.extras, "expected extras to be enabled");
 }
 
 #[then("the effective manifest has the skill addons enabled")]

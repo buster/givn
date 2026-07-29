@@ -235,6 +235,7 @@ mod tests {
             },
             coverage: Coverage::default(),
             givn_config_version: None,
+            extras: false,
         }
     }
 

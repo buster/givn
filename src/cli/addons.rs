@@ -117,7 +117,7 @@ pub fn run_enable(name: &str) -> Result<()> {
         println!("  Edit givn/config.yaml to set coverage.non_e2e_command");
         println!("  and coverage.e2e_command to produce Cobertura XML.");
     } else if is_skill_addon(name) || is_command_addon(name) {
-        println!("Run 'givn skills sync' to install the skill/command files.");
+        crate::skills::targets::sync(&std::env::current_dir()?)?;
     }
 
     Ok(())

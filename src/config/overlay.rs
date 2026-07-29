@@ -35,14 +35,10 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
         result.apply = a;
     }
 
-    // Merge addons. Every addon flag on the overlay is copied onto the
-    // effective manifest — this must happen for ALL addons, not just the
-    // ones with artifact-graph side effects, otherwise `load_effective()`
-    // silently reports an addon as disabled even though the user's
-    // `givn/config.yaml` enables it (this broke `absolute_mode`: every
-    // `givn skills sync` re-read the manifest, saw `absolute_mode: false`,
-    // and removed the AGENTS.md block that `givn addons enable` had just
-    // written).
+    if let Some(e) = overlay.extras {
+        result.extras = e;
+    }
+
     if let Some(addons) = overlay.addons {
         // arc42 additionally expands into an artifact-graph node — keep
         // that side effect here, guarded so enabling twice stays idempotent.
@@ -273,6 +269,7 @@ struct OverlayDoc {
     coverage: Option<Coverage>,
     apply: Option<Apply>,
     addons: Option<Addons>,
+    extras: Option<bool>,
     /// Ignored during overlay processing (used for version tracking).
     #[allow(dead_code)]
     givn_config_version: Option<String>,
