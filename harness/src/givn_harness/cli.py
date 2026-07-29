@@ -25,10 +25,9 @@ def main() -> None:
 @click.option("--fail", is_flag=True, default=False, help="Simulate agent failure")
 @click.option("--timeout", type=int, default=None, help="Agent execution timeout in seconds")
 @click.option("--max-iterations", type=int, default=None, help="Maximum agent iterations")
-@click.option("--verbose", is_flag=True, default=True, help="Stream agent output in real-time (default on)")
-@click.option("--verbose-tools", is_flag=True, default=False, help="Print every ralph tool invocation")
+@click.option("--no-agent-output", is_flag=True, default=False, help="Suppress streaming agent output")
 @click.option("--model", type=str, default=None, help="OpenCode model (e.g. openai/gpt-4o)")
-def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, verbose: bool, verbose_tools: bool, model: str | None) -> None:
+def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool, timeout: int | None, max_iterations: int | None, no_agent_output: bool, model: str | None) -> None:
     if not check_ralph_binary(ralph_bin):
         click.echo(f"Error: ralph binary not found at {ralph_bin}", err=True)
         raise SystemExit(1)
@@ -61,11 +60,11 @@ def run(task: str, output: str, workspace_root: str, ralph_bin: str, fail: bool,
         termination = "agent failure"
     else:
         click.echo("Starting agent execution ...")
+        show_output = not no_agent_output
         agent_log, termination = run_agent(
             workspace_path, ralph_bin=ralph_bin, timeout=timeout, max_iterations=max_iterations,
-            verbose=verbose, verbose_tools=verbose_tools, model=model,
+            show_output=show_output, model=model,
         )
-        click.echo(agent_log)
 
         click.echo("Running automated checks ...")
         checks = run_evaluation(workspace_path)

@@ -19,15 +19,14 @@ def run_agent(
     timeout: int | None = None,
     max_iterations: int | None = None,
     profile_info: dict | None = None,
-    verbose: bool = False,
-    verbose_tools: bool = False,
+    show_output: bool = True,
     model: str | None = None,
 ) -> tuple[str, str]:
     task_path = os.path.join(workspace_path, "task.md")
     cmd = [ralph_bin, "--prompt-file", task_path]
     if max_iterations is not None:
         cmd.extend(["--max-iterations", str(max_iterations)])
-    if verbose_tools:
+    if show_output:
         cmd.append("--verbose-tools")
 
     if model is not None:
@@ -35,14 +34,14 @@ def run_agent(
 
     log_path = os.path.join(workspace_path, LOG_FILENAME)
 
-    if verbose:
+    if show_output:
         sys.stderr.write(f"  ralph: {' '.join(cmd)}\n")
         sys.stderr.flush()
 
     if check_bubblewrap():
-        return _run_with_bwrap(cmd, timeout, workspace_path, log_path, verbose)
+        return _run_with_bwrap(cmd, timeout, workspace_path, log_path, show_output)
 
-    return _run_without_sandbox(cmd, timeout, workspace_path, log_path, verbose)
+    return _run_without_sandbox(cmd, timeout, workspace_path, log_path, show_output)
 
 
 def _write_log(log_path: str, stdout: str) -> None:
@@ -55,7 +54,7 @@ def _write_log(log_path: str, stdout: str) -> None:
 
 def _run_with_bwrap(
     cmd: list[str], timeout: int | None, workspace_path: str, log_path: str,
-    verbose: bool = False,
+    show_output: bool = True,
 ) -> tuple[str, str]:
     bwrap_cmd = build_bwrap_cmd(workspace_path)
     full_cmd, resource_limits = _wrap_with_limits(bwrap_cmd + ["--"] + cmd)
@@ -86,17 +85,24 @@ def _run_with_bwrap(
 
     original_handler = signal.signal(signal.SIGINT, _handle_sigint)
 
-    try:
-        stdout, stderr_data = proc.communicate(timeout=timeout)
-    except subprocess.TimeoutExpired:
-        termination = "timeout"
+    if show_output:
+        stream_stdout, stream_termination = _stream_output(proc, timeout)
+        stdout = stream_stdout
+        stderr_data = ""
+        if termination != "interrupted":
+            termination = stream_termination
+    else:
         try:
-            os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
-        except (ProcessLookupError, OSError):
-            pass
-        stdout, stderr_data = proc.communicate()
-    finally:
-        signal.signal(signal.SIGINT, original_handler)
+            stdout, stderr_data = proc.communicate(timeout=timeout)
+        except subprocess.TimeoutExpired:
+            termination = "timeout"
+            try:
+                os.killpg(os.getpgid(proc.pid), signal.SIGKILL)
+            except (ProcessLookupError, OSError):
+                pass
+            stdout, stderr_data = proc.communicate()
+        finally:
+            signal.signal(signal.SIGINT, original_handler)
 
     exit_code = proc.returncode
     if exit_code != 0:
@@ -115,7 +121,7 @@ def _run_with_bwrap(
 
 def _run_without_sandbox(
     cmd: list[str], timeout: int | None, workspace_path: str, log_path: str,
-    verbose: bool = False,
+    show_output: bool = True,
 ) -> tuple[str, str]:
     env = os.environ.copy()
     env["PWD"] = workspace_path
@@ -141,7 +147,7 @@ def _run_without_sandbox(
 
     original_handler = signal.signal(signal.SIGINT, _handle_sigint)
 
-    if verbose:
+    if show_output:
         stream_stdout, stream_termination = _stream_output(proc, timeout)
         stdout = stream_stdout
         if termination != "interrupted":
