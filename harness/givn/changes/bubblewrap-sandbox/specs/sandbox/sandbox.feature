@@ -59,6 +59,13 @@ Feature: sandbox
     And the file contains the agent's output
 
   @givn.added
+  Scenario: Bubblewrap sandbox makes givn/config.yaml read-only
+    Given a workspace directory at "/tmp/givn-harness-workspaces"
+    When the user runs `givn-harness run --task task.md --output reports/`
+    Then the agent cannot modify givn/config.yaml in the workspace
+    And the agent can still write other files in the workspace
+
+  @givn.added
   Scenario: Agent stdout and logs are captured from the sandbox
     Given a workspace directory at "/tmp/givn-harness-workspaces"
     When the user runs `givn-harness run --task task.md --output reports/`

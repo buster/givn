@@ -235,6 +235,30 @@ def step_then_file_contains_agent_output(context):
     )
 
 
+@then("the agent cannot modify givn/config.yaml in the workspace")
+def step_then_agent_cannot_modify_config_yaml(context):
+    config_path = os.path.join(context.workspace_path, "givn", "config.yaml")
+    assert os.path.isfile(config_path), f"expected {config_path} to exist (givn init)"
+    before = open(config_path, "rb").read()
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    cmd = bwrap_cmd + ["--", "bash", "-c", f"echo 'tampered: true' >> '{config_path}'"]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert result.returncode != 0, (
+        f"config.yaml append should be denied in sandbox, stderr: {result.stderr}"
+    )
+    after = open(config_path, "rb").read()
+    assert after == before, "config.yaml was modified despite the sandbox"
+
+
+@then("the agent can still write other files in the workspace")
+def step_then_agent_can_still_write_workspace(context):
+    test_file = os.path.join(context.workspace_path, "other_write_test.txt")
+    bwrap_cmd = build_bwrap_cmd(context.workspace_path)
+    cmd = bwrap_cmd + ["--", "touch", test_file]
+    result = subprocess.run(cmd, capture_output=True, text=True, timeout=10)
+    assert result.returncode == 0, f"write to workspace failed: {result.stderr}"
+
+
 @then("the agent's stdout is captured and written to the workspace agent log")
 def step_then_agent_stdout_captured_to_log(context):
     bwrap_cmd = build_bwrap_cmd(context.workspace_path)

@@ -873,6 +873,8 @@ def step_ralph_invoked_with_max_iterations(context):
 
     mock_proc = MagicMock()
     mock_proc.communicate.return_value = ("", "")
+    mock_proc.stdout.readline.return_value = ""
+    mock_proc.stderr.readline.return_value = ""
 
     with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen, \
          patch("givn_harness.runner.check_bubblewrap", return_value=True):
@@ -958,6 +960,8 @@ def step_ralph_invoked_with_prompt_file(context):
 
     mock_proc = MagicMock()
     mock_proc.communicate.return_value = ("", "")
+    mock_proc.stdout.readline.return_value = ""
+    mock_proc.stderr.readline.return_value = ""
 
     with patch("givn_harness.runner.subprocess.Popen", return_value=mock_proc) as mock_popen, \
          patch("givn_harness.runner.check_bubblewrap", return_value=True):

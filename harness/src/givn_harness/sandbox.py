@@ -61,6 +61,8 @@ def build_bwrap_cmd(workspace_path: str) -> list[str]:
         "--ro-bind-try", os.path.join(home, ".config", "opencode"), os.path.join(home, ".config", "opencode"),
         "--bind", workspace_path, workspace_path,
         "--bind", "/tmp", "/tmp",
+        "--ro-bind-try", os.path.join(workspace_path, "givn", "config.yaml"),
+        os.path.join(workspace_path, "givn", "config.yaml"),
         "--bind-try", os.path.join(home, ".npm"), os.path.join(home, ".npm"),
         "--bind-try", os.path.join(home, ".cache"), os.path.join(home, ".cache"),
         "--bind-try", os.path.join(home, ".bun"), os.path.join(home, ".bun"),
