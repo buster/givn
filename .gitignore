@@ -1,6 +1,19 @@
 # Rust build output — do NOT ignore Cargo.lock for binary crates
 /target
 
+# Python bytecode cache
+__pycache__/
+*.py[cod]
+
+# Test / coverage output
+.coverage
+.coverage.*
+coverage/
+reports/
+
+# Harness run state
+.givn-harness-run.json
+
 # Backup files
 **/*.rs.bk
 
