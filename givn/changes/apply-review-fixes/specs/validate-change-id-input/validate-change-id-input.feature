@@ -19,7 +19,7 @@ Feature: Validate Change ID Input
     When the user runs `givn status --change my-feature`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Path traversal id is rejected by status
     Given a project root with givn/ initialised
     When the user runs `givn status --change "../etc"`
