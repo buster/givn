@@ -27,25 +27,23 @@ fn change_with_artifact_containing(
 
     if artifact == "tasks.md" {
         // Detect "N done, M total" progress pattern and expand to checkbox lines.
-        if let Some((done_str, rest2)) = content.split_once(" done, ") {
-            if let Some(total_str) = rest2.strip_suffix(" total") {
-                if let (Ok(done), Ok(total)) =
-                    (done_str.parse::<usize>(), total_str.parse::<usize>())
-                {
-                    // Write proposal.md (empty) and tasks.md with checkboxes.
-                    std::fs::write(change_dir.join("proposal.md"), "").unwrap();
-                    let mut tasks = String::new();
-                    for _ in 0..done {
-                        tasks.push_str("- [x] task\n");
-                    }
-                    for _ in 0..(total - done) {
-                        tasks.push_str("- [ ] task\n");
-                    }
-                    std::fs::write(change_dir.join("tasks.md"), tasks)
-                        .expect("write tasks.md");
-                    return;
-                }
+        if let Some((done_str, rest2)) = content.split_once(" done, ")
+            && let Some(total_str) = rest2.strip_suffix(" total")
+            && let (Ok(done), Ok(total)) =
+                (done_str.parse::<usize>(), total_str.parse::<usize>())
+        {
+            // Write proposal.md (empty) and tasks.md with checkboxes.
+            std::fs::write(change_dir.join("proposal.md"), "").unwrap();
+            let mut tasks = String::new();
+            for _ in 0..done {
+                tasks.push_str("- [x] task\n");
             }
+            for _ in 0..(total - done) {
+                tasks.push_str("- [ ] task\n");
+            }
+            std::fs::write(change_dir.join("tasks.md"), tasks)
+                .expect("write tasks.md");
+            return;
         }
     }
 
