@@ -121,6 +121,16 @@ fn e2e_then_specs_rolled_back(world: &mut GivnWorld) {
     );
 }
 
+#[then("stderr says the e2e runner is not configured for permanent specs with @e2e coverage")]
+fn e2e_stderr_says_not_configured(world: &mut GivnWorld) {
+    let s = crate::steps::stderr(world);
+    assert!(
+        s.contains("not configured"),
+        "expected stderr to mention 'not configured', got: {}",
+        s
+    );
+}
+
 #[given("the permanent spec directory givn/specs/ has no @e2e scenario")]
 fn e2e_given_permanent_specs_no_e2e(world: &mut GivnWorld) {
     let env = world

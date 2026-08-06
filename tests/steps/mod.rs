@@ -481,29 +481,6 @@ fn stdout_shows_as_skipped(world: &mut GivnWorld, artifact: String) {
     );
 }
 
-#[then(regex = r#"^stderr says (.+)$"#)]
-fn stderr_says(world: &mut GivnWorld, message: String) {
-    let s = stderr(world);
-    // Check that the message or a trimmed version appears in stderr.
-    let msg_clean = message.trim().trim_start_matches("the ");
-    if s.contains(&msg_clean) || s.contains(&message) {
-        return;
-    }
-    // Check for any 2-gram from the message in stderr.
-    let check: &str = if msg_clean.is_empty() { &message } else { &msg_clean };
-    let words: Vec<&str> = check.split_whitespace().collect();
-    for pair in words.windows(2) {
-        let phrase = format!("{} {}", pair[0], pair[1]);
-        if s.contains(&phrase) {
-            return;
-        }
-    }
-    panic!(
-        "stderr does not match {:?}: {}",
-        message, s,
-    );
-}
-
 #[then(regex = r#"^stderr reports the placeholder hash as invalid$"#)]
 fn stderr_reports_invalid_hash(world: &mut GivnWorld) {
     let s = stderr(world);

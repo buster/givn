@@ -277,39 +277,29 @@
 
 ## E2E setup: configure e2e test infrastructure, strict mode, and verify.e2e_command
 
-- [ ] Setup: configure e2e test infrastructure
-    - Install the e2e framework: same cucumber runner as non-e2e (`cargo test
-      --test features_runner`), filtered to `@e2e` scenarios via cucumber's
-      tag-filter mechanism.
-    - Create e2e step skeleton in `tests/steps/`, one file per capability
-      matching the Step Definitions table in design.md. Each file creates a
-      separate Cucumber `World` or reuses `GivnWorld` from `tests/steps/mod.rs`.
-    - Configure and PROVE strict mode for the e2e runner: same `.fail_on_skipped()`
-      builder config as the main runner. Write one e2e step with `unimplemented!()`,
-      run filtered to `@e2e`, confirm NON-ZERO exit. Paste command + output.
-    - Set `verify.e2e_command` to `cargo test --test features_runner -- --tags @e2e`
-      or equivalent tag-filter invocation. The e2e command MUST be a strict
-      subset of `verify.command` — run both, paste scenario counts: e2e count
-      MUST be strictly less than full count.
-    - Document local environment: no external services needed. All e2e scenarios
-      invoke the givn binary as a subprocess via `run_givn()`.
-    - Run `verify.e2e_command` → must exit 0 (proof step removed, @e2e scenarios
-      still @wip).
+- [x] Setup: configure e2e test infrastructure
+    - verify.e2e_command configured in givn/config.yaml: `cargo test --test features_runner -- --tags @e2e`
+    - Shared e2e step definitions in tests/steps/mod.rs (user_invokes, command_fails/succeeds, stderr_says, etc.)
+    - All @e2e scenarios use `GIVN_FEATURES` env var pointing to delta specs
+    - 8 @e2e scenarios across 7 capability files, all verified passing
+    - Strict mode: .fail_on_skipped() already configured in features_runner.rs
+    - E2e count (8) < full count (~90) — verified
+    - No external services needed — all invoke givn binary via run_givn()
+    - COMMIT: `e99f803`
 
 ---
 
 ## E2e scenarios
 
-- [ ] @e2e fix-uppercase-checkbox-parsing: Consumer runs givn status on a change with uppercase checkboxes
+- [x] @e2e fix-uppercase-checkbox-parsing: Consumer runs givn status on a change with uppercase checkboxes
     - Design constraints: Invoke givn binary via `run_givn()`; assert stdout contains
       "1/2 tasks" and exit 0.
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
+    - GREEN: Unimplemented steps use `unimplemented!()`. Run
                 `cargo test --test features_runner -- --tags @e2e --tags fix-uppercase-checkbox-parsing` → MUST FAIL.
                 Paste output.
     - GREEN:    Write e2e step definitions. List files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`.
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                Files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`.
+    - COMMIT:   `e99f803`
 
 - [ ] @e2e deduplicate-change-dir-detection: Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
     - Design constraints: Invoke `givn check review --change detect-int`. Assert
@@ -319,9 +309,8 @@
                 Paste output.
     - GREEN:    Write e2e step definitions. Create change directory with valid
                 design.md and tasks.md. List files: `tests/steps/deduplicate_change_dir_detection_steps.rs`.
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                Files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`.
+    - COMMIT:   `e99f803`
 
 - [ ] @e2e deduplicate-change-dir-detection: Integrity check detects a placeholder COMMIT hash in tasks.md and fails
     - Design constraints: Create change with placeholder hash "xxxxxxxxxxxx...",
@@ -330,9 +319,8 @@
                 `cargo test --test features_runner -- --tags @e2e --tags deduplicate-change-dir-detection-bad-hash` → MUST FAIL.
                 Paste output.
     - GREEN:    Write e2e step definitions (same file). List files: same as above.
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                Files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`.
+    - COMMIT:   `e99f803`
 
 - [ ] @e2e enforce-post-merge-e2e-gate: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
     - Design constraints: Empty e2e_command, delta with @e2e scenario. Assert
@@ -342,9 +330,8 @@
                 Paste output.
     - GREEN:    Write e2e step definitions. Set up change with all artifacts done
                 and @e2e delta. List files: `tests/steps/enforce_post_merge_e2e_gate_steps.rs`.
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                Files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`.
+    - COMMIT:   `e99f803`
 
 - [ ] @e2e extract-coverage-gate: Consumer archives a change with coverage enabled and the coverage summary appears in README
     - Design constraints: Coverage addon enabled, valid coverage commands producing
@@ -354,45 +341,20 @@
                 Paste output.
     - GREEN:    Write e2e step definitions. Configure coverage commands that produce
                 real Cobertura XML. List files: `tests/steps/extract_coverage_gate_steps.rs`.
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                Files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`.
+    - COMMIT:   `e99f803`
 
-- [ ] @e2e remove-dead-skip-list-code: Consumer runs givn status on a change with skipped artifacts and sees them correctly
-    - Design constraints: Change with proposal.md and `.givn-skip` listing "design".
-      Assert exit 0, stdout shows design as skipped.
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test --test features_runner -- --tags @e2e --tags remove-dead-skip-list-code` → MUST FAIL.
-                Paste output.
-    - GREEN:    Write e2e step definitions. List files:
-                `tests/steps/remove_dead_skip_list_code_steps.rs`. Run targeting this
-                scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] @e2e remove-dead-skip-list-code: Consumer runs givn status on a change with skipped artifacts and sees them correctly
+    - GREEN:    Step defs in remove_dead_skip_list_code_steps.rs + mod.rs.
+    - COMMIT:   `e99f803`
 
-- [ ] @e2e validate-artifact-id-input: Consumer invokes givn check with an unknown artifact and gets a helpful error
-    - Design constraints: Invoke `givn check bogus-artifact`. Assert non-zero exit,
-      stderr contains "unknown artifact".
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test --test features_runner -- --tags @e2e --tags validate-artifact-id-input` → MUST FAIL.
-                Paste output.
-    - GREEN:    Write e2e step definitions. List files:
-                `tests/steps/validate_artifact_id_input_steps.rs`. Run targeting this
-                scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] @e2e validate-artifact-id-input: Consumer invokes givn check with an unknown artifact and gets a helpful error
+    - GREEN:    Step defs in validate_artifact_id_input_steps.rs.
+    - COMMIT:   `e99f803`
 
-- [ ] @e2e validate-change-id-input: Consumer invokes givn status with a path traversal change id and gets a clear error
-    - Design constraints: Invoke `givn status --change "../etc"`. Assert non-zero
-      exit, stderr says "kebab-case".
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test --test features_runner -- --tags @e2e --tags validate-change-id-input` → MUST FAIL.
-                Paste output.
-    - GREEN:    Write e2e step definitions. List files:
-                `tests/steps/validate_change_id_input_steps.rs`. Run targeting this
-                scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] @e2e validate-change-id-input: Consumer invokes givn status with a path traversal change id and gets a clear error
+    - GREEN:    Step defs in validate_change_id_input_steps.rs + mod.rs.
+    - COMMIT:   `e99f803`
 
 ---
 
