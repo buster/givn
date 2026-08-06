@@ -12,6 +12,7 @@ use crate::common;
 
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
+pub mod deduplicate_change_dir_detection_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod workflow_enforcement_steps;
 
