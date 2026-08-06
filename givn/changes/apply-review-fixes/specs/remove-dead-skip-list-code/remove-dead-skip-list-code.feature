@@ -14,7 +14,7 @@ Feature: Remove Dead Skip List Code
     Then the command exits 0
     And stdout mentions "design"
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn status JSON still reports skipped artifacts after dead code removal
     Given a project root with givn/ initialised
     And a change "skip-json" exists with artifact "proposal.md"
