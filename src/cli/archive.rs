@@ -21,7 +21,7 @@ use gherkin::GherkinEnv;
 /// All-or-nothing: if any step fails, abort and roll back.
 pub fn run(change: &str) -> Result<()> {
     let project_root = std::env::current_dir()?;
-    let change_dir = project_root.join("givn/changes").join(change);
+    let change_dir = crate::state::resolve_change_dir(&project_root, change)?;
 
     if !change_dir.exists() {
         bail!("change '{}' not found under givn/changes/", change);

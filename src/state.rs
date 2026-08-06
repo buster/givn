@@ -1,9 +1,11 @@
 use crate::config::manifest::{Artifact, Manifest};
+use anyhow::Result;
 /// Filesystem-derived lifecycle state (ADR-014, arc42 ch.8.6).
 ///
 /// There is no state file. State is computed entirely from which files exist,
 /// driven by the effective manifest's artifact graph rather than hardcoded fields.
 use std::path::Path;
+use std::path::PathBuf;
 
 /// The status of a single artifact within a change.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -349,6 +351,29 @@ pub fn is_skipped(artifact_id: &str, change_dir: &Path) -> bool {
 }
 
 
+/// Validate that a change id is valid kebab-case.
+pub(crate) fn validate_id(id: &str) -> Result<()> {
+    use anyhow::bail;
+    if id.is_empty() {
+        bail!("change id must not be empty");
+    }
+    if !id
+        .chars()
+        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+    {
+        bail!("change id must be kebab-case (lowercase letters, digits, hyphens): '{id}'");
+    }
+    if id.starts_with('-') || id.ends_with('-') {
+        bail!("change id must not start or end with a hyphen: '{id}'");
+    }
+    Ok(())
+}
+
+/// Validate a change id and resolve to the change directory path.
+pub(crate) fn resolve_change_dir(project_root: &Path, id: &str) -> Result<PathBuf> {
+    validate_id(id)?;
+    Ok(project_root.join("givn/changes").join(id))
+}
 
 /// Find all active changes under `givn/changes/`, manifest-aware.
 pub fn list_changes(project_root: &Path, manifest: &Manifest) -> Vec<ChangeState> {

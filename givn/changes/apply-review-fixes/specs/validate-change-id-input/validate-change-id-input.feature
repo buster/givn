@@ -12,7 +12,7 @@
 
 Feature: Validate Change ID Input
 
-  @givn.added @wip
+  @givn.added
   Scenario: Valid kebab-case change id is accepted by every command that accepts --change
     Given a project root with givn/ initialised
     And a change "my-feature" exists with artifact "proposal.md"

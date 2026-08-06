@@ -8,9 +8,8 @@ use anyhow::{Result, bail};
 /// `generates` output is not scaffolded. `givn status` shows skipped artifacts
 /// as ⊘ skipped (not pending), so `next_required` skips them.
 pub fn run(id: &str, skip: &[String]) -> Result<()> {
-    validate_id(id)?;
     let project_root = std::env::current_dir()?;
-    let change_dir = project_root.join("givn/changes").join(id);
+    let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
 
     if change_dir.exists() {
         bail!("change '{}' already exists at {}", id, change_dir.display());
@@ -64,21 +63,5 @@ pub fn run(id: &str, skip: &[String]) -> Result<()> {
         println!("  {} (skipped: {})", skip_path.display(), skip.join(", "));
     }
 
-    Ok(())
-}
-
-fn validate_id(id: &str) -> Result<()> {
-    if id.is_empty() {
-        bail!("change id must not be empty");
-    }
-    if !id
-        .chars()
-        .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
-    {
-        bail!("change id must be kebab-case (lowercase letters, digits, hyphens): '{id}'");
-    }
-    if id.starts_with('-') || id.ends_with('-') {
-        bail!("change id must not start or end with a hyphen: '{id}'");
-    }
     Ok(())
 }

@@ -18,7 +18,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
     let manifest = load_effective()?;
 
     if let Some(id) = change {
-        let change_dir = project_root.join("givn/changes").join(id);
+        let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
         if !change_dir.exists() {
             let archived_dir = project_root.join("givn/archive").join(id);
             if archived_dir.exists() {

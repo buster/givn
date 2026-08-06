@@ -20,7 +20,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
         paths.iter().map(std::path::PathBuf::from).collect()
     } else if let Some(id) = change {
         // Scope to givn/changes/<id>/specs/
-        let change_dir = project_root.join("givn/changes").join(id);
+        let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
         if !change_dir.exists() {
             anyhow::bail!("change '{id}' not found");
         }
@@ -100,7 +100,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
     if let Some(id) = change
         && !has_parse_error
     {
-        let change_dir = project_root.join("givn/changes").join(id);
+        let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
         let tasks_path = change_dir.join("tasks.md");
         if tasks_path.exists() {
             let tasks_content = std::fs::read_to_string(&tasks_path).unwrap_or_default();

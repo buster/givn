@@ -11,7 +11,7 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
 
     // Determine features_path: active change's features, or default specs.
     let features_path = if let Some(id) = change {
-        let change_dir = project_root.join("givn/changes").join(id);
+        let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
         change_dir.join("specs").to_string_lossy().into_owned()
     } else {
         manifest.verify.features_path.clone()
@@ -23,7 +23,9 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
-        let change_dir = change.map(|id| project_root.join("givn/changes").join(id));
+        let change_dir = change
+            .map(|id| crate::state::resolve_change_dir(&project_root, id))
+            .transpose()?;
 
         let mut ran_any = false;
         for artifact in &manifest.artifacts {
