@@ -2,7 +2,7 @@
 
 Feature: Choose Project License
 
-  @givn.added @wip
+  @givn.added
   Scenario: Cargo.toml declares dual MIT OR Apache-2.0 license
     Given a project root containing the givn source checkout
     When the user reads Cargo.toml

@@ -12,6 +12,7 @@ use crate::common;
 
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
+pub mod choose_project_license_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod workflow_enforcement_steps;
@@ -32,6 +33,10 @@ pub struct GivnWorld {
     overlay_manifest: Option<givn::config::manifest::Manifest>,
     /// Overlay error message (for config-overlay characterization).
     overlay_error: Option<String>,
+    /// Real project root for license check scenarios.
+    project_root: Option<std::path::PathBuf>,
+    /// License check state.
+    license_state: choose_project_license_steps::LicenseState,
 }
 
 // --- helpers ---------------------------------------------------------------
