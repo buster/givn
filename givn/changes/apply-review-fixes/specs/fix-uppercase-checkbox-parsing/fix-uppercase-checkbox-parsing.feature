@@ -32,7 +32,7 @@ Feature: Uppercase Checkbox Parsing
     And stdout mentions "\"tasks_done\": 2"
     And stdout mentions "\"tasks_total\": 3"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Uppercase checkboxes satisfy the archive gate
     Given a project root with givn/ initialised
     And a change "checkbox-archive" exists with all required artifacts complete and tasks.md containing "- [X] all done" with a valid COMMIT hash

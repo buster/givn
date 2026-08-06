@@ -17,6 +17,7 @@ fn change_with_artifact_containing(world: &mut GivnWorld, id: String, artifact: 
             String::from_utf8_lossy(&out.stderr),
         );
     }
+    world.last_change_id = Some(id.clone());
     let content = content.replace("\\n", "\n");
     std::fs::write(change_dir.join(&artifact), content).expect("write artifact file");
 }
@@ -28,6 +29,7 @@ fn change_all_complete_with_tasks_content(world: &mut GivnWorld, id: String, tas
         .env
         .as_ref()
         .expect("a project root is required first");
+    world.last_change_id = Some(id.clone());
     let change_dir = env.path(&format!("givn/changes/{}", id));
     if !change_dir.exists() {
         let out = crate::common::run_givn(env, &["new", &id]);
@@ -56,14 +58,51 @@ fn change_all_complete_with_tasks_content(world: &mut GivnWorld, id: String, tas
             write!(f, "{}", content).ok();
         }
     }
-    // Create specs dir with a valid feature file.
+    // Create specs dir with a valid @givn.delta-tagged feature file.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
-    std::fs::write(specs_dir.join("example.feature"), "Feature: example\n").unwrap();
+    std::fs::write(specs_dir.join("example.feature"), "@givn.delta\nFeature: example\n").unwrap();
     // Write STATUS: DONE marker for arc42-docs gate.
     std::fs::write(
         change_dir.join("arc42.md"),
         "## Status\n\nSTATUS: DONE\n",
     )
     .unwrap();
+    // Override commands.yaml so verify and coverage gates pass in test environment.
+    // The temp project root has no Rust project or coverage tooling, so we set
+    // everything to simple `true` commands and write dummy Cobertura XML files.
+    let commands_path = env.path("givn/commands.yaml");
+    let commands_yaml = "\
+verify:
+  command: \"true\"
+  e2e_command: \"\"
+coverage:
+  non_e2e_command: \"true\"
+  e2e_command: \"true\"
+  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
+  e2e_path: \"coverage/e2e-cobertura.xml\"
+addons:
+  arc42: true
+  absolute_mode: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  grill_me: true
+  grill_with_docs: true
+";
+    std::fs::write(&commands_path, commands_yaml).expect("write patched commands.yaml");
+    // Write distinct dummy Cobertura XML files so the coverage gate passes.
+    let cov_dir = env.path("coverage");
+    std::fs::create_dir_all(&cov_dir).expect("create coverage dir");
+    let non_e2e_xml = r#"<?xml version="1.0"?>
+<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
+  <packages />
+</coverage>"#;
+    let e2e_xml = r#"<?xml version="1.0"?>
+<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
+  <packages />
+</coverage>"#;
+    std::fs::write(cov_dir.join("non-e2e-cobertura.xml"), non_e2e_xml).expect("write non-e2e xml");
+    std::fs::write(cov_dir.join("e2e-cobertura.xml"), e2e_xml).expect("write e2e xml");
 }
