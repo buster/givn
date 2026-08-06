@@ -210,19 +210,19 @@ but the default templates make the boundary explicit.
 
 ```
 givn/
-├── config.yaml                       # manifest OVERLAY + verify.command
-├── specs/<cap>/<cap>.feature         # permanent merged spec (source of truth)
-├── changes/<id>/                     # active change (state = which files exist)
-│   ├── proposal.md
-│   ├── specs/<cap>/<cap>.feature     # delta: @givn.delta + added|modified|removed
-│   ├── design.md
-│   ├── tasks.md
-│   ├── design-review.md
-│   └── review.md
-├── archive/<id>/                     # archived changes (moved here on archive)
-└── artifacts/<id>/                   # OPTIONAL ejected overrides
-    ├── template.*                    #   ejected template facet
-    └── instructions.md               #   ejected instructions facet
++-- config.yaml                       # manifest OVERLAY + verify.command
++-- specs/<cap>/<cap>.feature         # permanent merged spec (source of truth)
++-- changes/<id>/                     # active change (state = which files exist)
+|   +-- proposal.md
+|   +-- specs/<cap>/<cap>.feature     # delta: @givn.delta + added|modified|removed
+|   +-- design.md
+|   +-- tasks.md
+|   +-- design-review.md
+|   +-- review.md
++-- archive/<id>/                     # archived changes (moved here on archive)
++-- artifacts/<id>/                   # OPTIONAL ejected overrides
+    +-- template.*                    #   ejected template facet
+    +-- instructions.md               #   ejected instructions facet
 givn/skills/<name>/SKILL.md.tmpl      # OPTIONAL ejected skill template
 
 # Generated agent files (outside givn/):
@@ -265,7 +265,7 @@ There is no state file. Lifecycle state is computed from which files exist:
 | `givn/changes/<id>/proposal.md` exists | proposal done |
 | `givn/changes/<id>/specs/**.feature` exist | spec drafted |
 | `design.md` / `design-review.md` / `tasks.md` / `review.md` exist | respective stage reached |
-| all `tasks.md` checkboxes `[x]` | implementation complete |
+| all `tasks.md` checkboxes `[x]` (case-insensitive: `[X]` also counts as done) | implementation complete |
 | `design-review.md` contains `DESIGN-REVIEW: PASS` | design review signed off |
 | `review.md` contains `REVIEW: PASS` | coverage review signed off |
 | `arc42.md` (in change dir) contains `STATUS: DONE` | arc42-docs update complete |
@@ -284,6 +284,20 @@ Marker conventions for completion signals beyond mere file presence:
 - **`arc42.md`** (change-level) — must contain `STATUS: DONE` (written by the
   arc42-docs agent; `STATUS: PARTIAL` or absence → Partial). The durable
   `docs/arc42/` chapter files are not themselves tracked — only this marker.
+
+### Input validation
+
+All commands accepting `--change` validate the id as kebab-case (lowercase
+ASCII, digits, hyphens; no leading/trailing hyphens) before constructing any
+filesystem path. The validation uses the shared `resolve_change_dir` helper in
+`src/state.rs`, which is called by every command that constructs a
+`givn/changes/<id>/` path. This prevents path traversal (e.g. `--change ../etc`)
+from escaping the `givn/changes/` directory.
+
+`givn check <artifact>` and `givn eject <artifact>:instruction` validate the
+artifact id against the effective manifest before any further processing,
+producing a consistent "unknown artifact" error that lists known artifact ids.
+This mirrors the validation already performed by `givn instructions`.
 
 ## 8.7 Skill & rule generation
 
@@ -583,6 +597,16 @@ artifacts:
 - Hooks run with `GIVN_FEATURES` set to the right target (the active change's
   features during development; `givn/specs` after archive), so the runner tests
   the correct `.feature` files.
+
+### Post-merge e2e gate
+
+After the per-change hooks and delta merge, `givn archive` also runs `verify.command`
+and `verify.e2e_command` against the merged permanent specs (`givn/specs/`). The
+post-merge e2e gate mirrors the per-change `verify-e2e` hook behaviour: if
+`verify.e2e_command` is empty and the merged permanent specs contain `@e2e`
+scenarios, the archive is blocked with a clear error — the same "unenforced gap"
+message the per-change hook produces. This prevents a delta that adds `@e2e`
+scenarios from creating a gap when it becomes permanent.
 
 ### Interaction with the sentinel
 

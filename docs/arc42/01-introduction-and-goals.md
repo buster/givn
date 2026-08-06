@@ -10,6 +10,7 @@ cucumber test, and the permanent archived record. There is no parallel `spec.md`
 It distills a proven Gherkin-first workflow (originally prototyped as a fork of
 OpenSpec) into a standalone, configurable, easily-installable Rust binary that is
 language- and test-runner-agnostic and aimed at the broader open-source community.
+This project is dual-licensed under MIT OR Apache-2.0 (see ADR-034).
 
 The lifecycle it manages:
 

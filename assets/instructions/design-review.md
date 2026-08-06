@@ -35,8 +35,8 @@ Required branches — cover every one (or explicitly record "no issue found"):
      arc42-docs instruction's chapter-selection table, forming your own
      Yes/No per row, before opening `arc42.md`.
   2. Open `arc42.md` and compare its per-row Yes/No against your own. Any
-     row where you say "Yes" and `arc42.md` says "No" (or omits the row) is
-     a blocking finding — an omission, not just a contradiction, is what
+row where you say "Yes" and `arc42.md` says "No" (or omits the row) is
+      a finding — an omission, not just a contradiction, is what
      slips through unnoticed and must block sign-off.
   3. For every chapter marked "Yes" (by either party): open the chapter file
      and confirm the content actually matches design.md, not placeholder
@@ -50,14 +50,14 @@ Required branches — cover every one (or explicitly record "no issue found"):
        box-drawing characters (`┌┐└┘│─├┤┬┴┼╔╗╚╝║═╠╣╦╩╬╭╮╰╯`) and for
        multi-line blocks where lines begin with `+` or `|` and contain
        `---` or `===` (non-table pseudo-diagrams). If any are found, the
-       content violates the diagram policy — treat this as a blocking
-       finding and require the diagram to be converted to Mermaid.
+content violates the diagram policy — treat this as a
+        finding and require the diagram to be converted to Mermaid.
   5. Confirm every non-trivial architecture decision in design.md has a
      MADR entry in chapter 09, and that any consequence of that decision
      (e.g. "Bad, because...") is reflected in chapter 11.
   `arc42.md`'s `STATUS: DONE` is a self-report from the same agent that
   wrote the docs — not verification; treat any mismatch, including a
-  missing row, as a blocking finding.
+  missing row, as a finding.
 
 If a question can be answered by exploring the existing codebase, explore it
 and record the finding — do not burden the user with it.
@@ -78,5 +78,5 @@ After all questions are answered, a hardening subagent applies decisions:
 - Grilling is complete only when every branch has been walked and every question
   answered or flagged as a blocker.
 - Sign off by writing `DESIGN-REVIEW: PASS` at the end of `design-review.md`
-  only when no blocking questions remain and all hardening edits are applied.
-  Write `DESIGN-REVIEW: FAIL` if any blocker is unresolved.
+  only when all questions are resolved and all hardening edits are applied.
+  Write `DESIGN-REVIEW: FAIL` if any question remains unresolved.

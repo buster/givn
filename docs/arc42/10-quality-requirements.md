@@ -43,6 +43,8 @@ graph TD
 | Q-7 | Correctness | An archive merges added/modified/removed across several `.feature` files. | Permanent specs updated correctly; all `@givn.*` tags stripped; result is valid Gherkin. |
 | Q-8 | Correctness | CI runs `givn lint` on specs containing a `@wip` scenario. | Exit code 2; CI can distinguish wip from parse error (1) and clean (0). Tests themselves are run separately via `verify.command`. |
 | Q-9 | Correctness | State is queried mid-change. | `givn status` reports the correct stage purely from file presence, even after manual edits. |
+| Q-24 | Correctness | A user passes a path-traversal change id (e.g. `givn status --change "../etc"`). | The command rejects the id with a clear "must be kebab-case" error before any filesystem path is constructed. |
+| Q-25 | Correctness | A user passes an unknown artifact id to `givn check` or `givn eject`. | The command validates against the manifest and produces a helpful error listing known artifact ids. |
 | Q-10 | Agent ergonomics | An agent requests instructions for the spec artifact. | `givn instructions specs --change <id> --json` returns id, generates, requires, instruction. |
 | Q-11 | Configurability | A fresh project tries to run tests without configuring a runner. | The sentinel `givn missing-testrunner` prints per-language setup guidance and exits non-zero; nothing falsely reports GREEN. |
 | Q-12 | Configurability | A user opens `givn/config.yaml` to discover what they can change. | Every key is present (commented) with description, default, and allowed values; no external docs needed. |

@@ -9,48 +9,50 @@ project's `givn/` directory, and writes artifacts and agent files.
 
 ```
 givn/  (single published binary crate)
-├── src/
-│   ├── main.rs                 # clap dispatch / entrypoint; inline completions handler
-│   ├── cli/                    # one module per subcommand
-│   │   ├── init.rs
-│   │   ├── new.rs
-│   │   ├── instructions.rs
-│   │   ├── lint.rs              # static .feature check (syntax/@wip/tags)
-│   │   ├── check.rs            # run an artifact's post hooks (e.g. verify.command)
-│   │   ├── status.rs
-│   │   ├── apply.rs
-│   │   ├── archive.rs
-│   │   ├── eject.rs
-│   │   ├── addons.rs           # `addons list/enable/disable`
-│   │   ├── skills.rs           # `skills sync`
-│   │   ├── upgrade.rs          # re-render managed config scaffold, bump version
-│   │   └── missing_testrunner.rs  # sentinel default verify.command
-│   ├── config/
-│   │   ├── embedded.rs         # access to baked-in assets (rust-embed)
-│   │   ├── manifest.rs         # serde types for the YAML manifest
-│   │   ├── overlay.rs          # merge project overlay onto embedded graph
-│   │   ├── cascade.rs          # per-facet resolution (project ← embedded)
-│   │   └── render.rs           # render documented, versioned config.yaml scaffold
-│   ├── gherkin/
-│   │   ├── parse.rs            # wrap the `gherkin` crate
-│   │   ├── delta.rs            # tag detection, split feature/scenario
-│   │   └── merge.rs            # added/modified/removed merge + tag stripping
-│   ├── skills/
-│   │   ├── render.rs           # template → SKILL.md
-│   │   └── targets.rs          # emit to .agents, .claude, .opencode
-│   ├── hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
-│   ├── state.rs                # derive lifecycle state from the filesystem
-│   └── error.rs                # error types (thiserror) + exit-code mapping
-├── assets/                     # embedded via rust-embed
-│   ├── default-manifest.yaml   # the default artifact graph
-│   ├── config.yaml.tmpl        # documented, versioned project config scaffold
-│   ├── templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
-│   ├── instructions/           # per-artifact instruction files (proposal, specs, design, tasks, review)
-│   ├── commands/               # opencode slash command templates (givn-propose … givn-archive)
-│   ├── skills/                 # default SKILL.md.tmpl templates per workflow step
-│   └── addons/                 # opt-in addons (pre-packaged artifacts)
-│       └── arc42-docs/         # instruction, marker template, 12 chapter templates + index
-└── tests/                      # integration tests
+|
++-- src/
+|   +-- main.rs                 # clap dispatch / entrypoint; inline completions handler
+|   +-- cli/                    # one module per subcommand
+|   |   +-- init.rs
+|   |   +-- new.rs
+|   |   +-- instructions.rs
+|   |   +-- lint.rs              # static .feature check (syntax/@wip/tags)
+|   |   +-- check.rs            # run an artifact's post hooks (e.g. verify.command)
+|   |   +-- status.rs
+|   |   +-- apply.rs
+|   |   +-- archive.rs
+|   |   +-- eject.rs
+|   |   +-- addons.rs           # `addons list/enable/disable`
+|   |   +-- skills.rs           # `skills sync`
+|   |   +-- upgrade.rs          # re-render managed config scaffold, bump version
+|   |   +-- coverage_gate.rs     # archive-level coverage pipeline (run, merge, validate, fence)
+|   |   +-- missing_testrunner.rs  # sentinel default verify.command
+|   +-- config/
+|   |   +-- embedded.rs         # access to baked-in assets (rust-embed)
+|   |   +-- manifest.rs         # serde types for the YAML manifest
+|   |   +-- overlay.rs          # merge project overlay onto embedded graph
+|   |   +-- cascade.rs          # per-facet resolution (project <- embedded)
+|   |   +-- render.rs           # render documented, versioned config.yaml scaffold
+|   +-- gherkin/
+|   |   +-- parse.rs            # wrap the `gherkin` crate
+|   |   +-- delta.rs            # tag detection, split feature/scenario
+|   |   +-- merge.rs            # added/modified/removed merge + tag stripping
+|   +-- skills/
+|   |   +-- render.rs           # template -> SKILL.md
+|   |   +-- targets.rs          # emit to .agents, .claude, .opencode
+|   +-- hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
+|   +-- state.rs                # derive lifecycle state from the filesystem
+|   +-- error.rs                # error types (thiserror) + exit-code mapping
++-- assets/                     # embedded via rust-embed
+|   +-- default-manifest.yaml   # the default artifact graph
+|   +-- config.yaml.tmpl        # documented, versioned project config scaffold
+|   +-- templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
+|   +-- instructions/           # per-artifact instruction files (proposal, specs, design, tasks, review)
+|   +-- commands/               # opencode slash command templates (givn-propose ... givn-archive)
+|   +-- skills/                 # default SKILL.md.tmpl templates per workflow step
+|   +-- addons/                 # opt-in addons (pre-packaged artifacts)
+|       +-- arc42-docs/         # instruction, marker template, 12 chapter templates + index
++-- tests/                      # integration tests
 ```
 
 ## 5.3 Module responsibilities
@@ -59,13 +61,14 @@ givn/  (single published binary crate)
 | --- | --- | --- |
 | `main.rs` | Parse args, dispatch to `cli::*`, map errors to exit codes. | `cli`, `error` |
 | `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, generate skills. | `config`, `skills` |
-| `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Validates `<id>` (non-empty, lowercase ASCII letters/digits/hyphens, not starting or ending with a hyphen) before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade` |
+| `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Calls the shared `resolve_change_dir` helper to validate `<id>` (kebab-case) and construct the path before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
 | `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner); block & exit non-zero on failure. | `hooks`, `config::manifest` |
 | `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
-| `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `config::manifest` |
+| `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run the coverage gate, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `coverage_gate`, `config::manifest` |
+| `cli::coverage_gate` | Archive-level coverage pipeline: run both coverage commands, merge Cobertura XML, validate, update README fence with coverage summary. Delegates rollback to `cli::archive`. | `cobertura`, `agents_block`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
@@ -81,8 +84,8 @@ givn/  (single published binary crate)
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md. | `config::cascade` |
 | `skills::targets` | Write rendered output to the three skill locations + `.opencode/commands/`. `AGENTS.md` is intentionally not touched (user-owned). | `render` |
-| `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). | `config::manifest`, `cli::lint` |
-| `state` | Compute change state from which files exist. | project FS, `manifest` |
+| `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
+| `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
 
 ## 5.4 Dependencies (crates)

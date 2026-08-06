@@ -138,14 +138,14 @@ as "no issue found" if genuinely clean):
   Do Then-steps assert concrete values, not "it ran"? Does design.md name a
   concrete strict-mode mechanism, not-implemented stub pattern, and
   single-scenario run command? Missing or vague on any of the three is a
-  blocking finding — this is the root cause of past fabricated changes.
+  finding — this is the root cause of past fabricated changes.
 - **E2E fidelity** — for each capability, does design.md name the actual
   interface type (browser UI / CLI / API-only) and a matching real driving
   mechanism? For a browser-UI capability, is a real browser driver named —
   not an HTTP client or in-page `fetch()` standing in for it? Is there
   exactly one `@e2e` scenario per distinct happy-path action, not one per
   variant/error case? Vague interface type, an HTTP/fetch()-based plan for
-  a browser UI, or more than one `@e2e` scenario per action is a blocking
+  a browser UI, or more than one `@e2e` scenario per action is a
   finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
@@ -161,7 +161,7 @@ as "no issue found" if genuinely clean):
      risks-and-technical-debt, etc.). Record your own Yes/No per row.
   2. Open `arc42.md` and its 12-row table. Diff row by row against your own
      assessment. **Any row you marked "Yes" that `arc42.md` marks "No",
-     leaves blank, or omits entirely is a blocking finding** — this
+     leaves blank, or omits entirely is a finding** — this
      omission is the actual failure mode seen in production use (an agent
      stopping after finding 2-3 obviously-affected chapters instead of
      checking all 12), and it is more dangerous than a contradiction
@@ -172,7 +172,7 @@ as "no issue found" if genuinely clean):
   3. For every chapter marked "Yes" by either party: open it and confirm the
      content actually reflects design.md — not placeholder text, not a
      stale description that contradicts design.md's Architecture Impact or
-     Technology Decisions sections. A contradiction is a blocking finding.
+     Technology Decisions sections. A contradiction is a finding.
   4. For every non-trivial architecture/technology decision in design.md
      (a real tradeoff was made, not a default/obvious choice): confirm
      chapter 09 (architecture-decisions) has a corresponding MADR entry
@@ -180,11 +180,11 @@ as "no issue found" if genuinely clean):
      consequences), and that its consequences are reflected in chapter 11
      (risks-and-technical-debt). A non-trivial decision with no MADR entry,
      or an MADR whose "Bad, because..." consequences have no counterpart in
-     chapter 11, is a blocking finding.
+     chapter 11, is a finding.
   5. A chapter file still containing only its scaffolded placeholder text,
-     while `arc42.md` claims that chapter was "updated," is a blocking
-     finding — the same fabrication pattern as an empty step body reported
-     as passing.
+while `arc42.md` claims that chapter was "updated," is a
+  finding — the same fabrication pattern as an empty step body reported
+  as passing.
 
 ## Return format
 
@@ -237,22 +237,18 @@ For each question:
 2. **Wait for the user's response.** Do not present the next question until
    the current one is answered.
 3. Record the outcome: agreed / overridden (note what the user decided) /
-   deferred (flag as open question).
-4. Ask: "Blocking or non-blocking?" Record the answer. Blocking means this
-   question must be resolved before implementation can proceed. Non-blocking
-   means it can be deferred.
+    deferred (flag as open question).
 
 When all questions are answered, summarise:
 
 ```
 **Grilling complete.** <N> questions answered.
-Open questions (blocking): <list or "none">
-Open questions (non-blocking): <list or "none">
+Open questions: <list or "none">
 
 Proceeding to hardening...
 ```
 
-If any open question is marked as blocking by the user, stop and report the
+If any open question remains unresolved, stop and report the
 blocker. Do not proceed to hardening until the user resolves it.
 
 ### 5. Spawn the hardening subagent
@@ -275,7 +271,7 @@ existing artifacts and write design-review.md.
 ### Questions and answers
 <paste each question, recommended answer, and the user's decision>
 
-### Open questions (non-blocking)
+### Open questions
 <list, or "none">
 
 ## Your tasks
@@ -307,7 +303,7 @@ Write `givn/changes/<id>/design-review.md` following this template structure:
 | Branch | Finding |
 
 ## Open questions
-| # | Question | Blocking? |
+| # | Question |
 
 ## Architecture documentation (arc42) check
 N/A if the arc42 addon is not enabled. Otherwise fill in all 12 rows — do not
@@ -325,7 +321,7 @@ leave blank and do not only list the rows arc42.md claims:
 
 ## Sign-off
 - [ ] All branches walked.
-- [ ] All open questions resolved or flagged as non-blocking.
+- [ ] All open questions resolved.
 - [ ] design.md reflects decisions reached.
 - [ ] specs/*.feature updated for any missing scenarios.
 - [ ] givn lint exits 0 or 2.
@@ -334,9 +330,9 @@ leave blank and do not only list the rows arc42.md claims:
 
 DESIGN-REVIEW: PASS
 
-Write `DESIGN-REVIEW: PASS` as the final line ONLY if no questions are marked
-as blocking. If there are blocking open questions, write `DESIGN-REVIEW: FAIL`
-instead and list the blockers.
+Write `DESIGN-REVIEW: PASS` as the final line ONLY if all questions are resolved.
+If there are unresolved open questions, write `DESIGN-REVIEW: FAIL`
+instead and list them.
 
 ### 3. Report back with
 - Artifacts edited (list, or "none")
@@ -368,7 +364,7 @@ Display next step: "Run `/givn-tasks` to write the task list."
 **Grilling:** <N> questions across <M> branches
 **Resolved by codebase:** <N> items
 **Hardening:** <summary of edits, or "no changes needed">
-**Open questions (non-blocking):** <list or "none">
+**Open questions:** <list or "none">
 
 **Review written:** givn/changes/<id>/design-review.md  (DESIGN-REVIEW: PASS)
 
@@ -380,7 +376,7 @@ Display next step: "Run `/givn-tasks` to write the task list."
 ```
 ## Design review blocked: <id>
 
-**Blocking question:** <question>
+**Unresolved question:** <question>
 **Status:** DESIGN-REVIEW: FAIL
 
 Resolve the blocker before proceeding.
@@ -392,9 +388,8 @@ Resolve the blocker before proceeding.
 
 - The orchestrator presents exactly one question per turn. Never batch questions.
 - Do not proceed to hardening while any question is unanswered.
-- Do not proceed to hardening while any blocking open question is unresolved.
 - The hardening subagent must not write tasks.md — that is the next artifact.
 - Hardening edits do not reset design or specs status — they are ordinary edits.
-- `DESIGN-REVIEW: PASS` requires no blocking open questions. If blockers remain,
-  write `DESIGN-REVIEW: FAIL` and surface them to the user.
+- `DESIGN-REVIEW: PASS` requires all questions resolved. If any question remains
+  unanswered, write `DESIGN-REVIEW: FAIL` and surface them to the user.
 - `givn lint` must exit 0 or 2 after any .feature edits before signing off.

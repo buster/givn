@@ -146,8 +146,18 @@ user → cli::archive
          - @givn.removed  → delete by title (error if missing)
        strip ALL @givn.* tags from the permanent output
   3. write merged permanent specs (clean, runnable Gherkin)
-  4. move givn/changes/<id>/ → givn/archive/<id>/
-  5. report summary
+  4. post-merge verify gate:
+       run verify.command against givn/specs/ → if non-zero, rollback and bail
+  5. post-merge verify-e2e gate:
+       if verify.e2e_command is empty AND merged specs contain @e2e → rollback and bail
+         (mirrors per-change hook behaviour: @e2e without a configured runner is an
+          unenforced gap, not an optional one)
+       else if e2e_command is non-empty AND merged specs contain @e2e → run it;
+         if non-zero, rollback and bail
+       else if no @e2e in merged specs → skip silently
+  6. coverage gate (if addons.coverage): see cli::coverage_gate
+  7. move givn/changes/<id>/ → givn/archive/<id>/
+  8. report summary
 ```
 
 If any merge precondition fails (e.g. modify a missing scenario), archive aborts

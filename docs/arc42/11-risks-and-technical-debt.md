@@ -12,6 +12,7 @@
 | R-6 | Merge corrupts the permanent spec on a partial failure. | Low | High | All-or-nothing archive: validate every precondition before any write; write atomically. |
 | R-7 | Scope creep back toward OpenSpec's dropped features (profiles, context stores). | Medium | Medium | Chapter 3.3 non-goals are explicit; keep them out of v1. |
 | R-8 | Filesystem-derived state misreads partially-written or manually-edited dirs. | Low | Medium | Derive conservatively; treat ambiguous states as "in progress"; never auto-destroy on inference. |
+| R-9 | Path traversal in `--change` parameter (e.g. `--change "../etc"`). | Low | High | **Resolved:** every command that accepts `--change` now validates the id as kebab-case via the shared `resolve_change_dir` helper before constructing any filesystem path. Invalid ids are rejected with a clear error. |
 
 ## 11.2 Deliberate (planned) technical debt
 
@@ -25,6 +26,8 @@
 | D-6 | `givn new` checks "change already exists" before "givn/ not found"; the already-exists branch is unreachable when `givn/` is absent (its parent cannot exist). No wrong error today, but the ordering is brittle. | Discovered during characterization; AS-IS captured, not reordered. | Future `@givn.modified` delta to swap the check order. Tracked as SMELL-1. |
 | D-7 | `givn new -foo` (leading-hyphen id, natural invocation) is rejected by clap as an unexpected flag (exit 2) before the id validator runs; the dedicated "must not start or end with a hyphen" message is only reachable via `givn new -- -foo`. Split behaviour. | Discovered during characterization; both paths captured as AS-IS. | Future `@givn.modified` delta to unify the two paths. Tracked as SMELL-2. |
 | D-8 | `givn init` does not create `givn/artifacts/`, so project template overrides require manual directory setup. | Discovered during characterization; documented as AS-IS. | Future enhancement (e.g. `givn eject` guidance or init scaffold). Tracked as SMELL-3. |
+
+## 11.3 Open questions — resolved
 
 ## 11.3 Open questions — resolved
 

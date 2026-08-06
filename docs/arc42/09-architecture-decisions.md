@@ -924,4 +924,32 @@ variant-of-normal approach because:
 - `README.md`: reverse-engineering section and quickstart updated.
 - `givn/archive/reverse-engineer-new-command/`: historical archive, unchanged.
   The permanent spec `givn/specs/new-command/new-command.feature` is valid.
+
+---
+
+## ADR-034: Dual-license MIT OR Apache-2.0
+
+**Context.** The project was created with `license = "TBD"` in `Cargo.toml` and
+"not yet chosen" in README.md. This blocks `cargo publish` and signals ambiguity
+to potential contributors. A license is a prerequisite for distributing the tool
+as open source (OC-4).
+
+**Decision.** Dual-license under **MIT OR Apache-2.0**.
+
+**Rationale.** This is the Rust ecosystem standard. The majority of published
+Rust crates use this dual-license. It provides:
+- MIT: broad, simple, permissive — widely compatible.
+- Apache-2.0: patent grant, contribution terms — preferred by some contributors
+  and organisations.
+
+Users choose which license applies. The dual form avoids forcing a choice and
+maximises compatibility. Both licenses are OSI-approved and GitHub-recognised.
+
+**Consequences.**
+- `Cargo.toml`: `license = "MIT OR Apache-2.0"`.
+- `README.md`: license section updated from "not yet chosen" to state the dual
+  license.
+- No CLA (Contributor License Agreement) needed — both licenses handle inbound=
+  outbound contribution terms.
+- OC-4 (license TBD) is resolved.
 - Empty-baseline merge mechanics from ADR-032 retained.

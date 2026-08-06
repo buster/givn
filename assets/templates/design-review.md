@@ -18,7 +18,7 @@ Items answered without user input by exploring the existing codebase.
 
 Questions that could not be resolved and were flagged explicitly.
 
-| # | Question | Blocking? |
+| # | Question |
 |---|---|---|
 | | | |
 
@@ -48,7 +48,7 @@ record both:
 - [ ] All 12 rows assessed independently against proposal.md/design.md
       before reading arc42.md's own claims.
 - [ ] No row is "Match? = No" with the reviewer saying "Yes" and arc42.md
-      saying "No" or omitting the row — any such row is a blocking finding,
+      saying "No" or omitting the row — any such row is a finding,
       not a note.
 - [ ] Every non-trivial architecture/technology decision in design.md has a
       corresponding MADR entry in chapter 09.
@@ -67,11 +67,11 @@ Edits applied to existing artifacts as a result of grilling.
 ## Sign-off
 
 - [ ] Every branch of the design tree has been walked.
-- [ ] All blocking questions are resolved.
+- [ ] All questions are resolved.
 - [ ] `design.md` reflects any decisions reached during grilling.
 - [ ] `specs/**/*.feature` updated if any missing scenarios were identified.
 - [ ] `givn lint --change {{CHANGE_ID}}` exits 0 or 2 (no parse errors).
 - [ ] Architecture documentation (arc42) check completed above (or marked
       N/A because the addon is not enabled) — never left blank.
 
-**DESIGN-REVIEW: PASS** <!-- change to FAIL if any blocker remains -->
+**DESIGN-REVIEW: PASS** <!-- change to FAIL if any question remains unresolved -->

@@ -37,7 +37,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | OC-1 | Repository lives at `~/projects/givn`, local `git init` only (no remote yet). |
 | OC-2 | Clean break from OpenSpec: no backward-compat read of `openspec/` dirs. A `givn migrate` command is a deferred nice-to-have. |
 | OC-3 | MVP scope includes the full stack: core engine + lifecycle + skills + install. |
-| OC-4 | Intended to be open source for the broader community (license TBD). |
+| OC-4 | Open source under dual MIT OR Apache-2.0 license (see ADR-034). |
 
 ## 2.4 Conventions
 
