@@ -45,50 +45,7 @@ givn_config_version: "0.2.0"
 # See arc42 ch.8.10 for details.
 verify:
   command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
-
-# --- Coverage gate (archive-level, requires addons.coverage: true) ------------
-# Commands that run tests with coverage instrumentation. Each must produce a
-# Cobertura XML file (default paths: coverage/non-e2e-cobertura.xml and
-# coverage/e2e-cobertura.xml). givn merges them into a unified summary written
-# to README.md.
-#
-# non_e2e_command: runs non-e2e tests with coverage instrumentation.
-# e2e_command:     runs @e2e tests with coverage instrumentation.
-#
-# E2e coverage typically requires running the application server with code
-# instrumentation (e.g. c8 --all, nyc instrument, JaCoCo agent), then running
-# the e2e test harness against the instrumented server — the coverage data is
-# collected from the server's output, not the test harness itself.
-#
-# The archive gate validates that both reports come from distinct
-# instrumentation runs — do not copy the non-e2e XML to the e2e path.
-#
-# Examples:
-#   npx c8 --reporter=cobertura npx cucumber-js "givn/specs/**/*.feature"
-#   npx c8 --reporter=cobertura npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
-#   cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner
-#
-# WARNING: Do not leave the sentinels. Without working coverage commands,
-# the coverage gate will block archive.
-coverage:
-  non_e2e_command: "givn missing-coverage"   # <-- replace this with your non-e2e coverage command
-  e2e_command: "givn missing-coverage"   # <-- replace this with your e2e coverage command
-
-# --- E2E test runner ----------------------------------------------------------
-# The command givn invokes to run end-to-end smoke tests. These are @e2e-tagged
-# scenarios that exercise the real interaction surface (browser, CLI, API).
-# E2e scenarios use separate step definitions and may require local test
-# infrastructure (application server, test database, Testcontainers, etc.).
-#
-# Examples:
-#   npx cucumber-js --tags @e2e "givn/specs/**/*.feature"
-#   behave --tags=@e2e
-#   cargo test --test e2e_runner
-#   mvn test -Dcucumber.filter.tags="@e2e"
-#   pytest --tags=e2e
-#
-# verify:
-#   e2e_command: ""   # <-- set this to your e2e runner
+  e2e_command: "cargo test --test features_runner -- --tags @e2e"
 
 # --- Features path -----------------------------------------------------------
 # Path the test runner reads .feature files from during development. Also

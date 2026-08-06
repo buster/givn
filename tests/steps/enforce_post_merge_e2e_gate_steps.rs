@@ -1,5 +1,5 @@
-use cucumber::{given, then};
 use crate::steps::GivnWorld;
+use cucumber::{given, then};
 
 #[given("the givn/config.yaml has an empty e2e_command")]
 fn empty_e2e_command(world: &mut GivnWorld) {
@@ -133,15 +133,13 @@ fn completed_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
     )
     .unwrap();
     // Write arc42 marker.
-    std::fs::write(
-        change_dir.join("arc42.md"),
-        "## Status\n\nSTATUS: DONE\n",
-    )
-    .unwrap();
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     world.last_change_id = Some(id);
 }
 
-#[given(regex = r#"^a completed change "([^"]+)" whose delta contains zero @e2e-tagged scenarios$"#)]
+#[given(
+    regex = r#"^a completed change "([^"]+)" whose delta contains zero @e2e-tagged scenarios$"#
+)]
 fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
     use std::io::Write;
     let env = world
@@ -177,11 +175,7 @@ fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
         "@givn.delta\nFeature: example\n\n  Scenario: unit test\n    Given a placeholder step\n",
     )
     .unwrap();
-    std::fs::write(
-        change_dir.join("arc42.md"),
-        "## Status\n\nSTATUS: DONE\n",
-    )
-    .unwrap();
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     world.last_change_id = Some(id);
 }
 

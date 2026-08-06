@@ -1,8 +1,13 @@
-use cucumber::given;
 use crate::steps::GivnWorld;
+use cucumber::given;
 
 #[given(regex = r#"^a change "([^"]+)" exists with artifact "([^"]+)" containing "([^"]*)"$"#)]
-fn change_with_artifact_containing(world: &mut GivnWorld, id: String, artifact: String, content: String) {
+fn change_with_artifact_containing(
+    world: &mut GivnWorld,
+    id: String,
+    artifact: String,
+    content: String,
+) {
     let env = world
         .env
         .as_ref()
@@ -22,8 +27,14 @@ fn change_with_artifact_containing(world: &mut GivnWorld, id: String, artifact: 
     std::fs::write(change_dir.join(&artifact), content).expect("write artifact file");
 }
 
-#[given(regex = r#"^a change "([^"]+)" exists with all required artifacts complete and tasks\.md containing "([^"]*)" with a valid COMMIT hash$"#)]
-fn change_all_complete_with_tasks_content(world: &mut GivnWorld, id: String, tasks_content: String) {
+#[given(
+    regex = r#"^a change "([^"]+)" exists with all required artifacts complete and tasks\.md containing "([^"]*)" with a valid COMMIT hash$"#
+)]
+fn change_all_complete_with_tasks_content(
+    world: &mut GivnWorld,
+    id: String,
+    tasks_content: String,
+) {
     use std::io::Write;
     let env = world
         .env
@@ -61,13 +72,13 @@ fn change_all_complete_with_tasks_content(world: &mut GivnWorld, id: String, tas
     // Create specs dir with a valid @givn.delta-tagged feature file.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
-    std::fs::write(specs_dir.join("example.feature"), "@givn.delta\nFeature: example\n").unwrap();
-    // Write STATUS: DONE marker for arc42-docs gate.
     std::fs::write(
-        change_dir.join("arc42.md"),
-        "## Status\n\nSTATUS: DONE\n",
+        specs_dir.join("example.feature"),
+        "@givn.delta\nFeature: example\n",
     )
     .unwrap();
+    // Write STATUS: DONE marker for arc42-docs gate.
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     // Override commands.yaml so verify and coverage gates pass in test environment.
     // The temp project root has no Rust project or coverage tooling, so we set
     // everything to simple `true` commands and write dummy Cobertura XML files.

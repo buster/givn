@@ -309,7 +309,8 @@ pub fn topological_sort(artifacts: &[Artifact]) -> Vec<&Artifact> {
 /// Parse the number of `[x]` and `[ ]` checkboxes in a tasks.md file.
 pub fn parse_tasks_progress(path: &Path) -> TasksProgress {
     let content = std::fs::read_to_string(path).unwrap_or_default();
-    let total = content.matches("[ ]").count() + content.matches("[x]").count()
+    let total = content.matches("[ ]").count()
+        + content.matches("[x]").count()
         + content.matches("[X]").count();
     let done = content.matches("[x]").count() + content.matches("[X]").count();
     TasksProgress { total, done }
@@ -350,7 +351,6 @@ pub fn is_skipped(artifact_id: &str, change_dir: &Path) -> bool {
     }
 }
 
-
 /// Validate that a change id is valid kebab-case.
 pub(crate) fn validate_id(id: &str) -> Result<()> {
     use anyhow::bail;
@@ -383,14 +383,15 @@ pub(crate) fn find_change_dir(features_path: &str) -> Option<PathBuf> {
     let components: Vec<_> = p.components().collect();
     let n = components.len();
     for i in (1..n).rev() {
-        if components[i].as_os_str() == "specs" {
-            if i >= 2 && components[i - 2].as_os_str() == "changes" {
-                let mut change_dir = PathBuf::new();
-                for c in &components[..i] {
-                    change_dir.push(c);
-                }
-                return Some(change_dir);
+        if components[i].as_os_str() == "specs"
+            && i >= 2
+            && components[i - 2].as_os_str() == "changes"
+        {
+            let mut change_dir = PathBuf::new();
+            for c in &components[..i] {
+                change_dir.push(c);
             }
+            return Some(change_dir);
         }
     }
     None

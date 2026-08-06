@@ -223,6 +223,11 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     world.last_output = Some(out);
 }
 
+#[when(regex = r"^the user invokes `([^`]+)`$")]
+fn user_invokes(world: &mut GivnWorld, cmd: String) {
+    user_runs(world, cmd);
+}
+
 // --- Then: exit codes ------------------------------------------------------
 
 #[then("the command exits 0")]
@@ -246,6 +251,27 @@ fn exits_one(world: &mut GivnWorld) {
 fn exits_two_generic(world: &mut GivnWorld) {
     let out = output(world);
     assert_eq!(out.status.code(), Some(2), "stderr={}", stderr(world));
+}
+
+#[then("the command fails")]
+fn command_fails(world: &mut GivnWorld) {
+    let out = output(world);
+    assert!(
+        !out.status.success(),
+        "expected failure, got exit {:?}: stdout={}",
+        out.status.code(),
+        stdout(world),
+    );
+}
+
+#[then("the command succeeds")]
+fn command_succeeds(world: &mut GivnWorld) {
+    exits_zero(world);
+}
+
+#[then("the command exits non-zero")]
+fn command_exits_nonzero(world: &mut GivnWorld) {
+    command_fails(world);
 }
 
 #[then("the command exits non-zero")]

@@ -4,6 +4,7 @@ pub mod agents_block;
 
 pub mod archive;
 pub mod check;
+pub mod coverage_gate;
 pub mod eject;
 pub mod graph;
 pub mod init;

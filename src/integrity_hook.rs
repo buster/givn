@@ -430,6 +430,7 @@ fn find_file_in_dir(dir: &Path, file_name: &str) -> Option<PathBuf> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::state::find_change_dir;
     use tempfile::TempDir;
 
     fn make_change_dir() -> (TempDir, std::path::PathBuf) {

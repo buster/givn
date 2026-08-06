@@ -1,5 +1,5 @@
-use cucumber::given;
 use crate::steps::GivnWorld;
+use cucumber::given;
 
 #[given(regex = r#"^a change "([^"]+)" exists with specs under "([^"]+)"$"#)]
 fn change_with_specs(world: &mut GivnWorld, id: String, specs_rel: String) {
@@ -17,7 +17,9 @@ fn change_with_specs(world: &mut GivnWorld, id: String, specs_rel: String) {
     world.last_change_id = Some(id);
 }
 
-#[given(regex = r#"^a change "([^"]+)" exists with design\.md containing a valid Step Definitions table$"#)]
+#[given(
+    regex = r#"^a change "([^"]+)" exists with design\.md containing a valid Step Definitions table$"#
+)]
 fn change_with_design_md(world: &mut GivnWorld, id: String) {
     let env = world
         .env
@@ -36,7 +38,9 @@ fn change_with_design_md(world: &mut GivnWorld, id: String) {
     world.last_change_id = Some(id);
 }
 
-#[given(regex = r#"^a change "([^"]+)" exists with tasks\.md where every COMMIT hash is a valid 40-character hex string$"#)]
+#[given(
+    regex = r#"^a change "([^"]+)" exists with tasks\.md where every COMMIT hash is a valid 40-character hex string$"#
+)]
 fn change_with_valid_hashes(world: &mut GivnWorld, id: String) {
     let env = world
         .env
@@ -56,7 +60,9 @@ fn change_with_valid_hashes(world: &mut GivnWorld, id: String) {
     world.last_change_id = Some(id);
 }
 
-#[given(regex = r#"^a change "([^"]+)" exists with specs under "([^"]+)" containing zero @e2e scenarios$"#)]
+#[given(
+    regex = r#"^a change "([^"]+)" exists with specs under "([^"]+)" containing zero @e2e scenarios$"#
+)]
 fn change_with_specs_no_e2e(world: &mut GivnWorld, id: String, specs_rel: String) {
     let env = world
         .env

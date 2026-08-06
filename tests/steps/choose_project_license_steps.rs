@@ -1,5 +1,5 @@
-use cucumber::{given, then, when};
 use crate::steps::GivnWorld;
+use cucumber::{given, then, when};
 
 #[derive(Debug, Default)]
 pub struct LicenseState {
