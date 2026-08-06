@@ -9,7 +9,7 @@ Feature: Choose Project License
     Then the license field is "MIT OR Apache-2.0"
     And the license field is no longer "TBD"
 
-  @givn.added @wip
+  @givn.added
   Scenario: README.md declares the project license
     Given a project root containing the givn source checkout
     When the user reads README.md

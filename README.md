@@ -399,4 +399,4 @@ AGENTS.md                             # user-owned; givn only maintains its own
 
 ## License
 
-Not yet chosen. `Cargo.toml` currently declares `license = "TBD"`.
+Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
