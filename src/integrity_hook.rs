@@ -70,7 +70,12 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
             .unwrap_or("")
             .trim();
 
-        let hash = hash_part.split("--").next().unwrap_or("").trim();
+        let hash = hash_part
+            .split("--")
+            .next()
+            .unwrap_or("")
+            .trim()
+            .trim_matches('`');
 
         if hash.is_empty() || hash == "—" || hash == "-" {
             errors.push(format!(
@@ -83,6 +88,8 @@ fn check_hash_presence(change_dir: &Path) -> Result<()> {
         let lower = hash.to_lowercase();
         if lower == "___"
             || lower == "---"
+            || lower == "xxx"
+            || lower.chars().all(|c| c == 'x')
             || lower == "tbd"
             || lower == "todo"
             || hash.contains("<!--")

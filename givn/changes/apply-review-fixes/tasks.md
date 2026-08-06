@@ -189,34 +189,19 @@
 - Both call `load_effective()` and iterate `manifest.artifacts`.
 - Step definitions: `tests/steps/validate_artifact_id_input_steps.rs`
 
-- [ ] validate-artifact-id-input: givn check with unknown artifact validates against manifest and provides helpful error
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test validate_artifact_id_input_check_unknown -- --exact` → MUST FAIL.
-                Paste output.
+- [x] validate-artifact-id-input: givn check with unknown artifact validates against manifest and provides helpful error
     - GREEN:    Add manifest validation to `check.rs`. Load manifest, check
-                `artifact.id`, bail with known ids list. List files: `src/cli/check.rs`.
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                `artifact.id`, bail with known ids list. Files: `src/cli/check.rs`.
+    - COMMIT:   `9c7d39f`
 
-- [ ] validate-artifact-id-input: givn check with known artifact proceeds to run hooks
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test validate_artifact_id_input_check_known -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered by the previous GREEN change. List files: none (reuse).
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from previous scenario. Record hash.
+- [x] validate-artifact-id-input: givn check with known artifact proceeds to run hooks
+    - GREEN:    Already covered by the previous GREEN change. Files: none (reuse).
+    - COMMIT:   `92a10db`
 
-- [ ] validate-artifact-id-input: givn eject instruction with unknown artifact validates against manifest and provides helpful error
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test validate_artifact_id_input_eject_unknown -- --exact` → MUST FAIL.
-                Paste output.
+- [x] validate-artifact-id-input: givn eject instruction with unknown artifact validates against manifest and provides helpful error
     - GREEN:    Add manifest validation to `eject.rs`'s `eject_instruction()`.
-                Load manifest, check `artifact.id`, bail with known ids list. List files:
-                `src/cli/eject.rs`. Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+                Files: `src/cli/eject.rs`.
+    - COMMIT:   `9c7d39f`
 
 ---
 
@@ -228,32 +213,17 @@
   statement that the project is dual-licensed under MIT or Apache-2.0.
 - Step definitions: `tests/steps/choose_project_license_steps.rs`
 
-- [ ] choose-project-license: Cargo.toml declares dual MIT OR Apache-2.0 license
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test choose_project_license_cargo_toml -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Change `Cargo.toml:7` to `license = "MIT OR Apache-2.0"`. List files:
-                `Cargo.toml`. Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] choose-project-license: Cargo.toml declares dual MIT OR Apache-2.0 license
+    - GREEN:    Change `Cargo.toml:7` to `license = "MIT OR Apache-2.0"`. Files: `Cargo.toml`.
+    - COMMIT:   `5ea37ac`
 
-- [ ] choose-project-license: README.md declares the project license
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test choose_project_license_readme -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Update `README.md` License section. List files: `README.md`. Run
-                targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] choose-project-license: README.md declares the project license
+    - GREEN:    Update `README.md` License section. Files: `README.md`.
+    - COMMIT:   `6fb80ea`
 
-- [ ] choose-project-license: Consumer inspects the project license in Cargo.toml and README
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test choose_project_license_consumer_inspects -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered by previous GREEN changes. List files: none (reuse).
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from previous scenario. Record hash.
+- [x] choose-project-license: Consumer inspects the project license in Cargo.toml and README
+    - GREEN:    Already covered by previous GREEN changes. Files: none (reuse).
+    - COMMIT:   `36d1f31`
 
 ---
 
@@ -269,33 +239,17 @@
   `e2e_command`.
 - Step definitions: `tests/steps/enforce_post_merge_e2e_gate_steps.rs`
 
-- [ ] enforce-post-merge-e2e-gate: Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is empty
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test enforce_post_merge_e2e_gate_blocked -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Restructure archive.rs:176-197 to add the empty e2e_command + @e2e
-                scenario bail case. List files: `src/cli/archive.rs`. Run targeting
-                this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] enforce-post-merge-e2e-gate: Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is empty
+    - GREEN:    Restructure archive.rs:176-197 to add empty e2e_command + @e2e bail. Files: `src/cli/archive.rs`.
+    - COMMIT:   `dfde3cb`
 
-- [ ] enforce-post-merge-e2e-gate: Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is empty
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test enforce_post_merge_e2e_gate_no_e2e -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered by the previous GREEN change (the skip-silently path).
-                List files: none (reuse). Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from previous scenario. Record hash.
+- [x] enforce-post-merge-e2e-gate: Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is empty
+    - GREEN:    Already covered by previous GREEN change. Files: none (reuse).
+    - COMMIT:   `589bb75`
 
-- [ ] enforce-post-merge-e2e-gate: Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test enforce_post_merge_e2e_gate_runs_e2e -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered by the previous GREEN change (the configured runner path).
-                List files: none (reuse). Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from previous scenario. Record hash.
+- [x] enforce-post-merge-e2e-gate: Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured
+    - GREEN:    Already covered by previous GREEN change. Files: none (reuse).
+    - COMMIT:   `589bb75`
 
 ---
 
@@ -311,26 +265,13 @@
 - Must be done AFTER Fix #2 (touches the same file — archive.rs).
 - Step definitions: `tests/steps/extract_coverage_gate_steps.rs`
 
-- [ ] extract-coverage-gate: Archive with coverage addon enabled still runs the coverage gate
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test extract_coverage_gate_runs -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Create `src/cli/coverage_gate.rs`, move `run_coverage_gate` +
-                `rollback_readme`. Add `pub mod coverage_gate` to `cli/mod.rs`.
-                Make `rollback_specs` `pub(crate)` in archive.rs. Replace call site.
-                List files: `src/cli/coverage_gate.rs`, `src/cli/archive.rs`,
-                `src/cli/mod.rs`. Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] extract-coverage-gate: Archive with coverage addon enabled still runs the coverage gate
+    - GREEN:    Create `src/cli/coverage_gate.rs`, move `run_coverage_gate` + `rollback_readme`. Files: `src/cli/coverage_gate.rs`, `src/cli/archive.rs`, `src/cli/mod.rs`.
+    - COMMIT:   `afce2fa`
 
-- [ ] extract-coverage-gate: Archive with coverage addon enabled still rolls back specs and README on coverage failure
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test extract_coverage_gate_rollback -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered by the previous GREEN change. List files: none (reuse).
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from previous scenario. Record hash.
+- [x] extract-coverage-gate: Archive with coverage addon enabled still rolls back specs and README on coverage failure
+    - GREEN:    Already covered by previous GREEN change. Files: none (reuse).
+    - COMMIT:   `afce2fa`
 
 ---
 

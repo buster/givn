@@ -1,3 +1,4 @@
+use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::given;
 
@@ -116,4 +117,25 @@ addons:
 </coverage>"#;
     std::fs::write(cov_dir.join("non-e2e-cobertura.xml"), non_e2e_xml).expect("write non-e2e xml");
     std::fs::write(cov_dir.join("e2e-cobertura.xml"), e2e_xml).expect("write e2e xml");
+}
+
+// --- e2e steps ---
+
+#[given(
+    regex = r#"^a givn project with a change "([^"]+)" containing tasks\.md with content "([^"]*)"$"#
+)]
+fn e2e_given_change_with_tasks(world: &mut GivnWorld, id: String, content: String) {
+    world.env = Some(common::make_init_root());
+    let env = world.env.as_ref().unwrap();
+    let change_dir = env.path(&format!("givn/changes/{}", id));
+    let out = crate::common::run_givn(env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {} failed: {}",
+        id,
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let content = content.replace("\\n", "\n");
+    std::fs::write(change_dir.join("tasks.md"), content).expect("write tasks.md");
+    world.last_change_id = Some(id);
 }

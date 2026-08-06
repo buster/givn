@@ -1,5 +1,11 @@
+use crate::common;
 use crate::steps::{GivnWorld, stderr};
-use cucumber::then;
+use cucumber::{given, then};
+
+#[given("a givn project with a standard manifest")]
+fn e2e_given_standard_manifest(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+}
 
 #[then("stderr lists known artifact ids")]
 fn stderr_lists_known_artifacts(world: &mut GivnWorld) {

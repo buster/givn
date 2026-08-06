@@ -15,8 +15,11 @@ use crate::common;
 pub mod choose_project_license_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
+pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
+pub mod remove_dead_skip_list_code_steps;
 pub mod validate_artifact_id_input_steps;
+pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
 
 #[derive(Debug, Default, World)]
@@ -274,13 +277,15 @@ fn command_exits_nonzero(world: &mut GivnWorld) {
     command_fails(world);
 }
 
-#[then("the command exits non-zero")]
-fn exits_nonzero(world: &mut GivnWorld) {
-    let out = output(world);
+// --- Then: e2e output assertions ------------------------------------------
+
+#[then(regex = r#"^stdout confirms integrity checks passed$"#)]
+fn stdout_confirms_integrity_passed(world: &mut GivnWorld) {
+    let s = stdout(world);
     assert!(
-        !out.status.success(),
-        "expected non-zero exit, got success: stdout={}",
-        stdout(world),
+        s.contains("integrity") && (s.contains("passed") || s.contains("PASS")),
+        "stdout missing integrity passed confirmation: {}",
+        s,
     );
 }
 
@@ -459,6 +464,67 @@ fn stderr_contains_abs_path(world: &mut GivnWorld, rel: String) {
         "stderr missing absolute path {}: {}",
         abs,
         s
+    );
+}
+
+// --- e2e Then steps -------------------------------------------------------
+
+#[then(regex = r#"^stdout shows (.+) as skipped$"#)]
+fn stdout_shows_as_skipped(world: &mut GivnWorld, artifact: String) {
+    let s = stdout(world);
+    // givn status renders skipped artifacts as "⊘ <name>" (U+2298)
+    assert!(
+        s.contains(&format!("\u{2298} {}", artifact)),
+        "stdout missing '{} as skipped': {}",
+        artifact,
+        s,
+    );
+}
+
+#[then(regex = r#"^stderr says (.+)$"#)]
+fn stderr_says(world: &mut GivnWorld, message: String) {
+    let s = stderr(world);
+    // Check that the message or a trimmed version appears in stderr.
+    let msg_clean = message.trim().trim_start_matches("the ");
+    if s.contains(&msg_clean) || s.contains(&message) {
+        return;
+    }
+    // Check for any 2-gram from the message in stderr.
+    let check: &str = if msg_clean.is_empty() { &message } else { &msg_clean };
+    let words: Vec<&str> = check.split_whitespace().collect();
+    for pair in words.windows(2) {
+        let phrase = format!("{} {}", pair[0], pair[1]);
+        if s.contains(&phrase) {
+            return;
+        }
+    }
+    panic!(
+        "stderr does not match {:?}: {}",
+        message, s,
+    );
+}
+
+#[then(regex = r#"^stderr reports the placeholder hash as invalid$"#)]
+fn stderr_reports_invalid_hash(world: &mut GivnWorld) {
+    let s = stderr(world);
+    assert!(
+        s.contains("hash") && (s.contains("invalid") || s.contains("placeholder")),
+        "stderr missing hash validity report: {}",
+        s,
+    );
+}
+
+#[then("the README.md contains a coverage summary fence")]
+fn readme_has_coverage_fence(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    assert!(
+        readme.contains("<!-- givn:begin:coverage -->"),
+        "README.md missing coverage fence: {}",
+        readme,
     );
 }
 

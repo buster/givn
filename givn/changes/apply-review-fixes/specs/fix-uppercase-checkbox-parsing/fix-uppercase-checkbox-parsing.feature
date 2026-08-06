@@ -40,7 +40,7 @@ Feature: Uppercase Checkbox Parsing
     Then the command exits 0
     And the change directory has been moved to givn/archive/
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs givn status on a change with uppercase checkboxes
     Given a givn project with a change "e2e-upper-check" containing tasks.md with content "- [X] hello world\n- [ ] not done"
     When the user invokes `givn status --change e2e-upper-check`
