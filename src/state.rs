@@ -307,8 +307,9 @@ pub fn topological_sort(artifacts: &[Artifact]) -> Vec<&Artifact> {
 /// Parse the number of `[x]` and `[ ]` checkboxes in a tasks.md file.
 pub fn parse_tasks_progress(path: &Path) -> TasksProgress {
     let content = std::fs::read_to_string(path).unwrap_or_default();
-    let total = content.matches("[ ]").count() + content.matches("[x]").count();
-    let done = content.matches("[x]").count();
+    let total = content.matches("[ ]").count() + content.matches("[x]").count()
+        + content.matches("[X]").count();
+    let done = content.matches("[x]").count() + content.matches("[X]").count();
     TasksProgress { total, done }
 }
 

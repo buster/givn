@@ -15,7 +15,7 @@ Feature: Uppercase Checkbox Parsing
     Then the command exits 0
     And stdout mentions "1/2 tasks"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Uppercase [X] checkboxes are counted as done in text mode
     Given a project root with givn/ initialised
     And a change "checkbox-upper" exists with artifact "tasks.md" containing "- [X] first task\n- [ ] second task"
