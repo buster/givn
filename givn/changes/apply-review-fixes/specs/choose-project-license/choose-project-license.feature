@@ -16,7 +16,7 @@ Feature: Choose Project License
     Then the license section names a specific license
     And the license section does not say "not yet chosen"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consumer inspects the project license in Cargo.toml and README
     Given a checkout of the givn source repository
     When the user reads Cargo.toml
