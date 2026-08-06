@@ -839,31 +839,6 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 }
 
-#[given(
-    regex = r#"^a change "([^"]+)" exists with artifact "tasks\.md" containing "(\d+) done, (\d+) total"$"#
-)]
-fn change_with_tasks_progress(world: &mut GivnWorld, id: String, done: usize, total: usize) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
-    let change_dir = env.path(&format!("givn/changes/{}", id));
-    if !change_dir.exists() {
-        let out = common::run_givn(env, &["new", &id]);
-        assert!(out.status.success(), "givn new failed");
-    }
-    std::fs::write(change_dir.join("proposal.md"), "").unwrap();
-    // Write tasks.md with the specified checkbox counts.
-    let mut content = String::new();
-    for _ in 0..done {
-        content.push_str("- [x] task\n");
-    }
-    for i in 0..(total - done) {
-        content.push_str(&format!("- [ ] task {}\n", done + i + 1));
-    }
-    std::fs::write(change_dir.join("tasks.md"), content).expect("write tasks.md");
-}
-
 #[given(regex = r#"^the change "([^"]+)" has "\.givn-skip" listing "([^"]+)"$"#)]
 fn change_has_skip_file(world: &mut GivnWorld, id: String, ids: String) {
     let env = world

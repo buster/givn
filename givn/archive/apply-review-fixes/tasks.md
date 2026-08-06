@@ -273,6 +273,14 @@
     - GREEN:    Already covered by previous GREEN change. Files: none (reuse).
     - COMMIT:   `afce2fa`
 
+- [x] extract-coverage-gate (non-e2e): Archive with coverage addon enabled still runs the coverage gate
+    - GREEN:    Implemented given step `the givn/config.yaml has the coverage addon enabled with valid commands`. Files: `tests/steps/extract_coverage_gate_steps.rs`, `givn/changes/apply-review-fixes/specs/extract-coverage-gate/extract-coverage-gate.feature`.
+    - COMMIT:   `a9df501`
+
+- [x] extract-coverage-gate (non-e2e): Archive with coverage addon enabled still rolls back specs and README on coverage failure
+    - GREEN:    Implemented given step `the givn/config.yaml has the coverage addon enabled but the non-e2e coverage command exits non-zero` and then step `stderr mentions coverage gate failure`. Files: `tests/steps/extract_coverage_gate_steps.rs`, `tests/steps/mod.rs`, `givn/changes/apply-review-fixes/specs/extract-coverage-gate/extract-coverage-gate.feature`.
+    - COMMIT:   `a9df501`
+
 ---
 
 ## E2E setup: configure e2e test infrastructure, strict mode, and verify.e2e_command

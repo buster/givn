@@ -1,6 +1,7 @@
 README.md
 pyproject.toml
 src/givn_harness/__init__.py
+src/givn_harness/_utils.py
 src/givn_harness/cli.py
 src/givn_harness/evaluator.py
 src/givn_harness/index.py

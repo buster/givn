@@ -23,7 +23,6 @@ Feature: Validate Artifact ID Input
     When the user runs `givn check proposal --change check-demo`
     Then the command exits 0
 
-  @givn.added @wip
   Scenario: givn eject instruction with unknown artifact validates against manifest and provides helpful error
     Given a project root with givn/ initialised
     When the user runs `givn eject nonexistent:instruction`

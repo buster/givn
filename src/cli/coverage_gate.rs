@@ -9,7 +9,6 @@ pub(crate) fn run_coverage_gate(
     backup_dir: &std::path::Path,
 ) -> Result<()> {
     let cov = &manifest.coverage;
-    let project_root_str = project_root.to_string_lossy();
 
     println!("Running coverage gate...");
 
@@ -35,7 +34,10 @@ pub(crate) fn run_coverage_gate(
     let non_e2e_status = std::process::Command::new("sh")
         .arg("-c")
         .arg(&cov.non_e2e_command)
-        .env("GIVN_FEATURES", &*project_root_str)
+        .env(
+            "GIVN_FEATURES",
+            project_root.join("givn/specs").to_string_lossy().as_ref(),
+        )
         .status()?;
     if !non_e2e_status.success() {
         let backup_specs = backup_dir.join("specs");
@@ -57,7 +59,10 @@ pub(crate) fn run_coverage_gate(
     let e2e_status = std::process::Command::new("sh")
         .arg("-c")
         .arg(&cov.e2e_command)
-        .env("GIVN_FEATURES", &*project_root_str)
+        .env(
+            "GIVN_FEATURES",
+            project_root.join("givn/specs").to_string_lossy().as_ref(),
+        )
         .status()?;
     if !e2e_status.success() {
         let backup_specs = backup_dir.join("specs");
