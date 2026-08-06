@@ -37,19 +37,19 @@ No `NotImplementedError` stubs remain. All were replaced with real assertions.
 
 | Task | Commit | Diff touches production/test source |
 |---|---|---|
-| Setup: strict-mode + scaffolding | `b949595` | Yes — `sandbox_steps.py` created |
-| Scenario 1: sandlock → bubblewrap | `fd041b6` | Yes — `sandbox.py`, `runner.py`, `cli.py`, `report.py` |
+| Setup: strict-mode + scaffolding | `4c71073` | Yes — `sandbox_steps.py` created |
+| Scenario 1: sandlock → bubblewrap | `5f76a3f` | Yes — `sandbox.py`, `runner.py`, `cli.py`, `report.py` |
 | Scenario 2: @givn.removed | N/A | Placeholder only — no commit needed |
-| Scenario 3: fallback unsandboxed | `9b1f53f` | Yes — step defs updated |
-| Scenario 4: filesystem write restrictions | `714717c` | Yes — step defs |
-| Scenario 5: filesystem read restrictions | `a5ec280` | Yes — step defs |
-| Scenario 6: process count limit | `84d9082` | Yes — step defs |
+| Scenario 3: fallback unsandboxed | `c27fc93` | Yes — step defs updated |
+| Scenario 4: filesystem write restrictions | `794cc3d` | Yes — step defs |
+| Scenario 5: filesystem read restrictions | `39a5683` | Yes — step defs |
+| Scenario 6: process count limit | `3886c59` | Yes — step defs |
 | Scenario 7: memory limit | N/A | Step reuse — no additional commit |
-| Scenario 8: write persistence | `f6caf10` | Yes — step defs |
-| Scenario 9: stdout capture | `8e7e9c5` | Yes — step defs |
-| Scenario 10: e2e smoke test | `a8187f9` | Yes — step defs + `tasks/trivial.md` |
-| Fix: mock-based ralph tests | `a0716b1` | Yes — `test_harness_steps.py` |
-| Chore: remove unused import | `8cfeb93` | Yes — `cli.py` |
+| Scenario 8: write persistence | `1e86ea6` | Yes — step defs |
+| Scenario 9: stdout capture | `e21439d` | Yes — step defs |
+| Scenario 10: e2e smoke test | `eb49f63` | Yes — step defs + `tasks/trivial.md` |
+| Fix: mock-based ralph tests | `851697f` | Yes — `test_harness_steps.py` |
+| Chore: remove unused import | `53c295e` | Yes — `cli.py` |
 
 **PASS.** Every checked-off task has a corresponding commit that touches production or test source.
 

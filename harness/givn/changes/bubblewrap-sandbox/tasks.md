@@ -14,7 +14,7 @@
     EXIT: 1
     ```
   - Commit: `chore(sandbox): scaffold step stubs and prove strict mode`
-  - Hash: `b949595`
+  - Hash: `4c71073`
 
 ## Modified scenarios (update existing `test_harness_steps.py`)
 
@@ -48,7 +48,7 @@
     EXIT: 0
     ```
   - Commit: `feat(sandbox): replace sandlock with bubblewrap sandbox`
-  - Hash: `fd041b6`
+  - Hash: `5f76a3f`
 
 - [x] **Scenario 2: Sandbox filesystem uses learn-then-confine mode** (`@givn.removed`) — No implementation. Placeholder scenario removed on archive.
 
@@ -68,7 +68,7 @@
   - REFACTOR: Clean up. Run single scenario — still PASSES.
   - Output: (same as GREEN — step reuse, no refactor needed)
   - Commit: `feat(sandbox): fall back to unsandboxed when bubblewrap not available`
-  - Hash: `9b1f53f`
+  - Hash: `c27fc93`
 
 ## New scenarios (new `sandbox_steps.py`)
 
@@ -106,7 +106,7 @@
   - REFACTOR: No refactor needed — steps are clean.
   - Output: (same as GREEN)
   - Commit: `test(sandbox): verify filesystem read restrictions`
-  - Hash: `a5ec280`
+  - Hash: `39a5683`
 
 - [x] **Scenario 6: Bubblewrap sandbox enforces process count limit** (`@givn.added`)
   - RED: Remove `@wip`. Run `uv run behave tests/features/ --no-capture -n "Bubblewrap sandbox enforces process count limit"` — MUST FAIL.
@@ -131,7 +131,7 @@
   - REFACTOR: No refactor needed.
   - Output: (same as GREEN)
   - Commit: `test(sandbox): verify process count limit configuration`
-  - Hash: `84d9082`
+  - Hash: `3886c59`
 
 - [x] **Scenario 7: Bubblewrap sandbox enforces memory limit** (`@givn.added`)
   - RED: Immediate GREEN — all four steps already implemented and proven in earlier scenarios (`step_given_agent_forks_too_many_processes`/`step_given_agent_allocates_too_much_memory` as no-op in Scenario 6, `step_then_agent_terminates_resource_limit` checks MemoryMax=16G).
@@ -168,7 +168,7 @@
   - REFACTOR: No refactor needed.
   - Output: (same as GREEN)
   - Commit: `test(sandbox): verify workspace writes persist after sandbox exit`
-  - Hash: `f6caf10`
+  - Hash: `1e86ea6`
 
 - [x] **Scenario 9: Agent stdout and logs are captured** (`@givn.added`)
   - RED: Run `uv run behave tests/features/ --no-capture -n "Agent stdout and logs are captured from the sandbox"` — MUST FAIL.
@@ -193,7 +193,7 @@
   - REFACTOR: No refactor needed.
   - Output: (same as GREEN)
   - Commit: `test(sandbox): verify stdout capture from bubblewrap sandbox`
-  - Hash: `8e7e9c5`
+  - Hash: `e21439d`
 
 ## E2E smoke tests
 
@@ -213,7 +213,7 @@
   - REFACTOR: No refactor needed.
   - Output: (same as GREEN)
   - Commit: `test(sandbox): e2e smoke test with real agent in bubblewrap sandbox`
-  - Hash: `a8187f9`
+  - Hash: `eb49f63`
 
 ## Interaction Coverage Matrix
 
