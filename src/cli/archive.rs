@@ -174,7 +174,18 @@ pub fn run(change: &str) -> Result<()> {
     // === Post-merge verify-e2e gate ===
 
     let e2e_command = &manifest.verify.e2e_command;
-    if !e2e_command.is_empty() {
+    if e2e_command.is_empty() {
+        let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
+        if merged_has_e2e {
+            rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
+            bail!(
+                "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
+                 configured in givn/config.yaml. An @e2e scenario without a configured \
+                 e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.",
+                specs_dir.display()
+            );
+        }
+    } else {
         let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
         if merged_has_e2e {
             println!("Running post-merge verify-e2e: {e2e_command}");

@@ -14,6 +14,7 @@ use crate::common;
 /// constructed for each scenario.
 pub mod choose_project_license_steps;
 pub mod deduplicate_change_dir_detection_steps;
+pub mod enforce_post_merge_e2e_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod workflow_enforcement_steps;

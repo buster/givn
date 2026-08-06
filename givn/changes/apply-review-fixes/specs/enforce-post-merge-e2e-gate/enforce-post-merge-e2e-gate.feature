@@ -7,7 +7,7 @@
 
 Feature: Enforce Post-Merge E2E Gate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is empty
     Given a project root with givn/ initialised
     And the givn/config.yaml has an empty e2e_command
@@ -15,7 +15,7 @@ Feature: Enforce Post-Merge E2E Gate
     And the permanent specs currently have no @e2e scenarios
     When the user runs `givn archive --change add-e2e-scenario`
     Then the command exits non-zero
-    And stderr contains "verify-e2e"
+    And stderr contains "verify.e2e_command"
     And stderr mentions the e2e runner is not configured
     And the change directory still exists under givn/changes/
 
