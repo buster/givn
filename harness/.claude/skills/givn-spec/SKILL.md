@@ -86,7 +86,7 @@ one `@e2e` scenario per entry, not fewer.
 
 Unit/integration:
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```
 
 E2E smoke tests:

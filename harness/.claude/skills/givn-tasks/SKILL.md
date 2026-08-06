@@ -12,7 +12,7 @@ Write the implementation task breakdown for change `<change-id>`.
 - Tasks file: `givn/changes/<change-id>/tasks.md`
 - Instructions: run `givn instructions tasks --change <change-id>`
 - Design (HOW): `givn/changes/<change-id>/design.md`
-- Test runner: `givn missing-testrunner`
+- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
 
 ## Verify Interaction Coverage before writing tasks (mandatory)
 
@@ -55,17 +55,17 @@ For each non-@e2e scenario:
   RED:      Remove @wip from THIS scenario only.
             Write step definitions — unimplemented steps use the
               not-implemented stub from design.md, NEVER an empty body.
-            Run: givn missing-testrunner, targeting this scenario only (use the
+            Run: uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock, targeting this scenario only (use the
               single-scenario run command from design.md) → MUST FAIL with
               non-zero exit. Paste the output as evidence.
   GREEN:    Replace stubs with real assertions. Write minimum production
               code. List every production file created/modified — empty
               list on a non-reuse scenario means investigate before
               claiming GREEN.
-            Run: givn missing-testrunner, targeting this scenario only → PASSES.
+            Run: uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock, targeting this scenario only → PASSES.
               Paste the output as evidence.
   REFACTOR: Clean up without changing behaviour.
-            Run: givn missing-testrunner, targeting this scenario only → still
+            Run: uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock, targeting this scenario only → still
               PASSES. Paste the output as evidence.
   COMMIT:   One atomic commit for RED+GREEN+REFACTOR, message references the
               scenario title. Record the commit hash.
@@ -119,7 +119,7 @@ Then move to the next @e2e scenario.
 - `givn lint` is a STATIC Gherkin check only. It does NOT run tests.
 - A step definition body is NEVER empty (`{}`, bare `pass`, bare `return`).
   Unimplemented steps always use the not-implemented stub from design.md.
-- GREEN for non-@e2e is confirmed by `givn missing-testrunner` only, and only
+- GREEN for non-@e2e is confirmed by `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` only, and only
   once strict mode has been proven in the setup task.
 - GREEN for @e2e is confirmed by `verify.e2e_command` only, likewise proven.
 - Never conflate lint, verify.command, or verify.e2e_command.
@@ -155,7 +155,7 @@ Then move to the next @e2e scenario.
 
 Unit/integration:
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```
 
 E2E smoke tests:

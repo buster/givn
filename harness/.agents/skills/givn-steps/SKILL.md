@@ -11,7 +11,7 @@ skill, not a standalone workflow — read by `/givn-implement` and
 
 ## Context
 
-- Test runner: `givn missing-testrunner`
+- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
 - Features path: `GIVN_FEATURES=givn/specs`
 - Change: `givn/changes/<change-id>/`
 
@@ -120,7 +120,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 1. Remove `@wip` from this scenario only.
 2. New steps use the stub above; reused steps kept as-is.
-3. Run targeting this scenario. Non-@e2e: `givn missing-testrunner`. @e2e:
+3. Run targeting this scenario. Non-@e2e: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`. @e2e:
    `verify.e2e_command`. Capture output.
    - Non-zero exit → RED confirmed, proceed to GREEN.
    - Zero exit, all steps reused → legitimate immediate GREEN (record which
@@ -144,7 +144,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 5. Run targeting this scenario → zero exit. Capture output.
 
 5a. Confirm the new code is covered. Coverage data is embedded in the
-    `givn missing-testrunner` output when the runner is configured with
+    `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` output when the runner is configured with
     coverage instrumentation (see config.yaml examples). Extract the
     coverage summary: every new/modified production file must show
     non-zero line/branch coverage.
@@ -186,7 +186,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 ## Distinctions
 
-`givn lint`: static check, no tests. `givn missing-testrunner`: GREEN for
+`givn lint`: static check, no tests. `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`: GREEN for
 non-@e2e, only once strict mode is proven. `verify.e2e_command`: GREEN for
 @e2e. Never conflate the three.
 
@@ -194,7 +194,7 @@ non-@e2e, only once strict mode is proven. `verify.e2e_command`: GREEN for
 
 Unit/integration:
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```
 
 E2E smoke tests:

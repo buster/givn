@@ -11,7 +11,7 @@ Apply the team's engineering principles while implementing change `<change-id>`.
 
 - Tasks: `givn/changes/<change-id>/tasks.md`
 - Design: `givn/changes/<change-id>/design.md`
-- Verify command: `givn missing-testrunner`
+- Verify command: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
 
 ## Principles
 

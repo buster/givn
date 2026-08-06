@@ -12,7 +12,7 @@ Archive change `<change-id>`.
 - Change: `givn/changes/<change-id>/`
 - Archive target: `givn/archive/<change-id>/`
 - Permanent specs: `givn/specs/`
-- Test runner: `givn missing-testrunner`
+- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
 
 ## Archive gate
 
@@ -24,7 +24,7 @@ Archive change `<change-id>`.
    not completion; the review fabrication audit and component diff will
    catch it and block archive anyway.
 3. `review.md` contains `REVIEW: PASS`.
-4. Hooks of all `apply.requires` artifacts pass (runs `givn missing-testrunner`).
+4. Hooks of all `apply.requires` artifacts pass (runs `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`).
 
 If any gate fails, the archive is refused with a clear error. Do **not**
 bypass a gate failure by mass-checking boxes — go back, genuinely
@@ -63,7 +63,7 @@ the current project state:
    replace it with the actual project name (from `Cargo.toml`,
    `package.json`, or the directory name).
 2. **Coverage section**: If coverage data is available (via
-   `coverage.command` or a coverage-instrumented `givn missing-testrunner`),
+   `coverage.command` or a coverage-instrumented `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`),
    update the coverage section with the latest line and branch
    percentages. If coverage measurement is not configured, state this
    explicitly. Use `<!-- givn:begin:coverage -->` /
@@ -73,7 +73,7 @@ the current project state:
 
 Unit/integration:
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```
 
 E2E smoke tests:

@@ -33,5 +33,5 @@ Fill in the proposal template sections:
 ## Verify command
 
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```

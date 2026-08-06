@@ -12,7 +12,7 @@ Write the design for change `<change-id>`.
 - Design file: `givn/changes/<change-id>/design.md`
 - Instructions: run `givn instructions design --change <change-id>`
 - Spec (WHAT): `givn/changes/<change-id>/specs/`
-- Test runner: `givn missing-testrunner`
+- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
 
 ## This is the HOW layer
 
@@ -129,7 +129,7 @@ inventory entry has no matching row, the design is incomplete.
 
 Unit/integration:
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```
 
 E2E smoke tests:

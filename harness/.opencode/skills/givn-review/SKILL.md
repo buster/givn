@@ -11,7 +11,7 @@ Complete the coverage review for change `<change-id>`.
 
 - Review file: `givn/changes/<change-id>/review.md`
 - Instructions: run `givn instructions review --change <change-id>`
-- Test runner: `givn missing-testrunner`
+- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
 
 ## Step 0: fabrication audit (mandatory, before anything else)
 
@@ -128,7 +128,7 @@ Coverage is complete when every gap is classified and resolved (or justified).
 
 ## Steps
 
-1. Run `givn missing-testrunner` — confirm all non-@e2e tests pass.
+1. Run `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` — confirm all non-@e2e tests pass.
    Coverage data is embedded in the output if the runner is configured
    with coverage instrumentation. Extract the coverage summary from the
    output — do not run a separate coverage tool.
@@ -140,7 +140,7 @@ Coverage is complete when every gap is classified and resolved (or justified).
    exist, this is a fabrication-audit finding (see Step 0, check 14) —
    go back and configure coverage instrumentation, then generate
    `coverage.md`. If the coverage addon is not enabled, extract coverage
-   from the `givn missing-testrunner` output directly. Under no circumstances
+   from the `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` output directly. Under no circumstances
    may the review proceed without measured coverage data — do not write
    "unmeasured" or "NOT_CONFIGURED" as a resolution. The three-bucket
    classification requires tool-measured data to be meaningful.
@@ -175,7 +175,7 @@ givn check review --change <change-id>
 
 Unit/integration:
 ```
-givn missing-testrunner
+uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
 ```
 
 E2E smoke tests:
