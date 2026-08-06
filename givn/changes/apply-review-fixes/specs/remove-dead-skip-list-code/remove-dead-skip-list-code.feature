@@ -5,7 +5,7 @@
 
 Feature: Remove Dead Skip List Code
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn status still reports skipped artifacts with the skip marker after dead code removal
     Given a project root with givn/ initialised
     And a change "skip-demo" exists with artifact "proposal.md"

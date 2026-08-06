@@ -348,18 +348,7 @@ pub fn is_skipped(artifact_id: &str, change_dir: &Path) -> bool {
     }
 }
 
-/// Read the list of skipped artifact ids for a change.
-#[allow(dead_code)]
-pub fn read_skip_list(change_dir: &Path) -> Vec<String> {
-    let skip_path = change_dir.join(SKIP_FILE);
-    std::fs::read_to_string(&skip_path)
-        .unwrap_or_default()
-        .lines()
-        .map(str::trim)
-        .filter(|l| !l.is_empty() && !l.starts_with('#'))
-        .map(String::from)
-        .collect()
-}
+
 
 /// Find all active changes under `givn/changes/`, manifest-aware.
 pub fn list_changes(project_root: &Path, manifest: &Manifest) -> Vec<ChangeState> {

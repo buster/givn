@@ -42,34 +42,29 @@
     - REFACTOR: Cleaned up unused import. Re-run → still PASSES.
     - COMMIT:   `8528a25`
 
-- [ ] fix-uppercase-checkbox-parsing: Uppercase [X] checkboxes are counted as done in text mode
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test fix_uppercase_checkbox_parsing_uppercase -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Write minimum production code: count `[X]` in `parse_tasks_progress`
-                (state.rs). List files: `src/state.rs`. Run targeting this scenario →
-                PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   One commit. Record hash.
+- [x] fix-uppercase-checkbox-parsing: Uppercase [X] checkboxes are counted as done in text mode
+    - RED:      Removed @wip. `cargo test --test features_runner -- --name "Uppercase \[X\]"` → FAILED
+                (exit 1, expected "1/2 tasks" but got "0/1 tasks" since `[X]` wasn't counted).
+    - GREEN:    Modified `parse_tasks_progress` in `src/state.rs` to count `[X]` in total and done.
+                Files: `src/state.rs`. Run → PASSES.
+    - REFACTOR: Re-run → still PASSES.
+    - COMMIT:   `f122706`
 
-- [ ] fix-uppercase-checkbox-parsing: Mixed-case checkboxes are both counted as done in JSON mode
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test fix_uppercase_checkbox_parsing_mixed -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered by the previous GREEN change. List files: none (reuse).
-                Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from previous scenario, or new commit if needed. Record hash.
+- [x] fix-uppercase-checkbox-parsing: Mixed-case checkboxes are both counted as done in JSON mode
+    - RED:      Removed @wip. `cargo test --test features_runner -- --name "Mixed-case"` → PASSES
+                (production code already handles `[X]` from previous commit).
+    - GREEN:    No production code change needed (covered by previous GREEN). Passes.
+    - REFACTOR: Re-run → still PASSES.
+    - COMMIT:   `32d146d`
 
-- [ ] fix-uppercase-checkbox-parsing: Uppercase checkboxes satisfy the archive gate
-    - RED:      Remove @wip. Unimplemented steps use `unimplemented!()`. Run
-                `cargo test fix_uppercase_checkbox_parsing_archive_gate -- --exact` → MUST FAIL.
-                Paste output.
-    - GREEN:    Already covered — `artifact_status` routes through `parse_tasks_progress`.
-                List files: none (reuse). Run targeting this scenario → PASSES. Paste output.
-    - REFACTOR: Clean up. Re-run → still PASSES. Paste output.
-    - COMMIT:   Reuse COMMIT from the GREEN scenario that changed state.rs, or new commit.
-                Record hash.
+- [x] fix-uppercase-checkbox-parsing: Uppercase checkboxes satisfy the archive gate
+    - RED:      Removed @wip. `cargo test --test features_runner -- --name "archive gate"` → FAILED
+                (merge error: feature not tagged @givn.delta; then archive blocked by verify/coverage gates).
+    - GREEN:    Fixed step definition: `@givn.delta` tag, `commands.yaml` override with `verify.command: "true"`,
+                coverage commands + dummy Cobertura XML. Set `last_change_id` for archive dir check.
+                Files: `tests/steps/fix_uppercase_checkbox_parsing_steps.rs`. Run → PASSES.
+    - REFACTOR: Re-run → still PASSES.
+    - COMMIT:   `b882bee`
 
 ---
 
