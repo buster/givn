@@ -7,7 +7,7 @@
 
 Feature: Uppercase Checkbox Parsing
 
-  @givn.added @wip
+  @givn.added
   Scenario: Lowercase [x] checkboxes are counted as done in text mode
     Given a project root with givn/ initialised
     And a change "checkbox-demo" exists with artifact "tasks.md" containing "- [x] done task\n- [ ] pending task"
