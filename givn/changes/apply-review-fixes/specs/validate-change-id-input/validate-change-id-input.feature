@@ -40,21 +40,21 @@ Feature: Validate Change ID Input
     Then the command exits non-zero
     And stderr contains "kebab-case"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Path traversal id is rejected by lint
     Given a project root with givn/ initialised
     When the user runs `givn lint --change "../sibling"`
     Then the command exits non-zero
     And stderr contains "kebab-case"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Path traversal id is rejected by graph
     Given a project root with givn/ initialised
     When the user runs `givn graph --change "../../escape"`
     Then the command exits non-zero
     And stderr contains "kebab-case"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Path traversal id is rejected by instructions
     Given a project root with givn/ initialised
     When the user runs `givn instructions --change "../back"`
