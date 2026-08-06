@@ -16,7 +16,7 @@ Feature: Validate Artifact ID Input
     And stderr contains "unknown artifact"
     And stderr lists known artifact ids
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn check with known artifact proceeds to run hooks
     Given a project root with givn/ initialised
     And a change "check-demo" exists with artifact "proposal.md"
