@@ -375,6 +375,27 @@ pub(crate) fn resolve_change_dir(project_root: &Path, id: &str) -> Result<PathBu
     Ok(project_root.join("givn/changes").join(id))
 }
 
+/// Derive the change directory from a features_path.
+/// If features_path looks like `givn/changes/<id>/specs`, returns `<project>/givn/changes/<id>`.
+/// Otherwise returns None.
+pub(crate) fn find_change_dir(features_path: &str) -> Option<PathBuf> {
+    let p = Path::new(features_path);
+    let components: Vec<_> = p.components().collect();
+    let n = components.len();
+    for i in (1..n).rev() {
+        if components[i].as_os_str() == "specs" {
+            if i >= 2 && components[i - 2].as_os_str() == "changes" {
+                let mut change_dir = PathBuf::new();
+                for c in &components[..i] {
+                    change_dir.push(c);
+                }
+                return Some(change_dir);
+            }
+        }
+    }
+    None
+}
+
 /// Find all active changes under `givn/changes/`, manifest-aware.
 pub fn list_changes(project_root: &Path, manifest: &Manifest) -> Vec<ChangeState> {
     let changes_dir = project_root.join("givn/changes");

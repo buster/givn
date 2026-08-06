@@ -9,7 +9,7 @@ use crate::config::manifest::{HookEntry, HookFull, Manifest};
 /// Hooks run with `GIVN_FEATURES` set to the appropriate features path.
 /// Failure blocks the gate unless `allow_failure: true`.
 use anyhow::Result;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 /// Run all post hooks for a given artifact.
 ///
@@ -147,7 +147,7 @@ pub(crate) fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> R
 
         // Cross-reference tasks.md: if tasks.md references @e2e scenarios but the delta
         // specs have none, the @e2e tags were removed — a gate bypass attempt.
-        if let Some(change_dir) = find_change_dir(features_path) {
+        if let Some(change_dir) = crate::state::find_change_dir(&features_path.to_string_lossy()) {
             let tasks_path = change_dir.join("tasks.md");
             if tasks_path.exists() {
                 let tasks_content = std::fs::read_to_string(&tasks_path).unwrap_or_default();
@@ -170,24 +170,6 @@ pub(crate) fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> R
     }
     println!("  Running: {command}");
     run_shell_command(command, &features_path.to_string_lossy())
-}
-
-/// If `features_path` is inside a change directory (`givn/changes/<id>/specs/`),
-/// return the change directory path. Returns `None` for global specs paths
-/// (e.g. `givn/specs/`).
-fn find_change_dir(features_path: &Path) -> Option<PathBuf> {
-    let path_str = features_path.to_string_lossy();
-    let prefix = "givn/changes/";
-    let pos = path_str.find(prefix)?;
-    let after_prefix = &path_str[pos + prefix.len()..];
-    let slash = after_prefix.find('/')?;
-    let change_id = &after_prefix[..slash];
-    Some(
-        Path::new(&path_str[..pos])
-            .join("givn")
-            .join("changes")
-            .join(change_id),
-    )
 }
 
 /// Check whether `tasks.md` content indicates that `@e2e` scenarios were planned.

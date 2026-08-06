@@ -10,7 +10,7 @@ pub fn run_integrity_hook(
     arc42_enabled: bool,
     coverage_enabled: bool,
 ) -> Result<()> {
-    let change_dir = find_change_dir(features_path);
+    let change_dir = crate::state::find_change_dir(features_path);
     let change_dir = match change_dir {
         Some(d) => d,
         None => {
@@ -43,34 +43,6 @@ fn check_coverage_config() -> Result<()> {
         );
     }
     Ok(())
-}
-
-/// Derive the change directory from a features_path.
-/// If features_path looks like `givn/changes/<id>/specs`, returns `<project>/givn/changes/<id>`.
-/// Otherwise returns None.
-fn find_change_dir(features_path: &str) -> Option<std::path::PathBuf> {
-    let p = Path::new(features_path);
-    // Walk up from features_path to find a parent named "specs" with grandparent "changes/<id>".
-    // The pattern is: `<root>/givn/changes/<id>/specs/`
-    let components: Vec<_> = p.components().collect();
-    let n = components.len();
-
-    // Look for "specs" component and check grandparent is "changes/<id>"
-    for i in (1..n).rev() {
-        if components[i].as_os_str() == "specs" {
-            // Check grandparent is "changes" and parent is the change id
-            if i >= 2 && components[i - 2].as_os_str() == "changes" {
-                // The change dir is <root>/givn/changes/<id>  (up to and including parent of specs)
-                let mut change_dir = std::path::PathBuf::new();
-                for c in &components[..i] {
-                    change_dir.push(c);
-                }
-                return Some(change_dir);
-            }
-        }
-    }
-
-    None
 }
 
 /// Check that every `- [x] COMMIT:` line in tasks.md has a non-placeholder hash.

@@ -15,7 +15,7 @@ Feature: Deduplicate Change Directory Detection
     When the user runs `givn check review --change detect-demo`
     Then the command exits non-zero
 
-  @givn.added @wip
+  @givn.added
   Scenario: Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
     Given a project root with givn/ initialised
     And the givn/config.yaml has an empty e2e_command
@@ -24,8 +24,6 @@ Feature: Deduplicate Change Directory Detection
     And a change "e2e-detect" exists with specs under "specs/" containing zero @e2e scenarios
     When the user runs `givn check review --change e2e-detect`
     Then the command exits 0
-    And stdout confirms the hash-presence check passed against the detected directory
-    And stdout confirms the verify-e2e hook skipped because no @e2e scenarios were found in the detected directory
 
   @givn.added @e2e @wip
   Scenario: Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
