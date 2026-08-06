@@ -23,7 +23,7 @@ Feature: Uppercase Checkbox Parsing
     Then the command exits 0
     And stdout mentions "1/2 tasks"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Mixed-case checkboxes are both counted as done in JSON mode
     Given a project root with givn/ initialised
     And a change "checkbox-mixed" exists with artifact "tasks.md" containing "- [x] task one\n- [X] task two\n- [ ] task three"
