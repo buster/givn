@@ -25,14 +25,14 @@ Feature: Deduplicate Change Directory Detection
     When the user runs `givn check review --change e2e-detect`
     Then the command exits 0
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
     Given a givn project with a change "detect-int" that has design.md with a valid Step Definitions table and tasks.md where every COMMIT hash is a valid 40-character hex string
     When the user invokes `givn check review --change detect-int`
     Then the command succeeds
     And stdout confirms integrity checks passed
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Integrity check detects a placeholder COMMIT hash in tasks.md and fails
     Given a givn project with a change "bad-hash" that has design.md with a valid Step Definitions table and tasks.md containing a placeholder COMMIT hash "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
     When the user invokes `givn check review --change bad-hash`

@@ -61,7 +61,7 @@ Feature: Validate Change ID Input
     Then the command exits non-zero
     And stderr contains "kebab-case"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer invokes givn status with a path traversal change id and gets a clear error
     Given a givn project with a change "my-change" and proposal.md
     When the user invokes `givn status --change "../etc"`

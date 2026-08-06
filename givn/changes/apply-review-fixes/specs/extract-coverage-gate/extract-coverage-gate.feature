@@ -27,7 +27,7 @@ Feature: Extract Coverage Gate
     And stderr mentions coverage gate failure
     And the change directory still exists under givn/changes/
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer archives a change with coverage enabled and the coverage summary appears in README
     Given a givn project with coverage enabled and valid coverage commands that produce Cobertura XML
     And a completed change "cov-real" with all required artifacts

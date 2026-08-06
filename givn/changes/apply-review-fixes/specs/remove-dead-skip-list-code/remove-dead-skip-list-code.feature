@@ -24,7 +24,7 @@ Feature: Remove Dead Skip List Code
     And stdout mentions "\"id\": \"design\""
     And stdout mentions "\"status\": \"skipped\""
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs givn status on a change with skipped artifacts and sees them correctly
     Given a givn project with a change "skip-real" that has proposal.md and a .givn-skip file listing "design"
     When the user invokes `givn status --change skip-real`

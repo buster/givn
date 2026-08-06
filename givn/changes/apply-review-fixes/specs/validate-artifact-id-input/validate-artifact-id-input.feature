@@ -31,7 +31,7 @@ Feature: Validate Artifact ID Input
     And stderr says the artifact is not in the effective manifest
     And stderr lists known artifact ids
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer invokes givn check with an unknown artifact and gets a helpful error
     Given a givn project with a standard manifest
     When the user invokes `givn check bogus-artifact`
