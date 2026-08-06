@@ -26,7 +26,7 @@ Feature: Validate Change ID Input
     Then the command exits non-zero
     And stderr contains "kebab-case"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Path traversal id is rejected by archive
     Given a project root with givn/ initialised
     When the user runs `givn archive --change "../../../tmp"`
