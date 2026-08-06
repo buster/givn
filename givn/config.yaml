@@ -47,6 +47,11 @@ verify:
   command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
   e2e_command: "cargo test --test features_runner -- --tags @e2e"
 
+# --- Coverage gate (archive-level, requires addons.coverage: true) ------------
+coverage:
+  non_e2e_command: "cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner"
+  e2e_command: "cargo llvm-cov --cobertura --output-path coverage/e2e-cobertura.xml --test features_runner -- --tags @e2e"
+
 # --- Features path -----------------------------------------------------------
 # Path the test runner reads .feature files from during development. Also
 # exported to the test runner as the GIVN_FEATURES environment variable.
