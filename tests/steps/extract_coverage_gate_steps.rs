@@ -5,6 +5,104 @@ use crate::steps::GivnWorld;
 use cucumber::given;
 
 #[given(
+    "the givn/config.yaml has the coverage addon enabled with valid commands"
+)]
+fn coverage_addon_enabled(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let commands_path = env.path("givn/commands.yaml");
+    let yaml = "\
+verify:
+  command: \"true\"
+  e2e_command: \"\"
+coverage:
+  non_e2e_command: \"true\"
+  e2e_command: \"true\"
+  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
+  e2e_path: \"coverage/e2e-cobertura.xml\"
+addons:
+  arc42: true
+  absolute_mode: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  grill_me: true
+  grill_with_docs: true
+";
+    std::fs::write(&commands_path, yaml).expect("write commands.yaml");
+    let cov_dir = env.path("coverage");
+    std::fs::create_dir_all(&cov_dir).expect("create coverage dir");
+    std::fs::write(
+        cov_dir.join("non-e2e-cobertura.xml"),
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+    )
+    .expect("write non-e2e xml");
+    std::fs::write(
+        cov_dir.join("e2e-cobertura.xml"),
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+    )
+    .expect("write e2e xml");
+}
+
+#[given(
+    "the givn/config.yaml has the coverage addon enabled but the non-e2e coverage command exits non-zero"
+)]
+fn coverage_command_fails(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let commands_path = env.path("givn/commands.yaml");
+    let yaml = "\
+verify:
+  command: \"true\"
+  e2e_command: \"\"
+coverage:
+  non_e2e_command: \"false\"
+  e2e_command: \"true\"
+  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
+  e2e_path: \"coverage/e2e-cobertura.xml\"
+addons:
+  arc42: true
+  absolute_mode: true
+  readme: true
+  coverage: true
+  domain_modeling: true
+  dev_principles: true
+  grill_me: true
+  grill_with_docs: true
+";
+    std::fs::write(&commands_path, yaml).expect("write commands.yaml");
+    let cov_dir = env.path("coverage");
+    std::fs::create_dir_all(&cov_dir).expect("create coverage dir");
+    std::fs::write(
+        cov_dir.join("non-e2e-cobertura.xml"),
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.85" branch-rate="0.72" lines-covered="340" lines-valid="400" branches-covered="36" branches-valid="50" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+    )
+    .expect("write non-e2e xml");
+    std::fs::write(
+        cov_dir.join("e2e-cobertura.xml"),
+        r#"<?xml version="1.0"?>
+<coverage line-rate="0.9" branch-rate="0.8" lines-covered="90" lines-valid="100" branches-covered="16" branches-valid="20" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+    )
+    .expect("write e2e xml");
+}
+
+#[given(
     "a givn project with coverage enabled and valid coverage commands that produce Cobertura XML"
 )]
 fn e2e_given_coverage_project(world: &mut GivnWorld) {

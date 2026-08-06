@@ -6,21 +6,19 @@
 
 Feature: Extract Coverage Gate
 
-  @givn.added @wip
   Scenario: Archive with coverage addon enabled still runs the coverage gate
     Given a project root with givn/ initialised
     And the givn/config.yaml has the coverage addon enabled with valid commands
-    And a completed change "cov-demo" exists with all required artifacts
+    And a completed change "cov-demo" with all required artifacts
     When the user runs `givn archive --change cov-demo`
     Then the command exits 0
     And stdout contains "Coverage gate"
     And the change directory has been moved to givn/archive/
 
-  @givn.added @wip
   Scenario: Archive with coverage addon enabled still rolls back specs and README on coverage failure
     Given a project root with givn/ initialised
     And the givn/config.yaml has the coverage addon enabled but the non-e2e coverage command exits non-zero
-    And a completed change "cov-fail" exists with all required artifacts
+    And a completed change "cov-fail" with all required artifacts
     When the user runs `givn archive --change cov-fail`
     Then the command exits non-zero
     And stdout contains "coverage"

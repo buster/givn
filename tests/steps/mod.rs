@@ -451,6 +451,16 @@ fn stderr_mentions_init(world: &mut GivnWorld) {
     assert!(s.contains("init"), "stderr missing 'init': {}", s);
 }
 
+#[then("stderr mentions coverage gate failure")]
+fn stderr_mentions_coverage_failure(world: &mut GivnWorld) {
+    let s = stderr(world);
+    assert!(
+        s.contains("coverage") && (s.contains("fail") || s.contains("blocked")),
+        "stderr missing coverage failure: {}",
+        s,
+    );
+}
+
 #[then(regex = r"^stderr contains the absolute path to (.+)$")]
 fn stderr_contains_abs_path(world: &mut GivnWorld, rel: String) {
     let env = world
