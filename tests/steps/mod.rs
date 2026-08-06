@@ -15,6 +15,7 @@ use crate::common;
 pub mod choose_project_license_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
+pub mod validate_artifact_id_input_steps;
 pub mod workflow_enforcement_steps;
 
 #[derive(Debug, Default, World)]
@@ -41,18 +42,18 @@ pub struct GivnWorld {
 
 // --- helpers ---------------------------------------------------------------
 
-fn output(world: &GivnWorld) -> &Output {
+pub(crate) fn output(world: &GivnWorld) -> &Output {
     world
         .last_output
         .as_ref()
         .expect("no `givn` command has been run yet")
 }
 
-fn stdout(world: &GivnWorld) -> String {
+pub(crate) fn stdout(world: &GivnWorld) -> String {
     String::from_utf8_lossy(&output(world).stdout).into_owned()
 }
 
-fn stderr(world: &GivnWorld) -> String {
+pub(crate) fn stderr(world: &GivnWorld) -> String {
     String::from_utf8_lossy(&output(world).stderr).into_owned()
 }
 

@@ -83,6 +83,17 @@ fn eject_template(project_root: &std::path::Path, artifact_id: &str, force: bool
 }
 
 fn eject_instruction(project_root: &std::path::Path, artifact_id: &str, force: bool) -> Result<()> {
+    // Validate against the effective manifest before looking up assets.
+    let manifest = crate::config::overlay::load_effective()?;
+    if !manifest.artifacts.iter().any(|a| a.id == artifact_id) {
+        let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+        anyhow::bail!(
+            "unknown artifact '{}'. Known artifacts: {}",
+            artifact_id,
+            known.join(", ")
+        );
+    }
+
     // Cascade: core instructions/ then addons/<id>/instructions.md.
     let core_key = format!("instructions/{artifact_id}.md");
     let addon_key = format!("addons/{artifact_id}/instructions.md");

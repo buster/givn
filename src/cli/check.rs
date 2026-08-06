@@ -1,5 +1,5 @@
 use crate::config::overlay::load_effective;
-use anyhow::Result;
+use anyhow::{Result, bail};
 
 /// Run an artifact's post hooks (e.g. verify.command, lint).
 ///
@@ -18,6 +18,15 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     };
 
     if let Some(artifact_id) = artifact {
+        // Validate against manifest before running checks.
+        if !manifest.artifacts.iter().any(|a| a.id == artifact_id) {
+            let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+            bail!(
+                "unknown artifact '{}'. Known artifacts: {}",
+                artifact_id,
+                known.join(", ")
+            );
+        }
         // Run mandatory checks first, then custom hooks.
         run_mandatory_checks(artifact_id, &manifest, &features_path)?;
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)

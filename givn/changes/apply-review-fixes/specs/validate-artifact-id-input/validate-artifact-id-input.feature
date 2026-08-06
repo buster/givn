@@ -8,7 +8,7 @@
 
 Feature: Validate Artifact ID Input
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn check with unknown artifact validates against manifest and provides helpful error
     Given a project root with givn/ initialised
     When the user runs `givn check nonexistent`
