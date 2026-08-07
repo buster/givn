@@ -57,8 +57,9 @@ pub(crate) fn run_coverage_gate(
     let non_e2e_path = project_root.join(&cov.non_e2e_path);
     let e2e_path = project_root.join(&cov.e2e_path);
 
-    let non_e2e_report = crate::cobertura::parse(&non_e2e_path)
-        .map_err(|e| anyhow::anyhow!("archive blocked: failed to parse non-e2e Cobertura XML: {e}"))?;
+    let non_e2e_report = crate::cobertura::parse(&non_e2e_path).map_err(|e| {
+        anyhow::anyhow!("archive blocked: failed to parse non-e2e Cobertura XML: {e}")
+    })?;
     let e2e_report = crate::cobertura::parse(&e2e_path)
         .map_err(|e| anyhow::anyhow!("archive blocked: failed to parse e2e Cobertura XML: {e}"))?;
 

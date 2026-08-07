@@ -4,9 +4,7 @@ use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::given;
 
-#[given(
-    "the givn/config.yaml has the coverage addon enabled with valid commands"
-)]
+#[given("the givn/config.yaml has the coverage addon enabled with valid commands")]
 fn coverage_addon_enabled(world: &mut GivnWorld) {
     let env = world
         .env
