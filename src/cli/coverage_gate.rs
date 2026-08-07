@@ -15,13 +15,7 @@ pub(crate) fn run_coverage_gate(
     // Validate commands are configured.
     let sentinel = "givn missing-coverage";
     if cov.non_e2e_command == sentinel || cov.e2e_command == sentinel {
-        let backup_specs = backup_dir.join("specs");
-        crate::cli::archive::rollback_specs(
-            &project_root.join("givn/specs"),
-            &backup_specs,
-            backup_dir,
-        )?;
-        rollback_readme(project_root, backup_dir)?;
+        let _ = rollback_specs_and_readme(project_root, backup_dir);
         bail!(
             "archive blocked: coverage commands are not configured. \
              Set coverage.non_e2e_command and coverage.e2e_command in givn/config.yaml. \
@@ -34,19 +28,9 @@ pub(crate) fn run_coverage_gate(
     let non_e2e_status = std::process::Command::new("sh")
         .arg("-c")
         .arg(&cov.non_e2e_command)
-        .env(
-            "GIVN_FEATURES",
-            project_root.join("givn/specs").to_string_lossy().as_ref(),
-        )
         .status()?;
     if !non_e2e_status.success() {
-        let backup_specs = backup_dir.join("specs");
-        crate::cli::archive::rollback_specs(
-            &project_root.join("givn/specs"),
-            &backup_specs,
-            backup_dir,
-        )?;
-        rollback_readme(project_root, backup_dir)?;
+        let _ = rollback_specs_and_readme(project_root, backup_dir);
         bail!(
             "archive blocked: non-e2e coverage command failed (exit code {}). \
              Specs and README have been rolled back.",
@@ -59,19 +43,9 @@ pub(crate) fn run_coverage_gate(
     let e2e_status = std::process::Command::new("sh")
         .arg("-c")
         .arg(&cov.e2e_command)
-        .env(
-            "GIVN_FEATURES",
-            project_root.join("givn/specs").to_string_lossy().as_ref(),
-        )
         .status()?;
     if !e2e_status.success() {
-        let backup_specs = backup_dir.join("specs");
-        crate::cli::archive::rollback_specs(
-            &project_root.join("givn/specs"),
-            &backup_specs,
-            backup_dir,
-        )?;
-        rollback_readme(project_root, backup_dir)?;
+        let _ = rollback_specs_and_readme(project_root, backup_dir);
         bail!(
             "archive blocked: e2e coverage command failed (exit code {}). \
              Specs and README have been rolled back.",
@@ -83,81 +57,20 @@ pub(crate) fn run_coverage_gate(
     let non_e2e_path = project_root.join(&cov.non_e2e_path);
     let e2e_path = project_root.join(&cov.e2e_path);
 
-    let non_e2e_report = match crate::cobertura::parse(&non_e2e_path) {
-        Ok(r) => r,
-        Err(e) => {
-            let backup_specs = backup_dir.join("specs");
-            crate::cli::archive::rollback_specs(
-                &project_root.join("givn/specs"),
-                &backup_specs,
-                backup_dir,
-            )?;
-            rollback_readme(project_root, backup_dir)?;
-            bail!(
-                "archive blocked: failed to parse non-e2e Cobertura XML: {e}. \
-                 Specs and README have been rolled back."
-            );
-        }
-    };
-    let e2e_report = match crate::cobertura::parse(&e2e_path) {
-        Ok(r) => r,
-        Err(e) => {
-            let backup_specs = backup_dir.join("specs");
-            crate::cli::archive::rollback_specs(
-                &project_root.join("givn/specs"),
-                &backup_specs,
-                backup_dir,
-            )?;
-            rollback_readme(project_root, backup_dir)?;
-            bail!(
-                "archive blocked: failed to parse e2e Cobertura XML: {e}. \
-                 Specs and README have been rolled back."
-            );
-        }
-    };
+    let non_e2e_report = crate::cobertura::parse(&non_e2e_path)
+        .map_err(|e| anyhow::anyhow!("archive blocked: failed to parse non-e2e Cobertura XML: {e}"))?;
+    let e2e_report = crate::cobertura::parse(&e2e_path)
+        .map_err(|e| anyhow::anyhow!("archive blocked: failed to parse e2e Cobertura XML: {e}"))?;
 
     // Validate individual reports.
-    if let Err(e) = crate::cobertura::validate(&non_e2e_report) {
-        let backup_specs = backup_dir.join("specs");
-        crate::cli::archive::rollback_specs(
-            &project_root.join("givn/specs"),
-            &backup_specs,
-            backup_dir,
-        )?;
-        rollback_readme(project_root, backup_dir)?;
-        bail!(
-            "archive blocked: non-e2e coverage validation failed: {e}. \
-             Specs and README have been rolled back."
-        );
-    }
-    if let Err(e) = crate::cobertura::validate(&e2e_report) {
-        let backup_specs = backup_dir.join("specs");
-        crate::cli::archive::rollback_specs(
-            &project_root.join("givn/specs"),
-            &backup_specs,
-            backup_dir,
-        )?;
-        rollback_readme(project_root, backup_dir)?;
-        bail!(
-            "archive blocked: e2e coverage validation failed: {e}. \
-             Specs and README have been rolled back."
-        );
-    }
+    crate::cobertura::validate(&non_e2e_report)
+        .map_err(|e| anyhow::anyhow!("archive blocked: non-e2e coverage validation failed: {e}"))?;
+    crate::cobertura::validate(&e2e_report)
+        .map_err(|e| anyhow::anyhow!("archive blocked: e2e coverage validation failed: {e}"))?;
 
     // Ensure the two reports are structurally distinct.
-    if let Err(e) = crate::cobertura::assert_distinct(&non_e2e_report, &e2e_report) {
-        let backup_specs = backup_dir.join("specs");
-        crate::cli::archive::rollback_specs(
-            &project_root.join("givn/specs"),
-            &backup_specs,
-            backup_dir,
-        )?;
-        rollback_readme(project_root, backup_dir)?;
-        bail!(
-            "archive blocked: {e} \
-             Specs and README have been rolled back."
-        );
-    }
+    crate::cobertura::assert_distinct(&non_e2e_report, &e2e_report)
+        .map_err(|e| anyhow::anyhow!("archive blocked: {e}"))?;
 
     // Merge reports.
     let merged = crate::cobertura::merge(&non_e2e_report, &e2e_report);
@@ -193,6 +106,25 @@ pub(crate) fn run_coverage_gate(
     println!("  updated README.md with coverage summary");
 
     println!("✓ Coverage gate passed");
+    Ok(())
+}
+
+/// Roll back specs and README to pre-archive state.
+///
+/// Errors from the rollback itself are logged but swallowed — if the
+/// rollback fails we are already in a fault handler and cannot recover.
+fn rollback_specs_and_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
+    let backup_specs = backup_dir.join("specs");
+    if let Err(e) = crate::cli::archive::rollback_specs(
+        &project_root.join("givn/specs"),
+        &backup_specs,
+        backup_dir,
+    ) {
+        eprintln!("  warning: spec rollback failed: {e}");
+    }
+    if let Err(e) = rollback_readme(project_root, backup_dir) {
+        eprintln!("  warning: README rollback failed: {e}");
+    }
     Ok(())
 }
 
