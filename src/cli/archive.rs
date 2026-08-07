@@ -174,7 +174,7 @@ pub fn run(change: &str) -> Result<()> {
     // === Post-merge verify-e2e gate ===
 
     let e2e_command = &manifest.verify.e2e_command;
-    if e2e_command.is_empty() {
+    if e2e_command.is_empty() || e2e_command == "givn missing-e2e-runner" {
         let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
         if merged_has_e2e {
             rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;

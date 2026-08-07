@@ -32,8 +32,9 @@ verify:
   command: "givn missing-testrunner"   # <-- replace with your test runner
 
   # --- E2E test runner --------------------------------------------------------
-  # Command to run @e2e-tagged scenarios. Leave empty if no @e2e scenarios.
-  e2e_command: ""
+  # Command to run @e2e-tagged scenarios. If unconfigured, the review gate and
+  # archive gate will reject any change whose specs include @e2e scenarios.
+  e2e_command: "givn missing-e2e-runner"
 
 # --- Coverage gate (requires addons.coverage: true) ---------------------------
 # Commands that produce Cobertura XML coverage data. givn merges both into a

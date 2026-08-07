@@ -135,7 +135,7 @@ pub(crate) fn run_verify_e2e_hook(manifest: &Manifest, features_path: &str) -> R
     let features_path = Path::new(features_path);
     let has_e2e = crate::gherkin::parse::has_e2e_scenarios(features_path);
 
-    if command.is_empty() {
+    if command == "givn missing-e2e-runner" {
         if has_e2e {
             anyhow::bail!(
                 "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
@@ -239,7 +239,7 @@ mod verify_e2e_hook_tests {
         )
         .unwrap();
 
-        let manifest = manifest_with("");
+        let manifest = manifest_with("givn missing-e2e-runner");
         let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
 
         assert!(
@@ -257,7 +257,7 @@ mod verify_e2e_hook_tests {
         )
         .unwrap();
 
-        let manifest = manifest_with("");
+        let manifest = manifest_with("givn missing-e2e-runner");
         let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
 
         assert!(
@@ -303,7 +303,7 @@ mod verify_e2e_hook_tests {
         )
         .unwrap();
 
-        let manifest = manifest_with("");
+        let manifest = manifest_with("givn missing-e2e-runner");
         let result = run_verify_e2e_hook(&manifest, specs_dir.to_str().unwrap());
 
         assert!(
@@ -337,7 +337,7 @@ mod verify_e2e_hook_tests {
         )
         .unwrap();
 
-        let manifest = manifest_with("");
+        let manifest = manifest_with("givn missing-e2e-runner");
         let result = run_verify_e2e_hook(&manifest, specs_dir.to_str().unwrap());
 
         assert!(
@@ -366,7 +366,7 @@ mod verify_e2e_hook_tests {
         )
         .unwrap();
 
-        let manifest = manifest_with("");
+        let manifest = manifest_with("givn missing-e2e-runner");
         let result = run_verify_e2e_hook(&manifest, specs_dir.to_str().unwrap());
 
         assert!(
@@ -388,7 +388,7 @@ mod verify_e2e_hook_tests {
         // Write a tasks.md here (plain tempdir won't be detected as a change dir).
         fs::write(dir.path().join("tasks.md"), "## E2E Smoke Tests\n").unwrap();
 
-        let manifest = manifest_with("");
+        let manifest = manifest_with("givn missing-e2e-runner");
         let result = run_verify_e2e_hook(&manifest, dir.path().to_str().unwrap());
 
         // Should skip because dir is not inside "givn/changes/".

@@ -108,8 +108,8 @@ pub struct Verify {
     /// Command to run the test suite. Default is the sentinel.
     pub command: String,
     /// Command to run end-to-end smoke tests (@e2e-tagged scenarios).
-    /// Empty string means no e2e runner is configured yet.
-    #[serde(default)]
+    /// The sentinel `"givn missing-e2e-runner"` means unconfigured.
+    #[serde(default = "Verify::default_e2e_command")]
     pub e2e_command: String,
     /// Features path passed to the runner via GIVN_FEATURES.
     #[serde(default = "Verify::default_features_path")]
@@ -120,13 +120,17 @@ impl Default for Verify {
     fn default() -> Self {
         Self {
             command: "givn missing-testrunner".to_string(),
-            e2e_command: String::new(),
+            e2e_command: "givn missing-e2e-runner".to_string(),
             features_path: Self::default_features_path(),
         }
     }
 }
 
 impl Verify {
+    fn default_e2e_command() -> String {
+        "givn missing-e2e-runner".to_string()
+    }
+
     fn default_features_path() -> String {
         "givn/specs".to_string()
     }

@@ -2,15 +2,15 @@ use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::{given, then};
 
-#[given("a givn project with an empty verify.e2e_command in givn/config.yaml")]
-fn e2e_given_empty_e2e_command(world: &mut GivnWorld) {
+#[given("a givn project with verify.e2e_command unconfigured in givn/config.yaml")]
+fn e2e_given_unconfigured_e2e_command(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     let env = world.env.as_ref().unwrap();
     let commands_path = env.path("givn/commands.yaml");
     let yaml = "\
 verify:
   command: \"true\"
-  e2e_command: \"\"
+  e2e_command: \"givn missing-e2e-runner\"
 coverage:
   non_e2e_command: \"true\"
   e2e_command: \"true\"
@@ -146,8 +146,8 @@ fn e2e_given_permanent_specs_no_e2e(world: &mut GivnWorld) {
     .unwrap();
 }
 
-#[given("the givn/config.yaml has an empty e2e_command")]
-fn empty_e2e_command(world: &mut GivnWorld) {
+#[given("the givn/config.yaml has e2e_command unconfigured")]
+fn unconfigured_e2e_command(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()
@@ -156,7 +156,7 @@ fn empty_e2e_command(world: &mut GivnWorld) {
     let yaml = "\
 verify:
   command: \"true\"
-  e2e_command: \"\"
+  e2e_command: \"givn missing-e2e-runner\"
 coverage:
   non_e2e_command: \"true\"
   e2e_command: \"true\"
