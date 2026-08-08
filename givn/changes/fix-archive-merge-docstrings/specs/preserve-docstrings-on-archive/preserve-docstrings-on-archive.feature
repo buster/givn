@@ -48,7 +48,7 @@ Feature: Preserve Docstrings on Archive
     Then  the command exits 0
     And  the permanent spec file for "table-cap" contains the text "table-survives-modified-merge"
 
-  @e2e @wip
+  @e2e
   Scenario: Consumer archives a modified scenario and the permanent spec keeps the docstring
     Given  a givn project with a completed change "real-modify" whose delta modifies scenario "Existing behaviour" within capability "real-cap" and gives a step the docstring:
       """
