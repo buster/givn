@@ -223,11 +223,13 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
     for step in &scenario.steps {
         out.push_str(&format!("    {} {}\n", step.keyword, step.value));
 
-        // Docstring (the crate stores content already dedented).
+        // Docstring (the crate stores content already dedented, with the
+        // newline that follows the opening delimiter still present).
         if let Some(doc) = step.docstring() {
             out.push_str("      \"\"\"\n");
-            if !doc.is_empty() {
-                for line in doc.lines() {
+            let content = doc.strip_prefix('\n').unwrap_or(doc.as_str());
+            if !content.is_empty() {
+                for line in content.lines() {
                     if line.is_empty() {
                         out.push('\n');
                     } else {
@@ -497,7 +499,7 @@ Feature: Delta
             op: DeltaOp::Added,
         };
         let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
-        assert!(result.contains("      \"\"\"\n\n      \"\"\""), "{result}");
+        assert!(result.contains("      \"\"\"\n      \"\"\""), "{result}");
     }
 
     #[test]
