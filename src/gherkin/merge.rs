@@ -222,6 +222,29 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
     // Steps.
     for step in &scenario.steps {
         out.push_str(&format!("    {} {}\n", step.keyword, step.value));
+
+        // Docstring (the crate stores content already dedented).
+        if let Some(doc) = step.docstring() {
+            out.push_str("      \"\"\"\n");
+            if !doc.is_empty() {
+                for line in doc.lines() {
+                    if line.is_empty() {
+                        out.push('\n');
+                    } else {
+                        out.push_str(&format!("      {line}\n"));
+                    }
+                }
+            }
+            out.push_str("      \"\"\"\n");
+        }
+
+        // Data table.
+        if let Some(table) = step.table() {
+            for row in &table.rows {
+                let cells: Vec<&str> = row.iter().map(|c| c.as_str()).collect();
+                out.push_str(&format!("      | {} |\n", cells.join(" | ")));
+            }
+        }
     }
 
     out
@@ -400,6 +423,132 @@ Feature: Delta
         // Empty baseline uses the delta feature name as the header.
         assert!(result.contains("Feature: Delta"));
         assert!(!result.contains("(merged)"));
+    }
+
+    #[test]
+    fn modified_scenario_keeps_step_docstring() {
+        let mod_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.modified
+  Scenario: User logs in
+    Given a registered user
+    When a payload is provided:
+      """
+      {
+        "purpose": "docstring-survives",
+        "count": 3
+      }
+      """
+    Then they are authenticated
+"#;
+        let feature = parse_str(mod_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Modified,
+        };
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
+        assert!(result.contains("\"purpose\": \"docstring-survives\""));
+        assert!(result.contains("\"count\": 3"));
+    }
+
+    #[test]
+    fn added_scenario_keeps_step_docstring() {
+        let new_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario: User resets password
+    Given a user who forgot their password
+    And a request payload:
+      """
+      payload:docstring-survives-added
+      """
+    Then they receive a reset email
+"#;
+        let feature = parse_str(new_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
+        assert!(result.contains("payload:docstring-survives-added"));
+    }
+
+    #[test]
+    fn empty_docstring_still_emits_delimiters() {
+        let new_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario: User resets password
+    Given a user who forgot their password
+    And an empty payload:
+      """
+      """
+    Then they receive a reset email
+"#;
+        let feature = parse_str(new_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
+        assert!(result.contains("      \"\"\"\n\n      \"\"\""), "{result}");
+    }
+
+    #[test]
+    fn modified_scenario_keeps_step_data_table() {
+        let mod_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.modified
+  Scenario: User logs in
+    Given a registered user
+    When the mapping is applied:
+      | key | value |
+      | id  | 42    |
+    Then they are authenticated
+"#;
+        let feature = parse_str(mod_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Modified,
+        };
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
+        assert!(result.contains("| key | value |"), "{result}");
+        assert!(result.contains("| id | 42 |"), "{result}");
+    }
+
+    #[test]
+    fn step_with_docstring_and_table_renders_docstring_first() {
+        let new_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario: User resets password
+    Given a user
+    And a combined step:
+      """
+      payload:both
+      """
+      | a | b |
+    Then it works
+"#;
+        let feature = parse_str(new_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
+        let doc_pos = result.find("payload:both").expect("docstring content");
+        let table_pos = result.find("| a | b |").expect("table row");
+        assert!(doc_pos < table_pos, "{result}");
     }
 
     #[test]
