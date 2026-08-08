@@ -402,6 +402,6 @@ AGENTS.md                             # user-owned; givn only maintains its own
 Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
 
 <!-- givn:begin:coverage -->
-Line coverage: 55% (3578/6482)
+Line coverage: 56% (3577/6382)
 Branch coverage: 0% (0/0)
 <!-- givn:end:coverage -->

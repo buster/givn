@@ -69,6 +69,32 @@ the current project state:
    explicitly. Use `<!-- givn:begin:coverage -->` /
    `<!-- givn:end:coverage -->` blocks to allow idempotent updates.
 
+**Example** — project-specific values (replace ` watn ` with your binary and
+adjust paths and measured numbers accordingly):
+
+```markdown
+## Coverage
+
+[![Coverage: 77.8%](https://img.shields.io/badge/coverage-77.8%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+
+Coverage runs the acceptance scenarios against the instrumented ` watn `
+executable. The latest non-E2E run covers `583/749` lines (`77.8%`); the
+E2E subset covers `465/749` lines (`62.1%`).
+
+```sh
+mkdir -p coverage
+cargo llvm-cov clean --workspace
+cargo llvm-cov run --bin watn --no-report -- --version
+cargo llvm-cov test --no-clean --test features_runner \
+  --cobertura --output-path coverage/non-e2e-cobertura.xml \
+  -- --tags 'not @wip'
+```
+```
+
+The managed coverage marker block is generated automatically during archive
+and should not be manually edited. The example above is a starting point;
+adapt it to your project's binary name, test runner, and coverage tool.
+
 ## Verify command
 
 Unit/integration:

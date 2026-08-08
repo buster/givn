@@ -40,7 +40,9 @@ verify:
 # Commands that produce Cobertura XML coverage data. givn merges both into a
 # unified summary written to README.md.
 #
-# E2e coverage typically requires running the app server with instrumentation.
+# Instrument every production process started by tests; merge every profile.
+# Use collision-safe output and flush on shutdown. Reject runner-only or
+# zero-production reports; verify one known production path is non-zero.
 #
 # The archive gate validates that both reports come from distinct
 # instrumentation runs — do not copy the non-e2e XML to the e2e path.
