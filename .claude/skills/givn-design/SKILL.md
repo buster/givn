@@ -100,19 +100,6 @@ The design MUST document the e2e test infrastructure for `@e2e` scenarios:
   capability has (browser UI / CLI / API-only) and name the matching
   driving mechanism.
 
-## Coverage process boundaries (when enabled)
-
-| Process | Started by | Instrumented artifact | Profile output | Merge step | Non-zero production probe |
-|---|---|---|---|---|---|
-
-Include the runner and every production process started by tests. For each:
-
-- Launch the instrumented artifact, not the normal build.
-- Use collision-safe profile output.
-- Flush data before shutdown.
-- Merge its profile before export.
-- Name one exercised production path expected to be non-zero.
-
 ### Interaction Coverage Matrix (mandatory)
 
 Map every entry from the spec's User Interaction Inventory to its matching
