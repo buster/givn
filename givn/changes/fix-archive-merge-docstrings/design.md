@@ -148,6 +148,14 @@ driving `apply_deltas` directly (fast, no subprocess), covering:
 - step data table is preserved;
 - step carrying both docstring and data table renders docstring then table.
 
+## Internal Primitives
+
+> Internal data structures and abstractions this change introduces or modifies.
+
+| Primitive | Type | Purpose |
+|---|---|---|
+| `render_scenario_stripped` | `fn` (modified) | Existing scenario renderer; now also emits each step's docstring block and data-table rows. No new structs, enums, or public fns introduced. Step definitions use only the existing `Step.keyword`/`Step.value`/`Step.docstring`/`Step.table` fields; no shared internal primitive is added. |
+
 ## Verify command
 
 ```

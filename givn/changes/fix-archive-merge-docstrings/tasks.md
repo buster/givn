@@ -45,7 +45,7 @@
                 `tests/steps/mod.rs`. Single-scenario run → exit 0 (6 steps, 1 passed). 13 merge unit tests pass.
     - REFACTOR: `cargo clippy --workspace --all-targets -- -D warnings` clean; `cargo fmt -- --check` clean;
                 re-run → still exit 0.
-    - COMMIT:   `0dd8bbc`
+    - [x] COMMIT: `0dd8bbc`
 
 - [x] preserve-docstrings-on-archive: An added scenario keeps its step docstring after archiving
     - RED:      Removed @wip. Single-scenario run → PASSED immediately (step
@@ -55,7 +55,7 @@
                 docstring rendering + `completed_change_adds_with_docstring` step).
                 Files: none new. Single-scenario run → exit 0 (6 steps, 1 passed).
     - REFACTOR: Re-run → still exit 0.
-    - COMMIT:   `b7d7b35`
+    - [x] COMMIT: `b7d7b35`
 
 - [x] preserve-docstrings-on-archive: A modified scenario keeps its step data table after archiving
     - RED:      Removed @wip. Single-scenario run → PASSED immediately (data-table
@@ -66,7 +66,7 @@
                 (6 steps, 1 passed). Assertion targets the on-disk merged spec
                 containing the table cell text — non-vacuous.
     - REFACTOR: Re-run → still exit 0.
-    - COMMIT:   `9719526`
+    - [x] COMMIT: `9719526`
 
 ---
 
@@ -96,7 +96,7 @@
                 permanent spec after the real `givn archive` subprocess — the
                 CLI's output, not a DB.
     - REFACTOR: Re-run → still exit 0.
-    - COMMIT:   `8c2c97c`
+    - [x] COMMIT: `8c2c97c`
 
 ---
 
