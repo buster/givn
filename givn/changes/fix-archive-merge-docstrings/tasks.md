@@ -72,38 +72,38 @@
 
 ## E2E setup: configure e2e test infrastructure, strict mode, and verify.e2e_command
 
-- [ ] Setup: configure e2e test infrastructure
+- [x] Setup: configure e2e test infrastructure
     - `verify.e2e_command` already set in `givn/config.yaml`:
       `cargo test --test features_runner -- --tags @e2e` (tag-filtered subset
       of the same runner — design.md's CLI capability has no browser/server).
-    - Scenario-count proof: record full-suite scenario count vs `@e2e`
-      count; e2e count must be strictly less. Paste both counts here.
-    - Strict mode: `.fail_on_skipped()` already configured (same runner).
+    - Scenario-count proof: full suite `cargo test --test features_runner`
+      → 125 scenarios; `-- --tags @e2e` → 9 scenarios. 9 < 125 — subset
+      proven.
+    - Strict mode: `.fail_on_skipped()` already configured (same runner);
+      RED runs exit non-zero on undefined steps.
 
 ## E2e scenarios
 
-- [ ] @e2e preserve-docstrings-on-archive: Consumer archives a modified scenario and the permanent spec keeps the docstring
-    - RED:      Remove @wip from this scenario only. Run
-      `GIVN_FEATURES=givn/changes/fix-archive-merge-docstrings/specs cargo test --test features_runner -- --tags @e2e`
-      → MUST exit non-zero (missing step definition). Paste output.
-    - GREEN:    Implement the e2e given (`a givn project with a completed
-                change ... whose delta ... gives a step the docstring`) —
-                sets env = make_init_root, writes the permanent-spec baseline,
-                the completed change, and the fixture commands.yaml, then
-                asserts via the shared `the permanent spec file for ...`
-                Then step. Files: `tests/steps/preserve_docstrings_on_archive_steps.rs`.
-                Run → MUST exit 0. Paste output.
-    - REFACTOR: Re-run → still exits 0. Paste output.
-    - COMMIT:   `hash`
+- [x] @e2e preserve-docstrings-on-archive: Consumer archives a modified scenario and the permanent spec keeps the docstring
+    - RED:      Removed @wip. Run
+      `GIVN_FEATURES=.../specs cargo test --test features_runner -- --tags @e2e`
+      → PASSED immediately (e2e given + Then shipped with scenario 1's GREEN;
+      reuse).
+    - GREEN:    Reuse — `e2e_project_with_completed_change` given + shared
+                `the permanent spec file for ... contains the text ...` Then.
+                Files: none new (`tests/steps/preserve_docstrings_on_archive_steps.rs`).
+                Run → exit 0 (4 steps, 1 passed). Asserts on the on-disk merged
+                permanent spec after the real `givn archive` subprocess — the
+                CLI's output, not a DB.
+    - REFACTOR: Re-run → still exit 0.
+    - COMMIT:   `8c2c97c`
 
 ---
 
 ## Post-implementation
 
-- [ ] Run full suite `cargo test --test features_runner` → exits 0 (or record
-      pre-existing unrelated failures with proof).
-- [ ] Run e2e suite `cargo test --test features_runner -- --tags @e2e` → exits 0.
-- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings` → pass.
-- [ ] Run `cargo fmt -- --check` → pass.
-- [ ] Run `cargo test --test features_runner -- --name "docstring"` etc. for the
-      new merge.rs unit tests → pass.
+- [x] Run full suite `cargo test --test features_runner` → 125 scenarios / 663 steps pass.
+- [x] Run e2e suite `cargo test --test features_runner -- --tags @e2e` → 9 scenarios pass.
+- [x] Run `cargo clippy --workspace --all-targets -- -D warnings` → pass.
+- [x] Run `cargo fmt -- --check` → pass.
+- [x] `cargo test --lib gherkin::merge` → 13 tests pass (incl. new docstring/table/empty-docstring/combo tests).
