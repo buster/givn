@@ -9,6 +9,8 @@
   from Given to done.
 ```
 
+[![Coverage: 57%](https://img.shields.io/badge/coverage-57%25-yellowgreen)](coverage/cobertura-coverage.xml)
+
 > A single-binary, Gherkin-first spec-driven workflow tool.
 
 `givn` manages a change lifecycle where **the `.feature` file IS the

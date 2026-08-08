@@ -19,6 +19,7 @@ pub mod enforce_post_merge_e2e_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod preserve_docstrings_on_archive_steps;
+pub mod readme_coverage_badge_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;

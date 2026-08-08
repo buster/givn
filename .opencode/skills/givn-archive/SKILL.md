@@ -62,12 +62,50 @@ the current project state:
 1. **Project name**: If the README still contains `{{PROJECT_NAME}}`,
    replace it with the actual project name (from `Cargo.toml`,
    `package.json`, or the directory name).
-2. **Coverage section**: If coverage data is available (via
+2. **Coverage badge**: Place the coverage badge directly after the README
+   title, so visitors see the measured coverage at the top. Link it to the
+   non-E2E Cobertura report. If coverage data is available (via
    `coverage.command` or a coverage-instrumented `cargo test --test features_runner`),
-   update the coverage section with the latest line and branch
-   percentages. If coverage measurement is not configured, state this
-   explicitly. Use `<!-- givn:begin:coverage -->` /
-   `<!-- givn:end:coverage -->` blocks to allow idempotent updates.
+   use the latest measured percentage. If coverage measurement is not
+   configured, state this explicitly.
+3. **Coverage section**: Below the badge, keep the `## Coverage` section
+   with the line/branch totals and the reproduction commands. Use
+   `<!-- givn:begin:coverage -->` / `<!-- givn:end:coverage -->` blocks for
+   the generated summary to allow idempotent updates.
+
+**Example** — project-specific values (replace ` watn ` with your binary and
+adjust paths and measured numbers accordingly):
+
+The badge, directly under the README title:
+
+```markdown
+# <project name>
+
+[![Coverage: 77.8%](https://img.shields.io/badge/coverage-77.8%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+```
+
+The coverage section, further down:
+
+```markdown
+## Coverage
+
+Coverage runs the acceptance scenarios against the instrumented ` watn `
+executable. The latest non-E2E run covers `583/749` lines (`77.8%`); the
+E2E subset covers `465/749` lines (`62.1%`).
+
+```sh
+mkdir -p coverage
+cargo llvm-cov clean --workspace
+cargo llvm-cov run --bin watn --no-report -- --version
+cargo llvm-cov test --no-clean --test features_runner \
+  --cobertura --output-path coverage/non-e2e-cobertura.xml \
+  -- --tags 'not @wip'
+```
+```
+
+The managed coverage marker block is generated automatically during archive
+and should not be manually edited. The examples above are a starting point;
+adapt them to your project's binary name, test runner, and coverage tool.
 
 ## Verify command
 
