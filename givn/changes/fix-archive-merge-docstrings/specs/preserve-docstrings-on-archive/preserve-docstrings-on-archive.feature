@@ -39,7 +39,7 @@ Feature: Preserve Docstrings on Archive
     Then  the command exits 0
     And  the permanent spec file for "add-cap" contains the text "docstring-survives-added-merge"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A modified scenario keeps its step data table after archiving
     Given  a project root with givn/ initialised
     And  a permanent spec for capability "table-cap" contains a scenario named "Existing behaviour"
