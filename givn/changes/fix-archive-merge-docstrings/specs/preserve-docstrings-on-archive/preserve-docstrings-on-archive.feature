@@ -27,7 +27,7 @@ Feature: Preserve Docstrings on Archive
     Then  the command exits 0
     And  the permanent spec file for "modify-cap" contains the text "docstring-survives-modified-merge"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An added scenario keeps its step docstring after archiving
     Given  a project root with givn/ initialised
     And  a permanent spec for capability "add-cap" contains a scenario named "Existing behaviour"
