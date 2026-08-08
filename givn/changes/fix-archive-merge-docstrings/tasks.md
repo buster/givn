@@ -2,12 +2,11 @@
 
 ## Setup: configure test infrastructure, strict mode, and verify.command
 
-- [ ] Setup
+- [x] Setup
     - `.fail_on_skipped()` already present in `tests/features_runner.rs:20`.
     - `verify.command` already set to `cargo test --test features_runner` in `givn/config.yaml`.
-    - Strict mode proof: run the full suite; the current permanent specs contain
-      unimplemented scenarios, so the runner must exit non-zero (proving
-      undefined/pending steps fail). Paste proof here.
+    - Strict mode proof: scenario 1 RED run exited 101 ("Step doesn't match any function")
+      — undefined steps fail. `cargo test --test features_runner` full suite: 125 scenarios / 663 steps pass.
 
 ---
 
@@ -37,15 +36,16 @@
 - Single-scenario command:
   `GIVN_FEATURES=givn/changes/fix-archive-merge-docstrings/specs cargo test --test features_runner -- --name "<title regex>"`
 
-- [ ] preserve-docstrings-on-archive: A modified scenario keeps its step docstring after archiving
-    - RED:      Remove @wip from this scenario only. Run the single-scenario
-                command. MUST exit non-zero (missing step definitions). Paste output.
-    - GREEN:    Implement step definitions + `render_scenario_stripped`
-                docstring rendering. Files: `src/gherkin/merge.rs`,
-                `tests/steps/preserve_docstrings_on_archive_steps.rs`,
-                `tests/steps/mod.rs`. Run single-scenario → MUST exit 0. Paste output.
-    - REFACTOR: Re-run single-scenario → still exits 0. Paste output.
-    - COMMIT:   `hash`
+- [x] preserve-docstrings-on-archive: A modified scenario keeps its step docstring after archiving
+    - RED:      Removed @wip. `... -- --name "A modified scenario keeps its step docstring after archiving"`
+                → exit 101, "Step doesn't match any function" (undefined steps fail).
+    - GREEN:    Implemented `render_scenario_stripped` docstring rendering in
+                `src/gherkin/merge.rs`; added step defs in
+                `tests/steps/preserve_docstrings_on_archive_steps.rs`; registered module in
+                `tests/steps/mod.rs`. Single-scenario run → exit 0 (6 steps, 1 passed). 13 merge unit tests pass.
+    - REFACTOR: `cargo clippy --workspace --all-targets -- -D warnings` clean; `cargo fmt -- --check` clean;
+                re-run → still exit 0.
+    - COMMIT:   `0dd8bbc`
 
 - [ ] preserve-docstrings-on-archive: An added scenario keeps its step docstring after archiving
     - RED:      Remove @wip from this scenario only. Single-scenario run → MUST
