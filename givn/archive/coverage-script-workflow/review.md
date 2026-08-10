@@ -119,7 +119,7 @@ non-zero production coverage. For example, the merged report shows
 Merged Cobertura output used for README publication:
 
 ```text
-Line coverage: 60% (4316/7136)
+Line coverage: 60% (4323/7144)
 Branch coverage: n/a (0/0)
 ```
 

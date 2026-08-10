@@ -117,16 +117,20 @@ fn upsert_after_title(content: &str, name: &str, body: &str) -> String {
 
 fn first_title_end(content: &str) -> Option<usize> {
     let mut offset = 0;
+    let mut in_fence = false;
     for line in content.split_inclusive('\n') {
         let title = line.trim_end_matches(['\r', '\n']);
-        if title.trim_start().starts_with("# ") {
+        let trimmed = title.trim_start();
+        if trimmed.starts_with("```") {
+            in_fence = !in_fence;
+        } else if !in_fence && trimmed.starts_with("# ") {
             return Some(offset + line.len());
         }
         offset += line.len();
     }
     if !content.is_empty() {
         let title = content[offset..].trim_end_matches(['\r', '\n']);
-        if title.trim_start().starts_with("# ") {
+        if !in_fence && title.trim_start().starts_with("# ") {
             return Some(content.len());
         }
     }
@@ -223,6 +227,13 @@ mod tests {
             result,
             "<!-- givn:begin:coverage-badge -->\nBADGES\n<!-- givn:end:coverage-badge -->\n\nIntro\n"
         );
+    }
+
+    #[test]
+    fn apply_after_title_ignores_headings_inside_fenced_code() {
+        let content = "```\n# Not a title\n```\n\nContent\n";
+        let result = upsert_after_title(content, "coverage-badge", "BADGES");
+        assert!(result.starts_with("<!-- givn:begin:coverage-badge -->"));
     }
 
     #[test]
