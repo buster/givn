@@ -13,11 +13,14 @@ pub fn run_sync() -> Result<()> {
 
     println!("Syncing skills and agent commands...");
     crate::skills::targets::sync(&project_root)?;
+    let targets = crate::config::overlay::load_skills_targets(&project_root)?;
     println!("\nDone. Generated:");
-    println!("  .agents/skills/   (primary neutral skills)");
-    println!("  .claude/skills/   (Claude Code mirror)");
-    println!("  .opencode/skills/ (opencode skills mirror)");
-    println!("  .opencode/commands/ (opencode slash commands)");
+    for name in &targets {
+        println!("  .{name}/skills/   (skills for {name})");
+    }
+    if targets.iter().any(|t| t == "opencode") {
+        println!("  .opencode/commands/ (opencode slash commands)");
+    }
 
     Ok(())
 }

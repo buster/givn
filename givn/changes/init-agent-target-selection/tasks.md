@@ -316,21 +316,21 @@ it. Do not write a TDD loop for it.
 
 ### Scenario 15: addon skills are written to every configured agent target after sync
 
-- [ ] RED: Remove `@wip`. Must fail — sync cannot yet write all three when
+- [x] RED: Remove `@wip`. Must fail — sync cannot yet write all three when
       configured.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — multi-target writing implemented in Scenario 1 (`write_skill_to_targets` iterates configured targets)
       ```
-- [ ] GREEN: config targets `opencode, agents, claude` → all three addon
+- [x] GREEN: config targets `opencode, agents, claude` → all three addon
       skill dirs written. Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 8 steps (8 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): addon skills are written to every configured agent target after sync`
+- [x] COMMIT: `ee38602` — `feat(init-agent-target-selection): addon skills are written to every configured agent target after sync`
 
 ---
 

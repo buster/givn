@@ -36,20 +36,49 @@ fn ejected_review_template_contains(world: &mut GivnWorld, needle: String) {
 #[then(regex = r##"^the generated review guidance contains "(.+)"$"##)]
 fn generated_review_guidance_contains(world: &mut GivnWorld, needle: String) {
     let root = project_root(world);
-    let paths = [
-        ".agents/skills/givn-review/SKILL.md",
-        ".claude/skills/givn-review/SKILL.md",
-        ".opencode/skills/givn-review/SKILL.md",
-        ".opencode/commands/givn-review.md",
-    ];
+    let config = std::fs::read_to_string(root.join("givn/config.yaml")).unwrap_or_default();
+    let mut targets: Vec<String> = vec!["opencode".to_string()];
+    let mut in_skills = false;
+    for line in config.lines() {
+        let trimmed = line.trim();
+        if trimmed == "skills:" {
+            in_skills = true;
+            continue;
+        }
+        if in_skills {
+            if !line.is_empty() && !line.starts_with(' ') {
+                break;
+            }
+            if let Some(rest) = trimmed.strip_prefix("targets:") {
+                targets = rest
+                    .trim()
+                    .trim_start_matches('[')
+                    .trim_end_matches(']')
+                    .split(',')
+                    .map(|s| s.trim().trim_matches('\'').trim_matches('"').to_string())
+                    .filter(|s| !s.is_empty())
+                    .collect();
+            }
+        }
+    }
 
-    for relative in paths {
-        let path = root.join(relative);
-        let content = std::fs::read_to_string(&path)
-            .unwrap_or_else(|error| panic!("read generated review guidance {relative}: {error}"));
-        assert!(
-            content.contains(&needle),
-            "generated review guidance {relative} missing {needle:?}"
-        );
+    for target in &targets {
+        let paths = [
+            format!(".{target}/skills/givn-review/SKILL.md"),
+            format!(".opencode/commands/givn-review.md"),
+        ];
+        for relative in paths {
+            let path = root.join(&relative);
+            if !path.exists() {
+                continue;
+            }
+            let content = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+                panic!("read generated review guidance {relative}: {error}")
+            });
+            assert!(
+                content.contains(&needle),
+                "generated review guidance {relative} missing {needle:?}"
+            );
+        }
     }
 }
