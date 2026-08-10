@@ -4,8 +4,11 @@
 
 - [x] RED/GREEN: The existing `cucumber-rs` runner uses `.fail_on_skipped()`
   in `tests/features_runner.rs`; `cargo test --test features_runner --no-run`
-  compiled it successfully. The change adds separate e2e and non-e2e step
-  modules and keeps the runner command `cargo test --test features_runner`.
+  compiled it successfully. A temporary undefined-step feature exited non-zero
+  in both modes: normal run `2 scenarios (2 failed)` and `-- --tags @e2e` run
+  `1 scenario (1 failed)`, each reporting `Step doesn't match any function`.
+  The change adds separate e2e and non-e2e step modules and keeps the runner
+  command `cargo test --test features_runner`.
 - [x] GREEN: `givn/commands.yaml` now uses `./run-tests.sh`,
   `./measure-coverage.sh`, and `./merge-coverages.sh`; the root and harness
   projects contain those scripts and README guidance names the same commands.
@@ -62,8 +65,8 @@
 
 - [x] `cargo test --test features_runner` — 151 scenarios, 819 steps passed.
 - [x] `cargo clippy --workspace --all-targets -- -D warnings` — passed.
-- [x] `givn lint` on permanent specs — passed; change-scoped lint reports only
-  the three intended `@wip` scenarios (exit 2).
+- [x] `givn lint` on permanent and change specs — passed after removing all
+  implementation-complete `@wip` tags.
 - [x] `cargo run --quiet -- status --change coverage-script-workflow` — tasks
   complete; review remains the next lifecycle artifact.
 
