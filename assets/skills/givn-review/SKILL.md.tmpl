@@ -118,6 +118,23 @@ when clean.
   </example>
 </coverage-boundary-examples>
 
+## Arc42 implementation conformance (conditional)
+
+If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled` in
+review.md. Otherwise, run this mandatory check before coverage classification.
+Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
+independently derive the affected chapters and architecture facts from the
+completed implementation, `design.md`, and `tasks.md`. For every chapter or
+fact named by either assessment, compare the durable source, Arc42 claim,
+design treatment, task mapping, and implementation evidence in review.md's
+**Arc42 implementation conformance** table.
+
+This check catches both stale Arc42 documentation and design, task, or
+implementation drift from documented facts. Every omission or contradiction is
+a finding. Fix the affected artifact and repeat the comparison; if design.md
+changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
+rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
+
 ## Coverage gate (completeness, not percentage)
 
 Classify every uncovered line/branch into exactly one bucket:

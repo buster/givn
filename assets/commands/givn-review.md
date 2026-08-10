@@ -125,12 +125,27 @@ Mechanical check, before trusting anything else:
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
-### 1. Confirm all tests pass
+### Arc42 implementation conformance (conditional)
+If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled`.
+If it is enabled, read the durable `docs/arc42/` chapters and the change-level
+`arc42.md`, independently derive the affected chapters and architecture facts,
+and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
+evidence from the completed implementation. Fill review.md's **Arc42
+implementation conformance** table.
+
+This is a fresh post-implementation check, not a copy of design-review. It
+must catch both stale Arc42 chapters and implementation drift from documented
+facts. Any omission or contradiction is a finding. Fix the affected artifact
+or implementation and repeat the comparison; if design.md changes, re-run
+design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
+row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
+
+### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
 Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 (classify below). Never change production code to force a pass.
 
-### 2. Measure and record coverage
+### 3. Measure and record coverage
 Run the coverage tool from design.md. Record percentage and raw output in
 review.md — a fact, not a threshold gate.
 
@@ -138,7 +153,7 @@ If `coverage.command` is still the sentinel (`givn missing-coverage`),
 the review gate is blocked. Install and configure a coverage tool before
 continuing. Do not write "not measured" or any placeholder text.
 
-### 3. Classify every gap
+### 4. Classify every gap
 | Bucket | Meaning | Action |
 |---|---|---|
 | Dead code | YAGNI/KISS | Delete; re-run tests. |
@@ -151,10 +166,10 @@ These three buckets are exhaustive — **do not invent a fourth**. Phrases like
 buckets above are themselves a fabrication-audit finding. A missing or
 downgraded `@e2e` scenario is always "Missing test," never excused.
 
-### 4. Resolve each gap
+### 5. Resolve each gap
 Per the table above; hard-to-test gaps get a written justification, no code change.
 
-### 5. Confirm e2e coverage
+### 6. Confirm e2e coverage
 Every capability needs exactly one `@e2e` scenario per distinct happy-path
 action, with a real-interface primary assertion driven through the actual
 interface (real browser for a browser-UI capability — never HTTP/fetch()
@@ -165,14 +180,14 @@ as an exception outside the three buckets. Before concluding a real driver
 is unavailable or not yet installed, search the tree yourself (including
 untracked files, per step 0.7) — do not take an absence at face value.
 
-### 6. Final GREEN confirmation
+### 7. Final GREEN confirmation
 Re-run both runners. Must pass after all gap resolutions.
 
-### 7. Write review.md
+### 8. Write review.md
 Coverage percentage + tool output, gap table, test suite output, sign-off
 checklist, final line REVIEW: PASS.
 
-### 8. Run the review hook
+### 9. Run the review hook
 `givn check review --change <id>`. Fix failures before reporting back.
 
 ## Report back with

@@ -30,7 +30,7 @@ Feature: Arc42 completion conformance review
     And the ejected review template contains "tasks.md"
     And the ejected review template contains "ARC42 CONFORMANCE"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Generated review guidance stays aligned after skill sync
     Given a project root with givn/ initialised
     When the user runs `givn skills sync`
