@@ -4,7 +4,7 @@ RED→GREEN→REFACTOR→COMMIT per scenario. Non-@e2e first, then @e2e.
 Runner: `cargo test --test features_runner` with `GIVN_FEATURES` pointing at
 the change's delta specs (see design.md "Test runner command").
 
-Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled in. Check boxes immediately after each scenario.
+Legend: pending (unchecked) versus done (checked with evidence + commit hash). Check boxes immediately after each scenario.
 
 ---
 
