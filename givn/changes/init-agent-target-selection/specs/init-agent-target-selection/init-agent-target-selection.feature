@@ -6,7 +6,7 @@
 @givn.delta @init-agent-target-selection
 Feature: init-agent-target-selection
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-interactive init installs skills to opencode only
     Given  a project root without a givn/ directory
     When  the user runs `givn init`

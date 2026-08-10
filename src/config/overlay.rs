@@ -107,6 +107,37 @@ pub fn load_effective() -> Result<Manifest> {
     }
 }
 
+/// The known agent target names (canonical, no leading dot).
+pub const KNOWN_AGENT_TARGETS: [&str; 3] = ["opencode", "agents", "claude"];
+
+/// Load the agent targets from the `skills:` block of `givn/config.yaml`.
+///
+/// Canonical names (no leading dot), deduplicated, unknown names dropped.
+/// An absent block, an empty list, or a list with no known names falls back
+/// to `["opencode"]`.
+pub fn load_skills_targets(project_root: &std::path::Path) -> Result<Vec<String>> {
+    let config_path = project_root.join("givn/config.yaml");
+    let mut targets: Vec<String> = Vec::new();
+    if config_path.exists() {
+        let yaml = std::fs::read_to_string(&config_path)?;
+        let doc: OverlayDoc = serde_yaml_ng::from_str(&yaml)
+            .map_err(|e| anyhow::anyhow!("failed to parse givn/config.yaml: {e}"))?;
+        if let Some(skills) = doc.skills {
+            for raw in skills.targets {
+                let name = raw.trim().trim_start_matches('.').to_string();
+                let name = name.to_ascii_lowercase();
+                if KNOWN_AGENT_TARGETS.contains(&name.as_str()) && !targets.contains(&name) {
+                    targets.push(name);
+                }
+            }
+        }
+    }
+    if targets.is_empty() {
+        targets.push("opencode".to_string());
+    }
+    Ok(targets)
+}
+
 /// Convert an overlay patch to a full Artifact (for new artifacts added via overlay).
 fn overlay_to_artifact(patch: OverlayArtifact) -> Artifact {
     Artifact {
@@ -270,9 +301,20 @@ struct OverlayDoc {
     apply: Option<Apply>,
     addons: Option<Addons>,
     extras: Option<bool>,
+    /// Agent targets for skill/command generation (`skills.targets`).
+    /// Ignored by the manifest itself; consumed by `load_skills_targets`.
+    skills: Option<Skills>,
     /// Ignored during overlay processing (used for version tracking).
     #[allow(dead_code)]
     givn_config_version: Option<String>,
+}
+
+/// The `skills:` block of `givn/config.yaml`.
+#[derive(Debug, serde::Deserialize)]
+struct Skills {
+    /// Canonical agent target names: `opencode`, `agents`, `claude`.
+    #[serde(default)]
+    targets: Vec<String>,
 }
 
 /// Overlay artifact patch — same fields as `Artifact` but all are optional/defaulted

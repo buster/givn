@@ -418,9 +418,15 @@ scenarios exist.
 
 ## Full-suite gate
 
-- [ ] Run the full runner against a freshly init'd temp project
-      (`GIVN_FEATURES=givn/specs/ cargo test --test features_runner`) and
-      against the change specs — both exit 0.
+- [ ] Run the full change-scoped suite
+      (`GIVN_FEATURES=givn/changes/init-agent-target-selection/specs/ cargo test --test features_runner` and the same with `-- --tags @e2e`) — both exit 0.
+- [ ] Run the permanent suite (`cargo test --test features_runner`):
+      the ONLY failing scenarios must be the three permanent install-extras
+      scenarios this change modifies (their deltas merge at archive:
+      "givn init defaults to all addons enabled and generates their files",
+      "givn addons enable generates skill and command files",
+      "addon skills are written to all target directories"). Any other
+      failure is unexpected and blocks archive.
       ```
       <!-- paste evidence -->
       ```

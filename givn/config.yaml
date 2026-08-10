@@ -15,52 +15,24 @@
 givn_config_version: "0.2.0"
 
 # --- Test runner -------------------------------------------------------------
-# The command givn invokes to run your test suite. This is the ONLY value
-# you MUST set for a working project. The shipped default is a sentinel that
-# prints setup guidance and exits non-zero — so nothing ever falsely reports
-# GREEN until you configure a real runner.
+# The command givn invokes to run your test suite. Configured in
+# givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
+# verify.command and verify.e2e_command keys.
 #
-# CHANGE ME — set this to your project's test runner.
+# The shipped default is a sentinel that prints setup guidance and exits
+# non-zero — so nothing ever falsely reports GREEN until you configure a
+# real runner in givn/commands.yaml.
 #
-# RECOMMENDED — coverage-instrumented runners (the review gate requires
-# coverage data to measure gaps):
-#   cargo llvm-cov --test features_runner                (Rust — line/branch coverage)
-#   cargo llvm-cov --test features_runner --test e2e_runner --summary-only (Rust — both runners, summary)
-#   npx nyc --reporter=text-summary npx cucumber-js "givn/specs/**/*.feature"  (Node.js — coverage)
-#   coverage run -m behave givn/specs && coverage report  (Python — coverage)
-#   mvn verify                                            (Java — with JaCoCo)
-#
-# Fallback — bare test runners (no coverage data produced; use only while
-# prototyping, then switch to a coverage-instrumented runner above):
-#   cargo test --test features_runner       (Rust — test only, no coverage)
-#   npx cucumber-js "givn/specs/**/*.feature"   (any — test only, no coverage)
-#   behave                                  (Python — test only, no coverage)
-#   go test ./...                           (Go — no coverage)
-#   pytest                                  (Python — test only, no coverage)
-#
-# WARNING: If your verify.command does NOT produce coverage data, you MUST
-# also set coverage.command below to an instrumented runner. Without coverage
-# data the review gate cannot measure gaps and will reject the change.
-#
-# See arc42 ch.8.10 for details.
-verify:
-  command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
-  e2e_command: "cargo test --test features_runner -- --tags @e2e"
 
 # --- Coverage gate (archive-level, requires addons.coverage: true) ------------
-coverage:
-  non_e2e_command: "GIVN_FEATURES=givn/specs/ cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner"
-  e2e_command: "GIVN_FEATURES=givn/specs/ cargo llvm-cov --cobertura --output-path coverage/e2e-cobertura.xml --test features_runner -- --tags @e2e"
+# Commands that run tests with coverage instrumentation. Configured in
+# givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
+# coverage.non_e2e_command and coverage.e2e_command keys.
+#
 
-# --- Features path -----------------------------------------------------------
-# Path the test runner reads .feature files from during development. Also
-# exported to the test runner as the GIVN_FEATURES environment variable.
+# --- E2E test runner ----------------------------------------------------------
+# Configured in givn/commands.yaml — see verify.e2e_command there.
 #
-# Default: givn/specs
-# After archive, GIVN_FEATURES points here for the permanent merged specs.
-#
-# verify:
-#   features_path: "givn/specs"
 
 # --- Artifact graph overlay --------------------------------------------------
 # Patch the embedded default artifact graph without replacing it. Declare only
@@ -176,6 +148,41 @@ coverage:
 # apply.requires) -- an enabled-but-unfinished arc42 doc blocks
 # `givn archive`, not just the "ready-to-archive" status label.
 
+# --- Addon: domain_modeling ---------------------------------------------------
+# Skill — model a change's domain (ubiquitous language, aggregates, invariants)
+# before design. Generates the givn-domain-modeling skill file on
+# `givn skills sync`. Toggle with: givn addons enable|disable domain_modeling.
+#
+# domain_modeling: false   # set to true to enable
+
+# --- Addon: dev_principles ----------------------------------------------------
+# Skill — apply the team's engineering principles during implementation.
+# Generates the givn-dev-principles skill file on `givn skills sync`.
+# Toggle with: givn addons enable|disable dev_principles.
+#
+# dev_principles: false   # set to true to enable
+
+# --- Addon: grill_me ----------------------------------------------------------
+# Command — Socratically grill the current plan/design, one question at a time.
+# Generates the /grill-me opencode command on `givn skills sync`.
+# Toggle with: givn addons enable|disable grill_me.
+#
+# grill_me: false   # set to true to enable
+
+# --- Addon: grill_with_docs ---------------------------------------------------
+# Command — grill the plan/design, citing a source in the project's own docs
+# for every challenge. Generates the /grill-with-docs opencode command on
+# `givn skills sync`. Toggle with: givn addons enable|disable grill_with_docs.
+#
+# grill_with_docs: false   # set to true to enable
+
+# --- User overrides preserved from previous version ---
+verify:
+  command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
+  e2e_command: "cargo test --test features_runner -- --tags @e2e"
+coverage:
+  non_e2e_command: "GIVN_FEATURES=givn/specs/ cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner"
+  e2e_command: "GIVN_FEATURES=givn/specs/ cargo llvm-cov --cobertura --output-path coverage/e2e-cobertura.xml --test features_runner -- --tags @e2e"
 addons:
   arc42: true
   absolute_mode: true
@@ -185,4 +192,4 @@ addons:
   dev_principles: true
   grill_me: true
   grill_with_docs: true
-
+# ---

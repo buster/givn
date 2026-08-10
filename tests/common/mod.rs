@@ -61,6 +61,33 @@ pub fn run_givn(env: &TestEnv, args: &[&str]) -> Output {
         .expect("spawn givn subprocess")
 }
 
+/// Invoke the `givn` binary with `env`'s temp dir as current directory,
+/// one stdin line written (`answer`), then stdin closed. Simulates an
+/// interactive answer to a prompt without a terminal.
+pub fn run_givn_with_stdin(env: &TestEnv, args: &[&str], answer: &str) -> Output {
+    use std::io::Write;
+    use std::process::Stdio;
+
+    let bin = env!("CARGO_BIN_EXE_givn");
+    let mut child = Command::new(bin)
+        .args(args)
+        .current_dir(env.root())
+        .stdin(Stdio::piped())
+        .stdout(Stdio::piped())
+        .stderr(Stdio::piped())
+        .spawn()
+        .expect("spawn givn subprocess with piped stdin");
+
+    {
+        let mut stdin = child.stdin.take().expect("piped stdin");
+        stdin
+            .write_all(answer.as_bytes())
+            .expect("write answer to givn stdin");
+    }
+
+    child.wait_with_output().expect("wait for givn subprocess")
+}
+
 /// Write a project override at `givn/artifacts/<artifact>/<file>` inside the
 /// temp root. `givn init` does not scaffold `givn/artifacts/` (SMELL-3), so
 /// this helper `create_dir_all`s the subtree itself.

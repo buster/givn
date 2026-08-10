@@ -2,11 +2,14 @@ use crate::config::overlay::load_effective;
 use crate::skills::render::{
     SkillContext, default_skill_names, render_skill, resolve_skill_template,
 };
-/// Write rendered skills and commands to all target locations:
-/// - `.agents/skills/<name>/SKILL.md`   (primary neutral)
-/// - `.claude/skills/<name>/SKILL.md`   (Claude Code mirror)
-/// - `.opencode/skills/<name>/SKILL.md` (opencode mirror)
-/// - `.opencode/commands/<name>.md`     (opencode slash commands)
+/// Write rendered skills and commands to the configured target locations:
+/// - `.opencode/skills/<name>/SKILL.md` when `opencode` is selected
+/// - `.agents/skills/<name>/SKILL.md` when `agents` is selected
+/// - `.claude/skills/<name>/SKILL.md` when `claude` is selected
+/// - `.opencode/commands/<name>.md` when `opencode` is selected
+///
+/// The target set comes from the `skills:` block of `givn/config.yaml`
+/// (default: `[opencode]`). See ADR-036.
 ///
 /// `AGENTS.md` at the repo root is otherwise user-owned. The only exception:
 /// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it:
@@ -17,12 +20,89 @@ use crate::skills::render::{
 use anyhow::Result;
 use std::path::Path;
 
+/// A canonical agent target for generated skills/commands.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum AgentTarget {
+    /// `.opencode/` — opencode skills mirror + slash commands.
+    Opencode,
+    /// `.agents/` — the neutral skills location.
+    Agents,
+    /// `.claude/` — Claude Code skills mirror.
+    Claude,
+}
+
+impl AgentTarget {
+    /// All known targets.
+    #[allow(dead_code)] // used by the init prompt
+    pub const ALL: [AgentTarget; 3] = [
+        AgentTarget::Opencode,
+        AgentTarget::Agents,
+        AgentTarget::Claude,
+    ];
+
+    /// Canonical config name (no leading dot).
+    #[allow(dead_code)] // used by the init prompt / config writer
+    pub fn name(&self) -> &'static str {
+        match self {
+            AgentTarget::Opencode => "opencode",
+            AgentTarget::Agents => "agents",
+            AgentTarget::Claude => "claude",
+        }
+    }
+
+    /// Directory name under the project root.
+    pub fn dir(&self) -> &'static str {
+        match self {
+            AgentTarget::Opencode => ".opencode",
+            AgentTarget::Agents => ".agents",
+            AgentTarget::Claude => ".claude",
+        }
+    }
+
+    /// Name shown in the init prompt (fully-qualified directory form).
+    #[allow(dead_code)] // used by the init prompt
+    pub fn display(&self) -> &'static str {
+        self.dir()
+    }
+
+    /// Resolve a (possibly dotted) name to a target.
+    pub fn from_name(name: &str) -> Option<Self> {
+        match name
+            .trim()
+            .trim_start_matches('.')
+            .to_ascii_lowercase()
+            .as_str()
+        {
+            "opencode" => Some(AgentTarget::Opencode),
+            "agents" => Some(AgentTarget::Agents),
+            "claude" => Some(AgentTarget::Claude),
+            _ => None,
+        }
+    }
+}
+
+/// Resolve the configured agent targets from `givn/config.yaml`.
+fn configured_targets(project_root: &Path) -> Result<Vec<AgentTarget>> {
+    let names = crate::config::overlay::load_skills_targets(project_root)?;
+    let mut targets = Vec::new();
+    for name in names {
+        if let Some(t) = AgentTarget::from_name(&name) {
+            targets.push(t);
+        }
+    }
+    if targets.is_empty() {
+        targets.push(AgentTarget::Opencode);
+    }
+    Ok(targets)
+}
+
 /// Regenerate all skills and commands in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
     let manifest = load_effective()?;
     let verify_command = &manifest.verify.command;
     let features_path = &manifest.verify.features_path;
     let version = env!("CARGO_PKG_VERSION");
+    let targets = configured_targets(project_root)?;
 
     let mut skill_names = default_skill_names();
     if manifest.addons.domain_modeling {
@@ -32,7 +112,7 @@ pub fn sync(project_root: &Path) -> Result<()> {
         skill_names.push("givn-dev-principles");
     }
 
-    // Render and write each skill to all targets.
+    // Render and write each skill to the configured targets.
     let ctx = SkillContext {
         change_id: "<change-id>",
         verify_command,
@@ -47,22 +127,24 @@ pub fn sync(project_root: &Path) -> Result<()> {
         // Validate frontmatter.
         validate_frontmatter(&rendered, name)?;
 
-        write_skill_to_targets(project_root, name, &rendered)?;
+        write_skill_to_targets(project_root, name, &rendered, &targets)?;
         println!("  synced skill: {name}");
     }
 
-    // Write opencode slash commands.
-    let mut command_names = default_command_names();
-    if manifest.addons.grill_me {
-        command_names.push("grill-me");
-    }
-    if manifest.addons.grill_with_docs {
-        command_names.push("grill-with-docs");
-    }
-    for name in &command_names {
-        let content = resolve_command_template_for(name)?;
-        write_opencode_command(project_root, name, &content)?;
-        println!("  synced command: /{name}");
+    // Write opencode slash commands (opencode target only).
+    if targets.contains(&AgentTarget::Opencode) {
+        let mut command_names = default_command_names();
+        if manifest.addons.grill_me {
+            command_names.push("grill-me");
+        }
+        if manifest.addons.grill_with_docs {
+            command_names.push("grill-with-docs");
+        }
+        for name in &command_names {
+            let content = resolve_command_template_for(name)?;
+            write_opencode_command(project_root, name, &content)?;
+            println!("  synced command: /{name}");
+        }
     }
 
     // Always-on blocks: unconditional, refreshed every sync.
@@ -79,16 +161,19 @@ pub fn sync(project_root: &Path) -> Result<()> {
     Ok(())
 }
 
-/// Write a rendered SKILL.md to all three skill target locations.
-fn write_skill_to_targets(project_root: &Path, name: &str, content: &str) -> Result<()> {
-    let targets = [
-        format!(".agents/skills/{name}/SKILL.md"),
-        format!(".claude/skills/{name}/SKILL.md"),
-        format!(".opencode/skills/{name}/SKILL.md"),
-    ];
-
-    for target in &targets {
-        let path = project_root.join(target);
+/// Write a rendered SKILL.md to the configured skill target locations.
+fn write_skill_to_targets(
+    project_root: &Path,
+    name: &str,
+    content: &str,
+    targets: &[AgentTarget],
+) -> Result<()> {
+    for target in targets {
+        let path = project_root
+            .join(target.dir())
+            .join("skills")
+            .join(name)
+            .join("SKILL.md");
         if let Some(parent) = path.parent() {
             std::fs::create_dir_all(parent)?;
         }
