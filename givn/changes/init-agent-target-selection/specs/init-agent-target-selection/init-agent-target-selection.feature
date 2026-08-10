@@ -84,7 +84,7 @@ Feature: init-agent-target-selection
     Then  the command exits 0
     And  givn skills targets in givn/config.yaml equal "opencode"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown agent name in the answer is dropped with a hint listing the valid agents
     Given  a project root without a givn/ directory
     When  the user runs `givn init` and answers the agent prompt with "claude, nope"

@@ -199,21 +199,21 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 9: givn init --force re-applies the default selection
 
-- [ ] RED: Remove `@wip`. Must fail.
+- [x] RED: Remove `@wip`. Must fail.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — Scenario 2's prompt runs whenever config is (re)created, including `--force`; EOF→default. No separate RED state.
       ```
-- [ ] GREEN: `--force` replaces config → prompt runs → EOF → default
+- [x] GREEN: `--force` replaces config → prompt runs → EOF → default
       `[opencode]`. Ensure this cannot clobber Scenario 8's skip path.
       Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 5 steps (5 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): givn init --force re-applies the default selection`
+- [x] COMMIT: `93de4c2` — `feat(init-agent-target-selection): givn init --force re-applies the default selection`
 
 ### Scenario 10: An unknown agent name in the answer is dropped with a hint listing the valid agents
 
