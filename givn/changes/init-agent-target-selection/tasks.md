@@ -180,22 +180,22 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 8: Re-running init keeps the persisted selection
 
-- [ ] RED: Remove `@wip`. Must fail — init currently forces the default on
+- [x] RED: Remove `@wip`. Must fail — init currently forces the default on
       every run (or writes all targets).
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — the `config_created` gate in `cli::init` (Scenario 2) already skips the prompt when `givn/config.yaml` exists; persisted `claude` survives re-init. No separate RED state.
       ```
-- [ ] GREEN: `init` on an existing project skips the prompt and keeps the
+- [x] GREEN: `init` on an existing project skips the prompt and keeps the
       persisted `claude` selection (config untouched, sync to `claude`).
       Files: `src/cli/init.rs`.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 5 steps (5 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): Re-running init keeps the persisted selection`
+- [x] COMMIT: `cc5efe7` — `feat(init-agent-target-selection): Re-running init keeps the persisted selection`
 
 ### Scenario 9: givn init --force re-applies the default selection
 

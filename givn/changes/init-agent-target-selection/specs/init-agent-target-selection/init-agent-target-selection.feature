@@ -76,7 +76,7 @@ Feature: init-agent-target-selection
     Then  the command exits 0
     And  givn skills targets in givn/config.yaml equal "claude"
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn init --force re-applies the default selection
     Given  a project root with givn/ initialised
     And  givn skills targets in givn/config.yaml equal "opencode, claude"
