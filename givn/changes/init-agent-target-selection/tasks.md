@@ -24,7 +24,7 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ## Setup
 
-- [ ] Register `tests/steps/init_agent_target_selection_steps.rs` in
+- [x] Register `tests/steps/init_agent_target_selection_steps.rs` in
       `tests/steps/mod.rs`. Add a stdin-capable invocation helper to
       `tests/common/mod.rs` (spawn with piped stdin, write `<answer>\n`,
       close pipe, wait) alongside the existing `run_givn`.
@@ -34,8 +34,9 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
       - `#[given] / #[then] givn skills targets in givn/config.yaml equal "<a, b, c>"` — given writes the `skills:` block, then asserts the parsed targets.
       - `#[given] a givn/config.yaml with skills targets "<a, b, c>"` — scaffold `givn/` + minimal `givn/config.yaml` with the `skills:` block (no init run).
       Proof-of-strictness (section above) must pass first.
+      Ran: `GIVN_FEATURES=givn/changes/init-agent-target-selection/specs/ cargo test --test features_runner -- --name "Interactive init installs only the agents the user selects"` with `init_with_answer` stubbed `todo!()` -> "1 scenario (1 failed) ... error: test failed". Stub reverted.
       ```
-      <!-- paste evidence -->
+      evidence: strict-mode proof above (panic -> scenario failed -> non-zero exit)
       ```
 
 ---
@@ -44,25 +45,25 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 1: Non-interactive init installs skills to opencode only
 
-- [ ] RED: Remove `@wip`. Run targeting this scenario only:
+- [x] RED: Remove `@wip`. Run targeting this scenario only:
       `GIVN_FEATURES=givn/changes/init-agent-target-selection/specs/ cargo test --test features_runner -- --name "Non-interactive init installs skills to opencode only"`.
       Must fail — currently `sync` writes to all three targets.
       ```
-      <!-- paste RED evidence -->
+      evidence: "expected directory .agents/skills/givn-propose to not exist ... 1 scenario (1 failed) ... error: test failed"
       ```
-- [ ] GREEN: implement target-driven sync in `src/skills/targets.rs`
+- [x] GREEN: implement target-driven sync in `src/skills/targets.rs`
       (`configured_targets` default `[Opencode]`), rewire `init`'s sync call.
       Files: `src/skills/targets.rs`, `src/config/overlay.rs` (Skills +
       `load_skills_targets`), `src/cli/init.rs`, `src/cli/skills.rs`.
       Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 7 steps (7 passed)
       ```
-- [ ] REFACTOR: `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`. Re-run, must still pass.
+- [x] REFACTOR: `cargo fmt`, `cargo clippy --workspace --all-targets -- -D warnings`. Re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: clippy clean; scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): Non-interactive init installs skills to opencode only`
+- [x] COMMIT: `3d40bdc` — `feat(init-agent-target-selection): Non-interactive init installs skills to opencode only`
 
 ### Scenario 2: Interactive init installs only the agents the user selects
 

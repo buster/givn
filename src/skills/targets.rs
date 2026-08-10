@@ -33,7 +33,6 @@ pub enum AgentTarget {
 
 impl AgentTarget {
     /// All known targets.
-    #[allow(dead_code)] // used by the init prompt
     pub const ALL: [AgentTarget; 3] = [
         AgentTarget::Opencode,
         AgentTarget::Agents,
@@ -41,7 +40,6 @@ impl AgentTarget {
     ];
 
     /// Canonical config name (no leading dot).
-    #[allow(dead_code)] // used by the init prompt / config writer
     pub fn name(&self) -> &'static str {
         match self {
             AgentTarget::Opencode => "opencode",
@@ -60,7 +58,6 @@ impl AgentTarget {
     }
 
     /// Name shown in the init prompt (fully-qualified directory form).
-    #[allow(dead_code)] // used by the init prompt
     pub fn display(&self) -> &'static str {
         self.dir()
     }

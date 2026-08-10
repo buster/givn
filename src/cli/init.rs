@@ -1,5 +1,7 @@
-use crate::config::render;
+use crate::skills::targets::AgentTarget;
 use anyhow::Result;
+use std::io::IsTerminal;
+use std::path::Path;
 
 const BANNER: &str = r#"
   ________  .__
@@ -11,6 +13,9 @@ const BANNER: &str = r#"
 
   from Given to done.
 "#;
+
+/// Default agent target when the user gives no selection.
+const DEFAULT_TARGETS: [AgentTarget; 1] = [AgentTarget::Opencode];
 
 /// Scaffold `givn/{specs,changes,archive}` and write the documented,
 /// versioned `givn/config.yaml`. Enables all addons by default (opt-out via
@@ -36,12 +41,26 @@ pub fn run(force: bool, no_addons: bool) -> Result<()> {
 
     // Write givn/config.yaml (documented + versioned).
     let config_path = project_root.join("givn/config.yaml");
-    if config_path.exists() && !force {
+    let config_created = if config_path.exists() && !force {
         println!("  exists   givn/config.yaml  (use --force to overwrite)");
+        false
     } else {
-        let content = render::config_yaml(env!("CARGO_PKG_VERSION"))?;
+        let content = crate::config::render::config_yaml(env!("CARGO_PKG_VERSION"))?;
         std::fs::write(&config_path, content)?;
         println!("  wrote    givn/config.yaml");
+        true
+    };
+
+    // Ask which agents to install skills/commands to (fresh config only).
+    // Non-interactive stdin (EOF) falls back to the default: opencode.
+    let mut target_print = Vec::new();
+    if config_created {
+        let targets = prompt_for_targets()?;
+        for t in &targets {
+            target_print.push(t.display().to_string());
+        }
+        write_skills_block(&project_root, &targets)?;
+        println!("  skills will be installed to: {}", target_print.join(", "));
     }
 
     // Write givn/commands.yaml (test runner + coverage, separate from config).
@@ -97,5 +116,84 @@ pub fn run(force: bool, no_addons: bool) -> Result<()> {
     println!("  3. Implement it      /givn-implement");
     println!();
 
+    Ok(())
+}
+
+/// Ask the user which agents to install skills/commands to.
+///
+/// Reads one line from stdin. On a terminal the numbered prompt is shown;
+/// with piped/closed stdin the line is still read if available. An empty
+/// answer, EOF, or an answer with no known agent name falls back to the
+/// default (`opencode`). Unknown names are dropped with a warning listing
+/// the valid agents.
+fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
+    let stdin = std::io::stdin();
+
+    if stdin.is_terminal() {
+        println!("\nWhich agents should givn install skills to?");
+        for (i, t) in AgentTarget::ALL.iter().enumerate() {
+            let marker = if *t == AgentTarget::Opencode {
+                " (default)"
+            } else {
+                ""
+            };
+            println!("  [{}] {}{}", i + 1, t.display(), marker);
+        }
+        println!(
+            "Enter numbers or names, comma-separated. Press Enter for the default (opencode): "
+        );
+    }
+
+    let mut line = String::new();
+    let n = stdin.read_line(&mut line)?;
+    if n == 0 {
+        return Ok(DEFAULT_TARGETS.to_vec());
+    }
+
+    let mut targets: Vec<AgentTarget> = Vec::new();
+    let mut unknown: Vec<String> = Vec::new();
+    for part in line.split(',') {
+        match AgentTarget::from_name(part) {
+            Some(t) if !targets.contains(&t) => targets.push(t),
+            Some(_) => {}
+            None => {
+                let name = part.trim();
+                if !name.is_empty() {
+                    unknown.push(name.to_string());
+                }
+            }
+        }
+    }
+
+    if !unknown.is_empty() {
+        let valid: Vec<&str> = AgentTarget::ALL.iter().map(|t| t.display()).collect();
+        println!(
+            "Unknown agent(s): {}. Valid agents: {}",
+            unknown.join(", "),
+            valid.join(", ")
+        );
+    }
+
+    if targets.is_empty() {
+        return Ok(DEFAULT_TARGETS.to_vec());
+    }
+
+    Ok(targets)
+}
+
+/// Append the `skills:` block with the chosen targets to `givn/config.yaml`.
+/// Line-based append: preserves all other content and comments.
+fn write_skills_block(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
+    let config_path = project_root.join("givn/config.yaml");
+    let mut content = std::fs::read_to_string(&config_path)?;
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    if !content.ends_with("\n\n") {
+        content.push('\n');
+    }
+    let list: Vec<&str> = targets.iter().map(|t| t.name()).collect();
+    content.push_str(&format!("skills:\n  targets: [{}]\n", list.join(", ")));
+    std::fs::write(&config_path, content)?;
     Ok(())
 }
