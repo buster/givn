@@ -15,6 +15,8 @@ pub mod arc42_review_alignment_steps;
 /// constructed for each scenario.
 pub mod choose_project_license_steps;
 pub mod coverage_readme_example_steps;
+pub mod coverage_script_workflow_e2e_steps;
+pub mod coverage_script_workflow_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
 pub mod extract_coverage_gate_steps;

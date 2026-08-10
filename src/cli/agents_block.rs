@@ -24,6 +24,23 @@ pub fn apply(path: &Path, name: &str, body: &str) -> Result<()> {
     Ok(())
 }
 
+/// Ensure a named block appears directly below the first level-one Markdown
+/// heading. Existing blocks are moved there before their body is replaced.
+/// If no heading exists, the block is placed at the beginning of the file.
+pub fn apply_after_title(path: &Path, name: &str, body: &str) -> Result<()> {
+    let existing = if path.exists() {
+        std::fs::read_to_string(path)?
+    } else {
+        String::new()
+    };
+
+    let updated = upsert_after_title(&existing, name, body.trim_end());
+    if updated != existing {
+        std::fs::write(path, updated)?;
+    }
+    Ok(())
+}
+
 /// Remove a named block from the given file. Leaves all other content
 /// untouched, including any other named block. If the file becomes empty as a
 /// result AND it contained nothing but givn-managed blocks (i.e. no user
@@ -74,6 +91,46 @@ fn upsert_block(content: &str, name: &str, body: &str) -> String {
         };
         format!("{content}{sep}{block}\n")
     }
+}
+
+fn upsert_after_title(content: &str, name: &str, body: &str) -> String {
+    let content = remove_block(content, name);
+    let begin = begin_marker(name);
+    let end = end_marker(name);
+    let block = format!("{begin}\n{body}\n{end}");
+
+    let Some(title_end) = first_title_end(&content) else {
+        if content.trim().is_empty() {
+            return format!("{block}\n");
+        }
+        return format!("{block}\n\n{content}");
+    };
+
+    let before = content[..title_end].trim_end_matches('\n');
+    let after = content[title_end..].trim_start_matches('\n');
+    if after.is_empty() {
+        format!("{before}\n\n{block}\n")
+    } else {
+        format!("{before}\n\n{block}\n\n{after}")
+    }
+}
+
+fn first_title_end(content: &str) -> Option<usize> {
+    let mut offset = 0;
+    for line in content.split_inclusive('\n') {
+        let title = line.trim_end_matches(['\r', '\n']);
+        if title.trim_start().starts_with("# ") {
+            return Some(offset + line.len());
+        }
+        offset += line.len();
+    }
+    if !content.is_empty() {
+        let title = content[offset..].trim_end_matches(['\r', '\n']);
+        if title.trim_start().starts_with("# ") {
+            return Some(content.len());
+        }
+    }
+    None
 }
 
 /// Remove the named block (and one adjacent blank line, if any) from `content`.
@@ -137,6 +194,34 @@ mod tests {
         assert!(result.starts_with(existing));
         assert!(
             result.contains("<!-- givn:begin:example -->\nBODY TEXT\n<!-- givn:end:example -->")
+        );
+    }
+
+    #[test]
+    fn apply_after_title_places_block_under_first_heading() {
+        let result = upsert_after_title("# Title\n\nContent.\n", "coverage-badge", "BADGES");
+        assert_eq!(
+            result,
+            "# Title\n\n<!-- givn:begin:coverage-badge -->\nBADGES\n<!-- givn:end:coverage-badge -->\n\nContent.\n"
+        );
+    }
+
+    #[test]
+    fn apply_after_title_replaces_and_moves_existing_block() {
+        let existing = "# Title\n\nContent.\n\n<!-- givn:begin:coverage-badge -->\nOLD\n<!-- givn:end:coverage-badge -->\n";
+        let result = upsert_after_title(existing, "coverage-badge", "NEW");
+        assert_eq!(
+            result,
+            "# Title\n\n<!-- givn:begin:coverage-badge -->\nNEW\n<!-- givn:end:coverage-badge -->\n\nContent.\n"
+        );
+    }
+
+    #[test]
+    fn apply_after_title_inserts_at_top_without_heading() {
+        let result = upsert_after_title("Intro\n", "coverage-badge", "BADGES");
+        assert_eq!(
+            result,
+            "<!-- givn:begin:coverage-badge -->\nBADGES\n<!-- givn:end:coverage-badge -->\n\nIntro\n"
         );
     }
 
