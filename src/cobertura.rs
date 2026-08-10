@@ -38,6 +38,24 @@ pub fn validate(report: &CoberturaReport) -> Result<()> {
              Coverage instrumentation produced no data."
         );
     }
+    let expected_line_rate = report.lines_covered as f64 / report.lines_valid as f64;
+    if (report.line_rate - expected_line_rate).abs() > 0.01 {
+        bail!(
+            "Cobertura XML line-rate={} does not match lines-covered/lines-valid={}",
+            report.line_rate,
+            expected_line_rate
+        );
+    }
+    if report.branches_valid > 0 {
+        let expected_branch_rate = report.branches_covered as f64 / report.branches_valid as f64;
+        if (report.branch_rate - expected_branch_rate).abs() > 0.01 {
+            bail!(
+                "Cobertura XML branch-rate={} does not match branches-covered/branches-valid={}",
+                report.branch_rate,
+                expected_branch_rate
+            );
+        }
+    }
     Ok(())
 }
 
@@ -237,6 +255,19 @@ mod tests {
         write_cobertura(&path, 0.0, 0.0, 0, 0, 0, 0);
 
         let report = parse(&path).unwrap();
+        assert!(validate(&report).is_err());
+    }
+
+    #[test]
+    fn validate_rejects_rates_that_disagree_with_counters() {
+        let report = CoberturaReport {
+            line_rate: 0.1,
+            branch_rate: 0.5,
+            lines_covered: 9,
+            lines_valid: 10,
+            branches_covered: 1,
+            branches_valid: 2,
+        };
         assert!(validate(&report).is_err());
     }
 
