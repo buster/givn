@@ -336,22 +336,22 @@ it. Do not write a TDD loop for it.
 
 ## Arc42/spec alignment
 
-- [ ] `assets/config.yaml.tmpl` documents the `skills:` block (commented
-      scaffold section).
-- [ ] Narrow `the generated review guidance contains` step
+- [x] `assets/config.yaml.tmpl` documents the `skills:` block (commented
+      scaffold section). <commit 800b27b/ec64ddd>
+- [x] Narrow `the generated review guidance contains` step
       (`tests/steps/arc42_review_alignment_steps.rs`) from the three fixed
       targets to the configured targets (read `.opencode` for default
       projects). Re-run `cargo test --test features_runner` — permanent
       suite stays green.
       ```
-      <!-- paste evidence -->
+      evidence: "Generated review guidance stays aligned after skill sync" 1 passed; permanent suite: 134 scenarios, only the 3 modified install-extras scenarios fail (131 passed)
       ```
-- [ ] Self-hosting: append `skills:` block with
+- [x] Self-hosting: append `skills:` block with
       `targets: [opencode, agents, claude]` to this repo's
       `givn/config.yaml`; run `givn skills sync`; confirm `.agents`,
       `.claude`, `.opencode` all regenerated.
       ```
-      <!-- paste evidence -->
+      evidence: givn skills sync -> synced skill lines; all three target dirs rewritten (identical mtime)
       ```
 
 ---

@@ -145,3 +145,17 @@ fn consumer_init_silent(world: &mut GivnWorld) {
     let out = crate::common::run_givn(env, &["init"]);
     world.last_output = Some(out);
 }
+
+#[when(regex = r#"^the consumer runs `([^`]+)`$"#)]
+fn consumer_runs(world: &mut GivnWorld, cmd: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let mut argv: Vec<&str> = cmd.split_whitespace().collect();
+    if argv.first() == Some(&"givn") {
+        argv.remove(0);
+    }
+    let out = crate::common::run_givn(env, &argv);
+    world.last_output = Some(out);
+}

@@ -102,7 +102,7 @@ Feature: init-agent-target-selection
     Then  the command exits 0
     And  givn skills targets in givn/config.yaml equal "opencode"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer selects agent targets during interactive init
     Given  a project root without a givn/ directory
     When  the consumer runs `givn init` and answers the agent prompt with "opencode, .claude"
@@ -111,7 +111,7 @@ Feature: init-agent-target-selection
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the directory ".agents/skills/givn-propose" does not exist
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs init non-interactively and gets opencode skills
     Given  a project root without a givn/ directory
     When  the consumer invokes `givn init` without answering a prompt
@@ -119,7 +119,7 @@ Feature: init-agent-target-selection
     And  the file ".opencode/skills/givn-propose/SKILL.md" exists
     And  the directory ".claude/skills/givn-propose" does not exist
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer re-syncs skills after init and the selection is honoured
     Given  a project root with givn/ initialised
     And  givn skills targets in givn/config.yaml equal "opencode, claude"
