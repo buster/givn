@@ -26,7 +26,7 @@ Feature: install-extras
   Scenario: addon skills are written to all target directories
     Given  a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: addon skills are written to the default agent target after sync
     Given  a project root with givn/ initialised
     And  givn addon "domain_modeling" is "true"

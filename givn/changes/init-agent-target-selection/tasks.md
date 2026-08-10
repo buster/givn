@@ -279,22 +279,22 @@ it. Do not write a TDD loop for it.
 
 ### Scenario 13: givn addons enable generates skill and command files (modified)
 
-- [ ] RED: Remove `@wip`. Must fail — `addons enable` sync writes to
+- [x] RED: Remove `@wip`. Must fail — `addons enable` sync writes to
       `.agents`.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — `addons enable` calls the same target-driven `sync` (Scenario 1). No separate RED state.
       ```
-- [ ] GREEN: must pass once `sync` is target-driven (Scenario 1); verify
+- [x] GREEN: must pass once `sync` is target-driven (Scenario 1); verify
       `.opencode/skills/givn-domain-modeling` exists, `.agents/...` absent.
       Files: —
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 7 steps (7 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): givn addons enable generates skill and command files`
+- [x] COMMIT: `e44d9f9` — `feat(init-agent-target-selection): givn addons enable generates skill and command files`
 
 ### Scenario 14: addon skills are written to the default agent target after sync
 
