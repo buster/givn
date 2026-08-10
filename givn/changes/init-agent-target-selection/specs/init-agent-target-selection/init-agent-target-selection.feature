@@ -48,7 +48,7 @@ Feature: init-agent-target-selection
     Then  the command exits 0
     And  givn skills targets in givn/config.yaml equal "opencode"
 
-  @givn.added @wip
+  @givn.added
   Scenario: givn skills sync installs to the persisted selection only
     Given  a project root with givn/ initialised
     And  givn skills targets in givn/config.yaml equal "opencode, claude"

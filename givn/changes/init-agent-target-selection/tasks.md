@@ -124,20 +124,20 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 5: Non-interactive init persists opencode as the default target
 
-- [ ] RED: Remove `@wip`. Must fail — config has no `skills:` block yet.
+- [x] RED: Remove `@wip`. Must fail — config has no `skills:` block yet.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — EOF fallback + `write_skills_block` already write `[opencode]` on fresh non-interactive init (Scenarios 2/3). No separate RED state.
       ```
-- [ ] GREEN: `init` writes the default `[opencode]` block on fresh config.
+- [x] GREEN: `init` writes the default `[opencode]` block on fresh config.
       Files: `src/cli/init.rs`.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 4 steps (4 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): Non-interactive init persists opencode as the default target`
+- [x] COMMIT: `4290e08` — `feat(init-agent-target-selection): Non-interactive init persists opencode as the default target`
 
 ### Scenario 6: givn skills sync installs to the persisted selection only
 
