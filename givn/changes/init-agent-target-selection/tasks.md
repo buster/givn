@@ -141,21 +141,21 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 6: givn skills sync installs to the persisted selection only
 
-- [ ] RED: Remove `@wip`. Must fail — sync ignores the config block.
+- [x] RED: Remove `@wip`. Must fail — sync ignores the config block.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — sync reads `load_skills_targets()` since Scenario 1. No separate RED state.
       ```
-- [ ] GREEN: `sync` reads `load_skills_targets()` from config. Presets can
+- [x] GREEN: `sync` reads `load_skills_targets()` from config. Presets can
       be covered by earlier scenarios; ensure the Given-step (write block)
       works. Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 7 steps (7 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): givn skills sync installs to the persisted selection only`
+- [x] COMMIT: `cf3929c` — `feat(init-agent-target-selection): givn skills sync installs to the persisted selection only`
 
 ### Scenario 7: Skills and commands are not installed to an agent excluded from the selection
 

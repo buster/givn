@@ -58,7 +58,7 @@ Feature: init-agent-target-selection
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the directory ".agents/skills/givn-propose" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Skills and commands are not installed to an agent excluded from the selection
     Given  a project root without a givn/ directory
     And  a givn/config.yaml with skills targets "claude"
