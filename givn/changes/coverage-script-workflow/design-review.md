@@ -59,6 +59,7 @@ files should be combined.
 | Artifact | Change summary |
 |---|---|
 | `design.md` | Added fresh-output, transaction, zero-branch, legacy compatibility, internal primitive, and step-separation decisions. |
+| `design.md` hardening | Added the required markdown Step Definitions table so the existing integrity hook can verify both named step modules. |
 | `coverage-script-workflow.feature` | Added exact merged counters, script names, badge placement, and merge-failure outcomes. |
 | `docs/arc42/` | Updated building blocks, runtime, cross-cutting coverage contract, decisions, risks, and glossary. |
 | `src/` and assets | Implemented the reviewed command, report, README, and rollback boundaries. |
