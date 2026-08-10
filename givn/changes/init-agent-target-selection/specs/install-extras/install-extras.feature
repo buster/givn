@@ -12,7 +12,7 @@ Feature: install-extras
     And  the file ".opencode/commands/grill-with-docs.md" exists
     And  the directory ".agents/skills/givn-domain-modeling" does not exist
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: givn addons enable generates skill and command files
     Given  a project root with givn/ initialised without addons
     And  givn addon "domain_modeling" is "false"

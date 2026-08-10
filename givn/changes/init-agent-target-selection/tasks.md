@@ -260,22 +260,22 @@ it. Do not write a TDD loop for it.
 
 ### Scenario 12: givn init defaults to all addons enabled and generates their files (modified)
 
-- [ ] RED: Remove `@wip`. Must fail — init writes addon skills to `.agents`
+- [x] RED: Remove `@wip`. Must fail — init writes addon skills to `.agents`
       (spec now asserts `.opencode` only).
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — delta scenario already matches the opencode-only default from Scenario 1. The permanent copy still asserts `.agents` (fails — expected pre-merge state).
       ```
-- [ ] GREEN: fix from Scenario 1 (default `[opencode]`) makes this pass.
+- [x] GREEN: fix from Scenario 1 (default `[opencode]`) makes this pass.
       Verify: `.opencode` skills + commands exist, `.agents/skills/givn-domain-modeling` absent. Files: —
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 8 steps (8 passed)
       ```
-- [ ] REFACTOR: full-suite re-run (`cargo test --test features_runner`) —
+- [x] REFACTOR: full-suite re-run (`cargo test --test features_runner`) —
       all permanent hooks (`givn check tasks` path) must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: change-scoped full run passes; permanent suite failures are exactly the 3 modified install-extras scenarios (see full-suite gate)
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): givn init defaults to all addons enabled and generates their files`
+- [x] COMMIT: `b4a9d43` — `feat(init-agent-target-selection): givn init defaults to all addons enabled and generates their files`
 
 ### Scenario 13: givn addons enable generates skill and command files (modified)
 
