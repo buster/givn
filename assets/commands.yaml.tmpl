@@ -11,8 +11,8 @@
 # ============================================================================
 
 # --- Test runner -------------------------------------------------------------
-# The command givn invokes to run your test suite. This is the ONLY value
-# you MUST set for a working project.
+# The command givn invokes to run your test suite. Keep the normal project
+# command in a script so the README and this file describe the same workflow.
 #
 # RECOMMENDED — coverage-instrumented runners (the review gate requires
 # coverage data to measure gaps):
@@ -29,16 +29,17 @@
 #
 # See arc42 ch.8.10 for details.
 verify:
-  command: "givn missing-testrunner"   # <-- replace with your test runner
+  command: "./run-tests.sh"            # project-owned test script
 
   # --- E2E test runner --------------------------------------------------------
   # Command to run @e2e-tagged scenarios. If unconfigured, the review gate and
   # archive gate will reject any change whose specs include @e2e scenarios.
-  e2e_command: "givn missing-e2e-runner"
+  e2e_command: "./run-tests.sh --e2e"  # same script, @e2e filter
 
 # --- Coverage gate (requires addons.coverage: true) ---------------------------
-# Commands that produce Cobertura XML coverage data. givn merges both into a
-# unified summary written to README.md.
+# Commands that produce Cobertura XML coverage data. The measurement script
+# writes both source reports; the merge script writes the report used by the
+# README badges and summary.
 #
 # Instrument every production process started by tests; merge every profile.
 # Use collision-safe output and flush on shutdown. Reject runner-only or
@@ -47,5 +48,11 @@ verify:
 # The archive gate validates that both reports come from distinct
 # instrumentation runs — do not copy the non-e2e XML to the e2e path.
 coverage:
-  non_e2e_command: "givn missing-coverage"   # <-- replace with your non-e2e coverage command
-  e2e_command: "givn missing-coverage"   # <-- replace with your e2e coverage command
+  measure_command: "./measure-coverage.sh"
+  merge_command: "./merge-coverages.sh"
+  non_e2e_path: "coverage/non-e2e-cobertura.xml"
+  e2e_path: "coverage/e2e-cobertura.xml"
+  output_path: "coverage/cobertura-coverage.xml"
+
+# The scripts receive GIVN_COVERAGE_NON_E2E_PATH,
+# GIVN_COVERAGE_E2E_PATH, GIVN_COVERAGE_OUTPUT_PATH, and GIVN_FEATURES.

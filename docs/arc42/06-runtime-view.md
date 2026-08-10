@@ -158,7 +158,13 @@ user → cli::archive
        else if e2e_command is non-empty AND merged specs contain @e2e → run it;
          if non-zero, rollback and bail
        else if no @e2e in merged specs → skip silently
-  6. coverage gate (if addons.coverage): see cli::coverage_gate
+   6. coverage gate (if addons.coverage):
+        run coverage.measure_command from project root with configured path env;
+        validate non-E2E and E2E reports;
+        remove stale coverage.output_path and run coverage.merge_command;
+        validate the freshly produced merged report;
+        update the managed README badges and coverage summary from that report;
+        on any failure, restore specs, README, and coverage files
   7. move givn/changes/<id>/ → givn/archive/<id>/
   8. report summary
 ```

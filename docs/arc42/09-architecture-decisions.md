@@ -1129,3 +1129,46 @@ installed files plus the persisted config.
 
 Related decisions: ADR-013 (original multi-target emit), chapter 8.7 (skill
 & rule generation), and chapter 8.3 (config structure).
+
+---
+
+## ADR-029: Project-owned coverage measurement and merge commands
+
+**Context.** Inline non-E2E and E2E coverage commands become long, opaque, and
+easy to copy into README text incorrectly. The resulting badge and summary can
+describe a different report from the one used by the archive gate.
+
+**Decision.** `givn/commands.yaml` names one project-owned
+`coverage.measure_command` that writes both source reports and one
+`coverage.merge_command` that writes the authoritative merged Cobertura report.
+The archive gate validates that final report and uses it for both README badges
+and the managed coverage summary. It passes configured report paths and
+`GIVN_FEATURES` to the scripts and removes stale merged output before invoking
+the merge command.
+
+**Rationale.** The project already owns its test runner and coverage tooling.
+Keeping the orchestration in short, documented scripts makes the same workflow
+visible in the README, reproducible locally, and inspectable in configuration.
+The final report must have one authority; recomputing a second result in givn
+would recreate the discrepancy this decision removes.
+
+**Consequences.** Projects must provide scripts that emit the configured
+Cobertura files. The gate can reject missing or stale output. Legacy projects
+may temporarily use the old two-command fields while migrating, but new
+configuration and documentation use the script contract.
+
+---
+
+## ADR-030: Coverage README output is managed in two owned blocks
+
+**Decision.** givn owns a `coverage-badge` block directly below the README title
+with line and branch badges, and a `coverage` block containing the merged report
+link, counters, and reproduction commands. Both are replaced atomically on
+archive and restored from the archive backup on failure.
+
+**Rationale.** A single generic fence at the end of the README cannot satisfy
+the visibility requirement for badges. Separate markers let givn update the
+top badges without taking ownership of surrounding README content.
+
+**Consequences.** A branch denominator of zero is rendered as `n/a`; the README
+does not claim `0%` for a metric that the coverage tool did not measure.

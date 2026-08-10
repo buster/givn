@@ -1,7 +1,10 @@
 verify:
-  command: "uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock"
-  e2e_command: "uv run behave tests/features/ --no-capture --tags=@e2e --tags=-wip"
+  command: "./run-tests.sh"
+  e2e_command: "./run-tests.sh --e2e"
 
 coverage:
-  non_e2e_command: "uv run coverage run -m behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock && uv run coverage report --skip-empty && uv run coverage xml -o coverage/non-e2e-cobertura.xml"
-  e2e_command: "uv run coverage run -m behave tests/features/ --no-capture --tags=@e2e --tags=-wip && uv run coverage report --skip-empty && uv run coverage xml -o coverage/e2e-cobertura.xml"
+  measure_command: "./measure-coverage.sh"
+  merge_command: "./merge-coverages.sh"
+  non_e2e_path: "coverage/non-e2e-cobertura.xml"
+  e2e_path: "coverage/e2e-cobertura.xml"
+  output_path: "coverage/cobertura-coverage.xml"

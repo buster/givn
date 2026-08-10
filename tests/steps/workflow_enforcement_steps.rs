@@ -87,6 +87,22 @@ fn set_verify_command_in_config(world: &GivnWorld, cmd: &str) {
 
 fn set_verify_true(world: &GivnWorld) {
     set_verify_command_in_config(world, "true");
+    let commands_path = project_root(world).join("givn/commands.yaml");
+    if commands_path.exists() {
+        let content = std::fs::read_to_string(&commands_path).unwrap();
+        let updated = content
+            .lines()
+            .map(|line| {
+                if line.trim_start().starts_with("e2e_command:") {
+                    "  e2e_command: \"true\"".to_string()
+                } else {
+                    line.to_string()
+                }
+            })
+            .collect::<Vec<_>>()
+            .join("\n");
+        std::fs::write(commands_path, updated + "\n").unwrap();
+    }
 }
 
 /// Create a verify script that exits 0 during gate hooks (GIVN_FEATURES points to
@@ -98,12 +114,12 @@ fn set_coverage_true(world: &GivnWorld) {
     let sentinel = "givn missing-coverage";
     let updated = content
         .replace(
-            &format!("non_e2e_command: \"{sentinel}\""),
-            "non_e2e_command: \"true\"",
+            &format!("measure_command: \"{sentinel}\""),
+            "measure_command: \"true\"",
         )
         .replace(
-            &format!("e2e_command: \"{sentinel}\""),
-            "e2e_command: \"true\"",
+            &format!("merge_command: \"{sentinel}\""),
+            "merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"",
         );
     if updated != content {
         std::fs::write(&cmds_path, updated).unwrap();

@@ -86,11 +86,15 @@ from this directory to see the current lifecycle state.
 # Install deps
 uv sync
 
-# Run behave tests (non-e2e)
-uv run behave tests/features/ --no-capture
+# Run the project-owned test script (non-e2e)
+./run-tests.sh
 
-# Run behave tests (e2e only — requires real LLM + sandlock + ralph)
-uv run behave tests/features/ --no-capture --tags=@e2e
+# Run the project-owned e2e test script (requires real LLM + sandlock + ralph)
+./run-tests.sh --e2e
+
+# Produce and merge both coverage reports
+./measure-coverage.sh
+./merge-coverages.sh
 
 # Single scenario
 uv run behave tests/features/ --no-capture -n "<scenario title>"
@@ -98,6 +102,11 @@ uv run behave tests/features/ --no-capture -n "<scenario title>"
 # Step-body audit
 bash scripts/check-step-bodies.sh
 ```
+
+The four commands above are the same commands configured in
+`givn/commands.yaml`. The measurement script writes the non-E2E and E2E
+Cobertura files; the merge script writes the report used by the README badges
+and summary.
 
 ## License
 
