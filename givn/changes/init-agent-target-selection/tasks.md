@@ -13,11 +13,12 @@ Legend: `[ ]` pending · `[x]` done only when evidence + commit hash are filled 
 The runner (`tests/features_runner.rs`) already fails on skipped/undefined
 steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
-- [ ] **Proof-of-strictness**: temporarily add an undefined step (or a
+- [x] **Proof-of-strictness**: temporarily add an undefined step (or a
       `todo!()` body) in the new step file (see first task), run
       `GIVN_FEATURES=givn/changes/init-agent-target-selection/specs/ cargo test --test features_runner`, confirm non-zero exit with a skippable/undefined-step error, then remove the stub.
       ```
-      <!-- paste command + output -->
+      command: GIVN_FEATURES=givn/changes/init-agent-target-selection/specs/ cargo test --test features_runner -- --name "Interactive init installs only the agents the user selects"
+      output: "Step panicked. Captured output: not yet implemented: strictness proof ... 1 scenario (1 failed) ... error: test failed" — stub reverted afterwards
       ```
 
 ---
