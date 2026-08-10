@@ -337,4 +337,19 @@ mod tests {
              and integrity are now mandatory binary checks, not configurable hooks"
         );
     }
+
+    #[test]
+    fn legacy_coverage_commands_are_accepted_during_migration() {
+        let base = Manifest::load_embedded().unwrap();
+        let result = crate::config::overlay::apply(
+            base,
+            "coverage:\n  non_e2e_command: \"old-non-e2e\"\n  e2e_command: \"old-e2e\"\n",
+        )
+        .unwrap();
+        assert_eq!(
+            result.coverage.non_e2e_command.as_deref(),
+            Some("old-non-e2e")
+        );
+        assert_eq!(result.coverage.e2e_command.as_deref(), Some("old-e2e"));
+    }
 }
