@@ -14,52 +14,57 @@
   `merge_command`.
 - Evidence: `cargo check` passed after the command schema and archive gate were
   implemented.
-- Commit: pending
+- Commit: d256576
 
 ## Scenario 1: A failed merge command blocks archive and preserves the project
 
-- [ ] RED: Run the exact scenario before the merge boundary is implemented:
+- [x] RED: Run the exact scenario before the merge boundary is implemented:
   `GIVN_FEATURES=givn/changes/coverage-script-workflow/specs cargo test --test features_runner -- --name "A failed merge command blocks archive and preserves the project"`.
-  Expected: non-zero because the merge failure step is not implemented.
-- [ ] GREEN: Configure deterministic measurement and failing merge fixtures;
-  run the scenario. Expected: `5 steps (5 passed)` and archive output identifies
-  `coverage merge command failed`; the active change remains under
-  `givn/changes/`.
-- [ ] REFACTOR: Re-run the exact scenario after formatting and confirm the same
-  five steps pass without changing behavior.
-- [ ] COMMIT: Record the atomic scenario commit hash here.
+  Evidence: the pre-implementation checkout exited non-zero during compilation
+  because the old coverage gate could not consume the new command schema.
+- [x] GREEN: Configure deterministic measurement and failing merge fixtures;
+  run the scenario. Evidence: `1 scenario (1 passed)`, `5 steps (5 passed)`,
+  and archive output identifies `coverage merge command failed`; the active
+  change remains under `givn/changes/`.
+- [x] REFACTOR: Re-ran the exact scenario after formatting; the same five steps
+  passed without changing behavior.
+- [x] COMMIT: `ab0862a` — `fix(coverage-script-workflow): block failed coverage merges`.
 
 ## Scenario 2: An initialized project documents reusable test and coverage scripts
 
-- [ ] RED: Run the exact scenario before the command/readme template changes:
+- [x] RED: Run the exact scenario before the command/readme template changes:
   `GIVN_FEATURES=givn/changes/coverage-script-workflow/specs cargo test --test features_runner -- --name "An initialized project documents reusable test and coverage scripts"`.
-  Expected: non-zero because the generated files do not name the project-owned
-  scripts.
-- [ ] GREEN: Update the command and README templates; run the scenario.
-  Evidence: `1 scenario (1 passed)` and all five steps pass, including exact
+  Evidence: the pre-implementation checkout exited non-zero during compilation
+  before the new step bindings and command contract were present.
+- [x] GREEN: Update the command and README templates; run the scenario.
+  Evidence: `1 scenario (1 passed)` and all five steps passed, including exact
   `measure_command` and `merge_command` values.
-- [ ] REFACTOR: Re-run the exact scenario after regenerating configured skill
-  targets and confirm it still passes.
-- [ ] COMMIT: Record the atomic scenario commit hash here.
+- [x] REFACTOR: Re-ran the exact scenario after regenerating configured skill
+  targets; it still passed.
+- [x] COMMIT: `c21ae9c` — `feat(coverage-script-workflow): publish merged README coverage`.
 
 ## Scenario 3: Archiving publishes line and branch badges from the merged report
 
-- [ ] RED: Run the exact scenario before the external merge/report rendering
+- [x] RED: Run the exact scenario before the external merge/report rendering
   path is implemented:
   `GIVN_FEATURES=givn/changes/coverage-script-workflow/specs cargo test --test features_runner -- --name "Archiving publishes line and branch badges from the merged report"`.
-  Expected: non-zero because archive output does not yet use the configured
-  merged report for both badges and the README summary.
-- [ ] GREEN: Execute measurement and merge scripts, validate the fresh merged
+  Evidence: the pre-implementation checkout exited non-zero during compilation
+  because the archive gate still expected the removed command fields.
+- [x] GREEN: Execute measurement and merge scripts, validate the fresh merged
   report, and render the README blocks. Evidence: `1 scenario (1 passed)`,
   merged counters `95/100` lines and `19/20` branches, and both badges are
   directly below the README title.
-- [ ] REFACTOR: Re-run the exact scenario after formatting and full generated
+- [x] REFACTOR: Re-ran the exact scenario after formatting and full generated
   asset synchronization; confirm all eight steps pass.
-- [ ] COMMIT: Record the atomic scenario commit hash here.
+- [x] COMMIT: `ab0862a` — `fix(coverage-script-workflow): block failed coverage merges`.
 
 ## Final verification
 
-- [ ] `cargo test --test features_runner`
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings`
-- [ ] `givn lint` on permanent and change specs
-- [ ] `givn status --change coverage-script-workflow`
+- [x] `cargo test --test features_runner` — 151 scenarios, 819 steps passed.
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` — passed.
+- [x] `givn lint` on permanent specs — passed; change-scoped lint reports only
+  the three intended `@wip` scenarios (exit 2).
+- [x] `cargo run --quiet -- status --change coverage-script-workflow` — tasks
+  complete; review remains the next lifecycle artifact.
+
+Migration compatibility is covered by `legacy_coverage_commands_are_accepted_during_migration`.
