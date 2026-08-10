@@ -48,7 +48,7 @@ with a warning that lists the valid agents; an answer with zero known agents
 | Capability | Step definition file |
 |---|---|
 | init-agent-target-selection | `tests/steps/init_agent_target_selection_steps.rs` |
-| install-extras (modified scenarios) | shared steps in `tests/steps/mod.rs` |
+| install-extras (modified scenarios) | `tests/steps/init_agent_target_selection_steps.rs` |
 
 New steps in `init_agent_target_selection_steps.rs`:
 
