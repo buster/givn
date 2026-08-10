@@ -146,11 +146,12 @@ Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 (classify below). Never change production code to force a pass.
 
 ### 3. Measure and record coverage
-Run the coverage tool from design.md. Record percentage and raw output in
-review.md — a fact, not a threshold gate.
+Run `coverage.measure_command`, then `coverage.merge_command` from
+`givn/commands.yaml`. Record the merged line and branch percentages and raw
+report counters in review.md — a fact, not a threshold gate.
 
-If `coverage.command` is still the sentinel (`givn missing-coverage`),
-the review gate is blocked. Install and configure a coverage tool before
+If either coverage command is still the sentinel (`givn missing-coverage`), the
+review gate is blocked. Install and configure the project scripts before
 continuing. Do not write "not measured" or any placeholder text.
 
 ### 4. Classify every gap

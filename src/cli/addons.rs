@@ -20,7 +20,7 @@ pub const KNOWN_ADDONS: &[(&str, &str)] = &[
     ),
     (
         "coverage",
-        "Archive-level coverage gate — runs coverage.*_command during archive, merges Cobertura XML, updates README",
+        "Archive-level coverage gate — runs project measurement and merge scripts, updates README from the merged Cobertura XML",
     ),
     (
         "domain_modeling",
@@ -114,8 +114,8 @@ pub fn run_enable(name: &str) -> Result<()> {
         println!("Coverage is measured at archive time (not per-change).");
         println!();
         println!("Next steps:");
-        println!("  Edit givn/config.yaml to set coverage.non_e2e_command");
-        println!("  and coverage.e2e_command to produce Cobertura XML.");
+        println!("  Edit givn/commands.yaml to set coverage.measure_command");
+        println!("  and coverage.merge_command to use your project scripts.");
     } else if is_skill_addon(name) || is_command_addon(name) {
         crate::skills::targets::sync(&std::env::current_dir()?)?;
     }

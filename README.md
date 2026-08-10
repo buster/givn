@@ -9,7 +9,10 @@
   from Given to done.
 ```
 
-[![Coverage: 57%](https://img.shields.io/badge/coverage-57%25-yellowgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: 57%](https://img.shields.io/badge/line%20coverage-57%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
 
 > A single-binary, Gherkin-first spec-driven workflow tool.
 
@@ -219,6 +222,22 @@ givn completions fish                       # print fish completion script (sour
 > `givn upgrade` refreshes the documentation scaffold to a newer givn release while
 > preserving your overrides, with `git diff` as the review/merge surface.
 
+## Development
+
+The repository keeps its usual test and coverage commands in scripts. The same
+scripts are referenced by `givn/commands.yaml`:
+
+```sh
+./run-tests.sh
+./run-tests.sh --e2e
+./measure-coverage.sh
+./merge-coverages.sh
+```
+
+`measure-coverage.sh` writes the non-E2E and E2E Cobertura reports.
+`merge-coverages.sh` writes the merged report used by the two badges and the
+managed coverage summary below.
+
 ## The workflow
 
 ```mermaid
@@ -347,7 +366,14 @@ The only value you *must* set for a working project is `verify.command`.
 Key sections:
 
 - `verify.command` / `verify.e2e_command` — the test runner(s). Must be a
-  Gherkin/Cucumber runner, not a bare unit-test command.
+  Gherkin/Cucumber runner, not a bare unit-test command. This repository keeps
+  them in `givn/commands.yaml` as `./run-tests.sh` and
+  `./run-tests.sh --e2e`.
+- `coverage.measure_command` / `coverage.merge_command` — project-owned
+  scripts. The measurement script writes the non-E2E and E2E Cobertura inputs;
+  the merge script writes the report used by both README badges and the
+  summary. This repository uses `./measure-coverage.sh` and
+  `./merge-coverages.sh`.
 - `verify.features_path` — where the runner reads `.feature` files from
   (default `givn/specs`).
 - `artifacts:` — patch the embedded artifact graph: remove a step, make one
@@ -365,6 +391,7 @@ Key sections:
 ```
 givn/
 ├── config.yaml                       # documented + versioned: overlay + verify.command
+├── commands.yaml                     # project-owned test and coverage scripts
 ├── specs/<cap>/<cap>.feature         # permanent merged spec (source of truth)
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md
@@ -389,6 +416,10 @@ AGENTS.md                             # user-owned; givn only maintains its own
                                        #    if that addon is enabled)
 ```
 
+Project command scripts belong in the README and are referenced by
+`givn/commands.yaml`. The conventional names are `run-tests.sh`,
+`measure-coverage.sh`, and `merge-coverages.sh`.
+
 ## Documentation
 
 - [`docs/arc42/`](docs/arc42/README.md) — full architecture documentation
@@ -404,6 +435,17 @@ AGENTS.md                             # user-owned; givn only maintains its own
 Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
 
 <!-- givn:begin:coverage -->
-Line coverage: 60% (4027/6670)
-Branch coverage: 0% (0/0)
+## Coverage
+
+Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
+
+Line coverage: 57% (3664/6416)
+Branch coverage: n/a (0/0)
+
+Reproduce the result:
+
+```sh
+./measure-coverage.sh
+./merge-coverages.sh
+```
 <!-- givn:end:coverage -->

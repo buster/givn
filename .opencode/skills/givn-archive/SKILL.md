@@ -12,7 +12,7 @@ Archive change `<change-id>`.
 - Change: `givn/changes/<change-id>/`
 - Archive target: `givn/archive/<change-id>/`
 - Permanent specs: `givn/specs/`
-- Test runner: `cargo test --test features_runner`
+- Test runner: `./run-tests.sh`
 
 ## Archive gate
 
@@ -24,7 +24,7 @@ Archive change `<change-id>`.
    not completion; the review fabrication audit and component diff will
    catch it and block archive anyway.
 3. `review.md` contains `REVIEW: PASS`.
-4. Hooks of all `apply.requires` artifacts pass (runs `cargo test --test features_runner`).
+4. Hooks of all `apply.requires` artifacts pass (runs `./run-tests.sh`).
 
 If any gate fails, the archive is refused with a clear error. Do **not**
 bypass a gate failure by mass-checking boxes — go back, genuinely
@@ -62,26 +62,30 @@ the current project state:
 1. **Project name**: If the README still contains `{{PROJECT_NAME}}`,
    replace it with the actual project name (from `Cargo.toml`,
    `package.json`, or the directory name).
-2. **Coverage badge**: Place the coverage badge directly after the README
-   title, so visitors see the measured coverage at the top. Link it to the
-   non-E2E Cobertura report. If coverage data is available (via
-   `coverage.command` or a coverage-instrumented `cargo test --test features_runner`),
-   use the latest measured percentage. If coverage measurement is not
-   configured, state this explicitly.
-3. **Coverage section**: Below the badge, keep the `## Coverage` section
-   with the line/branch totals and the reproduction commands. Use
-   `<!-- givn:begin:coverage -->` / `<!-- givn:end:coverage -->` blocks for
-   the generated summary to allow idempotent updates.
+2. **Coverage badges**: The archive gate runs the configured
+   `coverage.measure_command`, then `coverage.merge_command`. Place the two
+   generated badges directly after the README title. Both badges must link to
+   the merged `coverage.output_path`, never only to the non-E2E report.
+3. **Coverage section**: Below the badges, keep the `## Coverage` section
+   with the merged line/branch totals, merged report link, and the exact
+   measurement and merge commands. Use
+   `<!-- givn:begin:coverage-badge -->` /
+   `<!-- givn:end:coverage-badge -->` for the top badges and
+   `<!-- givn:begin:coverage -->` / `<!-- givn:end:coverage -->` for the
+   generated summary. Do not hand-edit either managed block.
 
-**Example** — project-specific values (replace ` watn ` with your binary and
-adjust paths and measured numbers accordingly):
+**Example** — replace the values and paths with the output of the configured
+project scripts:
 
-The badge, directly under the README title:
+The two badges, directly under the README title:
 
 ```markdown
 # <project name>
 
-[![Coverage: 77.8%](https://img.shields.io/badge/coverage-77.8%25-brightgreen)](coverage/non-e2e-cobertura.xml)
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: 77.8%](https://img.shields.io/badge/line%20coverage-77.8%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: 64.2%](https://img.shields.io/badge/branch%20coverage-64.2%25-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
 ```
 
 The coverage section, further down:
@@ -89,29 +93,27 @@ The coverage section, further down:
 ```markdown
 ## Coverage
 
-Coverage runs the acceptance scenarios against the instrumented ` watn `
-executable. The latest non-E2E run covers `583/749` lines (`77.8%`); the
-E2E subset covers `465/749` lines (`62.1%`).
+The merged coverage report combines the non-E2E and E2E runs. It covers
+`583/749` lines (`77.8%`) and `321/500` branches (`64.2%`).
+
+Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
 ```sh
-mkdir -p coverage
-cargo llvm-cov clean --workspace
-cargo llvm-cov run --bin watn --no-report -- --version
-cargo llvm-cov test --no-clean --test features_runner \
-  --cobertura --output-path coverage/non-e2e-cobertura.xml \
-  -- --tags 'not @wip'
+./measure-coverage.sh
+./merge-coverages.sh
 ```
 ```
 
-The managed coverage marker block is generated automatically during archive
+The managed coverage marker blocks are generated automatically during archive
 and should not be manually edited. The examples above are a starting point;
-adapt them to your project's binary name, test runner, and coverage tool.
+adapt the scripts to your project's test runner and coverage tool. The final
+report emitted by `merge_command` is the only source for the badges and totals.
 
 ## Verify command
 
 Unit/integration:
 ```
-cargo test --test features_runner
+./run-tests.sh
 ```
 
 E2E smoke tests:

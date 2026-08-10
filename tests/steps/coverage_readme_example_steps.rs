@@ -27,15 +27,16 @@ fn archive_guidance_has_example(world: &mut GivnWorld) {
         "archive skill missing coverage badge"
     );
     assert!(
-        archive_skill.contains("coverage/non-e2e-cobertura.xml"),
+        archive_skill.contains("coverage/cobertura-coverage.xml"),
         "archive skill missing report link"
     );
     assert!(
-        archive_skill.contains("non-E2E") && archive_skill.contains("E2E subset"),
+        archive_skill.contains("non-E2E") && archive_skill.contains("E2E runs"),
         "archive skill missing non-E2E and E2E totals"
     );
     assert!(
-        archive_skill.contains("cargo llvm-cov"),
+        archive_skill.contains("measure-coverage.sh")
+            && archive_skill.contains("merge-coverages.sh"),
         "archive skill missing reproduction commands"
     );
 }
