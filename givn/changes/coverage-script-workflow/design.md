@@ -139,6 +139,11 @@ branch counters are the only counters rendered into the README.
 
 ## Step Definitions
 
+| Capability | Step definition file |
+|---|---|
+| coverage-script-workflow non-E2E failure | `tests/steps/coverage_script_workflow_steps.rs` |
+| coverage-script-workflow CLI E2E flows | `tests/steps/coverage_script_workflow_e2e_steps.rs` |
+
 The non-E2E failure scenario uses
 `tests/steps/coverage_script_workflow_steps.rs`. The two `@e2e` scenarios use
 `tests/steps/coverage_script_workflow_e2e_steps.rs`. Both are registered from
