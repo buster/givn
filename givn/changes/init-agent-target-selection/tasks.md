@@ -105,22 +105,22 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 4: The selected agents are persisted in givn/config.yaml
 
-- [ ] RED: Remove `@wip`. The `givn skills targets ... equal` Then-step is
+- [x] RED: Remove `@wip`. The `givn skills targets ... equal` Then-step is
       unimplemented → must fail.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — the assert step existed (setup) and `write_skills_block` persists targets (Scenario 2). No separate RED state.
       ```
-- [ ] GREEN: implement the Then-step assertion (parse `targets:` list from
+- [x] GREEN: implement the Then-step assertion (parse `targets:` list from
       `givn/config.yaml`, normalize). Assert interactively-selected targets
       are written. Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 4 steps (4 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): The selected agents are persisted in givn/config.yaml`
+- [x] COMMIT: `2af0027` — `feat(init-agent-target-selection): The selected agents are persisted in givn/config.yaml`
 
 ### Scenario 5: Non-interactive init persists opencode as the default target
 

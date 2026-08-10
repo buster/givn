@@ -41,7 +41,7 @@ Feature: init-agent-target-selection
     Then  the command exits 0
     And  givn skills targets in givn/config.yaml equal "opencode, claude"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Non-interactive init persists opencode as the default target
     Given  a project root without a givn/ directory
     When  the user runs `givn init`
