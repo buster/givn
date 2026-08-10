@@ -65,7 +65,7 @@ fn generated_review_guidance_contains(world: &mut GivnWorld, needle: String) {
     for target in &targets {
         let paths = [
             format!(".{target}/skills/givn-review/SKILL.md"),
-            format!(".opencode/commands/givn-review.md"),
+            ".opencode/commands/givn-review.md".to_string(),
         ];
         for relative in paths {
             let path = root.join(&relative);
