@@ -235,20 +235,20 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 11: An answer without any known agent falls back to the default
 
-- [ ] RED: Remove `@wip`. Must fail.
+- [x] RED: Remove `@wip`. Must fail.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — zero-known fallback implemented in `prompt_for_targets` (Scenario 2). No separate RED state.
       ```
-- [ ] GREEN: `nope`-only answer → zero known agents → default `[opencode]`.
+- [x] GREEN: `nope`-only answer → zero known agents → default `[opencode]`.
       Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 4 steps (4 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): An answer without any known agent falls back to the default`
+- [x] COMMIT: `4598bfc` — `feat(init-agent-target-selection): An answer without any known agent falls back to the default`
 
 ---
 
