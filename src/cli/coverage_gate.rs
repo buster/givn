@@ -1,119 +1,299 @@
-use anyhow::{Result, bail};
-use std::path::Path;
+use anyhow::{Context, Result, bail};
+use std::path::{Path, PathBuf};
 
-/// Run the archive-level coverage pipeline: run both coverage commands,
-/// merge Cobertura XML, validate, update README fence.
+const COVERAGE_SENTINEL: &str = "givn missing-coverage";
+
+/// Run the archive-level coverage pipeline: measure, merge, validate, and
+/// publish the merged result in the README.
 pub(crate) fn run_coverage_gate(
-    project_root: &std::path::Path,
+    project_root: &Path,
     manifest: &crate::config::manifest::Manifest,
-    backup_dir: &std::path::Path,
+    backup_dir: &Path,
+) -> Result<()> {
+    let result = run_coverage_gate_inner(project_root, manifest, backup_dir);
+    if let Err(error) = result {
+        let _ = rollback_specs_and_readme(project_root, backup_dir);
+        return Err(error);
+    }
+    Ok(())
+}
+
+fn run_coverage_gate_inner(
+    project_root: &Path,
+    manifest: &crate::config::manifest::Manifest,
+    backup_dir: &Path,
 ) -> Result<()> {
     let cov = &manifest.coverage;
 
     println!("Running coverage gate...");
 
-    // Validate commands are configured.
-    let sentinel = "givn missing-coverage";
-    if cov.non_e2e_command == sentinel || cov.e2e_command == sentinel {
-        let _ = rollback_specs_and_readme(project_root, backup_dir);
+    let legacy_commands =
+        if cov.measure_command == COVERAGE_SENTINEL && cov.merge_command == COVERAGE_SENTINEL {
+            cov.non_e2e_command
+                .as_deref()
+                .zip(cov.e2e_command.as_deref())
+        } else {
+            None
+        };
+    if (cov.measure_command == COVERAGE_SENTINEL || cov.merge_command == COVERAGE_SENTINEL)
+        && legacy_commands.is_none()
+    {
         bail!(
-            "archive blocked: coverage commands are not configured. \
-             Set coverage.non_e2e_command and coverage.e2e_command in givn/config.yaml. \
-             Specs and README have been rolled back."
+            "archive blocked: coverage commands are not configured. Set coverage.measure_command \
+             and coverage.merge_command in givn/commands.yaml. Specs, README, and coverage \
+             files have been rolled back."
         );
     }
 
-    // Run non-e2e coverage command.
-    println!("  Running non-e2e coverage: {}", cov.non_e2e_command);
-    let non_e2e_status = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(&cov.non_e2e_command)
-        .status()?;
-    if !non_e2e_status.success() {
-        let _ = rollback_specs_and_readme(project_root, backup_dir);
-        bail!(
-            "archive blocked: non-e2e coverage command failed (exit code {}). \
-             Specs and README have been rolled back.",
-            non_e2e_status.code().unwrap_or(-1)
-        );
+    let paths = CoveragePaths::new(project_root, cov)?;
+    backup_coverage_files(&paths, backup_dir)?;
+
+    if let Some((non_e2e_command, e2e_command)) = legacy_commands {
+        println!("  Running legacy non-e2e coverage: {non_e2e_command}");
+        run_command(
+            project_root,
+            non_e2e_command,
+            &paths,
+            "legacy non-e2e coverage",
+        )?;
+        println!("  Running legacy e2e coverage: {e2e_command}");
+        run_command(project_root, e2e_command, &paths, "legacy e2e coverage")?;
+    } else {
+        println!("  Running coverage measurement: {}", cov.measure_command);
+        run_command(
+            project_root,
+            &cov.measure_command,
+            &paths,
+            "coverage measurement",
+        )?;
     }
 
-    // Run e2e coverage command.
-    println!("  Running e2e coverage: {}", cov.e2e_command);
-    let e2e_status = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(&cov.e2e_command)
-        .status()?;
-    if !e2e_status.success() {
-        let _ = rollback_specs_and_readme(project_root, backup_dir);
-        bail!(
-            "archive blocked: e2e coverage command failed (exit code {}). \
-             Specs and README have been rolled back.",
-            e2e_status.code().unwrap_or(-1)
-        );
-    }
-
-    // Parse Cobertura XML files.
-    let non_e2e_path = project_root.join(&cov.non_e2e_path);
-    let e2e_path = project_root.join(&cov.e2e_path);
-
-    let non_e2e_report = crate::cobertura::parse(&non_e2e_path).map_err(|e| {
-        anyhow::anyhow!("archive blocked: failed to parse non-e2e Cobertura XML: {e}")
-    })?;
-    let e2e_report = crate::cobertura::parse(&e2e_path)
-        .map_err(|e| anyhow::anyhow!("archive blocked: failed to parse e2e Cobertura XML: {e}"))?;
-
-    // Validate individual reports.
-    crate::cobertura::validate(&non_e2e_report)
-        .map_err(|e| anyhow::anyhow!("archive blocked: non-e2e coverage validation failed: {e}"))?;
-    crate::cobertura::validate(&e2e_report)
-        .map_err(|e| anyhow::anyhow!("archive blocked: e2e coverage validation failed: {e}"))?;
-
-    // Ensure the two reports are structurally distinct.
+    let non_e2e_report = parse_and_validate(&paths.non_e2e, "non-e2e")?;
+    let e2e_report = parse_and_validate(&paths.e2e, "e2e")?;
     crate::cobertura::assert_distinct(&non_e2e_report, &e2e_report)
         .map_err(|e| anyhow::anyhow!("archive blocked: {e}"))?;
 
-    // Merge reports.
-    let merged = crate::cobertura::merge(&non_e2e_report, &e2e_report);
-
-    // Write merged Cobertura XML.
-    let output_path = project_root.join(&cov.output_path);
-    if let Some(parent) = output_path.parent() {
-        std::fs::create_dir_all(parent)?;
+    if paths.output.exists() {
+        std::fs::remove_file(&paths.output).with_context(|| {
+            format!(
+                "archive blocked: failed to remove stale merged coverage report {}",
+                paths.output.display()
+            )
+        })?;
     }
-    let merged_xml = format!(
-        r#"<?xml version="1.0"?>
-<coverage line-rate="{lr}" branch-rate="{br}" lines-covered="{lc}" lines-valid="{lv}" branches-covered="{bc}" branches-valid="{bv}" timestamp="{ts}" version="1">
-  <packages />
-</coverage>"#,
-        lr = merged.line_rate,
-        br = merged.branch_rate,
-        lc = merged.lines_covered,
-        lv = merged.lines_valid,
-        bc = merged.branches_covered,
-        bv = merged.branches_valid,
-        ts = std::time::SystemTime::now()
-            .duration_since(std::time::UNIX_EPOCH)
-            .unwrap_or_default()
-            .as_secs(),
-    );
-    std::fs::write(&output_path, merged_xml)?;
-    println!("  wrote merged Cobertura → {}", output_path.display());
 
-    // Update README with coverage fence.
+    if legacy_commands.is_some() {
+        write_legacy_merged_report(&paths.output, &non_e2e_report, &e2e_report)?;
+    } else {
+        println!("  Running coverage merge: {}", cov.merge_command);
+        run_command(project_root, &cov.merge_command, &paths, "coverage merge")?;
+    }
+
+    if !paths.output.exists() {
+        bail!(
+            "archive blocked: coverage merge command succeeded but did not create {}",
+            cov.output_path
+        );
+    }
+
+    let merged = parse_and_validate(&paths.output, "merged")?;
     let readme_path = project_root.join("README.md");
-    let summary = crate::cobertura::render_markdown(&merged);
+    remove_legacy_coverage_badges(&readme_path)?;
+    let badges = crate::cobertura::render_badges(&merged, &cov.output_path);
+    crate::cli::agents_block::apply_after_title(&readme_path, "coverage-badge", &badges)?;
+    let summary = crate::cobertura::render_readme_summary(
+        &merged,
+        &cov.output_path,
+        cov.non_e2e_command
+            .as_deref()
+            .unwrap_or(&cov.measure_command),
+        cov.e2e_command.as_deref().unwrap_or(&cov.merge_command),
+    );
     crate::cli::agents_block::apply(&readme_path, "coverage", &summary)?;
-    println!("  updated README.md with coverage summary");
 
+    println!(
+        "  published merged coverage: {}",
+        crate::cobertura::render_markdown(&merged)
+    );
+    println!("  updated README.md with merged line and branch coverage");
     println!("✓ Coverage gate passed");
     Ok(())
 }
 
-/// Roll back specs and README to pre-archive state.
-///
-/// Errors from the rollback itself are logged but swallowed — if the
-/// rollback fails we are already in a fault handler and cannot recover.
+struct CoveragePaths {
+    non_e2e: PathBuf,
+    e2e: PathBuf,
+    output: PathBuf,
+    non_e2e_relative: String,
+    e2e_relative: String,
+    output_relative: String,
+}
+
+impl CoveragePaths {
+    fn new(project_root: &Path, coverage: &crate::config::manifest::Coverage) -> Result<Self> {
+        let non_e2e = project_path(project_root, &coverage.non_e2e_path)?;
+        let e2e = project_path(project_root, &coverage.e2e_path)?;
+        let output = project_path(project_root, &coverage.output_path)?;
+        if non_e2e == e2e || non_e2e == output || e2e == output {
+            bail!("coverage input and output paths must be distinct");
+        }
+        Ok(Self {
+            non_e2e,
+            e2e,
+            output,
+            non_e2e_relative: coverage.non_e2e_path.clone(),
+            e2e_relative: coverage.e2e_path.clone(),
+            output_relative: coverage.output_path.clone(),
+        })
+    }
+}
+
+fn remove_legacy_coverage_badges(readme_path: &Path) -> Result<()> {
+    if !readme_path.exists() {
+        return Ok(());
+    }
+    let existing = std::fs::read_to_string(readme_path)?;
+    let updated: String = existing
+        .lines()
+        .filter(|line| {
+            !(line.contains("img.shields.io/badge/coverage-")
+                || line.contains("img.shields.io/badge/line%20coverage-")
+                || line.contains("img.shields.io/badge/branch%20coverage-"))
+        })
+        .map(|line| format!("{line}\n"))
+        .collect();
+    if updated != existing {
+        std::fs::write(readme_path, updated)?;
+    }
+    Ok(())
+}
+
+fn project_path(project_root: &Path, configured: &str) -> Result<PathBuf> {
+    let path = Path::new(configured);
+    if path.is_absolute()
+        || path
+            .components()
+            .any(|c| c == std::path::Component::ParentDir)
+    {
+        bail!(
+            "coverage path '{}' must be relative to the project root and cannot contain '..'",
+            configured
+        );
+    }
+    Ok(project_root.join(path))
+}
+
+fn run_command(
+    project_root: &Path,
+    command: &str,
+    paths: &CoveragePaths,
+    label: &str,
+) -> Result<()> {
+    let status = std::process::Command::new("sh")
+        .arg("-c")
+        .arg(command)
+        .current_dir(project_root)
+        .env("GIVN_FEATURES", "givn/specs")
+        .env("GIVN_COVERAGE_NON_E2E_PATH", &paths.non_e2e_relative)
+        .env("GIVN_COVERAGE_E2E_PATH", &paths.e2e_relative)
+        .env("GIVN_COVERAGE_OUTPUT_PATH", &paths.output_relative)
+        .status()
+        .with_context(|| format!("archive blocked: failed to start {label} command"))?;
+
+    if !status.success() {
+        bail!(
+            "archive blocked: {label} command failed (exit code {}). Specs, README, and coverage \
+             files have been rolled back.",
+            status.code().unwrap_or(-1)
+        );
+    }
+    Ok(())
+}
+
+fn parse_and_validate(path: &Path, label: &str) -> Result<crate::cobertura::CoberturaReport> {
+    let report = crate::cobertura::parse(path).map_err(|e| {
+        anyhow::anyhow!("archive blocked: failed to parse {label} Cobertura XML: {e}")
+    })?;
+    crate::cobertura::validate(&report)
+        .map_err(|e| anyhow::anyhow!("archive blocked: {label} coverage validation failed: {e}"))?;
+    Ok(report)
+}
+
+fn write_legacy_merged_report(
+    output: &Path,
+    non_e2e: &crate::cobertura::CoberturaReport,
+    e2e: &crate::cobertura::CoberturaReport,
+) -> Result<()> {
+    let merged = crate::cobertura::merge_legacy_reports(non_e2e, e2e);
+    if let Some(parent) = output.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let xml = format!(
+        r#"<?xml version="1.0"?>
+<coverage line-rate="{line_rate}" branch-rate="{branch_rate}" lines-covered="{lines_covered}" lines-valid="{lines_valid}" branches-covered="{branches_covered}" branches-valid="{branches_valid}" timestamp="0" version="1">
+  <packages />
+</coverage>"#,
+        line_rate = merged.line_rate,
+        branch_rate = merged.branch_rate,
+        lines_covered = merged.lines_covered,
+        lines_valid = merged.lines_valid,
+        branches_covered = merged.branches_covered,
+        branches_valid = merged.branches_valid,
+    );
+    std::fs::write(output, xml)?;
+    Ok(())
+}
+
+fn backup_coverage_files(paths: &CoveragePaths, backup_dir: &Path) -> Result<()> {
+    let backup_root = backup_dir.join("coverage");
+    let mut state = String::new();
+    for (source, relative) in [
+        (&paths.non_e2e, &paths.non_e2e_relative),
+        (&paths.e2e, &paths.e2e_relative),
+        (&paths.output, &paths.output_relative),
+    ] {
+        state.push_str(relative);
+        state.push('\t');
+        state.push_str(if source.exists() { "present" } else { "absent" });
+        state.push('\n');
+        if source.exists() {
+            let destination = backup_root.join(relative);
+            if let Some(parent) = destination.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::copy(source, destination)?;
+        }
+    }
+    std::fs::write(backup_dir.join("coverage-state"), state)?;
+    Ok(())
+}
+
+fn rollback_coverage_files(project_root: &Path, backup_dir: &Path) -> Result<()> {
+    let state_path = backup_dir.join("coverage-state");
+    if !state_path.exists() {
+        return Ok(());
+    }
+
+    let backup_root = backup_dir.join("coverage");
+    for line in std::fs::read_to_string(state_path)?.lines() {
+        let Some((relative, state)) = line.split_once('\t') else {
+            continue;
+        };
+        let destination = project_root.join(relative);
+        if state == "present" {
+            let source = backup_root.join(relative);
+            if let Some(parent) = destination.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
+            std::fs::copy(source, destination)?;
+        } else if destination.exists() {
+            std::fs::remove_file(destination)?;
+        }
+    }
+    Ok(())
+}
+
+/// Roll back specs, README, and coverage files to pre-archive state.
 fn rollback_specs_and_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
     let backup_specs = backup_dir.join("specs");
     if let Err(e) = crate::cli::archive::rollback_specs(
@@ -126,21 +306,20 @@ fn rollback_specs_and_readme(project_root: &Path, backup_dir: &Path) -> Result<(
     if let Err(e) = rollback_readme(project_root, backup_dir) {
         eprintln!("  warning: README rollback failed: {e}");
     }
+    if let Err(e) = rollback_coverage_files(project_root, backup_dir) {
+        eprintln!("  warning: coverage rollback failed: {e}");
+    }
     Ok(())
 }
 
-/// Roll back the coverage summary from README.
-fn rollback_readme(project_root: &Path, _backup_dir: &Path) -> Result<()> {
+/// Restore the README bytes that existed before the archive transaction.
+fn rollback_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
     let readme_path = project_root.join("README.md");
-    if !readme_path.exists() {
-        return Ok(());
+    let backup_readme = backup_dir.join("README.md");
+    if backup_readme.exists() {
+        std::fs::copy(backup_readme, readme_path)?;
+    } else if readme_path.exists() {
+        std::fs::remove_file(readme_path)?;
     }
-
-    let readme_content = std::fs::read_to_string(&readme_path)?;
-    let updated = crate::cli::agents_block::remove_block(&readme_content, "coverage");
-    if updated != readme_content {
-        std::fs::write(&readme_path, updated)?;
-    }
-    println!("  restored README.md (removed coverage fence)");
     Ok(())
 }
