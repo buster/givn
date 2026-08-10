@@ -10,13 +10,16 @@ fn badge_after_title(world: &mut GivnWorld) {
     let skill = std::fs::read_to_string(env.path(".opencode/skills/givn-archive/SKILL.md"))
         .expect("read generated archive skill");
     assert!(
-        skill.contains("Place the coverage badge directly after the README"),
+        skill.contains("Place the two")
+            && skill.contains("generated badges directly after the README"),
         "archive skill missing the badge-placement rule"
     );
     assert!(
         skill.contains("# <project name>")
             && skill.contains("img.shields.io")
-            && skill.contains("coverage/non-e2e-cobertura.xml"),
+            && skill.contains("coverage/cobertura-coverage.xml")
+            && skill.contains("Line Coverage")
+            && skill.contains("Branch Coverage"),
         "archive skill example must show the badge directly under the title"
     );
 }
@@ -30,11 +33,11 @@ fn totals_and_commands(world: &mut GivnWorld) {
     let skill = std::fs::read_to_string(env.path(".opencode/skills/givn-archive/SKILL.md"))
         .expect("read generated archive skill");
     assert!(
-        skill.contains("## Coverage") && skill.contains("non-E2E") && skill.contains("E2E subset"),
+        skill.contains("## Coverage") && skill.contains("non-E2E") && skill.contains("E2E runs"),
         "archive skill example must keep the Coverage section with non-E2E and E2E totals"
     );
     assert!(
-        skill.contains("cargo llvm-cov"),
+        skill.contains("measure-coverage.sh") && skill.contains("merge-coverages.sh"),
         "archive skill example must keep the reproduction commands"
     );
 }

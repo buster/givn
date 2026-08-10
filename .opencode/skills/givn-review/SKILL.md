@@ -11,7 +11,7 @@ Complete the coverage review for change `<change-id>`.
 
 - Review file: `givn/changes/<change-id>/review.md`
 - Instructions: run `givn instructions review --change <change-id>`
-- Test runner: `cargo test --test features_runner`
+- Test runner: `./run-tests.sh`
 
 ## Step 0: fabrication audit (mandatory, before anything else)
 
@@ -93,14 +93,17 @@ stubs. Mechanical check, not a judgment call:
        used a different driver than the reviewed design committed to.
     e. Record the full cross-reference as a table in the fabrication audit
        section of review.md.
-14. **Coverage measurement validity.** For `verify.command`, or both coverage
-    commands when enabled:
+ 14. **Coverage measurement validity.** For `verify.command`, and for the
+     measurement plus merge commands when coverage is enabled:
     a. Map the runner and every production process started by tests.
-    b. Confirm each process is instrumented, writes collision-safe output,
-       flushes on shutdown, and is included in the merged report.
+     b. Confirm each process is instrumented, writes collision-safe output,
+        flushes on shutdown, and both source reports are passed to the configured
+        merge command.
     c. Confirm one known exercised production path has non-zero coverage.
     d. Reject runner-only, test-only, absent, or zero-production coverage.
-    e. If invalid, record `COVERAGE MEASUREMENT: INVALID` and stop before gap
+     e. Confirm the merged report is freshly produced by the merge command; a
+        stale or missing output is invalid.
+     f. If invalid, record `COVERAGE MEASUREMENT: INVALID` and stop before gap
        classification. Fix instrumentation; do not classify it as missing test
        coverage or hard-to-test code.
 
@@ -154,12 +157,13 @@ Coverage is complete when every gap is classified and resolved (or justified).
 
 ## Steps
 
-1. Run `cargo test --test features_runner` — confirm all non-@e2e tests pass.
+1. Run `./run-tests.sh` — confirm all non-@e2e tests pass.
    Coverage data is embedded in the output if the runner is configured
-   with coverage instrumentation. Extract the coverage summary from the
-   output — do not run a separate coverage tool.
+    with coverage instrumentation. Extract the summary from the merged report
+    produced by `coverage.measure_command` and `coverage.merge_command`.
 2. Run `verify.e2e_command` — confirm all @e2e tests pass.
-3. Run configured coverage commands. Apply check 14 before extracting gaps.
+3. Run the configured measurement command and then merge command. Apply check
+   14 before extracting gaps.
    Reject absent, runner-only, test-only, or zero-production coverage.
 4. Classify each gap (1, 2, or 3 above).
 5. Resolve each gap:
@@ -192,7 +196,7 @@ givn check review --change <change-id>
 
 Unit/integration:
 ```
-cargo test --test features_runner
+./run-tests.sh
 ```
 
 E2E smoke tests:

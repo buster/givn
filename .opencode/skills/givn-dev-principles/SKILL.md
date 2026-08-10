@@ -11,7 +11,7 @@ Apply the team's engineering principles while implementing change `<change-id>`.
 
 - Tasks: `givn/changes/<change-id>/tasks.md`
 - Design: `givn/changes/<change-id>/design.md`
-- Verify command: `cargo test --test features_runner`
+- Verify command: `./run-tests.sh`
 
 ## Principles
 

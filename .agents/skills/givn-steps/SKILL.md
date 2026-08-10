@@ -11,7 +11,7 @@ skill, not a standalone workflow — read by `/givn-implement` and
 
 ## Context
 
-- Test runner: `cargo test --test features_runner`
+- Test runner: `./run-tests.sh`
 - Features path: `GIVN_FEATURES=givn/specs`
 - Change: `givn/changes/<change-id>/`
 
@@ -120,7 +120,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 1. Remove `@wip` from this scenario only.
 2. New steps use the stub above; reused steps kept as-is.
-3. Run targeting this scenario. Non-@e2e: `cargo test --test features_runner`. @e2e:
+3. Run targeting this scenario. Non-@e2e: `./run-tests.sh`. @e2e:
    `verify.e2e_command`. Capture output.
    - Non-zero exit → RED confirmed, proceed to GREEN.
    - Zero exit, all steps reused → legitimate immediate GREEN (record which
@@ -180,7 +180,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 ## Distinctions
 
-`givn lint`: static check, no tests. `cargo test --test features_runner`: GREEN for
+`givn lint`: static check, no tests. `./run-tests.sh`: GREEN for
 non-@e2e, only once strict mode is proven. `verify.e2e_command`: GREEN for
 @e2e. Never conflate the three.
 
@@ -188,7 +188,7 @@ non-@e2e, only once strict mode is proven. `verify.e2e_command`: GREEN for
 
 Unit/integration:
 ```
-cargo test --test features_runner
+./run-tests.sh
 ```
 
 E2E smoke tests:

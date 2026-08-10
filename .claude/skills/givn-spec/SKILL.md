@@ -86,7 +86,7 @@ one `@e2e` scenario per entry, not fewer.
 
 Unit/integration:
 ```
-cargo test --test features_runner
+./run-tests.sh
 ```
 
 E2E smoke tests:

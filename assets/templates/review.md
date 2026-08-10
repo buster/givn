@@ -136,13 +136,13 @@ continuing this review).
 
 ## Coverage
 
-**Coverage result:** <!-- paste line/branch percentages from coverage.command output. If coverage.command is still the sentinel (givn missing-coverage), leave this section empty — the review gate will block until measurement is configured. -->
+**Coverage result:** <!-- paste line/branch percentages from the merged report produced by coverage.measure_command and coverage.merge_command. If either command is still the sentinel (givn missing-coverage), leave this section empty — the review gate will block until measurement is configured. -->
 
 ```
-<!-- paste coverage summary from coverage.command output here.
+<!-- paste coverage summary from the merged coverage report here.
 
-     The coverage.command is configured in givn/config.yaml. This tool
-     captures stdout, so run it and paste the coverage summary below.
+     coverage.measure_command and coverage.merge_command are configured in
+     givn/commands.yaml. Run both and paste the merged summary below.
      Coverage must be measured — do not write "not measured" or any
      placeholder text. Classification without instrumented data is
      guessing, not review. -->
