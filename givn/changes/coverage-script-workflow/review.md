@@ -32,6 +32,7 @@ content.
 | Failed merge blocks archive | `ab0862a` | Yes — `src/cli/coverage_gate.rs` |
 | README merged line/branch publication | `c21ae9c` | Yes — `src/cobertura.rs`, `src/cli/agents_block.rs` |
 | Legacy command migration compatibility | `eff3d28` | Yes — `src/config/manifest.rs` |
+| Merged report counter/rate validation | `8727d02` | Yes — `src/cobertura.rs` |
 
 **Promised components:** CLEAN. The configured scripts, command schema,
 coverage gate, Cobertura renderer, title-aware managed-block helper, separate
