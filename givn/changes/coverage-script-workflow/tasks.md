@@ -31,7 +31,7 @@
   change remains under `givn/changes/`.
 - [x] REFACTOR: Re-ran the exact scenario after formatting; the same five steps
   passed without changing behavior.
-- [x] COMMIT: `ab0862a` — `fix(coverage-script-workflow): block failed coverage merges`.
+- [x] COMMIT: `8727d02` — `fix(coverage-script-workflow): validate merged coverage rates`.
 
 ## Scenario 2: An initialized project documents reusable test and coverage scripts
 
