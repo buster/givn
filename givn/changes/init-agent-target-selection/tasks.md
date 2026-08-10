@@ -217,21 +217,21 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 10: An unknown agent name in the answer is dropped with a hint listing the valid agents
 
-- [ ] RED: Remove `@wip`. Must fail.
+- [x] RED: Remove `@wip`. Must fail.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — drop-invalid + valid-agent hint implemented in `prompt_for_targets` (Scenario 2). No separate RED state.
       ```
-- [ ] GREEN: drop-invalid semantics — answer `claude, nope` → targets
+- [x] GREEN: drop-invalid semantics — answer `claude, nope` → targets
       `claude`, warning printed to stdout listing `opencode`, `.agents`,
       `.claude`. Files: `src/cli/init.rs` (`prompt_for_targets`).
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 8 steps (8 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): An unknown agent name in the answer is dropped with a hint listing the valid agents`
+- [x] COMMIT: `931b2df` — `feat(init-agent-target-selection): An unknown agent name in the answer is dropped with a hint listing the valid agents`
 
 ### Scenario 11: An answer without any known agent falls back to the default
 

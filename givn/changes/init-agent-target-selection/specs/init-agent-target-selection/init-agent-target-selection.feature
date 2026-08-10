@@ -95,7 +95,7 @@ Feature: init-agent-target-selection
     And  givn skills targets in givn/config.yaml equal "claude"
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: An answer without any known agent falls back to the default
     Given  a project root without a givn/ directory
     When  the user runs `givn init` and answers the agent prompt with "nope"
