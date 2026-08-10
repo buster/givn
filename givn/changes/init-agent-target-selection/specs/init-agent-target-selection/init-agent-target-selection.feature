@@ -34,7 +34,7 @@ Feature: init-agent-target-selection
     And  the directory ".claude/skills/givn-propose" does not exist
     And  the directory ".agents/skills/givn-propose" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: The selected agents are persisted in givn/config.yaml
     Given  a project root without a givn/ directory
     When  the user runs `givn init` and answers the agent prompt with "opencode, .claude"

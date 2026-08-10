@@ -87,21 +87,21 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 3: Interactive init accepts the default selection with an empty answer
 
-- [ ] RED: Remove `@wip`. Must fail (prompt not yet accepting answers).
+- [x] RED: Remove `@wip`. Must fail (prompt not yet accepting answers).
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN from Scenario 2 — `prompt_for_targets` EOF/empty fallback was implemented there; no separate RED state existed for this scenario. Recorded as reuse-GREEN.
       ```
-- [ ] GREEN: empty answer → default `[opencode]`. No new production code
+- [x] GREEN: empty answer → default `[opencode]`. No new production code
       beyond Scenario 2 if the fallback is implemented there; verify.
       Files: —
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 6 steps (6 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed after fmt
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): Interactive init accepts the default selection with an empty answer`
+- [x] COMMIT: `07540d5` — `feat(init-agent-target-selection): Interactive init accepts the default selection with an empty answer`
 
 ### Scenario 4: The selected agents are persisted in givn/config.yaml
 
