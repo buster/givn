@@ -80,15 +80,15 @@ impl AgentTarget {
 
 /// Resolve the configured agent targets from `givn/config.yaml`.
 fn configured_targets(project_root: &Path) -> Result<Vec<AgentTarget>> {
+    // load_skills_targets already defaults to [opencode] when the config has
+    // no skills block or an empty/invalid list, so the result never needs a
+    // second fallback here.
     let names = crate::config::overlay::load_skills_targets(project_root)?;
     let mut targets = Vec::new();
     for name in names {
         if let Some(t) = AgentTarget::from_name(&name) {
             targets.push(t);
         }
-    }
-    if targets.is_empty() {
-        targets.push(AgentTarget::Opencode);
     }
     Ok(targets)
 }

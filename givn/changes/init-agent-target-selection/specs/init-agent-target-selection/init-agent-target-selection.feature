@@ -102,6 +102,23 @@ Feature: init-agent-target-selection
     Then  the command exits 0
     And  givn skills targets in givn/config.yaml equal "opencode"
 
+  @givn.added
+  Scenario: Interactive init can select the .agents target
+    Given  a project root without a givn/ directory
+    When  the user runs `givn init` and answers the agent prompt with "opencode, .agents"
+    Then  the command exits 0
+    And  givn skills targets in givn/config.yaml equal "opencode, agents"
+    And  the file ".agents/skills/givn-propose/SKILL.md" exists
+
+  @givn.added
+  Scenario: givn skills sync defaults to opencode when the config has no skills block
+    Given  a project root without a givn/ directory
+    And  a givn/config.yaml without a skills block
+    When  the user runs `givn skills sync`
+    Then  the command exits 0
+    And  the file ".opencode/skills/givn-propose/SKILL.md" exists
+    And  the directory ".claude/skills/givn-propose" does not exist
+
   @givn.added @e2e
   Scenario: Consumer selects agent targets during interactive init
     Given  a project root without a givn/ directory

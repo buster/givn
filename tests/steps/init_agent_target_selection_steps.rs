@@ -114,6 +114,21 @@ fn scaffold_config_with_skills_targets(world: &mut GivnWorld, list: String) {
     std::fs::write(env.path("givn/config.yaml"), content).expect("write givn/config.yaml");
 }
 
+#[given(regex = r#"^a givn/config.yaml without a skills block$"#)]
+fn scaffold_config_without_skills(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let dir = env.path("givn");
+    std::fs::create_dir_all(&dir).expect("create givn dir");
+    std::fs::write(
+        env.path("givn/config.yaml"),
+        "givn_config_version: \"0.2.0\"\n",
+    )
+    .expect("write givn/config.yaml");
+}
+
 #[then(regex = r#"^givn skills targets in givn/config.yaml equal "([^"]+)"$"#)]
 fn assert_skills_targets(world: &mut GivnWorld, list: String) {
     let actual = read_skills_targets(world);
