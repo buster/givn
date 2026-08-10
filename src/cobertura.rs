@@ -137,8 +137,8 @@ pub fn render_badges(report: &CoberturaReport, report_path: &str) -> String {
     let branch_badge = badge_value(&branch_pct);
 
     format!(
-        "[![Line Coverage: {line_pct}](https://img.shields.io/badge/line%20coverage-{line_badge}%25-brightgreen)]({report_path})\n\
-         [![Branch Coverage: {branch_pct}](https://img.shields.io/badge/branch%20coverage-{branch_badge}%25-brightgreen)]({report_path})",
+        "[![Line Coverage: {line_pct}](https://img.shields.io/badge/line%20coverage-{line_badge}-brightgreen)]({report_path})\n\
+         [![Branch Coverage: {branch_pct}](https://img.shields.io/badge/branch%20coverage-{branch_badge}-brightgreen)]({report_path})",
         line_pct = line_pct,
         branch_pct = branch_pct,
         line_badge = line_badge,
@@ -178,7 +178,7 @@ fn badge_value(percentage: &str) -> String {
     if value == "n/a" {
         "n--a".to_string()
     } else {
-        value.replace('/', "%2F")
+        format!("{}%25", value.replace('/', "%2F"))
     }
 }
 
