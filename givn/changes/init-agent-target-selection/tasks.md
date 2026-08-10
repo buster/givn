@@ -335,6 +335,22 @@ it. Do not write a TDD loop for it.
 
 ---
 
+## Review-phase coverage additions
+
+- [x] Scenario: Interactive init can select the .agents target — review
+      coverage gap (bucket 2): `AgentTarget::name()` for `Agents` was only
+      reachable via the prompt and never exercised. Added scenario,
+      immediate GREEN (implementation correct, untested). Evidence: 1
+      scenario (1 passed); covered in commit `18ade54`.
+- [x] Scenario: givn skills sync defaults to opencode when the config has no
+      skills block — review coverage gap (bucket 2): the default-fallback
+      of `load_skills_targets` (upgraded projects without a `skills:`
+      block) was untested. Added scenario + Given step; immediate GREEN.
+      Evidence: 1 scenario (1 passed); commit `18ade54`.
+- [x] Dead code removed (bucket 1): redundant empty-targets fallback in
+      `configured_targets` (`src/skills/targets.rs`) — `load_skills_targets`
+      already defaults to `[opencode]`. Commit `18ade54`.
+
 ## Arc42/spec alignment
 
 - [x] `assets/config.yaml.tmpl` documents the `skills:` block (commented
