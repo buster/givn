@@ -36,7 +36,7 @@ Feature: install-extras
     And  the directory ".agents/skills/givn-domain-modeling" does not exist
     And  the directory ".claude/skills/givn-domain-modeling" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: addon skills are written to every configured agent target after sync
     Given  a project root with givn/ initialised
     And  givn skills targets in givn/config.yaml equal "opencode, agents, claude"
