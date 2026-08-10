@@ -347,6 +347,36 @@ The review phase classifies every uncovered line/branch into exactly one of:
 Coverage is **complete** when every gap is classified and resolved. There is no
 minimum percentage; a high number is a side effect, not the target.
 
+### Project-owned coverage commands
+
+Coverage commands live in `givn/commands.yaml`, alongside the test commands,
+rather than as long inline invocations in `config.yaml`:
+
+```yaml
+verify:
+  command: "./run-tests.sh"
+  e2e_command: "./run-tests.sh --e2e"
+coverage:
+  measure_command: "./measure-coverage.sh"
+  merge_command: "./merge-coverages.sh"
+  non_e2e_path: "coverage/non-e2e-cobertura.xml"
+  e2e_path: "coverage/e2e-cobertura.xml"
+  output_path: "coverage/cobertura-coverage.xml"
+```
+
+The measurement command writes both source Cobertura reports. The merge
+command writes the final report. Archive removes an existing final report
+before invoking the merge command, so a successful command must create fresh
+output. The final report is parsed for line and branch counters and is the sole
+source for the README badges and managed coverage summary. The scripts receive
+`GIVN_FEATURES`, `GIVN_COVERAGE_NON_E2E_PATH`, `GIVN_COVERAGE_E2E_PATH`, and
+`GIVN_COVERAGE_OUTPUT_PATH`.
+
+The coverage transaction backs up and restores the two source reports, final
+report, README, and merged permanent specs when any command, parse, validation,
+or README update fails. A branch denominator of zero is rendered as `n/a`, not
+as a misleading `0%` badge.
+
 ## 8.10 Configuration: documented defaults, versioning, and upgrade
 
 The project's `givn/config.yaml` is the primary configuration surface. It is

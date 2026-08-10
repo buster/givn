@@ -27,7 +27,7 @@ givn_config_version: "0.2.0"
 # --- Coverage gate (archive-level, requires addons.coverage: true) ------------
 # Commands that run tests with coverage instrumentation. Configured in
 # givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
-# coverage.non_e2e_command and coverage.e2e_command keys.
+# coverage.measure_command and coverage.merge_command keys.
 #
 
 # --- E2E test runner ----------------------------------------------------------
@@ -177,12 +177,6 @@ givn_config_version: "0.2.0"
 # grill_with_docs: false   # set to true to enable
 
 # --- User overrides preserved from previous version ---
-verify:
-  command: "cargo test --test features_runner"   # cucumber-rs runs givn/specs/**/*.feature
-  e2e_command: "cargo test --test features_runner -- --tags @e2e"
-coverage:
-  non_e2e_command: "GIVN_FEATURES=givn/specs/ cargo llvm-cov --cobertura --output-path coverage/non-e2e-cobertura.xml --test features_runner"
-  e2e_command: "GIVN_FEATURES=givn/specs/ cargo llvm-cov --cobertura --output-path coverage/e2e-cobertura.xml --test features_runner -- --tags @e2e"
 addons:
   arc42: true
   absolute_mode: true

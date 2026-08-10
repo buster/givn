@@ -25,7 +25,7 @@ givn/  (single published binary crate)
 |   |   +-- addons.rs           # `addons list/enable/disable`
 |   |   +-- skills.rs           # `skills sync`
 |   |   +-- upgrade.rs          # re-render managed config scaffold, bump version
-|   |   +-- coverage_gate.rs     # archive-level coverage pipeline (run, merge, validate, fence)
+|   |   +-- coverage_gate.rs     # archive-level coverage pipeline (measure, merge, validate, README)
 |   |   +-- missing_testrunner.rs  # sentinel default verify.command
 |   +-- config/
 |   |   +-- embedded.rs         # access to baked-in assets (rust-embed)
@@ -68,14 +68,14 @@ givn/  (single published binary crate)
 | `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run the coverage gate, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `coverage_gate`, `config::manifest` |
-| `cli::coverage_gate` | Archive-level coverage pipeline: run both coverage commands, merge Cobertura XML, validate, update README fence with coverage summary. Delegates rollback to `cli::archive`. | `cobertura`, `agents_block`, `config::manifest` |
+| `cli::coverage_gate` | Archive-level coverage pipeline: run the project measurement and merge commands, validate source and merged Cobertura XML, update README badges/summary, and restore all changed files on failure. | `cobertura`, `agents_block`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
-| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, `post` hooks, deps, apply, the `verify` test-runner block); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
+| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, `post` hooks, deps, apply, verify, and project-owned coverage commands); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
 | `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. Also exposes `load_skills_targets()` — reads the `skills:` block from `givn/config.yaml` (ignored by the manifest itself). | `manifest`, `embedded` |
 | `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
 | `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |

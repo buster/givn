@@ -12,8 +12,8 @@ verify:
   command: \"true\"
   e2e_command: \"givn missing-e2e-runner\"
 coverage:
-  non_e2e_command: \"true\"
-  e2e_command: \"true\"
+  measure_command: \"true\"
+  merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"
   non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
   e2e_path: \"coverage/e2e-cobertura.xml\"
 addons:
@@ -158,8 +158,8 @@ verify:
   command: \"true\"
   e2e_command: \"givn missing-e2e-runner\"
 coverage:
-  non_e2e_command: \"true\"
-  e2e_command: \"true\"
+  measure_command: \"true\"
+  merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"
   non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
   e2e_path: \"coverage/e2e-cobertura.xml\"
 addons:
@@ -205,8 +205,8 @@ verify:
   command: \"true\"
   e2e_command: \"true\"
 coverage:
-  non_e2e_command: \"true\"
-  e2e_command: \"true\"
+  measure_command: \"true\"
+  merge_command: \"cp coverage/non-e2e-cobertura.xml coverage/cobertura-coverage.xml\"
   non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
   e2e_path: \"coverage/e2e-cobertura.xml\"
 addons:

@@ -27,7 +27,7 @@ givn_config_version: "0.2.0"
 # --- Coverage gate (archive-level, requires addons.coverage: true) ------------
 # Commands that run tests with coverage instrumentation. Configured in
 # givn/commands.yaml — NOT in this file. See givn/commands.yaml for the
-# coverage.non_e2e_command and coverage.e2e_command keys.
+# coverage.measure_command and coverage.merge_command keys.
 #
 
 # --- E2E test runner ----------------------------------------------------------
@@ -177,12 +177,6 @@ givn_config_version: "0.2.0"
 # grill_with_docs: false   # set to true to enable
 
 # --- User overrides preserved from previous version ---
-verify:
-  command: "uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock"
-  e2e_command: "uv run behave tests/features/ --no-capture --tags=@e2e --tags=-wip"
-coverage:
-  non_e2e_command: "uv run coverage run -m behave tests/features/ --no-capture --tags=-wip --tags=-e2e && uv run coverage report --skip-empty"
-  e2e_command: "uv run coverage run -m behave tests/features/ --no-capture --tags=@e2e --tags=-wip && uv run coverage report --skip-empty"
 addons:
   grill_with_docs: true
   grill_me: true

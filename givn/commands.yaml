@@ -1,0 +1,11 @@
+# Project-owned command scripts. The README documents these same commands.
+verify:
+  command: "./run-tests.sh"
+  e2e_command: "./run-tests.sh --e2e"
+
+coverage:
+  measure_command: "./measure-coverage.sh"
+  merge_command: "./merge-coverages.sh"
+  non_e2e_path: "coverage/non-e2e-cobertura.xml"
+  e2e_path: "coverage/e2e-cobertura.xml"
+  output_path: "coverage/cobertura-coverage.xml"

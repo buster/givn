@@ -138,31 +138,35 @@ impl Verify {
 
 /// Coverage instrumentation configuration.
 ///
-/// When the coverage addon is enabled (`addons.coverage: true`), givn runs
-/// these commands during archive to measure full-project coverage. Each
-/// command must produce a Cobertura XML file. givn merges the two Cobertura
-/// files into a single report and updates the project README.
+/// When the coverage addon is enabled (`addons.coverage: true`), givn runs a
+/// project-owned measurement command and then a project-owned merge command
+/// during archive. The merge command produces the report used for README
+/// output.
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(deny_unknown_fields)]
 pub struct Coverage {
-    /// Command to run non-e2e tests with coverage instrumentation.
-    /// Must produce a Cobertura XML at `non_e2e_path`.
+    /// Command that produces both source Cobertura reports.
     #[serde(default = "sentinel")]
-    pub non_e2e_command: String,
-    /// Command to run e2e tests with coverage instrumentation.
-    /// Must produce a Cobertura XML at `e2e_path`.
+    pub measure_command: String,
+    /// Command that merges the source reports into `output_path`.
     #[serde(default = "sentinel")]
-    pub e2e_command: String,
-    /// Path (relative to project root) where non_e2e_command writes its
-    /// Cobertura XML.
+    pub merge_command: String,
+    /// Legacy non-e2e command accepted during migration. New projects must
+    /// use `measure_command`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub non_e2e_command: Option<String>,
+    /// Legacy e2e command accepted during migration. New projects must use
+    /// `measure_command`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub e2e_command: Option<String>,
+    /// Path (relative to project root) to the non-e2e source report.
     #[serde(default = "default_non_e2e_path")]
     pub non_e2e_path: String,
-    /// Path (relative to project root) where e2e_command writes its Cobertura
-    /// XML.
+    /// Path (relative to project root) to the e2e source report.
     #[serde(default = "default_e2e_path")]
     pub e2e_path: String,
-    /// Path (relative to project root) where givn writes the merged Cobertura
-    /// XML.
+    /// Path (relative to project root) where merge_command writes the merged
+    /// Cobertura XML.
     #[serde(default = "default_cobertura_output")]
     pub output_path: String,
 }
@@ -186,8 +190,10 @@ fn default_cobertura_output() -> String {
 impl Default for Coverage {
     fn default() -> Self {
         Self {
-            non_e2e_command: sentinel(),
-            e2e_command: sentinel(),
+            measure_command: sentinel(),
+            merge_command: sentinel(),
+            non_e2e_command: None,
+            e2e_command: None,
             non_e2e_path: default_non_e2e_path(),
             e2e_path: default_e2e_path(),
             output_path: default_cobertura_output(),
