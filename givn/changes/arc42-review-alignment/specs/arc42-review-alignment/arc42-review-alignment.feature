@@ -19,7 +19,7 @@ Feature: Arc42 completion conformance review
     And stdout contains "mismatch"
     And stdout contains "ARC42 CONFORMANCE: CLEAN"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The review template includes the Arc42 conformance block
     Given a project root with givn/ initialised
     When the user runs `givn eject review:template`

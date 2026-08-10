@@ -95,6 +95,38 @@ driving mechanism:
 |---|---|---|---|---|---|
 | | | | | | |
 
+## Arc42 implementation conformance
+
+**N/A when the arc42 addon is disabled.** When `addons.arc42` is enabled, this
+is a mandatory comparison of the durable `docs/arc42/` chapters and the
+change-level `arc42.md` assessment against `design.md`, `tasks.md`, and the
+completed implementation. This is a fresh implementation review, not a copy
+of the design-review table.
+
+First derive the architectural facts and affected chapters from the completed
+change and the current durable documentation. Then compare the change-level
+Arc42 claims. Read each chapter named by either assessment and record concrete
+evidence in the table:
+
+| Arc42 chapter or architectural fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Completed implementation evidence | Match? / finding |
+|---|---|---|---|---|---|---|
+| | | | | | | |
+
+- [ ] Every chapter marked affected by either the independent review or
+      `arc42.md` was opened and checked for stale, contradictory, or placeholder
+      content.
+- [ ] Every Arc42 fact or architecture decision relevant to this change is
+      represented in `design.md` and mapped to one or more tasks in `tasks.md`.
+- [ ] The completed implementation follows those facts and decisions; evidence
+      names the built file, command, test, or observable result.
+- [ ] Architecture changes discovered in the completed implementation are
+      recorded in the durable Arc42 chapter and the change-level assessment.
+- [ ] No mismatch remains. A mismatch was fixed in the affected documentation,
+      design, tasks, or implementation and this comparison was repeated; a
+      design change also triggered design-review again.
+
+ARC42 CONFORMANCE: CLEAN / FINDINGS
+
 **Result:** CLEAN / FINDINGS (if findings, list remediation taken — reopened
 tasks, re-run RED/GREEN/REFACTOR/COMMIT, real-interface obstacle fixed per
 design.md, or design.md corrected + design-review re-run — before
