@@ -365,63 +365,64 @@ E2e setup: no external infra (CLI-only capability). e2e steps share
 separates e2e from the full suite (full count > e2e count) once e2e
 scenarios exist.
 
-- [ ] Set up e2e infrastructure: confirm `verify.e2e_command` runs and
+- [x] Set up e2e infrastructure: confirm `verify.e2e_command` runs and
       filters: full-run scenario count vs `--tags @e2e` count must differ.
       ```
-      <!-- paste evidence -->
+      evidence: full run 19 scenarios vs e2e-only 3 scenarios (strict subset) — repo config e2e_command `cargo test --test features_runner -- --tags @e2e`
       ```
-- [ ] @e2e Scenario: Consumer selects agent targets during interactive init
-  - [ ] RED: Remove `@wip`. Must fail (piped-stdin step unimplemented).
+- [x] @e2e Scenario: Consumer selects agent targets during interactive init
+  - [x] RED: Remove `@wip`. Must fail (piped-stdin step unimplemented).
         ```
-        <!-- paste RED evidence -->
+        evidence: side-effect GREEN — piped-stdin steps existed from Scenario 2 (user/consumer answer handlers share the same binding). No separate RED state.
         ```
-  - [ ] GREEN: piped-stdin answer `opencode, .claude` → files in both
+  - [x] GREEN: piped-stdin answer `opencode, .claude` → files in both
         targets, `.agents` absent. Files: `tests/steps/init_agent_target_selection_steps.rs`.
         ```
-        <!-- paste GREEN evidence -->
+        evidence: e2e run: 3 scenarios (3 passed), 18 steps (18 passed)
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        evidence: e2e run passes after fmt/clippy
         ```
-  - [ ] COMMIT: `<hash>` — `test(e2e): Consumer selects agent targets during interactive init`
-- [ ] @e2e Scenario: Consumer runs init non-interactively and gets opencode skills
-  - [ ] RED: Remove `@wip`. Must fail.
+  - [x] COMMIT: `79bb7b0` — `test(e2e): Consumer selects agent targets during interactive init` (shared commit covering all three e2e scenarios — they share the glue fix)
+- [x] @e2e Scenario: Consumer runs init non-interactively and gets opencode skills
+  - [x] RED: Remove `@wip`. Must fail.
         ```
-        <!-- paste RED evidence -->
+        evidence: side-effect GREEN — null-stdin default path implemented in Scenarios 1/2. No separate RED state.
         ```
-  - [ ] GREEN: null-stdin init → opencode skills written, `.claude` absent.
+  - [x] GREEN: null-stdin init → opencode skills written, `.claude` absent.
         ```
-        <!-- paste GREEN evidence -->
+        evidence: e2e run passes (3/3)
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        evidence: e2e run passes after fmt/clippy
         ```
-  - [ ] COMMIT: `<hash>` — `test(e2e): Consumer runs init non-interactively and gets opencode skills`
-- [ ] @e2e Scenario: Consumer re-syncs skills after init and the selection is honoured
-  - [ ] RED: Remove `@wip`. Must fail.
+  - [x] COMMIT: `79bb7b0` — `test(e2e): Consumer runs init non-interactively and gets opencode skills`
+- [x] @e2e Scenario: Consumer re-syncs skills after init and the selection is honoured
+  - [x] RED: Remove `@wip`. Must fail.
         ```
-        <!-- paste RED evidence -->
+        evidence: "Step doesn't match any function" — `the consumer runs` binding was missing; runner failed (strict mode). Genuine RED.
         ```
-  - [ ] GREEN: init'd project with persisted `opencode, claude` → sync
-        writes both, `.agents` untouched.
+  - [x] GREEN: init'd project with persisted `opencode, claude` → sync
+        writes both, `.agents` untouched. Added `#[when] the consumer runs` binding (argv strip fix).
+        Files: `tests/steps/init_agent_target_selection_steps.rs`.
         ```
-        <!-- paste GREEN evidence -->
+        evidence: e2e run: 3 scenarios (3 passed), 18 steps (18 passed)
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        evidence: e2e run passes after fmt/clippy
         ```
-  - [ ] COMMIT: `<hash>` — `test(e2e): Consumer re-syncs skills after init and the selection is honoured`
+  - [x] COMMIT: `79bb7b0` — `test(e2e): Consumer re-syncs skills after init and the selection is honoured`
 
 ---
 
 ## Full-suite gate
 
-- [ ] Run the full change-scoped suite
+- [x] Run the full change-scoped suite
       (`GIVN_FEATURES=givn/changes/init-agent-target-selection/specs/ cargo test --test features_runner` and the same with `-- --tags @e2e`) — both exit 0.
-- [ ] Run the permanent suite (`cargo test --test features_runner`):
+- [x] Run the permanent suite (`cargo test --test features_runner`):
       the ONLY failing scenarios must be the three permanent install-extras
       scenarios this change modifies (their deltas merge at archive:
       "givn init defaults to all addons enabled and generates their files",
@@ -429,7 +430,7 @@ scenarios exist.
       "addon skills are written to all target directories"). Any other
       failure is unexpected and blocks archive.
       ```
-      <!-- paste evidence -->
+      evidence: change-scoped 19/19 + e2e 3/3 passed; `givn check tasks --change` verify passed; `givn lint --change` clean. Permanent suite: 134 scenarios (131 passed) — the 3 failures are exactly the modified install-extras scenarios (".agents/skills/givn-domain-modeling/SKILL.md" exists assertions). No empty/no-op step bodies (grep 0 hits).
       ```
 
 **Done when:** every box checked with evidence and commit hash, full suite
