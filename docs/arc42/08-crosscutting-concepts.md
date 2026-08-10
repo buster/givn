@@ -301,12 +301,20 @@ This mirrors the validation already performed by `givn instructions`.
 
 ## 8.7 Skill & rule generation
 
-Standards-aligned, multi-target emit (see ADR-013):
+Standards-aligned, configurable-target emit (see ADR-013, ADR-036):
 
 - **`AGENTS.md`** at repo root is **user-owned** — givn never writes or
   overwrites it. Users author whatever project-level rules/context they need.
-- **Skills →** neutral `.agents/skills/<name>/SKILL.md` (primary), mirrored to
-  `.claude/skills/<name>/SKILL.md` and `.opencode/skills/<name>/SKILL.md`.
+- **Target selection** — the agent targets that receive generated skills are
+  configured in the `skills:` block of `givn/config.yaml` (`targets:` list of
+  `opencode`/`agents`/`claude`). `givn init` asks for the selection (default:
+  opencode only); `givn skills sync` installs to exactly the persisted
+  selection. Absent block → opencode only.
+- **Skills →** written to `.opencode/skills/<name>/SKILL.md` when opencode is
+  selected, `.agents/skills/<name>/SKILL.md` when agents is selected,
+  `.claude/skills/<name>/SKILL.md` when claude is selected.
+- **Commands →** `.opencode/commands/<name>.md`, written only when opencode
+  is selected.
 - Default skills, one per workflow action: `givn-explore`, `givn-propose`,
   `givn-spec`, `givn-design`, `givn-design-review`, `givn-tasks`,
   `givn-implement`, `givn-review`, `givn-archive`.

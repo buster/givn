@@ -22,7 +22,7 @@ graph TB
 
 | Entity | Interaction |
 | --- | --- |
-| Developer | Runs `givn` commands from the terminal. |
+| Developer | Runs `givn` commands from the terminal. On `givn init`, answers the agent-target selection prompt (default: opencode only). |
 | AI coding agent | Reads `givn instructions --json` and generated skills; `AGENTS.md` (user-authored, if present); edits artifacts and code. |
 | Project filesystem | Holds the `givn/` directory, source code, and generated agent files. |
 | Test runner (cargo/npm/pytest/…) | The `verify.command`; executes step definitions. Invoked by givn via `post` hooks (`givn check`, archive gate) and directly by the agent during the TDD loop. |
@@ -51,7 +51,7 @@ graph TB
 - YAML manifest overlay onto embedded default graph.
 - `givn lint` (static Gherkin check with exit codes; runs no tests).
 - Filesystem-derived state and task-progress tracking.
-- Skill generation (neutral + claude + opencode). `AGENTS.md` is user-owned.
+- Skill generation (neutral + claude + opencode, configurable target selection at init). `AGENTS.md` is user-owned.
 - Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
 - Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
 - Per-artifact `post` hooks; givn runs `verify.command` at gates (`givn check`, archive).
@@ -69,4 +69,4 @@ graph TB
 | Profiles / global config layers | "All config in one place" — single project dir. |
 | Workspace/multi-repo coordination | Out of scope for v1. |
 | Context stores / initiatives | Dropped weight from the prototype. |
-| Additional skill targets (cursor, gemini, …) | Achievable via `eject`; not shipped built-in in v1. |
+| Additional skill targets (cursor, gemini, …) | The built-in target set is fixed at opencode, .agents, .claude (selectable at init); other tools are achievable via `eject`; not shipped built-in in v1. |

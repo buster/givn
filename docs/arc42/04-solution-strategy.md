@@ -16,7 +16,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | TDD | **Scenario-by-scenario** RED/GREEN/REFACTOR loop. |
 | Coverage | **Completeness of gap classification**, not a percentage threshold. |
 | State | **Filesystem-derived** — file presence determines lifecycle state. |
-| Agent integration | `AGENTS.md` is user-owned (never written); `.agents/skills` (neutral) + claude/opencode mirrors. |
+| Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |

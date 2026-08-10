@@ -60,7 +60,7 @@ givn/  (single published binary crate)
 | Module | Responsibility | Key collaborators |
 | --- | --- | --- |
 | `main.rs` | Parse args, dispatch to `cli::*`, map errors to exit codes. | `cli`, `error` |
-| `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, generate skills. | `config`, `skills` |
+| `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, prompt for the agent-target selection (default opencode) and persist it as the `skills:` block, generate skills to the selected targets. | `config`, `skills` |
 | `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Calls the shared `resolve_change_dir` helper to validate `<id>` (kebab-case) and construct the path before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
@@ -76,14 +76,14 @@ givn/  (single published binary crate)
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
 | `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, `post` hooks, deps, apply, the `verify` test-runner block); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
-| `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. | `manifest`, `embedded` |
+| `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. Also exposes `load_skills_targets()` — reads the `skills:` block from `givn/config.yaml` (ignored by the manifest itself). | `manifest`, `embedded` |
 | `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
 | `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |
 | `gherkin::parse` | Parse `.feature` into a typed AST; classify lint findings. | `gherkin` crate |
 | `gherkin::delta` | Detect `@givn.*` tags; split features/scenarios. | `parse` |
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md. | `config::cascade` |
-| `skills::targets` | Write rendered output to the three skill locations + `.opencode/commands/`. `AGENTS.md` is intentionally not touched (user-owned). | `render` |
+| `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |

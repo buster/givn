@@ -1042,3 +1042,90 @@ asset parity scenario confirms the rule reaches generated agent targets.
 
 Related decisions: ADR-026 (Arc42 documentation artifact), ADR-030
 (`design-review` planning gate), and chapter 8.14 (review mechanics).
+
+---
+
+## ADR-036: Configurable agent target selection with opencode default
+
+---
+status: accepted
+date: 2026-08-10
+decision-makers: givn maintainers
+consulted: users of `givn init` and `givn skills sync`
+informed: givn users whose projects already contain `.agents`/`.claude` skills
+---
+
+### Context and Problem Statement
+
+`givn init` and `givn skills sync` wrote workflow skills and commands to every
+agent directory unconditionally (`.agents/`, `.claude/`, `.opencode/`). Most
+projects are used from a single agent, so the other two directories were pure
+noise — files the user never reads, polluting the repo and confusing which
+directory is authoritative. There was no opt-out that survived the next
+`givn skills sync`.
+
+### Decision Drivers
+
+- Keep the repo clean for a single-agent workflow by default.
+- Preserve multi-agent projects (all three targets) without extra tooling.
+- Keep the interaction testable without a PTY or a new dependency.
+- Never block non-interactive `givn init` (CI/scripts) on a prompt.
+
+### Considered Options
+
+- Ask at init which agents to install to (multi-select), default opencode.
+- Keep writing to all three targets unconditionally.
+- Write to `.agents` only by default (neutral-primary argument).
+
+### Decision Outcome
+
+Chosen option: **Ask at init which agents to install to, default opencode**,
+because the single-agent project is the common case while the multi-agent
+project remains one prompt away. The selection is persisted in
+`givn/config.yaml` as `skills.targets` and `givn skills sync` honours it.
+Non-interactive init (EOF on stdin) falls back to the opencode default and
+re-running init on an existing project preserves the persisted selection.
+
+#### Consequences
+
+- Good, because a fresh single-agent project gets exactly one agent directory.
+- Good, because the choice is explicit, persisted, and survives re-sync.
+- Good, because the prompt is a plain line-based list — no PTY, no TUI
+  dependency, and the cucumber harness drives it via piped stdin.
+- Bad, because existing projects that previously synced all three targets will
+  narrow to opencode after upgrade unless they add the `skills:` block;
+  chapter 11 records this as a migration risk.
+- Bad, because the target set itself is fixed at three options; other tools
+  still require `eject`.
+
+#### Confirmation
+
+The `@e2e` scenarios in the `init-agent-target-selection` capability drive a
+real `givn init`/`givn skills sync` subprocess with piped stdin and assert the
+installed files plus the persisted config.
+
+### Pros and Cons of the Options
+
+#### Ask at init which agents to install to (default opencode)
+
+- Good, because single-agent projects are clean by default.
+- Good, because the prompt reads plain lines — testable via piped stdin.
+- Bad, because it adds an interactive step to init.
+
+#### Keep writing to all three targets unconditionally
+
+- Good, because no new interaction.
+- Bad, because it leaves unwanted directories in every single-agent project.
+
+#### Write to `.agents` only by default
+
+- Good, because `.agents` is the neutral primary location and opencode reads
+  it.
+- Bad, because it ignores the opencode-specific `.opencode/commands/`
+  — the user's actual agent — while still creating a directory the user did
+  not ask for.
+
+### More Information
+
+Related decisions: ADR-013 (original multi-target emit), chapter 8.7 (skill
+& rule generation), and chapter 8.3 (config structure).
