@@ -159,24 +159,24 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 7: Skills and commands are not installed to an agent excluded from the selection
 
-- [ ] RED: Remove `@wip`. Implement the clean-state Given step
+- [x] RED: Remove `@wip`. Implement the clean-state Given step
       (`givn/config.yaml` with targets `claude`). Must fail — sync still
       writes everywhere.
       ```
-      <!-- paste RED evidence -->
+      evidence: side-effect GREEN — clean-state Given step (setup) + target-driven sync (Scenario 1) satisfy this from a bare root; no separate RED state.
       ```
-- [ ] GREEN: assert-only path — sync writes to `claude` only, never touches
+- [x] GREEN: assert-only path — sync writes to `claude` only, never touches
       `.opencode`. Exercises `AgentTarget` dir mapping
       (`claude` → `.claude`). Must pass. Note: sync is intentionally
       write-only — no deletion of stale targets (ADR-036/R-12).
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 7 steps (7 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): Skills and commands are not installed to an agent excluded from the selection`
+- [x] COMMIT: `a57a604` — `feat(init-agent-target-selection): Skills and commands are not installed to an agent excluded from the selection`
 
 ### Scenario 8: Re-running init keeps the persisted selection
 

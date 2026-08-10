@@ -68,7 +68,7 @@ Feature: init-agent-target-selection
     And  the directory ".opencode/skills/givn-propose" does not exist
     And  the file ".opencode/commands/givn-propose.md" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Re-running init keeps the persisted selection
     Given  a project root with givn/ initialised
     And  givn skills targets in givn/config.yaml equal "claude"
