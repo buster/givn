@@ -67,23 +67,23 @@ steps via `.fail_on_skipped()`. Prove gate-to-gate before any scenario work.
 
 ### Scenario 2: Interactive init installs only the agents the user selects
 
-- [ ] RED: Remove `@wip`. The `answers the agent prompt` step is unimplemented (`todo!()`) → must fail.
+- [x] RED: Remove `@wip`. The `answers the agent prompt` step is unimplemented (`todo!()`) → must fail.
       ```
-      <!-- paste RED evidence -->
+      evidence: "1 step failed ... error: test failed" (answer ignored -> .claude missing)
       ```
-- [ ] GREEN: implement `prompt_for_targets()` in `src/cli/init.rs` (read one
+- [x] GREEN: implement `prompt_for_targets()` in `src/cli/init.rs` (read one
       stdin line, normalize names, prompt on TTY) and `write_skills_block`
       (line-based append to `givn/config.yaml`, pattern of `set_addon`).
       Interactive answer `opencode, .claude` → both targets installed,
       `.agents` untouched. Must pass.
       ```
-      <!-- paste GREEN evidence -->
+      evidence: 1 scenario (1 passed), 6 steps (6 passed)
       ```
-- [ ] REFACTOR: re-run, must still pass.
+- [x] REFACTOR: re-run, must still pass.
       ```
-      <!-- paste REFACTOR evidence -->
+      evidence: scenario passed after fmt/clippy
       ```
-- [ ] COMMIT: `<hash>` — `feat(init-agent-target-selection): Interactive init installs only the agents the user selects`
+- [x] COMMIT: `01829e6` — `feat(init-agent-target-selection): Interactive init installs only the agents the user selects`
 
 ### Scenario 3: Interactive init accepts the default selection with an empty answer
 

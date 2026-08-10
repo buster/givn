@@ -25,7 +25,7 @@ Feature: init-agent-target-selection
     And  the file ".claude/skills/givn-propose/SKILL.md" exists
     And  the directory ".agents/skills/givn-propose" does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Interactive init accepts the default selection with an empty answer
     Given  a project root without a givn/ directory
     When  the user runs `givn init` and answers the agent prompt with ""
