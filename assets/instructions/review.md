@@ -152,8 +152,9 @@ implementation ignores or contradicts.
    as a finding. Fix the affected Arc42 chapter, `arc42.md`, `design.md`,
    `tasks.md`, or implementation, then repeat the comparison. If `design.md`
    changes, run design-review again before continuing.
-6. Record `ARC42 CONFORMANCE: CLEAN` only when every row matches and all five
-   sign-off checks in the template are checked. Do not write `REVIEW: PASS`
+6. Record `ARC42 CONFORMANCE: CLEAN` as the explicit clean marker only when
+   every row matches and all five sign-off checks in the template are checked.
+   Do not write `REVIEW: PASS`
    while this block contains an unresolved finding.
 
 ## Coverage

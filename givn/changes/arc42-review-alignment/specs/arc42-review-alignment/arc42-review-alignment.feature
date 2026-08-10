@@ -6,7 +6,7 @@
 @givn.delta @arc42-review-alignment
 Feature: Arc42 completion conformance review
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Arc42-enabled review instructions require conformance evidence
     Given a project root with givn/ initialised
     When the user runs `givn new arc42-review-alignment-test`
