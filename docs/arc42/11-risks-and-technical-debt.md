@@ -13,6 +13,8 @@
 | R-7 | Scope creep back toward OpenSpec's dropped features (profiles, context stores). | Medium | Medium | Chapter 3.3 non-goals are explicit; keep them out of v1. |
 | R-8 | Filesystem-derived state misreads partially-written or manually-edited dirs. | Low | Medium | Derive conservatively; treat ambiguous states as "in progress"; never auto-destroy on inference. |
 | R-9 | Path traversal in `--change` parameter (e.g. `--change "../etc"`). | Low | High | **Resolved:** every command that accepts `--change` now validates the id as kebab-case via the shared `resolve_change_dir` helper before constructing any filesystem path. Invalid ids are rejected with a clear error. |
+| R-10 | Durable Arc42 chapters become stale, or implementation silently diverges from documented architecture after design-review. | Medium | High | When the `arc42` addon is enabled, completion review independently cross-checks Arc42 facts and affected chapters against `design.md`, `tasks.md`, and implementation evidence; mismatches block sign-off. |
+| R-11 | The prompt-layer conformance review is completed superficially or omitted because the binary does not parse architecture facts. | Medium | High | Require `ARC42 CONFORMANCE: CLEAN` and a completed evidence table in the review assets; design-review and the review instructions state that any unresolved row prevents human sign-off. |
 
 ## 11.2 Deliberate (planned) technical debt
 

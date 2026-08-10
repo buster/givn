@@ -28,5 +28,7 @@
 | **`@wip`** | Scenario tag: step definitions not yet implemented. |
 | **`GIVN_FEATURES`** | Env var overriding the feature path for the test runner (default `givn/specs`). |
 | **arc42** | The architecture documentation template this `docs/arc42/` folder follows. |
+| **Arc42 implementation conformance** | The completion-review comparison of durable Arc42 facts and the change-level assessment against the design, mapped tasks, and completed implementation. Required only when the `arc42` addon is enabled. |
+| **Architecture fact** | A documented architectural constraint, decision, structure, flow, quality requirement, risk, or domain term that a change may need to preserve or update. |
 | **ADR** | Architecture Decision Record (chapter 9). |
 | **OpenSpec** | The TypeScript tool whose fork prototyped this workflow; givn is a clean-break successor. |

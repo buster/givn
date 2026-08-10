@@ -758,3 +758,44 @@ command prompts. The only binary changes are: the `--skip` flag on `givn new`,
 the `ArtifactStatus::Skipped` variant in `state.rs`, and the `givn-steps` skill
 added to the sync lists. No manifest changes, no new CLI subcommands for the
 reverse flow itself.
+
+---
+
+## 8.14 Arc42 implementation conformance review (ADR-035)
+
+The `arc42` addon has two distinct review points. `design-review` checks the
+planned chapter impact before tasks are written. The completion review checks
+whether the durable architecture and the completed change still agree after
+implementation.
+
+### Conditional review block
+
+The core review assets contain an explicit Arc42 implementation conformance
+block. If `addons.arc42` is disabled, the block is recorded as not applicable.
+If it is enabled, the block is mandatory and compares:
+
+| Source | Question |
+| --- | --- |
+| Durable `docs/arc42/` chapters | What architecture facts and decisions are currently documented? |
+| Change-level `arc42.md` | Which chapters does this change claim to affect? |
+| `design.md` | Does the planned solution account for every relevant fact? |
+| `tasks.md` | Do implementation tasks map to the documented decisions and consequences? |
+| Completed implementation | Does the built result follow the documented and designed architecture? |
+
+The reviewer independently derives relevant facts before accepting the
+change-level claims. Every chapter named by either assessment is opened and
+checked for placeholder text, stale content, and contradictions. The review
+records source evidence and a match/finding result for each fact.
+
+### Finding and remediation semantics
+
+The review catches both directions of drift: a completed change missing from
+durable Arc42 documentation, and an implementation that ignores or contradicts
+an Arc42 fact. Any omission, contradiction, stale chapter, or missing task
+mapping is a finding. The affected documentation, design, task list, or code is
+corrected and the comparison is repeated. If the design changes, the planning
+design-review is run again before the completion review can pass.
+
+This is a human evidence review, not automatic source-code inference. The
+architecture facts require context and trade-off judgment that a text scan
+cannot establish reliably.

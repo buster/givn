@@ -953,3 +953,92 @@ maximises compatibility. Both licenses are OSI-approved and GitHub-recognised.
   outbound contribution terms.
 - OC-4 (license TBD) is resolved.
 - Empty-baseline merge mechanics from ADR-032 retained.
+
+---
+
+## ADR-035: Arc42 conformance is a post-implementation evidence review
+
+---
+status: accepted
+date: 2026-08-10
+decision-makers: givn maintainers
+consulted: project architecture documentation and lifecycle asset owners
+informed: givn users enabling the arc42 addon
+---
+
+### Context and Problem Statement
+
+The `arc42` addon updates durable project architecture documents from the
+proposal, specification, and design. A design-review audit verifies the planned
+chapter set before tasks are written, but implementation can still drift
+afterward and a durable chapter can remain stale.
+
+### Decision Drivers
+
+- Detect design-to-implementation drift after the TDD loop.
+- Detect durable Arc42 documentation that was not updated for a completed change.
+- Keep the default lifecycle language- and framework-agnostic.
+- Avoid false confidence from source-text heuristics that cannot judge trade-offs.
+- Make the rule visible in every review asset and agent target.
+
+### Considered Options
+
+- Prompt-layer, evidence-based completion review.
+- Automatic source-code parser and Arc42 fact checker.
+- Keep only the existing pre-task design-review check.
+
+### Decision Outcome
+
+Chosen option: **Prompt-layer, evidence-based completion review**, because
+architectural facts and trade-offs require human context while the review can
+still demand concrete evidence across durable chapters, design, tasks, and the
+completed implementation. When the `arc42` addon is enabled, completion review
+includes a mandatory Arc42 implementation conformance block. When disabled, it
+is explicitly not applicable.
+
+#### Consequences
+
+- Good, because a completed change must account for both documented architecture
+  and implementation evidence before `REVIEW: PASS`.
+- Good, because the same conditional block is carried by the template,
+  instructions, skill, and slash-command assets.
+- Good, because the check remains usable for any language or test runner.
+- Bad, because a human reviewer can still omit or weaken evidence; chapter 11
+  records this residual risk and the review gate requires explicit clean status.
+- Bad, because the check does not mechanically prove source-code conformance;
+  automatic inference is deliberately excluded.
+
+#### Confirmation
+
+`design-review` confirms the independent chapter assessment before tasks are
+written. Completion review then fills the Arc42 implementation conformance
+table, records `ARC42 CONFORMANCE: CLEAN`, and refuses human sign-off while a
+fact, chapter, task mapping, or implementation comparison has a finding. The
+asset parity scenario confirms the rule reaches generated agent targets.
+
+### Pros and Cons of the Options
+
+#### Prompt-layer, evidence-based completion review
+
+- Good, because it supports architectural judgment and remains portable.
+- Good, because it is a small change to existing review assets.
+- Bad, because compliance depends on reviewer discipline.
+
+#### Automatic source-code parser and Arc42 fact checker
+
+- Good, because some omissions could be detected mechanically.
+- Bad, because source names and text cannot reliably establish architecture,
+  trade-offs, or whether a chapter is stale.
+- Bad, because it would introduce a language-specific architecture model and
+  create false confidence for facts it cannot parse.
+
+#### Keep only the existing pre-task design-review check
+
+- Good, because it adds no new review work.
+- Bad, because it cannot see implementation drift or post-design documentation
+  staleness.
+
+### More Information
+
+Related decisions: ADR-026 (Arc42 documentation artifact), ADR-030
+(`design-review` planning gate), and chapter 8.14 (review mechanics).

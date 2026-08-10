@@ -119,6 +119,43 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
 
 Record the result even when clean: "0 empty step bodies found across N files."
 
+## Arc42 implementation conformance (conditional)
+
+Run this block after the fabrication audit and before coverage classification.
+
+If `addons.arc42` is disabled in `givn/config.yaml`, write exactly:
+`N/A when the arc42 addon is disabled` and continue. Do not invent an Arc42
+finding for a project that has opted out.
+
+If the addon is enabled, the check is mandatory. It catches both directions of
+drift: durable architecture documentation that is stale or missing a completed
+change, and architecture facts that the change's design, tasks, or completed
+implementation ignores or contradicts.
+
+1. Read the durable `docs/arc42/` chapters and the change-level `arc42.md`.
+2. Independently derive the affected chapters and concrete architecture facts
+   from the completed implementation, `design.md`, and `tasks.md` before
+   accepting the change-level Arc42 claims.
+3. For every chapter marked affected by either assessment, open the chapter and
+   check that it contains current, decision-specific content rather than a
+   placeholder or stale contradiction.
+4. Cross-reference each relevant fact or decision against `design.md`, the
+   specific task(s) in `tasks.md`, and evidence from the completed
+   implementation. Record the full comparison in the `Arc42 implementation
+   conformance` block of `review.md`:
+
+   | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` | `tasks.md` | Implementation evidence | Match? |
+   |---|---|---|---|---|---|---|
+   | | | | | | | |
+
+5. Treat every omission, contradiction, stale chapter, or missing task mapping
+   as a finding. Fix the affected Arc42 chapter, `arc42.md`, `design.md`,
+   `tasks.md`, or implementation, then repeat the comparison. If `design.md`
+   changes, run design-review again before continuing.
+6. Record `ARC42 CONFORMANCE: CLEAN` only when every row matches and all five
+   sign-off checks in the template are checked. Do not write `REVIEW: PASS`
+   while this block contains an unresolved finding.
+
 ## Coverage
 
 Record the percentage (line/branch) and raw tool output as a fact, not a

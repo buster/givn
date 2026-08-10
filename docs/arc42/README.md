@@ -9,6 +9,10 @@ documents focused and reviewable.
 > (change `reverse-engineer-new-command`). All architecture decisions remain
 > binding — see chapter 9.
 
+When the `arc42` addon is enabled, completion review also cross-checks durable
+Arc42 facts against the change's design, mapped tasks, and completed
+implementation. See chapter 8.14 and ADR-035.
+
 ## Chapters
 
 | # | Chapter | Purpose |

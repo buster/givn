@@ -59,6 +59,7 @@ graph TD
 | Q-21 | Self-contained gate | `givn archive` is run while the suite is red. | Archive runs the hooks of `apply.requires` artifacts, a required hook fails, archive is refused with non-zero exit; no merge/move occurs. |
 | Q-22 | Self-contained gate | A fresh project (sentinel runner) runs `givn check` or `givn archive`. | The `verify` hook invokes `givn missing-testrunner`, which fails with setup guidance; the gate blocks until `verify.command` is configured. |
 | Q-23 | Configurability | A team adds a custom hook `"npm run typecheck"` to `tasks.post`. | It runs alongside `verify` on `givn check tasks`; a non-zero result blocks unless `allow_failure: true`. |
+| Q-26 | Architecture consistency | A team completes a change while `addons.arc42` is enabled. | The human completion review cross-checks durable Arc42 facts and the change assessment against `design.md`, mapped tasks, and completed implementation evidence; any mismatch prevents the reviewer from recording `ARC42 CONFORMANCE: CLEAN` and `REVIEW: PASS` until corrected. |
 
 ## 10.3 Acceptance signals per phase
 
