@@ -323,7 +323,7 @@ Feature: spec-overlap-gates
     And  stdout contains "parse_error"
     And  stdout contains "bad.feature"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consecutive And and But steps normalise to the same shape as plain Then steps
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
