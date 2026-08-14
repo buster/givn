@@ -77,7 +77,7 @@ Feature: review-disposition-gates
     And  stderr contains "split-or-keep"
     And  stderr contains "The undisposed marathon"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review passes when a long scenario has a split-or-keep entry
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
