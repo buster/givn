@@ -47,6 +47,12 @@ Read `givn instructions specs --change <id>` for the normalized action scope,
 real-interface assertions, and driver-fidelity rules. This command owns only
 step-definition mechanics and scenario targeting; it does not restate policy.
 
+## Black-Box-First
+
+For every internal step or test retained, record which case this test covers
+that the E2E does not. Otherwise remove the duplicate and extend the real-
+interface scenario.
+
 ## RED → GREEN → REFACTOR → COMMIT (one scenario at a time)
 
 Every phase targets the runner **at this scenario only** (name/line/tag —
