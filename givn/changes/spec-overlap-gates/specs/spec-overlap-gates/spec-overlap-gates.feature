@@ -178,7 +178,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Second sighting"
     And  stderr contains "merging"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The same shape with contradicting facts produces a related-scenario hint
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
