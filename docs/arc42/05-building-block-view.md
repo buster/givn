@@ -64,7 +64,7 @@ givn/  (single published binary crate)
 | `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Calls the shared `resolve_change_dir` helper to validate `<id>` (kebab-case) and construct the path before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`); `specs` is the canonical source for E2E authoring policy. | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags) plus the tree-wide overlap scan; produce exit codes 0/1/3/2. Runs no tests. `--json` emits findings machine-readably. | `gherkin::parse`, `overlap::analysis` |
-| `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner) and the mandatory review checks (incl. the overlap disposition gate); block & exit non-zero on failure. | `hooks`, `config::manifest`, `overlap::analysis`, `overlap::disposition` |
+| `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner) and the mandatory review checks (incl. the overlap disposition gate); append advisory retrieval candidates without changing the gate result. | `hooks`, `config::manifest`, `overlap::analysis`, `overlap::disposition`, `spec::retrieval` |
 | `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
 | `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run the coverage gate, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `coverage_gate`, `config::manifest` |
@@ -72,7 +72,7 @@ givn/  (single published binary crate)
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
-| `cli::spec` | Build the local scenario index or search it for ranked related scenarios. | `spec::retrieval`, `gherkin::parse` |
+| `cli::spec` | Build, search, or review the local scenario index for ranked related scenarios and active-delta advisory candidates. | `spec::retrieval`, `gherkin::parse` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
@@ -88,7 +88,7 @@ givn/  (single published binary crate)
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed permanent scenario text, persist content-hash/vector entries, and rank query results without blocking gates. | `fastembed`, `gherkin::parse`, project FS |
+| `spec::retrieval` | Embed permanent scenario text, persist content-hash/vector entries, rank query results, and report active-delta candidates without blocking gates. | `fastembed`, `gherkin::parse`, `overlap::disposition`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |

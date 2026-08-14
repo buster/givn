@@ -4,13 +4,13 @@
 
 | # | Branch | Question | Recommended answer | Outcome |
 |---|---|---|---|---|
-| 1 | Scope | Does the change remain advisory and local? | Keep indexing/searching in the CLI, exclude own deltas, and defer automatic review-gate integration. | Resolved: proposal and design now state that review can consume the commands but retrieval never changes a gate result. |
+| 1 | Scope | Does the change remain advisory and local? | Keep indexing/searching and the explicit review advisory in the CLI, exclude own deltas, and never make retrieval a gate. | Resolved: proposal and design specify `givn spec review --change`; retrieval never changes a gate result. |
 | 2 | Tech choices | Can `fastembed` be adopted without weakening the single-binary constraints? | Make `fastembed` optional behind `spec-retrieval`; keep the default and musl distribution builds free of native ONNX Runtime. | Resolved in design.md, ADR-039, and Arc42 chapters 2 and 7. |
-| 3 | Dependency policy | Does the chosen version satisfy TC-13? | Use `fastembed 5.17.2` and run `scripts/check-dep-age.sh` against the complete lockfile before GREEN. | Resolved: version is older than 30 days at design time; implementation must preserve the age check. |
-| 4 | Missing scenarios | Are incremental reuse and unavailable-model behavior observable? | Add one scenario for unchanged-vector reuse and one for explicit model setup failure. | Resolved: both scenarios were added with `@wip`. |
+| 3 | Dependency policy | Does the chosen version satisfy TC-13? | Use the latest compatible lockfile resolution under the explicitly authorized lockfile-derived `GIVN_DEP_AGE_ALLOWLIST` exception, and record the override in tasks.md. | Resolved by explicit user authorization; the normal 30-day policy remains the default outside this change. |
+| 4 | Missing scenarios | Are incremental reuse, unavailable-model behavior, and review candidates observable? | Add scenarios for unchanged-vector reuse, explicit model setup failure, and advisory review output. | Resolved: all three scenarios are implemented and GREEN. |
 | 5 | Testability | Can the strict subprocess scenarios reach GREEN without a multi-gigabyte model or network? | Use `GIVN_SPEC_EMBEDDER=stub` in the runner, with token-derived deterministic vectors; retain production fastembed when unset. | Resolved in design.md; the e2e gate stays offline and strict. |
-| 6 | E2E fidelity | Does every happy-path CLI action use the real interface and a real driver? | Keep the two `@e2e` scenarios on the compiled `givn` subprocess and assert stdout/index files. | Resolved: the interaction matrix is a one-to-one CLI mapping. |
-| 7 | Interaction coverage | Does the feature inventory map to valid driving mechanisms? | Keep one matrix row for index and one for search; treat own-delta exclusion as the search variant. | Resolved: both inventory rows have real subprocess mechanisms; no browser/API mechanism is implied. |
+| 6 | E2E fidelity | Does every happy-path CLI action use the real interface and a real driver? | Keep four distinct CLI actions on the compiled `givn` subprocess and assert CLI output/index files. | Resolved: the interaction matrix is a one-to-one CLI mapping. |
+| 7 | Interaction coverage | Does the feature inventory map to valid driving mechanisms? | Map index, search, and review to real compiled subprocesses; treat own-delta exclusion as the search variant. | Resolved: all three inventory rows have real subprocess mechanisms; no browser/API mechanism is implied. |
 | 8 | Risk | What is the likely production failure? | Treat native runtime/linking, model/cache footprint, dependency age, and first-use setup as explicit risks; never turn them into a correctness gate. | Resolved in ADR-039 and risks R-18/R-19/R-20. |
 
 ## Resolved by codebase exploration
@@ -21,7 +21,7 @@
 | Interface fidelity | `tests/common/mod.rs` invokes the compiled `givn` binary in a temporary project root; the retrieval steps will use that same black-box seam. |
 | Existing architecture | Permanent specs are rooted at `givn/specs`; active deltas are under `givn/changes`, so indexing only the permanent tree excludes the running change by construction. |
 | Model evidence | `tools/embed-analysis/MODEL-REPORT.md` supports E5-large as a retrieval candidate but explicitly rejects score gates; the product design preserves that advisory boundary. |
-| Review integration | The current review gate is deterministic and disposition-based. This change exposes advisory commands and does not add retrieval to the gate. |
+| Review integration | `givn spec review --change` performs the advisory pass, and `givn check review --change` invokes it after the deterministic gate without changing the exit code. |
 
 ## Open questions
 
@@ -54,9 +54,9 @@ No unresolved design questions remain for this change. Production target support
 
 | Artifact | Change summary |
 |---|---|
-| `proposal.md` | Clarified deferred automatic review integration and offline deterministic e2e behavior. |
-| `design.md` | Pinned an age-compliant fastembed release, documented E5 prefixes, opt-in feature gating, native-runtime tradeoffs, and the stub embedder. |
-| `specs/spec-retrieval/spec-retrieval.feature` | Added unchanged-vector reuse and unavailable-model scenarios. |
+| `proposal.md` | Defined advisory review-time candidate reporting and offline deterministic e2e behavior. |
+| `design.md` | Documented review integration, E5 prefixes, opt-in feature gating, native-runtime tradeoffs, the stub embedder, and the authorized dependency-age exception. |
+| `specs/spec-retrieval/spec-retrieval.feature` | Added unchanged-vector reuse, unavailable-model, and advisory review scenarios. |
 | `arc42.md` | Marked deployment as affected by the opt-in runtime/cache footprint. |
 | `docs/arc42/02-architecture-constraints.md` | Added the opt-in retrieval build constraint. |
 | `docs/arc42/05-building-block-view.md` | Recorded fastembed and its feature-gated transitive runtime. |
@@ -70,7 +70,7 @@ No unresolved design questions remain for this change. Production target support
 - [x] All questions are resolved.
 - [x] `design.md` reflects the decisions reached during grilling.
 - [x] `specs/**/*.feature` was updated for missing observable behavior.
-- [x] `givn lint --change spec-retrieval` exits 2 with only the five expected `@wip` findings; there are no parse errors.
+- [x] `givn lint --change spec-retrieval` exits 0 with no parse errors or remaining `@wip` findings.
 - [x] Architecture documentation (arc42) was independently checked above.
 
 **DESIGN-REVIEW: PASS**

@@ -143,7 +143,9 @@ addition (after verify, verify-e2e, and integrity): the **overlap disposition
 gate** — every shape match without fact contradiction involving the change's
 delta needs a disposition row in review.md, every long delta scenario a
 split-or-keep row; the net-delta receipt (added/modified/removed counts) is
-printed on stdout. See 8.8 and ADR-037.
+printed on stdout. The advisory retrieval pass then refreshes the permanent
+index and reports undisposed candidates without changing the exit code. See
+8.8, 8.5a, and ADR-037.
 
 Example: after the agent finishes `tasks`, `givn check tasks` runs the configured
 test suite and confirms GREEN before review. With the sentinel default runner, it
@@ -245,7 +247,7 @@ names or order. A project that adds a `risk-assessment` artifact sees it in
 `givn status --json` automatically; `/givn-propose` follows `next_required`
 to drive its loop regardless of how the manifest is configured.
 
-## 6.8a `givn spec index` and `givn spec search`
+## 6.8a `givn spec index`, `givn spec search`, and `givn spec review`
 
 The authoring retrieval flow is:
 
@@ -255,7 +257,9 @@ The authoring retrieval flow is:
    index.
 3. `givn spec search "<query>"` embeds the query, ranks candidates by cosine
    similarity, and prints the top results.
-4. The current change's own delta is excluded; results are advisory and do not
+4. `givn spec review --change <id>` refreshes the index, queries active added or
+   modified scenarios, and prints candidates that lack a matching disposition.
+5. The current change's own delta is excluded from the permanent index; results are advisory and do not
    affect lint, CI, or archive exit codes.
 
 ## 6.9 Running the test runner on a fresh project (sentinel)
