@@ -110,14 +110,20 @@ fn run_mandatory_checks(
             println!("  ✓ integrity passed");
             if let Some(id) = change {
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
-                if let Err(error) = crate::spec::retrieval::review(project_root, id) {
-                    println!("retrieval advisory setup unavailable: {error:#}");
-                }
+                run_advisory_retrieval(project_root, id);
             }
         }
         _ => {}
     }
     Ok(())
+}
+
+/// Retrieval is advisory: setup failures are visible but never alter the
+/// deterministic review gate's exit status.
+fn run_advisory_retrieval(project_root: &std::path::Path, change_id: &str) {
+    if let Err(error) = crate::spec::retrieval::review(project_root, change_id) {
+        println!("retrieval advisory setup unavailable: {error:#}");
+    }
 }
 
 /// Check if an artifact's output files exist in the change directory.
