@@ -427,7 +427,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Paying with"
     And  stderr contains "Paying again with"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Docstrings are ignored in the shape comparison
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
@@ -437,9 +437,9 @@ Feature: spec-overlap-gates
           Given a project root with givn/ initialised
           When the user runs `givn lint`
           Then the output matches
-            \"\"\"
+            ```
             one docstring
-            \"\"\"
+            ```
       """
     And  a .feature file at "givn/specs/bar/bar.feature" with:
       """
@@ -448,9 +448,9 @@ Feature: spec-overlap-gates
           Given a project root with givn/ initialised
           When the user runs `givn lint`
           Then the output matches
-            \"\"\"
+            ```
             a different docstring
-            \"\"\"
+            ```
       """
     When  the user runs `givn lint`
     Then  the command exits 0
