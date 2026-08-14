@@ -128,7 +128,7 @@ complete.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Canonical E2E policy is emitted by specs instructions`
+  - [x] COMMIT: `cf63571` -- `Canonical E2E policy is emitted by specs instructions`
 
 - [ ] @e2e Scenario: `Generated guidance points to the canonical E2E policy`
   - [ ] RED: remove `@wip`; target with `./run-tests.sh --e2e` and the exact
