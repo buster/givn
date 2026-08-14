@@ -2,14 +2,14 @@
 
 Dieses Dokument spezifiziert die Refactor-Vorhaben aus
 `docs/givn-refactor-0.3/analysis.md` (Entscheidungsstand nach
-Design-Review-Grilling, 2026-08-14) als fünf aufeinanderfolgende givn-Changes.
+Design-Review-Grilling, 2026-08-14) als sechs aufeinanderfolgende givn-Changes.
 Für jede Change enthält es mindestens den Inhalt einer proposal.md
 (Problem/Opportunity, Proposed Solution, Out of Scope, Open Questions) in
 User-Perspektive und Domain-Sprache, plus Spec-Anhaltspunkte
 (Kandidaten-Szenarien), Design-Anhaltspunkte (technische Entscheidungen aus
 analysis.md, die in design.md gehören) und Evidenz-/Verifikationspflichten.
 
-Verwendung: Jeder Abschnitt 1–5 ist die Eingabe für die Erstellung einer
+Verwendung: Jeder Abschnitt 1–6 ist die Eingabe für die Erstellung einer
 givn-Change (`givn propose`, dann spec/design/tasks). Proposals sind bewusst
 in User-Perspektive geschrieben; alles Technische steht unter
 "Design-Anhaltspunkte" und darf erst in design.md einfließen. Die Changes
@@ -27,21 +27,29 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
 
 | # | Change (vorgeschlagene ID) | Repo | Voraussetzung |
 |---|---|---|---|
-| 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) |
-| 2 | `prose-consolidation` | givn | 1 (Regeltext wird nach den Gates konsolidiert, nicht vorher) |
-| 3 | `skill-rewrites` | givn | 2 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
-| 4 | `spec-retrieval` | givn | **bedingt**: nur wenn die Evidenz aus 1 (Fingerprint-Messung auf den 18 watn-Paaren) Paraphrasen-Durchrutscher mit verschiedenem Titel belegt |
-| 5 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 2–4 optional für den Start) |
+| 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) — **erledigt, archiviert** |
+| 2 | `workflow-enforcement-wip-cleanup` | givn | 1 (Gates aktiv: die Change läuft selbst durch sie) |
+| 3 | `prose-consolidation` | givn | 2 (Baum @wip-frei, sonst verstopfen die Altlasten die neue Regel-Prüfung) |
+| 4 | `skill-rewrites` | givn | 3 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
+| 5 | `spec-retrieval` | givn | **bedingt**: nur wenn die Evidenz aus 1 (Fingerprint-Messung auf den 18 watn-Paaren) Paraphrasen-Durchrutscher mit verschiedenem Titel belegt — **belegt, Change wird gebaut** |
+| 6 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 3–5 optional für den Start) |
 
-- Change 4 wird **nicht** angelegt, solange die Messung aus Change 1 nicht
-  belegt, dass der deterministische Fingerprint Fälle der Lücke 1
-  (Paraphrasen, gleiche Bedeutung, andere Wortwahl) verpasst. Der
-  Handoff-Befund "deterministisch fängt nur 2/8" ist dafür kein Beleg —
-  er vergleicht gegen exakte Titel, nicht gegen den geplanten Fingerprint.
-- Change 5 läuft im watn-Repo mit einer bereits konsolidierten givn-Version;
+- Change 2 (Befund 2026-08-14): Die permanente Spec trägt **20 stale @wip-Tags**
+  in `givn/specs/givn-workflow-enforcement/givn-workflow-enforcement.feature`.
+  Wurzelursache: `@wip` ist kein `@givn.*`-Tag und wird beim Archivieren
+  nicht gestrippt; die Szenarien des archivierten `integrity-hook-and-archive-gate`
+  sind trotz Implementierung als @wip gemergt. Alle 20 Szenarien laufen
+  bereits grün (Steps in `tests/steps/workflow_enforcement_steps.rs`). Die
+  Change entfernt die Tags per `@givn.modified`-Delta und verifiziert jedes
+  Szenario — reine Altlasten-Bereinigung, keine neue Funktionalität.
+- Change 5 wird gebaut: Die Messung in Change 1 (evidence-fingerprint.md)
+  belegt 3 verpasste Paraphrasen-Paare (F5, F12a, F12b) — Lücke 1 der
+  analysis.md ist real; das Retrieval ergänzt die Gates als Authoring- und
+  Review-Werkzeug (kein Block auf Scores).
+- Change 6 läuft im watn-Repo mit einer bereits konsolidierten givn-Version;
   baumweite Altlasten (F1/F2) werden manuell aufgelöst.
   Rückwärtskompatibilität ist explizit nicht im Scope.
-- givn ist selbst givn-Konsument: Jede Change 1–4 läuft durch die eigenen
+- givn ist selbst givn-Konsument: Jede Change 1–5 läuft durch die eigenen
   neuen Gates, sobald diese aktiviert sind.
 
 ---
@@ -256,7 +264,76 @@ Fixture-Bäume):
 
 ---
 
-## 2. Change `prose-consolidation` — eine normative Prosa-Quelle
+## 2. Change `workflow-enforcement-wip-cleanup` — stale @wip-Tags in der permanenten Spec
+
+### Proposal (User-Perspektive)
+
+**Problem / Opportunity**
+
+Der permanente Spec-Baum trägt 20 @wip-Markierungen in
+`givn/specs/givn-workflow-enforcement/givn-workflow-enforcement.feature`,
+obwohl alle diese Szenarien implementiert und grün sind. Ursache: `@wip`
+ist kein `@givn.*`-Tag und wird beim Archivieren nicht entfernt — das
+gemergte Delta des archivierten `integrity-hook-and-archive-gate` hat die
+Markierungen mitgenommen. Die Folge: `givn lint` meldet dauerhaft
+@wip-Findings (exit 2) für Verhalten, das längst getestet wird, und jede
+neue Regel-Prüfung (z.B. Change 3) sieht einen Baum voller
+Altlast-Findings statt eines sauberen Ausgangszustands.
+
+**Proposed Solution**
+
+- Die 20 @wip-Markierungen werden entfernt; jedes Szenario behält seine
+  exakte Greichheit im Wortlaut.
+- Der Baum ist danach @wip-frei (außer Fixture-Interna) — `givn lint`
+  meldet keine @wip-Findings mehr aus den permanenten Specs.
+- Jedes der 20 Szenarien wird einzeln verifiziert (läuft grün über den
+  echten Runner) — die Entfernung der Markierung ist keine Verhaltensänderung,
+  sondern die Bestätigung, dass das Verhalten abgedeckt ist.
+
+**Out of Scope**
+
+- Inhaltliche Änderungen an den Szenarien (nur Tag-Entfernung).
+- Neue Verhaltens-Szenarien für givn-workflow-enforcement.
+- Änderungen an Hooks/Integritätsprüfungen oder am Archiv-Mechanismus
+  (das @wip-Survives-Archive-Problem selbst wird hier nur dokumentiert).
+
+**Open Questions**
+
+- Soll das @wip-Überleben beim Archivieren als eigenes Wartungs-Item oder
+  im Rahmen von Change 3/4 behoben werden? (Hier nicht im Scope.)
+
+### Spec-Anhaltspunkte
+
+- Delta mit `@givn.modified` für alle 20 Szenarien (identischer Body, Tag
+  entfernt). Nach dem Archivieren läuft die permanente Spec @wip-frei.
+- `givn lint` (Default-Scope) meldet nach Abschluss keine @wip-Findings aus
+  `givn-workflow-enforcement.feature` (Vorher: 20 Findings, exit 2).
+- Kein Szenario verlässt die Suite als rot; die 20 Szenarien laufen vor und
+  nach der Change grün.
+- Die Change läuft selbst durch die Gates aus Change 1 (Titel-Duplikate:
+  modified-Delta vs. eigenen Zielen ist exempt; Shape-Matches der Deltas mit
+  permanenter Spec werden an der Change-Dispositionstage disposiert).
+
+### Design-Anhaltspunkte
+
+- Reine Delta/Archiv-Change: kein Produktionscode außer ggf. fehlende
+  Step-Definitionen (Befund: keine fehlenden — alle 20 haben Steps in
+  `tests/steps/workflow_enforcement_steps.rs`).
+- Schrittdefinitionen werden nicht angefasst; jede Szenario-Verifikation
+  läuft als Charakterisierungs-GREEN (Verhalten existiert bereits).
+- Dispositionen für Shape-Matches der modified-Deltas mit permanenter Spec
+  maschinell aus der Gate-Ausgabe generieren (wie in Change 1).
+
+### Evidenz-/Verifikationspflichten
+
+- Vorher/Nachher: `givn lint` meldet 20 @wip-Findings → danach null.
+- Alle 20 Szenarien liefen grün (gezielte Läufe, Evidenz je Szenario in
+  tasks.md).
+- `givn check review --change workflow-enforcement-wip-cleanup` grün.
+
+---
+
+## 3. Change `prose-consolidation` — eine normative Prosa-Quelle
 
 ### Proposal (User-Perspektive)
 
@@ -330,7 +407,7 @@ vorprogrammiert.
 
 ---
 
-## 3. Change `skill-rewrites` — Skill-Choreografie für die neuen Gates
+## 4. Change `skill-rewrites` — Skill-Choreografie für die neuen Gates
 
 ### Proposal (User-Perspektive)
 
@@ -393,12 +470,12 @@ wie man ihnen korrekt begegnet.
 
 ---
 
-## 4. Change `spec-retrieval` — semantische Suche beim Authoring (BEDINGT)
+## 5. Change `spec-retrieval` — semantische Suche beim Authoring
 
-> Diese Change wird nur erstellt, wenn die Messung aus Change 1 belegt,
-> dass der deterministische Fingerprint Paraphrasen-Fälle (gleiche
-> Bedeutung, verschiedene Titel) verpasst. Siehe "Abhängigkeiten und
-> Entscheidungspunkte".
+> Diese Change wird gebaut: Die Messung aus Change 1 (evidence-fingerprint.md)
+> belegt, dass der deterministische Fingerprint Paraphrasen-Fälle (gleiche
+> Bedeutung, verschiedene Titel) verpasst (3/8 Dup-Paare: F5, F12a, F12b).
+> Siehe "Abhängigkeiten und Entscheidungspunkte".
 
 ### Proposal (User-Perspektive)
 
@@ -462,7 +539,7 @@ beschreiben (Paraphrasen), die kein deterministischer Vergleich findet.
 
 ---
 
-## 5. Change `watn-consolidation` — Dogfood der Gates im Referenzprojekt
+## 6. Change `watn-consolidation` — Dogfood der Gates im Referenzprojekt
 
 > Diese Change wird im watn-Repo (`~/projects/watn`) angelegt, nachdem
 > givn mit Change 1 (mindestens) konsolidiert dort eingesetzt wird.
