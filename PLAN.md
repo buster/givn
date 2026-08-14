@@ -1,15 +1,15 @@
-# PLAN.md — givn 0.3 Refactor: fünf Changes
+# PLAN.md — givn 0.3 Refactor: sechs Changes
 
 Dieses Dokument spezifiziert die Refactor-Vorhaben aus
 `docs/givn-refactor-0.3/analysis.md` (Entscheidungsstand nach
-Design-Review-Grilling, 2026-08-14) als fünf aufeinanderfolgende givn-Changes.
+Design-Review-Grilling, 2026-08-14) als sechs aufeinanderfolgende givn-Changes.
 Für jede Change enthält es mindestens den Inhalt einer proposal.md
 (Problem/Opportunity, Proposed Solution, Out of Scope, Open Questions) in
 User-Perspektive und Domain-Sprache, plus Spec-Anhaltspunkte
 (Kandidaten-Szenarien), Design-Anhaltspunkte (technische Entscheidungen aus
 analysis.md, die in design.md gehören) und Evidenz-/Verifikationspflichten.
 
-Verwendung: Jeder Abschnitt 1–5 ist die Eingabe für die Erstellung einer
+Verwendung: Jeder Abschnitt 1–6 ist die Eingabe für die Erstellung einer
 givn-Change (`givn propose`, dann spec/design/tasks). Proposals sind bewusst
 in User-Perspektive geschrieben; alles Technische steht unter
 "Design-Anhaltspunkte" und darf erst in design.md einfließen. Die Changes
@@ -27,21 +27,28 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
 
 | # | Change (vorgeschlagene ID) | Repo | Voraussetzung |
 |---|---|---|---|
-| 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) |
-| 2 | `prose-consolidation` | givn | 1 (Regeltext wird nach den Gates konsolidiert, nicht vorher) |
-| 3 | `skill-rewrites` | givn | 2 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
-| 4 | `spec-retrieval` | givn | **bedingt**: nur wenn die Evidenz aus 1 (Fingerprint-Messung auf den 18 watn-Paaren) Paraphrasen-Durchrutscher mit verschiedenem Titel belegt |
-| 5 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 2–4 optional für den Start) |
+| 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) — **erledigt, archiviert** |
+| 2 | `workflow-enforcement-wip-cleanup` | givn | 1 (Gates aktiv; die permanente Spec muss vor der Prosa-Konsolidierung von Altlasten bereinigt werden) |
+| 3 | `prose-consolidation` | givn | 2 (Regeltext wird nach Gates und WIP-Bereinigung konsolidiert) |
+| 4 | `skill-rewrites` | givn | 3 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
+| 5 | `spec-retrieval` | givn | 1 (Fingerprint-Messung belegt Paraphrasen-Durchrutscher; Retrieval wird gebaut) |
+| 6 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 2–5 optional für den Start) |
 
-- Change 4 wird **nicht** angelegt, solange die Messung aus Change 1 nicht
-  belegt, dass der deterministische Fingerprint Fälle der Lücke 1
-  (Paraphrasen, gleiche Bedeutung, andere Wortwahl) verpasst. Der
-  Handoff-Befund "deterministisch fängt nur 2/8" ist dafür kein Beleg —
-  er vergleicht gegen exakte Titel, nicht gegen den geplanten Fingerprint.
-- Change 5 läuft im watn-Repo mit einer bereits konsolidierten givn-Version;
+- Change 2 behandelt **16 echte @wip-Tags** in
+  `givn/specs/givn-workflow-enforcement/givn-workflow-enforcement.feature`.
+  Die Szenarien und Step-Definitionen laufen bereits grün; die Tags sind
+  stale, weil `@wip` kein `@givn.*`-Tag ist und beim Archivieren nicht
+  entfernt wird. Die Change verifiziert jedes Szenario und aktiviert es
+  durch ein `@givn.modified`-Delta ohne @wip. Fixture-interne `@wip`-Texte
+  in anderen Specs sind kein permanenter Tag und bleiben unverändert.
+- Change 5 wird gebaut: Die Messung aus Change 1 (`evidence-fingerprint.md`)
+  belegt 3 verpasste Paraphrasen-Paare (F5, F12a, F12b) — Lücke 1 der
+  analysis.md ist real; Retrieval ergänzt die Gates als Authoring- und
+  Review-Werkzeug, ohne Block auf Scores.
+- Change 6 läuft im watn-Repo mit einer bereits konsolidierten givn-Version;
   baumweite Altlasten (F1/F2) werden manuell aufgelöst.
   Rückwärtskompatibilität ist explizit nicht im Scope.
-- givn ist selbst givn-Konsument: Jede Change 1–4 läuft durch die eigenen
+- givn ist selbst givn-Konsument: Jede Change 1–5 läuft durch die eigenen
   neuen Gates, sobald diese aktiviert sind.
 
 ---
@@ -52,7 +59,7 @@ Alle Changes laufen als **Stacked PRs** über die offizielle Extension
 `gh stack` (`github/gh-stack`, installiert). Ein Layer = eine Change = ein
 PR. Jeder PR basiert auf dem Branch des darunterliegenden PR; nur der
 unterste PR zielt auf `main`. Reviewer sehen pro PR nur das Diff seines
-Layers. Die Sequenz (1 → 2 → 3 → bedingt 4) bleibt hart — die
+Layers. Die Sequenz (1 → 2 → 3 → 4 → 5 → 6) bleibt hart — die
 Base-Verkettung bildet sie ab.
 
 **Installation / Update**
@@ -65,34 +72,34 @@ gh extension upgrade gh-stack           # Updates
 **Stack-Layout (givn-Repo)**
 
 ```
-spec-retrieval      → PR #4 (base: skill-rewrites)   ← nur wenn Change 4 gebaut wird
-skill-rewrites      → PR #3 (base: prose-consolidation)
-prose-consolidation → PR #2 (base: spec-overlap-gates)
-spec-overlap-gates  → PR #1 (base: main)              ← bottom
-─────────────
+workflow-enforcement-wip-cleanup → nächster PR (base: spec-overlap-gates)
+spec-overlap-gates               → PR #5 (base: spec-refactoring)  ← Change 1
+spec-refactoring                 → PR #1 (base: main)              ← first PR
+────────────────────────────────────────────────────────────────────────────
 main (trunk)
 ```
 
-Change 5 (`watn-consolidation`) liegt im watn-Repo und bekommt dort
+Change 6 (`watn-consolidation`) liegt im watn-Repo und bekommt dort
 seinen eigenen Stack (bzw. einen einzelnen PR) mit `main` als Trunk.
 
 **Workflow pro Change**
 
 ```bash
-# Einmalig, von sauberem main aus:
-gh stack init spec-overlap-gates
+# Einmalig, von sauberem main aus. Der erste Stack-Layer ist der
+# bereits existierende spec-refactoring-Branch:
+gh stack init --base main spec-refactoring spec-overlap-gates
 
-# Change 1 abarbeiten (givn propose/spec/design/tasks; ein Commit pro
-# Szenario), dann:
+# Nach dem Update von PLAN.md auf spec-refactoring den Stack synchronisieren:
+gh stack sync
+
+# Change 2 als nächsten Layer anlegen und abarbeiten:
+gh stack add workflow-enforcement-wip-cleanup
+# ... givn propose/spec/design/tasks/implement/review/archive ...
 gh stack push
-gh stack submit                        # PR #1 erzeugen, Stack auf GitHub linken
+gh stack submit                        # nächsten PR erzeugen/verlinken
 
-# Nach Change 1: nächsten Layer anlegen und bearbeiten
-gh stack add prose-consolidation
-# ... Change 2 abarbeiten, committen ...
-gh stack push && gh stack submit       # PR #2
-
-# Entsprechend: skill-rewrites, ggf. spec-retrieval
+# Danach: prose-consolidation, skill-rewrites, spec-retrieval,
+# anschließend watn-consolidation im watn-Repo.
 ```
 
 **Regeln**
@@ -109,8 +116,9 @@ gh stack push && gh stack submit       # PR #2
 - Merge: `gh stack merge --yes --squash` merged den ganzen Stack
   all-or-nothing; `gh stack merge <PR-Nr>` merged nur bis zu einem Layer.
   Da die Dependencies hart sind, wird immer bottom-up gemergt.
-- Change 4 nicht gebaut (Messung aus Change 1 negativ): Layer entfällt
-  einfach; der Stack endet bei `skill-rewrites`.
+- Change 5 wird gebaut (Change 1 hat die Paraphrasen-Lücke belegt); der
+  Retrieval-Layer bleibt ein eigener PR, damit die Merge-Entscheidung über
+  Embeddings separat getroffen werden kann.
 - `gh stack view` zeigt Branches, PR-Links und letzten Commit;
   `gh stack view --short` nur Branchnamen.
 
