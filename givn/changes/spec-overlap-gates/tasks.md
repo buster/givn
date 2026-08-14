@@ -95,9 +95,13 @@ reflect true state.
   - [x] REFACTOR: n/a
   - [x] COMMIT: `58a7b39`
 
-- [ ] Scenario: `A modified delta matching its merge target in the same capability is allowed` — **Charakterisierung** (heute bereits exit 0; RED unmöglich; Regression-Guard für die modified-Ausnahme)
-  - [ ] GREEN: Schrittdefinitionen schreiben, Produktion: modified-Ausnahme (gleiche Capability).
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `A modified delta matching its merge target in the same capability is allowed` — **Charakterisierung** (heute bereits exit 0; RED unmöglich; Regression-Guard für die modified-Ausnahme)
+  - [x] GREEN: Modified-Ausnahme in `title_duplicates` (genau ein Paar
+        modified-Delta vs. permanentes Ziel gleicher Capability) verifiziert.
+        ```
+        → 1 scenario (1 passed), 5 steps (5 passed).
+        ```
+  - [x] COMMIT: `a79ddc4`
 
 - [ ] Scenario: `A modified delta whose title exists in a different capability is a hard error`
   - [ ] RED: `<output>`
