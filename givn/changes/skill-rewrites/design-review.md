@@ -48,5 +48,7 @@ substantive and existing diagram policy is unchanged.
   E2E does not**.
 - Spec guidance explicitly uses deterministic gates and defers retrieval.
 - Generated guidance and instruction outputs are covered by the feature.
+- Rechecked the Step Definitions table after the integrity hook required an
+  exact path cell; reuse documentation now sits outside the table.
 
 DESIGN-REVIEW: PASS
