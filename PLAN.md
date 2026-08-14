@@ -28,19 +28,22 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
 | # | Change (vorgeschlagene ID) | Repo | Voraussetzung |
 |---|---|---|---|
 | 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) — **erledigt, archiviert** |
-| 2 | `workflow-enforcement-wip-cleanup` | givn | 1 (Gates aktiv; die permanente Spec muss vor der Prosa-Konsolidierung von Altlasten bereinigt werden) |
+| 2 | `workflow-enforcement-wip-cleanup` | givn | 1 (Gates aktiv; die permanente Spec muss vor der Prosa-Konsolidierung von Altlasten bereinigt werden) — **erledigt, archiviert** |
 | 3 | `prose-consolidation` | givn | 2 (Regeltext wird nach Gates und WIP-Bereinigung konsolidiert) |
 | 4 | `skill-rewrites` | givn | 3 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
 | 5 | `spec-retrieval` | givn | 1 (Fingerprint-Messung belegt Paraphrasen-Durchrutscher; Retrieval wird gebaut) |
 | 6 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 2–5 optional für den Start) |
 
-- Change 2 behandelt **16 echte @wip-Tags** in
+- Change 2 behandelte **16 echte @wip-Tags** in
   `givn/specs/givn-workflow-enforcement/givn-workflow-enforcement.feature`.
   Die Szenarien und Step-Definitionen laufen bereits grün; die Tags sind
   stale, weil `@wip` kein `@givn.*`-Tag ist und beim Archivieren nicht
-  entfernt wird. Die Change verifiziert jedes Szenario und aktiviert es
-  durch ein `@givn.modified`-Delta ohne @wip. Fixture-interne `@wip`-Texte
-  in anderen Specs sind kein permanenter Tag und bleiben unverändert.
+  entfernt wird. Die Change verifizierte jedes Szenario und aktivierte es
+  durch ein `@givn.modified`-Delta ohne Szenario-@wip. Ein dabei gefundener
+  Merge-Randfall für den Tag des ersten Szenarios wurde in
+  `src/gherkin/merge.rs` behoben und mit einem Regressionstest abgesichert.
+  Fixture-interne `@wip`-Texte sind kein permanenter Tag und bleiben
+  unverändert. **Ergebnis: archiviert.**
 - Change 5 wird gebaut: Die Messung aus Change 1 (`evidence-fingerprint.md`)
   belegt 3 verpasste Paraphrasen-Paare (F5, F12a, F12b) — Lücke 1 der
   analysis.md ist real; Retrieval ergänzt die Gates als Authoring- und
@@ -92,13 +95,13 @@ gh stack init --base main spec-refactoring spec-overlap-gates
 # Nach dem Update von PLAN.md auf spec-refactoring den Stack synchronisieren:
 gh stack sync
 
-# Change 2 als nächsten Layer anlegen und abarbeiten:
-gh stack add workflow-enforcement-wip-cleanup
+# Nach Change 2 den nächsten Layer anlegen und abarbeiten:
+gh stack add prose-consolidation
 # ... givn propose/spec/design/tasks/implement/review/archive ...
 gh stack push
 gh stack submit                        # nächsten PR erzeugen/verlinken
 
-# Danach: prose-consolidation, skill-rewrites, spec-retrieval,
+# Danach: skill-rewrites, spec-retrieval,
 # anschließend watn-consolidation im watn-Repo.
 ```
 
@@ -264,7 +267,72 @@ Fixture-Bäume):
 
 ---
 
-## 2. Change `prose-consolidation` — eine normative Prosa-Quelle
+## 2. Change `workflow-enforcement-wip-cleanup` — permanente Workflow-Spec bereinigen
+
+### Proposal (User-Perspektive)
+
+**Problem / Opportunity**
+
+Die permanente Workflow-Enforcement-Spec enthielt 16 Szenarien mit `@wip`.
+Ihre Bindings und beobachtbaren Ergebnisse waren bereits grün, aber der Tag
+signalisierte weiterhin einen unfertigen Zustand und machte fertige Prüfungen
+für Autoren und Reviewer irreführend.
+
+**Proposed Solution**
+
+- Die 16 bestehenden Szenarien werden als fertiggestellt aktiviert.
+- Die Szenariotitel, Schritte und beobachtbaren Ergebnisse bleiben unverändert;
+  nur die Lifecycle-Markierungen werden über `@givn.modified`-Deltas entfernt.
+- Nach dem Archivieren enthält die permanente Spec keine
+  Szenario-`@wip`-Tags mehr; wörtliche `@wip`-Erwähnungen in Fixture-Schritten
+  bleiben erhalten.
+- Der Merge-Randfall, bei dem ein Tag vor dem ersten Szenario im Feature-Header
+  hängen bleiben kann, wird durch einen Regressionstest verhindert.
+
+**Out of Scope**
+
+- Neue Workflow-Enforcement-Regeln oder Szenarien.
+- Änderungen an vorhandenen Step-Definitionen oder dem Test-Runner, außer dem
+  notwendigen Merge-Parser-Fix für den ersten Szenario-Tag.
+- Bereinigung von `@wip`-Text in anderen Capabilities oder im Archiv.
+
+**Open Questions**
+
+- Keine. Die 16 Szenarien waren bereits implementiert und konnten einzeln gegen
+  den aktiven Delta-Baum verifiziert werden.
+
+### Spec-Anhaltspunkte
+
+- Jedes der 16 vorhandenen Szenarien wird über ein `@givn.modified`-Delta ohne
+  Szenario-`@wip` aktiviert.
+- Die vollständige Workflow-Enforcement-Spec bleibt grün.
+- Die Archivierung entfernt alle Lifecycle-Tags, ohne Fixture-Text zu ändern.
+- Der erste permanente Szenariotag wird beim modifizierenden Merge ebenfalls
+  entfernt.
+
+### Design-Anhaltspunkte
+
+- Bestehende `cucumber-rs`-Suite und
+  `tests/steps/workflow_enforcement_steps.rs` wiederverwenden.
+- Strict Mode bleibt über `.fail_on_skipped()` im vorhandenen Runner bewiesen.
+- Vor dem Archivieren wird der aktive Delta-Pfad über `GIVN_FEATURES` gezielt
+  ausgeführt; danach werden permanente Non-E2E- und E2E-Suiten ausgeführt.
+- Der textbasierte Merge entfernt Tags, die nach der `Feature:`-Zeile vor dem
+  ersten Szenario stehen, damit ein modifiziertes erstes Szenario keine alten
+  Tags erbt.
+
+### Evidenz-/Verifikationspflichten
+
+- `givn lint --change workflow-enforcement-wip-cleanup` ist clean.
+- Alle 16 Szenarien werden einzeln und als Delta-Suite ausgeführt.
+- Permanente Suite: 163 Szenarien; E2E-Subset: 22 Szenarien; beide grün.
+- Nach dem Archivieren gibt es keinen Szenario-`@wip`-Tag in der permanenten
+  Workflow-Spec; Fixture-Erwähnungen bleiben bestehen.
+- Der Regressionstest für den ersten Szenariotag und `cargo check` sind grün.
+
+---
+
+## 3. Change `prose-consolidation` — eine normative Prosa-Quelle
 
 ### Proposal (User-Perspektive)
 
@@ -297,7 +365,7 @@ vorprogrammiert.
 **Out of Scope**
 
 - Inhaltliche Neuformulierung von Regeln über die Konsolidierung hinaus.
-- Retrieval-/Suchschritte in Skills (Change 3/4).
+- Retrieval-/Suchschritte in Skills (Change 4/5).
 - Änderungen an den Gates aus Change 1.
 
 **Open Questions**
@@ -338,7 +406,7 @@ vorprogrammiert.
 
 ---
 
-## 3. Change `skill-rewrites` — Skill-Choreografie für die neuen Gates
+## 4. Change `skill-rewrites` — Skill-Choreografie für die neuen Gates
 
 ### Proposal (User-Perspektive)
 
@@ -363,15 +431,15 @@ wie man ihnen korrekt begegnet.
   "welchen Fall deckt dieser Test, den das E2E nicht deckt?" beantwortet
   sein, sonst wird er gelöscht. Konsequenz in der Praxis: schwächere
   Duplikat-Szenarien werden gelöscht, nicht umbenannt.
-- givn-spec bekommt die Such-Schritte aus Change 4 **nur, wenn** Change 4
+- givn-spec bekommt die Such-Schritte aus Change 5 **nur, wenn** Change 5
   gebaut wird; bis dahin verweist der Skill auf die deterministischen
   Gates.
 
 **Out of Scope**
 
-- Die Gates selbst (Change 1), die Prosa-Quelle (Change 2), die
-  Retrieval-Implementierung (Change 4).
-- Step-Mechanics-Konsolidierung in watn (Change 5).
+- Die Gates selbst (Change 1), die Prosa-Quelle (Change 3), die
+  Retrieval-Implementierung (Change 5).
+- Step-Mechanics-Konsolidierung in watn (Change 6).
 
 **Open Questions**
 
@@ -386,14 +454,14 @@ wie man ihnen korrekt begegnet.
 - Gerenderte givn-design/givn-steps-Instruktionen enthalten die
   Black-Box-First-Frage ("welchen Fall deckt dieser Test, den das E2E
   nicht deckt?").
-- Ohne Change 4 enthalten givn-spec-Instruktionen keinen Such-Schritt;
-  mit Change 4 enthalten sie ihn (bedingtes Szenario, erst bei Change 4
+- Ohne Change 5 enthalten givn-spec-Instruktionen keinen Such-Schritt;
+  mit Change 5 enthalten sie ihn (bedingtes Szenario, erst bei Change 5
   relevant).
 
 ### Design-Anhaltspunkte
 
 - Alle Änderungen sind Asset-/Template-Änderungen auf Basis der
-  konsolidierten Quelle aus Change 2; kein Binary-Code außer ggf.
+  konsolidierten Quelle aus Change 3; kein Binary-Code außer ggf.
   Render-Anpassungen.
 - Keine gepinnten Embedding-Scores in review-Anweisungen (Review-Protokoll 2,
   analysis.md §2.5): Der Reviewer queried gegen den frischen Index, die
@@ -401,7 +469,7 @@ wie man ihnen korrekt begegnet.
 
 ---
 
-## 4. Change `spec-retrieval` — semantische Suche beim Authoring (BEDINGT)
+## 5. Change `spec-retrieval` — semantische Suche beim Authoring (BEDINGT)
 
 > Diese Change wird nur erstellt, wenn die Messung aus Change 1 belegt,
 > dass der deterministische Fingerprint Paraphrasen-Fälle (gleiche
@@ -470,7 +538,7 @@ beschreiben (Paraphrasen), die kein deterministischer Vergleich findet.
 
 ---
 
-## 5. Change `watn-consolidation` — Dogfood der Gates im Referenzprojekt
+## 6. Change `watn-consolidation` — Dogfood der Gates im Referenzprojekt
 
 > Diese Change wird im watn-Repo (`~/projects/watn`) angelegt, nachdem
 > givn mit Change 1 (mindestens) konsolidiert dort eingesetzt wird.
@@ -508,7 +576,7 @@ sichtbar und teilweise blockierend.
 
 **Out of Scope**
 
-- givn-Engine-Änderungen (die sind Changes 1–4).
+- givn-Engine-Änderungen (die sind Changes 1–5).
 - Neues Verhalten in watn — nur Konsolidierung bestehender Specs.
 - Runner-Doppelausführung (analysis.md §5, verschoben).
 
