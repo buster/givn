@@ -264,6 +264,15 @@ Two distinct tools, never conflated:
 `givn lint` alone is **never** sufficient to confirm GREEN — that requires the
 test runner (`verify.command`).
 
+## 8.5a Local scenario retrieval
+
+Retrieval is an authoring aid, not a correctness gate. `givn spec index` owns a
+local cache of model-backed vectors and content hashes under `givn/`; `givn
+spec search` reads that index and prints ranked candidates. CI, lint, and
+archive do not require a model or a similarity score. A missing model/cache is
+an explicit setup error for retrieval, never a false clean result or a block on
+unrelated workflow commands.
+
 ## 8.6 Filesystem-derived state
 
 There is no state file. Lifecycle state is computed from which files exist:

@@ -29,6 +29,7 @@ pub mod remove_dead_skip_list_code_steps;
 pub mod review_disposition_gates_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_overlap_gates_steps;
+pub mod spec_retrieval_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
@@ -55,6 +56,8 @@ pub struct GivnWorld {
     license_state: choose_project_license_steps::LicenseState,
     /// Combined output captured by a multi-command guidance scenario.
     pub(crate) additional_output: Option<String>,
+    /// Optional retrieval backend override for the current subprocess.
+    pub(crate) retrieval_embedder: Option<String>,
 }
 
 // --- helpers ---------------------------------------------------------------
@@ -232,7 +235,14 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
         .as_ref()
         .expect("a project root is required first");
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    let out = common::run_givn(env, &argv);
+    let out = common::run_givn_with_env(
+        env,
+        &argv,
+        world
+            .retrieval_embedder
+            .as_deref()
+            .map(|value| ("GIVN_SPEC_EMBEDDER", value)),
+    );
     if let Some(id) = change_id_from_args(&args) {
         world.last_change_id = Some(id);
     }

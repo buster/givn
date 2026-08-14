@@ -53,12 +53,24 @@ pub fn make_init_root() -> TestEnv {
 /// Invoke the `givn` binary with `env`'s temp dir as current directory and
 /// the given args, returning captured stdout/stderr/exit code.
 pub fn run_givn(env: &TestEnv, args: &[&str]) -> Output {
+    run_givn_with_env(env, args, None)
+}
+
+/// Invoke the `givn` binary with one optional environment override.
+pub fn run_givn_with_env(
+    env: &TestEnv,
+    args: &[&str],
+    environment: Option<(&str, &str)>,
+) -> Output {
     let bin = env!("CARGO_BIN_EXE_givn");
-    Command::new(bin)
+    let mut command = Command::new(bin);
+    command
         .args(args)
-        .current_dir(env.root())
-        .output()
-        .expect("spawn givn subprocess")
+        .current_dir(env.root());
+    if let Some((key, value)) = environment {
+        command.env(key, value);
+    }
+    command.output().expect("spawn givn subprocess")
 }
 
 /// Invoke the `givn` binary with `env`'s temp dir as current directory,

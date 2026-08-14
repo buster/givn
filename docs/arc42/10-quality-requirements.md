@@ -60,6 +60,8 @@ graph TD
 | Q-22 | Self-contained gate | A fresh project (sentinel runner) runs `givn check` or `givn archive`. | The `verify` hook invokes `givn missing-testrunner`, which fails with setup guidance; the gate blocks until `verify.command` is configured. |
 | Q-23 | Configurability | A team adds a custom hook `"npm run typecheck"` to `tasks.post`. | It runs alongside `verify` on `givn check tasks`; a non-zero result blocks unless `allow_failure: true`. |
 | Q-26 | Architecture consistency | A team completes a change while `addons.arc42` is enabled. | The human completion review cross-checks durable Arc42 facts and the change assessment against `design.md`, mapped tasks, and completed implementation evidence; any mismatch prevents the reviewer from recording `ARC42 CONFORMANCE: CLEAN` and `REVIEW: PASS` until corrected. |
+| Q-29 | Agent ergonomics | An author indexes permanent scenarios before writing a new one. | `givn spec index` reports the indexed inventory and persists a reusable local index. |
+| Q-30 | Agent ergonomics | An author searches with a behavior query. | `givn spec search` returns ranked related scenarios; results are advisory and never block the workflow. |
 | Q-27 | Agent ergonomics | An agent requests the specs instruction and then synchronizes skills. | The resolved specs instruction contains the canonical E2E policy; generated guidance points to it and does not contain contradictory legacy wording. |
 | Q-28 | Configurability | A project supplies `givn/artifacts/specs/instructions.md`. | `givn instructions specs` returns the project override, while synchronization leaves the override intact and generated guidance continues to delegate to the resolved instruction. |
 
