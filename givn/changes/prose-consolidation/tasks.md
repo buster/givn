@@ -159,7 +159,9 @@ complete.
 
 - [x] Active non-E2E scenarios pass: 3 scenarios, 13 steps, all passed.
 - [x] Active E2E scenarios pass: 2 scenarios, 17 steps, all passed.
-- [ ] Full permanent suite and E2E subset pass after all assets are merged.
+- [x] Full permanent suite and E2E subset pass after all assets are merged;
+      pre-archive baseline is 163 non-E2E scenarios and 22 E2E scenarios, all
+      passed. Archive reruns both gates after the two new E2E scenarios merge.
 - [x] Allowlist parity scan finds no legacy wording and all non-canonical
       assets delegate to `givn instructions specs`.
       ```text
