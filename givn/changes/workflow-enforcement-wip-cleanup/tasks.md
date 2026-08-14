@@ -68,7 +68,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: pending -- `Integrity hook fails on placeholder commit hash`
+  - [x] COMMIT: `45e3ec0` -- `Integrity hook fails on placeholder commit hash`
 
 - [ ] Scenario: `Integrity hook fails on missing step-definition file`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
