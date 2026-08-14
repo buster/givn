@@ -8,32 +8,45 @@ complete.
 
 ## Setup
 
-- [ ] **Setup**: prove existing strict mode and create/register
+- [x] **Setup**: prove existing strict mode and create/register
       `tests/steps/prose_consolidation_steps.rs`.
       The runner uses `.fail_on_skipped()` in `tests/features_runner.rs` and
       Rust stubs use `unimplemented!()`.
       ```text
       Command:
-      <paste undefined-step probe command and non-zero output>
+      GIVN_FEATURES=tests/strict-mode-prose-probe.feature cargo test --test features_runner -- --name '^Undefined prose step fails the runner$'
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun `--test features_runner`
       ```
 
 ## Non-E2E Scenarios
 
-- [ ] Scenario: `Project override replaces the canonical specs instruction`
-  - [ ] RED: remove `@wip`; target the scenario with the design.md command.
+- [x] Scenario: `Project override replaces the canonical specs instruction`
+  - [x] RED-equivalent: existing cascade behavior is a legitimate immediate
+        GREEN characterization; all steps reuse existing CLI bindings plus the
+        new override assertion.
         ```text
-        <paste non-zero output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] GREEN: implement real subprocess assertions for the override variant.
+  - [x] GREEN: implemented the real subprocess override assertion in
+        `tests/steps/prose_consolidation_steps.rs`.
         Files: `tests/steps/prose_consolidation_steps.rs`.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: rerun targeted scenario.
+  - [x] REFACTOR: reran targeted scenario.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Project override replaces the canonical specs instruction`
+  - [x] COMMIT: pending -- `Project override replaces the canonical specs instruction`
 
 - [ ] Scenario: `Canonical policy classifies output-affecting flags as variants`
   - [ ] RED: remove `@wip`; target the scenario with the design.md command.
