@@ -69,7 +69,7 @@ complete.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Canonical policy classifies output-affecting flags as variants`
+  - [x] COMMIT: `5e38ef1` -- `Canonical policy classifies output-affecting flags as variants`
 
 - [ ] Scenario: `Design and review instructions defer to the canonical policy`
   - [ ] RED: remove `@wip`; target the scenario with the design.md command.
