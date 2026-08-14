@@ -21,7 +21,7 @@ Feature: spec-retrieval
     Then stdout contains "Provider name is unknown"
     And stdout contains "rank 1"
 
-  @givn.added @wip
+  @givn.added @e2e
   Scenario: Search does not return the running change's own delta
     Given a givn project with permanent scenarios for retrieval
     And an active change delta contains a scenario named "Running change only"
