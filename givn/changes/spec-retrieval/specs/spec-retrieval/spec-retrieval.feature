@@ -6,7 +6,7 @@
 
 Feature: spec-retrieval
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Local index reports the permanent scenario inventory
     Given a givn project with permanent scenarios for retrieval
     When the user runs `givn spec index`

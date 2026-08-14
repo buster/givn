@@ -33,17 +33,21 @@
   --features spec-retrieval` and the targeted scenario passed (four steps).
 - [x] REFACTOR: Re-ran the targeted scenario after cleanup; one scenario and
   four steps passed with exit 0.
-- Commit: pending until the scenario commit is created.
+- Commit: `9a99d4e`.
 
 ## Scenario: Local index reports the permanent scenario inventory
 
-- [ ] RED: Remove `@wip` from this scenario, leave new steps pending with
-  `unimplemented!()`, run the e2e runner for only this scenario, and record
-  non-zero output.
-- [ ] GREEN: Implement the real `givn spec index` subprocess behavior and
-  deterministic test embedder. Run only this e2e scenario and record exit 0.
-- [ ] REFACTOR: Re-run only this e2e scenario after cleanup; record exit 0.
-- Commit: pending.
+- [x] RED: Removed `@wip`; the targeted e2e runner failed at the pending
+  project-fixture step with `Step panicked. Captured output: not implemented`.
+  The runner rejects combined `--tags` and `--name`, so the scenario was
+  selected by `--name` and still exercised the real compiled CLI.
+- [x] GREEN: Enabled the `spec-retrieval` feature and deterministic stub in
+  `run-tests.sh`; the real `givn spec index` subprocess wrote the index and
+  reported `Indexed 3 permanent scenarios`. The targeted e2e scenario passed
+  four steps.
+- [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
+  and four steps passed with exit 0.
+- Commit: pending until the scenario commit is created.
 
 ## Scenario: Search returns a semantically related scenario
 
