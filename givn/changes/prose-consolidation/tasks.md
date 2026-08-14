@@ -152,7 +152,7 @@ complete.
         1 scenario (1 passed)
         13 steps (13 passed)
         ```
-  - [x] COMMIT: pending -- `Generated guidance points to the canonical E2E policy`
+  - [x] COMMIT: `ad5a962` -- `Generated guidance points to the canonical E2E policy`
 
 ## Final Gates
 
