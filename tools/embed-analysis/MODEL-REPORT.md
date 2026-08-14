@@ -97,6 +97,35 @@ das auf beiden Achsen (EN und DE) gewinnt.
   Korpusgröße unkritisch. Mögliche Verbesserung: expliziter E5-`query:`-Präfix
   im Query-Pfad (fastembed ergänzt ihn ggf. nicht automatisch).
 
+## Scope-Entscheidung: Step Definitions bleiben außen vor
+
+Die `.feature`-Dateien sind standardisiertes Gherkin, aber die Step-
+Definitionen sind pro Projekt unterschiedlich (Rust, Java, Python, …) und
+lassen sich daher **nicht generisch extrahieren**. Der Scope der Embeddings
+wird auf den Gherkin-Szenariotext begrenzt.
+
+Auswirkung (quantifiziert, englischer Korpus, ohne vs. mit Step-Definitionen):
+
+| Metrik | ohne Defs (generisch) | mit Defs | Delta |
+|---|---|---|---|
+| dup hit@1 / hit@5 | 6/8 / 8/8 | 6/8 / 8/8 | 0 |
+| Fehler bester Schwellwert | 4/18 | 2/18 | +2 |
+| legit hit@1 | 5/10 | 3/10 | +2 |
+
+- **Kein Verlust beim Duplikat-Finden** — Step-Defs haben die Retrieval-Rate
+  (dup hit@1 6/8, hit@5 8/8) nie erhöht; Duplikate findet der Szenariotext
+  allein.
+- **Verlust nur bei der Boundary-Enttäuschung**: Step-Defs hoben genau die
+  legit-Paare auseinander, die Gherkin-gleich aussehen aber andere Implementierungs-
+  mechanik haben (Credential-Matrix, Transport-Override). Ohne sie liegen statt
+  3 nun 5 legit-Paare in der Near-Duplicate-Zone → mehr explizite
+  MERGE/KEEP-AS-BOUNDARY-Entscheidungen. Das ist Review-Aufwand, kein
+  Korrektheitsverlust.
+- **Konsequenz**: Der Standardpfad von `index`/`query`/`evaluate` ist bereits
+  definitionsfrei; `--with-step-defs` bleibt eine optionale, projekt-lokale
+  Optimierung (kein generischer Parser pro Sprache). Damit bleibt das Tool
+  über Sprach- und Frameworkgrenzen tragfähig.
+
 ## Ergebnisdateien
 
 - `results.txt` — englischer Korpus, bge-base-en (Baseline)
