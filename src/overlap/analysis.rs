@@ -239,3 +239,77 @@ fn long_scenarios(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
         })
         .collect()
 }
+
+/// Review gate: every shape match (without fact contradiction) that involves
+/// the change's delta needs a disposition row; every long scenario in the
+/// delta needs a split-or-keep row. Prints the net-delta receipt.
+pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<()> {
+    let review_path = root
+        .join("givn/changes")
+        .join(change_id)
+        .join("review.md");
+    let (rows, split_rows) = crate::overlap::disposition::parse_review(&review_path);
+    let delta_prefix = root
+        .join("givn/changes")
+        .join(change_id)
+        .join("specs")
+        .to_string_lossy()
+        .into_owned();
+
+    let findings = scan_tree(root);
+    let mut missing: Vec<String> = Vec::new();
+    for finding in &findings {
+        let involves_delta = finding
+            .files
+            .iter()
+            .any(|f| f.starts_with(&delta_prefix));
+        if !involves_delta {
+            continue;
+        }
+        match finding.kind.as_str() {
+            "shape_match" if !finding.contradiction => {
+                let (a, b) = (finding.titles[0].as_str(), finding.titles[1].as_str());
+                if !crate::overlap::disposition::disposed(&rows, a, b) {
+                    missing.push(format!("shape match: '{a}' / '{b}'"));
+                }
+            }
+            "long_scenario" => {
+                let title = finding.titles.first().map(String::as_str).unwrap_or("?");
+                if !split_rows.iter().any(|r| r.title == title) {
+                    missing.push(format!("split-or-keep: '{title}'"));
+                }
+            }
+            _ => {}
+        }
+    }
+
+    // Net-delta receipt: count added/modified/removed in the change's delta.
+    let delta_ops: Vec<DeltaOp> = collect_tree(root)
+        .into_iter()
+        .filter(|s| s.file.to_string_lossy().starts_with(&delta_prefix))
+        .map(|s| s.op)
+        .collect();
+    let added = delta_ops.iter().filter(|o| **o == DeltaOp::Added).count();
+    let modified = delta_ops.iter().filter(|o| **o == DeltaOp::Modified).count();
+    let removed = delta_ops.iter().filter(|o| **o == DeltaOp::Removed).count();
+    println!("net delta: {added} added, {modified} modified, {removed} removed");
+    println!(
+        "net delta json: {}",
+        serde_json::json!({"added": added, "modified": modified, "removed": removed})
+    );
+
+    if !missing.is_empty() {
+        if !review_path.exists() {
+            anyhow::bail!(
+                "review.md is missing in givn/changes/{change_id}/ — the overlap gate \
+                 needs its disposition table to verify every finding"
+            );
+        }
+        anyhow::bail!(
+            "overlap dispositions missing in review.md:\n  {}",
+            missing.join("\n  ")
+        );
+    }
+    println!("  ✓ overlap dispositions passed");
+    Ok(())
+}
