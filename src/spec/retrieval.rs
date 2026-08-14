@@ -1,6 +1,9 @@
 use std::path::Path;
 
-use anyhow::{Context, Result, bail};
+use anyhow::{Result, bail};
+
+#[cfg(feature = "spec-retrieval")]
+use anyhow::Context;
 
 #[cfg(feature = "spec-retrieval")]
 use std::collections::hash_map::DefaultHasher;
@@ -53,7 +56,7 @@ enum EmbeddingRole {
 pub fn index(root: &Path) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        return index_enabled(root);
+        index_enabled(root)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
@@ -68,7 +71,7 @@ pub fn index(root: &Path) -> Result<()> {
 pub fn search(root: &Path, query: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        return search_enabled(root, query);
+        search_enabled(root, query)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
@@ -83,13 +86,15 @@ pub fn search(root: &Path, query: &str) -> Result<()> {
 pub fn review(root: &Path, change_id: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        return review_enabled(root, change_id);
+        review_enabled(root, change_id)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
     {
         let _ = (root, change_id);
-        Ok(())
+        bail!(
+            "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+        );
     }
 }
 
@@ -108,11 +113,7 @@ fn index_enabled(root: &Path) -> Result<()> {
     let mut reused = 0usize;
 
     for scenario in entries {
-        if let Some(existing) = previous.entries.iter().find(|entry| {
-            entry.title == scenario.title
-                && entry.file == scenario.file
-                && entry.content_hash == scenario.content_hash
-        }) {
+        if let Some(existing) = reusable_entry(&previous, &scenario) {
             result.push(existing.clone());
             reused += 1;
         } else {
@@ -183,15 +184,15 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     index_enabled(root)?;
     let index = read_index(&root.join("givn/.spec-index.json"))?;
-    let delta_root = root.join("givn/changes").join(change_id).join("specs");
+    let change_dir = crate::state::resolve_change_dir(root, change_id)?;
+    let delta_root = change_dir.join("specs");
     if !delta_root.exists() {
-        return Ok(());
+        bail!(
+            "change `{change_id}` has no specs directory; create an active change delta first"
+        );
     }
 
-    let review_path = root
-        .join("givn/changes")
-        .join(change_id)
-        .join("review.md");
+    let review_path = change_dir.join("review.md");
     let (dispositions, _) = crate::overlap::disposition::parse_review(&review_path);
     for scenario in collect_scenarios_from(root, &delta_root)? {
         let query_vector = embed_texts(root, &[scenario.text], EmbeddingRole::Query)?
@@ -227,7 +228,7 @@ fn collect_scenarios(root: &Path) -> Result<Vec<ScenarioText>> {
 #[cfg(feature = "spec-retrieval")]
 fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<ScenarioText>> {
     let mut scenarios = Vec::new();
-    for path in crate::gherkin::parse::collect_feature_files(&specs_root) {
+    for path in crate::gherkin::parse::collect_feature_files(specs_root) {
         let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
             .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
         let file = path
@@ -255,6 +256,9 @@ fn collect_feature_scenarios(
     output: &mut Vec<ScenarioText>,
 ) {
     for scenario in source {
+        if scenario.tags.iter().any(|tag| tag == "givn.removed") {
+            continue;
+        }
         let mut text = scenario.name.clone();
         for step in &scenario.steps {
             text.push('\n');
@@ -302,6 +306,19 @@ fn content_hash(text: &str) -> String {
     let mut hasher = DefaultHasher::new();
     text.hash(&mut hasher);
     format!("{:016x}", hasher.finish())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn reusable_entry(index: &SpecIndex, scenario: &ScenarioText) -> Option<IndexEntry> {
+    index
+        .entries
+        .iter()
+        .find(|entry| {
+            entry.title == scenario.title
+                && entry.file == scenario.file
+                && entry.content_hash == scenario.content_hash
+        })
+        .cloned()
 }
 
 #[cfg(feature = "spec-retrieval")]
