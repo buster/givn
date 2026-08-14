@@ -76,7 +76,7 @@ Feature: givn Workflow Enforcement
     And  stderr contains "arc42"
     And  stderr contains "01-introduction-and-goals"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook passes on edited arc42 chapter
     Given  a givn project with arc42 addon enabled
     And  the change's tasks.md contains valid commit hashes

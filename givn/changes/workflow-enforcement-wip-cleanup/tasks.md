@@ -170,20 +170,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `11556c7` -- `Integrity hook fails on unedited arc42 chapter`
 
-- [ ] Scenario: `Integrity hook passes on edited arc42 chapter`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Integrity hook passes on edited arc42 chapter`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Integrity hook passes on edited arc42 chapter' is tagged @wip
+        givn lint: 1 file(s) checked, 9 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Integrity hook passes on edited arc42 chapter`
+  - [x] COMMIT: pending -- `Integrity hook passes on edited arc42 chapter`
 
 - [ ] Scenario: `Integrity hook skips arc42 check when slug cannot be resolved`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
