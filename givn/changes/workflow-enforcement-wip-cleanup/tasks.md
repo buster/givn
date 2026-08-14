@@ -351,7 +351,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: pending -- `Check tasks blocked when delta spec has @wip`
+  - [x] COMMIT: `17e3d71` -- `Check tasks blocked when delta spec has @wip`
 
 ## Final Gates
 
