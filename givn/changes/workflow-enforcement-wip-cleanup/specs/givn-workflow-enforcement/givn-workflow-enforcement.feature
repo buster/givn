@@ -24,7 +24,7 @@ Feature: givn Workflow Enforcement
     And  stderr contains "placeholder"
     And  stderr contains "commit hash"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook fails on missing step-definition file
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains valid commit hashes
