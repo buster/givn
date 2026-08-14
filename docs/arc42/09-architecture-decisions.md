@@ -1045,6 +1045,37 @@ Related decisions: ADR-026 (Arc42 documentation artifact), ADR-030
 
 ---
 
+## ADR-037: Deterministic scenario-overlap fingerprint instead of a model
+
+**Context.** Projects accumulate duplicate, subset, and long scenarios.
+`givn lint` only checked parse errors and @wip. Candidate approach: embedding
+models for semantic similarity (e5-large etc.). Models add a multi-GB download,
+an index, and non-determinism across environments — and a measured 3/8
+paraphrase-dup pairs were missed by a deterministic fingerprint anyway
+(5/8 found).
+
+**Decision.** Deterministic, rule-based overlap gates over the whole active
+tree. Identical titles hard-fail (`givn lint` exit 3); shape matches (equal
+masked assertion sequences), subsets (LCS), and long scenarios (> 14 steps)
+produce warnings that the review gate converts into required dispositions in
+review.md. A review-time gate and a net-delta receipt are mandatory checks of
+`givn check review`. The fingerprint masks quoted strings and numbers and
+extracts facts (exit code, contains polarity, data tables, `[DONE]`, TTY);
+missing facts never contradict (conservative).
+
+**Consequences.**
+- Hard error only for identical titles; everything softer warns and requires a
+  human disposition (merge/delete/boundary/related) — no score thresholds.
+- Lint-as-hook pipelines inherit exit 3; `--json` is the machine contract.
+- Embedding retrieval remains a conditional authoring aid (spec retrieval),
+  never a gate — revisited when the deterministic fingerprint's missed
+  paraphrase cases are deemed worth a model.
+- Disposition volume on large trees can be significant; the review gate
+  applies it only to pairs involving the change's delta.
+
+Related decisions: ADR-001 (standalone tool), ADR-026 (arc42 artifact),
+chapter 8.8 (exit codes), chapter 11 (R-10).
+
 ## ADR-036: Configurable agent target selection with opencode default
 
 ---
