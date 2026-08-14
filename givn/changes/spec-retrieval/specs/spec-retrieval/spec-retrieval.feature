@@ -29,7 +29,7 @@ Feature: spec-retrieval
     When the user searches for "running change only"
     Then stdout does not contain "Running change only"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Reindex reuses unchanged scenario vectors
     Given a givn project with permanent scenarios for retrieval
     And the local spec index has been built
