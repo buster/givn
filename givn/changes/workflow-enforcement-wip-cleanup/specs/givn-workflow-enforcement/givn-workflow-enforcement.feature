@@ -86,7 +86,7 @@ Feature: givn Workflow Enforcement
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook skips arc42 check when slug cannot be resolved
     Given  a givn project with arc42 addon enabled
     And  the change's tasks.md contains valid commit hashes
