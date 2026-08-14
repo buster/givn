@@ -1,0 +1,7 @@
+.venv/
+.embed-cache/
+__pycache__/
+
+# generated artifacts - rebuild via `index` (embeddings downloaded separately)
+index*.npz
+index*.json
