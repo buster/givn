@@ -97,7 +97,7 @@ Feature: givn Workflow Enforcement
     Then  the command exits 0
     And  stdout contains "integrity"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive re-runs verify against merged permanent specs and passes
     Given  a givn project with a completed change configured for archive
     And  the project's verify.command exits 0 on the current permanent specs
