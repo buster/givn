@@ -5,8 +5,16 @@
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
 | `Search does not return the running change's own delta` | `Review suppresses a disposed retrieval candidate` | related |
+| `Review reports an advisory retrieval candidate` | `Review gate keeps retrieval advisory` | related |
+| `Review suppresses a disposed retrieval candidate` | `Review ignores a removed delta scenario` | related |
+| `Review rejects a missing change delta` | `Review rejects an unsafe change identifier` | boundary |
+| `Review rejects a missing change delta` | `Index reports unavailable model setup` | boundary |
+| `Review rejects an unsafe change identifier` | `Index reports unavailable model setup` | boundary |
 | `Consumer runs givn status on a change with uppercase checkboxes` | `Review reports an advisory retrieval candidate` | boundary |
 | `Consumer invokes givn check with an unknown artifact and gets a helpful error` | `Index reports unavailable model setup` | boundary |
+| `Consumer runs givn status on a change with uppercase checkboxes` | `Review gate keeps retrieval advisory` | boundary |
+| `Consumer invokes givn check with an unknown artifact and gets a helpful error` | `Review rejects a missing change delta` | boundary |
+| `Consumer invokes givn check with an unknown artifact and gets a helpful error` | `Review rejects an unsafe change identifier` | boundary |
 
 ## Fabrication Audit (do this first)
 
@@ -25,12 +33,16 @@ scenario commits either exercise it or add production refactoring.
 | Scenario | Commit hash | Touches production code? |
 |---|---|---|
 | Index reports unavailable model setup | `81df4f6` | Yes: `src/spec/retrieval.rs`, CLI dispatch, black-box steps |
-| Reindex reuses unchanged scenario vectors | `9a99d4e` + shared `81df4f6` | Yes: content-hash/reuse implementation in `81df4f6` |
-| Local index reports the permanent scenario inventory | `2d407a7` + shared `81df4f6` | Yes: index implementation in `81df4f6` |
-| Search returns a semantically related scenario | `e536efe` + shared `81df4f6` | Yes: ranking implementation in `81df4f6` |
-| Search does not return the running change's own delta | `6639bc0` + shared `81df4f6` | Yes: permanent-tree-only index implementation in `81df4f6` |
+| Reindex reuses unchanged scenario vectors | `9a99d4e`, `4b3b203` | Yes: `4b3b203` refactors the reuse path |
+| Local index reports the permanent scenario inventory | `2d407a7`, `93037d5` | Yes: `93037d5` refactors the permanent index path |
+| Search returns a semantically related scenario | `e536efe`, `435e6a0`, `171c1b9` | Yes: ranking output and stable hash refactors |
+| Search does not return the running change's own delta | `6639bc0`, `4b1b9dc` | Yes: `4b1b9dc` makes the permanent-tree boundary explicit |
 | Review reports an advisory retrieval candidate | `af1a7cb` | Yes: review operation and `check review` integration |
 | Review suppresses a disposed retrieval candidate | `3034ce2` | Yes: shared ranking refactor and disposition-aware review path |
+| Review gate keeps retrieval advisory | `9b6790f` | Yes: advisory review hook extraction |
+| Review rejects a missing change delta | `549b3aa` | Yes: explicit missing-delta validation |
+| Review rejects an unsafe change identifier | `c13e711`, `d06b17b` | Yes: explicit kebab-case validation before model/index work |
+| Review ignores a removed delta scenario | `1510aa0` | Yes: explicit queryable-scenario filter |
 
 **Promised-architecture cross-check**
 
@@ -56,18 +68,17 @@ browser-driver checks are not applicable.
 |---|---|---|---|
 | Local index reports the permanent scenario inventory | Yes: stdout and index file | N/A, CLI | No |
 | Search returns a semantically related scenario | Yes: ranked stdout | N/A, CLI | No |
-| Search does not return the running change's own delta | Yes: CLI stdout exclusion | N/A, CLI | No |
 | Review reports an advisory retrieval candidate | Yes: advisory stdout and exit 0 | N/A, CLI | No |
 
-**E2e scope check** — index, search, search self-match safety, and review
-advisory reporting are four distinct user-facing retrieval contracts. The
-self-match scenario is not a second ranking happy path: it verifies the
-separate safety boundary that active deltas never enter the permanent index.
+**E2e scope check** — index, search, and review advisory reporting are three
+distinct happy-path actions. Self-match safety remains regular search coverage
+and verifies the separate boundary that active deltas never enter the permanent
+index.
 
 | Capability | @e2e scenario count | Distinct actions? | Over-produced? |
 |---|---|---|---|
 | Index permanent scenarios | 1 | Yes | No |
-| Search permanent scenarios | 2, including self-match safety | Yes: search and self-match safety are distinct contracts | No |
+| Search permanent scenarios | 1 | Yes | No |
 | Review active change | 1 | Yes | No |
 
 **Duplicate-implementation check** — `verify.e2e_command` is the exact
@@ -92,10 +103,17 @@ temporary-project fixtures and deterministic stub backend.
 
 | `verify.command` value | `verify.e2e_command` value | Identical? | Full-suite scenario count | E2e-only scenario count | E2e count strictly smaller? |
 |---|---|---|---:|---:|---|
-| `./run-tests.sh` | `./run-tests.sh --e2e` | No | 7 | 4 | Yes |
+| `./run-tests.sh` | `./run-tests.sh --e2e` | No | 11 | 3 | Yes |
 
-The configured verify command reports the 3 non-e2e scenarios; the unfiltered
-runner proof reports all 7 and the e2e command reports 4.
+The configured verify command reports all 11 scenarios; the explicit
+`--non-e2e` coverage mode reports 8 and the e2e command reports 3.
+
+**Dependency-age override evidence** — `cargo update` resolved the latest
+compatible lockfile. The crates.io API returned rate limits in this
+environment, so the explicitly user-authorized complete-lockfile override was
+run from the lockfile itself with this deterministic generator:
+`allowlist=$(perl -0ne 'while (/\[\[package\]\]\n(.*?)(?=\n\[\[package\]\]|\z)/sg) { $b=$1; ($n)=$b =~ /^name = "([^"]+)"/m; ($v)=$b =~ /^version = "([^"]+)"/m; print "$n\@$v " if $b =~ /^source = "registry\+/m }' Cargo.lock); GIVN_DEP_AGE_ALLOWLIST="$allowlist" MIN_AGE_DAYS=30 scripts/check-dep-age.sh` reported `checked: 0, skipped: 328, violations: 0`.
+The exception is intentionally complete-lockfile, not limited to FastEmbed.
 
 **Design.md conformance check**
 
@@ -113,7 +131,7 @@ runner proof reports all 7 and the e2e command reports 4.
 | Inventory entry | Matrix row exists? | @e2e scenario exists? | Promised mechanism | Actual mechanism | Match? |
 |---|---|---|---|---|---|
 | Run `givn spec index` | Yes | Local index reports the permanent scenario inventory | Real CLI subprocess | `common::run_givn_with_env` | Yes |
-| Run `givn spec search` | Yes | Search returns a semantically related scenario; self-match safety variant | Real CLI subprocess | `common::run_givn_with_env` | Yes |
+| Run `givn spec search` | Yes | Search returns a semantically related scenario; regular self-match safety scenario also passes | Real CLI subprocess | `common::run_givn_with_env` | Yes |
 | Run `givn spec review --change` | Yes | Review reports an advisory retrieval candidate | Real CLI subprocess | `common::run_givn_with_env` | Yes |
 
 Fabrication audit result: **CLEAN**.
@@ -130,12 +148,12 @@ and implementation.
 | Opt-in native dependency constraint | `02-architecture-constraints.md:23` | Ch2 Yes | `spec-retrieval` Cargo feature | Setup feature task | `Cargo.toml`, default build remains feature-free | Yes |
 | CLI context/interface | `03-context-and-scope.md:39` | Ch3 Yes | Index/search/review CLI | E2E scenarios | `SpecCommands` and subprocess tests | Yes |
 | Local-first strategy | `04-solution-strategy.md:22` | Ch4 Yes | Local cache, stub gate, no service | Setup and e2e gate evidence | `GIVN_SPEC_EMBEDDER`, local JSON index | Yes |
-| Retrieval building blocks/dependency | `05-building-block-view.md:75,91,108` | Ch5 Yes | `src/spec/retrieval.rs`, FastEmbed | All scenario tasks | Modules and lockfile exist | Yes |
+| Retrieval building blocks/dependency | `05-building-block-view.md:77,93,110` | Ch5 Yes | `src/spec/retrieval.rs`, FastEmbed | All scenario tasks | Modules and lockfile exist | Yes |
 | Runtime index/search/review flow | `06-runtime-view.md:141,248-261` | Ch6 Yes | Review after deterministic gate, advisory failure | Review scenarios | `cli/check.rs`, `retrieval::review` | Yes |
 | Default versus opt-in deployment | `07-deployment-view.md:5-15,65` | Ch7 Yes | Default binary omits ONNX; cache is project-local | Feature-gating setup | Optional dependency and runtime cache path | Yes |
 | Cache and failure semantics | `08-crosscutting-concepts.md:267-277` | Ch8 Yes | Stub/model cache and advisory failures | Unavailable-model scenario | Explicit stderr error and no gate block | Yes |
 | ADR and tradeoffs | `09-architecture-decisions.md:1285-1340` | Ch9 Yes | ADR-039 records feature gate, native runtime, age exception | Setup evidence | `Cargo.toml`, `Cargo.lock`, review output | Yes |
-| Quality scenarios | `10-quality-requirements.md:63-65` | Ch10 Yes | Inventory, ranking, review disposition | Seven executable scenarios | Runner output shows all GREEN | Yes |
+| Quality scenarios | `10-quality-requirements.md:63-65` | Ch10 Yes | Inventory, ranking, review disposition | Eleven executable scenarios | Runner output shows all GREEN | Yes |
 | Native-runtime/model risks | `11-risks-and-technical-debt.md:24-27` | Ch11 Yes | R-18/R-19/R-20 mitigations | Setup and model-error tasks | Stub and advisory failure path | Yes |
 | Retrieval vocabulary | `12-glossary.md:34` | Ch12 Yes | Advisory match terminology | Scenario titles and task wording | CLI output uses advisory wording | Yes |
 
@@ -156,39 +174,51 @@ ARC42 CONFORMANCE: CLEAN
 `./merge-coverages.sh`:
 
 ```text
-lines: 1805 / 8694 = 20.76%
+lines: 2248 / 8758 = 25.67%
 branches: 0 / 0
-retrieval module: 78.35% merged, 83.46% in e2e report
+retrieval module: 88.69% merged, 84.10% in e2e report
 ```
 
 Both reports include the Gherkin runner and the compiled `givn` subprocess.
 `src/spec/retrieval.rs` has non-zero production coverage. The merge output is
 freshly generated at `coverage/cobertura-coverage.xml`.
 
+The no-feature branches are separately verified by `cargo check
+--no-default-features --locked` and the real default binary command, which
+returns the documented setup guidance without loading the native dependency.
+The default `givn check review --change spec-retrieval` path was also run;
+deterministic verify/integrity/overlap checks stayed green and the advisory
+setup message was printed without changing the exit code.
+
 ## Coverage gap classification
 
 | Location | Classification | Action taken |
 |---|---|---|
 | `src/spec/retrieval.rs` FastEmbed production branch | 3: legitimately hard to test | The production branch downloads and initializes a 2.24 GB model; running it in the strict e2e gate would introduce network, memory, and nondeterminism. `cargo check --features spec-retrieval` validates compilation; the real subprocess uses the deterministic backend seam. |
-| `src/spec/retrieval.rs` no-feature command branches | 3: legitimately hard to test | They are a separate default-build compilation variant; default `cargo check` and the feature-gated runner both exercise the supported build contracts. |
-| Pre-existing unrelated modules | 3: legitimately hard to test | The merged report includes the full application and runner as required; uncovered lines are outside this change's implementation surface and no new untested retrieval behavior is hidden in them. |
+| `src/spec/retrieval.rs` no-feature command branches | 3: legitimately hard to test in the feature-enabled Gherkin process | They belong to a mutually exclusive compilation unit. The separate `cargo check --no-default-features --locked` and real default binary invocation verify both branches without linking FastEmbed. |
+
+The merged report intentionally includes the complete application and runner;
+the change-specific classification above is limited to the production units
+introduced or modified by this change. No uncovered changed retrieval region
+is left unclassified.
 
 No dead retrieval code was found. Missing retrieval behavior identified during
-review was converted into the disposed-candidate scenario and completed with
-RED/GREEN/REFACTOR evidence.
+review was converted into disposed-candidate, review-gate, missing-change,
+unsafe-id, and removed-delta scenarios, all completed with RED/GREEN/REFACTOR
+evidence.
 
 ## Test suite result
 
 ```text
-GIVN_FEATURES=givn/changes/spec-retrieval/specs ./run-tests.sh
-3 scenarios (3 passed), 14 steps (14 passed), exit 0
+GIVN_FEATURES=givn/changes/spec-retrieval/specs ./run-tests.sh --non-e2e
+8 scenarios (8 passed), 38 steps (38 passed), exit 0
 
 GIVN_FEATURES=givn/changes/spec-retrieval/specs ./run-tests.sh --e2e
-4 scenarios (4 passed), 19 steps (19 passed), exit 0
+3 scenarios (3 passed), 14 steps (14 passed), exit 0
 
 GIVN_SPEC_EMBEDDER=stub GIVN_FEATURES=givn/changes/spec-retrieval/specs \
   cargo test --features spec-retrieval --test features_runner
-7 scenarios (7 passed), 33 steps (33 passed), exit 0
+11 scenarios (11 passed), 52 steps (52 passed), exit 0
 ```
 
 **Result:** PASS
