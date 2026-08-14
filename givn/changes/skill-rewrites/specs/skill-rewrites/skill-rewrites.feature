@@ -25,7 +25,7 @@ Feature: skill-rewrites
     And stdout contains "split-or-keep"
     And stdout contains "removed+added"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design and step instructions require the Black-Box-First decision
     Given a givn project
     When the user reads the design and steps instructions for skill-rewrites
