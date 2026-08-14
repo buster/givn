@@ -127,4 +127,11 @@ They remain separate because they verify different policy phases and outcomes.
 | `Project override replaces the canonical specs instruction` | `Spec instructions use deterministic gates before retrieval exists` | boundary: project override versus retrieval-phase policy |
 | `Canonical policy classifies output-affecting flags as variants` | `Spec instructions use deterministic gates before retrieval exists` | boundary: action normalization versus retrieval-phase policy |
 
+## Post-Archive Verification
+
+- [x] Permanent skill-rewrites spec contains no `@wip` tags.
+- [x] Post-merge non-E2E suite: 169 scenarios and 952 steps passed.
+- [x] Post-merge E2E suite: 25 scenarios and 153 steps passed.
+- [x] Coverage merge passed with `5159/8154` lines and `0/0` branches.
+
 REVIEW: PASS
