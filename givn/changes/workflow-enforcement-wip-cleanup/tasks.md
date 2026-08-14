@@ -270,20 +270,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `4816e01` -- `New-capability merge failure produces clear recovery instructions`
 
-- [ ] Scenario: `Design.md template includes Internal Primitives section`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Design.md template includes Internal Primitives section`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Design.md template includes Internal Primitives section' is tagged @wip
+        givn lint: 1 file(s) checked, 4 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Design.md template includes Internal Primitives section`
+  - [x] COMMIT: pending -- `Design.md template includes Internal Primitives section`
 
 - [ ] Scenario: `Archive blocked when delta spec has non-removed @wip scenario`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.

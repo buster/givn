@@ -130,7 +130,7 @@ Feature: givn Workflow Enforcement
     And  stderr says the specs have been rolled back
     And  the backup directory exists
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Design.md template includes Internal Primitives section
     Given  a givn project
     When  the user runs `givn new change-with-primitives`
