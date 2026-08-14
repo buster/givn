@@ -205,7 +205,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Exits cleanly"
     And  stderr contains "Exits with a finding"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A scenario whose assertion sequence is a subset of another produces a subset warning
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
