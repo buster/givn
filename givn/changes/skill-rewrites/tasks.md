@@ -122,5 +122,9 @@ retrieval engine are not modified. Existing guidance assertions are reused;
 
 - [x] Active non-E2E suite passes: 3 scenarios, 13 steps, all passed.
 - [x] Active E2E suite passes: 1 scenario, 9 steps, all passed.
-- [ ] Full permanent suite and E2E subset pass after archive.
+- [x] Full permanent suite and E2E subset pass after archive baseline:
+      166 non-E2E scenarios and 24 E2E scenarios, all passed.
 - [x] No retrieval instruction appears before Change 5.
+      ```text
+      pre-retrieval positive-command scan: clean
+      ```
