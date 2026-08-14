@@ -47,17 +47,18 @@
   four steps.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and four steps passed with exit 0.
-- Commit: pending until the scenario commit is created.
+- Commit: `2d407a7`.
 
 ## Scenario: Search returns a semantically related scenario
 
-- [ ] RED: Remove `@wip` from this scenario, leave new steps pending with
-  `unimplemented!()`, run the e2e runner for only this scenario, and record
-  non-zero output.
-- [ ] GREEN: Implement query embedding, cosine ranking, E5 role prefixes, and
-  ranked CLI output. Run only this e2e scenario and record exit 0.
-- [ ] REFACTOR: Re-run only this e2e scenario after cleanup; record exit 0.
-- Commit: pending.
+- [x] RED: Removed `@wip`; the targeted e2e runner failed at the query step
+  with `Step panicked. Captured output: not implemented`.
+- [x] GREEN: Implemented query embedding, cosine ranking, E5 role prefixes,
+  and ranked CLI output. `cargo check --features spec-retrieval` passed; the
+  targeted e2e scenario passed five steps with the real subprocess.
+- [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
+  and five steps passed with exit 0.
+- Commit: pending until the scenario commit is created.
 
 ## Scenario: Search does not return the running change's own delta
 
