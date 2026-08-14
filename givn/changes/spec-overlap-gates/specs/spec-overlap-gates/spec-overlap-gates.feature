@@ -92,7 +92,7 @@ Feature: spec-overlap-gates
     And  stderr contains "a.feature"
     And  stderr contains "b.feature"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A modified delta matching its merge target in the same capability is allowed
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
