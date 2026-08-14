@@ -127,23 +127,33 @@ reflect true state.
   - [ ] REFACTOR: `<output>`
   - [ ] COMMIT: `<hash>`
 
-- [ ] Scenario: `The same shape with contradicting facts produces a related-scenario hint`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Facts (exit_code), Widerspruch → related_scenario.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The same shape with contradicting facts produces a related-scenario hint`
+  - [x] RED/GREEN: Step-Reuse — Facts/Exit-Code-Widerspruch aus dem
+        initialen Modul-Slice vorhanden; Szenario verifiziert den
+        related_scenario-Pfad.
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `7e9e768`
 
-- [ ] Scenario: `A scenario whose assertion sequence is a subset of another produces a subset warning`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Subset-Erkennung (LCS).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `A scenario whose assertion sequence is a subset of another produces a subset warning`
+  - [x] RED/GREEN: Step-Reuse — Subset-Erkennung (Subsequenz) aus dem
+        initialen Modul-Slice vorhanden.
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `7e9e768`
 
-- [ ] Scenario: `A scenario with more than 14 steps produces a long-scenario warning`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Längen-Check (>14, ohne Background).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `A scenario with more than 14 steps produces a long-scenario warning`
+  - [x] RED/GREEN: Step-Reuse — Längen-Check (>14) aus dem initialen
+        Modul-Slice vorhanden.
+        ```
+        → 1 scenario (1 passed), 6 steps (6 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `7e9e768`
 
 - [ ] Scenario: `The default scope excludes the archive tree`
   - [ ] RED: `<output>`
