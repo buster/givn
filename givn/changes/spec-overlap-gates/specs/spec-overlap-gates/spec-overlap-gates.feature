@@ -288,7 +288,7 @@ Feature: spec-overlap-gates
     Then  the command exits 2
     And  stderr contains "scenario 'Past' is tagged @wip"
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: The json output reports duplicate-title findings machine-readably
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/alpha/alpha.feature" with:
