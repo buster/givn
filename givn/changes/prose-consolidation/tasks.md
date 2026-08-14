@@ -46,7 +46,7 @@ complete.
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: pending -- `Project override replaces the canonical specs instruction`
+  - [x] COMMIT: `7187b03` -- `Project override replaces the canonical specs instruction`
 
 - [ ] Scenario: `Canonical policy classifies output-affecting flags as variants`
   - [ ] RED: remove `@wip`; target the scenario with the design.md command.
