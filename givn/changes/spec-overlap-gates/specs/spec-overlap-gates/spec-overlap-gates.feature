@@ -230,7 +230,7 @@ Feature: spec-overlap-gates
     And  stderr contains "subset"
     And  stderr contains "The partial check"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A scenario with more than 14 steps produces a long-scenario warning
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
