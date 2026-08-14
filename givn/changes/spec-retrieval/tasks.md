@@ -70,6 +70,18 @@
   e2e scenario passed five steps with exit 0.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and five steps passed with exit 0.
+- Commit: `6639bc0`.
+
+## Scenario: Review reports an advisory retrieval candidate
+
+- [x] RED: Removed `@wip`; the targeted e2e runner failed at the shared active
+  delta fixture step with `Step panicked. Captured output: not implemented`.
+- [x] GREEN: Added `givn spec review --change`, refreshed the permanent index,
+  queried active delta scenarios, respected disposition rows, and kept setup
+  failures advisory. The targeted e2e scenario passed five steps through the
+  real subprocess.
+- [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
+  and five steps passed with exit 0.
 - Commit: pending until the scenario commit is created.
 
 ## E2E gate proof

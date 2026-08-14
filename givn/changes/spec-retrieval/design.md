@@ -10,7 +10,7 @@ Add a `spec` CLI namespace with two commands:
   cosine similarity, and print the top five results with title, file, and rank.
 
 The index is local and advisory. CI and deterministic lint never require it.
-The review path may refresh the index and query the current permanent tree when
+The review path refreshes the index and queries the current permanent tree when
 the index is available; an unavailable model/index is reported as a setup
 failure, never converted into a blocking score.
 
@@ -58,6 +58,16 @@ changed scenarios are re-embedded, and deleted scenarios are removed. The
 current change's own delta is excluded from both indexing and query results.
 Open deltas from other changes are excluded by default; a future flag may opt
 into them without changing the default CI behavior.
+
+## Review Integration
+
+`givn spec review --change <id>` refreshes the permanent index, embeds each
+added or modified scenario in the active change, and prints its top candidates
+as advisory findings. A candidate with an existing disposition row is not
+reported as undisposed. `givn check review --change <id>` invokes the same
+advisory pass after the deterministic overlap gate. Retrieval setup failures
+are printed as advisory setup messages and never change the review exit code.
+The review pass never indexes the active delta into the permanent index.
 
 ## CLI and Files
 
@@ -113,6 +123,7 @@ lint/test commands.
 |---|---|---|---|
 | Run `givn spec index` to build a local search index over permanent scenarios | Local index reports the permanent scenario inventory | CLI | Real `givn spec index` subprocess and stdout/index-file assertions |
 | Run `givn spec search` to find semantically related existing scenarios | Search returns a semantically related scenario | CLI | Real `givn spec search` subprocess and ranked stdout assertions |
+| Run `givn spec review --change` to surface advisory candidates for a delta | Review reports an advisory retrieval candidate | CLI | Real `givn spec review --change` subprocess and advisory stdout assertions |
 
 The own-delta exclusion scenario is a regular variant of the search action.
 The index refresh and unavailable-model scenarios are non-e2e error and
