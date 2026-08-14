@@ -175,6 +175,12 @@ enum SpecCommands {
         /// Behavior description or completed scenario text.
         query: String,
     },
+    /// Refresh the permanent index and report advisory candidates for a change.
+    Review {
+        /// Active change identifier.
+        #[arg(long)]
+        change: String,
+    },
 }
 
 fn main() {
@@ -221,6 +227,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Spec { command } => match command {
             SpecCommands::Index => cli::spec::run_index(),
             SpecCommands::Search { query } => cli::spec::run_search(&query),
+            SpecCommands::Review { change } => cli::spec::run_review(&change),
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),

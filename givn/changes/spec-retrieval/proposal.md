@@ -16,10 +16,9 @@ seeing a semantically related existing one.
   candidates.
 - Search results are advisory and never block authoring or CI; the author and
   reviewer decide whether a match is a duplicate, variant, or boundary.
-- The same commands are available during review to refresh the current tree
-  and surface candidates for human disposition. Automatic review-gate
-  integration is deferred; retrieval remains advisory and never changes a
-  gate result.
+- During review, the current tree is indexed before querying and undisposed
+  candidates from the active delta are reported for human disposition. The
+  review result remains advisory and never changes a gate result.
 - A change's own delta is not matched against itself.
 - The index updates incrementally when specification content changes and does
   not require a network service after the model is available locally.
