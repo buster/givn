@@ -22,7 +22,7 @@ Feature: spec-retrieval
     Then stdout contains "Provider name is unknown"
     And stdout contains "rank 1"
 
-  @givn.added @e2e
+  @givn.added
   Scenario: Search does not return the running change's own delta
     Given a givn project with permanent scenarios for retrieval
     And an active change delta contains a scenario named "Running change only"
@@ -45,6 +45,37 @@ Feature: spec-retrieval
     And a review disposition exists for "Running change only" and "Provider name is unknown"
     When the user runs `givn spec review --change running-change`
     Then stdout does not contain "Provider name is unknown"
+    And the command exits 0
+
+  @givn.added
+  Scenario: Review gate keeps retrieval advisory
+    Given a givn project with permanent scenarios for retrieval
+    And an active change delta contains a scenario named "Running change only"
+    When the user runs `givn check review --change running-change`
+    Then stdout contains "retrieval advisory"
+    And the command exits 0
+
+  @givn.added
+  Scenario: Review rejects a missing change delta
+    Given a givn project with permanent scenarios for retrieval
+    When the user runs `givn spec review --change missing-change`
+    Then the command fails
+    And stderr contains "no specs directory"
+
+  @givn.added
+  Scenario: Review rejects an unsafe change identifier
+    Given a givn project with permanent scenarios for retrieval
+    When the user runs `givn spec review --change ../outside`
+    Then the command fails
+    And stderr contains "kebab-case"
+
+  @givn.added
+  Scenario: Review ignores a removed delta scenario
+    Given a givn project with permanent scenarios for retrieval
+    And an active change delta contains a removed scenario named "Removed scenario"
+    When the user runs `givn spec review --change running-change`
+    Then stdout does not contain "Removed scenario"
+    And the command exits 0
 
   @givn.added
   Scenario: Reindex reuses unchanged scenario vectors
