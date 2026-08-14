@@ -85,34 +85,42 @@ retrieval engine are not modified. Existing guidance assertions are reused;
 
 ## E2E Setup
 
-- [ ] **E2E setup**: prove `./run-tests.sh --e2e` and the real CLI subprocess;
+- [x] **E2E setup**: prove `./run-tests.sh --e2e` and the real CLI subprocess;
       enable all configured skill targets through the fixture.
       ```text
-      Full active count: <paste>
-      E2E active count: <paste; strictly smaller>
+      Full active count: 3 scenarios (3 passed), 13 steps (13 passed)
+      E2E active count: 1 scenario (1 passed), 9 steps (9 passed)
+      E2E count is strictly smaller than full count.
       ```
 
 ## E2E Scenario
 
-- [ ] @e2e Scenario: `Synchronized guidance explains how to resolve the deterministic gates`
-  - [ ] RED: remove `@wip`; target using the E2E scenario filter.
+- [x] @e2e Scenario: `Synchronized guidance explains how to resolve the deterministic gates`
+  - [x] RED-equivalent: immediate GREEN characterization after gate-aware
+        guidance was added; real skills-sync subprocess passes.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] GREEN: assert successful skills-sync CLI output, review dispositions,
+  - [x] GREEN: asserted successful skills-sync CLI output, review dispositions,
         split-or-keep, removed+added, Black-Box-First, and no retrieval step.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] REFACTOR: rerun targeted E2E scenario.
+  - [x] REFACTOR: reran targeted E2E scenario.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Synchronized guidance explains how to resolve the deterministic gates`
+  - [x] COMMIT: pending -- `Synchronized guidance explains how to resolve the deterministic gates`
 
 ## Final Gates
 
-- [ ] Active non-E2E suite passes.
-- [ ] Active E2E suite passes.
+- [x] Active non-E2E suite passes: 3 scenarios, 13 steps, all passed.
+- [x] Active E2E suite passes: 1 scenario, 9 steps, all passed.
 - [ ] Full permanent suite and E2E subset pass after archive.
-- [ ] No retrieval instruction appears before Change 5.
+- [x] No retrieval instruction appears before Change 5.
