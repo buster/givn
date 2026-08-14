@@ -7,6 +7,7 @@ mod hooks;
 mod integrity_hook;
 mod overlap;
 mod skills;
+mod spec;
 mod state;
 
 use clap::{CommandFactory, Parser, Subcommand};
@@ -119,6 +120,11 @@ enum Commands {
         #[command(subcommand)]
         command: SkillsCommands,
     },
+    /// Build and query the local permanent-scenario retrieval index.
+    Spec {
+        #[command(subcommand)]
+        command: SpecCommands,
+    },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
@@ -158,6 +164,17 @@ enum AddonsCommands {
 enum SkillsCommands {
     /// Regenerate skills and agent commands from current templates.
     Sync,
+}
+
+#[derive(Subcommand)]
+enum SpecCommands {
+    /// Build or refresh the permanent-scenario index.
+    Index,
+    /// Search the local index for related scenarios.
+    Search {
+        /// Behavior description or completed scenario text.
+        query: String,
+    },
 }
 
 fn main() {
@@ -201,6 +218,10 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Skills {
             command: SkillsCommands::Sync,
         } => cli::skills::run_sync(),
+        Commands::Spec { command } => match command {
+            SpecCommands::Index => cli::spec::run_index(),
+            SpecCommands::Search { query } => cli::spec::run_search(&query),
+        },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::Completions { shell } => {

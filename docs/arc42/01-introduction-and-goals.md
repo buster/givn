@@ -47,6 +47,7 @@ flowchart LR
 | FR-20 | Provide an opt-in addon mechanism; ship an `arc42-docs` addon that creates and maintains durable project-level arc42 documentation (e.g. after `design`). |
 | FR-21 | Support per-artifact `post` hooks; run `verify.command` (tests) after `tasks` and `review` by default. Provide `givn check`; run required hooks as the archive gate, blocking on failure. |
 | FR-22 | Expose one canonical authoring policy for interaction inventories and E2E evidence; generated guidance references it rather than restating it. |
+| FR-23 | Provide advisory local retrieval over permanent scenarios without blocking authoring, lint, CI, or archive on similarity scores. |
 
 ### Non-functional requirements (top)
 
