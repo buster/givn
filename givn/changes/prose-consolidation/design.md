@@ -81,11 +81,9 @@ service changes.
 
 ## Step Definitions
 
-The executable spec uses one capability file:
-
-```text
-tests/steps/prose_consolidation_steps.rs
-```
+| Capability | Step definition file | Interface |
+|---|---|---|
+| prose-consolidation | `tests/steps/prose_consolidation_steps.rs` | Real `givn` CLI subprocess |
 
 It drives the real `givn` subprocess in temporary initialized projects and
 asserts on command output plus the generated guidance files. It is separate
