@@ -53,14 +53,11 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    tree (committed or not) is itself a fabrication-audit finding — the
    review must use and credit the strongest one, not whichever one
    `verify.e2e_command` happens to point at if that is the wrong one.
-8. **Check `@e2e` scope: one per happy-path action, not one per variant.**
-   If a capability has more than one `@e2e` scenario, confirm each covers a
-   genuinely distinct user-facing action (e.g. registration vs. login), not
-   input variants/error cases/enum values of the same action. Excess `@e2e`
-   scenarios covering variants should be converted to regular (non-`@e2e`)
-   scenarios — flag this as a fabrication-audit finding (wasted e2e budget
-   on the same underlying action, e2e coverage should be reserved for one
-   distinct action).
+8. **Check E2E scope using the canonical specs instruction.** Confirm that
+   inventory entries are normalized distinct user actions and that each has one
+   E2E scenario. Variants, error cases, and output-affecting flag combinations
+   of the same action are regular scenarios. Excess E2E scenarios are a
+   fabrication-audit finding.
 9. **Confirm `verify.e2e_command` is actually scoped to `@e2e`, not a copy
    of `verify.command`.** Read both values from `givn/config.yaml`
    literally. If they are identical strings, the "e2e run" re-runs the
@@ -190,23 +187,11 @@ gap without naming one of the three buckets above, stop and reclassify it.
 
 ## E2e coverage
 
-Every capability needs exactly one `@e2e` scenario per distinct user-facing
-happy-path action, exercising the real interaction surface, with a primary
-assertion on what that interface produced. For a browser-UI capability, the
-step definitions must actually drive the browser (click/type/navigate) —
-not an HTTP request or in-page `fetch()` standing in for browser
-interaction. Missing, downgraded to repository-only assertions, or driven
-via HTTP/fetch() instead of the real interface = classify as "missing
-test," add or fix one — never as "acceptable for now" or any other
-exception outside the three buckets above, even if a real-browser
-implementation is reportedly not yet installed or not yet finished
-elsewhere in the tree. Before concluding a real driver is unavailable,
-search the tree yourself (including untracked files, see fabrication-audit
-step 7) — do not take an absence at face value. More than one `@e2e`
-scenario per action (one per variant/error case) = convert the excess to
-regular scenarios. `verify.e2e_command` must pass alongside `verify.command`.
-Confirm the local run command (design.md's Local Runnability section) still
-starts the full stack, including digital twins, cleanly.
+Apply the canonical E2E policy from `givn instructions specs --change <id>`.
+Review still verifies the real-interface primary assertion, the actual driver,
+the configured E2E command, and the normalized inventory-to-scenario mapping.
+Missing, downgraded, or over-produced coverage is unfinished work and must be
+fixed or classified under the three coverage buckets above.
 
 ## Sign-off checklist
 
@@ -220,12 +205,11 @@ starts the full stack, including digital twins, cleanly.
 - Dead code deleted. Missing tests added. Hard-to-test gaps justified.
 - Redundant unit tests removed.
 - No `@wip` tags remain. No implementation-layer detail in the spec.
-- Every capability has exactly one `@e2e` scenario per distinct happy-path
-  action, with a real-interface primary assertion — none downgraded to
-  repository-only checks, and none driven via HTTP/fetch() in place of real
-  browser interaction on a browser-UI capability.
-- No capability has more than one `@e2e` scenario per happy-path action
-  (variants/error cases are regular scenarios, not additional `@e2e`).
+- Canonical E2E policy was read from the resolved specs instruction; every
+  normalized inventory action has one `@e2e` scenario and variants are regular
+  scenarios.
+- Every E2E scenario has a real-interface primary assertion and uses the
+  reviewed driver; browser UI scenarios are never replaced by HTTP/fetch.
 - The local run command starts the full stack (including digital twins)
   cleanly, verified during this review.
 - The exact file(s) `verify.e2e_command` invokes were identified and read;
