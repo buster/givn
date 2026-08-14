@@ -112,7 +112,7 @@ Feature: spec-overlap-gates
     When  the user runs `givn lint`
     Then  the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: A modified delta whose title exists in a different capability is a hard error
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
