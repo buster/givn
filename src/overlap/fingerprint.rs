@@ -72,8 +72,29 @@ impl Facts {
                     .contains_polarity
                     .insert(pos, if negative { "negative" } else { "positive" }.to_string());
             }
+            if let Some(table) = &step.table {
+                extract_table_facts(table, &mut facts.tables);
+            }
         }
         facts
+    }
+}
+
+fn extract_table_facts(table: &gherkin::Table, out: &mut BTreeMap<String, String>) {
+    let rows: Vec<Vec<String>> = table.rows.iter().map(|row| row.clone()).collect();
+    let (header, body) = match rows.split_first() {
+        Some((h, b)) => (h.clone(), b),
+        None => return,
+    };
+    for row in body {
+        for (i, cell) in row.iter().enumerate() {
+            let key = header
+                .get(i)
+                .cloned()
+                .filter(|h| !h.is_empty())
+                .unwrap_or_else(|| format!("col_{i}"));
+            out.insert(key, mask(cell));
+        }
     }
 }
 
