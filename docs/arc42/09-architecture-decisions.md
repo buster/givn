@@ -1326,8 +1326,10 @@ link the native ONNX Runtime dependency.
 - Bad, because the local index must be refreshed when content hashes change.
 - Bad, because the opt-in build adds a native ONNX Runtime dependency and is not
   automatically a portable musl artifact.
-- Bad, because the dependency tree must satisfy the 30-day age policy before it
-  can be adopted.
+- Bad, because the latest compatible optional dependency tree is younger than
+  the normal 30-day policy; this change uses the explicitly authorized
+  lockfile-derived `GIVN_DEP_AGE_ALLOWLIST` override and records that exception
+  in its task evidence.
 
 ### Confirmation
 
