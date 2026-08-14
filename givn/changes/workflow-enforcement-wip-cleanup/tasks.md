@@ -208,7 +208,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: pending -- `Integrity hook skips arc42 check when slug cannot be resolved`
+  - [x] COMMIT: `cdabeeb` -- `Integrity hook skips arc42 check when slug cannot be resolved`
 
 - [ ] Scenario: `Archive re-runs verify against merged permanent specs and passes`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
