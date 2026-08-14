@@ -35,52 +35,29 @@ reflect true state.
 
 ## Tasks: capability spec-overlap-gates (non-@e2e)
 
-- [ ] Scenario: `A duplicate title across two permanent spec files is a hard error` (später als @e2e — siehe unten; hier regulär nicht geführt)
-  - [ ] RED: `unimplemented!()` in neuen Steps; `src/overlap/`-Modul-Skelett.
-        ```
-        <output>
-        ```
-  - [ ] GREEN: Produktion: `src/overlap/` (Skeleton) + Lint-Integration, Exit 3.
-        ```
-        <output>
-        ```
-  - [ ] REFACTOR: Aufräumen.
-        ```
-        <output>
-        ```
-  - [ ] COMMIT: `<hash>`
-
 - [x] Scenario: `An added delta duplicating a permanent spec title is a hard error`
-  - [x] RED: `unimplemented!()` nicht nötig — vorhandene Steps genutzt, neuer
-        Step `the command exits 3` mit echter Assertion; Produktions-Code fehlt,
-        Lint liefert exit 0.
+  - [x] RED: `the command exits 3` (neuer Step, echte Assertion); Lint
+        liefert exit 0 ohne Dup-Check.
         ```
-        GIVN_FEATURES=givn/changes/spec-overlap-gates/specs cargo test --test
-        features_runner -- --name "An added delta duplicating a permanent
-        spec title is a hard error"
-        → 1 scenario (1 failed), 5 steps (4 passed, 1 failed) — "the command
-        exits 3" schlägt fehl (tatsächlich 0).
+        → 1 scenario (1 failed), 5 steps (4 passed, 1 failed).
         ```
   - [x] GREEN: Produktion: `src/overlap/{mod,analysis,fingerprint,disposition}.rs`
         (Baum-Kollektion, Titel-Gruppierung, Finding-Modell), `src/cli/lint.rs`
         (Scan + Ausgabe + Exit 3), `src/lib.rs`+`src/main.rs` (mod overlap).
         ```
-        Gleiche Zielinvokation → 1 scenario (1 passed), 6 steps (6 passed).
+        → 1 scenario (1 passed), 6 steps (6 passed).
         ```
   - [x] REFACTOR: Capability-Erkennung vereinfacht, kein Verhaltenswechsel.
         ```
-        Gleiche Zielinvokation → 1 scenario (1 passed).
+        Permanente Suite: 154 passed.
         ```
   - [x] COMMIT: `1a6dc6d`
 
 - [x] Scenario: `A delta of another active change duplicating a permanent spec title is a hard error`
-  - [x] RED/GREEN: Sofort-GREEN per vollständigem Step-Reuse — der Baum-Scan
-        aus dem vorherigen Szenario deckt `givn/changes/*/specs` bereits ab;
-        kein neuer Step, keine Produktionsänderung nötig.
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse — Baum-Scan deckt
+        `givn/changes/*/specs` bereits ab; kein neuer Step, keine
+        Produktionsänderung nötig.
         ```
-        GIVN_FEATURES=givn/changes/spec-overlap-gates/specs cargo test --test
-        features_runner -- --name "A delta of another active change
-        duplicating a permanent spec title is a hard error"
         → 1 scenario (1 passed), 7 steps (7 passed).
         ```
   - [x] REFACTOR: n/a
@@ -121,11 +98,20 @@ reflect true state.
         ```
   - [x] COMMIT: `40d1fdc`
 
-- [ ] Scenario: `Two scenarios with the same shape but different titles produce a warning`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Fingerprint (Assertion-Folge, Maskierung), Shape-Match-Warnung.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Two scenarios with the same shape but different titles produce a warning`
+  - [x] RED: Maskierung fehlt → Shapes ("clean" vs "tidy") ungleich → keine
+        Warnung, exit 0 statt Warnung auf stderr.
+        ```
+        → 1 scenario (1 failed) — "stderr contains \"merge\"" schlägt fehl.
+        ```
+  - [x] GREEN: Produktion: `mask()` in `src/overlap/fingerprint.rs`
+        (Quoted Strings + Zahlen), Assertion-Folge maskiert; Spec-Assertion
+        auf "merging" präzisiert (Substring-Missverständnis behoben).
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `a7bd2b2`
 
 - [x] Scenario: `The same shape with contradicting facts produces a related-scenario hint`
   - [x] RED/GREEN: Step-Reuse — Facts/Exit-Code-Widerspruch aus dem
@@ -135,7 +121,7 @@ reflect true state.
         → 1 scenario (1 passed), 8 steps (8 passed).
         ```
   - [x] REFACTOR: n/a
-  - [x] COMMIT: `7e9e768`
+  - [x] COMMIT: `a6579f9`
 
 - [x] Scenario: `A scenario whose assertion sequence is a subset of another produces a subset warning`
   - [x] RED/GREEN: Step-Reuse — Subset-Erkennung (Subsequenz) aus dem
@@ -144,7 +130,7 @@ reflect true state.
         → 1 scenario (1 passed), 7 steps (7 passed).
         ```
   - [x] REFACTOR: n/a
-  - [x] COMMIT: `7e9e768`
+  - [x] COMMIT: `05396f5`
 
 - [x] Scenario: `A scenario with more than 14 steps produces a long-scenario warning`
   - [x] RED/GREEN: Step-Reuse — Längen-Check (>14) aus dem initialen
@@ -153,7 +139,7 @@ reflect true state.
         → 1 scenario (1 passed), 6 steps (6 passed).
         ```
   - [x] REFACTOR: n/a
-  - [x] COMMIT: `7e9e768`
+  - [x] COMMIT: `657794f`
 
 - [x] Scenario: `The default scope excludes the archive tree`
   - [x] RED: Archive noch im Scope → Parse-Error (exit 1) statt erwartet 0.
@@ -166,7 +152,7 @@ reflect true state.
         → 1 scenario (1 passed), 5 steps (5 passed).
         ```
   - [x] REFACTOR: n/a
-  - [x] COMMIT: `c32c3c4`
+  - [x] COMMIT: `38765f8`
 
 - [x] Scenario: `An explicit archive path still lints its file` — **Charakterisierung** (heute bereits exit 2)
   - [x] GREEN: Explizite Pfade unverändert — Archiv-Datei lintet gezielt
@@ -174,150 +160,220 @@ reflect true state.
         ```
         → 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [x] COMMIT: `ba1ad33`
+  - [x] COMMIT: `1616124`
 
-- [ ] Scenario: `The json output reports a parse error as a machine-readable finding`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: `--json`-Flag (main.rs), JSON-Schema für Parse-Findings.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The json output reports a parse error as a machine-readable finding`
+  - [x] RED: `--json` existiert nicht → clap-Fehler statt JSON.
+        ```
+        → 1 scenario (1 failed), 4 steps (3 passed, 1 failed).
+        ```
+  - [x] GREEN: Produktion: `--json`-Flag (src/main.rs), Finding-Sammlung und
+        pretty-JSON-Ausgabe in src/cli/lint.rs (Schema kind/level/files/titles;
+        Parse-/Wip-Findings als JSON-Einträge). Spec-Assertionen auf
+        backslash-freie Substrings umgestellt (Step-Regex-Escape-Falle).
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] REFACTOR: Prose-Rendering in `render_prose` extrahiert.
+        ```
+        Permanente Suite: 154 passed.
+        ```
+  - [x] COMMIT: `9244be1`
 
-- [ ] Scenario: `Consecutive And and But steps normalise to the same shape as plain Then steps`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: StepType-basierte Assertion-Folge (gherkin `Step.ty`).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Consecutive And and But steps normalise to the same shape as plain Then steps`
+  - [x] RED/GREEN: Step-Reuse — gherkin-Crate löst And/But bereits
+        kontextuell zu `Step.ty == Then` auf (Grilling-Finding 11 bestätigt).
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] COMMIT: `1d1436a`
 
-- [ ] Scenario: `Quoted strings are masked in the shape comparison`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Quoted-String-Maskierung.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Quoted strings are masked in the shape comparison`
+  - [x] RED/GREEN: Step-Reuse — `mask()` aus dem Shape-Match-Szenario deckt
+        Quoted Strings ab.
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] COMMIT: `e2a10f8`
 
-- [ ] Scenario: `Numbers are masked in the shape comparison but exit codes stay facts`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Zahlen-Maskierung (Exit-Code als Fact bleibt).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Numbers are masked in the shape comparison but exit codes stay facts`
+  - [x] RED/GREEN: Step-Reuse — Zahlen-Maskierung aus `mask()`; Exit-Codes
+        als Facts aus `extract_exit_code` → Widerspruch → related_scenario.
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] COMMIT: `f8110a6`
 
-- [ ] Scenario: `Scenario outlines sharing a template produce a shape-match warning`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Outline-Template-Fingerprint.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Scenario outlines sharing a template produce a shape-match warning`
+  - [x] RED/GREEN: Step-Reuse — Template-Steps fließen als Fingerprint ein
+        (Examples-Werte sind nicht Teil der Shape).
+        ```
+        → 1 scenario (1 passed), 6 steps (6 passed).
+        ```
+  - [x] COMMIT: `135060f`
 
-- [ ] Scenario: `Docstrings are ignored in the shape comparison`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Docstring-Ignorierung.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Docstrings are ignored in the shape comparison`
+  - [x] RED: Fixture-Gherkin parste nicht (verschachtelte `"""`-Delimiter —
+        Spec-Fehler, keine Produktionslücke).
+        ```
+        → 1 parsing error (features_runner).
+        ```
+  - [x] GREEN: Spec-Fix (äußere Delimiter `"""`, innere ```-Fences);
+        Produktion ignoriert Docstrings bereits (nur step.value zählt).
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] COMMIT: `62b23ed`
 
-- [ ] Scenario: `Background steps are prepended before the comparison`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Background-Voranstellung.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Background steps are prepended before the comparison`
+  - [x] RED: Fixture ohne eigenes When umgebaut (erst dann ist der
+        Prepending-Effekt beobachtbar); ohne Prepending: SHAPE-Match statt
+        subset.
+        ```
+        → 1 scenario (1 failed) — stderr missing "subset" (SHAPE-Linie statt subset).
+        ```
+  - [x] GREEN: Produktion: Background-Steps in all_steps prepended
+        (of_scenario); ohne When zählen auch Background-Thens als
+        Assertionen.
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `a0ae7f0`
 
-- [ ] Scenario: `Data table contents are compared as facts and can contradict`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Data-Table-Facts (Spaltenkopf-Key).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Data table contents are compared as facts and can contradict`
+  - [x] RED: Tabellen-Facts fehlen → kein Widerspruch erkannt.
+        ```
+        → 1 scenario (1 failed), 6 steps (5 passed, 1 failed).
+        ```
+  - [x] GREEN: Produktion: `extract_table_facts` (Spaltenkopf-Key,
+        maskierte Zellwerte) in Facts::extract.
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `7c7a914`
 
-- [ ] Scenario: `The same shape without any extractable facts suggests merging`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: konservative Fact-Regel (fehlender Key = kein Widerspruch).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The same shape without any extractable facts suggests merging`
+  - [x] RED/GREEN: Step-Reuse — keine Facts auf beiden Seiten → kein
+        Widerspruch → Merge-Vorschlag (konservative Regel vorhanden).
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] COMMIT: `e14b76e`
 
 ---
 
 ## Tasks: capability review-disposition-gates (non-@e2e)
 
-- [ ] Scenario: `Review blocks when a shape match involving the change's delta is undisposed`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Review-Gate in `run_mandatory_checks("review")`, disposition.rs (Tabellen-Parser).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review blocks when a shape match involving the change's delta is undisposed`
+  - [x] RED: Kein Review-Gate → exit 0 statt Block.
+        ```
+        → 1 scenario (1 failed), 5 steps (4 passed, 1 failed).
+        ```
+  - [x] GREEN: Produktion: `run_review_overlap_gate` in
+        src/overlap/analysis.rs, Aufruf in src/cli/check.rs nach integrity;
+        disposition.rs-Tabellen-Parser.
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] REFACTOR: Bail nur wenn Findings vorliegen (fehlendes review.md ohne
+        Findings passiert) — permanente Suite bleibt grün (154 passed).
+  - [x] COMMIT: `fcc068f`
 
-- [ ] Scenario: `Review blocks when a long scenario in the delta has no split-or-keep entry`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: split-or-keep-Zeilen-Check.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review blocks when a long scenario in the delta has no split-or-keep entry`
+  - [x] RED/GREEN: Step-Reuse — split-or-keep-Pflicht im Review-Gate
+        (bereits implementiert).
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] COMMIT: `39f982d`
 
-- [ ] Scenario: `Review passes when a long scenario has a split-or-keep entry` — **Charakterisierung** (Gate-Akzeptanzpfad)
-  - [ ] GREEN: Bestätigung mit split-or-keep-Zeile.
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review passes when a long scenario has a split-or-keep entry` — **Charakterisierung** (Gate-Akzeptanzpfad)
+  - [x] GREEN: Akzeptanzpfad mit split-or-keep-Zeile verifiziert.
+        ```
+        → 1 scenario (1 passed), 5 steps (5 passed).
+        ```
+  - [x] COMMIT: `ae978a2`
 
-- [ ] Scenario: `Review blocks when a delta scenario shape-matches a permanent scenario without disposition`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Mitgliedschafts-Regel (≥1 Delta-Mitglied).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review blocks when a delta scenario shape-matches a permanent scenario without disposition`
+  - [x] RED/GREEN: Step-Reuse — Mitgliedschafts-Regel (file-Prefix unter
+        givn/changes/<id>/specs) im Gate vorhanden.
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] COMMIT: `742caa4`
 
-- [ ] Scenario: `Review passes when a shape match exists only between permanent scenarios`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: permanent-only-Exemption.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review passes when a shape match exists only between permanent scenarios`
+  - [x] RED/GREEN: Step-Reuse — permanent-only-Paare werden vom Gate
+        übersprungen (involves_delta == false).
+        ```
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] COMMIT: `b7115f6`
 
 - [x] Scenario: `Review blocks with a clear message when review.md is missing`
   - [x] RED: Fixture ohne Findings erzeugte keinen Block (Gate lief durch).
         ```
-        -> Szenario um Fixture mit echtem Shape-Match-Paar erweitert.
+        → Szenario um Fixture mit echtem Shape-Match-Paar erweitert.
         ```
   - [x] GREEN: Produktion: Bail nennt review.md, wenn undisponierte
         Findings vorliegen und review.md fehlt.
         ```
-        -> 1 scenario (1 passed), 5 steps (5 passed).
+        → 1 scenario (1 passed), 5 steps (5 passed).
         ```
-  - [x] COMMIT: `7c36829`
+  - [x] COMMIT: `30aaca0`
 
-- [ ] Scenario: `The net-delta receipt counts added, modified, and removed scenarios`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Net-Delta-Receipt (Delta-Tags-Zählung) auf stdout.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The net-delta receipt counts added, modified, and removed scenarios`
+  - [x] RED/GREEN: Step-Reuse — Receipt (Delta-Op-Zählung) im Gate
+        vorhanden, inkl. JSON-Zeile.
+        ```
+        → 1 scenario (1 passed), 9 steps (9 passed).
+        ```
+  - [x] COMMIT: `d4479c9`
 
 ---
 
 ## Tasks: @e2e scenarios (verify.e2e_command)
 
-- [ ] Scenario: `A duplicate title across two permanent spec files is a hard error` (@e2e)
-  - [ ] RED: `./run-tests.sh --e2e` gegen Fixture → Fehlschlag.
+- [x] Scenario: `A duplicate title across two permanent spec files is a hard error` (@e2e)
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse — Steps stammen aus den
+        non-@e2e-Phasen, Treiber ist das echte Binary (CARGO_BIN_EXE_givn).
         ```
-        <output>
+        ./run-tests.sh --e2e → 3 scenarios (3 passed), 25 steps (25 passed).
         ```
-  - [ ] GREEN: Schritte gegen echtes Binary (CARGO_BIN_EXE_givn), Fixture-Baum.
-        ```
-        <output>
-        ```
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `75b22e1`
 
-- [ ] Scenario: `The json output reports duplicate-title findings machine-readably` (@e2e)
-  - [ ] RED: `<output>`
-  - [ ] GREEN: `<output>`
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The json output reports duplicate-title findings machine-readably` (@e2e)
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse (JSON-Ausgabe aus dem
+        non-@e2e-Slice; valides JSON + kind/title gegen echtes Binary).
+        ```
+        ./run-tests.sh --e2e → 3 scenarios (3 passed).
+        ```
+  - [x] COMMIT: `997e386`
 
-- [ ] Scenario: `Review passes when every shape match is disposed and reports the net-delta receipt` (@e2e)
-  - [ ] RED: `<output>`
-  - [ ] GREEN: `<output>`
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review passes when every shape match is disposed and reports the net-delta receipt` (@e2e)
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse (Review-Gate + Receipt aus
+        den non-@e2e-Slices; Dispositions-Zeile via Step geschrieben).
+        ```
+        ./run-tests.sh --e2e → 3 scenarios (3 passed), 25 steps (25 passed).
+        ```
+  - [x] COMMIT: `1b342fc`
 
 ---
 
 ## Evidenzpflichten & Abschluss
 
-- [ ] Fingerprint-Messung auf den 18 gelabelten watn-Paaren
+- [x] Fingerprint-Messung auf den 18 gelabelten watn-Paaren
       (`~/projects/watn/docs/feature-step-overlap-report.md`); Ergebnis →
       `givn/changes/spec-overlap-gates/evidence-fingerprint.md`. Messung
-      mit Wegwerf-Skript `tools/overlap-measure/`, Overlap-Bibliothek.
+      mit `tools/overlap-measure/` (Overlap-Bibliothek als Path-Dependency).
       ```
-      <output>
+      dup pairs found (title|shape|subset): 5/8
+      legit pairs flagged as duplicate/shape (false positives): 1/10
+      (plus 1 legit Subset-Warnung: DONE-vs-EOF) — Details in
+      evidence-fingerprint.md. Entscheidung: Change 4 wird gebaut.
       ```
 - [ ] Dispositions-Volumen messen: `givn check review --change spec-overlap-gates`
       ausführen, fehlende Zeilen auflisten, review.md-Dispositionstabelle
@@ -325,7 +381,8 @@ reflect true state.
       Delta-Mitglied; jedes lange Delta-Szenario).
 - [ ] arc42: arc42.md mit 03/05/06/08/09/11/12 Affected: Yes + echte Edits
       der Kapitel (MADR in 09, Konsequenzen in 11, Glossar in 12).
-- [ ] @wip-Tags aus allen 29 Szenarien entfernen (nach vollständigem GREEN).
+- [x] @wip-Tags aus allen 29 Szenarien entfernen (nach vollständigem GREEN;
+      verbleibende @wip sind Fixture-Interna).
 - [ ] Gesamtsuite: `./run-tests.sh` und `./run-tests.sh --e2e` grün.
 - [ ] `givn check review --change spec-overlap-gates` grün (Dispositionen vollständig).
 - [ ] Review-Artefakt review.md schreiben (Dispositionstabelle, Evidence,

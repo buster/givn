@@ -5,7 +5,7 @@
 
 Feature: review-disposition-gates
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: Review passes when every shape match is disposed and reports the net-delta receipt
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
@@ -160,7 +160,7 @@ Feature: review-disposition-gates
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review blocks with a clear message when review.md is missing
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
