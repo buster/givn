@@ -48,7 +48,7 @@ Feature: review-disposition-gates
     And  stderr contains "Undisposed shape one"
     And  stderr contains "Undisposed shape two"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review blocks when a long scenario in the delta has no split-or-keep entry
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
