@@ -92,7 +92,7 @@ complete.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Design and review instructions defer to the canonical policy`
+  - [x] COMMIT: `80b6575` -- `Design and review instructions defer to the canonical policy`
 
 ## E2E Setup
 
