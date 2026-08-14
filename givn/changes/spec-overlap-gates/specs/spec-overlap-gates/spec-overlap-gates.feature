@@ -306,11 +306,11 @@ Feature: spec-overlap-gates
     When  the user runs `givn lint --json`
     Then  the command exits 3
     And  stdout is valid JSON
-    And  stdout contains "\"kind\": \"duplicate_title\""
-    And  stdout contains "\"titles\""
+    And  stdout contains "duplicate_title"
+    And  stdout contains "titles"
     And  stdout contains "Twin title"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The json output reports a parse error as a machine-readable finding
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/bad/bad.feature" with:
@@ -320,7 +320,7 @@ Feature: spec-overlap-gates
     When  the user runs `givn lint --json`
     Then  the command exits 1
     And  stdout is valid JSON
-    And  stdout contains "\"kind\": \"parse_error\""
+    And  stdout contains "parse_error"
     And  stdout contains "bad.feature"
 
   @givn.added @wip

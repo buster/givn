@@ -63,6 +63,9 @@ enum Commands {
         change: Option<String>,
         /// Paths to check (default: all .feature files under givn/).
         paths: Vec<String>,
+        /// Emit findings as a JSON array on stdout.
+        #[arg(long)]
+        json: bool,
     },
     /// Run an artifact's post hooks (e.g. the test suite via verify.command).
     Check {
@@ -176,8 +179,8 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             change,
             json,
         } => cli::instructions::run(artifact.as_deref(), change.as_deref(), json),
-        Commands::Lint { change, paths } => {
-            let code = cli::lint::run(change.as_deref(), paths)?;
+        Commands::Lint { change, paths, json } => {
+            let code = cli::lint::run(change.as_deref(), paths, json)?;
             if code != 0 {
                 std::process::exit(code);
             }
