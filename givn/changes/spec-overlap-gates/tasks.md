@@ -389,4 +389,4 @@ reflect true state.
       verify-e2e, integrity, overlap dispositions, net delta 31 added.
 - [x] review.md geschrieben: Coverage-Review, Dispositionstabelle (98 Zeilen),
       split-or-keep, Fabrication-Audit.
-- [ ] `givn archive spec-overlap-gates` (nach Review-Grün).
+- [x] `givn archive spec-overlap-gates` (nach Review-Grün).
