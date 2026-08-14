@@ -284,29 +284,30 @@ reflect true state.
 
 ## Tasks: @e2e scenarios (verify.e2e_command)
 
-- [ ] Scenario: `A duplicate title across two permanent spec files is a hard error` (@e2e)
-  - [ ] RED: `./run-tests.sh --e2e` gegen Fixture → Fehlschlag.
+- [x] Scenario: `A duplicate title across two permanent spec files is a hard error` (@e2e)
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse - Steps stammen aus den
+        non-@e2e-Phasen, Treiber ist das echte Binary (CARGO_BIN_EXE_givn).
         ```
-        <output>
+        ./run-tests.sh --e2e -> 3 scenarios (3 passed), 25 steps (25 passed).
         ```
-  - [ ] GREEN: Schritte gegen echtes Binary (CARGO_BIN_EXE_givn), Fixture-Baum.
-        ```
-        <output>
-        ```
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `54358b6`
 
-- [ ] Scenario: `The json output reports duplicate-title findings machine-readably` (@e2e)
-  - [ ] RED: `<output>`
-  - [ ] GREEN: `<output>`
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The json output reports duplicate-title findings machine-readably` (@e2e)
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse (JSON-Ausgabe aus dem
+        non-@e2e-Slice; valides JSON + kind/title gegen echtes Binary).
+        ```
+        ./run-tests.sh --e2e -> 3 scenarios (3 passed).
+        ```
+  - [x] COMMIT: `54358b6`
 
-- [ ] Scenario: `Review passes when every shape match is disposed and reports the net-delta receipt` (@e2e)
-  - [ ] RED: `<output>`
-  - [ ] GREEN: `<output>`
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review passes when every shape match is disposed and reports the net-delta receipt` (@e2e)
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse (Review-Gate + Receipt aus
+        den non-@e2e-Slices; Dispositions-Zeile via Step geschrieben).
+        ```
+        ./run-tests.sh --e2e -> 3 scenarios (3 passed), 25 steps (25 passed).
+        ```
+  - [x] COMMIT: `54358b6`
 
 ---
 

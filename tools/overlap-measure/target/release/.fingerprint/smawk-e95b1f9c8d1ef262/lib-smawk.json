@@ -1,0 +1,1 @@
+{"rustc":12019306335353385202,"features":"[]","declared_features":"[\"ndarray\"]","target":4176482491972077784,"profile":2040997289075261528,"path":18376880814312206277,"deps":[],"local":[{"CheckDepInfo":{"dep_info":"release/.fingerprint/smawk-e95b1f9c8d1ef262/dep-lib-smawk","checksum":false}}],"rustflags":[],"config":9396254390672932401,"compile_kind":0}

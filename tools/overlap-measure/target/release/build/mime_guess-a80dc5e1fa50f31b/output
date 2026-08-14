@@ -1,0 +1,1 @@
+cargo:rustc-env=MIME_TYPES_GENERATED_PATH=/home/buster/.paseo/worktrees/008cxm4u/admiring-pony/tools/overlap-measure/target/release/build/mime_guess-a80dc5e1fa50f31b/out/mime_types_generated.rs
