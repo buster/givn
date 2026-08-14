@@ -91,6 +91,9 @@ Feature: My Capability
 the inventory, real-interface, and one-E2E-per-distinct-action rules. This
 command only choreographs the spec-writing steps and must not restate them.
 
+Until the retrieval change exists, use deterministic lint and review gates;
+do not add a `givn spec index` or semantic-search step.
+
 ### 5. Validate syntax
 
 ```sh

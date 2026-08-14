@@ -61,20 +61,27 @@ retrieval engine are not modified. Existing guidance assertions are reused;
         ```
   - [x] COMMIT: `20423bd` -- `Design and step instructions require the Black-Box-First decision`
 
-- [ ] Scenario: `Spec instructions use deterministic gates before retrieval exists`
-  - [ ] RED: remove `@wip`; target with the exact scenario command.
+- [x] Scenario: `Spec instructions use deterministic gates before retrieval exists`
+  - [x] RED-equivalent: immediate GREEN characterization of the deterministic
+        pre-retrieval instruction through the real CLI.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] GREEN: assert deterministic-gate guidance and no retrieval command.
+  - [x] GREEN: asserted deterministic-gate guidance and no retrieval command.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun targeted scenario.
+  - [x] REFACTOR: reran targeted scenario.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Spec instructions use deterministic gates before retrieval exists`
+  - [x] COMMIT: pending -- `Spec instructions use deterministic gates before retrieval exists`
 
 ## E2E Setup
 
