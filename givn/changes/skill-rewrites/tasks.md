@@ -81,7 +81,7 @@ retrieval engine are not modified. Existing guidance assertions are reused;
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Spec instructions use deterministic gates before retrieval exists`
+  - [x] COMMIT: `77534f5` -- `Spec instructions use deterministic gates before retrieval exists`
 
 ## E2E Setup
 
