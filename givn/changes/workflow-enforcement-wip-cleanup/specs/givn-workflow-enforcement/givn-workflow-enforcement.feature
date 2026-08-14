@@ -151,7 +151,7 @@ Feature: givn Workflow Enforcement
     Then  the command exits 0
     And  the change directory has been moved to givn/archive/
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Check tasks blocked when delta spec has @wip
     Given  a givn project
     And  a change whose delta spec contains @wip
