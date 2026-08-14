@@ -71,21 +71,28 @@ complete.
         ```
   - [x] COMMIT: `5e38ef1` -- `Canonical policy classifies output-affecting flags as variants`
 
-- [ ] Scenario: `Design and review instructions defer to the canonical policy`
-  - [ ] RED: remove `@wip`; target the scenario with the design.md command.
+- [x] Scenario: `Design and review instructions defer to the canonical policy`
+  - [x] RED-equivalent: immediate GREEN characterization after the canonical
+        asset update; the real subprocess and combined-output assertions pass.
         ```text
-        <paste non-zero output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] GREEN: run both instruction commands through the real subprocess and
+  - [x] GREEN: ran both instruction commands through the real subprocess and
         assert canonical delegation.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun targeted scenario.
+  - [x] REFACTOR: reran targeted scenario.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Design and review instructions defer to the canonical policy`
+  - [x] COMMIT: pending -- `Design and review instructions defer to the canonical policy`
 
 ## E2E Setup
 

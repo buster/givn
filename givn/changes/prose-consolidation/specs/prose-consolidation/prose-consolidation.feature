@@ -46,7 +46,7 @@ Feature: prose-consolidation
     Then stdout contains "output-affecting flags are recorded as variants"
     And stdout does not contain "Every subcommand, every flag combination that produces different output"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design and review instructions defer to the canonical policy
     Given a givn project
     When the user reads the design and review instructions for prose-consolidation
