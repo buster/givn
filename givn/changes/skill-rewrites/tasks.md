@@ -6,29 +6,38 @@ retrieval engine are not modified. Existing guidance assertions are reused;
 
 ## Setup
 
-- [ ] **Setup**: prove strict mode with an undefined-step probe, register
+- [x] **Setup**: prove strict mode with an undefined-step probe, register
       `skill_rewrites_steps.rs`, and confirm the existing runner's
       `.fail_on_skipped()` mechanism.
       ```text
-      <paste command and non-zero output>
+      GIVN_FEATURES=tests/strict-mode-skill-probe.feature cargo test --test features_runner -- --name '^Undefined skill step fails the runner$'
+      1 feature; 1 scenario (1 failed); 1 step (1 failed)
+      error: test failed, to rerun `--test features_runner`
       ```
 
 ## Non-E2E Scenarios
 
-- [ ] Scenario: `Review instructions require deterministic gate dispositions`
-  - [ ] RED: remove `@wip`; target with the exact scenario command.
+- [x] Scenario: `Review instructions require deterministic gate dispositions`
+  - [x] RED-equivalent: immediate GREEN characterization after instruction
+        choreography was added; real CLI output passes.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] GREEN: assert review instruction gate choreography through the CLI.
+  - [x] GREEN: asserted review instruction gate choreography through the CLI.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: rerun targeted scenario.
+  - [x] REFACTOR: reran targeted scenario.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Review instructions require deterministic gate dispositions`
+  - [x] COMMIT: pending -- `Review instructions require deterministic gate dispositions`
 
 - [ ] Scenario: `Design and step instructions require the Black-Box-First decision`
   - [ ] RED: remove `@wip`; target with the exact scenario command.

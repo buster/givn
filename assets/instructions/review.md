@@ -193,6 +193,14 @@ the configured E2E command, and the normalized inventory-to-scenario mapping.
 Missing, downgraded, or over-produced coverage is unfinished work and must be
 fixed or classified under the three coverage buckets above.
 
+## Deterministic gate dispositions
+
+For every shape match involving the change, complete the **Overlap
+dispositions** table in `review.md`. For every scenario longer than the gate
+threshold, record a **split-or-keep** decision. For every removed+added pair,
+record whether the new scenario supersedes the removed one or is unrelated.
+These decisions are review evidence, not score thresholds.
+
 ## Sign-off checklist
 
 - Fabrication audit: clean (or all findings remediated).
