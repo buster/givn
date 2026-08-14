@@ -30,7 +30,7 @@
   spec-retrieval` passed; the targeted scenario passed with five steps.
 - [x] REFACTOR: Re-ran the targeted command after cleanup; one scenario and
   five steps passed with exit 0.
-- Commit: `81df4f6`.
+- [x] COMMIT: `81df4f6`.
 
 ## Scenario: Reindex reuses unchanged scenario vectors
 
@@ -41,7 +41,7 @@
   --features spec-retrieval` and the targeted scenario passed (four steps).
 - [x] REFACTOR: Re-ran the targeted scenario after cleanup; one scenario and
   four steps passed with exit 0.
-- Commit: `9a99d4e`.
+- [x] COMMIT: `9a99d4e`.
 
 ## Scenario: Review suppresses a disposed retrieval candidate
 
@@ -52,7 +52,7 @@
   targeted scenario passed five steps.
 - [x] REFACTOR: Re-ran the targeted scenario after narrowing the assertion to
   the disposed candidate; one scenario and five steps passed with exit 0.
-- Commit: pending until the scenario commit is created.
+- [x] COMMIT: `3034ce2`.
 
 ## Scenario: Local index reports the permanent scenario inventory
 
@@ -66,7 +66,7 @@
   four steps.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and four steps passed with exit 0.
-- Commit: `2d407a7`.
+- [x] COMMIT: `2d407a7`.
 
 ## Scenario: Search returns a semantically related scenario
 
@@ -77,7 +77,7 @@
   targeted e2e scenario passed five steps with the real subprocess.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and five steps passed with exit 0.
-- Commit: `e536efe`.
+- [x] COMMIT: `e536efe`.
 
 ## Scenario: Search does not return the running change's own delta
 
@@ -89,7 +89,7 @@
   e2e scenario passed five steps with exit 0.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and five steps passed with exit 0.
-- Commit: `6639bc0`.
+- [x] COMMIT: `6639bc0`.
 
 ## Scenario: Review reports an advisory retrieval candidate
 
@@ -101,7 +101,7 @@
   real subprocess.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and five steps passed with exit 0.
-- Commit: `af1a7cb`.
+- [x] COMMIT: `af1a7cb`.
 
 ## E2E gate proof
 
