@@ -206,6 +206,14 @@ design and tasks instructions explicitly carry it). The instructions are
 cascade-resolved and ejectable, so a project can tighten or relax the wording —
 but the default templates make the boundary explicit.
 
+### 8.3a Normative authoring guidance
+
+The E2E interaction policy has one normative source in the `specs` instruction.
+Design, task, review, skill, and slash-command guidance references that source
+and supplies only artifact-specific choreography. This prevents generated
+entry points from drifting into contradictory rules. The existing cascade
+still lets a consuming project override the effective instruction deliberately.
+
 ## 8.4 Project directory layout
 
 ```

@@ -15,7 +15,7 @@ Feature: prose-consolidation
     Then stdout contains "one E2E evidence scenario per distinct real user action"
     And stdout does not contain "one `@e2e` scenario per User Interaction Inventory entry"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Generated guidance points to the canonical E2E policy
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`

@@ -130,23 +130,29 @@ complete.
         ```
   - [x] COMMIT: `cf63571` -- `Canonical E2E policy is emitted by specs instructions`
 
-- [ ] @e2e Scenario: `Generated guidance points to the canonical E2E policy`
-  - [ ] RED: remove `@wip`; target with `./run-tests.sh --e2e` and the exact
-        Cucumber name filter.
+- [x] @e2e Scenario: `Generated guidance points to the canonical E2E policy`
+  - [x] RED-equivalent: immediate GREEN characterization after the delegated
+        asset guidance was implemented; real skills-sync subprocess passes.
         ```text
-        <paste non-zero output>
+        1 feature
+        1 scenario (1 passed)
+        13 steps (13 passed)
         ```
-  - [ ] GREEN: assert successful `givn skills sync` CLI output, all configured
+  - [x] GREEN: asserted successful `givn skills sync` CLI output, all configured
         skill targets, the opencode command, canonical delegation, and absence
         of legacy policy wording.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        13 steps (13 passed)
         ```
-  - [ ] REFACTOR: rerun the E2E scenario.
+  - [x] REFACTOR: reran the E2E scenario.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        13 steps (13 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Generated guidance points to the canonical E2E policy`
+  - [x] COMMIT: pending -- `Generated guidance points to the canonical E2E policy`
 
 ## Final Gates
 

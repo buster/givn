@@ -41,9 +41,9 @@ Required branches:
 - **Tech choices** — right stack for these scenarios? Simpler alternatives?
 - **Missing scenarios** — observable behaviours without a scenario? Error paths?
 - **Testability** — every scenario can genuinely fail in RED?
-- **E2E fidelity** — interface type named (browser UI / CLI / API-only)? For
-  a browser UI, a real browser driver named — not HTTP/fetch()? Exactly one
-  `@e2e` scenario per distinct happy-path action, not per variant?
+- **E2E fidelity** — read `givn instructions specs --change {{CHANGE_ID}}`
+  and verify its normalized action scope, interface type, real driver, and
+  primary assertion rules are applied without redefinition.
 - **Interaction Coverage** — does every entry in the spec's User Interaction
   Inventory correspond to a row in the design's Interaction Coverage Matrix?
   Does every matrix row name a valid, non-empty driving mechanism (real

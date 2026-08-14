@@ -80,24 +80,10 @@ Write `givn/changes/<id>/design.md` covering:
     with its concrete fix. "The browser had a cookie problem so we checked
     the database instead" is not an acceptable outcome — that obstacle
     belongs here, fixed, before tasks.md is written.
-- **E2E smoke test infrastructure** — document the e2e setup:
-  - E2E runner command → becomes `verify.e2e_command` in `givn/config.yaml`.
-  - E2E step definition location (separate from unit/integration steps).
-  - Test infrastructure needed locally (browser driver, test server, test DB,
-    Testcontainers, fake services). How it starts/stops.
-  - E2E framework choice and justification (Playwright is the default
-    recommendation for browser-based systems).
-  - **Real-interface assertion rule**: every `@e2e` scenario's primary
-    assertion is on what the real interface returned/displayed. Repository/
-    database checks are secondary and additional only, never a replacement.
-  - **The real interface is whichever one a real user/client uses — not
-    whichever is easiest to automate.** State explicitly which interface
-    type this capability has (browser UI / CLI / API-only). For a
-    browser-UI capability, name a real browser driver (Playwright default)
-    that clicks/types/navigates through the rendered page — an HTTP request
-    to the backend route, or an in-page `fetch()`/`XMLHttpRequest` call, is
-    NOT the real interface for a browser UI; both only prove the API works,
-    not that a user can use the UI.
+- **E2E smoke test infrastructure** — read the canonical policy with
+  `givn instructions specs --change <id>`, then document the exact runner,
+  step location, infrastructure, interface type, driver, and coverage matrix
+  needed for this design. Do not restate the policy here.
 - **Non-obvious choices** — justify them; obvious choices need no justification.
 
 This is the HOW layer. Everything that was kept out of the proposal and spec
