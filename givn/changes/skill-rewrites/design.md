@@ -34,7 +34,11 @@ interpolation or override mechanism is introduced.
 
 | Capability | Step definition file | Interface |
 |---|---|---|
-| skill-rewrites | `tests/steps/skill_rewrites_steps.rs` plus reused guidance assertions in `tests/steps/prose_consolidation_steps.rs` | Real `givn` CLI subprocess |
+| skill-rewrites | `tests/steps/skill_rewrites_steps.rs` | Real `givn` CLI subprocess |
+
+The capability reuses generic generated-guidance assertions from
+`tests/steps/prose_consolidation_steps.rs`; the promised capability-specific
+file above contains the combined instruction step.
 
 The new file only handles the combined design/tasks instruction interaction;
 existing generic generated-guidance assertions are reused. No direct asset,
