@@ -5,6 +5,7 @@ mod error;
 mod gherkin;
 mod hooks;
 mod integrity_hook;
+mod overlap;
 mod skills;
 mod state;
 

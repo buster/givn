@@ -25,6 +25,8 @@ pub mod init_agent_target_selection_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod readme_coverage_badge_steps;
 pub mod remove_dead_skip_list_code_steps;
+pub mod review_disposition_gates_steps;
+pub mod spec_overlap_gates_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
