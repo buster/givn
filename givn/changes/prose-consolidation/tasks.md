@@ -157,8 +157,11 @@ complete.
 
 ## Final Gates
 
-- [ ] Active non-E2E scenarios pass.
-- [ ] Active E2E scenarios pass.
+- [x] Active non-E2E scenarios pass: 3 scenarios, 13 steps, all passed.
+- [x] Active E2E scenarios pass: 2 scenarios, 17 steps, all passed.
 - [ ] Full permanent suite and E2E subset pass after all assets are merged.
-- [ ] Allowlist parity scan finds no legacy wording and all non-canonical
+- [x] Allowlist parity scan finds no legacy wording and all non-canonical
       assets delegate to `givn instructions specs`.
+      ```text
+      legacy policy scan: clean
+      ```
