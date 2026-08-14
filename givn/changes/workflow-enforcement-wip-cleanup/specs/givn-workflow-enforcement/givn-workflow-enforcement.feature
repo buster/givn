@@ -6,7 +6,7 @@
 
 Feature: givn Workflow Enforcement
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook passes when tasks.md commit hashes are present
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains `- [x] COMMIT: a1b2c3d4 -- Implement scenario one`

@@ -27,22 +27,28 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
 
 ## Scenarios
 
-- [ ] Scenario: `Integrity hook passes when tasks.md commit hashes are present`
-  - [ ] RED-equivalent: `givn lint --change workflow-enforcement-wip-cleanup`
-        reports the still-WIP delta; existing behavior is already implemented.
+- [x] Scenario: `Integrity hook passes when tasks.md commit hashes are present`
+  - [x] RED-equivalent: `givn lint --change workflow-enforcement-wip-cleanup`
+        reported 16 WIP findings, including this scenario; existing behavior is
+        already implemented.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Integrity hook passes when tasks.md commit hashes are present' is tagged @wip
+        givn lint: 1 file(s) checked, 16 finding(s)
         ```
-  - [ ] GREEN: remove `@wip` from this scenario only and run the anchored
+  - [x] GREEN: removed `@wip` from this scenario only and ran the anchored
         active-delta command from design.md.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command; no behavior change.
+  - [x] REFACTOR: reran the anchored command; no behavior change.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Integrity hook passes when tasks.md commit hashes are present`
+  - [x] COMMIT: pending until this task's evidence is committed -- `Integrity hook passes when tasks.md commit hashes are present`
 
 - [ ] Scenario: `Integrity hook fails on placeholder commit hash`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
