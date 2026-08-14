@@ -39,7 +39,7 @@ Feature: prose-consolidation
     Then stdout contains "Project-specific E2E policy"
     And stdout does not contain "one E2E evidence scenario per distinct real user action"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy classifies output-affecting flags as variants
     Given a givn project
     When the user runs `givn instructions specs --change prose-consolidation`
