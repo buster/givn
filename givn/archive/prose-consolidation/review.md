@@ -164,4 +164,13 @@ configuration or authoring outcome; no scenario is merged or removed.
 | `Canonical E2E policy is emitted by specs instructions` | `Canonical policy classifies output-affecting flags as variants` | boundary: canonical policy output versus flag-variant rule |
 | `Project override replaces the canonical specs instruction` | `Canonical policy classifies output-affecting flags as variants` | boundary: configuration override versus policy classification |
 
+## Post-Archive Verification
+
+- [x] Archive completed and merged the five scenarios into
+      `givn/specs/prose-consolidation/prose-consolidation.feature`.
+- [x] Permanent target contains no `@wip` tags.
+- [x] Post-merge full suite: 166 scenarios and 939 steps passed.
+- [x] Post-merge E2E suite: 24 scenarios and 144 steps passed.
+- [x] Coverage merge published `5159/8154` lines and `0/0` branches.
+
 REVIEW: PASS
