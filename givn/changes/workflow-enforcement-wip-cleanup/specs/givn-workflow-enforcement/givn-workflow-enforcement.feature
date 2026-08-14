@@ -107,7 +107,7 @@ Feature: givn Workflow Enforcement
     And  the backup directory givn/.archive-backup-integrity-hook-and-archive-gate does not exist
     And  the delta scenarios have been merged into givn/specs/
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive blocked when merged permanent specs fail verify
     Given  a givn project with a completed change configured for archive
     And  the delta spec introduces a scenario that conflicts with an existing permanent scenario
