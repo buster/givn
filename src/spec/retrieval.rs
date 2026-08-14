@@ -80,6 +80,19 @@ pub fn search(root: &Path, query: &str) -> Result<()> {
     }
 }
 
+pub fn review(root: &Path, change_id: &str) -> Result<()> {
+    #[cfg(feature = "spec-retrieval")]
+    {
+        return review_enabled(root, change_id);
+    }
+
+    #[cfg(not(feature = "spec-retrieval"))]
+    {
+        let _ = (root, change_id);
+        Ok(())
+    }
+}
+
 #[cfg(feature = "spec-retrieval")]
 fn index_enabled(root: &Path) -> Result<()> {
     let entries = collect_scenarios(root)?;
@@ -177,8 +190,62 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
+    index_enabled(root)?;
+    let index = read_index(&root.join("givn/.spec-index.json"))?;
+    let delta_root = root.join("givn/changes").join(change_id).join("specs");
+    if !delta_root.exists() {
+        return Ok(());
+    }
+
+    let review_path = root
+        .join("givn/changes")
+        .join(change_id)
+        .join("review.md");
+    let (dispositions, _) = crate::overlap::disposition::parse_review(&review_path);
+    for scenario in collect_scenarios_from(root, &delta_root)? {
+        let query_vector = embed_texts(root, &[scenario.text], EmbeddingRole::Query)?
+            .into_iter()
+            .next()
+            .context("retrieval embedder returned no review vector")?;
+        let mut ranked: Vec<(&IndexEntry, f32)> = index
+            .entries
+            .iter()
+            .map(|entry| (entry, cosine_similarity(&query_vector, &entry.embedding)))
+            .collect();
+        ranked.sort_by(|(left_entry, left_score), (right_entry, right_score)| {
+            right_score
+                .total_cmp(left_score)
+                .then_with(|| left_entry.file.cmp(&right_entry.file))
+                .then_with(|| left_entry.title.cmp(&right_entry.title))
+        });
+        for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
+            if crate::overlap::disposition::disposed(
+                &dispositions,
+                &scenario.title,
+                &entry.title,
+            ) {
+                continue;
+            }
+            println!(
+                "retrieval advisory: '{}' resembles '{}' (rank {}, score {:.4})",
+                scenario.title,
+                entry.title,
+                rank + 1,
+                score
+            );
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn collect_scenarios(root: &Path) -> Result<Vec<ScenarioText>> {
-    let specs_root = root.join("givn/specs");
+    collect_scenarios_from(root, &root.join("givn/specs"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<ScenarioText>> {
     let mut scenarios = Vec::new();
     for path in crate::gherkin::parse::collect_feature_files(&specs_root) {
         let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
