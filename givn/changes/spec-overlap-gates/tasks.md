@@ -155,11 +155,18 @@ reflect true state.
   - [x] REFACTOR: n/a
   - [x] COMMIT: `7e9e768`
 
-- [ ] Scenario: `The default scope excludes the archive tree`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: givn/archive aus Default-Scope.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `The default scope excludes the archive tree`
+  - [x] RED: Archive noch im Scope → Parse-Error (exit 1) statt erwartet 0.
+        ```
+        → 1 scenario (1 failed), 5 steps (4 passed, 1 failed).
+        ```
+  - [x] GREEN: Produktion: Default-Scope filtert givn/archive
+        (src/cli/lint.rs). Permanente Suite bleibt grün (154 passed).
+        ```
+        → 1 scenario (1 passed), 5 steps (5 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `c32c3c4`
 
 - [ ] Scenario: `An explicit archive path still lints its file` — **Charakterisierung** (heute bereits exit 2)
   - [ ] GREEN: Bestätigung, dass explizite Pfade unverändert linten.
