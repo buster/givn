@@ -88,7 +88,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         8 steps (8 passed)
         ```
-  - [x] COMMIT: pending -- `Integrity hook fails on missing step-definition file`
+  - [x] COMMIT: `02737df` -- `Integrity hook fails on missing step-definition file`
 
 - [ ] Scenario: `Integrity hook fails on empty step-definition file`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
