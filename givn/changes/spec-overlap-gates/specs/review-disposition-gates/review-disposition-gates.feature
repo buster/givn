@@ -26,7 +26,7 @@ Feature: review-disposition-gates
     And  stdout contains "net delta"
     And  stdout contains "2 added"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review blocks when a shape match involving the change's delta is undisposed
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
