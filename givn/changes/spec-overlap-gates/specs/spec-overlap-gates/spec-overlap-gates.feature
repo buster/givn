@@ -151,7 +151,7 @@ Feature: spec-overlap-gates
     When  the user runs `givn lint`
     Then  the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Two scenarios with the same shape but different titles produce a warning
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
@@ -176,7 +176,7 @@ Feature: spec-overlap-gates
     Then  the command exits 0
     And  stderr contains "First sighting"
     And  stderr contains "Second sighting"
-    And  stderr contains "merge"
+    And  stderr contains "merging"
 
   @givn.added @wip
   Scenario: The same shape with contradicting facts produces a related-scenario hint
@@ -533,6 +533,6 @@ Feature: spec-overlap-gates
       """
     When  the user runs `givn lint`
     Then  the command exits 0
-    And  stderr contains "merge"
+    And  stderr contains "merging"
     And  stderr contains "Plain steps one"
     And  stderr contains "Plain steps two"

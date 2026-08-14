@@ -113,9 +113,13 @@ reflect true state.
   - [x] REFACTOR: n/a
   - [x] COMMIT: `4a3d50e`
 
-- [ ] Scenario: `A removed delta referencing its target by title is allowed` — **Charakterisierung** (heute bereits exit 0)
-  - [ ] GREEN: Produktion: removed-Paar-Ausnahme.
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `A removed delta referencing its target by title is allowed` — **Charakterisierung** (heute bereits exit 0)
+  - [x] GREEN: removed-Ausnahme (removed-Szenarien aus der Titel-Gruppierung
+        ausgeschlossen) verifiziert.
+        ```
+        → 1 scenario (1 passed), 5 steps (5 passed).
+        ```
+  - [x] COMMIT: `40d1fdc`
 
 - [ ] Scenario: `Two scenarios with the same shape but different titles produce a warning`
   - [ ] RED: `<output>`

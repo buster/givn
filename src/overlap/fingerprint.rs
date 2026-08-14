@@ -99,6 +99,42 @@ fn extract_exit_code(value: &str) -> Option<String> {
     }
 }
 
+/// Mask quoted strings and numbers in a step value.
+pub fn mask(value: &str) -> String {
+    let mut out = String::with_capacity(value.len());
+    let mut chars = value.chars().peekable();
+    while let Some(c) = chars.next() {
+        match c {
+            '"' => {
+                out.push('"');
+                for n in chars.by_ref() {
+                    if n == '"' {
+                        break;
+                    }
+                }
+                out.push_str("*\"");
+            }
+            '\'' => {
+                out.push('\'');
+                for n in chars.by_ref() {
+                    if n == '\'' {
+                        break;
+                    }
+                }
+                out.push_str("*'");
+            }
+            c if c.is_ascii_digit() => {
+                while chars.peek().is_some_and(|n| n.is_ascii_digit()) {
+                    chars.next();
+                }
+                out.push('*');
+            }
+            c => out.push(c),
+        }
+    }
+    out
+}
+
 /// A scenario fingerprint: masked assertion sequence + extracted facts.
 #[derive(Debug, Clone)]
 pub struct Fingerprint {
@@ -118,7 +154,7 @@ impl Fingerprint {
             .collect();
 
         let facts = Facts::extract(&assertion_steps, &scenario.name, &scenario.steps.iter().collect::<Vec<_>>());
-        let assertions = assertion_steps.iter().map(|s| s.value.clone()).collect();
+        let assertions = assertion_steps.iter().map(|s| mask(&s.value)).collect();
         Fingerprint { assertions, facts }
     }
 }
