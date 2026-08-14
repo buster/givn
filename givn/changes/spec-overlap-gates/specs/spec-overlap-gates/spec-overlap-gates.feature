@@ -398,7 +398,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Exit zero"
     And  stderr contains "Exit two"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Scenario outlines sharing a template produce a shape-match warning
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
