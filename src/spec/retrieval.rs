@@ -174,10 +174,10 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
-    index_enabled(root)?;
-    let index = read_index(&spec_index_path(root))?;
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
+    index_enabled(root)?;
+    let index = read_index(&spec_index_path(root))?;
 
     let review_path = change_dir.join("review.md");
     let (dispositions, _) = crate::overlap::disposition::parse_review(&review_path);
