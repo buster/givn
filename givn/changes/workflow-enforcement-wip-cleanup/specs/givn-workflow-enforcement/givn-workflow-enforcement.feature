@@ -144,7 +144,7 @@ Feature: givn Workflow Enforcement
     Then  the command exits non-zero
     And  stderr contains "@wip"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive allowed when @wip only on a @givn.removed placeholder
     Given  a givn project with an archive-ready change whose @wip is only on a @givn.removed scenario
     When  the user runs `givn archive --change wip-removed-change`
