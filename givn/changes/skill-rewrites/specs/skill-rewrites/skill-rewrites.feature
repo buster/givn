@@ -32,7 +32,7 @@ Feature: skill-rewrites
     Then combined instruction output contains "Black-Box-First"
     And combined instruction output contains "which case this test covers"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Spec instructions use deterministic gates before retrieval exists
     Given a givn project
     When the user runs `givn instructions specs --change skill-rewrites`

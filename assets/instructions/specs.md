@@ -64,6 +64,13 @@ spec is incomplete. Variants, error cases, and flag combinations of the same
 user action do not create additional inventory entries or additional `@e2e`
 scenarios. The inventory is exhaustive after this normalization.
 
+## Deterministic overlap gates before retrieval
+
+Until the retrieval change is available, authors use the deterministic gates:
+inspect repository-wide title and shape findings, resolve each review
+disposition, and prefer the real interface before adding internal coverage.
+There is no `givn spec index` or semantic-search step in this guidance yet.
+
 ## Executable-spec invariant
 
 The `.feature` file is the executable specification. The chosen
