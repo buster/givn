@@ -20,6 +20,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-11 | Delta tags use the `@givn.*` namespace. | Clean break from `@openspec.*`. |
 | TC-12 | `givn lint` exit codes: **0** clean, **1** parse error, **2** `@wip`/PENDING. | Static Gherkin check; preserved CI-friendly contract. Distinct from the test runner (`verify.command`). |
 | TC-13 | **Minimum dependency age:** every crate version in `Cargo.lock` (direct *and* transitive) must have been published on crates.io **≥ 30 days** ago. | Avoid brand-new releases that have had no time to surface bugs or supply-chain compromise. See 2.5. |
+| TC-14 | Spec retrieval is an **opt-in Cargo feature**. The default release and musl builds must not require its native ONNX Runtime or model cache. | Preserve TC-2/TC-3/DC-2 while permitting local authoring retrieval with an explicit feature build. |
 
 ## 2.2 Distribution Constraints
 

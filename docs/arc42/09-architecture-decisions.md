@@ -1279,3 +1279,62 @@ absence of legacy policy wording, and project override resolution.
 
 Related decisions: ADR-013 (multi-target emit), ADR-026 (Arc42 artifact),
 ADR-036 (configurable agent targets), and chapter 8.3a.
+
+---
+
+## ADR-039: Local model-backed scenario retrieval
+
+---
+status: accepted
+date: 2026-08-14
+decision-makers: givn maintainers
+---
+
+### Context and Problem Statement
+
+Deterministic fingerprints miss some paraphrases. Authors need related
+scenario suggestions without introducing a network service or making CI depend
+on model availability.
+
+### Decision Drivers
+
+- Keep the single-binary posture and local-first workflow.
+- Make retrieval useful for paraphrases, not only token identity.
+- Keep CI, lint, and archive setup-free and deterministic.
+- Permit incremental refresh as permanent specs change.
+
+### Considered Options
+
+1. No retrieval; rely only on deterministic gates.
+2. Shell out to a Python embedding/index tool.
+3. Use local in-binary embeddings with a persisted content-hash index.
+4. Make the embedding implementation an opt-in Cargo feature.
+
+### Decision Outcome
+
+Choose local in-binary embeddings through an opt-in `fastembed-rs` feature, with
+a cached multilingual E5 model and a JSON index of scenario hashes/vectors.
+Retrieval is advisory and never a gate. The default release build does not
+link the native ONNX Runtime dependency.
+
+### Consequences
+
+- Good, because paraphrase candidates become visible during authoring.
+- Good, because CI and deterministic gates need no model or external service.
+- Bad, because first-use model setup is large and can fail; retrieval reports
+  explicit setup guidance and remains separate from correctness gates.
+- Bad, because the local index must be refreshed when content hashes change.
+- Bad, because the opt-in build adds a native ONNX Runtime dependency and is not
+  automatically a portable musl artifact.
+- Bad, because the dependency tree must satisfy the 30-day age policy before it
+  can be adopted.
+
+### Confirmation
+
+The retrieval feature indexes permanent scenarios, returns a ranked known
+paraphrase candidate, and excludes the current change's own delta.
+
+### More Information
+
+Related decisions: ADR-037 (deterministic overlap fingerprint), ADR-038
+(normative authoring policy), chapters 6.8a and 8.5a, and risks R-18/R-19/R-20.

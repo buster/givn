@@ -3,8 +3,15 @@
 ## 7.1 Artifact
 
 A single statically-linked executable named `givn`, with all defaults
-(manifest, templates, skill templates) embedded. No runtime dependency, no
-companion files required.
+(manifest, templates, skill templates) embedded. The default build has no
+runtime dependency and no companion files required.
+
+Spec retrieval is an opt-in authoring build (`--features spec-retrieval`). It
+adds fastembed's native ONNX Runtime and uses a project-local model cache under
+`givn/`; the first production index may download the configured model. This
+feature build is not claimed as a portable musl release artifact until its
+native link mode is proven. The distributed/default binary remains independent
+of the model cache and preserves the single-binary contract.
 
 ## 7.2 Target environments
 
@@ -55,6 +62,9 @@ runtimes.
 
 Per-project footprint is created by `givn init` (see chapter 8.4 for the layout).
 No global config directory is used (NFR-3: all config in the project `givn/`).
+When retrieval is enabled, `givn/.spec-index.json` and the model cache are
+project-local, generated, and advisory; they are not required by lint or the
+default installation.
 
 ## 7.6 Upgrading an installed project
 

@@ -10,6 +10,11 @@ repository = "https://github.com/TBD/givn"
 
 [lib]
 path = "src/lib.rs"
+
+[features]
+default = []
+spec-retrieval = ["dep:fastembed"]
+
 [dependencies]
 clap = { version = "4.6", features = ["derive"] }
 clap_complete = "4"
@@ -21,6 +26,7 @@ gherkin = "0.16"
 anyhow = "1.0"
 thiserror = "2.0"
 quick-xml = { version = "0.37", features = ["serialize"] }
+fastembed = { version = "=5.17.2", optional = true, default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries-rustls-tls"] }
 
 [dev-dependencies]
 tempfile = "3"
