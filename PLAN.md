@@ -30,7 +30,7 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
 | 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) — **erledigt, archiviert** |
 | 2 | `workflow-enforcement-wip-cleanup` | givn | 1 (Gates aktiv; die permanente Spec muss vor der Prosa-Konsolidierung von Altlasten bereinigt werden) — **erledigt, archiviert** |
 | 3 | `prose-consolidation` | givn | 2 (Regeltext wird nach Gates und WIP-Bereinigung konsolidiert) — **erledigt, archiviert** |
-| 4 | `skill-rewrites` | givn | 3 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
+| 4 | `skill-rewrites` | givn | 3 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) — **erledigt, archiviert** |
 | 5 | `spec-retrieval` | givn | 1 (Fingerprint-Messung belegt Paraphrasen-Durchrutscher; Retrieval wird gebaut) |
 | 6 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 2–5 optional für den Start) |
 
@@ -52,6 +52,10 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
   E2E-/Inventory-Quelle; Skills, Slash-Commands und Templates delegieren an
   `givn instructions specs`. Die Parity-Suite lief mit 166 Non-E2E- und 24
   E2E-Szenarien grün; Projekt-Overrides und Flag-Varianten sind abgedeckt.
+- Change 4 wurde archiviert: Review-/Design-/Steps-Guidance erklärt die
+  deterministischen Gate-Dispositionen und die Black-Box-First-Frage; die
+  Retrieval-Anweisung bleibt bis Change 5 aus. Post-Merge liefen 169
+  Non-E2E- und 25 E2E-Szenarien grün.
 - Change 6 läuft im watn-Repo mit einer bereits konsolidierten givn-Version;
   baumweite Altlasten (F1/F2) werden manuell aufgelöst.
   Rückwärtskompatibilität ist explizit nicht im Scope.
