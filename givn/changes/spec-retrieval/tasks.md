@@ -22,16 +22,18 @@
   spec-retrieval` passed; the targeted scenario passed with five steps.
 - [x] REFACTOR: Re-ran the targeted command after cleanup; one scenario and
   five steps passed with exit 0.
-- Commit: pending until the scenario commit is created.
+- Commit: `81df4f6`.
 
 ## Scenario: Reindex reuses unchanged scenario vectors
 
-- [ ] RED: Remove `@wip` from this scenario, leave new steps pending with
-  `unimplemented!()`, run only this scenario, and record non-zero output.
-- [ ] GREEN: Implement permanent scenario discovery, content hashes, persisted
-  vectors, and unchanged-vector reuse. Run only this scenario and record exit 0.
-- [ ] REFACTOR: Re-run only this scenario after cleanup; record exit 0.
-- Commit: pending.
+- [x] RED: Removed `@wip`; the targeted runner passed setup and failed at the
+  pending rebuild step with `Step panicked. Captured output: not implemented`.
+- [x] GREEN: The index implementation now discovers permanent scenarios,
+  persists content hashes/vectors, and reports reuse. `cargo check
+  --features spec-retrieval` and the targeted scenario passed (four steps).
+- [x] REFACTOR: Re-ran the targeted scenario after cleanup; one scenario and
+  four steps passed with exit 0.
+- Commit: pending until the scenario commit is created.
 
 ## Scenario: Local index reports the permanent scenario inventory
 
