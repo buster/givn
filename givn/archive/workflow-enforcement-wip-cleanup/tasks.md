@@ -384,3 +384,12 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
       rg -n 'contains "@wip"|contains @wip' ...
       # 8 fixture-text matches, exit 0
       ```
+
+## Post-Archive Evidence
+
+- [x] Permanent target has no scenario-level `@wip` tags after the archive
+      correction; fixture assertions still contain the expected literal `@wip`
+      text.
+- [x] Regression test `gherkin::merge::tests::modified_first_scenario_drops_stale_target_tags` passes.
+- [x] `cargo check`, `./run-tests.sh`, and `./run-tests.sh --e2e` pass after
+      the archive correction.
