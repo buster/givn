@@ -137,6 +137,14 @@ a finding. Fix the affected artifact and repeat the comparison; if design.md
 changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
 rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
 
+## Deterministic gate dispositions
+
+Before sign-off, inspect the deterministic overlap findings. Complete the
+**Overlap dispositions** table for every shape match, add a **split-or-keep**
+decision for every long scenario, and explain every removed+added pair as
+supersession or unrelated work. Do not use scores as a substitute for a human
+disposition.
+
 ## Coverage gate (completeness, not percentage)
 
 Classify every uncovered line/branch into exactly one bucket:

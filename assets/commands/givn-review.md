@@ -139,6 +139,12 @@ or implementation and repeat the comparison; if design.md changes, re-run
 design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
 row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
 
+### Deterministic gate dispositions
+
+Complete the **Overlap dispositions** table for every shape match, add a
+**split-or-keep** decision for every long scenario, and explain every
+removed+added pair as supersession or unrelated work before sign-off.
+
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
 Failures: diagnose infrastructure (fix plumbing only) or coverage gap
