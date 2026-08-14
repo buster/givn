@@ -228,7 +228,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         7 steps (7 passed)
         ```
-  - [x] COMMIT: pending -- `Archive re-runs verify against merged permanent specs and passes`
+  - [x] COMMIT: `aa89a3d` -- `Archive re-runs verify against merged permanent specs and passes`
 
 - [ ] Scenario: `Archive blocked when merged permanent specs fail verify`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
