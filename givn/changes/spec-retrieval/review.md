@@ -174,9 +174,9 @@ ARC42 CONFORMANCE: CLEAN
 `./merge-coverages.sh`:
 
 ```text
-lines: 2248 / 8758 = 25.67%
+lines: 2256 / 8766 = 25.74%
 branches: 0 / 0
-retrieval module: 88.69% merged, 84.10% in e2e report
+retrieval module: 88.85% merged, 84.32% in e2e report
 ```
 
 Both reports include the Gherkin runner and the compiled `givn` subprocess.
