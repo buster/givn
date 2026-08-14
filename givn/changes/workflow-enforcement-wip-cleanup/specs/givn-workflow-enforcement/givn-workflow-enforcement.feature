@@ -137,7 +137,7 @@ Feature: givn Workflow Enforcement
     Then  the change's design.md template contains a section named "Internal Primitives"
     And  the section includes a table with columns "Primitive", "Type", and "Purpose"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive blocked when delta spec has non-removed @wip scenario
     Given  a givn project with an archive-ready change whose delta spec contains @wip
     When  the user runs `givn archive --change wip-change`

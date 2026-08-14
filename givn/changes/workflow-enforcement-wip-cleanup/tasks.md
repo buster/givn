@@ -290,20 +290,26 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `1e265be` -- `Design.md template includes Internal Primitives section`
 
-- [ ] Scenario: `Archive blocked when delta spec has non-removed @wip scenario`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Archive blocked when delta spec has non-removed @wip scenario`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Archive blocked when delta spec has non-removed @wip scenario' is tagged @wip
+        givn lint: 1 file(s) checked, 3 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's lifecycle `@wip`; the fixture assertion
+        containing literal `@wip` remains and the active-delta scenario passes.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command; no behavior change.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Archive blocked when delta spec has non-removed @wip scenario`
+  - [x] COMMIT: pending -- `Archive blocked when delta spec has non-removed @wip scenario`
 
 - [ ] Scenario: `Archive allowed when @wip only on a @givn.removed placeholder`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
