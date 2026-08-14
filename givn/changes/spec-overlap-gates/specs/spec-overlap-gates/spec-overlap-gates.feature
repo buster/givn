@@ -274,7 +274,7 @@ Feature: spec-overlap-gates
     When  the user runs `givn lint`
     Then  the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: An explicit archive path still lints its file
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/archive/old/old.feature" with:
