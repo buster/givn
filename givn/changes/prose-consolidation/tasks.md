@@ -47,6 +47,7 @@ complete.
         5 steps (5 passed)
         ```
   - [x] COMMIT: `7187b03` -- `Project override replaces the canonical specs instruction`
+        Follow-up lifecycle-tag cleanup: `809f1fc`.
 
 - [x] Scenario: `Canonical policy classifies output-affecting flags as variants`
   - [x] RED-equivalent: immediate GREEN characterization through existing CLI
