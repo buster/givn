@@ -80,19 +80,29 @@ user/agent → cli::instructions
 ## 6.4 `givn lint [path]`
 
 Static check of `.feature` files. Runs **no** tests (that is the test runner,
-`verify.command` — see 6.9).
+`verify.command` — see 6.9). Default scope is the whole active tree
+(`givn/specs/` + all active change deltas) **excluding `givn/archive/`**;
+explicit paths and `--change` keep their scoped semantics.
 
 ```
 user/CI → cli::lint
-  1. collect target .feature files (path arg or givn/specs + active change)
+  1. collect target .feature files (default: active tree minus archive)
   2. gherkin::parse each:
        - parse error            → record (will exit 1)
        - @wip or PENDING steps  → record (will exit 2)
-  3. report findings
-  4. exit code: 1 if any parse error; else 2 if any wip; else 0 (clean)
+  3. tree-wide overlap scan (default scope only): overlap::analysis
+       - duplicate title (hard error, exit 3) — exemptions: removed
+         placeholders; exactly one modified-delta vs. its permanent target
+         in the same capability
+       - shape match (warning; related_scenario hint when facts contradict)
+       - subset (warning), long scenario > 14 steps (warning)
+  4. report findings (prose on stderr, or `--json` on stdout)
+  5. exit code: 1 if any parse error; else 3 if any duplicate title;
+     else 2 if any wip; else 0 (clean)
 ```
 
-Exit-code precedence: parse error (1) outranks wip (2) outranks clean (0).
+Exit-code precedence: parse error (1) outranks duplicate title (3) outranks
+wip (2) outranks clean (0). Warnings never change the exit code.
 
 ## 6.5 `givn status --change <id>`
 
@@ -127,6 +137,13 @@ user/agent/CI → cli::check
   3. if any hook fails (non-zero) and not allow_failure → exit non-zero (gate fails)
      else → exit 0
 ```
+
+For `givn check review --change <id>` the mandatory review checks run in
+addition (after verify, verify-e2e, and integrity): the **overlap disposition
+gate** — every shape match without fact contradiction involving the change's
+delta needs a disposition row in review.md, every long delta scenario a
+split-or-keep row; the net-delta receipt (added/modified/removed counts) is
+printed on stdout. See 8.8 and ADR-037.
 
 Example: after the agent finishes `tasks`, `givn check tasks` runs the configured
 test suite and confirms GREEN before review. With the sentinel default runner, it

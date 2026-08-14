@@ -375,16 +375,18 @@ reflect true state.
       (plus 1 legit Subset-Warnung: DONE-vs-EOF) — Details in
       evidence-fingerprint.md. Entscheidung: Change 4 wird gebaut.
       ```
-- [ ] Dispositions-Volumen messen: `givn check review --change spec-overlap-gates`
-      ausführen, fehlende Zeilen auflisten, review.md-Dispositionstabelle
-      daraus generieren (jedes shape-match-ohne-Widerspruch-Paar mit ≥1
-      Delta-Mitglied; jedes lange Delta-Szenario).
-- [ ] arc42: arc42.md mit 03/05/06/08/09/11/12 Affected: Yes + echte Edits
-      der Kapitel (MADR in 09, Konsequenzen in 11, Glossar in 12).
+- [x] Dispositions-Volumen messen: gemessen = 98 Paare (Schwellwert 60
+      überschritten → Entscheidung dokumentiert in review.md: maschinell
+      generierte `boundary`-Zeilen, kein Folge-Change). Gate-Ausgabe als
+      Quelle; review.md enthält Tabelle + split-or-keep.
+- [x] arc42: arc42.md (12-Zeilen-Tabelle, 7 Kapitel Affected: Yes) + Edits
+      in docs/arc42/ (03, 05, 06, 08, 09 ADR-037, 11 R-10, 12).
 - [x] @wip-Tags aus allen 29 Szenarien entfernen (nach vollständigem GREEN;
       verbleibende @wip sind Fixture-Interna).
-- [ ] Gesamtsuite: `./run-tests.sh` und `./run-tests.sh --e2e` grün.
-- [ ] `givn check review --change spec-overlap-gates` grün (Dispositionen vollständig).
-- [ ] Review-Artefakt review.md schreiben (Dispositionstabelle, Evidence,
-      Coverage-Review-Klassifikation).
+- [x] Gesamtsuite: non-e2e 135 passed, e2e 19 passed (permanente Specs);
+      Delta-Szenarien in den zielgerichteten Läufen grün.
+- [x] `givn check review --change spec-overlap-gates` grün: verify,
+      verify-e2e, integrity, overlap dispositions, net delta 31 added.
+- [x] review.md geschrieben: Coverage-Review, Dispositionstabelle (98 Zeilen),
+      split-or-keep, Fabrication-Audit.
 - [ ] `givn archive spec-overlap-gates` (nach Review-Grün).
