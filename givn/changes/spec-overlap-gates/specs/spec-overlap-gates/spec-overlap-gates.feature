@@ -512,7 +512,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Permission for admin"
     And  stderr contains "Permission for guest"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The same shape without any extractable facts suggests merging
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
