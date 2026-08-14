@@ -374,5 +374,13 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
       22 scenarios (22 passed)
       127 steps (127 passed)
       ```
-- [ ] Post-archive metadata checks prove no scenario-level `@wip` remains and
-      fixture literals remain unchanged.
+- [x] Post-archive metadata checks preflight the archive result: no
+      scenario-level `@wip` remains in the delta, while the four fixture
+      assertions retain their literal `@wip` text. The same commands are rerun
+      against the permanent target immediately after archive.
+      ```text
+      ! rg -n '^[[:space:]]+@wip[[:space:]]*$' givn/changes/workflow-enforcement-wip-cleanup/specs/givn-workflow-enforcement/givn-workflow-enforcement.feature
+      # no output, exit 0
+      rg -n 'contains "@wip"|contains @wip' ...
+      # 8 fixture-text matches, exit 0
+      ```
