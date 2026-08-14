@@ -59,7 +59,7 @@ retrieval engine are not modified. Existing guidance assertions are reused;
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Design and step instructions require the Black-Box-First decision`
+  - [x] COMMIT: `20423bd` -- `Design and step instructions require the Black-Box-First decision`
 
 - [ ] Scenario: `Spec instructions use deterministic gates before retrieval exists`
   - [ ] RED: remove `@wip`; target with the exact scenario command.
