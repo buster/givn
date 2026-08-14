@@ -73,11 +73,18 @@ reflect true state.
         ```
   - [x] COMMIT: `1a6dc6d`
 
-- [ ] Scenario: `A delta of another active change duplicating a permanent spec title is a hard error`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: wie zuvor (Scan über alle aktiven Changes).
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `A delta of another active change duplicating a permanent spec title is a hard error`
+  - [x] RED/GREEN: Sofort-GREEN per vollständigem Step-Reuse — der Baum-Scan
+        aus dem vorherigen Szenario deckt `givn/changes/*/specs` bereits ab;
+        kein neuer Step, keine Produktionsänderung nötig.
+        ```
+        GIVN_FEATURES=givn/changes/spec-overlap-gates/specs cargo test --test
+        features_runner -- --name "A delta of another active change
+        duplicating a permanent spec title is a hard error"
+        → 1 scenario (1 passed), 7 steps (7 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `89f4b30`
 
 - [ ] Scenario: `Deltas of two active changes sharing a title are a hard error`
   - [ ] RED: `<output>`
