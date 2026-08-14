@@ -258,7 +258,7 @@ fn collect_feature_scenarios(
     output: &mut Vec<ScenarioText>,
 ) {
     for scenario in source {
-        if scenario.tags.iter().any(|tag| tag == "givn.removed") {
+        if !is_queryable_scenario(scenario) {
             continue;
         }
         let mut text = scenario.name.clone();
@@ -278,6 +278,11 @@ fn collect_feature_scenarios(
             text: normalized,
         });
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn is_queryable_scenario(scenario: &gherkin::Scenario) -> bool {
+    !scenario.tags.iter().any(|tag| tag == "givn.removed")
 }
 
 #[cfg(feature = "spec-retrieval")]
