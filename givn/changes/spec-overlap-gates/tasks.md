@@ -86,11 +86,14 @@ reflect true state.
   - [x] REFACTOR: n/a
   - [x] COMMIT: `89f4b30`
 
-- [ ] Scenario: `Deltas of two active changes sharing a title are a hard error`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Titel-Gruppierung über Delta-Dateien hinweg.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Deltas of two active changes sharing a title are a hard error`
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse (Scan über alle aktiven
+        Changes vorhanden).
+        ```
+        → 1 scenario (1 passed), 8 steps (8 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `58a7b39`
 
 - [ ] Scenario: `A modified delta matching its merge target in the same capability is allowed` — **Charakterisierung** (heute bereits exit 0; RED unmöglich; Regression-Guard für die modified-Ausnahme)
   - [ ] GREEN: Schrittdefinitionen schreiben, Produktion: modified-Ausnahme (gleiche Capability).
