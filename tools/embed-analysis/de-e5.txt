@@ -1,0 +1,20 @@
+/home/buster/.paseo/worktrees/008cxm4u/admiring-pony/tools/embed-analysis/analyze.py:296: UserWarning: The model intfloat/multilingual-e5-large now uses mean pooling instead of CLS embedding. In order to preserve the previous behaviour, consider either pinning fastembed version to 0.5.1 or using `add_custom_model` functionality.
+  return TextEmbedding(model, cache_dir=CACHE_DIR)
+
+== German labeled pairs by similarity (model intfloat/multilingual-e5-large) ==
+label      sim    jac  note
+dup     0.9932  0.700  DE F1: identischer Titel, resolver seam vs real binary
+dup     0.9812  0.615  DE F6: empty search subset
+dup     0.9604  0.600  DE F3: missing-config subset
+dup     0.9552  0.429  DE F2: identischer Titel, Paraphrase
+legit   0.9417  0.393  DE transport: normal vs Test-Support override
+legit   0.9390  0.379  DE reasoning: request-body vs stderr channel
+legit   0.9390  0.424  DE credential matrix: literal vs fallback
+legit   0.9334  0.318  DE F7: debug vs release binary
+
+== German separation ==
+dup   sim: min=0.9552 median=0.9812 max=0.9932 n=4
+legit sim: min=0.9334 median=0.9390 max=0.9417 n=4
+overlap band (max legit - min dup): -0.0135  (SEPARATED)
+best threshold sim>=0.9552: 0/8 misclassified
+best threshold jaccard>=0.4286: 0/8 misclassified

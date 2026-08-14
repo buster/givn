@@ -411,7 +411,140 @@ def cmd_query(args):
             run_query("\n".join(buf))
 
 
+# --------------------------------------------------------------------------
+# German evaluation: givn scenarios may be written in German (with English
+# source code), so the model must separate duplicate/variant/boundary pairs
+# in German too. Synthetic labeled pairs, same structure as the EN report.
+# --------------------------------------------------------------------------
+GERMAN_PAIRS = [
+    # duplicates / variants (should be high similarity)
+    ("dup",
+     "Scenario: Ein gespeichertes Literal-Credential hat Vorrang vor dem Environment-Fallback\n"
+     "Given ein Provider ist mit einem gespeicherten Literal-Credential konfiguriert\n"
+     "Given zusätzlich ist ein provider-spezifischer Fallback konfiguriert\n"
+     "When eine Anfrage über watn gesendet wird\n"
+     "Then verwendet die Anfrage das Literal-Credential",
+     "Scenario: Ein gespeichertes Literal-Credential hat Vorrang vor dem Environment-Fallback\n"
+     "Given ein Provider ist mit einem gespeicherten Literal-Credential konfiguriert\n"
+     "When watn die Anfrage ausführt\n"
+     "Then verwendet die Anfrage das Literal-Credential",
+     "DE F1: identischer Titel, resolver seam vs real binary"),
+    ("dup",
+     "Scenario: Das neueste Suchergebnis bleibt sichtbar, wenn ein älteres Ergebnis später eintrifft\n"
+     "Given die Suche nach \"gpt\" ist langsamer als \"o3\"\n"
+     "When \"o3\" als neuestes Ergebnis eintrifft\n"
+     "Then bleibt \"o3\" sichtbar und \"gpt\" ersetzt es nicht",
+     "Scenario: Das neueste Suchergebnis bleibt sichtbar, wenn ein älteres Ergebnis später eintrifft\n"
+     "Given zwei Suchen laufen gleichzeitig\n"
+     "When das neuere Ergebnis vor dem aelteren eintrifft\n"
+     "Then bleibt das neue Ergebnis sichtbar und das alte kann es nicht ersetzen",
+     "DE F2: identischer Titel, Paraphrase"),
+    ("dup",
+     "Scenario: Ein erster Nicht-TTY-Lauf erstellt keine Konfigurationsdatei\n"
+     "Given es existiert keine Konfigurationsdatei\n"
+     "When watn ohne TTY aufgerufen wird\n"
+     "Then wird keine Konfigurationsdatei erstellt und Setup-Hinweise erscheinen",
+     "Scenario: Fehlende Konfigurationsdatei zeigt Setup-Hinweise\n"
+     "Given es existiert keine Konfigurationsdatei\n"
+     "When watn ohne TTY aufgerufen wird\n"
+     "Then erscheinen Setup-Hinweise",
+     "DE F3: missing-config subset"),
+    ("dup",
+     "Scenario: Kein passendes Modell erzeugt einen klaren Leerzustand\n"
+     "Given der Katalog enthält zwei Modelle\n"
+     "When ein nicht vorhandenes Modell gesucht wird\n"
+     "Then wird ein klarer Leerzustand angezeigt",
+     "Scenario: Leeres Filterergebnis erzeugt einen klaren Leerzustand\n"
+     "Given der Katalog enthält zwei Modelle\n"
+     "When nach einem nicht vorhandenen Modell gefiltert wird\n"
+     "Then wird ein klarer Leerzustand angezeigt",
+     "DE F6: empty search subset"),
+    # legitimate boundary pairs (should be separable)
+    ("legit",
+     "Scenario: Der Versions-Flag druckt Logo und Version\n"
+     "When watn mit --version aufgerufen wird\n"
+     "Then druckt watn Logo, Name und eine Versionsnummer",
+     "Scenario: Der Versions-Flag meldet die Paketversion\n"
+     "When das Release-Binary mit --version aufgerufen wird\n"
+     "Then wird die exakte Paketversion gemeldet",
+     "DE F7: debug vs release binary"),
+    ("legit",
+     "Scenario: Normale Debug-Anfragen ignorieren Test-Routing-Einstellungen\n"
+     "Given eine Test-Routing-Ueberschreibung ist konfiguriert\n"
+     "When eine normale Debug-Anfrage gesendet wird\n"
+     "Then ignoriert die Anfrage die Test-Einstellung",
+     "Scenario: Test-Support-Anfragen nutzen isoliertes Routing ohne die Konfiguration zu aendern\n"
+     "Given eine Test-Routing-Ueberschreibung ist konfiguriert\n"
+     "When eine Test-Support-Anfrage gesendet wird\n"
+     "Then nutzt die Anfrage isoliertes Routing und die Konfiguration bleibt unveraendert",
+     "DE transport: normal vs Test-Support override"),
+    ("legit",
+     "Scenario: Thinking-Tier sendet Reasoning, ohne es auszugeben\n"
+     "Given der Thinking-Tier ist gewaehlt\n"
+     "When eine Anfrage gesendet wird\n"
+     "Then enthält die Anfrage Reasoning und es wird nicht gedruckt",
+     "Scenario: Thinking-Tier mit Verbose-Flag gibt Reasoning auf stderr aus\n"
+     "Given der Thinking-Tier ist gewaehlt und der Verbose-Flag gesetzt\n"
+     "When eine Anfrage gesendet wird\n"
+     "Then wird Reasoning auf stderr ausgegeben",
+     "DE reasoning: request-body vs stderr channel"),
+    ("legit",
+     "Scenario: Ein gespeichertes Literal-Credential hat Vorrang vor dem Environment-Fallback\n"
+     "Given ein Provider ist mit einem gespeicherten Literal-Credential konfiguriert\n"
+     "When eine Anfrage gesendet wird\n"
+     "Then verwendet die Anfrage das Literal-Credential",
+     "Scenario: Provider-spezifischer Environment-Fallback geht vor generischem Fallback\n"
+     "Given der Provider hat einen spezifischen Environment-Fallback\n"
+     "Given zusätzlich ist ein generischer Fallback konfiguriert\n"
+     "When eine Anfrage gesendet wird\n"
+     "Then verwendet die Anfrage den provider-spezifischen Fallback",
+     "DE credential matrix: literal vs fallback"),
+]
+
+
+def run_german_eval(args):
+    embedder = load_embedder(args.model)
+    uniq = {}
+    for _label, a, b, _note in GERMAN_PAIRS:
+        uniq[a] = a
+        uniq[b] = b
+    texts = list(uniq.keys())
+    vecs = {}
+    for t, v in zip(texts, embedder.embed(texts)):
+        vecs[t] = np.asarray(v, dtype=np.float32)
+    rows = []
+    for label, a, b, note in GERMAN_PAIRS:
+        sim = cosine(vecs[a], vecs[b])
+        jac = jaccard(a, b)
+        tmatch = 1.0 if a.splitlines()[0] == b.splitlines()[0] else 0.0
+        rows.append((label, a, b, note, sim, jac, tmatch))
+    rows.sort(key=lambda r: -r[4])
+    print(f"\n== German labeled pairs by similarity (model {args.model}) ==")
+    print(f"{'label':6} {'sim':>7} {'jac':>6}  note")
+    for label, a, b, note, sim, jac, tmatch in rows:
+        print(f"{label:6} {sim:7.4f} {jac:6.3f}  {note}")
+
+    dups = [r[4] for r in rows if r[0] == "dup"]
+    legits = [r[4] for r in rows if r[0] == "legit"]
+    print("\n== German separation ==")
+    print(f"dup   sim: min={min(dups):.4f} median={sorted(dups)[len(dups)//2]:.4f} max={max(dups):.4f} n={len(dups)}")
+    print(f"legit sim: min={min(legits):.4f} median={sorted(legits)[len(legits)//2]:.4f} max={max(legits):.4f} n={len(legits)}")
+    print(f"overlap band (max legit - min dup): {max(legits)-min(dups):+.4f}  "
+          f"({'SEPARATED' if max(legits) < min(dups) else 'OVERLAPS'})")
+    best = min((sum(1 for s in dups if s < t) + sum(1 for s in legits if s >= t), t)
+               for t in sorted(set(dups + legits)))
+    jd = [r[5] for r in rows if r[0] == "dup"]
+    jl = [r[5] for r in rows if r[0] == "legit"]
+    jbest = min((sum(1 for s in jd if s < t) + sum(1 for s in jl if s >= t), t)
+                for t in sorted(set(jd + jl)))
+    print(f"best threshold sim>={best[1]:.4f}: {best[0]}/{len(dups)+len(legits)} misclassified")
+    print(f"best threshold jaccard>={jbest[1]:.4f}: {jbest[0]}/{len(dups)+len(legits)} misclassified")
+
+
 def cmd_evaluate(args):
+    if args.german:
+        run_german_eval(args)
+        return
     scenarios, vecs, _, defs = build_index(args.watn, args.model, with_defs=args.with_step_defs)
     keys = {(s["file"], s["title"]): s for s in scenarios}
     vec = {(s["file"], s["title"]): v for s, v in zip(scenarios, vecs)}
@@ -448,7 +581,7 @@ def cmd_evaluate(args):
         ("legit", K("incremental-sse-rendering/incremental-sse-rendering", "Partial network reads are reassembled into complete events"),
                 K("incremental-sse-rendering/incremental-sse-rendering", "Malformed nonessential events do not discard valid content"), "streaming: reassembly vs malformed"),
         ("legit", K("transport/transport", "Normal debug requests ignore test routing settings"),
-                K("transport/transport", "Test-support requests use isolated routing without changing saved configuration"), "transport: normal vs test-support"),
+                K("transport/transport", "Test-support requests use isolated routing without changing saved configuration"), "transport: normal vs Test-Support"),
         ("legit", K("transport/transport", "Missing or whitespace test overrides fall back to the configured provider"),
                 K("transport/transport", "Provider readiness ignores the test routing setting"), "transport: fallback vs readiness"),
         ("legit", K("model-autosuggest/model-autosuggest", "The newest search result stays visible when an older result arrives later"),
@@ -488,9 +621,10 @@ def cmd_evaluate(args):
 
     best = min((sum(1 for s in dups if s < t) + sum(1 for s in legits if s >= t), t)
                for t in sorted(set(dups + legits)))
-    jbest = min((sum(1 for s in dups if s < t) + sum(1 for s in legits if s >= t), t)
-                for t in sorted(set([r[5] for r in rows if r[0] == 'dup'] +
-                                    [r[5] for r in rows if r[0] == 'legit'])))
+    jd = [r[5] for r in rows if r[0] == "dup"]
+    jl = [r[5] for r in rows if r[0] == "legit"]
+    jbest = min((sum(1 for s in jd if s < t) + sum(1 for s in jl if s >= t), t)
+                for t in sorted(set(jd + jl)))
     print(f"best threshold sim>={best[1]:.4f}: {best[0]}/{len(dups)+len(legits)} misclassified")
     print(f"best threshold jaccard>={jbest[1]:.4f}: {jbest[0]}/{len(dups)+len(legits)} misclassified")
     print(f"exact-title match catches {sum(1 for r in rows if r[0]=='dup' and r[6]==1.0)}/{len(dups)} dup pairs")
@@ -604,13 +738,15 @@ def main():
     p.set_defaults(fn=cmd_query)
 
     p = sub.add_parser("evaluate", help="labeled-pairs + hold-one-out retrieval experiment")
-    p.add_argument("--watn", required=True)
+    p.add_argument("--watn", help="watn checkout (not needed with --german)")
     p.add_argument("--model", default=DEFAULT_MODEL)
     p.add_argument("--topn", type=int, default=25)
     p.add_argument("--with-step-defs", action="store_true",
                    help="embed step-definition bodies in the index side of the comparison")
     p.add_argument("--diff-threshold", type=float, default=0.9,
                    help="similarity marking the near-duplicate / must-differentiate zone")
+    p.add_argument("--german", action="store_true",
+                   help="evaluate on the synthetic German labeled set instead of the watn corpus")
     p.set_defaults(fn=cmd_evaluate)
 
     args = ap.parse_args()

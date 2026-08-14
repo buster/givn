@@ -1,0 +1,18 @@
+
+== German labeled pairs by similarity (model BAAI/bge-base-en-v1.5) ==
+label      sim    jac  note
+dup     0.9941  0.700  DE F1: identischer Titel, resolver seam vs real binary
+dup     0.9483  0.600  DE F3: missing-config subset
+dup     0.9220  0.615  DE F6: empty search subset
+dup     0.9199  0.429  DE F2: identischer Titel, Paraphrase
+legit   0.9089  0.379  DE reasoning: request-body vs stderr channel
+legit   0.8969  0.424  DE credential matrix: literal vs fallback
+legit   0.8847  0.393  DE transport: normal vs Test-Support override
+legit   0.8386  0.318  DE F7: debug vs release binary
+
+== German separation ==
+dup   sim: min=0.9199 median=0.9483 max=0.9941 n=4
+legit sim: min=0.8386 median=0.8969 max=0.9089 n=4
+overlap band (max legit - min dup): -0.0110  (SEPARATED)
+best threshold sim>=0.9199: 0/8 misclassified
+best threshold jaccard>=0.4286: 0/8 misclassified

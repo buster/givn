@@ -92,12 +92,53 @@ uv run python analyze.py evaluate --watn /home/buster/projects/watn
 uv run python analyze.py evaluate --watn /home/buster/projects/watn --with-step-defs   # index side carries step-def bodies
 ```
 
+### evaluate --german
+
+givn scenarios may be written in German (with English source code), so the model
+must also separate duplicate/variant/boundary pairs in German. The German mode
+runs the same labeled experiment on a small synthetic German set (real umlauts,
+English technical vocabulary), no corpus needed:
+
+```sh
+uv run python analyze.py evaluate --german --model intfloat/multilingual-e5-large
+```
+
 ## Model
 
 Default `BAAI/bge-base-en-v1.5` (768-dim, ~0.21 GB ONNX, CPU). The corpus is
 small (223 scenarios) so a larger embedding is affordable. Swap via `--model`
 with any fastembed-supported model (e.g.
 `sentence-transformers/all-MiniLM-L6-v2` for a lighter baseline).
+
+**Recommendation: `intfloat/multilingual-e5-large`** (1024-dim). givn scenarios
+are not English-only — German Gherkin with English source code is a stated
+requirement — so the model must separate duplicates in both languages. e5-large
+is the best on the English corpus and the best on the German set (see Model
+comparison). It is slower than the 768-dim models, which matters only for the
+interactive query path.
+
+### Model comparison (2026-08-14)
+
+Full outputs in `results-*.txt` (English corpus) and `de-*.txt` (German set).
+
+| Model | EN best-threshold errors | EN dup/legit hit@1 | DE best-threshold errors | DE band |
+|---|---|---|---|---|
+| BAAI/bge-base-en-v1.5 | 4/18 | 6/8 / 5/10 | 0/8 | −0.011 |
+| jinaai/jina-embeddings-v2-base-de | 3/18 | 6/8 / 5/10 | 1/8 | +0.006 |
+| sentence-transformers/paraphrase-multilingual-mpnet-base-v2 | 3/18 | 6/8 / 6/10 | 1/8 | +0.094 |
+| intfloat/multilingual-e5-large | **2/18** | 6/8 / **4/10** | **0/8** | **−0.014** |
+
+Notes:
+
+- The watn corpus is entirely English (0 files with umlauts, no German words),
+  so the multilingual models gain nothing there; e5-large still wins.
+- On the synthetic German set even the English-only bge model separates
+  perfectly, because the scenarios are saturated with English technical terms.
+  The "German-native" jina-de and mpnet models actually *miss* the harder
+  German duplicate cases (subset / paraphrase), while e5-large and bge do not.
+- E5 models expect a `query:` / `passage:` prompt prefix; fastembed may not add
+  it automatically, so an explicit prefix in the query path could improve e5
+  further.
 
 ## Step definitions (`--with-step-defs`)
 

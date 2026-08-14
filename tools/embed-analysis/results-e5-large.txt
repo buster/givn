@@ -1,0 +1,137 @@
+/home/buster/.paseo/worktrees/008cxm4u/admiring-pony/tools/embed-analysis/analyze.py:296: UserWarning: The model intfloat/multilingual-e5-large now uses mean pooling instead of CLS embedding. In order to preserve the previous behaviour, consider either pinning fastembed version to 0.5.1 or using `add_custom_model` functionality.
+  return TextEmbedding(model, cache_dir=CACHE_DIR)
+parsed 223 active scenarios under /home/buster/projects/watn/givn/specs
+
+== labeled pairs by embedding similarity ==
+label      sim    jac  title  note
+dup     0.9895  0.848      1  F1 identical title
+dup     0.9802  0.815      0  F5 failed/empty output duplicate
+dup     0.9793  0.639      0  F4 bash widget subset
+dup     0.9786  0.708      0  F6 empty search subset
+dup     0.9707  0.512      1  F2 identical title
+dup     0.9679  0.593      0  F3 missing-config subset
+legit   0.9676  0.638      0  transport: normal vs test-support
+legit   0.9570  0.500      0  credential matrix: fallback vs missing
+legit   0.9544  0.743      0  credential matrix: literal vs fallback
+legit   0.9530  0.533      0  reasoning: request vs stderr channel
+legit   0.9503  0.500      0  F7 debug vs release binary
+legit   0.9460  0.481      0  F10 unified vs streamlined flow
+legit   0.9293  0.213      0  stale-result: regular vs PTY
+legit   0.9261  0.583      0  streaming: reassembly vs malformed
+legit   0.9180  0.146      0  streaming: DONE vs EOF
+legit   0.9001  0.313      0  transport: fallback vs readiness
+dup     0.8928  0.205      0  F12 unknown-reasoning duplicate
+dup     0.8925  0.189      0  F12 persisted-reasoning duplicate
+
+== separation ==
+dup   sim: min=0.8925 median=0.9786 max=0.9895 n=8
+legit sim: min=0.9001 median=0.9503 max=0.9676 n=10
+overlap band (max legit - min dup): +0.0751  (OVERLAPS)
+best threshold sim>=0.9679: 2/18 misclassified
+best threshold jaccard>=0.5926: 5/18 misclassified
+exact-title match catches 2/8 dup pairs
+
+== near-duplicate zone (sim >= 0.9) ==
+   each pair must be classified: MERGE (duplicate / variant -> Examples row,
+   parameter, or delete) or KEEP-AS-BOUNDARY (different production boundary ->
+   rename so the wording looks different enough).
+   dup     0.9895  F1 identical title
+   dup     0.9802  F5 failed/empty output duplicate
+   dup     0.9793  F4 bash widget subset
+   dup     0.9786  F6 empty search subset
+   dup     0.9707  F2 identical title
+   dup     0.9679  F3 missing-config subset
+   legit   0.9676  transport: normal vs test-support
+   legit   0.9570  credential matrix: fallback vs missing
+   legit   0.9544  credential matrix: literal vs fallback
+   legit   0.9530  reasoning: request vs stderr channel
+   legit   0.9503  F7 debug vs release binary
+   legit   0.9460  F10 unified vs streamlined flow
+   legit   0.9293  stale-result: regular vs PTY
+   legit   0.9261  streaming: reassembly vs malformed
+   legit   0.9180  streaming: DONE vs EOF
+   legit   0.9001  transport: fallback vs readiness
+   10/10 legit boundary pairs fall in the near-duplicate zone -> KEEP-AS-BOUNDARY candidates that must be reworded to look distinct
+
+== retrieval (hold-one-out): a new scenario vs all other active ==
+label  best marg>0  note
+dup       1   True  F1 identical title
+dup       1   True  F5 failed/empty output duplicate
+dup       1   True  F4 bash widget subset
+dup       1   True  F6 empty search subset
+dup       1   True  F2 identical title
+dup       1   True  F3 missing-config subset
+legit     1   True  transport: normal vs test-support
+legit     1   True  credential matrix: fallback vs missing
+legit     1   True  F7 debug vs release binary
+legit     1   True  stale-result: regular vs PTY
+legit     2  False  credential matrix: literal vs fallback
+legit     2  False  reasoning: request vs stderr channel
+legit     2  False  F10 unified vs streamlined flow
+legit     2  False  streaming: reassembly vs malformed
+legit     3  False  streaming: DONE vs EOF
+legit     3  False  transport: fallback vs readiness
+dup       5  False  F12 unknown-reasoning duplicate
+dup       5  False  F12 persisted-reasoning duplicate
+
+-- hit@k: partner surfaces among the top-k nearest neighbors --
+  dup    n= 8 hit@1= 6 hit@3= 6 hit@5= 8 partner-nearest-with-margin= 6
+  legit  n=10 hit@1= 4 hit@3=10 hit@5=10 partner-nearest-with-margin= 4
+
+  miss: query "Existing unknown reasoning remains active after rerunning setup" (streamlined-setup/streamlined-setup.feature:374)
+    partner rank=5 sim=0.8928; closest other = "Free-form reasoning survives persistence and request construction" sim=0.9253
+
+  miss: query "Free-form reasoning survives persistence and request construction" (streamlined-setup/streamlined-setup.feature:366)
+    partner rank=5 sim=0.8925; closest other = "Existing unknown reasoning remains active after rerunning setup" sim=0.9253
+
+== top 25 most similar pairs (sim>=0.85) ==
+ 0.9895 DUP   provider-setup/provider-setup.feature:187 :: credential-sources/credential-sources.feature:17
+         "A literal saved credential is authoritative over environment fallback" <-> "A literal saved credential is authoritative over environment fallback"
+ 0.9826       highlight-active-setup-input/highlight-active-setup-input.feature:25 :: highlight-active-setup-input/highlight-active-setup-input.feature:39
+         "The green border follows model focus" <-> "The green border follows optional shortcut focus"
+ 0.9808       shell-completions/shell-completions.feature:3 :: shell-completions/shell-completions.feature:128
+         "Bash completion exposes the authoritative command tree" <-> "PowerShell completion exposes the authoritative command tree"
+ 0.9804       shell-completions/shell-completions.feature:3 :: shell-completions/shell-completions.feature:41
+         "Bash completion exposes the authoritative command tree" <-> "Zsh completion exposes the authoritative command tree"
+ 0.9802 DUP   interactive-shell-shortcut/interactive-shell-shortcut.feature:131 :: interactive-shell-shortcut/interactive-shell-shortcut.feature:188
+         "Failed or empty output preserves the original command line" <-> "Failed or empty generation preserves the original buffer"
+ 0.9793 DUP   interactive-shell-shortcut/interactive-shell-shortcut.feature:13 :: interactive-shell-shortcut/interactive-shell-shortcut.feature:204
+         "The generated Bash widget runs through Bash without evaluating its result" <-> "The generated Bash widget keeps the request visible and does not evaluate the command"
+ 0.9786 DUP   model-autosuggest/model-autosuggest.feature:23 :: ratatui-model-picker/ratatui-model-picker.feature:59
+         "No matching model produces a clear empty state" <-> "Empty filter result produces a clear empty state"
+ 0.9781       provider-setup/provider-setup.feature:131 :: streamlined-setup/streamlined-setup.feature:89
+         "Rerunning provider setup preserves unrelated configuration" <-> "Provider setup preserves unrelated settings"
+ 0.9768       shell-completions/shell-completions.feature:41 :: shell-completions/shell-completions.feature:128
+         "Zsh completion exposes the authoritative command tree" <-> "PowerShell completion exposes the authoritative command tree"
+ 0.9766       ask/ask.feature:39 :: ask/ask.feature:46
+         "Execute flag prompts for confirmation" <-> "Execute flag with explicit "y" confirmation"
+ 0.9707 DUP   model-autosuggest/model-autosuggest.feature:28 :: search-concurrency/search-concurrency.feature:3
+         "The newest search result stays visible when an older result arrives later" <-> "The newest search result stays visible when an older result arrives later"
+ 0.9707       shell-completions/shell-completions.feature:3 :: shell-completions/shell-completions.feature:99
+         "Bash completion exposes the authoritative command tree" <-> "Elvish completion exposes the authoritative command tree"
+ 0.9702       shell-completions/shell-completions.feature:3 :: shell-completions/shell-completions.feature:70
+         "Bash completion exposes the authoritative command tree" <-> "Fish completion exposes the authoritative command tree"
+ 0.9701       reasoning/reasoning.feature:23 :: reasoning/reasoning.feature:33
+         "Verbose flag with small tier prints reasoning if present" <-> "Small tier without verbose flag does not print reasoning"
+ 0.9692       transport/transport.feature:4 :: transport/transport.feature:31
+         "Normal debug requests ignore test routing settings" <-> "Missing or whitespace test overrides fall back to the configured provider"
+ 0.9679 DUP   config/config.feature:45 :: auto-init-config/auto-init-config.feature:3
+         "Missing config file prints provider setup guidance" <-> "First non-TTY run does not create a config file"
+ 0.9676 LEGIT transport/transport.feature:4 :: transport/transport.feature:17
+         "Normal debug requests ignore test routing settings" <-> "Test-support requests use isolated routing without changing saved configuration"
+ 0.9675       shell-completions/shell-completions.feature:41 :: shell-completions/shell-completions.feature:99
+         "Zsh completion exposes the authoritative command tree" <-> "Elvish completion exposes the authoritative command tree"
+ 0.9661       shell-completions/shell-completions.feature:70 :: shell-completions/shell-completions.feature:128
+         "Fish completion exposes the authoritative command tree" <-> "PowerShell completion exposes the authoritative command tree"
+ 0.9660       interactive-shell-shortcut/interactive-shell-shortcut.feature:111 :: interactive-shell-shortcut/interactive-shell-shortcut.feature:169
+         "A successful widget inserts one normalized command and moves the cursor to its end" <-> "A successful generation keeps the original request visible as a comment"
+ 0.9650       shell-completions/shell-completions.feature:41 :: shell-completions/shell-completions.feature:70
+         "Zsh completion exposes the authoritative command tree" <-> "Fish completion exposes the authoritative command tree"
+ 0.9640       reasoning/reasoning.feature:13 :: reasoning/reasoning.feature:57
+         "Thinking tier with verbose flag prints reasoning to stderr" <-> "Thinking tier with verbose and execute flags"
+ 0.9639       provider-setup/provider-setup.feature:141 :: provider-setup/provider-setup.feature:149
+         "Escape cancellation preserves the existing provider configuration" <-> "Ctrl-C cancellation preserves the existing provider configuration"
+ 0.9633       shell-completions/shell-completions.feature:99 :: shell-completions/shell-completions.feature:128
+         "Elvish completion exposes the authoritative command tree" <-> "PowerShell completion exposes the authoritative command tree"
+ 0.9631       ask/ask.feature:83 :: providers/providers.feature:39
+         "Non-zero exit code on API authentication failure" <-> "Missing API key produces error"
