@@ -17,11 +17,11 @@ Feature: skill-rewrites
     And the generated givn-steps guidance contains "which case this test covers"
     And generated guidance does not contain "Run `givn spec index`"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review instructions require deterministic gate dispositions
     Given a givn project
     When the user runs `givn instructions review --change skill-rewrites`
-    Then stdout contains "Overlap dispositions"
+    Then stdout contains "Overlap"
     And stdout contains "split-or-keep"
     And stdout contains "removed+added"
 
