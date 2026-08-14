@@ -1,6 +1,7 @@
 # User Interaction Inventory:
 # - Run `givn spec index` to build a local search index over permanent scenarios
 # - Run `givn spec search` to find semantically related existing scenarios
+# - Run `givn spec review --change` to surface advisory candidates for a delta
 
 @givn.delta @spec-retrieval
 
@@ -28,6 +29,14 @@ Feature: spec-retrieval
     And the local spec index has been built
     When the user searches for "running change only"
     Then stdout does not contain "Running change only"
+
+  @givn.added @e2e
+  Scenario: Review reports an advisory retrieval candidate
+    Given a givn project with permanent scenarios for retrieval
+    And an active change delta contains a scenario named "Running change only"
+    When the user runs `givn spec review --change running-change`
+    Then stdout contains "retrieval advisory"
+    And the command exits 0
 
   @givn.added
   Scenario: Reindex reuses unchanged scenario vectors

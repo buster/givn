@@ -110,6 +110,9 @@ fn run_mandatory_checks(
             println!("  ✓ integrity passed");
             if let Some(id) = change {
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
+                if let Err(error) = crate::spec::retrieval::review(project_root, id) {
+                    println!("retrieval advisory setup unavailable: {error:#}");
+                }
             }
         }
         _ => {}
