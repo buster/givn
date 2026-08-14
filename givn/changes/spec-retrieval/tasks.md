@@ -58,18 +58,19 @@
   targeted e2e scenario passed five steps with the real subprocess.
 - [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
   and five steps passed with exit 0.
-- Commit: pending until the scenario commit is created.
+- Commit: `e536efe`.
 
 ## Scenario: Search does not return the running change's own delta
 
-- [ ] RED: Remove `@wip` from this scenario, leave new steps pending with
-  `unimplemented!()`, run the e2e runner for only this scenario, and record
-  non-zero output.
-- [ ] GREEN: Verify the index scope excludes active deltas and the real search
-  subprocess does not print the running change title. Run only this e2e scenario
-  and record exit 0.
-- [ ] REFACTOR: Re-run only this e2e scenario after cleanup; record exit 0.
-- Commit: pending.
+- [x] RED: Added the immutable `@e2e` tag and removed `@wip`; the targeted
+  e2e runner failed at the pending active-delta fixture step with
+  `Step panicked. Captured output: not implemented`.
+- [x] GREEN: The permanent-only index scope excludes the active delta, and
+  the real search subprocess did not print `Running change only`. The targeted
+  e2e scenario passed five steps with exit 0.
+- [x] REFACTOR: Re-ran the targeted e2e scenario after cleanup; one scenario
+  and five steps passed with exit 0.
+- Commit: pending until the scenario commit is created.
 
 ## E2E gate proof
 
