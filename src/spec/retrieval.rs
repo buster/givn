@@ -176,7 +176,7 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     index_enabled(root)?;
     let index = read_index(&spec_index_path(root))?;
-    let change_dir = crate::state::resolve_change_dir(root, change_id)?;
+    let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
 
     let review_path = change_dir.join("review.md");
@@ -289,6 +289,15 @@ fn delta_specs_path(change_dir: &Path, change_id: &str) -> Result<std::path::Pat
         );
     }
     Ok(path)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn validated_review_change_dir(root: &Path, change_id: &str) -> Result<std::path::PathBuf> {
+    crate::state::resolve_change_dir(root, change_id).with_context(|| {
+        format!(
+            "review change id `{change_id}` must be a kebab-case identifier"
+        )
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]
