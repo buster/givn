@@ -103,11 +103,15 @@ reflect true state.
         ```
   - [x] COMMIT: `a79ddc4`
 
-- [ ] Scenario: `A modified delta whose title exists in a different capability is a hard error`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Capability-Vergleich der modified-Paare.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `A modified delta whose title exists in a different capability is a hard error`
+  - [x] RED/GREEN: Sofort-GREEN per Step-Reuse (Capability-Vergleich der
+        modified-Ausnahme bereits implementiert — ungleiche Capability →
+        kein Exempt → Duplikat-Error).
+        ```
+        → 1 scenario (1 passed), 6 steps (6 passed).
+        ```
+  - [x] REFACTOR: n/a
+  - [x] COMMIT: `4a3d50e`
 
 - [ ] Scenario: `A removed delta referencing its target by title is allowed` — **Charakterisierung** (heute bereits exit 0)
   - [ ] GREEN: Produktion: removed-Paar-Ausnahme.
