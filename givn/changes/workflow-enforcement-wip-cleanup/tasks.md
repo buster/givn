@@ -250,20 +250,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `f7e3dbc` -- `Archive blocked when merged permanent specs fail verify`
 
-- [ ] Scenario: `New-capability merge failure produces clear recovery instructions`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `New-capability merge failure produces clear recovery instructions`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'New-capability merge failure produces clear recovery instructions' is tagged @wip
+        givn lint: 1 file(s) checked, 5 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `New-capability merge failure produces clear recovery instructions`
+  - [x] COMMIT: pending -- `New-capability merge failure produces clear recovery instructions`
 
 - [ ] Scenario: `Design.md template includes Internal Primitives section`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
