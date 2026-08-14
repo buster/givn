@@ -55,7 +55,7 @@ Feature: givn Workflow Enforcement
     Then  the command exits non-zero
     And  stderr contains "must use a markdown table"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook passes when arc42 is disabled
     Given  a givn project with arc42 addon disabled
     And  a change that has passed design-review

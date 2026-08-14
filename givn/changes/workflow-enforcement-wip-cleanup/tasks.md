@@ -130,20 +130,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `5e6b8a3` -- `Integrity hook fails on Step Definitions section that is not a table`
 
-- [ ] Scenario: `Integrity hook passes when arc42 is disabled`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Integrity hook passes when arc42 is disabled`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Integrity hook passes when arc42 is disabled' is tagged @wip
+        givn lint: 1 file(s) checked, 11 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Integrity hook passes when arc42 is disabled`
+  - [x] COMMIT: pending -- `Integrity hook passes when arc42 is disabled`
 
 - [ ] Scenario: `Integrity hook fails on unedited arc42 chapter`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
