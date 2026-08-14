@@ -162,3 +162,5 @@ statt pro Paar) ist als Verbesserung für einen späteren Change vermerkt.
   `{}`/bare-return-Stubs.
 - Alle 29 Szenarien haben eigene Commits (tasks.md, per Szenario).
 - Belegte Runner-Ausgaben je Szenario in tasks.md aufgezeichnet.
+
+REVIEW: PASS
