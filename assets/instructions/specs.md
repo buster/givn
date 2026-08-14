@@ -32,6 +32,10 @@ Feature: My Capability
 
 ## User Interaction Inventory (mandatory, before writing any scenario)
 
+This section is the canonical E2E and interaction-inventory policy. Other
+artifact instructions, skills, and slash commands reference it and must not
+define competing wording.
+
 Enumerate every interaction a consumer performs against the system's black-box
 boundary — before writing any scenario text. An interaction is a discrete
 action that triggers an observable state change through the real interface.
@@ -40,7 +44,7 @@ What counts as "the real interface" depends on the system type:
 | System type | Real interface | Inventory must include |
 |---|---|---|
 | **Web UI** | Rendered browser (via Playwright, Selenium) | Every button click, form submission, navigation link, SSE/WebSocket event that changes visible content. |
-| **CLI / terminal** | Real subprocess invocation | Every subcommand, every flag combination that produces different output. |
+| **CLI / terminal** | Real subprocess invocation | Every distinct user action; output-affecting flags are recorded as variants unless they change the action or side effect. |
 | **HTTP/REST API** | Real HTTP client against the deployed server | Every endpoint, every side-effect-permitting operation. |
 | **Library / SDK** | Public API surface called from real consumer code | Every public function or method a consumer invokes. |
 | **Message/event bus** | Real producer/consumer against running services | Every message type consumed, every side-effect-producing message published. |
@@ -54,11 +58,11 @@ file, before the Feature header. One entry per interaction:
 # - <action description>
 ```
 
-Each inventory entry MUST have at least one matching `@e2e` scenario in the
-same `.feature` file. If an inventory entry has no corresponding `@e2e`
-scenario, the spec is incomplete — fill the gap before moving to design.
-The inventory is the exhaustive list; there is no second-class interaction
-that can skip e2e coverage.
+Each normalized inventory entry MUST have exactly one matching `@e2e` scenario
+in the same `.feature` file. If an entry has no corresponding scenario, the
+spec is incomplete. Variants, error cases, and flag combinations of the same
+user action do not create additional inventory entries or additional `@e2e`
+scenarios. The inventory is exhaustive after this normalization.
 
 ## Executable-spec invariant
 
@@ -91,21 +95,15 @@ run via `verify.e2e_command` (configured in `givn/config.yaml`), not
 - It covers the critical happy path: "can a consumer actually do the thing
   through the real interface?"
 
-**Scope: one `@e2e` scenario per User Interaction Inventory entry — not one
-per variant, not one total.** Every entry in the inventory must have exactly
-one matching `@e2e` scenario that exercises that interaction through the
-real interface. A capability gets one `@e2e` scenario for each distinct
-interaction a consumer performs end-to-end (e.g. "submit registration form,"
-"click 'Add' button," "delete an item"). It does NOT get an additional `@e2e`
-scenario for every input variant, error case, validation rule, or enum/
-dropdown value of the same interaction — those belong as regular (non-`@e2e`)
-scenarios, which are cheaper to run and already prove the logic without
-paying for a real browser/CLI/API round trip each time. Before adding a
-second `@e2e` scenario for the same inventory entry, ask: "is this a
-genuinely different interaction, or a variant of one already covered?" If
-it is a variant, it is not a separate `@e2e` scenario. Under-covering (an
-inventory entry with zero `@e2e` scenarios) and over-covering (one per input
-variant) are both defects — the target is exactly one per inventory entry.
+**Canonical scope: one E2E evidence scenario per distinct real user action.**
+Each normalized inventory entry has exactly one matching `@e2e` scenario that
+exercises that action through the real interface. A capability gets one
+`@e2e` scenario for each distinct action a consumer performs end-to-end (for
+example, submitting a registration form, clicking Add, or deleting an item).
+Input variants, error cases, validation rules, enum values, and output-affecting
+flag combinations of the same action are regular scenarios. Before adding a
+second `@e2e` scenario, ask whether it is a genuinely different action or only
+a variant. Under-covering and over-covering are both defects.
 
 **What an `@e2e` scenario is NOT:**
 - Not a unit test wrapped in Gherkin.
