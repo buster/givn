@@ -168,15 +168,7 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 
     let ranked = rank_entries(&index.entries, &query_vector);
 
-    for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
-        println!(
-            "rank {}: {} ({}, score {:.4})",
-            rank + 1,
-            entry.title,
-            entry.file,
-            score
-        );
-    }
+    print_search_results(&ranked);
     Ok(())
 }
 
@@ -418,4 +410,17 @@ fn rank_entries<'a>(entries: &'a [IndexEntry], query: &[f32]) -> Vec<(&'a IndexE
             .then_with(|| left_entry.title.cmp(&right_entry.title))
     });
     ranked
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn print_search_results(ranked: &[(&IndexEntry, f32)]) {
+    for (rank, (entry, score)) in ranked.iter().take(5).enumerate() {
+        println!(
+            "rank {}: {} ({}, score {:.4})",
+            rank + 1,
+            entry.title,
+            entry.file,
+            score
+        );
+    }
 }
