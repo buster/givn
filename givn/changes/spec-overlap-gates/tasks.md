@@ -168,9 +168,13 @@ reflect true state.
   - [x] REFACTOR: n/a
   - [x] COMMIT: `c32c3c4`
 
-- [ ] Scenario: `An explicit archive path still lints its file` — **Charakterisierung** (heute bereits exit 2)
-  - [ ] GREEN: Bestätigung, dass explizite Pfade unverändert linten.
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `An explicit archive path still lints its file` — **Charakterisierung** (heute bereits exit 2)
+  - [x] GREEN: Explizite Pfade unverändert — Archiv-Datei lintet gezielt
+        weiter (exit 2, @wip gemeldet).
+        ```
+        → 1 scenario (1 passed), 5 steps (5 passed).
+        ```
+  - [x] COMMIT: `ba1ad33`
 
 - [ ] Scenario: `The json output reports a parse error as a machine-readable finding`
   - [ ] RED: `<output>`
