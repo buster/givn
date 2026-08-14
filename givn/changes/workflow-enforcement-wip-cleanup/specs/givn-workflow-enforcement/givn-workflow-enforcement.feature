@@ -121,7 +121,7 @@ Feature: givn Workflow Enforcement
     And  the backup directory givn/.archive-backup-integrity-hook-and-archive-gate exists with the pre-merge permanent specs
     And  the merged permanent spec has been rolled back to its pre-archive state
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: New-capability merge failure produces clear recovery instructions
     Given  a givn project with a completed change that introduces a brand-new capability
     And  verify.command exits non-zero on the merged permanent spec
