@@ -6,10 +6,6 @@ use anyhow::{Result, bail};
 use anyhow::Context;
 
 #[cfg(feature = "spec-retrieval")]
-use std::collections::hash_map::DefaultHasher;
-#[cfg(feature = "spec-retrieval")]
-use std::hash::{Hash, Hasher};
-#[cfg(feature = "spec-retrieval")]
 use std::fs;
 
 #[cfg(feature = "spec-retrieval")]
@@ -325,9 +321,7 @@ fn write_index(path: &Path, index: &SpecIndex) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn content_hash(text: &str) -> String {
-    let mut hasher = DefaultHasher::new();
-    text.hash(&mut hasher);
-    format!("{:016x}", hasher.finish())
+    format!("{:016x}", stable_hash(text.as_bytes()))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -372,9 +366,7 @@ fn stub_embedding(text: &str, role: EmbeddingRole) -> Vec<f32> {
         .filter(|token| !token.is_empty())
         .map(str::to_lowercase)
     {
-        let mut hasher = DefaultHasher::new();
-        token.hash(&mut hasher);
-        let index = (hasher.finish() as usize) % DIMENSIONS;
+        let index = (stable_hash(token.as_bytes()) as usize) % DIMENSIONS;
         vector[index] += 1.0;
     }
     normalize(vector)
@@ -420,6 +412,16 @@ fn cosine_similarity(left: &[f32], right: &[f32]) -> f32 {
         .zip(right)
         .map(|(a, b)| a * b)
         .sum::<f32>()
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn stable_hash(bytes: &[u8]) -> u64 {
+    let mut hash = 0xcbf29ce484222325u64;
+    for byte in bytes {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    hash
 }
 
 #[cfg(feature = "spec-retrieval")]
