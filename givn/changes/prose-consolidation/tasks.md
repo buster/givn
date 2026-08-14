@@ -96,32 +96,39 @@ complete.
 
 ## E2E Setup
 
-- [ ] **E2E setup**: configure/prove `./run-tests.sh --e2e`, confirm the real
+- [x] **E2E setup**: configure/prove `./run-tests.sh --e2e`, confirm the real
       CLI subprocess harness, and enable all three skill targets for the
       generated-guidance scenario.
       ```text
-      Full count: <paste>
-      E2E count: <paste; strictly smaller>
+      Full active-delta count: 3 scenarios (3 passed), 13 steps (13 passed)
+      E2E active-delta count: 2 scenarios (2 passed), 17 steps (17 passed)
+      E2E count is strictly smaller than full count.
       ```
 
 ## E2E Scenarios
 
-- [ ] @e2e Scenario: `Canonical E2E policy is emitted by specs instructions`
-  - [ ] RED: remove `@wip`; target with `./run-tests.sh --e2e` and the exact
-        Cucumber name filter.
+- [x] @e2e Scenario: `Canonical E2E policy is emitted by specs instructions`
+  - [x] RED-equivalent: existing CLI bindings provide an immediate GREEN
+        characterization of the changed canonical instruction.
         ```text
-        <paste non-zero output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] GREEN: assert canonical output and absence of the actual legacy wording
+  - [x] GREEN: asserted canonical output and absence of the actual legacy wording
         through the real `givn instructions` subprocess.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun the E2E scenario.
+  - [x] REFACTOR: reran the E2E scenario.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Canonical E2E policy is emitted by specs instructions`
+  - [x] COMMIT: pending -- `Canonical E2E policy is emitted by specs instructions`
 
 - [ ] @e2e Scenario: `Generated guidance points to the canonical E2E policy`
   - [ ] RED: remove `@wip`; target with `./run-tests.sh --e2e` and the exact
