@@ -23,11 +23,12 @@ reflect true state.
 
 ## Setup
 
-- [ ] Step-Dateien anlegen und registrieren: `tests/steps/spec_overlap_gates_steps.rs`
+- [x] Step-Dateien anlegen und registrieren: `tests/steps/spec_overlap_gates_steps.rs`
       (exit 3, JSON-Steps) und `tests/steps/review_disposition_gates_steps.rs`
       (Dispositions-Steps), beide als `pub mod` in `tests/steps/mod.rs`.
       ```
-      <output>
+      cargo check → Finished dev profile; Step-Dateien erstellt und
+      registriert (tests/steps/mod.rs um zwei `pub mod`-Zeilen erweitert).
       ```
 
 ---
@@ -49,11 +50,28 @@ reflect true state.
         ```
   - [ ] COMMIT: `<hash>`
 
-- [ ] Scenario: `An added delta duplicating a permanent spec title is a hard error`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: Baum-Scan über permanente Specs + eigene/andere Change-Deltas.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `An added delta duplicating a permanent spec title is a hard error`
+  - [x] RED: `unimplemented!()` nicht nötig — vorhandene Steps genutzt, neuer
+        Step `the command exits 3` mit echter Assertion; Produktions-Code fehlt,
+        Lint liefert exit 0.
+        ```
+        GIVN_FEATURES=givn/changes/spec-overlap-gates/specs cargo test --test
+        features_runner -- --name "An added delta duplicating a permanent
+        spec title is a hard error"
+        → 1 scenario (1 failed), 5 steps (4 passed, 1 failed) — "the command
+        exits 3" schlägt fehl (tatsächlich 0).
+        ```
+  - [x] GREEN: Produktion: `src/overlap/{mod,analysis,fingerprint,disposition}.rs`
+        (Baum-Kollektion, Titel-Gruppierung, Finding-Modell), `src/cli/lint.rs`
+        (Scan + Ausgabe + Exit 3), `src/lib.rs`+`src/main.rs` (mod overlap).
+        ```
+        Gleiche Zielinvokation → 1 scenario (1 passed), 6 steps (6 passed).
+        ```
+  - [x] REFACTOR: Capability-Erkennung vereinfacht, kein Verhaltenswechsel.
+        ```
+        Gleiche Zielinvokation → 1 scenario (1 passed).
+        ```
+  - [x] COMMIT: `1a6dc6d`
 
 - [ ] Scenario: `A delta of another active change duplicating a permanent spec title is a hard error`
   - [ ] RED: `<output>`
