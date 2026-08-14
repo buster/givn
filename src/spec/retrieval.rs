@@ -177,12 +177,7 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     index_enabled(root)?;
     let index = read_index(&spec_index_path(root))?;
     let change_dir = crate::state::resolve_change_dir(root, change_id)?;
-    let delta_root = change_dir.join("specs");
-    if !delta_root.exists() {
-        bail!(
-            "change `{change_id}` has no specs directory; create an active change delta first"
-        );
-    }
+    let delta_root = delta_specs_path(&change_dir, change_id)?;
 
     let review_path = change_dir.join("review.md");
     let (dispositions, _) = crate::overlap::disposition::parse_review(&review_path);
@@ -283,6 +278,17 @@ fn collect_feature_scenarios(
 #[cfg(feature = "spec-retrieval")]
 fn is_queryable_scenario(scenario: &gherkin::Scenario) -> bool {
     !scenario.tags.iter().any(|tag| tag == "givn.removed")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn delta_specs_path(change_dir: &Path, change_id: &str) -> Result<std::path::PathBuf> {
+    let path = change_dir.join("specs");
+    if !path.exists() {
+        bail!(
+            "change `{change_id}` has no specs directory; create an active change delta first"
+        );
+    }
+    Ok(path)
 }
 
 #[cfg(feature = "spec-retrieval")]
