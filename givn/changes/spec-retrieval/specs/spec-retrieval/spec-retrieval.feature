@@ -13,7 +13,7 @@ Feature: spec-retrieval
     Then stdout contains "Indexed 3 permanent scenarios"
     And the local spec index exists
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Search returns a semantically related scenario
     Given a givn project with permanent scenarios for retrieval
     And the local spec index has been built
