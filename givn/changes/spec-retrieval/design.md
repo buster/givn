@@ -2,17 +2,23 @@
 
 ## Architecture
 
-Add a `spec` CLI namespace with two commands:
+Add a `spec` CLI namespace with three operations:
 
 - `givn spec index`: scan permanent `.feature` files, embed scenario text, and
   write `givn/.spec-index.json`.
 - `givn spec search "<query>"`: embed the query, rank indexed scenarios by
   cosine similarity, and print the top five results with title, file, and rank.
+- `givn spec review --change <id>`: refresh the permanent index and report
+  advisory candidates for the active change.
 
 The index is local and advisory. CI and deterministic lint never require it.
 The review path refreshes the index and queries the current permanent tree when
 the index is available; an unavailable model/index is reported as a setup
 failure, never converted into a blocking score.
+
+Generated `givn/.spec-index.json` and `givn/.spec-model-cache/` are ignored by
+the project `.gitignore`; users may inspect or delete them without changing
+permanent specifications.
 
 ## Embeddings and Cache
 
@@ -27,7 +33,7 @@ on those roles.
 The dependency is declared with `default-features = false` and only the
 `hf-hub-rustls-tls` and `ort-download-binaries-rustls-tls` features. This
 change explicitly overrides the repository's 30-day dependency-age threshold
-for the resolved optional tree with a lockfile-derived
+for the complete resolved `Cargo.lock` with a lockfile-derived
 `GIVN_DEP_AGE_ALLOWLIST`. The exception is recorded in the tasks evidence
 because the user authorized latest compatible versions and the crates.io API
 was rate-limited in this environment.
@@ -71,7 +77,10 @@ The retrieval implementation introduces these internal primitives in
 input, and `EmbeddingRole` for E5 passage/query prefixes. The public operations
 are `index`, `search`, and `review`; private helpers cover scenario collection,
 hashing, index I/O, stub/production embedding, vector normalization, cosine
-similarity, and advisory ranking. The CLI exposes these through
+similarity, and advisory ranking. Content hashes and deterministic stub vectors
+use an explicit FNV-1a implementation rather than a runtime-default hasher, so
+the persisted index remains reproducible across processes and toolchain builds.
+The CLI exposes these through
 `src/cli/spec.rs` and `SpecCommands` in `src/main.rs`.
 
 ## Review Integration
@@ -103,7 +112,12 @@ The existing Gherkin runner remains:
 ```text
 ./run-tests.sh
 ./run-tests.sh --e2e
+./run-tests.sh --non-e2e
 ```
+
+The no-argument command is the configured full `verify.command`; the explicit
+`--e2e` command is the strict e2e subset, and `--non-e2e` is reserved for the
+coverage split.
 
 Strict mode is `.fail_on_skipped()` in `tests/features_runner.rs`; Rust
 unimplemented steps use `unimplemented!()`. Single-scenario command:
@@ -138,7 +152,7 @@ lint/test commands.
 |---|---|---|---|
 | Run `givn spec index` to build a local search index over permanent scenarios | Local index reports the permanent scenario inventory | CLI | Real `givn spec index` subprocess and stdout/index-file assertions |
 | Run `givn spec search` to find semantically related existing scenarios | Search returns a semantically related scenario | CLI | Real `givn spec search` subprocess and ranked stdout assertions |
-| Run `givn spec review --change` to surface advisory candidates for a delta | Review reports an advisory retrieval candidate | CLI | Real `givn spec review --change` subprocess and advisory stdout assertions |
+| Run `givn spec review --change` to surface advisory candidates for a delta | Review reports an advisory retrieval candidate | CLI | Real `givn spec review --change` and `givn check review --change` subprocesses and advisory stdout assertions |
 
 The own-delta exclusion scenario is a regular variant of the search action.
 The index refresh and unavailable-model scenarios are non-e2e error and

@@ -19,7 +19,6 @@ givn/  (single published binary crate)
 |   |   +-- lint.rs              # static .feature check (syntax/@wip/tags)
 |   |   +-- check.rs            # run an artifact's post hooks (e.g. verify.command)
 |   |   +-- status.rs
-|   |   +-- apply.rs
 |   |   +-- archive.rs
 |   |   +-- eject.rs
 |   |   +-- addons.rs           # `addons list/enable/disable`
@@ -27,6 +26,7 @@ givn/  (single published binary crate)
 |   |   +-- upgrade.rs          # re-render managed config scaffold, bump version
 |   |   +-- coverage_gate.rs     # archive-level coverage pipeline (measure, merge, validate, README)
 |   |   +-- missing_testrunner.rs  # sentinel default verify.command
+|   |   +-- spec.rs              # local retrieval index/search/review commands
 |   +-- config/
 |   |   +-- embedded.rs         # access to baked-in assets (rust-embed)
 |   |   +-- manifest.rs         # serde types for the YAML manifest
@@ -43,6 +43,9 @@ givn/  (single published binary crate)
 |   +-- hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
 |   +-- state.rs                # derive lifecycle state from the filesystem
 |   +-- error.rs                # error types (thiserror) + exit-code mapping
+|   +-- spec/
+|   |   +-- mod.rs
+|   |   +-- retrieval.rs         # local embeddings, index, ranking, advisory review
 +-- assets/                     # embedded via rust-embed
 |   +-- default-manifest.yaml   # the default artifact graph
 |   +-- config.yaml.tmpl        # documented, versioned project config scaffold
@@ -66,7 +69,6 @@ givn/  (single published binary crate)
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags) plus the tree-wide overlap scan; produce exit codes 0/1/3/2. Runs no tests. `--json` emits findings machine-readably. | `gherkin::parse`, `overlap::analysis` |
 | `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner) and the mandatory review checks (incl. the overlap disposition gate); append advisory retrieval candidates without changing the gate result. | `hooks`, `config::manifest`, `overlap::analysis`, `overlap::disposition`, `spec::retrieval` |
 | `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
-| `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run the coverage gate, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `coverage_gate`, `config::manifest` |
 | `cli::coverage_gate` | Archive-level coverage pipeline: run the project measurement and merge commands, validate source and merged Cobertura XML, update README badges/summary, and restore all changed files on failure. | `cobertura`, `agents_block`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
@@ -100,7 +102,7 @@ givn/  (single published binary crate)
 | `clap` | CLI parsing | 4.6 |
 | `clap_complete` | Shell completion script generation (bash/zsh/fish/…) | 4 |
 | `serde` + `serde_yaml_ng` | Manifest (de)serialisation | serde 1, serde_yaml_ng 0.10 |
-| `rust-embed` | Embed default assets | 8.11 |
+| `rust-embed` | Embed default assets | 8.12.0 |
 | `gherkin` | Parse `.feature` files | 0.16 |
 | `anyhow` | Application error context | 1.0 |
 | `thiserror` | Library error types | 2.0 |

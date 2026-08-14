@@ -7,10 +7,10 @@
 | 1 | Scope | Does the change remain advisory and local? | Keep indexing/searching and the explicit review advisory in the CLI, exclude own deltas, and never make retrieval a gate. | Resolved: proposal and design specify `givn spec review --change`; retrieval never changes a gate result. |
 | 2 | Tech choices | Can `fastembed` be adopted without weakening the single-binary constraints? | Make `fastembed` optional behind `spec-retrieval`; keep the default and musl distribution builds free of native ONNX Runtime. | Resolved in design.md, ADR-039, and Arc42 chapters 2 and 7. |
 | 3 | Dependency policy | Does the chosen version satisfy TC-13? | Use the latest compatible lockfile resolution under the explicitly authorized lockfile-derived `GIVN_DEP_AGE_ALLOWLIST` exception, and record the override in tasks.md. | Resolved by explicit user authorization; the normal 30-day policy remains the default outside this change. |
-| 4 | Missing scenarios | Are incremental reuse, unavailable-model behavior, and review candidates observable? | Add scenarios for unchanged-vector reuse, explicit model setup failure, and advisory review output. | Resolved: all three scenarios are implemented and GREEN. |
+| 4 | Missing scenarios | Are incremental reuse, unavailable-model behavior, review candidates, path validation, and removed-delta filtering observable? | Add executable scenarios for each behavior and keep setup failures explicit. | Resolved: all eleven scenarios are implemented and GREEN. |
 | 5 | Testability | Can the strict subprocess scenarios reach GREEN without a multi-gigabyte model or network? | Use `GIVN_SPEC_EMBEDDER=stub` in the runner, with token-derived deterministic vectors; retain production fastembed when unset. | Resolved in design.md; the e2e gate stays offline and strict. |
-| 6 | E2E fidelity | Does every happy-path CLI action use the real interface and a real driver? | Keep four distinct CLI actions on the compiled `givn` subprocess and assert CLI output/index files. | Resolved: the interaction matrix is a one-to-one CLI mapping. |
-| 7 | Interaction coverage | Does the feature inventory map to valid driving mechanisms? | Map index, search, and review to real compiled subprocesses; treat own-delta exclusion as the search variant. | Resolved: all three inventory rows have real subprocess mechanisms; no browser/API mechanism is implied. |
+| 6 | E2E fidelity | Does every happy-path CLI action use the real interface and a real driver? | Keep three distinct happy-path CLI actions on the compiled `givn` subprocess; keep self-match safety as regular coverage. | Resolved: the interaction matrix is a one-to-one CLI mapping. |
+| 7 | Interaction coverage | Does the feature inventory map to valid driving mechanisms? | Map index, search, and review to real compiled subprocesses; cover own-delta exclusion as regular search coverage. | Resolved: all three inventory rows have real subprocess mechanisms; no browser/API mechanism is implied. |
 | 8 | Risk | What is the likely production failure? | Treat native runtime/linking, model/cache footprint, dependency age, and first-use setup as explicit risks; never turn them into a correctness gate. | Resolved in ADR-039 and risks R-18/R-19/R-20. |
 
 ## Resolved by codebase exploration
@@ -56,13 +56,16 @@ No unresolved design questions remain for this change. Production target support
 |---|---|
 | `proposal.md` | Defined advisory review-time candidate reporting and offline deterministic e2e behavior. |
 | `design.md` | Documented review integration, E5 prefixes, opt-in feature gating, native-runtime tradeoffs, the stub embedder, and the authorized dependency-age exception. |
-| `specs/spec-retrieval/spec-retrieval.feature` | Added unchanged-vector reuse, unavailable-model, and advisory review scenarios. |
+| `specs/spec-retrieval/spec-retrieval.feature` | Added unchanged-vector reuse, unavailable-model, advisory review, disposition, gate, validation, and removed-delta scenarios. |
 | `arc42.md` | Marked deployment as affected by the opt-in runtime/cache footprint. |
 | `docs/arc42/02-architecture-constraints.md` | Added the opt-in retrieval build constraint. |
 | `docs/arc42/05-building-block-view.md` | Recorded fastembed and its feature-gated transitive runtime. |
 | `docs/arc42/07-deployment-view.md` | Documented default versus retrieval-enabled artifacts and local cache footprint. |
 | `docs/arc42/09-architecture-decisions.md` | Normalized ADR-039 metadata and recorded native-runtime/age-policy consequences. |
 | `docs/arc42/11-risks-and-technical-debt.md` | Added the native-runtime, footprint, and target-linking risk. |
+| `docs/arc42/03-context-and-scope.md` | Added the spec namespace to the context diagram and interface. |
+| `docs/arc42/06-runtime-view.md` | Documented review advisory execution after deterministic checks. |
+| `docs/arc42/10-quality-requirements.md` | Added review advisory quality acceptance. |
 
 ## Sign-off
 

@@ -914,7 +914,6 @@ variant-of-normal approach because:
   `SKIP_FILE` constant.
 - `src/cli/status.rs`: ⊘ symbol for skipped, `"skipped"` in JSON.
 - `src/cli/archive.rs`: gate treats `Skipped` as satisfied.
-- `src/cli/apply.rs`: missing-artifacts report excludes `Skipped`.
 - `src/skills/render.rs`, `src/skills/targets.rs`: `givn-steps` added to sync
   lists.
 - `docs/arc42/08-crosscutting-concepts.md`: §8.13 rewritten.
@@ -1326,7 +1325,7 @@ link the native ONNX Runtime dependency.
 - Bad, because the local index must be refreshed when content hashes change.
 - Bad, because the opt-in build adds a native ONNX Runtime dependency and is not
   automatically a portable musl artifact.
-- Bad, because the latest compatible optional dependency tree is younger than
+- Bad, because the latest compatible complete lockfile dependency tree is younger than
   the normal 30-day policy; this change uses the explicitly authorized
   lockfile-derived `GIVN_DEP_AGE_ALLOWLIST` override and records that exception
   in its task evidence.

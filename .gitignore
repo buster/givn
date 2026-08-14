@@ -14,6 +14,10 @@ reports/
 # Harness run state
 .givn-harness-run.json
 
+# Local semantic retrieval artifacts — generated and advisory
+givn/.spec-index.json
+givn/.spec-model-cache/
+
 # Backup files
 **/*.rs.bk
 
