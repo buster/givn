@@ -70,6 +70,12 @@ assertion, driver-fidelity, and normalized action rules. This skill supplies
 step-writing mechanics and applies the resolved design's concrete driver; it
 does not define another policy.
 
+## Black-Box-First policy
+
+Prefer reused real-interface steps. For an internal step or test that remains,
+record **which case this test covers that the E2E does not**; otherwise remove
+the duplicate and extend the E2E scenario.
+
 ## Step reuse
 
 Check for a matching step definition before writing a new one. Reused: keep

@@ -81,6 +81,13 @@ interaction inventory, one-E2E-per-action scope, real-interface assertions,
 and flag-variant classification. Design-specific infrastructure and matrix
 details belong here; the policy itself is not restated here.
 
+## Black-Box-First policy
+
+Prefer the real interface for every behavior. If an internal test is retained,
+the design must answer: **which case this test covers that the E2E does not**?
+If there is no concrete answer, use the E2E scenario instead. This policy
+prevents weaker duplicate scenarios from surviving under a new title.
+
 ## Local runnability & digital twins (mandatory)
 
 The system MUST be runnable and testable locally, in full, with one

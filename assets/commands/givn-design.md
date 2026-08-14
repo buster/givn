@@ -84,6 +84,9 @@ Write `givn/changes/<id>/design.md` covering:
   `givn instructions specs --change <id>`, then document the exact runner,
   step location, infrastructure, interface type, driver, and coverage matrix
   needed for this design. Do not restate the policy here.
+- **Black-Box-First** — for every internal test retained, answer "which case
+  this test covers that the E2E does not". Without a concrete answer, use the
+  real-interface scenario instead.
 - **Non-obvious choices** — justify them; obvious choices need no justification.
 
 This is the HOW layer. Everything that was kept out of the proposal and spec
