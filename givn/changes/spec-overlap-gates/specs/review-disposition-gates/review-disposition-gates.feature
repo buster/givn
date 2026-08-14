@@ -179,7 +179,7 @@ Feature: review-disposition-gates
     Then  the command exits non-zero
     And  stderr contains "review.md"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The net-delta receipt counts added, modified, and removed scenarios
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
