@@ -86,5 +86,7 @@ policies and chapter integrity remain unchanged.
 - Made the project override a regular configuration-variant scenario.
 - Added canonical delegation checks for design and review instructions.
 - Completed ADR-038 and reconciled R-17 plus Arc42 quality chapters.
+- Rechecked the design after converting the Step Definitions section to the
+  required Markdown table format for the integrity hook.
 
 DESIGN-REVIEW: PASS
