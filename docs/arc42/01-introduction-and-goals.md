@@ -46,6 +46,7 @@ flowchart LR
 | FR-19 | Keep specification artifacts (`proposal`, `.feature`) implementation-independent; carry implementation detail only in `design`/`tasks`. |
 | FR-20 | Provide an opt-in addon mechanism; ship an `arc42-docs` addon that creates and maintains durable project-level arc42 documentation (e.g. after `design`). |
 | FR-21 | Support per-artifact `post` hooks; run `verify.command` (tests) after `tasks` and `review` by default. Provide `givn check`; run required hooks as the archive gate, blocking on failure. |
+| FR-22 | Expose one canonical authoring policy for interaction inventories and E2E evidence; generated guidance references it rather than restating it. |
 
 ### Non-functional requirements (top)
 
@@ -68,7 +69,8 @@ Top three quality goals, in priority order (see chapter 10 for scenarios):
 | 3 | **Upgradeability** | Updating the binary must never break or overwrite project config. Defaults live in the binary; project files always win. |
 
 Secondary goals: correctness of the Gherkin merge (data integrity of the spec),
-and AI-agent ergonomics (standards-aligned skill/rule generation).
+AI-agent ergonomics (standards-aligned skill/rule generation), and consistency
+of that guidance across instructions, skills, commands, and project overrides.
 
 ## 1.4 Stakeholders
 

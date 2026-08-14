@@ -139,13 +139,10 @@ as "no issue found" if genuinely clean):
   concrete strict-mode mechanism, not-implemented stub pattern, and
   single-scenario run command? Missing or vague on any of the three is a
   finding — this is the root cause of past fabricated changes.
-- **E2E fidelity** — for each capability, does design.md name the actual
-  interface type (browser UI / CLI / API-only) and a matching real driving
-  mechanism? For a browser-UI capability, is a real browser driver named —
-  not an HTTP client or in-page `fetch()` standing in for it? Is there
-  exactly one `@e2e` scenario per distinct happy-path action, not one per
-  variant/error case? Vague interface type, an HTTP/fetch()-based plan for
-  a browser UI, or more than one `@e2e` scenario per action is a
+- **E2E fidelity** — read `givn instructions specs --change <id>` and verify
+  that design.md applies its normalized action scope, real-interface rule, and
+  concrete driving mechanism. A silent redefinition, vague interface type,
+  HTTP/fetch plan for a browser UI, or duplicate coverage of one action is a
   finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?

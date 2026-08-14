@@ -28,6 +28,7 @@
 | **Lint** (`givn lint`) | Built-in command that statically checks `.feature` syntax, `@wip`/PENDING, and delta tags. Exit 0/1/2. **Runs no tests.** (Renamed from `givn verify` — ADR-027.) |
 | **Test runner** | The command that actually executes step definitions against code, configured in `verify.command`. Invoked by the agent/CI, not by givn. Confirms GREEN. |
 | **`verify.command`** | The manifest config key holding the test-runner command (default sentinel `givn missing-testrunner`). Read after overlay resolution; written by `init`/`upgrade`; invoked by agent/CI. |
+| **Canonical authoring policy** | The resolved `specs` instruction containing the normative rules for interaction inventories and E2E evidence. Other guidance references it instead of restating it. |
 | **Coverage measurement command** | The project-owned command in `coverage.measure_command` that runs the configured test subsets and writes the non-E2E and E2E source coverage reports. |
 | **Coverage merge command** | The project-owned command in `coverage.merge_command` that combines the two source reports into `coverage.output_path`. Its fresh output is authoritative for README coverage. |
 | **Merged coverage report** | The Cobertura XML emitted by the coverage merge command. givn validates this report and uses its line and branch counters for both README badges and the managed summary. |
