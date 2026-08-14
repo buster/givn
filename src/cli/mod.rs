@@ -15,5 +15,6 @@ pub mod new;
 pub mod project_hint;
 pub mod readme;
 pub mod skills;
+pub mod spec;
 pub mod status;
 pub mod upgrade;

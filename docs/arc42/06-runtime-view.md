@@ -245,6 +245,19 @@ names or order. A project that adds a `risk-assessment` artifact sees it in
 `givn status --json` automatically; `/givn-propose` follows `next_required`
 to drive its loop regardless of how the manifest is configured.
 
+## 6.8a `givn spec index` and `givn spec search`
+
+The authoring retrieval flow is:
+
+1. `givn spec index` scans permanent feature files and resolves or creates the
+   local model cache.
+2. Scenario text is embedded and persisted with its content hash in the local
+   index.
+3. `givn spec search "<query>"` embeds the query, ranks candidates by cosine
+   similarity, and prints the top results.
+4. The current change's own delta is excluded; results are advisory and do not
+   affect lint, CI, or archive exit codes.
+
 ## 6.9 Running the test runner on a fresh project (sentinel)
 
 When a project has not configured `verify.command`, the manifest's default points
