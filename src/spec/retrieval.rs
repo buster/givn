@@ -101,7 +101,7 @@ pub fn review(root: &Path, change_id: &str) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn index_enabled(root: &Path) -> Result<()> {
     let entries = collect_scenarios(root)?;
-    let index_path = root.join("givn/.spec-index.json");
+    let index_path = spec_index_path(root);
     let previous = read_index(&index_path).unwrap_or_else(|_| SpecIndex {
         version: INDEX_VERSION,
         model: MODEL_ID.to_string(),
@@ -154,7 +154,7 @@ fn index_enabled(root: &Path) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn search_enabled(root: &Path, query: &str) -> Result<()> {
-    let index_path = root.join("givn/.spec-index.json");
+    let index_path = spec_index_path(root);
     let index = read_index(&index_path).with_context(|| {
         format!(
             "spec index is missing at {}; run `givn spec index` first",
@@ -183,7 +183,7 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     index_enabled(root)?;
-    let index = read_index(&root.join("givn/.spec-index.json"))?;
+    let index = read_index(&spec_index_path(root))?;
     let change_dir = crate::state::resolve_change_dir(root, change_id)?;
     let delta_root = change_dir.join("specs");
     if !delta_root.exists() {
@@ -223,6 +223,11 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn collect_scenarios(root: &Path) -> Result<Vec<ScenarioText>> {
     collect_scenarios_from(root, &root.join("givn/specs"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn spec_index_path(root: &Path) -> std::path::PathBuf {
+    root.join("givn/.spec-index.json")
 }
 
 #[cfg(feature = "spec-retrieval")]
