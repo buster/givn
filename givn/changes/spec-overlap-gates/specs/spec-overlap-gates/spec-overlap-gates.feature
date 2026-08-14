@@ -51,7 +51,7 @@ Feature: spec-overlap-gates
     Then  the command exits 3
     And  stderr contains "Shared title"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A delta of another active change duplicating a permanent spec title is a hard error
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/alpha/alpha.feature" with:
