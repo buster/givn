@@ -14,7 +14,8 @@ givn-Change (`givn propose`, dann spec/design/tasks). Proposals sind bewusst
 in User-Perspektive geschrieben; alles Technische steht unter
 "Design-Anhaltspunkte" und darf erst in design.md einfließen. Die Changes
 werden nacheinander abgearbeitet — niemals parallel, die Abhängigkeiten sind
-hart.
+hart. Ergebnisse werden als Stacked PRs abgelegt (Abschnitt
+"PR-Workflow — Stacked PRs").
 
 Quellen: `docs/givn-refactor-0.3/analysis.md`,
 `tools/embed-analysis/HANDOFF-EMBEDDINGS.md`, watn-Repo (`~/projects/watn`,
@@ -42,6 +43,76 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
   Rückwärtskompatibilität ist explizit nicht im Scope.
 - givn ist selbst givn-Konsument: Jede Change 1–4 läuft durch die eigenen
   neuen Gates, sobald diese aktiviert sind.
+
+---
+
+## PR-Workflow — Stacked PRs
+
+Alle Changes laufen als **Stacked PRs** über die offizielle Extension
+`gh stack` (`github/gh-stack`, installiert). Ein Layer = eine Change = ein
+PR. Jeder PR basiert auf dem Branch des darunterliegenden PR; nur der
+unterste PR zielt auf `main`. Reviewer sehen pro PR nur das Diff seines
+Layers. Die Sequenz (1 → 2 → 3 → bedingt 4) bleibt hart — die
+Base-Verkettung bildet sie ab.
+
+**Installation / Update**
+
+```bash
+gh extension install github/gh-stack    # einmalig
+gh extension upgrade gh-stack           # Updates
+```
+
+**Stack-Layout (givn-Repo)**
+
+```
+spec-retrieval      → PR #4 (base: skill-rewrites)   ← nur wenn Change 4 gebaut wird
+skill-rewrites      → PR #3 (base: prose-consolidation)
+prose-consolidation → PR #2 (base: spec-overlap-gates)
+spec-overlap-gates  → PR #1 (base: main)              ← bottom
+─────────────
+main (trunk)
+```
+
+Change 5 (`watn-consolidation`) liegt im watn-Repo und bekommt dort
+seinen eigenen Stack (bzw. einen einzelnen PR) mit `main` als Trunk.
+
+**Workflow pro Change**
+
+```bash
+# Einmalig, von sauberem main aus:
+gh stack init spec-overlap-gates
+
+# Change 1 abarbeiten (givn propose/spec/design/tasks; ein Commit pro
+# Szenario), dann:
+gh stack push
+gh stack submit                        # PR #1 erzeugen, Stack auf GitHub linken
+
+# Nach Change 1: nächsten Layer anlegen und bearbeiten
+gh stack add prose-consolidation
+# ... Change 2 abarbeiten, committen ...
+gh stack push && gh stack submit       # PR #2
+
+# Entsprechend: skill-rewrites, ggf. spec-retrieval
+```
+
+**Regeln**
+
+- Stack-Branches bleiben **linear** (nur Rebase, nie Merge in die
+  Stack-Branches). Commits pro Szenario bleiben atomar — sie liegen im
+  Layer ihrer Change.
+- `gh stack submit` nach jeder Change, damit der neue PR sofort im Stack
+  hängt; vorhandene PRs werden dabei aktualisiert, nicht dupliziert.
+- Wird der Trunk (`main`) bewegt oder ein unterer PR gemergt:
+  `gh stack sync --prune` (fetch + Kaskaden-Rebase + Push + PR-Sync,
+  pruned gemergte Branches). Bei Konflikten: `gh stack rebase`,
+  auflösen, `gh stack rebase --continue`.
+- Merge: `gh stack merge --yes --squash` merged den ganzen Stack
+  all-or-nothing; `gh stack merge <PR-Nr>` merged nur bis zu einem Layer.
+  Da die Dependencies hart sind, wird immer bottom-up gemergt.
+- Change 4 nicht gebaut (Messung aus Change 1 negativ): Layer entfällt
+  einfach; der Stack endet bei `skill-rewrites`.
+- `gh stack view` zeigt Branches, PR-Links und letzten Commit;
+  `gh stack view --short` nur Branchnamen.
 
 ---
 
