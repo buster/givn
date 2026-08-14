@@ -268,7 +268,10 @@ test runner (`verify.command`).
 
 Retrieval is an authoring aid, not a correctness gate. `givn spec index` owns a
 local cache of model-backed vectors and content hashes under `givn/`; `givn
-spec search` reads that index and prints ranked candidates. CI, lint, and
+ spec search` reads that index and prints ranked candidates. `givn spec review
+ --change <id>` queries active delta scenarios against a freshly refreshed
+ permanent index and suppresses candidates already present in the disposition
+ table. CI, lint, and
 archive do not require a model or a similarity score. A missing model/cache is
 an explicit setup error for retrieval, never a false clean result or a block on
 unrelated workflow commands.

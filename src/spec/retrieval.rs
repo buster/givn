@@ -165,17 +165,7 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
         .next()
         .context("retrieval embedder returned no query vector")?;
 
-    let mut ranked: Vec<(&IndexEntry, f32)> = index
-        .entries
-        .iter()
-        .map(|entry| (entry, cosine_similarity(&query_vector, &entry.embedding)))
-        .collect();
-    ranked.sort_by(|(left_entry, left_score), (right_entry, right_score)| {
-        right_score
-            .total_cmp(left_score)
-            .then_with(|| left_entry.file.cmp(&right_entry.file))
-            .then_with(|| left_entry.title.cmp(&right_entry.title))
-    });
+    let ranked = rank_entries(&index.entries, &query_vector);
 
     for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
         println!(
@@ -208,17 +198,7 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
             .into_iter()
             .next()
             .context("retrieval embedder returned no review vector")?;
-        let mut ranked: Vec<(&IndexEntry, f32)> = index
-            .entries
-            .iter()
-            .map(|entry| (entry, cosine_similarity(&query_vector, &entry.embedding)))
-            .collect();
-        ranked.sort_by(|(left_entry, left_score), (right_entry, right_score)| {
-            right_score
-                .total_cmp(left_score)
-                .then_with(|| left_entry.file.cmp(&right_entry.file))
-                .then_with(|| left_entry.title.cmp(&right_entry.title))
-        });
+        let ranked = rank_entries(&index.entries, &query_vector);
         for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
             if crate::overlap::disposition::disposed(
                 &dispositions,
@@ -401,4 +381,19 @@ fn cosine_similarity(left: &[f32], right: &[f32]) -> f32 {
         .zip(right)
         .map(|(a, b)| a * b)
         .sum::<f32>()
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn rank_entries<'a>(entries: &'a [IndexEntry], query: &[f32]) -> Vec<(&'a IndexEntry, f32)> {
+    let mut ranked: Vec<(&IndexEntry, f32)> = entries
+        .iter()
+        .map(|entry| (entry, cosine_similarity(query, &entry.embedding)))
+        .collect();
+    ranked.sort_by(|(left_entry, left_score), (right_entry, right_score)| {
+        right_score
+            .total_cmp(left_score)
+            .then_with(|| left_entry.file.cmp(&right_entry.file))
+            .then_with(|| left_entry.title.cmp(&right_entry.title))
+    });
+    ranked
 }

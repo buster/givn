@@ -25,8 +25,12 @@ and queries use the `query:` prefix because the measured model behavior depends
 on those roles.
 
 The dependency is declared with `default-features = false` and only the
-`hf-hub-rustls-tls` and `ort-download-binaries-rustls-tls` features. The full
-resolved dependency tree must pass `scripts/check-dep-age.sh` before GREEN.
+`hf-hub-rustls-tls` and `ort-download-binaries-rustls-tls` features. This
+change explicitly overrides the repository's 30-day dependency-age threshold
+for the resolved optional tree with a lockfile-derived
+`GIVN_DEP_AGE_ALLOWLIST`. The exception is recorded in the tasks evidence
+because the user authorized latest compatible versions and the crates.io API
+was rate-limited in this environment.
 
 ## Build and Feature Gating
 
@@ -58,6 +62,17 @@ changed scenarios are re-embedded, and deleted scenarios are removed. The
 current change's own delta is excluded from both indexing and query results.
 Open deltas from other changes are excluded by default; a future flag may opt
 into them without changing the default CI behavior.
+
+## Internal Primitives
+
+The retrieval implementation introduces these internal primitives in
+`src/spec/retrieval.rs`: `SpecIndex` for the persisted document,
+`IndexEntry` for one scenario vector, `ScenarioText` for parsed normalized
+input, and `EmbeddingRole` for E5 passage/query prefixes. The public operations
+are `index`, `search`, and `review`; private helpers cover scenario collection,
+hashing, index I/O, stub/production embedding, vector normalization, cosine
+similarity, and advisory ranking. The CLI exposes these through
+`src/cli/spec.rs` and `SpecCommands` in `src/main.rs`.
 
 ## Review Integration
 
