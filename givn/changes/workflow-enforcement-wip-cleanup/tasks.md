@@ -268,7 +268,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: pending -- `New-capability merge failure produces clear recovery instructions`
+  - [x] COMMIT: `4816e01` -- `New-capability merge failure produces clear recovery instructions`
 
 - [ ] Scenario: `Design.md template includes Internal Primitives section`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
