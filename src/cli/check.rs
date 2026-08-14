@@ -28,7 +28,7 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
             );
         }
         // Run mandatory checks first, then custom hooks.
-        run_mandatory_checks(artifact_id, &manifest, &features_path)?;
+        run_mandatory_checks(artifact_id, &manifest, &features_path, &project_root, change)?;
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
@@ -69,6 +69,8 @@ fn run_mandatory_checks(
     artifact_id: &str,
     manifest: &crate::config::manifest::Manifest,
     features_path: &str,
+    project_root: &std::path::Path,
+    change: Option<&str>,
 ) -> anyhow::Result<()> {
     match artifact_id {
         "tasks" => {
@@ -106,6 +108,9 @@ fn run_mandatory_checks(
                 manifest.addons.coverage,
             )?;
             println!("  ✓ integrity passed");
+            if let Some(id) = change {
+                crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
+            }
         }
         _ => {}
     }
