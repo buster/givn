@@ -129,7 +129,7 @@ Feature: review-disposition-gates
     And  stderr contains "Permanent twin"
     And  stderr contains "Delta twin"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review passes when a shape match exists only between permanent scenarios
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/specs/one/one.feature" with:
