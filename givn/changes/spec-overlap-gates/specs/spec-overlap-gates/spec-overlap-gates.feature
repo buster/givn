@@ -457,7 +457,7 @@ Feature: spec-overlap-gates
     And  stderr contains "With a docstring"
     And  stderr contains "With another docstring"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Background steps are prepended before the comparison
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
@@ -465,25 +465,25 @@ Feature: spec-overlap-gates
       Feature: Foo
         Background:
           Given a project root with givn/ initialised
+          Then the background assertion holds
 
         Scenario: With background context
-          When the user runs `givn lint`
+          Given another piece of context
           Then the command exits 0
       """
     And  a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Without background context
-          Given a project root with givn/ initialised
-          When the user runs `givn lint`
+          Given another piece of context
           Then the command exits 0
       """
     When  the user runs `givn lint`
     Then  the command exits 0
+    And  stderr contains "subset"
     And  stderr contains "With background context"
     And  stderr contains "Without background context"
 
-  @givn.added @wip
   Scenario: Data table contents are compared as facts and can contradict
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
