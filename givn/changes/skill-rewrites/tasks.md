@@ -116,7 +116,7 @@ retrieval engine are not modified. Existing guidance assertions are reused;
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: pending -- `Synchronized guidance explains how to resolve the deterministic gates`
+  - [x] COMMIT: `7e3f470` -- `Synchronized guidance explains how to resolve the deterministic gates`
 
 ## Final Gates
 
