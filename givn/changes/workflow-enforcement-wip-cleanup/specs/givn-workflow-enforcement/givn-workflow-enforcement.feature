@@ -46,7 +46,7 @@ Feature: givn Workflow Enforcement
     And  stderr contains "empty"
     And  stderr contains "Step Definitions"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook fails on Step Definitions section that is not a table
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains valid commit hashes

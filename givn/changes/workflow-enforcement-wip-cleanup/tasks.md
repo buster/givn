@@ -110,20 +110,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `6c2e450` -- `Integrity hook fails on empty step-definition file`
 
-- [ ] Scenario: `Integrity hook fails on Step Definitions section that is not a table`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Integrity hook fails on Step Definitions section that is not a table`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Integrity hook fails on Step Definitions section that is not a table' is tagged @wip
+        givn lint: 1 file(s) checked, 12 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Integrity hook fails on Step Definitions section that is not a table`
+  - [x] COMMIT: pending -- `Integrity hook fails on Step Definitions section that is not a table`
 
 - [ ] Scenario: `Integrity hook passes when arc42 is disabled`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
