@@ -29,7 +29,7 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
 |---|---|---|---|
 | 1 | `spec-overlap-gates` | givn | keine (eigener Baum ist titel-eindeutig, verifiziert: 154 Szenarien, null Titelduplikate) — **erledigt, archiviert** |
 | 2 | `workflow-enforcement-wip-cleanup` | givn | 1 (Gates aktiv; die permanente Spec muss vor der Prosa-Konsolidierung von Altlasten bereinigt werden) — **erledigt, archiviert** |
-| 3 | `prose-consolidation` | givn | 2 (Regeltext wird nach Gates und WIP-Bereinigung konsolidiert) |
+| 3 | `prose-consolidation` | givn | 2 (Regeltext wird nach Gates und WIP-Bereinigung konsolidiert) — **erledigt, archiviert** |
 | 4 | `skill-rewrites` | givn | 3 (Skills dürfen nur noch choreografieren, was konsolidierte Instruktionen enthalten) |
 | 5 | `spec-retrieval` | givn | 1 (Fingerprint-Messung belegt Paraphrasen-Durchrutscher; Retrieval wird gebaut) |
 | 6 | `watn-consolidation` | watn | 1 (Gates müssen existieren; 2–5 optional für den Start) |
@@ -48,6 +48,10 @@ Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
   belegt 3 verpasste Paraphrasen-Paare (F5, F12a, F12b) — Lücke 1 der
   analysis.md ist real; Retrieval ergänzt die Gates als Authoring- und
   Review-Werkzeug, ohne Block auf Scores.
+- Change 3 wurde archiviert: `assets/instructions/specs.md` ist die normative
+  E2E-/Inventory-Quelle; Skills, Slash-Commands und Templates delegieren an
+  `givn instructions specs`. Die Parity-Suite lief mit 166 Non-E2E- und 24
+  E2E-Szenarien grün; Projekt-Overrides und Flag-Varianten sind abgedeckt.
 - Change 6 läuft im watn-Repo mit einer bereits konsolidierten givn-Version;
   baumweite Altlasten (F1/F2) werden manuell aufgelöst.
   Rückwärtskompatibilität ist explizit nicht im Scope.
