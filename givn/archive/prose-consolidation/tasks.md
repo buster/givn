@@ -165,5 +165,11 @@ complete.
 - [x] Allowlist parity scan finds no legacy wording and all non-canonical
       assets delegate to `givn instructions specs`.
       ```text
-      legacy policy scan: clean
-      ```
+       legacy policy scan: clean
+       ```
+
+## Post-Archive Evidence
+
+- [x] Permanent spec has no `@wip` tags after archive.
+- [x] Post-merge suites passed: 166 non-E2E scenarios and 24 E2E scenarios.
+- [x] Coverage merge passed with `5159/8154` lines and `0/0` branches.
