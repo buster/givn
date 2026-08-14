@@ -21,6 +21,7 @@
 | R-15 | A zero branch denominator is rendered as `0%`, implying measured branch coverage where the tool emitted no branches. | High | Medium | Render `n/a` for `branches-valid=0` in the badge and summary, while preserving the raw `0/0` counters. |
 | R-16 | Coverage or README updates partially succeed before a later archive gate fails, leaving user content or reports changed. | Low | High | Back up README and configured coverage paths before measurement and restore them together with permanent specs on every coverage error. |
 
+| R-10 | Overlap-disposition volume on the project's own tree makes the review gate self-blocking. | Medium | Medium | The gate requires dispositions only for shape matches **without** fact contradiction involving the change's delta; exit-code contrasts (0/2/3) are contradictions and only emit hints. The change itself measures its own volume (`givn check review` lists every missing row) and generates review.md from the gate output. Consequence of ADR-037 (fingerprint) — see chapter 9. |
 ## 11.2 Deliberate (planned) technical debt
 
 | ID | Debt | Reason | Repayment |
