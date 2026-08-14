@@ -288,7 +288,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Design.md template includes Internal Primitives section`
+  - [x] COMMIT: `1e265be` -- `Design.md template includes Internal Primitives section`
 
 - [ ] Scenario: `Archive blocked when delta spec has non-removed @wip scenario`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
