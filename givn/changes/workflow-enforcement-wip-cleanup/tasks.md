@@ -330,7 +330,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         4 steps (4 passed)
         ```
-  - [x] COMMIT: pending -- `Archive allowed when @wip only on a @givn.removed placeholder`
+  - [x] COMMIT: `8ce289f` -- `Archive allowed when @wip only on a @givn.removed placeholder`
 
 - [ ] Scenario: `Check tasks blocked when delta spec has @wip`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
