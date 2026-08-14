@@ -39,6 +39,14 @@ Feature: spec-retrieval
     And the command exits 0
 
   @givn.added
+  Scenario: Review suppresses a disposed retrieval candidate
+    Given a givn project with permanent scenarios for retrieval
+    And an active change delta contains a scenario named "Running change only"
+    And a review disposition exists for "Running change only" and "Provider name is unknown"
+    When the user runs `givn spec review --change running-change`
+    Then stdout does not contain "Provider name is unknown"
+
+  @givn.added
   Scenario: Reindex reuses unchanged scenario vectors
     Given a givn project with permanent scenarios for retrieval
     And the local spec index has been built

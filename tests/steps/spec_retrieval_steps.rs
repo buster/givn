@@ -75,6 +75,20 @@ fn active_change_delta(world: &mut GivnWorld, title: String) {
     .expect("write active delta");
 }
 
+#[given(regex = r#"^a review disposition exists for "([^"]+)" and "([^"]+)"$"#)]
+fn review_disposition(world: &mut GivnWorld, delta_title: String, permanent_title: String) {
+    let env = world.env.as_ref().expect("retrieval project is required");
+    let path = env.path("givn/changes/running-change/review.md");
+    fs::create_dir_all(path.parent().expect("review parent")).expect("create review parent");
+    fs::write(
+        path,
+        format!(
+            "## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `{delta_title}` | `{permanent_title}` | boundary |\n"
+        ),
+    )
+    .expect("write review disposition");
+}
+
 #[when(regex = r#"^the user searches for "([^"]+)"$"#)]
 fn search_retrieval(world: &mut GivnWorld, query: String) {
     let env = world.env.as_ref().expect("retrieval project is required");
