@@ -6,7 +6,7 @@
 
 Feature: spec-overlap-gates
 
-  @givn.added @wip @e2e
+  @givn.added @e2e
   Scenario: A duplicate title across two permanent spec files is a hard error
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/alpha/alpha.feature" with:
