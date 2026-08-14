@@ -37,7 +37,7 @@ retrieval engine are not modified. Existing guidance assertions are reused;
         1 scenario (1 passed)
         5 steps (5 passed)
         ```
-  - [x] COMMIT: pending -- `Review instructions require deterministic gate dispositions`
+  - [x] COMMIT: `433cdb8` -- `Review instructions require deterministic gate dispositions`
 
 - [ ] Scenario: `Design and step instructions require the Black-Box-First decision`
   - [ ] RED: remove `@wip`; target with the exact scenario command.
