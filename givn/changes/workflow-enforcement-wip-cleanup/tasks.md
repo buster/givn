@@ -248,7 +248,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         11 steps (11 passed)
         ```
-  - [x] COMMIT: pending -- `Archive blocked when merged permanent specs fail verify`
+  - [x] COMMIT: `f7e3dbc` -- `Archive blocked when merged permanent specs fail verify`
 
 - [ ] Scenario: `New-capability merge failure produces clear recovery instructions`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
