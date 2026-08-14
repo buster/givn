@@ -288,4 +288,13 @@ or removed by this metadata-only change.
 - [x] No scenario-level `@wip` tag remains in the active delta; literal
       fixture references to `@wip` remain.
 
+## Post-Archive Correction
+
+The first post-archive check found one stale `@wip` tag before the first
+scenario in the permanent feature. The text merge parser treated that tag as
+part of the feature header instead of the first scenario's block. The merge
+parser now drops tags after the `Feature:` line when reconstructing the header,
+with a regression unit test in `src/gherkin/merge.rs`. The remaining permanent
+tag was removed and the full non-E2E and E2E suites were rerun successfully.
+
 REVIEW: PASS
