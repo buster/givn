@@ -477,12 +477,17 @@ wie man ihnen korrekt begegnet.
 
 ---
 
-## 5. Change `spec-retrieval` — semantische Suche beim Authoring (BEDINGT)
+## 5. Change `spec-retrieval` — semantische Suche beim Authoring (ERLEDIGT / ARCHIVIERT)
 
 > Diese Change wird nur erstellt, wenn die Messung aus Change 1 belegt,
 > dass der deterministische Fingerprint Paraphrasen-Fälle (gleiche
 > Bedeutung, verschiedene Titel) verpasst. Siehe "Abhängigkeiten und
 > Entscheidungspunkte".
+
+> **STATUS: ERLEDIGT / ARCHIVIERT** — umgesetzt auf Stack-Layer
+> `spec-retrieval`, archiviert mit Commit `97bf8b3`. Die Messbedingung war durch
+> Change 1 erfüllt: deterministische Fingerprints verpassten belegte
+> Paraphrasen.
 
 ### Proposal (User-Perspektive)
 
@@ -502,6 +507,9 @@ beschreiben (Paraphrasen), die kein deterministischer Vergleich findet.
   Schreiben). Treffer werden angezeigt, nie geblockt — die Klassifikation
   (Duplikat/Variante/Boundary) trifft der Autor, der Reviewer verifiziert
   in der Disposition.
+- `givn spec review --change <id>` aktualisiert den permanenten Index und meldet
+  undisponierte semantische Kandidaten der aktiven Change; `givn check review`
+  ruft denselben Lauf advisory-only nach dem deterministischen Gate auf.
 - Im Review aktualisiert der Reviewer den Index und queried gegen den
   **aktuellen** Baum: Jeder Treffer ohne Disposition ist ein Befund.
   Gepinnte Scores gibt es nicht — die Disposition trägt Entscheidungen.
@@ -512,17 +520,16 @@ beschreiben (Paraphrasen), die kein deterministischer Vergleich findet.
 
 - Jede Form von Block auf Ähnlichkeits-Scores.
 - Indexierung von Step-Definitionen oder fremdem Testcode.
-- CI-Nutzung: Die Gates brauchen den Index nie; CI bleibt setup-frei.
+- CI-Nutzung eines heruntergeladenen Produktionsmodells: Die Gates verwenden
+  einen deterministischen lokalen Stub; CI bleibt netzwerk- und modellsetupfrei.
 - Treffer gegen offene Deltas anderer Changes (transiente Störung; nur
   hinter einem Flag, Details im Design).
 
 **Open Questions**
 
-- Index-Zusammensetzung im Detail (Flag für fremde aktive Deltas) — erst
-  beim Bau entscheiden.
-- Deutsche Szenarien: givn ist sprach-agnostisch; die Modellwahl
-  (multilingual-e5-large, 2,24 GB) folgt aus diesem Prinzip, nicht aus
-  Messung — das watn-Korpus ist englisch.
+- Keine offenen Fragen für die archivierte Change. Fremde aktive Deltas bleiben
+  außerhalb des Standardindexes; der Produktionsembedder ist optional,
+  feature-gated und lokal cachebar.
 
 ### Spec-Anhaltspunkte
 
@@ -534,12 +541,18 @@ beschreiben (Paraphrasen), die kein deterministischer Vergleich findet.
 - Die Suche matcht ein Szenario nicht gegen die eigenen Deltas.
 - Review-Wiederholung gegen den aktualisierten Index: undisponierter
   Treffer → Befund.
+- Unveränderte Szenarien werden per content hash wiederverwendet; fehlende
+  Modelle, fehlende Changes, unsichere Change-IDs und entfernte Deltas sind
+  explizit getestet.
 
 ### Design-Anhaltspunkte
 
-- In-Binary Rust über `fastembed-rs` (unterstützt
-  `intfloat/multilingual-e5-large`); kein Shell-out auf das Python-Tool,
-  kein externer Dienst. Single-Binary-Posture bleibt.
+- Optionaler In-Binary-Rust-Pfad über `fastembed-rs` mit
+  `intfloat/multilingual-e5-large`; kein Shell-out auf das Python-Tool, kein
+  externer Dienst. Der Default-/musl-Build bleibt feature-frei.
+- Der vollständige Lockfile-Age-Gate wurde für diese Change aufgrund der
+  expliziten Nutzerentscheidung per reproduzierbarer Allowlist überschrieben;
+  die 30-Tage-Regel bleibt für spätere Releases bestehen.
 - Index inkrementell per content_hash; Modell-Download beim ersten Lauf.
 - Review-Protokoll 2 (analysis.md §2.5): frischer Index, Vergleich gegen
   den aktuellen Baum, nie gegen die Autoren-Aufzeichnung.
