@@ -132,7 +132,7 @@ Feature: spec-overlap-gates
     Then  the command exits 3
     And  stderr contains "Wrong home"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A removed delta referencing its target by title is allowed
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
