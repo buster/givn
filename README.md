@@ -1,3 +1,8 @@
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: 63%](https://img.shields.io/badge/line%20coverage-63%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
+
 ```
   ________  .__
  /  _____/  |__|__  __ ____
@@ -8,11 +13,6 @@
 
   from Given to done.
 ```
-
-<!-- givn:begin:coverage-badge -->
-[![Line Coverage: 60%](https://img.shields.io/badge/line%20coverage-60%25-brightgreen)](coverage/cobertura-coverage.xml)
-[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
-<!-- givn:end:coverage-badge -->
 
 > A single-binary, Gherkin-first spec-driven workflow tool.
 
@@ -439,7 +439,7 @@ Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at y
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 60% (4323/7144)
+Line coverage: 63% (5144/8140)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
