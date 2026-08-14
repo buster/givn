@@ -214,12 +214,17 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn collect_scenarios(root: &Path) -> Result<Vec<ScenarioText>> {
-    collect_scenarios_from(root, &root.join("givn/specs"))
+    collect_scenarios_from(root, &permanent_specs_path(root))
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn spec_index_path(root: &Path) -> std::path::PathBuf {
     root.join("givn/.spec-index.json")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn permanent_specs_path(root: &Path) -> std::path::PathBuf {
+    root.join("givn/specs")
 }
 
 #[cfg(feature = "spec-retrieval")]
