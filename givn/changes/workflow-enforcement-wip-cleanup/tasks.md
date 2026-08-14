@@ -210,20 +210,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `cdabeeb` -- `Integrity hook skips arc42 check when slug cannot be resolved`
 
-- [ ] Scenario: `Archive re-runs verify against merged permanent specs and passes`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Archive re-runs verify against merged permanent specs and passes`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Archive re-runs verify against merged permanent specs and passes' is tagged @wip
+        givn lint: 1 file(s) checked, 7 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Archive re-runs verify against merged permanent specs and passes`
+  - [x] COMMIT: pending -- `Archive re-runs verify against merged permanent specs and passes`
 
 - [ ] Scenario: `Archive blocked when merged permanent specs fail verify`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
