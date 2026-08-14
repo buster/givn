@@ -128,7 +128,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: pending -- `Integrity hook fails on Step Definitions section that is not a table`
+  - [x] COMMIT: `5e6b8a3` -- `Integrity hook fails on Step Definitions section that is not a table`
 
 - [ ] Scenario: `Integrity hook passes when arc42 is disabled`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
