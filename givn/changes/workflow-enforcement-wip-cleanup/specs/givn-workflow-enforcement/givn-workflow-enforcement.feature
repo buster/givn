@@ -35,7 +35,7 @@ Feature: givn Workflow Enforcement
     And  stderr contains "Step Definitions"
     And  stderr contains "nonexistent.rs"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook fails on empty step-definition file
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains valid commit hashes
