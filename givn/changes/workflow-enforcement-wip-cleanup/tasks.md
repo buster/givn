@@ -332,20 +332,26 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `8ce289f` -- `Archive allowed when @wip only on a @givn.removed placeholder`
 
-- [ ] Scenario: `Check tasks blocked when delta spec has @wip`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Check tasks blocked when delta spec has @wip`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Check tasks blocked when delta spec has @wip' is tagged @wip
+        givn lint: 1 file(s) checked, 1 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's lifecycle `@wip`; the literal fixture
+        reference to `@wip` remains and the active-delta scenario passes.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command; no behavior change.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Check tasks blocked when delta spec has @wip`
+  - [x] COMMIT: pending -- `Check tasks blocked when delta spec has @wip`
 
 ## Final Gates
 
