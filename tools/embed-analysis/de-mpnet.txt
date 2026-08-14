@@ -1,0 +1,20 @@
+$HOME/.paseo/worktrees/008cxm4u/admiring-pony/tools/embed-analysis/analyze.py:296: UserWarning: The model sentence-transformers/paraphrase-multilingual-mpnet-base-v2 now uses mean pooling instead of CLS embedding. In order to preserve the previous behaviour, consider either pinning fastembed version to 0.5.1 or using `add_custom_model` functionality.
+  return TextEmbedding(model, cache_dir=CACHE_DIR)
+
+== German labeled pairs by similarity (model sentence-transformers/paraphrase-multilingual-mpnet-base-v2) ==
+label      sim    jac  note
+dup     0.9632  0.700  DE F1: identischer Titel, resolver seam vs real binary
+dup     0.9145  0.600  DE F3: missing-config subset
+legit   0.8604  0.379  DE reasoning: request-body vs stderr channel
+dup     0.8120  0.615  DE F6: empty search subset
+dup     0.7664  0.429  DE F2: identischer Titel, Paraphrase
+legit   0.7062  0.393  DE transport: normal vs Test-Support override
+legit   0.6696  0.424  DE credential matrix: literal vs fallback
+legit   0.6643  0.318  DE F7: debug vs release binary
+
+== German separation ==
+dup   sim: min=0.7664 median=0.9145 max=0.9632 n=4
+legit sim: min=0.6643 median=0.7062 max=0.8604 n=4
+overlap band (max legit - min dup): +0.0940  (OVERLAPS)
+best threshold sim>=0.7664: 1/8 misclassified
+best threshold jaccard>=0.4286: 0/8 misclassified

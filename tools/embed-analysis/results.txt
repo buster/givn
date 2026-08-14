@@ -26,11 +26,13 @@ dup   sim: min=0.7771 median=0.9378 max=0.9803 n=8
 legit sim: min=0.7783 median=0.8775 max=0.9249 n=10
 overlap band (max legit - min dup): +0.1477  (OVERLAPS)
 best threshold sim>=0.9229: 4/18 misclassified
-best threshold jaccard>=0.8485: 8/18 misclassified
+best threshold jaccard>=0.5926: 5/18 misclassified
 exact-title match catches 2/8 dup pairs
 
-== differentiation burden (sim >= 0.9) ==
-   every pair in this zone requires an explicit boundary statement:
+== near-duplicate zone (sim >= 0.9) ==
+   each pair must be classified: MERGE (duplicate / variant -> Examples row,
+   parameter, or delete) or KEEP-AS-BOUNDARY (different production boundary ->
+   rename so the wording looks different enough).
    dup     0.9803  F1 identical title
    dup     0.9514  F6 empty search subset
    dup     0.9474  F5 failed/empty output duplicate
@@ -41,7 +43,7 @@ exact-title match catches 2/8 dup pairs
    legit   0.9113  transport: normal vs test-support
    dup     0.9106  F3 missing-config subset
    legit   0.9069  credential matrix: fallback vs missing
-   4/10 legit boundary pairs fall in the near-duplicate zone -> authors must differentiate these in the title/boundary
+   4/10 legit boundary pairs fall in the near-duplicate zone -> KEEP-AS-BOUNDARY candidates that must be reworded to look distinct
 
 == retrieval (hold-one-out): a new scenario vs all other active ==
 label  best marg>0  note
