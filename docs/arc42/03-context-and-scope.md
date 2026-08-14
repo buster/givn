@@ -36,8 +36,9 @@ graph TB
 | `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files. |
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
+| `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
-| Exit codes | out | 0 clean / 1 parse error / 2 wip (for `givn lint`); standard 0/non-0 elsewhere. |
+| Exit codes | out | For `givn lint`: 0 clean / 1 parse error / 3 duplicate scenario title / 2 wip (1 > 3 > 2); standard 0/non-0 elsewhere. |
 | `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
 | Embedded assets | in | Compiled-in default manifest, templates, skill templates. |
 

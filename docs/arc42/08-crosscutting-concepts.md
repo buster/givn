@@ -329,9 +329,14 @@ Standards-aligned, configurable-target emit (see ADR-013, ADR-036):
 ## 8.8 Error handling and exit codes
 
 - Library errors via `thiserror`; application context via `anyhow`.
-- `givn lint` exit codes: **0** clean, **1** parse error, **2** `@wip`/PENDING
-  (these describe spec well-formedness, not test results — "GREEN" comes from the
-  test runner, not from `givn lint`).
+- `givn lint` exit codes: **0** clean, **1** parse error, **3** duplicate
+  scenario title (overlap hard error), **2** `@wip`/PENDING — precedence
+  1 > 3 > 2. Overlap **warnings** (shape match, subset, long scenario) never
+  change the exit code; they require a disposition at review time
+  (see ADR-037). `--json` emits all findings as a JSON array on stdout
+  (one object per finding: `kind`, `level`, `files`, `titles`), exit codes
+  unchanged. These describe spec well-formedness, not test results — "GREEN"
+  comes from the test runner, not from `givn lint`.
 - Other commands: **0** success, non-zero on failure with a clear message.
 - Destructive operations (archive) validate all preconditions before any write.
 

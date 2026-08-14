@@ -10,6 +10,9 @@
 | **Cascade** | The CSS-style resolution where a project override file wins over the embedded default, per facet. |
 | **Change** | A unit of work moving through the lifecycle, living in `givn/changes/<id>/` and ending in `givn/archive/<id>/`. |
 | **Delta** | A `.feature` file tagged `@givn.delta` describing additions/modifications/removals to be merged into the permanent spec. |
+| **Disposition table** | The review.md table in which every shape match involving the change's delta is classified (`merge`/`delete`/`boundary`/`related`); the review gate blocks until it is complete. See ADR-037. |
+| **Fingerprint** | The deterministic, masked assertion sequence plus extracted facts (exit code, contains polarity, data-table contents, `[DONE]`, TTY) of a scenario; the basis of shape-match and subset detection. See ADR-037. |
+| **Net-delta receipt** | The review output counting added/modified/removed scenarios of a change (prose + JSON line), acknowledging the net effect of removed+added pairs. |
 | **Eject** | Materialise an embedded default into the project `givn/` dir so it can be edited (`givn eject`). |
 | **Facet** | The smallest overridable unit of an artifact: template, instructions, or deps. |
 | **Feature file** | A Gherkin `.feature` file. In givn it IS the specification (no `spec.md`). |
@@ -17,6 +20,7 @@
 | **Overlay / patch** | The project's `givn/config.yaml`, merged onto the embedded default manifest (add/modify/remove). |
 | **Permanent spec** | The merged, tag-stripped `.feature` under `givn/specs/` — the source of truth after archive. |
 | **Scenario** | A Gherkin scenario (Given/When/Then). The unit of the TDD loop. |
+| **Shape match** | Two scenarios whose masked assertion sequences are equal but whose titles differ; a lint warning that requires a disposition at review unless their facts contradict. See ADR-037. |
 | **Skill** | A `SKILL.md` (frontmatter + markdown) that an agent can load to perform a workflow action. |
 | **TDD loop** | Scenario-by-scenario RED (failing assertions) → GREEN (minimum code) → REFACTOR. |
 | **Hook** (`post`) | A command an artifact runs after completion: built-in `verify` (runs the test runner) or `lint`, or a shell command. Run by `givn check` and as the `givn archive` gate; failure blocks (unless `allow_failure`). See ADR-028, ch.8.12. |
