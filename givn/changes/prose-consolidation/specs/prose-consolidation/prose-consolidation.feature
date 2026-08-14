@@ -31,7 +31,7 @@ Feature: prose-consolidation
     And generated guidance does not contain "one `@e2e` scenario per User Interaction Inventory entry"
     And generated guidance does not contain "one @e2e scenario per distinct happy-path action"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Project override replaces the canonical specs instruction
     Given a givn project
     And a project override for specs instructions containing "Project-specific E2E policy"
