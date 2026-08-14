@@ -148,7 +148,7 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: pending -- `Integrity hook passes when arc42 is disabled`
+  - [x] COMMIT: `5348c61` -- `Integrity hook passes when arc42 is disabled`
 
 - [ ] Scenario: `Integrity hook fails on unedited arc42 chapter`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
