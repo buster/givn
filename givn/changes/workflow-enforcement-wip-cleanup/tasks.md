@@ -355,8 +355,24 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
 
 ## Final Gates
 
-- [ ] Full active-delta suite passes with `GIVN_FEATURES` set to this change.
-- [ ] Full permanent non-E2E suite passes with `./run-tests.sh`.
-- [ ] Existing E2E subset passes with `./run-tests.sh --e2e`.
+- [x] Full active-delta suite passes with `GIVN_FEATURES` set to this change.
+      ```text
+      givn lint: 1 file(s) checked — clean
+      [Summary]
+      1 feature
+      16 scenarios (16 passed)
+      105 steps (105 passed)
+      ```
+- [x] Full permanent non-E2E suite passes with `./run-tests.sh`.
+      ```text
+      exit 0; existing permanent non-E2E suite GREEN (163 scenarios)
+      ```
+- [x] Existing E2E subset passes with `./run-tests.sh --e2e`.
+      ```text
+      [Summary]
+      15 features
+      22 scenarios (22 passed)
+      127 steps (127 passed)
+      ```
 - [ ] Post-archive metadata checks prove no scenario-level `@wip` remains and
       fixture literals remain unchanged.
