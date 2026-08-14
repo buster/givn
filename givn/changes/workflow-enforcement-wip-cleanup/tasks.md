@@ -1,0 +1,278 @@
+# Tasks: workflow-enforcement-wip-cleanup
+
+This is a metadata-only characterization migration. The existing bindings and
+observable behavior are already GREEN. A meaningful production RED phase is
+not applicable; each scenario uses `givn lint --change` as the metadata check,
+then runs the existing scenario against the active delta. Each scenario gets
+one atomic commit containing its tag transition, evidence, and task checkbox.
+
+## Strict-Mode Setup
+
+- [x] **Setup**: prove that `tests/features_runner.rs` uses
+      `.fail_on_skipped()`, and run a temporary undefined-step probe that must
+      exit non-zero. No new runner or step-definition file is needed; the
+      existing capability binding is `tests/steps/workflow_enforcement_steps.rs`.
+      Stub convention, if ever needed: Rust `unimplemented!()`.
+      ```text
+      Command:
+      GIVN_FEATURES=tests/strict-mode-probe.feature cargo test --test features_runner -- --name '^Undefined steps fail the runner$'
+
+      Output:
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      thread 'main' panicked ... cucumber-0.23.0 ... 1 step failed
+      error: test failed, to rerun `--test features_runner`
+      ```
+
+## Scenarios
+
+- [ ] Scenario: `Integrity hook passes when tasks.md commit hashes are present`
+  - [ ] RED-equivalent: `givn lint --change workflow-enforcement-wip-cleanup`
+        reports the still-WIP delta; existing behavior is already implemented.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove `@wip` from this scenario only and run the anchored
+        active-delta command from design.md.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command; no behavior change.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook passes when tasks.md commit hashes are present`
+
+- [ ] Scenario: `Integrity hook fails on placeholder commit hash`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook fails on placeholder commit hash`
+
+- [ ] Scenario: `Integrity hook fails on missing step-definition file`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook fails on missing step-definition file`
+
+- [ ] Scenario: `Integrity hook fails on empty step-definition file`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook fails on empty step-definition file`
+
+- [ ] Scenario: `Integrity hook fails on Step Definitions section that is not a table`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook fails on Step Definitions section that is not a table`
+
+- [ ] Scenario: `Integrity hook passes when arc42 is disabled`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook passes when arc42 is disabled`
+
+- [ ] Scenario: `Integrity hook fails on unedited arc42 chapter`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook fails on unedited arc42 chapter`
+
+- [ ] Scenario: `Integrity hook passes on edited arc42 chapter`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook passes on edited arc42 chapter`
+
+- [ ] Scenario: `Integrity hook skips arc42 check when slug cannot be resolved`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Integrity hook skips arc42 check when slug cannot be resolved`
+
+- [ ] Scenario: `Archive re-runs verify against merged permanent specs and passes`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Archive re-runs verify against merged permanent specs and passes`
+
+- [ ] Scenario: `Archive blocked when merged permanent specs fail verify`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Archive blocked when merged permanent specs fail verify`
+
+- [ ] Scenario: `New-capability merge failure produces clear recovery instructions`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `New-capability merge failure produces clear recovery instructions`
+
+- [ ] Scenario: `Design.md template includes Internal Primitives section`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Design.md template includes Internal Primitives section`
+
+- [ ] Scenario: `Archive blocked when delta spec has non-removed @wip scenario`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Archive blocked when delta spec has non-removed @wip scenario`
+
+- [ ] Scenario: `Archive allowed when @wip only on a @givn.removed placeholder`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Archive allowed when @wip only on a @givn.removed placeholder`
+
+- [ ] Scenario: `Check tasks blocked when delta spec has @wip`
+  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+        ```text
+        <paste lint output>
+        ```
+  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] REFACTOR: rerun the anchored command.
+        ```text
+        <paste runner output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Check tasks blocked when delta spec has @wip`
+
+## Final Gates
+
+- [ ] Full active-delta suite passes with `GIVN_FEATURES` set to this change.
+- [ ] Full permanent non-E2E suite passes with `./run-tests.sh`.
+- [ ] Existing E2E subset passes with `./run-tests.sh --e2e`.
+- [ ] Post-archive metadata checks prove no scenario-level `@wip` remains and
+      fixture literals remain unchanged.
