@@ -48,20 +48,28 @@ complete.
         ```
   - [x] COMMIT: `7187b03` -- `Project override replaces the canonical specs instruction`
 
-- [ ] Scenario: `Canonical policy classifies output-affecting flags as variants`
-  - [ ] RED: remove `@wip`; target the scenario with the design.md command.
+- [x] Scenario: `Canonical policy classifies output-affecting flags as variants`
+  - [x] RED-equivalent: immediate GREEN characterization through existing CLI
+        subprocess steps; the changed canonical instruction is the observable
+        asset under test.
         ```text
-        <paste non-zero output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] GREEN: assert the canonical variant wording through the real CLI.
+  - [x] GREEN: asserted the canonical variant wording through the real CLI.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun targeted scenario.
+  - [x] REFACTOR: reran targeted scenario.
         ```text
-        <paste zero-exit output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Canonical policy classifies output-affecting flags as variants`
+  - [x] COMMIT: pending -- `Canonical policy classifies output-affecting flags as variants`
 
 - [ ] Scenario: `Design and review instructions defer to the canonical policy`
   - [ ] RED: remove `@wip`; target the scenario with the design.md command.
