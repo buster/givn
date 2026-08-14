@@ -349,7 +349,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Written with conjunctions"
     And  stderr contains "Written with plain steps"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Quoted strings are masked in the shape comparison
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
