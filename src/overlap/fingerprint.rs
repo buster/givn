@@ -144,16 +144,22 @@ pub struct Fingerprint {
 
 impl Fingerprint {
     pub fn of_scenario(scenario: &Scenario, background: Option<&Background>) -> Fingerprint {
-        let last_when = scenario.steps.iter().rposition(|s| s.ty == StepType::When);
-        let assertion_steps: Vec<&Step> = scenario
-            .steps
+        // Background steps are prepended before the comparison (they belong
+        // to the scenario's step sequence) but do not count toward length.
+        let background_steps: Vec<&Step> =
+            background.map(|b| b.steps.iter().collect()).unwrap_or_default();
+        let own_steps: Vec<&Step> = scenario.steps.iter().collect();
+        let all_steps: Vec<&Step> = background_steps.iter().copied().chain(own_steps.iter().copied()).collect();
+
+        let last_when = all_steps.iter().rposition(|s| s.ty == StepType::When);
+        let assertion_steps: Vec<&Step> = all_steps
             .iter()
             .enumerate()
             .filter(|(i, s)| s.ty == StepType::Then && last_when.is_none_or(|w| *i > w))
-            .map(|(_, s)| s)
+            .map(|(_, s)| *s)
             .collect();
 
-        let facts = Facts::extract(&assertion_steps, &scenario.name, &scenario.steps.iter().collect::<Vec<_>>());
+        let facts = Facts::extract(&assertion_steps, &scenario.name, &all_steps);
         let assertions = assertion_steps.iter().map(|s| mask(&s.value)).collect();
         Fingerprint { assertions, facts }
     }
