@@ -128,3 +128,9 @@ retrieval engine are not modified. Existing guidance assertions are reused;
       ```text
       pre-retrieval positive-command scan: clean
       ```
+
+## Post-Archive Evidence
+
+- [x] Permanent spec has no `@wip` tags after archive.
+- [x] Post-merge suites passed: 169 non-E2E scenarios and 25 E2E scenarios.
+- [x] Coverage merge passed with `5159/8154` lines and `0/0` branches.
