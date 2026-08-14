@@ -8,7 +8,7 @@
 
 Feature: prose-consolidation
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Canonical E2E policy is emitted by specs instructions
     Given a givn project
     When the user runs `givn instructions specs --change prose-consolidation`
