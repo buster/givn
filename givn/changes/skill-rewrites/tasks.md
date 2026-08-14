@@ -39,20 +39,27 @@ retrieval engine are not modified. Existing guidance assertions are reused;
         ```
   - [x] COMMIT: `433cdb8` -- `Review instructions require deterministic gate dispositions`
 
-- [ ] Scenario: `Design and step instructions require the Black-Box-First decision`
-  - [ ] RED: remove `@wip`; target with the exact scenario command.
+- [x] Scenario: `Design and step instructions require the Black-Box-First decision`
+  - [x] RED-equivalent: immediate GREEN characterization through the real
+        design/tasks instruction subprocesses.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] GREEN: assert both instruction outputs through the real subprocess.
+  - [x] GREEN: asserted both instruction outputs through the real subprocess.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: rerun targeted scenario.
+  - [x] REFACTOR: reran targeted scenario.
         ```text
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Design and step instructions require the Black-Box-First decision`
+  - [x] COMMIT: pending -- `Design and step instructions require the Black-Box-First decision`
 
 - [ ] Scenario: `Spec instructions use deterministic gates before retrieval exists`
   - [ ] RED: remove `@wip`; target with the exact scenario command.
