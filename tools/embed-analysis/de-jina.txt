@@ -1,0 +1,18 @@
+
+== German labeled pairs by similarity (model jinaai/jina-embeddings-v2-base-de) ==
+label      sim    jac  note
+dup     0.9729  0.700  DE F1: identischer Titel, resolver seam vs real binary
+dup     0.8946  0.615  DE F6: empty search subset
+dup     0.8362  0.429  DE F2: identischer Titel, Paraphrase
+legit   0.7973  0.393  DE transport: normal vs Test-Support override
+dup     0.7917  0.600  DE F3: missing-config subset
+legit   0.7710  0.379  DE reasoning: request-body vs stderr channel
+legit   0.6771  0.318  DE F7: debug vs release binary
+legit   0.6279  0.424  DE credential matrix: literal vs fallback
+
+== German separation ==
+dup   sim: min=0.7917 median=0.8946 max=0.9729 n=4
+legit sim: min=0.6279 median=0.7710 max=0.7973 n=4
+overlap band (max legit - min dup): +0.0056  (OVERLAPS)
+best threshold sim>=0.7917: 1/8 misclassified
+best threshold jaccard>=0.4286: 0/8 misclassified
