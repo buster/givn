@@ -1,0 +1,95 @@
+# Tasks: skill-rewrites
+
+This change rewrites embedded workflow guidance. The deterministic gates and
+retrieval engine are not modified. Existing guidance assertions are reused;
+`tests/steps/skill_rewrites_steps.rs` supplies the combined instruction step.
+
+## Setup
+
+- [ ] **Setup**: prove strict mode with an undefined-step probe, register
+      `skill_rewrites_steps.rs`, and confirm the existing runner's
+      `.fail_on_skipped()` mechanism.
+      ```text
+      <paste command and non-zero output>
+      ```
+
+## Non-E2E Scenarios
+
+- [ ] Scenario: `Review instructions require deterministic gate dispositions`
+  - [ ] RED: remove `@wip`; target with the exact scenario command.
+        ```text
+        <paste output>
+        ```
+  - [ ] GREEN: assert review instruction gate choreography through the CLI.
+        ```text
+        <paste output>
+        ```
+  - [ ] REFACTOR: rerun targeted scenario.
+        ```text
+        <paste output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Review instructions require deterministic gate dispositions`
+
+- [ ] Scenario: `Design and step instructions require the Black-Box-First decision`
+  - [ ] RED: remove `@wip`; target with the exact scenario command.
+        ```text
+        <paste output>
+        ```
+  - [ ] GREEN: assert both instruction outputs through the real subprocess.
+        ```text
+        <paste output>
+        ```
+  - [ ] REFACTOR: rerun targeted scenario.
+        ```text
+        <paste output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Design and step instructions require the Black-Box-First decision`
+
+- [ ] Scenario: `Spec instructions use deterministic gates before retrieval exists`
+  - [ ] RED: remove `@wip`; target with the exact scenario command.
+        ```text
+        <paste output>
+        ```
+  - [ ] GREEN: assert deterministic-gate guidance and no retrieval command.
+        ```text
+        <paste output>
+        ```
+  - [ ] REFACTOR: rerun targeted scenario.
+        ```text
+        <paste output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Spec instructions use deterministic gates before retrieval exists`
+
+## E2E Setup
+
+- [ ] **E2E setup**: prove `./run-tests.sh --e2e` and the real CLI subprocess;
+      enable all configured skill targets through the fixture.
+      ```text
+      Full active count: <paste>
+      E2E active count: <paste; strictly smaller>
+      ```
+
+## E2E Scenario
+
+- [ ] @e2e Scenario: `Synchronized guidance explains how to resolve the deterministic gates`
+  - [ ] RED: remove `@wip`; target using the E2E scenario filter.
+        ```text
+        <paste output>
+        ```
+  - [ ] GREEN: assert successful skills-sync CLI output, review dispositions,
+        split-or-keep, removed+added, Black-Box-First, and no retrieval step.
+        ```text
+        <paste output>
+        ```
+  - [ ] REFACTOR: rerun targeted E2E scenario.
+        ```text
+        <paste output>
+        ```
+  - [ ] COMMIT: `<hash>` -- `Synchronized guidance explains how to resolve the deterministic gates`
+
+## Final Gates
+
+- [ ] Active non-E2E suite passes.
+- [ ] Active E2E suite passes.
+- [ ] Full permanent suite and E2E subset pass after archive.
+- [ ] No retrieval instruction appears before Change 5.
