@@ -15,7 +15,7 @@ Feature: givn Workflow Enforcement
     Then  the command exits 0
     And  stdout contains "integrity"
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook fails on placeholder commit hash
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains `- [x] COMMIT: ___ -- scenario one`
