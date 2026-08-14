@@ -71,7 +71,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Borrowed title"
     And  stderr contains "gamma.feature"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Deltas of two active changes sharing a title are a hard error
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/changes/one/specs/a/a.feature" with:
