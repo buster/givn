@@ -41,37 +41,11 @@ Exempt only once a step has a real assertion (GREEN) or performs a real
 reused action. Before trusting any PASS, confirm the runner is strict (see
 design.md's Strict Mode section, proven in tasks.md's setup task).
 
-## E2E step definitions
+## Canonical E2E policy
 
-`@e2e` scenarios use separate step definitions (different infrastructure:
-browser driver, HTTP client). One file per capability, same reuse rules,
-never mixed with non-e2e steps.
-
-## Rule: `@e2e` asserts the real interface — not instead of it
-
-An `@e2e` scenario's Then steps assert PRIMARILY on what the real interface
-returned or displayed (page content, HTTP response, redirect, CLI output).
-Repository/database checks are allowed only as secondary, additional
-assertions — never the sole assertion. A `@e2e` scenario whose Then steps
-touch only the repository is an integration test wearing the wrong tag; it
-does not prove the feature works end-to-end.
-
-**The real interface is whichever one a real user/client uses — not
-whichever is easiest to automate.** For a browser-UI capability, the step
-definitions must drive a real browser (click/type/navigate via a real
-driver) — never an HTTP request to the backend route, and never `fetch()`/
-`XMLHttpRequest` called from the page's own JS context. Both only exercise
-the API, never the UI, even if the assertion later checks page content. If
-the capability's real interface IS an API with no UI, an HTTP request
-against it genuinely is the real interface.
-
-If a technical obstacle blocks the real interface (a browser session/cookie
-not persisting across steps, an auth redirect losing state, a flaky
-selector), that is a design gap, not a reason to test something weaker.
-Apply the fix design.md names in its "Anticipated interface obstacles"
-section. If none is named for this obstacle, STOP and report it as a
-blocker — do not substitute a repository-only assertion or an HTTP/fetch()
-shortcut and move on.
+Read `givn instructions specs --change <id>` for the normalized action scope,
+real-interface assertions, and driver-fidelity rules. This command owns only
+step-definition mechanics and scenario targeting; it does not restate policy.
 
 ## RED → GREEN → REFACTOR → COMMIT (one scenario at a time)
 

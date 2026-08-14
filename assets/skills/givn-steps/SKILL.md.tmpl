@@ -47,9 +47,10 @@ giant all-in-one step file is a red flag: it hides empty/no-op stubs.
 - Node (`cucumber-js`): `features/steps/<capability>.steps.js`.
 - Java (`cucumber-jvm`): `src/test/java/.../steps/<Capability>Steps.java`.
 
-`@e2e` scenarios use separate step definitions (different infrastructure:
-browser driver, HTTP client), same one-file-per-capability rule, never
-mixed with non-e2e steps.
+`@e2e` scenarios use separate step definitions and the same one-file-per-
+capability rule. Read the canonical E2E policy with
+`givn instructions specs --change {{CHANGE_ID}}`; do not restate its action
+scope or interface policy here.
 
 ## Rule: `@e2e` tags are immutable — never remove them
 
@@ -62,30 +63,12 @@ detected at review time (`givn check review`) and lint time (`givn lint
 `givn/config.yaml`, implement the e2e test infrastructure, and make the
 scenario pass.
 
-## Rule: `@e2e` asserts the real interface — not instead of it
+## Canonical E2E policy
 
-An `@e2e` scenario's Then steps assert PRIMARILY on what the real interface
-returned or displayed (page content, HTTP response, redirect, CLI output).
-Repository/database checks are allowed only as secondary, additional
-assertions — never the sole assertion. A `@e2e` scenario whose Then steps
-touch only the repository is an integration test wearing the wrong tag.
-
-**The real interface is whichever one a real user/client uses, not whichever
-is easiest to automate.** For a browser-UI capability, the step definitions
-must drive the actual browser (click/type/navigate via a real driver) —
-never an HTTP request to the backend route, and never `fetch()`/
-`XMLHttpRequest` called from the page's own JS context. Both produce a
-scenario that never actually drove the browser, even if its assertion later
-checks page content. If the capability's real interface IS an API with no
-UI, an HTTP request against it genuinely is the real interface.
-
-If a technical obstacle blocks the real interface (browser session/cookie
-not persisting across steps, an auth redirect losing state, a flaky
-selector), that is a design gap, not a reason to test something weaker.
-Apply the fix design.md names in its Anticipated Interface Obstacles
-section. If none is named for this obstacle, STOP and report it as a
-blocker — do not substitute a repository-only assertion, or an HTTP/fetch()
-shortcut, and move on.
+Read `givn instructions specs --change {{CHANGE_ID}}` for the real-interface
+assertion, driver-fidelity, and normalized action rules. This skill supplies
+step-writing mechanics and applies the resolved design's concrete driver; it
+does not define another policy.
 
 ## Step reuse
 

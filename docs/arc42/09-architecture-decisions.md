@@ -1203,3 +1203,79 @@ top badges without taking ownership of surrounding README content.
 
 **Consequences.** A branch denominator of zero is rendered as `n/a`; the README
 does not claim `0%` for a metric that the coverage tool did not measure.
+
+---
+
+## ADR-038: One normative authoring-policy source
+
+**Status:** Accepted
+**Date:** 2026-08-14
+**Decision-makers:** givn maintainers
+
+### Context and Problem Statement
+
+E2E and interaction-inventory rules were repeated across artifact instructions,
+skills, slash commands, and templates. The wording drifted, and one skill
+contained contradictory inventory guidance about flag combinations and action
+variants.
+
+### Decision Drivers
+
+- Authors need one discoverable policy regardless of entry point.
+- Project overrides must remain effective and reviewable.
+- Generated guidance must be shorter without losing artifact-specific mechanics.
+- The policy must remain language- and runner-agnostic.
+
+### Considered Options
+
+1. Keep policy text duplicated in every entry point and rely on review.
+2. Put the complete policy in the `specs` instruction; make other assets
+   reference it and retain only choreography.
+3. Add a new runtime include/preprocessor for policy fragments.
+
+### Decision Outcome
+
+Chosen option: **one normative policy in the `specs` instruction, with thin
+references from all other instruction, skill, command, and template assets.**
+The existing project override cascade remains the customization mechanism.
+
+### Pros and Cons of the Options
+
+#### Keep duplicated policy text
+
+- Good, because every asset is self-contained.
+- Bad, because wording drifts and contradictions are difficult to detect.
+
+#### Canonical specs instruction with choreography references
+
+- Good, because `givn instructions specs` is the discoverable authority at the
+  point where interactions are authored.
+- Good, because it needs no renderer or binary protocol change.
+- Bad, because generated guidance is less self-contained and agents must follow
+  the reference before authoring or reviewing.
+
+#### Runtime include/preprocessor
+
+- Good, because shared text could be mechanically inserted.
+- Bad, because it adds a templating/runtime mechanism and complicates project
+  overrides for a problem that can be solved by explicit delegation.
+
+### Consequences
+
+Authors must read the resolved specs instruction before writing or reviewing
+interaction inventories. A project override can replace the effective policy,
+so review verifies the resolved instruction rather than only the embedded
+default. Generated guidance becomes shorter and less self-contained, but its
+entry points are less likely to drift. The residual drift risk and the parity
+scan are recorded as R-17 in chapter 11.
+
+### Confirmation
+
+The prose-consolidation executable spec checks canonical instruction output,
+flag-variant wording, synchronized generated guidance across configured targets,
+absence of legacy policy wording, and project override resolution.
+
+### More Information
+
+Related decisions: ADR-013 (multi-target emit), ADR-026 (Arc42 artifact),
+ADR-036 (configurable agent targets), and chapter 8.3a.
