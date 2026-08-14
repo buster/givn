@@ -104,7 +104,7 @@ Feature: review-disposition-gates
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review blocks when a delta scenario shape-matches a permanent scenario without disposition
     Given  a givn project with a change that has passed design-review
     And  a .feature file at "givn/specs/ex/ex.feature" with:
