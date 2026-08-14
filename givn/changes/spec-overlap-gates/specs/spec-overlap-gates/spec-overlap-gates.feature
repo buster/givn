@@ -373,7 +373,7 @@ Feature: spec-overlap-gates
     And  stderr contains "Looking for alpha"
     And  stderr contains "Looking for beta"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Numbers are masked in the shape comparison but exit codes stay facts
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
