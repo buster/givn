@@ -166,7 +166,11 @@ Feature: review-disposition-gates
     And  a .feature file at "givn/changes/test-change/specs/cap/cap.feature" with:
       """
       Feature: Cap
-        Scenario: Reviewless delta
+        Scenario: Reviewless shape one
+          Given a project root with givn/ initialised
+          When the user runs `givn lint`
+          Then the command exits 0
+        Scenario: Reviewless shape two
           Given a project root with givn/ initialised
           When the user runs `givn lint`
           Then the command exits 0
