@@ -262,11 +262,17 @@ reflect true state.
   - [ ] REFACTOR: `<output>`
   - [ ] COMMIT: `<hash>`
 
-- [ ] Scenario: `Review blocks with a clear message when review.md is missing`
-  - [ ] RED: `<output>`
-  - [ ] GREEN: Produktion: review.md-Pflicht-Bail.
-  - [ ] REFACTOR: `<output>`
-  - [ ] COMMIT: `<hash>`
+- [x] Scenario: `Review blocks with a clear message when review.md is missing`
+  - [x] RED: Fixture ohne Findings erzeugte keinen Block (Gate lief durch).
+        ```
+        -> Szenario um Fixture mit echtem Shape-Match-Paar erweitert.
+        ```
+  - [x] GREEN: Produktion: Bail nennt review.md, wenn undisponierte
+        Findings vorliegen und review.md fehlt.
+        ```
+        -> 1 scenario (1 passed), 5 steps (5 passed).
+        ```
+  - [x] COMMIT: `7c36829`
 
 - [ ] Scenario: `The net-delta receipt counts added, modified, and removed scenarios`
   - [ ] RED: `<output>`
