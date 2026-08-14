@@ -62,7 +62,7 @@ graph TD
 | Q-26 | Architecture consistency | A team completes a change while `addons.arc42` is enabled. | The human completion review cross-checks durable Arc42 facts and the change assessment against `design.md`, mapped tasks, and completed implementation evidence; any mismatch prevents the reviewer from recording `ARC42 CONFORMANCE: CLEAN` and `REVIEW: PASS` until corrected. |
 | Q-29 | Agent ergonomics | An author indexes permanent scenarios before writing a new one. | `givn spec index` reports the indexed inventory and persists a reusable local index. |
 | Q-30 | Agent ergonomics | An author searches with a behavior query. | `givn spec search` returns ranked related scenarios; results are advisory and never block the workflow. |
-| Q-31 | Agent ergonomics | A reviewer checks an active change for semantic candidates. | `givn spec review --change <id>` refreshes the permanent index and reports undisposed retrieval candidates without changing the review exit code. |
+| Q-31 | Agent ergonomics | A reviewer checks an active change for semantic candidates. | `givn spec review --change <id>` and `givn check review --change <id>` refresh the permanent index and report undisposed retrieval candidates without changing the review exit code. |
 | Q-27 | Agent ergonomics | An agent requests the specs instruction and then synchronizes skills. | The resolved specs instruction contains the canonical E2E policy; generated guidance points to it and does not contain contradictory legacy wording. |
 | Q-28 | Configurability | A project supplies `givn/artifacts/specs/instructions.md`. | `givn instructions specs` returns the project override, while synchronization leaves the override intact and generated guidance continues to delegate to the resolved instruction. |
 

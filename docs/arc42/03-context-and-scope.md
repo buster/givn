@@ -8,7 +8,7 @@ Gherkin `.feature` files.
 
 ```mermaid
 graph TB
-    CLI["givn (CLI)<br/>init · new · instructions · lint · check · status ·<br/>apply · archive · eject · skills sync"]
+    CLI["givn (CLI)<br/>init · new · instructions · lint · check · status ·<br/>archive · eject · skills sync · spec index/search/review"]
     PROJECT["givn/ project config dir<br/>(specs, changes, archive, ...)"]
     SKILLS["skills<br/>(.agents, .claude, .opencode)"]
     EMBEDDED["embedded defaults<br/>(baked into the binary)"]
