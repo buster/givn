@@ -23,6 +23,7 @@ pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod init_agent_target_selection_steps;
 pub mod preserve_docstrings_on_archive_steps;
+pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod review_disposition_gates_steps;
@@ -51,6 +52,8 @@ pub struct GivnWorld {
     project_root: Option<std::path::PathBuf>,
     /// License check state.
     license_state: choose_project_license_steps::LicenseState,
+    /// Combined output captured by a multi-command guidance scenario.
+    pub(crate) additional_output: Option<String>,
 }
 
 // --- helpers ---------------------------------------------------------------
