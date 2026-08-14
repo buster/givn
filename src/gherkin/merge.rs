@@ -1,5 +1,5 @@
 use crate::error::GivnError;
-use crate::gherkin::delta::{DeltaOp, DeltaScenario, strip_givn_tags};
+use crate::gherkin::delta::{strip_givn_tags, DeltaOp, DeltaScenario};
 /// Merge engine: apply delta scenarios to a permanent .feature file.
 ///
 /// Semantics (ADR-011, arc42 ch.8.3):
@@ -183,12 +183,22 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
 /// Extract everything before the first Scenario: line (the feature header).
 fn extract_feature_header(text: &str) -> String {
     let mut header = Vec::new();
+    let mut feature_seen = false;
     for line in text.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("Scenario:") || trimmed.starts_with("Scenario Outline:") {
             break;
         }
+        // A tag after the Feature line belongs to the first scenario. Keep
+        // feature-level tags before Feature, but do not carry stale
+        // first-scenario tags into a modified merge target.
+        if feature_seen && trimmed.starts_with('@') {
+            continue;
+        }
         header.push(line);
+        if trimmed.starts_with("Feature:") {
+            feature_seen = true;
+        }
     }
     // Trim trailing blank lines from header.
     while header
@@ -318,6 +328,36 @@ Feature: Delta
         let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
         assert!(result.contains("MFA"));
         assert!(result.contains("User logs in"));
+    }
+
+    #[test]
+    fn modified_first_scenario_drops_stale_target_tags() {
+        let permanent = r#"Feature: User auth
+
+  @wip
+  Scenario: User logs in
+    Given a registered user
+    When they provide valid credentials
+    Then they are authenticated
+"#;
+        let mod_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.modified
+  Scenario: User logs in
+    Given a registered user
+    When they provide valid credentials and MFA
+    Then they are authenticated with MFA
+"#;
+        let feature = parse_str(mod_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Modified,
+        };
+        let result = apply_deltas(Some(permanent), &[delta], "Delta").unwrap();
+        assert!(!result.contains("@wip"), "{result}");
+        assert!(result.contains("authenticated with MFA"), "{result}");
     }
 
     #[test]
