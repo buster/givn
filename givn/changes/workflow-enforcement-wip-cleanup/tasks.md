@@ -230,20 +230,25 @@ one atomic commit containing its tag transition, evidence, and task checkbox.
         ```
   - [x] COMMIT: `aa89a3d` -- `Archive re-runs verify against merged permanent specs and passes`
 
-- [ ] Scenario: `Archive blocked when merged permanent specs fail verify`
-  - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
+- [x] Scenario: `Archive blocked when merged permanent specs fail verify`
+  - [x] RED-equivalent: lint output with this scenario still tagged `@wip`.
         ```text
-        <paste lint output>
+        [WIP] scenario 'Archive blocked when merged permanent specs fail verify' is tagged @wip
+        givn lint: 1 file(s) checked, 6 finding(s)
         ```
-  - [ ] GREEN: remove this scenario's `@wip`; run its anchored active-delta command.
+  - [x] GREEN: removed this scenario's `@wip`; ran its anchored active-delta command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] REFACTOR: rerun the anchored command.
+  - [x] REFACTOR: reran the anchored command.
         ```text
-        <paste runner output>
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Archive blocked when merged permanent specs fail verify`
+  - [x] COMMIT: pending -- `Archive blocked when merged permanent specs fail verify`
 
 - [ ] Scenario: `New-capability merge failure produces clear recovery instructions`
   - [ ] RED-equivalent: lint output with this scenario still tagged `@wip`.
