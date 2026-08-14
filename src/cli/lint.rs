@@ -32,8 +32,13 @@ pub fn run(change: Option<&str>, paths: Vec<String>) -> Result<i32> {
         }
         files
     } else {
-        // Default: check all .feature files under givn/ in the project.
-        let files = collect_feature_files(&project_root.join("givn"));
+        // Default: check all .feature files under givn/ in the project,
+        // excluding the archive tree (historical, no longer executable).
+        let archive_root = project_root.join("givn/archive");
+        let files = collect_feature_files(&project_root.join("givn"))
+            .into_iter()
+            .filter(|p| !p.starts_with(&archive_root))
+            .collect::<Vec<_>>();
         if files.is_empty() {
             println!("givn lint: no .feature files found under givn/");
             return Ok(0);

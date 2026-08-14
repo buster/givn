@@ -258,7 +258,7 @@ Feature: spec-overlap-gates
     And  stderr contains "long scenario"
     And  stderr contains "The marathon"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The default scope excludes the archive tree
     Given  a project root with givn/ initialised
     And  a .feature file at "givn/specs/foo/foo.feature" with:
