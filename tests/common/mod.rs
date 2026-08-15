@@ -64,9 +64,7 @@ pub fn run_givn_with_env(
 ) -> Output {
     let bin = env!("CARGO_BIN_EXE_givn");
     let mut command = Command::new(bin);
-    command
-        .args(args)
-        .current_dir(env.root());
+    command.args(args).current_dir(env.root());
     if let Some((key, value)) = environment {
         command.env(key, value);
     }

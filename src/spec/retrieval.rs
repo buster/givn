@@ -184,11 +184,7 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
             .context("retrieval embedder returned no review vector")?;
         let ranked = rank_entries(&index.entries, &query_vector);
         for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
-            if crate::overlap::disposition::disposed(
-                &dispositions,
-                &scenario.title,
-                &entry.title,
-            ) {
+            if crate::overlap::disposition::disposed(&dispositions, &scenario.title, &entry.title) {
                 continue;
             }
             println!(
@@ -280,20 +276,15 @@ fn is_queryable_scenario(scenario: &gherkin::Scenario) -> bool {
 fn delta_specs_path(change_dir: &Path, change_id: &str) -> Result<std::path::PathBuf> {
     let path = change_dir.join("specs");
     if !path.exists() {
-        bail!(
-            "change `{change_id}` has no specs directory; create an active change delta first"
-        );
+        bail!("change `{change_id}` has no specs directory; create an active change delta first");
     }
     Ok(path)
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn validated_review_change_dir(root: &Path, change_id: &str) -> Result<std::path::PathBuf> {
-    crate::state::resolve_change_dir(root, change_id).with_context(|| {
-        format!(
-            "review change id `{change_id}` must be a kebab-case identifier"
-        )
-    })
+    crate::state::resolve_change_dir(root, change_id)
+        .with_context(|| format!("review change id `{change_id}` must be a kebab-case identifier"))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -408,10 +399,7 @@ fn normalize(mut vector: Vec<f32>) -> Vec<f32> {
 
 #[cfg(feature = "spec-retrieval")]
 fn cosine_similarity(left: &[f32], right: &[f32]) -> f32 {
-    left.iter()
-        .zip(right)
-        .map(|(a, b)| a * b)
-        .sum::<f32>()
+    left.iter().zip(right).map(|(a, b)| a * b).sum::<f32>()
 }
 
 #[cfg(feature = "spec-retrieval")]
