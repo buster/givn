@@ -35,6 +35,9 @@
 | **Similarity candidate** | A distinct scenario pair whose passage-vector cosine score is at or above the binary-fixed `0.95` threshold. It is a hard review failure until resolved. |
 | **MERGE remediation** | The required response when a similarity candidate is a true duplicate: delete the duplicate scenario rather than keeping a second copy. |
 | **KEEP-AS-BOUNDARY remediation** | The required response when a similarity candidate is valid separate coverage: rewrite the retained title and steps so the observable distinction is explicit and the score falls below `0.95`; it is not an exception. |
+| **Retrieve-then-rerank** | A two-stage search flow in which embeddings retrieve a bounded candidate set and a pair model performs the final comparison. |
+| **Pair reranker / cross-encoder** | A model that receives two complete texts jointly and returns a relevance logit for their relationship; it cannot precompute one independent vector per document. |
+| **Reranker raw logit** | The uncalibrated scalar returned by the pair model before the diagnostic sigmoid transformation. It is not an embedding cosine score or probability. |
 | **Coverage measurement command** | The project-owned command in `coverage.measure_command` that runs the configured test subsets and writes the non-E2E and E2E source coverage reports. |
 | **Coverage merge command** | The project-owned command in `coverage.merge_command` that combines the two source reports into `coverage.output_path`. Its fresh output is authoritative for README coverage. |
 | **Merged coverage report** | The Cobertura XML emitted by the coverage merge command. givn validates this report and uses its line and branch counters for both README badges and the managed summary. |

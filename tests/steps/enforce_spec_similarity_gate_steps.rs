@@ -10,7 +10,7 @@ use crate::common;
 const PROVIDER_STEPS: &str = "    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
 
 #[given("a givn project with permanent near-duplicate scenarios in different feature files")]
-fn permanent_cross_feature_pair(world: &mut GivnWorld) {
+pub(crate) fn permanent_cross_feature_pair(world: &mut GivnWorld) {
     let env = common::make_init_root();
     clear_permanent_specs(&env);
     write_feature(
@@ -30,6 +30,7 @@ fn permanent_cross_feature_pair(world: &mut GivnWorld) {
     prepare_retrieval_commands(&env);
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
 }
 
 #[given("a givn project with permanent near-duplicate scenarios in one feature file")]
@@ -86,7 +87,7 @@ fn permanent_six_near_duplicates(world: &mut GivnWorld) {
 }
 
 #[given("an active change delta contains a distinct scenario")]
-fn distinct_delta(world: &mut GivnWorld) {
+pub(crate) fn distinct_delta(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("similarity project is required");
     write_delta(
         env,
@@ -150,7 +151,7 @@ fn modify_own_scenario(world: &mut GivnWorld) {
 }
 
 #[given("the active change removes the duplicate scenario named \"Unknown provider is rejected\"")]
-fn remove_duplicate_delta(world: &mut GivnWorld) {
+pub(crate) fn remove_duplicate_delta(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("similarity project is required");
     let path = env.path("givn/changes/running-change/specs/auth/auth.feature");
     fs::create_dir_all(path.parent().expect("delta parent")).expect("create delta directory");

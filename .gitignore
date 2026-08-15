@@ -17,6 +17,7 @@ reports/
 # Local semantic retrieval artifacts — generated and advisory
 givn/.spec-index.json
 givn/.spec-model-cache/
+givn/.spec-reranker-cache/
 
 # Backup files
 **/*.rs.bk

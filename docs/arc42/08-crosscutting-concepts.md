@@ -283,15 +283,18 @@ has a second responsibility: it embeds added and modified delta scenarios with
 the same `passage:` role as the permanent index, compares them with the
 pre-change permanent tree, projects the permanent tree after the delta's
 tagged add/modify/remove operations, and compares every distinct projected
-scenario pair. Same-file and cross-file pairs are both checked.
+scenario pair. The embedding index retrieves top-K cross-feature candidates;
+same-file structural variants remain owned by the deterministic overlap gate.
+Each candidate is then scored in both directions by the local multilingual
+pair reranker and the raw logits are averaged.
 
-The binary-fixed `SIMILARITY_THRESHOLD = 0.95` is inclusive. A pair at or above
-the threshold is a hard failure. The output tells the agent to classify the
-case as `MERGE` (delete the true duplicate) or `KEEP-AS-BOUNDARY` (rewrite the
-retained title and steps until the score is below the threshold). Neither note
-nor disposition table suppresses a candidate. A missing model/cache is an
-explicit setup failure for the feature-enabled strict review path, never a
-false clean result.
+The binary-fixed reranker raw-logit boundary is `3.0`. A pair at or above the
+boundary is a hard failure. The output tells the agent to classify the case as
+`MERGE` (delete the true duplicate) or `KEEP-AS-BOUNDARY` (rewrite the retained
+title and steps until the reranker score is below the boundary). Neither note
+nor disposition table suppresses a candidate. A missing embedding or reranker
+model/cache is an explicit setup failure for the feature-enabled strict review
+path, never a false clean result.
 
 The default binary remains independent of ONNX Runtime. Without the retrieval
 feature, ordinary check and archive behavior is unchanged and direct retrieval
