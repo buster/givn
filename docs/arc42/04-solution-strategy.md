@@ -19,7 +19,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
-| Scenario retrieval | Local multilingual embeddings and a persisted content-hash index; results are advisory and never a gate. |
+| Scenario retrieval | Local multilingual embeddings and a persisted content-hash index; interactive search is advisory, while review audits all permanent pairs and current deltas against a fixed `0.95` gate. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 
 ## 4.2 How the strategy meets the top quality goals

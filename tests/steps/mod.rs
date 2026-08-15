@@ -19,6 +19,7 @@ pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
+pub mod enforce_spec_similarity_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod init_agent_target_selection_steps;
