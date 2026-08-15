@@ -621,6 +621,52 @@ aus dem erneuten Embedding-Vergleich abgeleitet.
 
 ---
 
+## 5b. Change `cross-encoder-reranker` — pairwise semantic review experiment (IN ARBEIT / STACK-LAYER)
+
+> Dieser Stack-Layer basiert auf `38c2f22` (`enforce-spec-similarity-gate`) und
+> wird auf einem separaten Branch gegen die harte Embedding-Grenze verglichen.
+> Permanente Szenarien werden während des Benchmarks nicht verändert.
+
+### Hypothese
+
+Der Bi-Encoder findet Kandidaten schnell, bewertet aber zwei Szenarien getrennt.
+Ein lokaler multilingualer Cross-Encoder sieht beide Szenariotexte gemeinsam
+und kann deshalb echte Duplikate von validen Interface-/Boundary-Varianten
+trennen.
+
+### Geplanter Ablauf
+
+- Den bestehenden Embedding-Index als Candidate Generator behalten.
+- Pro Szenario deterministisch die Top-5-Embedding-Nachbarn holen.
+- Kandidaten mit `fastembed::TextRerank` und dem multilingualen
+  `BGERerankerV2M3` in beide Richtungen bewerten.
+- Die beiden Raw-Logits mitteln; der Reranker-Score, nicht der alte
+  Embedding-Score, entscheidet den Gate-Zustand.
+- Branch-Konstante `RERANKER_LOGIT_THRESHOLD = 3.0`; kein Projekt-, CLI-,
+  Environment- oder Review-Override.
+- `MERGE` löscht echte Duplikate; `KEEP-AS-BOUNDARY` erfordert weiterhin eine
+  Umschreibung unter die Reranker-Grenze. Eine Disposition unterdrückt keinen
+  Score.
+
+### Messung
+
+Verglichen werden Volltext-Embedding, Kandidatenmenge, Top-K-Recall,
+Reranker-Scores, CPU-Laufzeit und manuell klassifizierte Kandidaten. Der Branch
+wird nur übernommen, wenn der Reranker die False-Positive-Rate senkt, bekannte
+Duplikate weiterhin findet und die lokale Review-Laufzeit vertretbar bleibt.
+
+### Status
+
+- Basis-Commit: `38c2f22`.
+- Keine permanenten Szenarien als Teil des Benchmarks geändert.
+- Realer Benchmark abgeschlossen: 839 integrierte Kandidaten, 7 Reranker-
+  Kandidaten über Raw-Logit `3.0`, `750.67 s`; nur 1/7 ist klarer Duplikatfall.
+- Der Branch ist damit ein Vergleichs-/Negativbefund und keine freigegebene
+  Ersatzlösung für das Gate. Kein finaler Merge ohne duplicate-spezifisches
+  Modell oder zusätzliche belastbare Klassifikationsstufe.
+
+---
+
 ## 6. Change `watn-consolidation` — Dogfood der Gates im Referenzprojekt
 
 > Diese Change wird im watn-Repo (`~/projects/watn`) angelegt, nachdem

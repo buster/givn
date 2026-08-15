@@ -49,6 +49,7 @@ flowchart LR
 | FR-22 | Expose one canonical authoring policy for interaction inventories and E2E evidence; generated guidance references it rather than restating it. |
 | FR-23 | Provide local retrieval over permanent scenarios and enforce the fixed semantic-similarity gate during review and archive preparation. |
 | FR-24 | Keep interactive `givn spec search` advisory while requiring every permanent or current-delta scenario pair at or above the fixed `0.95` threshold to be rewritten or removed before review passes. |
+| FR-25 | Use local retrieve-then-rerank scoring to distinguish true duplicate scenarios from valid boundary candidates during semantic review. |
 
 ### Non-functional requirements (top)
 

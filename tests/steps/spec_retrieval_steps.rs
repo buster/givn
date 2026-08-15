@@ -27,6 +27,7 @@ fn retrieval_project(world: &mut GivnWorld) {
     .expect("write retrieval test commands");
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
 }
 
 #[given("the retrieval model is unavailable")]

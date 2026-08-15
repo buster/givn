@@ -62,10 +62,16 @@ pub fn run_givn_with_env(
     args: &[&str],
     environment: Option<(&str, &str)>,
 ) -> Output {
+    let environments = environment.into_iter().collect::<Vec<_>>();
+    run_givn_with_envs(env, args, &environments)
+}
+
+/// Invoke the `givn` binary with multiple optional environment overrides.
+pub fn run_givn_with_envs(env: &TestEnv, args: &[&str], environments: &[(&str, &str)]) -> Output {
     let bin = env!("CARGO_BIN_EXE_givn");
     let mut command = Command::new(bin);
     command.args(args).current_dir(env.root());
-    if let Some((key, value)) = environment {
+    for (key, value) in environments {
         command.env(key, value);
     }
     command.output().expect("spawn givn subprocess")

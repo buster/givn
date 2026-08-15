@@ -62,11 +62,11 @@ runtimes.
 
 Per-project footprint is created by `givn init` (see chapter 8.4 for the layout).
 No global config directory is used (NFR-3: all config in the project `givn/`).
-When retrieval is enabled, `givn/.spec-index.json` and the model cache are
-project-local and generated. Interactive search remains advisory, but review
-and archive-preparation similarity checks are strict at the binary-fixed `0.95`
-threshold. They are not present in the default installation without the
-opt-in feature.
+When retrieval is enabled, `givn/.spec-index.json`, the embedding model cache,
+and the separate `givn/.spec-reranker-cache/` are project-local and generated.
+Interactive search remains advisory; review additionally runs the local
+multilingual pair reranker over top-K candidates. These artifacts are not
+present in the default installation without the opt-in feature.
 
 ## 7.6 Upgrading an installed project
 
