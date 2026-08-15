@@ -214,6 +214,14 @@ and supplies only artifact-specific choreography. This prevents generated
 entry points from drifting into contradictory rules. The existing cascade
 still lets a consuming project override the effective instruction deliberately.
 
+### 8.3.1 Repository-owned CLI fixtures
+
+The same boundary applies to Givn's own acceptance tests. A fixture invokes
+the compiled CLI as an external process, sets its temporary project as the
+working directory, captures stdout and exit status, and keeps the temporary
+tree alive until all assertions finish. This prevents consumer repositories
+from becoming hidden test hosts for Givn behavior.
+
 ## 8.4 Project directory layout
 
 ```

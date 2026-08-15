@@ -1339,3 +1339,65 @@ paraphrase candidate, and excludes the current change's own delta.
 
 Related decisions: ADR-037 (deterministic overlap fingerprint), ADR-038
 (normative authoring policy), chapters 6.8a and 8.5a, and risks R-18/R-19/R-20.
+---
+
+## ADR-040: Repository-owned CLI acceptance fixtures
+
+Status: Accepted
+
+Date: 2026-08-15
+
+Decision-makers: givn maintainers
+
+### Context and Problem Statement
+
+Review, archive, and failure-preservation behavior was being exercised from a
+consumer repository. That made Givn's acceptance contract depend on a private
+consumer checkout and allowed the fixture to drift from Givn's own CLI.
+
+### Decision Drivers
+
+- Keep the acceptance source of truth with the product that owns the CLI.
+- Exercise the real binary and observable output rather than internal modules.
+- Avoid providers, network services, shared filesystems, and consumer-specific
+  paths.
+- Preserve deterministic failure and archive evidence.
+
+### Considered Options
+
+- Keep the fixture in a consumer repository; this creates a private cross-
+  repository CI dependency and couples unrelated release pipelines.
+- Replace the real CLI with an in-process fake; this loses confidence that the
+  shipped command and its filesystem boundary work together.
+- Own a generic temporary-project fixture in Givn and invoke the compiled CLI;
+  this keeps the test boundary real while removing the consumer dependency.
+
+### Decision Outcome
+
+Choose the Givn-owned temporary-project fixture. The fixture runs review and
+archive commands in a fresh directory, asserts CLI output and exit status, and
+uses permanent-tree checks only as secondary evidence. Consumer repositories
+retain their domain-specific specifications but do not install Givn in their
+normal CI.
+
+### Consequences
+
+#### Good
+
+- Givn's review, archive, and failure-preservation contracts are tested where
+  they are implemented.
+- Consumer CI remains independent of private Givn repository access.
+- The fixture is deterministic and reusable for future archive gate changes.
+
+#### Bad
+
+- Givn owns another integration fixture and must keep its generic project
+  layout aligned with the CLI contract.
+- Child-process coverage must be verified explicitly rather than inferred from
+  the step runner's coverage alone.
+
+### Confirmation
+
+The repository-ownership fixture change runs the compiled Givn CLI for review,
+archive, and pre-merge failure scenarios, then records both CLI and permanent
+tree evidence in the Gherkin run.
