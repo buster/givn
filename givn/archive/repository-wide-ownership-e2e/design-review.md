@@ -15,7 +15,7 @@
 | 9 | Strictness | Can pending steps silently pass? | PASS. `tests/features_runner.rs` uses `.fail_on_skipped()` and the RED stub is `unimplemented!()`. |
 | 10 | Addons | Can the temporary fixture run without unrelated addon gates? | PASS. The fixture uses `givn init --no-addons` and writes explicit `true`/`false` verify commands; coverage is disabled in the fixture and remains an outer Givn gate. |
 | 11 | Coverage | Is child-process coverage evidence concrete? | PASS. Review runs measurement and merge, then requires non-zero `lines-covered` for `src/cli/check.rs` and `src/cli/archive.rs` in the E2E and merged Cobertura reports. Missing/zero evidence is invalid, not excused. |
-| 12 | Architecture | Does Arc42 reflect the test-boundary decision? | PASS. All twelve rows are assessed; affected chapters, ADR-038, quality scenarios, risks, and glossary terms are updated. ADR-037 remains reserved for deterministic overlap fingerprints. |
+| 12 | Architecture | Does Arc42 reflect the test-boundary decision? | PASS. All twelve rows are assessed; affected chapters, ADR-040, quality scenarios, risks, and glossary terms are updated. ADR-037 remains reserved for deterministic overlap fingerprints. |
 
 ## Resolved Findings
 
@@ -34,7 +34,8 @@
   overlap finding.
 - Coverage evidence now names the exact commands, reports, and production
   paths required for sign-off.
-- The new architecture decision is ADR-038, avoiding the existing ADR-037.
+- The new architecture decision is ADR-040, following the existing ADR-038 and
+  ADR-039 decisions in the current stack.
 
 ## Arc42 Assessment
 
@@ -55,7 +56,7 @@
 
 All twelve durable chapter files exist and contain substantive content. The
 chapter scan found no Unicode box-drawing diagrams and no non-table pseudo-
-diagrams. ADR-038 consequences are represented by R-17/R-18 and D-10 in
+diagrams. ADR-040 consequences are represented by R-21/R-22 and D-10 in
 chapter 11.
 
 ## Sign-Off
