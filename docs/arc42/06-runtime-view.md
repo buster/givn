@@ -260,16 +260,18 @@ The retrieval and similarity-gate flow is:
 2. `givn spec search "<query>"` embeds an interactive query with the `query:`
    role, ranks candidates by cosine similarity, and prints the top results. This
    authoring command remains advisory.
-3. `givn spec review --change <id>` refreshes the permanent index, embeds added
-   and modified delta scenarios with the `passage:` role, and compares them with
-   the pre-change permanent tree.
+3. `givn spec review --change <id>` refreshes the permanent index, retrieves the
+   top-K added/modified delta neighbours with the `passage:` role, and compares
+   them with the pre-change permanent tree.
 4. The same review projects the permanent tree after applying the delta's
-   capability-tagged added, modified, and removed scenarios, then compares every
-   distinct projected pair. Same-file and cross-file pairs are both gate-relevant.
-5. A pair at or above the private binary threshold `0.95` prints a candidate and
-   remediation (`MERGE` means delete the duplicate; `KEEP-AS-BOUNDARY` means
-   rewrite the scenario below the threshold), then exits non-zero. A review note
-   cannot suppress the candidate.
+   capability-tagged added, modified, and removed scenarios, retrieves top-K
+   cross-feature pairs, and jointly scores each pair in both directions with the
+   local multilingual reranker.
+5. The averaged reranker raw logit is compared with the binary-fixed reranker
+   boundary. A candidate prints its embedding score, raw reranker score,
+   diagnostic sigmoid, and remediation (`MERGE` means delete the duplicate;
+   `KEEP-AS-BOUNDARY` means rewrite the scenario below the reranker boundary),
+   then exits non-zero. A review note cannot suppress the candidate.
 6. After a successful archive, the change is moved to `givn/archive/` and the
    permanent index is refreshed. The refresh is best-effort and feature-gated;
    it never runs before a merge gate that could roll the permanent tree back.

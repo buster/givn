@@ -17,6 +17,7 @@ pub mod choose_project_license_steps;
 pub mod coverage_readme_example_steps;
 pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
+pub mod cross_encoder_reranker_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
 pub mod enforce_spec_similarity_gate_steps;
@@ -63,6 +64,8 @@ pub struct GivnWorld {
     pub(crate) additional_output: Option<String>,
     /// Optional retrieval backend override for the current subprocess.
     pub(crate) retrieval_embedder: Option<String>,
+    /// Optional pair-reranker backend override for the current subprocess.
+    pub(crate) retrieval_reranker: Option<String>,
 }
 
 // --- helpers ---------------------------------------------------------------
@@ -240,14 +243,14 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
         .as_ref()
         .expect("a project root is required first");
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    let out = common::run_givn_with_env(
-        env,
-        &argv,
-        world
-            .retrieval_embedder
-            .as_deref()
-            .map(|value| ("GIVN_SPEC_EMBEDDER", value)),
-    );
+    let mut environments = Vec::new();
+    if let Some(value) = world.retrieval_embedder.as_deref() {
+        environments.push(("GIVN_SPEC_EMBEDDER", value));
+    }
+    if let Some(value) = world.retrieval_reranker.as_deref() {
+        environments.push(("GIVN_SPEC_RERANKER", value));
+    }
+    let out = common::run_givn_with_envs(env, &argv, &environments);
     if let Some(id) = change_id_from_args(&args) {
         world.last_change_id = Some(id);
     }

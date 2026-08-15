@@ -19,7 +19,11 @@ const INDEX_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
 #[cfg(feature = "spec-retrieval")]
-const SIMILARITY_THRESHOLD: f32 = 0.95;
+const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
+#[cfg(feature = "spec-retrieval")]
+const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
+#[cfg(feature = "spec-retrieval")]
+const RERANKER_TOP_K: usize = 5;
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -67,8 +71,16 @@ struct SimilarityEndpoint {
 struct SimilarityCandidate {
     left: SimilarityEndpoint,
     right: SimilarityEndpoint,
-    score: f32,
+    embedding_score: f32,
+    rerank_score: f32,
     scopes: Vec<&'static str>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct ScenarioRecord {
+    endpoint: SimilarityEndpoint,
+    embedding: Vec<f32>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -205,28 +217,38 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let index = read_index(&spec_index_path(root))?;
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
-    let candidates = similarity_candidates(root, &index, &delta)?;
+    let (candidates, considered) = similarity_candidates(root, &index, &delta)?;
+    println!(
+        "reranker: model {}, top_k {}, considered {} candidate pairs, fixed raw-logit boundary {:.4}",
+        RERANKER_MODEL_ID, RERANKER_TOP_K, considered, RERANKER_LOGIT_THRESHOLD,
+    );
     for candidate in &candidates {
         println!(
-            "similarity candidate [{}]: '{}' ({}) resembles '{}' ({}) score {:.4}, threshold {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the threshold)",
+            "reranker candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}, rerank raw {:.4}, sigmoid {:.4}, boundary {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the boundary)",
             candidate.scopes.join(","),
             candidate.left.title,
             candidate.left.file,
             candidate.right.title,
             candidate.right.file,
-            candidate.score,
-            SIMILARITY_THRESHOLD,
+            candidate.embedding_score,
+            candidate.rerank_score,
+            sigmoid(candidate.rerank_score),
+            RERANKER_LOGIT_THRESHOLD,
         );
     }
+    println!(
+        "retrieval advisory: pair reranker evaluated {} candidate pairs",
+        considered
+    );
     if !candidates.is_empty() {
         bail!(
-            "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
+            "similarity gate failed: {} reranker candidate(s) are at or above the fixed raw-logit boundary {RERANKER_LOGIT_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the boundary",
             candidates.len()
         );
     }
     println!(
-        "similarity gate: no scenario pair at or above fixed threshold {:.4}",
-        SIMILARITY_THRESHOLD
+        "reranker gate: no scenario pair at or above fixed raw-logit boundary {:.4}",
+        RERANKER_LOGIT_THRESHOLD
     );
     Ok(())
 }
@@ -367,11 +389,22 @@ fn similarity_candidates(
     root: &Path,
     index: &SpecIndex,
     delta: &[DeltaScenario],
-) -> Result<Vec<SimilarityCandidate>> {
+) -> Result<(Vec<SimilarityCandidate>, usize)> {
+    let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
+        .into_iter()
+        .map(|scenario| ((scenario.file, scenario.title), scenario.text))
+        .collect();
     let active_delta: Vec<&DeltaScenario> = delta
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
         .collect();
+    let mut candidate_texts = permanent_texts.clone();
+    for item in &active_delta {
+        candidate_texts.insert(
+            (item.target_file.clone(), item.scenario.title.clone()),
+            item.scenario.text.clone(),
+        );
+    }
     let delta_texts: Vec<String> = active_delta
         .iter()
         .map(|item| item.scenario.text.clone())
@@ -385,109 +418,113 @@ fn similarity_candidates(
     let mut candidates = BTreeMap::new();
     for (delta, vector) in active_delta.iter().zip(delta_vectors.iter()) {
         let own_target = (delta.target_file.as_str(), delta.scenario.title.as_str());
-        for entry in &index.entries {
-            if delta.operation == crate::gherkin::delta::DeltaOp::Modified
-                && (entry.file.as_str(), entry.title.as_str()) == own_target
-            {
-                continue;
-            }
-            let score = cosine_similarity(vector, &entry.embedding);
-            if score >= SIMILARITY_THRESHOLD {
-                add_similarity_candidate(
-                    &mut candidates,
-                    "delta-to-permanent",
-                    endpoint(&delta.target_file, &delta.scenario.title),
-                    endpoint(&entry.file, &entry.title),
-                    score,
-                );
-            }
+        let mut neighbours: Vec<(f32, &IndexEntry)> = index
+            .entries
+            .iter()
+            .filter(|entry| {
+                entry.file.as_str() != delta.target_file.as_str()
+                    && !(delta.operation == crate::gherkin::delta::DeltaOp::Modified
+                        && (entry.file.as_str(), entry.title.as_str()) == own_target)
+            })
+            .map(|entry| (cosine_similarity(vector, &entry.embedding), entry))
+            .collect();
+        neighbours.sort_by(|left, right| right.0.total_cmp(&left.0));
+        for (score, entry) in neighbours.into_iter().take(RERANKER_TOP_K) {
+            add_similarity_candidate(
+                &mut candidates,
+                "delta-to-permanent",
+                endpoint(&delta.target_file, &delta.scenario.title),
+                endpoint(&entry.file, &entry.title),
+                score,
+            );
         }
     }
 
-    let projected = project_entries(index, delta, &delta_vectors, &active_delta)?;
+    let projected = project_records(index, delta, &delta_vectors, &active_delta)?;
     for (left, right) in projected.iter().enumerate() {
-        for other in projected.iter().skip(left + 1) {
-            let score = cosine_similarity(&right.embedding, &other.embedding);
-            if score >= SIMILARITY_THRESHOLD {
-                add_similarity_candidate(
-                    &mut candidates,
-                    "projected-permanent",
-                    endpoint(&right.file, &right.title),
-                    endpoint(&other.file, &other.title),
-                    score,
-                );
-            }
+        let mut neighbours: Vec<(f32, &ScenarioRecord)> = projected
+            .iter()
+            .enumerate()
+            .filter(|(index, other)| *index != left && other.endpoint.file != right.endpoint.file)
+            .map(|(_, other)| (cosine_similarity(&right.embedding, &other.embedding), other))
+            .collect();
+        neighbours.sort_by(|left, right| right.0.total_cmp(&left.0));
+        for (score, other) in neighbours.into_iter().take(RERANKER_TOP_K) {
+            add_similarity_candidate(
+                &mut candidates,
+                "projected-permanent",
+                right.endpoint.clone(),
+                other.endpoint.clone(),
+                score,
+            );
         }
     }
 
     let mut result: Vec<SimilarityCandidate> = candidates.into_values().collect();
+    let considered = result.len();
+    rerank_candidates(root, &mut result, &candidate_texts)?;
+    result.retain(|candidate| candidate.rerank_score >= RERANKER_LOGIT_THRESHOLD);
     result.sort_by(|left, right| {
         right
-            .score
-            .total_cmp(&left.score)
+            .rerank_score
+            .total_cmp(&left.rerank_score)
             .then_with(|| left.left.cmp(&right.left))
             .then_with(|| left.right.cmp(&right.right))
     });
-    Ok(result)
+    Ok((result, considered))
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn project_entries(
+fn project_records(
     index: &SpecIndex,
     delta: &[DeltaScenario],
     delta_vectors: &[Vec<f32>],
     active_delta: &[&DeltaScenario],
-) -> Result<Vec<IndexEntry>> {
-    let mut entries: BTreeMap<(String, String), IndexEntry> = index
+) -> Result<Vec<ScenarioRecord>> {
+    let mut entries: BTreeMap<(String, String), ScenarioRecord> = index
         .entries
         .iter()
-        .cloned()
-        .map(|entry| ((entry.file.clone(), entry.title.clone()), entry))
+        .map(|entry| {
+            let key = (entry.file.clone(), entry.title.clone());
+            (
+                key,
+                ScenarioRecord {
+                    endpoint: endpoint(&entry.file, &entry.title),
+                    embedding: entry.embedding.clone(),
+                },
+            )
+        })
         .collect();
-    let mut pending: BTreeMap<(String, String), IndexEntry> = BTreeMap::new();
 
     for item in delta {
         let key = (item.target_file.clone(), item.scenario.title.clone());
         match item.operation {
             crate::gherkin::delta::DeltaOp::Removed => {
                 entries.remove(&key);
-                pending.remove(&key);
             }
             crate::gherkin::delta::DeltaOp::Modified => {
                 entries.remove(&key);
-                pending.remove(&key);
                 let position = active_delta
                     .iter()
                     .position(|active| std::ptr::eq(*active, item))
                     .context("modified delta vector is missing")?;
-                pending.insert(
+                entries.insert(
                     key,
-                    IndexEntry {
-                        title: item.scenario.title.clone(),
-                        file: item.target_file.clone(),
-                        content_hash: item.scenario.content_hash.clone(),
+                    ScenarioRecord {
+                        endpoint: endpoint(&item.target_file, &item.scenario.title),
                         embedding: delta_vectors[position].clone(),
                     },
                 );
             }
             crate::gherkin::delta::DeltaOp::Added => {
-                if entries.contains_key(&key) || pending.contains_key(&key) {
-                    bail!(
-                        "similarity projection cannot add existing scenario '{}' in {}",
-                        item.scenario.title,
-                        item.target_file
-                    );
-                }
                 let position = active_delta
                     .iter()
                     .position(|active| std::ptr::eq(*active, item))
                     .context("added delta vector is missing")?;
-                pending.insert(
+                entries.insert(
                     key,
-                    IndexEntry {
-                        title: item.scenario.title.clone(),
-                        file: item.target_file.clone(),
-                        content_hash: item.scenario.content_hash.clone(),
+                    ScenarioRecord {
+                        endpoint: endpoint(&item.target_file, &item.scenario.title),
                         embedding: delta_vectors[position].clone(),
                     },
                 );
@@ -495,7 +532,6 @@ fn project_entries(
         }
     }
 
-    entries.extend(pending);
     Ok(entries.into_values().collect())
 }
 
@@ -529,8 +565,8 @@ fn add_similarity_candidate(
             existing.scopes.push(scope);
             existing.scopes.sort_unstable();
         }
-        if score > existing.score {
-            existing.score = score;
+        if score > existing.embedding_score {
+            existing.embedding_score = score;
         }
         return;
     }
@@ -539,10 +575,145 @@ fn add_similarity_candidate(
         SimilarityCandidate {
             left,
             right,
-            score,
+            embedding_score: score,
+            rerank_score: f32::NEG_INFINITY,
             scopes: vec![scope],
         },
     );
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn rerank_candidates(
+    root: &Path,
+    candidates: &mut [SimilarityCandidate],
+    texts: &BTreeMap<(String, String), String>,
+) -> Result<()> {
+    if candidates.is_empty() {
+        return Ok(());
+    }
+
+    match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
+        Ok("stub") => {
+            for candidate in candidates {
+                let left = scenario_text_for(texts, &candidate.left)?;
+                let right = scenario_text_for(texts, &candidate.right)?;
+                let forward = stub_reranker_score(left, right);
+                let reverse = stub_reranker_score(right, left);
+                candidate.rerank_score = (forward + reverse) / 2.0;
+            }
+            Ok(())
+        }
+        Ok("missing") => bail!(
+            "reranker model is unavailable; configure a local reranker cache or unset GIVN_SPEC_RERANKER"
+        ),
+        Ok(value) => bail!("unknown GIVN_SPEC_RERANKER value `{value}`"),
+        Err(std::env::VarError::NotPresent) => rerank_with_fastembed(root, candidates, texts),
+        Err(std::env::VarError::NotUnicode(_)) => {
+            bail!("GIVN_SPEC_RERANKER is not valid UTF-8")
+        }
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn rerank_with_fastembed(
+    root: &Path,
+    candidates: &mut [SimilarityCandidate],
+    texts: &BTreeMap<(String, String), String>,
+) -> Result<()> {
+    let cache_dir = root.join("givn/.spec-reranker-cache");
+    fs::create_dir_all(&cache_dir)
+        .with_context(|| format!("create reranker model cache {}", cache_dir.display()))?;
+    let options = fastembed::RerankInitOptions::new(fastembed::RerankerModel::BGERerankerV2M3)
+        .with_cache_dir(cache_dir)
+        .with_show_download_progress(false)
+        .with_intra_threads(4);
+    let mut model = fastembed::TextRerank::try_new(options)
+        .context("reranker model is unavailable; check the local reranker cache and network")?;
+
+    let mut documents_by_query: BTreeMap<SimilarityEndpoint, Vec<SimilarityEndpoint>> =
+        BTreeMap::new();
+    for candidate in candidates.iter() {
+        documents_by_query
+            .entry(candidate.left.clone())
+            .or_default()
+            .push(candidate.right.clone());
+        documents_by_query
+            .entry(candidate.right.clone())
+            .or_default()
+            .push(candidate.left.clone());
+    }
+
+    let mut directed_scores: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32> =
+        BTreeMap::new();
+    for (query, documents) in documents_by_query {
+        let query_text = scenario_text_for(texts, &query)?.to_string();
+        let document_texts: Vec<String> = documents
+            .iter()
+            .map(|document| scenario_text_for(texts, document).map(str::to_string))
+            .collect::<Result<Vec<_>>>()?;
+        let results = model
+            .rerank(query_text, document_texts, false, Some(32))
+            .context("rerank similarity candidates")?;
+        for result in results {
+            directed_scores.insert(
+                (query.clone(), documents[result.index].clone()),
+                result.score,
+            );
+        }
+    }
+
+    for candidate in candidates {
+        let forward = directed_scores
+            .get(&(candidate.left.clone(), candidate.right.clone()))
+            .context("reranker omitted forward pair score")?;
+        let reverse = directed_scores
+            .get(&(candidate.right.clone(), candidate.left.clone()))
+            .context("reranker omitted reverse pair score")?;
+        candidate.rerank_score = (forward + reverse) / 2.0;
+    }
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn scenario_text_for<'a>(
+    texts: &'a BTreeMap<(String, String), String>,
+    endpoint: &SimilarityEndpoint,
+) -> Result<&'a str> {
+    texts
+        .get(&(endpoint.file.clone(), endpoint.title.clone()))
+        .map(String::as_str)
+        .with_context(|| format!("missing scenario text for '{}'", endpoint.title))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn stub_reranker_score(left: &str, right: &str) -> f32 {
+    let left_tokens = reranker_tokens(left);
+    let right_tokens = reranker_tokens(right);
+    let shared = left_tokens.intersection(&right_tokens).count() as f32;
+    let union = left_tokens.union(&right_tokens).count() as f32;
+    if union == 0.0 {
+        0.0
+    } else {
+        let overlap = shared / union;
+        if overlap >= 0.85 {
+            7.0 * overlap
+        } else {
+            2.0 * overlap
+        }
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn reranker_tokens(text: &str) -> std::collections::BTreeSet<String> {
+    text.split(|character: char| !character.is_alphanumeric())
+        .filter(|token| !token.is_empty())
+        .map(str::to_lowercase)
+        .collect()
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn sigmoid(value: f32) -> f32 {
+    1.0 / (1.0 + (-value).exp())
 }
 
 #[cfg(feature = "spec-retrieval")]
