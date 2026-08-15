@@ -41,8 +41,8 @@
 - [x] REFACTOR: Removed the unused support import and formatted the new step
   modules without changing behavior. The named rerun passed with `1 scenario
   (1 passed)` and `5 steps (5 passed)`.
-- [ ] COMMIT: `test(e2e): Repository-wide review accepts explicit overlap dispositions`
-  Hash: `________________`.
+- [x] COMMIT: `test(e2e): Repository-wide review accepts explicit overlap dispositions`
+  Hash: `4369d77`.
 
 ## Scenario: Archive publishes consolidated permanent specifications
 
