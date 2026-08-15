@@ -89,17 +89,18 @@
   `@wip` tags are removed: `1 file(s) checked - clean`.
 - [x] `./run-tests.sh` passes the permanent non-E2E suite: `20 features`,
   `163 scenarios (163 passed)`, and `926 steps (926 passed)`.
-- [x] `./run-tests.sh --e2e` passes the permanent E2E suite: `22 features`,
-  `185 scenarios (185 passed)`, and `1053 steps (1053 passed)`.
+- [x] `./run-tests.sh --e2e` passes the permanent E2E suite. The post-merge
+  rerun reported `16 features`, `25 scenarios (25 passed)`, and `143 steps
+  (143 passed)`.
 - [x] The active delta's unfiltered, non-E2E, and E2E commands pass with the
   recorded all-E2E equal-count exception: full and `@e2e` each reported `3
   scenarios (3 passed)` and `16 steps (16 passed)`; `not @e2e` reported `0
   scenarios` and `0 steps`.
 - [x] `./measure-coverage.sh` and `./merge-coverages.sh` produce fresh reports;
   the E2E and merged Cobertura files show non-zero `src/cli/check.rs` and
-  `src/cli/archive.rs` line coverage. Final reports are non-E2E `2978/4093`,
-  E2E `2207/4093`, merged `5185/8186`; merged check is `57/98` and archive is
-  `143/168`.
+  `src/cli/archive.rs` line coverage. Post-merge reports are non-E2E
+  `2978/4093`, E2E `2238/4093`, merged `5216/8186`; merged check is `57/98`
+  and archive is `144/168`.
 - [x] `cargo fmt --all -- --check` and `cargo clippy --workspace --all-targets -- -D warnings`
   pass.
 - [x] `givn check review --change repository-wide-ownership-e2e` passed
@@ -107,5 +108,10 @@
   0 modified, 0 removed`.
 - [x] Wrote `review.md` with the fabrication audit, interaction matrix, Arc42
   conformance, coverage evidence, and `REVIEW: PASS`.
-- [ ] Run `givn archive --change repository-wide-ownership-e2e` and record the
-  post-merge permanent-tree, E2E, and coverage gates.
+- [x] Run `givn archive --change repository-wide-ownership-e2e` and record the
+  post-merge permanent-tree, E2E, and coverage gates. `cargo run --quiet --
+  archive --change repository-wide-ownership-e2e` passed; the permanent
+  fixture feature was published under `givn/specs/repository-ownership-fixtures`,
+  the post-merge E2E suite passed with `16 features`, `25 scenarios`, and `143
+  steps`, the coverage gate published `64% (5216/8186)` with branch `n/a
+  (0/0)`, and the archive backup was removed.
