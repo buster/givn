@@ -1,11 +1,12 @@
 # User Interaction Inventory:
 # - invoke repository-wide review for a project with explicit overlap dispositions
 # - archive a consolidated project and publish its permanent specifications
+# - invoke archive for a project whose pre-merge hook fails
 
 @givn.delta @repository-ownership-fixtures
 Feature: Repository-wide ownership fixtures
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Repository-wide review accepts explicit overlap dispositions
     Given an isolated ownership fixture with dispositions for every overlap finding
     When the maintainer invokes the fixture review command
@@ -23,7 +24,7 @@ Feature: Repository-wide ownership fixtures
     And the fixture permanent specification tree contains "Canonical retained behavior"
     And the fixture permanent specification tree does not contain "Obsolete behavior"
 
-  @givn.added @wip
+  @givn.added @e2e @wip
   Scenario: Pre-merge archive failure preserves the permanent specification tree
     Given an isolated ownership fixture with a failing pre-merge archive hook
     When the maintainer runs `givn archive --change fixture-consolidation`
