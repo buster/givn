@@ -6,6 +6,9 @@ use anyhow::{Result, bail};
 use anyhow::Context;
 
 #[cfg(feature = "spec-retrieval")]
+use std::collections::BTreeMap;
+
+#[cfg(feature = "spec-retrieval")]
 use std::fs;
 
 #[cfg(feature = "spec-retrieval")]
@@ -15,6 +18,8 @@ use serde::{Deserialize, Serialize};
 const INDEX_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
+#[cfg(feature = "spec-retrieval")]
+const SIMILARITY_THRESHOLD: f32 = 0.95;
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,6 +45,30 @@ struct ScenarioText {
     file: String,
     content_hash: String,
     text: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct DeltaScenario {
+    scenario: ScenarioText,
+    target_file: String,
+    operation: crate::gherkin::delta::DeltaOp,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+struct SimilarityEndpoint {
+    file: String,
+    title: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct SimilarityCandidate {
+    left: SimilarityEndpoint,
+    right: SimilarityEndpoint,
+    score: f32,
+    scopes: Vec<&'static str>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -175,27 +204,30 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     index_enabled(root)?;
     let index = read_index(&spec_index_path(root))?;
 
-    let review_path = change_dir.join("review.md");
-    let (dispositions, _) = crate::overlap::disposition::parse_review(&review_path);
-    for scenario in collect_scenarios_from(root, &delta_root)? {
-        let query_vector = embed_texts(root, &[scenario.text], EmbeddingRole::Query)?
-            .into_iter()
-            .next()
-            .context("retrieval embedder returned no review vector")?;
-        let ranked = rank_entries(&index.entries, &query_vector);
-        for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
-            if crate::overlap::disposition::disposed(&dispositions, &scenario.title, &entry.title) {
-                continue;
-            }
-            println!(
-                "retrieval advisory: '{}' resembles '{}' (rank {}, score {:.4})",
-                scenario.title,
-                entry.title,
-                rank + 1,
-                score
-            );
-        }
+    let delta = collect_delta_scenarios(root, &delta_root)?;
+    let candidates = similarity_candidates(root, &index, &delta)?;
+    for candidate in &candidates {
+        println!(
+            "similarity candidate [{}]: '{}' ({}) resembles '{}' ({}) score {:.4}, threshold {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the threshold)",
+            candidate.scopes.join(","),
+            candidate.left.title,
+            candidate.left.file,
+            candidate.right.title,
+            candidate.right.file,
+            candidate.score,
+            SIMILARITY_THRESHOLD,
+        );
     }
+    if !candidates.is_empty() {
+        bail!(
+            "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
+            candidates.len()
+        );
+    }
+    println!(
+        "similarity gate: no scenario pair at or above fixed threshold {:.4}",
+        SIMILARITY_THRESHOLD
+    );
     Ok(())
 }
 
@@ -239,6 +271,59 @@ fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<Scenario
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn collect_delta_scenarios(root: &Path, delta_root: &Path) -> Result<Vec<DeltaScenario>> {
+    let mut scenarios = Vec::new();
+    for path in crate::gherkin::parse::collect_feature_files(delta_root) {
+        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
+            .with_context(|| format!("failed to parse delta spec {}", path.display()))?;
+        let capability = crate::gherkin::delta::capability_tag(&feature)
+            .map(str::to_string)
+            .or_else(|| {
+                path.parent()
+                    .and_then(Path::file_name)
+                    .and_then(|name| name.to_str())
+                    .map(str::to_string)
+            })
+            .or_else(|| {
+                path.file_stem()
+                    .and_then(|name| name.to_str())
+                    .map(str::to_string)
+            })
+            .context("delta feature has no capability or filename for similarity projection")?;
+        let target_file = format!("givn/specs/{capability}/{capability}.feature");
+        collect_delta_feature_scenarios(&feature.scenarios, &path, &target_file, &mut scenarios);
+        for rule in &feature.rules {
+            collect_delta_feature_scenarios(&rule.scenarios, &path, &target_file, &mut scenarios);
+        }
+    }
+    scenarios.sort_by(|left, right| {
+        left.scenario
+            .file
+            .cmp(&right.scenario.file)
+            .then_with(|| left.scenario.title.cmp(&right.scenario.title))
+    });
+    let _ = root;
+    Ok(scenarios)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn collect_delta_feature_scenarios(
+    source: &[gherkin::Scenario],
+    path: &Path,
+    target_file: &str,
+    output: &mut Vec<DeltaScenario>,
+) {
+    let file = path.to_string_lossy().replace('\\', "/");
+    for scenario in source {
+        output.push(DeltaScenario {
+            scenario: scenario_text(scenario, &file),
+            target_file: target_file.to_string(),
+            operation: crate::gherkin::delta::delta_op(scenario),
+        });
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn collect_feature_scenarios(
     source: &[gherkin::Scenario],
     file: &str,
@@ -248,28 +333,216 @@ fn collect_feature_scenarios(
         if !is_queryable_scenario(scenario) {
             continue;
         }
-        let mut text = scenario.name.clone();
-        for step in &scenario.steps {
+        output.push(scenario_text(scenario, file));
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn scenario_text(scenario: &gherkin::Scenario, file: &str) -> ScenarioText {
+    let mut text = scenario.name.clone();
+    for step in &scenario.steps {
+        text.push('\n');
+        text.push_str(step.value.trim());
+        if let Some(docstring) = &step.docstring {
             text.push('\n');
-            text.push_str(step.value.trim());
-            if let Some(docstring) = &step.docstring {
-                text.push('\n');
-                text.push_str(docstring.trim());
-            }
+            text.push_str(docstring.trim());
         }
-        let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
-        output.push(ScenarioText {
-            title: scenario.name.clone(),
-            file: file.to_string(),
-            content_hash: content_hash(&normalized),
-            text: normalized,
-        });
+    }
+    let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+    ScenarioText {
+        title: scenario.name.clone(),
+        file: file.to_string(),
+        content_hash: content_hash(&normalized),
+        text: normalized,
     }
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn is_queryable_scenario(scenario: &gherkin::Scenario) -> bool {
     !scenario.tags.iter().any(|tag| tag == "givn.removed")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn similarity_candidates(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+) -> Result<Vec<SimilarityCandidate>> {
+    let active_delta: Vec<&DeltaScenario> = delta
+        .iter()
+        .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+        .collect();
+    let delta_texts: Vec<String> = active_delta
+        .iter()
+        .map(|item| item.scenario.text.clone())
+        .collect();
+    let delta_vectors = if delta_texts.is_empty() {
+        Vec::new()
+    } else {
+        embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
+    };
+
+    let mut candidates = BTreeMap::new();
+    for (delta, vector) in active_delta.iter().zip(delta_vectors.iter()) {
+        let own_target = (delta.target_file.as_str(), delta.scenario.title.as_str());
+        for entry in &index.entries {
+            if delta.operation == crate::gherkin::delta::DeltaOp::Modified
+                && (entry.file.as_str(), entry.title.as_str()) == own_target
+            {
+                continue;
+            }
+            let score = cosine_similarity(vector, &entry.embedding);
+            if score >= SIMILARITY_THRESHOLD {
+                add_similarity_candidate(
+                    &mut candidates,
+                    "delta-to-permanent",
+                    endpoint(&delta.target_file, &delta.scenario.title),
+                    endpoint(&entry.file, &entry.title),
+                    score,
+                );
+            }
+        }
+    }
+
+    let projected = project_entries(index, delta, &delta_vectors, &active_delta)?;
+    for (left, right) in projected.iter().enumerate() {
+        for other in projected.iter().skip(left + 1) {
+            let score = cosine_similarity(&right.embedding, &other.embedding);
+            if score >= SIMILARITY_THRESHOLD {
+                add_similarity_candidate(
+                    &mut candidates,
+                    "projected-permanent",
+                    endpoint(&right.file, &right.title),
+                    endpoint(&other.file, &other.title),
+                    score,
+                );
+            }
+        }
+    }
+
+    let mut result: Vec<SimilarityCandidate> = candidates.into_values().collect();
+    result.sort_by(|left, right| {
+        right
+            .score
+            .total_cmp(&left.score)
+            .then_with(|| left.left.cmp(&right.left))
+            .then_with(|| left.right.cmp(&right.right))
+    });
+    Ok(result)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn project_entries(
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+    delta_vectors: &[Vec<f32>],
+    active_delta: &[&DeltaScenario],
+) -> Result<Vec<IndexEntry>> {
+    let mut entries: BTreeMap<(String, String), IndexEntry> = index
+        .entries
+        .iter()
+        .cloned()
+        .map(|entry| ((entry.file.clone(), entry.title.clone()), entry))
+        .collect();
+    let mut pending: BTreeMap<(String, String), IndexEntry> = BTreeMap::new();
+
+    for item in delta {
+        let key = (item.target_file.clone(), item.scenario.title.clone());
+        match item.operation {
+            crate::gherkin::delta::DeltaOp::Removed => {
+                entries.remove(&key);
+                pending.remove(&key);
+            }
+            crate::gherkin::delta::DeltaOp::Modified => {
+                entries.remove(&key);
+                pending.remove(&key);
+                let position = active_delta
+                    .iter()
+                    .position(|active| std::ptr::eq(*active, item))
+                    .context("modified delta vector is missing")?;
+                pending.insert(
+                    key,
+                    IndexEntry {
+                        title: item.scenario.title.clone(),
+                        file: item.target_file.clone(),
+                        content_hash: item.scenario.content_hash.clone(),
+                        embedding: delta_vectors[position].clone(),
+                    },
+                );
+            }
+            crate::gherkin::delta::DeltaOp::Added => {
+                if entries.contains_key(&key) || pending.contains_key(&key) {
+                    bail!(
+                        "similarity projection cannot add existing scenario '{}' in {}",
+                        item.scenario.title,
+                        item.target_file
+                    );
+                }
+                let position = active_delta
+                    .iter()
+                    .position(|active| std::ptr::eq(*active, item))
+                    .context("added delta vector is missing")?;
+                pending.insert(
+                    key,
+                    IndexEntry {
+                        title: item.scenario.title.clone(),
+                        file: item.target_file.clone(),
+                        content_hash: item.scenario.content_hash.clone(),
+                        embedding: delta_vectors[position].clone(),
+                    },
+                );
+            }
+        }
+    }
+
+    entries.extend(pending);
+    Ok(entries.into_values().collect())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn endpoint(file: &str, title: &str) -> SimilarityEndpoint {
+    SimilarityEndpoint {
+        file: file.to_string(),
+        title: title.to_string(),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn add_similarity_candidate(
+    candidates: &mut BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), SimilarityCandidate>,
+    scope: &'static str,
+    left: SimilarityEndpoint,
+    right: SimilarityEndpoint,
+    score: f32,
+) {
+    if left == right {
+        return;
+    }
+    let (left, right) = if left <= right {
+        (left, right)
+    } else {
+        (right, left)
+    };
+    let key = (left.clone(), right.clone());
+    if let Some(existing) = candidates.get_mut(&key) {
+        if !existing.scopes.contains(&scope) {
+            existing.scopes.push(scope);
+            existing.scopes.sort_unstable();
+        }
+        if score > existing.score {
+            existing.score = score;
+        }
+        return;
+    }
+    candidates.insert(
+        key,
+        SimilarityCandidate {
+            left,
+            right,
+            score,
+            scopes: vec![scope],
+        },
+    );
 }
 
 #[cfg(feature = "spec-retrieval")]

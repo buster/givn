@@ -274,15 +274,31 @@ test runner (`verify.command`).
 
 ## 8.5a Local scenario retrieval
 
-Retrieval is an authoring aid, not a correctness gate. `givn spec index` owns a
-local cache of model-backed vectors and content hashes under `givn/`; `givn
- spec search` reads that index and prints ranked candidates. `givn spec review
- --change <id>` queries active delta scenarios against a freshly refreshed
- permanent index and suppresses candidates already present in the disposition
- table. CI, lint, and
-archive do not require a model or a similarity score. A missing model/cache is
-an explicit setup error for retrieval, never a false clean result or a block on
-unrelated workflow commands.
+`givn spec index` owns a local cache of model-backed vectors and content hashes
+under `givn/`; `givn spec search` reads that index and prints ranked candidates
+for an interactive query. Search remains an authoring aid.
+
+When the `spec-retrieval` feature is compiled, `givn spec review --change <id>`
+has a second responsibility: it embeds added and modified delta scenarios with
+the same `passage:` role as the permanent index, compares them with the
+pre-change permanent tree, projects the permanent tree after the delta's
+tagged add/modify/remove operations, and compares every distinct projected
+scenario pair. Same-file and cross-file pairs are both checked.
+
+The binary-fixed `SIMILARITY_THRESHOLD = 0.95` is inclusive. A pair at or above
+the threshold is a hard failure. The output tells the agent to classify the
+case as `MERGE` (delete the true duplicate) or `KEEP-AS-BOUNDARY` (rewrite the
+retained title and steps until the score is below the threshold). Neither note
+nor disposition table suppresses a candidate. A missing model/cache is an
+explicit setup failure for the feature-enabled strict review path, never a
+false clean result.
+
+The default binary remains independent of ONNX Runtime. Without the retrieval
+feature, ordinary check and archive behavior is unchanged and direct retrieval
+commands report that retrieval is unavailable. After a successful archive, a
+feature-enabled binary refreshes the generated index from the merged permanent
+tree; a refresh error is warned after archive completion and retried at the next
+review.
 
 ## 8.6 Filesystem-derived state
 

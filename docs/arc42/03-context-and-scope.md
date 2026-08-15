@@ -36,7 +36,7 @@ graph TB
 | `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files. |
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
-| `givn spec index/search/review` | in/out | Local scenario-index construction, advisory ranked retrieval, and active-delta candidate reporting. |
+| `givn spec index/search/review` | in/out | Local scenario-index construction, advisory single-query retrieval, and strict permanent/delta similarity auditing during review. |
 | `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
 | Canonical authoring guidance | out | `givn instructions specs` emits the normative E2E and interaction-inventory policy consumed by agents. |
@@ -58,6 +58,9 @@ graph TB
 - Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
 - Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
 - Per-artifact `post` hooks; givn runs `verify.command` at gates (`givn check`, archive).
+- Feature-enabled review rejects every permanent or current-delta scenario pair
+  at or above the fixed `0.95` similarity threshold; duplicates are removed and
+  valid boundaries are rewritten below the threshold.
 - Configurable artifacts (add/remove/reorder/optional) via overlay.
 - Opt-in addons; bundled `arc42-docs` addon maintaining durable arc42 docs.
 - Distribution: release binaries, curl\|sh, brew, cargo.
