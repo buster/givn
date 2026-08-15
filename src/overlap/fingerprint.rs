@@ -22,23 +22,23 @@ pub struct Facts {
 impl Facts {
     /// True if a key is extracted on both sides with different values.
     pub fn contradicts(&self, other: &Facts) -> bool {
-        if let (Some(a), Some(b)) = (&self.exit_code, &other.exit_code) {
-            if a != b {
+        if let (Some(a), Some(b)) = (&self.exit_code, &other.exit_code)
+            && a != b
+        {
+            return true;
+        }
+        for (pos, polarity) in &self.contains_polarity {
+            if let Some(other_polarity) = other.contains_polarity.get(pos)
+                && other_polarity != polarity
+            {
                 return true;
             }
         }
-        for (pos, polarity) in &self.contains_polarity {
-            if let Some(other_polarity) = other.contains_polarity.get(pos) {
-                if other_polarity != polarity {
-                    return true;
-                }
-            }
-        }
         for (key, value) in &self.tables {
-            if let Some(other_value) = other.tables.get(key) {
-                if other_value != value {
-                    return true;
-                }
+            if let Some(other_value) = other.tables.get(key)
+                && other_value != value
+            {
+                return true;
             }
         }
         if self.done != other.done || self.tty != other.tty {
@@ -68,9 +68,10 @@ impl Facts {
                     || lower.contains("not-contain")
                     || lower.contains("does not contain")
                     || lower.contains("doesn't contain");
-                facts
-                    .contains_polarity
-                    .insert(pos, if negative { "negative" } else { "positive" }.to_string());
+                facts.contains_polarity.insert(
+                    pos,
+                    if negative { "negative" } else { "positive" }.to_string(),
+                );
             }
             if let Some(table) = &step.table {
                 extract_table_facts(table, &mut facts.tables);
@@ -81,7 +82,7 @@ impl Facts {
 }
 
 fn extract_table_facts(table: &gherkin::Table, out: &mut BTreeMap<String, String>) {
-    let rows: Vec<Vec<String>> = table.rows.iter().map(|row| row.clone()).collect();
+    let rows: Vec<Vec<String>> = table.rows.to_vec();
     let (header, body) = match rows.split_first() {
         Some((h, b)) => (h.clone(), b),
         None => return,
@@ -167,10 +168,15 @@ impl Fingerprint {
     pub fn of_scenario(scenario: &Scenario, background: Option<&Background>) -> Fingerprint {
         // Background steps are prepended before the comparison (they belong
         // to the scenario's step sequence) but do not count toward length.
-        let background_steps: Vec<&Step> =
-            background.map(|b| b.steps.iter().collect()).unwrap_or_default();
+        let background_steps: Vec<&Step> = background
+            .map(|b| b.steps.iter().collect())
+            .unwrap_or_default();
         let own_steps: Vec<&Step> = scenario.steps.iter().collect();
-        let all_steps: Vec<&Step> = background_steps.iter().copied().chain(own_steps.iter().copied()).collect();
+        let all_steps: Vec<&Step> = background_steps
+            .iter()
+            .copied()
+            .chain(own_steps.iter().copied())
+            .collect();
 
         let last_when = all_steps.iter().rposition(|s| s.ty == StepType::When);
         let assertion_steps: Vec<&Step> = all_steps
@@ -194,23 +200,32 @@ mod tests {
     fn extract_exit_codes() {
         assert_eq!(extract_exit_code("the command exits 0"), Some("0".into()));
         assert_eq!(extract_exit_code("the command exits 12"), Some("12".into()));
-        assert_eq!(extract_exit_code("the command exits non-zero"), Some("non-zero".into()));
+        assert_eq!(
+            extract_exit_code("the command exits non-zero"),
+            Some("non-zero".into())
+        );
         assert_eq!(extract_exit_code("the command finishes"), None);
     }
 
     #[test]
     fn exit_code_contradiction() {
-        let mut a = Facts::default();
-        a.exit_code = Some("0".into());
-        let mut b = Facts::default();
-        b.exit_code = Some("2".into());
+        let a = Facts {
+            exit_code: Some("0".into()),
+            ..Default::default()
+        };
+        let b = Facts {
+            exit_code: Some("2".into()),
+            ..Default::default()
+        };
         assert!(a.contradicts(&b));
     }
 
     #[test]
     fn missing_fact_never_contradicts() {
-        let mut a = Facts::default();
-        a.exit_code = Some("0".into());
+        let a = Facts {
+            exit_code: Some("0".into()),
+            ..Default::default()
+        };
         let b = Facts::default();
         assert!(!a.contradicts(&b));
     }

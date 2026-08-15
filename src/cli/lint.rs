@@ -105,7 +105,12 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
             };
             findings.push(Finding {
                 kind: kind.to_string(),
-                level: if kind == "parse_error" { "error" } else { "warning" }.to_string(),
+                level: if kind == "parse_error" {
+                    "error"
+                } else {
+                    "warning"
+                }
+                .to_string(),
                 files: vec![path.display().to_string()],
                 titles: vec![error.message.clone()],
                 contradiction: false,
@@ -137,7 +142,9 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
                         });
                     } else {
                         eprintln!("[WARN] {}  {}", specs_dir.display(), message);
-                        eprintln!("       Restore @e2e tags or remove the e2e tasks from tasks.md.");
+                        eprintln!(
+                            "       Restore @e2e tags or remove the e2e tasks from tasks.md."
+                        );
                     }
                     total_errors += 1;
                     has_wip = true;
@@ -212,9 +219,13 @@ fn render_prose(finding: &Finding) {
         "shape_match" => {
             let (a, b) = (finding.titles[0].as_str(), finding.titles[1].as_str());
             if finding.contradiction {
-                eprintln!("[{level}] {location}  related_scenario: '{a}' and '{b}' share a shape but their facts contradict");
+                eprintln!(
+                    "[{level}] {location}  related_scenario: '{a}' and '{b}' share a shape but their facts contradict"
+                );
             } else {
-                eprintln!("[{level}] {location}  scenarios '{a}' and '{b}' share a shape — consider merging");
+                eprintln!(
+                    "[{level}] {location}  scenarios '{a}' and '{b}' share a shape — consider merging"
+                );
             }
         }
         "subset" => {

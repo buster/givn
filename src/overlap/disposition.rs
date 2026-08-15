@@ -61,13 +61,11 @@ pub fn parse_review_content(content: &str) -> (Vec<DispositionRow>, Vec<SplitOrK
                     });
                 }
             }
-            "split" => {
-                if cells.len() >= 2 && cells[0].to_lowercase() != "scenario" {
-                    split_rows.push(SplitOrKeepRow {
-                        title: cells[0].clone(),
-                        decision: cells[1].clone(),
-                    });
-                }
+            "split" if cells.len() >= 2 && cells[0].to_lowercase() != "scenario" => {
+                split_rows.push(SplitOrKeepRow {
+                    title: cells[0].clone(),
+                    decision: cells[1].clone(),
+                });
             }
             _ => {}
         }
@@ -99,7 +97,8 @@ mod tests {
 
     #[test]
     fn parses_split_or_keep_rows() {
-        let content = "## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `The marathon` | keep |\n";
+        let content =
+            "## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `The marathon` | keep |\n";
         let (rows, split) = parse_review_content(content);
         assert!(rows.is_empty());
         assert_eq!(split.len(), 1);
