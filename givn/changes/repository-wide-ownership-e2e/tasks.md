@@ -80,8 +80,8 @@
 - [x] REFACTOR: Reused the shared `invoke_archive` and byte-for-byte
   `snapshot_tree` helpers, then ran `cargo fmt --all`. The named expected-
   failure rerun passed with `1 scenario (1 passed)` and `4 steps (4 passed)`.
-- [ ] COMMIT: `test(e2e): Pre-merge archive failure preserves the permanent specification tree`
-  Hash: `________________`.
+- [x] COMMIT: `test(e2e): Pre-merge archive failure preserves the permanent specification tree`
+  Hash: `37d244e`.
 
 ## Final Gate Evidence
 
