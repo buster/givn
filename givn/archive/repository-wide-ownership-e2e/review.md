@@ -136,7 +136,7 @@ discard E2E coverage for a class.
 
 ### Fresh report counters
 
-The final project-level reports contain:
+The pre-archive review measurement produced these project-level reports:
 
 | Report | Lines covered | Lines valid | Line rate | Branches covered/valid |
 |---|---:|---:|---:|---:|
@@ -177,8 +177,9 @@ Coverage gap classification:
 
 - `givn lint --change repository-wide-ownership-e2e`: clean.
 - `./run-tests.sh`: `20 features`, `163 scenarios (163 passed)`, `926 steps`.
-- `./run-tests.sh --e2e`: `22 features`, `185 scenarios (185 passed)`,
-  `1053 steps`.
+- `./run-tests.sh --e2e` passed before archive; the post-merge archive gate
+  and rerun passed with `16 features`, `25 scenarios (25 passed)`, and `143
+  steps`.
 - Active delta: `3/3` scenarios and `16/16` steps passed in both full and
   `@e2e` projections; non-E2E projection was empty by design.
 - `cargo fmt --all -- --check`: passed.
@@ -186,5 +187,21 @@ Coverage gap classification:
 - `givn check review --change repository-wide-ownership-e2e`: verify,
   verify-e2e, integrity, overlap, and net-delta gates passed; the receipt was
   `net delta: 3 added, 0 modified, 0 removed`.
+
+## Post-merge Archive
+
+- `cargo run --quiet -- archive --change repository-wide-ownership-e2e` exited
+  0.
+- The delta was moved to
+  `givn/archive/repository-wide-ownership-e2e/` and merged into
+  `givn/specs/repository-ownership-fixtures/`.
+- The archive gate reran the permanent verify and E2E projections. The E2E
+  projection passed with `16 features`, `25 scenarios`, and `143 steps`.
+- The fresh post-merge reports contain non-E2E `2978/4093` lines, E2E
+  `2238/4093` lines, and merged `5216/8186` lines (`64%`). The merged class
+  rates are `57/98` for `src/cli/check.rs` and `144/168` for
+  `src/cli/archive.rs`; branch coverage remains `n/a (0/0)`.
+- The coverage gate updated the managed README summary and removed
+  `.archive-backup-repository-wide-ownership-e2e`.
 
 REVIEW: PASS
