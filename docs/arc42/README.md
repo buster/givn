@@ -22,9 +22,9 @@ implementation. See chapter 8.14 and ADR-035.
 | 3 | [Context and Scope](03-context-and-scope.md) | System boundary, external interfaces, in/out of scope |
 | 4 | [Solution Strategy](04-solution-strategy.md) | Key strategic decisions in brief |
 | 5 | [Building Block View](05-building-block-view.md) | Static decomposition: crate, modules, responsibilities |
-| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks), apply, archive, eject |
+| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks), strict similarity review, archive, eject |
 | 7 | [Deployment View](07-deployment-view.md) | Distribution, install methods, release pipeline |
-| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade engine, Gherkin delta model, TDD loop, coverage gate, skills |
+| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade engine, Gherkin delta model, TDD loop, coverage gate, skills, similarity gate |
 | 9 | [Architecture Decisions](09-architecture-decisions.md) | ADRs — every decision from the Q&A, with rationale |
 | 10 | [Quality Requirements](10-quality-requirements.md) | Quality tree and concrete scenarios |
 | 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and planned debt |
