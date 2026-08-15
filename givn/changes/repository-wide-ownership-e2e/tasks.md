@@ -61,8 +61,8 @@
   failing archive steps and kept duplicate-title/tree assertions in the shared
   helper. After `cargo fmt --all`, the named rerun passed with `1 scenario (1
   passed)` and `7 steps (7 passed)`.
-- [ ] COMMIT: `test(e2e): Archive publishes consolidated permanent specifications`
-  Hash: `________________`.
+- [x] COMMIT: `test(e2e): Archive publishes consolidated permanent specifications`
+  Hash: `5bbeadb`.
 
 ## Scenario: Pre-merge archive failure preserves the permanent specification tree
 
