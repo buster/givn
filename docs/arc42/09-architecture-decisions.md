@@ -1066,9 +1066,9 @@ missing facts never contradict (conservative).
 - Hard error only for identical titles; everything softer warns and requires a
   human disposition (merge/delete/boundary/related) — no score thresholds.
 - Lint-as-hook pipelines inherit exit 3; `--json` is the machine contract.
-- Embedding retrieval remains a conditional authoring aid (spec retrieval),
-  never a gate — revisited when the deterministic fingerprint's missed
-  paraphrase cases are deemed worth a model.
+- Embedding retrieval was originally kept as a conditional authoring aid and
+  not a gate. The semantic-gate portion of this consequence is superseded by
+  ADR-041; deterministic fingerprint gates remain governed by this ADR.
 - Disposition volume on large trees can be significant; the review gate
   applies it only to pairs involving the change's delta.
 
@@ -1313,15 +1313,17 @@ on model availability.
 
 Choose local in-binary embeddings through an opt-in `fastembed-rs` feature, with
 a cached multilingual E5 model and a JSON index of scenario hashes/vectors.
-Retrieval is advisory and never a gate. The default release build does not
-link the native ONNX Runtime dependency.
+Interactive retrieval remains advisory, and the default release build does not
+link the native ONNX Runtime dependency. The review-specific non-gating portion
+of this decision is superseded by ADR-041, which adds a strict gate to the
+feature-enabled binary.
 
 ### Consequences
 
 - Good, because paraphrase candidates become visible during authoring.
 - Good, because CI and deterministic gates need no model or external service.
-- Bad, because first-use model setup is large and can fail; retrieval reports
-  explicit setup guidance and remains separate from correctness gates.
+- Bad, because first-use model setup is large and can fail; feature-enabled
+  strict review reports setup failure rather than returning a false clean result.
 - Bad, because the local index must be refreshed when content hashes change.
 - Bad, because the opt-in build adds a native ONNX Runtime dependency and is not
   automatically a portable musl artifact.
@@ -1339,6 +1341,96 @@ paraphrase candidate, and excludes the current change's own delta.
 
 Related decisions: ADR-037 (deterministic overlap fingerprint), ADR-038
 (normative authoring policy), chapters 6.8a and 8.5a, and risks R-18/R-19/R-20.
+---
+
+## ADR-041: Strict binary-fixed semantic scenario uniqueness gate
+
+---
+status: accepted
+date: 2026-08-15
+decision-makers: givn maintainers
+---
+
+### Context and Problem Statement
+
+ADR-039 made local embeddings available as an advisory authoring aid. The
+repository's own dogfood scan now shows semantically close scenarios in both
+the same and different feature files. A disposition-only review leaves the
+duplicate or the confusingly similar boundary in the permanent specification,
+so the tool can accumulate the very overlap it is intended to reveal.
+
+The safety boundary must also be protected from an authoring agent changing a
+project setting to make its own review pass.
+
+### Decision Drivers
+
+- Prevent duplicate or confusingly similar scenarios from entering the
+  permanent specification.
+- Check both the projected permanent tree and the current delta against the
+  pre-change permanent tree.
+- Keep the threshold fixed for a given binary, with future threshold changes
+  requiring a new reviewed/dogfooded binary change.
+- Preserve the default binary's feature-gated ONNX Runtime and local-first
+  posture.
+- Make a valid boundary explicit in the scenario itself rather than accepting
+  a prose exception in `review.md`.
+
+### Considered Options
+
+1. Keep retrieval advisory and rely on human dispositions.
+2. Make the threshold project-configurable, allowing each project or agent to
+   choose its own gate.
+3. Enforce a binary-fixed threshold for all scenario pairs and require a
+   duplicate deletion or a rewrite below the threshold.
+
+### Decision Outcome
+
+Choose option 3. The current binary uses the private constant
+`SIMILARITY_THRESHOLD = 0.95`. There is no project-config, CLI, environment, or
+review-disposition override. Every distinct permanent pair in the projected
+post-change tree and every added/modified delta scenario against the pre-change
+permanent tree is compared using passage-role vectors. A score greater than or
+equal to `0.95` fails review.
+
+The report labels the required action: `MERGE` means delete the true duplicate;
+`KEEP-AS-BOUNDARY` means rewrite the retained scenario's title and steps until
+the score falls below the threshold. A note never suppresses a candidate.
+After archive, the feature-enabled binary refreshes the generated index. A
+future threshold change is a new versioned code and plan decision, not a
+project-local override.
+
+### Consequences
+
+- Good, because the permanent specification has a mechanically enforced
+  semantic-uniqueness floor.
+- Good, because valid boundaries must communicate their distinction in the
+  scenario text instead of relying on reviewer metadata.
+- Good, because the agent cannot weaken the gate by editing project config.
+- Bad, because the current repository must resolve every existing candidate
+  before the gate can be considered green; the initial dogfood cleanup is
+  explicit work rather than grandfathered debt.
+- Bad, because a future model, model revision, or threshold change can alter
+  the candidate set and requires a fresh baseline and dogfood run.
+- Bad, because feature-enabled review requires the local model/cache and can be
+  slower than deterministic overlap checks.
+- Bad, because a false positive requires wording changes even when human review
+  believes the behavior is valid; the threshold is intentionally conservative.
+
+### Confirmation
+
+The executable scenarios prove same-file and cross-file permanent scans,
+delta-to-permanent scans, projected removal, rewrite-below-threshold behavior,
+attempted configuration override resistance, exact threshold handling, and
+post-archive index refresh. The current givn permanent tree is scanned with the
+same production passage-to-passage algorithm and all candidates are resolved
+before this change is archived.
+
+### More Information
+
+Supersedes the advisory review portion of ADR-039. ADR-039 remains the decision
+for local model-backed retrieval and interactive `givn spec search`. Related
+chapters: 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, and 12.
+
 ---
 
 ## ADR-040: Repository-owned CLI acceptance fixtures

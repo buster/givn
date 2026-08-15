@@ -80,6 +80,23 @@ fn active_change_delta(world: &mut GivnWorld, title: String) {
     .expect("write active delta");
 }
 
+#[given(regex = r#"^an active change delta contains a scenario similar to "([^"]+)"$"#)]
+fn active_change_similar_to(world: &mut GivnWorld, _permanent_title: String) {
+    let env = world.env.as_ref().expect("retrieval project is required");
+    let path = env.path("givn/changes/running-change/specs/running-change.feature");
+    fs::create_dir_all(path.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        path,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write similar active delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | related |\n",
+    )
+    .expect("write review gate fixture");
+}
+
 #[given(regex = r#"^an active change delta contains a removed scenario named "([^"]+)"$"#)]
 fn removed_change_delta(world: &mut GivnWorld, title: String) {
     let env = world.env.as_ref().expect("retrieval project is required");

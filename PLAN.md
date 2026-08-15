@@ -559,6 +559,68 @@ beschreiben (Paraphrasen), die kein deterministischer Vergleich findet.
 
 ---
 
+## 5a. Change `enforce-spec-similarity-gate` — harte semantische Spec-Eindeutigkeit (IN ARBEIT)
+
+> Diese Change ist der nächste Stack-Layer auf dem aktuellen Retrieval-/Review-
+> Stand. Sie darf nicht durch eine vom Agenten veränderbare Konfiguration
+> abgeschwächt werden.
+
+### Ziel und unveränderliche Regel
+
+- Die Binärdatei enthält den festen Schwellenwert
+  `SIMILARITY_THRESHOLD = 0.95`.
+- Es gibt keinen Override über `givn/config.yaml`, CLI-Flags,
+  Umgebungsvariablen oder Review-Dispositionen.
+- Jeder Szenario-Paarvergleich mit einem Score `>= 0.95` ist ein harter
+  Review-Fehler. Eine Ausnahme oberhalb des Schwellenwerts ist nicht zulässig.
+
+### Prüfbereiche
+
+Jedes Review prüft beide Mengen:
+
+1. Alle permanenten Szenarien nach Anwendung des aktuellen Deltas gegeneinander.
+   Gleiches Feature und unterschiedliche Feature-Dateien sind gleichermaßen
+   gate-relevant; der Report markiert nur den Scope.
+2. Jedes hinzugefügte oder geänderte Szenario des aktuellen Deltas gegen die
+   permanenten Szenarien vor der Änderung.
+
+Die Projektion berücksichtigt auch `@givn.removed`-Szenarien. Ein echtes
+Duplikat kann dadurch nur dann grün werden, wenn das Duplikat im resultierenden
+Spec-Baum tatsächlich entfernt ist.
+
+### Verbindliche Remediation
+
+- **MERGE:** Die zwei Szenarien beschreiben dieselbe Invariante oder Variante.
+  Das Duplikat wird gelöscht; ein Review-Eintrag allein löst den Fehler nicht.
+- **KEEP-AS-BOUNDARY:** Die Szenarien sind fachlich verschieden. Das behaltene
+  Szenario wird so umgeschrieben, dass Titel und Schritte die unterscheidende
+  Boundary ausdrücklich benennen und der Score unter `0.95` fällt.
+
+Der Agent darf keinen Kandidaten lediglich als `keep`, `boundary` oder
+`KEEP-AS-BOUNDARY` markieren und dadurch den Gate-Fehler unterdrücken. Die
+Klassifikation ist die Handlungsanweisung; der Gate-Zustand wird ausschließlich
+aus dem erneuten Embedding-Vergleich abgeleitet.
+
+### Archiv-Verhalten
+
+- `givn spec review --change <id>` und `givn check review --change <id>` blockieren
+  bei jedem verbleibenden Kandidaten.
+- Nach einem erfolgreichen Archiv wird der permanente Index inkrementell
+  aktualisiert und enthält die neu gemergten Szenarien.
+- Ein Modell-/Cache-Fehler beim nachgelagerten Refresh erzeugt eine sichtbare
+  Warnung; die bereits bestandenen deterministischen Archiv-Gates werden nicht
+  rückwirkend verändert.
+
+### Ausdrücklich nicht erlaubt
+
+- Kein konfigurierbarer Schwellenwert.
+- Keine akzeptierte Ausnahme für ein valides, aber weiterhin zu ähnliches
+  Szenario.
+- Kein globales `allow_similarity`- oder Dispositions-Flag.
+- Kein Gate, das nur Titelgleichheit prüft und semantische Paraphrasen ignoriert.
+
+---
+
 ## 6. Change `watn-consolidation` — Dogfood der Gates im Referenzprojekt
 
 > Diese Change wird im watn-Repo (`~/projects/watn`) angelegt, nachdem

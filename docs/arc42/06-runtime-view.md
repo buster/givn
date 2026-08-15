@@ -143,9 +143,9 @@ addition (after verify, verify-e2e, and integrity): the **overlap disposition
 gate** — every shape match without fact contradiction involving the change's
 delta needs a disposition row in review.md, every long delta scenario a
 split-or-keep row; the net-delta receipt (added/modified/removed counts) is
-printed on stdout. The advisory retrieval pass then refreshes the permanent
-index and reports undisposed candidates without changing the exit code. See
-8.8, 8.5a, and ADR-037.
+printed on stdout. With `spec-retrieval` compiled, the strict similarity pass
+then refreshes the permanent index and fails on every permanent or projected
+delta pair at or above `0.95`. See 8.8, 8.5a, and ADR-037/ADR-041.
 
 Example: after the agent finishes `tasks`, `givn check tasks` runs the configured
 test suite and confirms GREEN before review. With the sentinel default runner, it
@@ -184,8 +184,11 @@ user → cli::archive
         validate the freshly produced merged report;
         update the managed README badges and coverage summary from that report;
         on any failure, restore specs, README, and coverage files
-  7. move givn/changes/<id>/ → givn/archive/<id>/
-  8. report summary
+   7. move givn/changes/<id>/ → givn/archive/<id>/
+   8. with the retrieval feature, refresh givn/.spec-index.json from the merged
+      permanent tree; without the feature this is a no-op; refresh failure is a
+      visible warning after the archive has already succeeded
+   9. report summary
 ```
 
 If any merge precondition fails (e.g. modify a missing scenario), archive aborts
@@ -249,18 +252,27 @@ to drive its loop regardless of how the manifest is configured.
 
 ## 6.8a `givn spec index`, `givn spec search`, and `givn spec review`
 
-The authoring retrieval flow is:
+The retrieval and similarity-gate flow is:
 
-1. `givn spec index` scans permanent feature files and resolves or creates the
-   local model cache.
-2. Scenario text is embedded and persisted with its content hash in the local
-   index.
-3. `givn spec search "<query>"` embeds the query, ranks candidates by cosine
-   similarity, and prints the top results.
-4. `givn spec review --change <id>` refreshes the index, queries active added or
-   modified scenarios, and prints candidates that lack a matching disposition.
-5. The current change's own delta is excluded from the permanent index; results are advisory and do not
-   affect lint, CI, or archive exit codes.
+1. `givn spec index` scans permanent feature files, resolves or creates the
+   local model cache, embeds scenario text with the `passage:` role, and stores
+   content hashes and vectors.
+2. `givn spec search "<query>"` embeds an interactive query with the `query:`
+   role, ranks candidates by cosine similarity, and prints the top results. This
+   authoring command remains advisory.
+3. `givn spec review --change <id>` refreshes the permanent index, embeds added
+   and modified delta scenarios with the `passage:` role, and compares them with
+   the pre-change permanent tree.
+4. The same review projects the permanent tree after applying the delta's
+   capability-tagged added, modified, and removed scenarios, then compares every
+   distinct projected pair. Same-file and cross-file pairs are both gate-relevant.
+5. A pair at or above the private binary threshold `0.95` prints a candidate and
+   remediation (`MERGE` means delete the duplicate; `KEEP-AS-BOUNDARY` means
+   rewrite the scenario below the threshold), then exits non-zero. A review note
+   cannot suppress the candidate.
+6. After a successful archive, the change is moved to `givn/archive/` and the
+   permanent index is refreshed. The refresh is best-effort and feature-gated;
+   it never runs before a merge gate that could roll the permanent tree back.
 
 ## 6.9 Running the test runner on a fresh project (sentinel)
 
