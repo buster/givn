@@ -28,7 +28,13 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
             );
         }
         // Run mandatory checks first, then custom hooks.
-        run_mandatory_checks(artifact_id, &manifest, &features_path, &project_root, change)?;
+        run_mandatory_checks(
+            artifact_id,
+            &manifest,
+            &features_path,
+            &project_root,
+            change,
+        )?;
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
