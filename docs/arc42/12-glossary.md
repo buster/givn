@@ -44,4 +44,7 @@
 | **Arc42 implementation conformance** | The completion-review comparison of durable Arc42 facts and the change-level assessment against the design, mapped tasks, and completed implementation. Required only when the `arc42` addon is enabled. |
 | **Architecture fact** | A documented architectural constraint, decision, structure, flow, quality requirement, risk, or domain term that a change may need to preserve or update. |
 | **ADR** | Architecture Decision Record (chapter 9). |
+| **Ownership fixture** | A temporary generic project used to exercise Givn's repository-wide review and archive contract through the real CLI. |
+| **Overlap disposition** | A maintainer's explicit decision recorded for a pair of scenarios reported as structurally related. |
+| **Net-change receipt** | The deterministic count of added, modified, and removed scenarios reported by review or archive evidence. |
 | **OpenSpec** | The TypeScript tool whose fork prototyped this workflow; givn is a clean-break successor. |

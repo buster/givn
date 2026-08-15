@@ -95,6 +95,14 @@ givn/  (single published binary crate)
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
 
+### 5.5 Repository-owned acceptance blocks
+
+The Gherkin runner's test-support layer contains three explicit pieces for the
+repository-ownership fixture capability: regular failure-path bindings, CLI
+E2E bindings, and shared temporary-project helpers. They are test-system
+building blocks, not production CLI modules, and invoke the compiled binary
+through the existing test environment seam.
+
 ## 5.4 Dependencies (crates)
 
 | Crate | Use | Version (verified) |

@@ -352,3 +352,28 @@ user → cli::upgrade
 
 Idempotent: running `givn upgrade` twice on the same binary produces no further
 diff. Never deletes user-set values.
+
+## 6.12 Repository-ownership fixture flow
+
+The repository-owned acceptance fixture exercises the public CLI without
+mutating the checkout:
+
+```mermaid
+sequenceDiagram
+    participant Runner as Gherkin runner
+    participant CLI as Compiled givn CLI
+    participant Temp as Temporary project
+    participant Specs as Temporary permanent specs
+
+    Runner->>Temp: create generic project and change
+    Runner->>CLI: invoke check review or archive
+    CLI->>Temp: read change artifacts and commands
+    CLI->>Specs: inspect or merge permanent features
+    CLI-->>Runner: exit status and stdout
+    Runner->>Specs: perform secondary tree assertions
+```
+
+The successful cases assert the CLI receipt first. The failure case injects a
+pre-merge hook failure and compares the complete permanent tree with its
+pre-command snapshot. No consumer application or external service participates
+in this flow.

@@ -53,3 +53,8 @@ files. `givn skills sync` regenerates agent files from current templates on dema
 - **Template rendering with multi-target emit** for skills (chapter 8.7).
 - **Arc42-to-change conformance review** — post-implementation evidence
   cross-check for Arc42-enabled projects (chapter 8.14).
+
+Repository workflow contracts are verified at their owning boundary: Givn's
+own acceptance fixtures invoke the public CLI, while consumer repositories
+retain only their domain-specific permanent specifications. This keeps the
+deterministic gate implementation and its regression evidence in one place.

@@ -78,3 +78,11 @@ API, and fails (exit 1) if any registry dependency is younger than the threshold
 **Remediation when it fails.** Pin an older version
 (`cargo update -p <crate> --precise <older>`), wait until the release ages past
 the threshold, or allowlist with explicit justification.
+
+## 2.6 Acceptance-boundary constraints
+
+Repository-owned workflow acceptance runs through the compiled Givn CLI in an
+isolated temporary project. Fixtures use only local deterministic commands and
+must not require a consumer checkout, provider credential, network service, or
+shared filesystem. The active change path is supplied through `GIVN_FEATURES`
+so the same Gherkin runner can execute the delta during lifecycle gates.
