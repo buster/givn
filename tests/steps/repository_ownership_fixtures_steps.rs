@@ -4,7 +4,7 @@ use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use super::repository_ownership_fixtures_support::{
-    duplicate_titles, feature_text, fixture_specs, invoke_givn, setup_fixture,
+    duplicate_titles, feature_text, fixture_specs, invoke_archive, invoke_givn, setup_fixture,
 };
 
 #[given("an isolated ownership fixture with dispositions for every overlap finding")]
@@ -27,12 +27,12 @@ fn run_fixture_review(world: &mut GivnWorld) {
 
 #[when("the maintainer invokes the fixture archive command")]
 fn run_fixture_archive(world: &mut GivnWorld) {
-    invoke_givn(world, &["archive", "--change", "fixture-consolidation"]);
+    invoke_archive(world);
 }
 
 #[when("the maintainer runs `givn archive --change fixture-consolidation`")]
 fn run_failing_fixture_archive(world: &mut GivnWorld) {
-    invoke_givn(world, &["archive", "--change", "fixture-consolidation"]);
+    invoke_archive(world);
 }
 
 #[then("the fixture command exits 0")]

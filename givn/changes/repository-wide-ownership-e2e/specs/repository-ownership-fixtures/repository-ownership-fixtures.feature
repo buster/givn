@@ -14,7 +14,7 @@ Feature: Repository-wide ownership fixtures
     And fixture stdout contains "overlap dispositions passed"
     And fixture stdout contains "net delta: 1 added, 0 modified, 1 removed"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Archive publishes consolidated permanent specifications
     Given an isolated ownership fixture with dispositions for every overlap finding
     When the maintainer invokes the fixture archive command
