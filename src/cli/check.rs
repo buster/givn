@@ -126,6 +126,14 @@ fn run_mandatory_checks(
 
 #[cfg(feature = "spec-retrieval")]
 fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow::Result<()> {
+    if !project_root
+        .join("givn/changes")
+        .join(change_id)
+        .join("specs")
+        .exists()
+    {
+        return Ok(());
+    }
     crate::spec::retrieval::review(project_root, change_id)
 }
 

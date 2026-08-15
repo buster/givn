@@ -36,7 +36,7 @@ graph TB
 | `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files. |
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
-| `givn spec index/search/review` | in/out | Local scenario-index construction, advisory single-query retrieval, and strict permanent/delta similarity auditing during review. |
+| `givn spec index/search/review` | in/out | Local scenario-index construction, advisory single-query retrieval, and retrieve-then-rerank candidate auditing during review. |
 | `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
 | Canonical authoring guidance | out | `givn instructions specs` emits the normative E2E and interaction-inventory policy consumed by agents. |

@@ -1433,6 +1433,84 @@ chapters: 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, and 12.
 
 ---
 
+## ADR-042: Retrieve with embeddings, decide with a local multilingual reranker
+
+---
+status: accepted for experiment
+date: 2026-08-16
+decision-makers: givn maintainers
+---
+
+### Context and Problem Statement
+
+Independent scenario embeddings are efficient for indexing but can over-rank
+valid boundary scenarios that share a large amount of test setup language. A
+pair model that sees both scenarios together may distinguish a true duplicate
+from a different output contract or command boundary more accurately.
+
+### Decision Drivers
+
+- Preserve fast local indexing and bounded review work.
+- Compare complete scenario texts jointly for the final candidate score.
+- Support German and English scenario text through a local multilingual model.
+- Keep the default binary feature-free and avoid a hosted model dependency.
+- Measure recall, false positives, and CPU cost before replacing the baseline.
+
+### Considered Options
+
+1. Keep the embedding-only hard gate.
+2. Use project-specific string heuristics to remove test harness language.
+3. Weight frequent step templates statistically and aggregate short step vectors.
+4. Retrieve top-K embedding neighbours and rerank scenario pairs with a local
+   multilingual cross-encoder/reranker.
+
+### Decision Outcome
+
+Choose option 4 for the comparison branch. Use FastEmbed-rs `TextRerank` with
+the multilingual `BGERerankerV2M3` model, retrieve the top five embedding
+neighbours, score each candidate in both directions, and average the raw
+logits. The experiment uses the private binary boundary `3.0` and no project
+override. Same-file structural overlap remains with the deterministic gate;
+the reranker focuses on cross-feature semantic candidates.
+
+This is an experiment rather than a final quality claim. It is accepted only if
+the real-model benchmark preserves known duplicate recall, materially reduces
+manually labeled false positives, and remains practical on CPU.
+
+### Consequences
+
+- Good, because the pair model can attend to both scenario texts at once.
+- Good, because the expensive model is bounded to retrieved candidates rather
+  than all permanent pairs.
+- Good, because the model is local and uses the existing feature-gated ONNX
+  runtime path.
+- Bad, because a relevance reranker is not automatically a duplicate
+  classifier; threshold calibration requires labeled duplicate and boundary
+  pairs.
+- Bad, because top-K retrieval can miss a true duplicate below the candidate
+  cutoff; recall must be measured before adoption.
+- Bad, because CPU reranking is substantially slower than embedding-only
+  review and adds a second model cache.
+- Bad, because model score logits are not probabilities and cannot reuse the
+  old embedding `0.95` threshold.
+
+### Confirmation
+
+The branch's executable scenarios use a deterministic reranker stub for true
+duplicates, valid boundaries, projected removal, and model setup failure. The
+real benchmark uses the local `BGERerankerV2M3` model, records top-K candidate
+counts, raw-logit distributions, latency, and manually labeled outcomes.
+
+### More Information
+
+FastEmbed-rs `TextRerank`, `RerankInitOptions`, and
+`RerankerModel::BGERerankerV2M3` were checked against the installed locked
+source and Context7 documentation on 2026-08-16. Related decisions: ADR-039
+(local embeddings), ADR-041 (strict semantic review), and chapters 6, 8, 10,
+and 11.
+
+---
+
 ## ADR-040: Repository-owned CLI acceptance fixtures
 
 Status: Accepted
