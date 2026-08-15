@@ -82,3 +82,10 @@ of that guidance across instructions, skills, commands, and project overrides.
 | AI coding agents | Consume `givn instructions` and generated skills. `AGENTS.md` (if present) is user-authored. |
 | Contributors | Readable Rust; clear architecture (this document). |
 | CI systems | Run `givn lint` (static) and the project test runner (`verify.command`) deterministically. |
+
+## 1.5 Repository-owned acceptance
+
+Givn's review, archive, and failure-preservation workflow is itself a product
+contract. Its acceptance proof belongs in Givn and must not depend on a private
+consumer repository. The repository-owned fixture provides a deterministic
+signal for CLI output, archive publication, and pre-merge failure behavior.

@@ -65,6 +65,9 @@ graph TD
 | Q-31 | Agent ergonomics | A reviewer checks an active change for semantic candidates. | `givn spec review --change <id>` and `givn check review --change <id>` refresh the permanent index and report undisposed retrieval candidates without changing the review exit code. |
 | Q-27 | Agent ergonomics | An agent requests the specs instruction and then synchronizes skills. | The resolved specs instruction contains the canonical E2E policy; generated guidance points to it and does not contain contradictory legacy wording. |
 | Q-28 | Configurability | A project supplies `givn/artifacts/specs/instructions.md`. | `givn instructions specs` returns the project override, while synchronization leaves the override intact and generated guidance continues to delegate to the resolved instruction. |
+| Q-32 | Repository-owned acceptance | A maintainer reviews a generic change with explicit overlap dispositions. | The real Givn CLI exits 0 and prints the deterministic overlap and net-change receipt. |
+| Q-33 | Repository-owned acceptance | A maintainer archives a generic consolidated change. | The real Givn CLI exits 0; the retained scenario is published, the obsolete scenario is absent, and the permanent tree has no duplicate title. |
+| Q-34 | Recovery / Integrity | A pre-merge archive hook fails in the generic fixture. | The CLI exits non-zero and the complete permanent specification tree remains byte-for-byte unchanged. |
 
 ## 10.3 Acceptance signals per phase
 
