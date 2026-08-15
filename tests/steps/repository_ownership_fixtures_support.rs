@@ -75,6 +75,15 @@ pub(crate) fn invoke_archive(world: &mut GivnWorld) {
     invoke_givn(world, &["archive", "--change", "fixture-consolidation"]);
 }
 
+pub(crate) fn assert_tree_unchanged(world: &GivnWorld, root: PathBuf) {
+    let before = world
+        .ownership_before_tree
+        .as_ref()
+        .expect("fixture snapshot");
+    let after = snapshot_tree(&root);
+    assert_eq!(after, *before, "archive changed the fixture after failure");
+}
+
 fn fixture_root(world: &GivnWorld) -> PathBuf {
     world.env.as_ref().expect("fixture project").root()
 }
