@@ -46,16 +46,21 @@
 
 ## Scenario: Archive publishes consolidated permanent specifications
 
-- [ ] RED: Remove `@wip` from this scenario only and run
+- [x] RED: Remove `@wip` from this scenario only and run
   `GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test features_runner -- --name "Archive publishes consolidated permanent specifications"`.
-  Record the required non-zero failure output.
-- [ ] GREEN: Invoke the real `givn archive --change fixture-consolidation`
+  RED output: `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)`, with
+  `Step panicked. Captured output: not implemented` for the archive command.
+- [x] GREEN: Invoke the real `givn archive --change fixture-consolidation`
   subprocess in a fresh fixture and assert CLI output first, then canonical
   title presence, obsolete title absence, and repository-wide duplicate-title
-  absence. Record the implementation files changed.
-- [ ] REFACTOR: Extract duplicate-title/tree assertions into the shared helper
-  without changing behavior. Re-run the same named command and record the
-  passing output.
+  absence. The implementation uses
+  `tests/steps/repository_ownership_fixtures_steps.rs` and
+  `tests/steps/repository_ownership_fixtures_support.rs`; the targeted run
+  passed with `1 scenario (1 passed)` and `7 steps (7 passed)`.
+- [x] REFACTOR: Reused the shared `invoke_archive` helper for successful and
+  failing archive steps and kept duplicate-title/tree assertions in the shared
+  helper. After `cargo fmt --all`, the named rerun passed with `1 scenario (1
+  passed)` and `7 steps (7 passed)`.
 - [ ] COMMIT: `test(e2e): Archive publishes consolidated permanent specifications`
   Hash: `________________`.
 

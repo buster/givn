@@ -71,6 +71,10 @@ pub(crate) fn invoke_givn(world: &mut GivnWorld, args: &[&str]) {
     world.last_output = Some(common::run_givn(env, args));
 }
 
+pub(crate) fn invoke_archive(world: &mut GivnWorld) {
+    invoke_givn(world, &["archive", "--change", "fixture-consolidation"]);
+}
+
 fn fixture_root(world: &GivnWorld) -> PathBuf {
     world.env.as_ref().expect("fixture project").root()
 }
