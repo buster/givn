@@ -66,15 +66,20 @@
 
 ## Scenario: Pre-merge archive failure preserves the permanent specification tree
 
-- [ ] RED: Remove `@wip` from this scenario only and run
+- [x] RED: Remove `@wip` from this scenario only and run
   `GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test features_runner -- --name "Pre-merge archive failure preserves the permanent specification tree"`.
-  Record the required non-zero failure output.
-- [ ] GREEN: Create the failing fixture variant with `verify.command: "false"`,
+  RED output: `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)`, with
+  `Step panicked. Captured output: not implemented` for the archive command.
+- [x] GREEN: Create the failing fixture variant with `verify.command: "false"`,
   invoke the real archive subprocess, assert non-zero CLI status, and compare
   the complete permanent tree byte-for-byte with its pre-command snapshot.
-  Record the implementation files changed.
-- [ ] REFACTOR: Re-run the named failure scenario after consolidating snapshot
-  helpers and record the passing expected-failure output.
+  The implementation uses
+  `tests/steps/repository_ownership_fixtures_steps.rs` and
+  `tests/steps/repository_ownership_fixtures_support.rs`; the targeted run
+  passed with `1 scenario (1 passed)` and `4 steps (4 passed)`.
+- [x] REFACTOR: Reused the shared `invoke_archive` and byte-for-byte
+  `snapshot_tree` helpers, then ran `cargo fmt --all`. The named expected-
+  failure rerun passed with `1 scenario (1 passed)` and `4 steps (4 passed)`.
 - [ ] COMMIT: `test(e2e): Pre-merge archive failure preserves the permanent specification tree`
   Hash: `________________`.
 

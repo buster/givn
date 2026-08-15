@@ -4,7 +4,8 @@ use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use super::repository_ownership_fixtures_support::{
-    duplicate_titles, feature_text, fixture_specs, invoke_archive, invoke_givn, setup_fixture,
+    assert_tree_unchanged, duplicate_titles, feature_text, fixture_specs, invoke_archive,
+    invoke_givn, setup_fixture,
 };
 
 #[given("an isolated ownership fixture with dispositions for every overlap finding")]
@@ -82,10 +83,5 @@ fn command_fails(world: &mut GivnWorld) {
 
 #[then("the fixture permanent specification tree remains unchanged")]
 fn permanent_tree_unchanged(world: &mut GivnWorld) {
-    let before = world
-        .ownership_before_tree
-        .as_ref()
-        .expect("fixture snapshot");
-    let after = super::repository_ownership_fixtures_support::snapshot_tree(&fixture_specs(world));
-    assert_eq!(after, *before, "archive changed the fixture after failure");
+    assert_tree_unchanged(world, fixture_specs(world));
 }
