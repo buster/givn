@@ -15,7 +15,9 @@ fn change_dir(world: &GivnWorld) -> std::path::PathBuf {
     root.join(format!("givn/changes/{id}"))
 }
 
-#[given(regex = r#"^the change's review\.md contains a disposition row naming "([^"]+)" and "([^"]+)"$"#)]
+#[given(
+    regex = r#"^the change's review\.md contains a disposition row naming "([^"]+)" and "([^"]+)"$"#
+)]
 fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: String) {
     let path = change_dir(world).join("review.md");
     let content = format!(
@@ -27,9 +29,8 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
 #[given(regex = r#"^the change's review\.md contains a split-or-keep row for "([^"]+)"$"#)]
 fn review_md_split_or_keep_row(world: &mut GivnWorld, title: String) {
     let path = change_dir(world).join("review.md");
-    let content = format!(
-        "## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n"
-    );
+    let content =
+        format!("## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n");
     std::fs::write(&path, content).expect("write review.md split-or-keep row");
 }
 

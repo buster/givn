@@ -202,7 +202,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             change,
             json,
         } => cli::instructions::run(artifact.as_deref(), change.as_deref(), json),
-        Commands::Lint { change, paths, json } => {
+        Commands::Lint {
+            change,
+            paths,
+            json,
+        } => {
             let code = cli::lint::run(change.as_deref(), paths, json)?;
             if code != 0 {
                 std::process::exit(code);

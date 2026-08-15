@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use serde::Serialize;
 
-use crate::gherkin::delta::{delta_op, DeltaOp};
+use crate::gherkin::delta::{DeltaOp, delta_op};
 use crate::gherkin::parse::collect_feature_files;
 use crate::overlap::fingerprint::Fingerprint;
 
@@ -72,7 +72,11 @@ fn collect_from_file(file: &Path, specs_root: &Path, is_delta: bool, out: &mut V
         .and_then(|p| p.file_name())
         .map(|n| n.to_string_lossy().into_owned());
     for scenario in &feature.scenarios {
-        let op = if is_delta { delta_op(scenario) } else { DeltaOp::Added };
+        let op = if is_delta {
+            delta_op(scenario)
+        } else {
+            DeltaOp::Added
+        };
         let fingerprint = Fingerprint::of_scenario(scenario, feature.background.as_ref());
         out.push(ScenarioInfo {
             title: scenario.name.clone(),
@@ -130,10 +134,16 @@ fn title_duplicates(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
         }
         // Exemption: exactly one pair "modified delta vs. its permanent
         // target in the same capability".
-        let non_modified: Vec<&ScenarioInfo> =
-            group.iter().copied().filter(|s| s.op != DeltaOp::Modified).collect();
-        let modified: Vec<&ScenarioInfo> =
-            group.iter().copied().filter(|s| s.op == DeltaOp::Modified).collect();
+        let non_modified: Vec<&ScenarioInfo> = group
+            .iter()
+            .copied()
+            .filter(|s| s.op != DeltaOp::Modified)
+            .collect();
+        let modified: Vec<&ScenarioInfo> = group
+            .iter()
+            .copied()
+            .filter(|s| s.op == DeltaOp::Modified)
+            .collect();
         let exempt = modified.len() == 1
             && non_modified.len() == 1
             && modified[0].is_delta
@@ -244,10 +254,7 @@ fn long_scenarios(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
 /// the change's delta needs a disposition row; every long scenario in the
 /// delta needs a split-or-keep row. Prints the net-delta receipt.
 pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<()> {
-    let review_path = root
-        .join("givn/changes")
-        .join(change_id)
-        .join("review.md");
+    let review_path = root.join("givn/changes").join(change_id).join("review.md");
     let (rows, split_rows) = crate::overlap::disposition::parse_review(&review_path);
     let delta_prefix = root
         .join("givn/changes")
@@ -259,10 +266,7 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
     let findings = scan_tree(root);
     let mut missing: Vec<String> = Vec::new();
     for finding in &findings {
-        let involves_delta = finding
-            .files
-            .iter()
-            .any(|f| f.starts_with(&delta_prefix));
+        let involves_delta = finding.files.iter().any(|f| f.starts_with(&delta_prefix));
         if !involves_delta {
             continue;
         }
@@ -290,7 +294,10 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
         .map(|s| s.op)
         .collect();
     let added = delta_ops.iter().filter(|o| **o == DeltaOp::Added).count();
-    let modified = delta_ops.iter().filter(|o| **o == DeltaOp::Modified).count();
+    let modified = delta_ops
+        .iter()
+        .filter(|o| **o == DeltaOp::Modified)
+        .count();
     let removed = delta_ops.iter().filter(|o| **o == DeltaOp::Removed).count();
     println!("net delta: {added} added, {modified} modified, {removed} removed");
     println!(
