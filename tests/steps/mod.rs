@@ -26,6 +26,8 @@ pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
 pub mod remove_dead_skip_list_code_steps;
+pub mod repository_ownership_fixtures_steps;
+pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_overlap_gates_steps;
@@ -43,6 +45,8 @@ pub struct GivnWorld {
     /// The change id parsed from the last `givn new <id>` command, for steps
     /// that refer to "the proposal.md" without naming the path.
     last_change_id: Option<String>,
+    /// Snapshot used by the repository-ownership fixture rollback scenario.
+    pub(crate) ownership_before_tree: Option<Vec<(String, Vec<u8>)>>,
     /// Override content written by the override Given step, for the
     /// "equals the project override content byte for byte" step.
     override_content: Option<String>,
