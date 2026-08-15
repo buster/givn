@@ -6,7 +6,7 @@
 | 2 | Architecture Constraints | Yes | The change fixes the verification boundary and requires isolated, deterministic CLI fixtures. | The fixture uses the compiled Givn binary, TempDir, local commands, and no network. |
 | 3 | Context and Scope | No | No new external product interface is introduced. | Existing Givn CLI commands are exercised from their own repository. |
 | 4 | Solution Strategy | Yes | Black-box CLI acceptance is the chosen verification strategy. | Review and archive are tested through subprocess output and exit status. |
-| 5 | Building Block View | Yes | New fixture step modules and shared support are added to the test system. | Regular, E2E, and shared fixture bindings are explicit components. |
+| 5 | Building Block View | Yes | New fixture step modules and shared support are added to the test system. | CLI E2E bindings and shared fixture helpers are explicit components. |
 | 6 | Runtime View | Yes | Review, archive, and pre-merge failure flows become executable. | The fixture lifecycle and CLI sequence are documented in design.md. |
 | 7 | Deployment View | No | No release artifact or deployment topology changes. | The change is test support only. |
 | 8 | Crosscutting Concepts | Yes | Isolation, strictness, hook configuration, and CLI evidence are cross-cutting test rules. | TempDir, GIVN_FEATURES, fail-on-skipped, and local hook commands are documented. |

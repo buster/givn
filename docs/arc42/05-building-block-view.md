@@ -97,11 +97,11 @@ givn/  (single published binary crate)
 
 ### 5.5 Repository-owned acceptance blocks
 
-The Gherkin runner's test-support layer contains three explicit pieces for the
-repository-ownership fixture capability: regular failure-path bindings, CLI
-E2E bindings, and shared temporary-project helpers. They are test-system
-building blocks, not production CLI modules, and invoke the compiled binary
-through the existing test environment seam.
+The Gherkin runner's test-support layer contains two explicit pieces for the
+repository-ownership fixture capability: CLI E2E bindings and shared
+temporary-project helpers. They are test-system building blocks, not production
+CLI modules, and invoke the compiled binary through the existing test
+environment seam.
 
 ## 5.4 Dependencies (crates)
 

@@ -85,20 +85,27 @@
 
 ## Final Gate Evidence
 
-- [ ] `givn lint --change repository-wide-ownership-e2e` is clean after all
-  `@wip` tags are removed.
-- [ ] `./run-tests.sh` passes the permanent non-E2E suite.
-- [ ] `./run-tests.sh --e2e` passes the permanent E2E suite.
-- [ ] The active delta's unfiltered, non-E2E, and E2E commands pass with the
-  recorded all-E2E equal-count exception.
-- [ ] `./measure-coverage.sh` and `./merge-coverages.sh` produce fresh reports;
+- [x] `givn lint --change repository-wide-ownership-e2e` is clean after all
+  `@wip` tags are removed: `1 file(s) checked - clean`.
+- [x] `./run-tests.sh` passes the permanent non-E2E suite: `20 features`,
+  `163 scenarios (163 passed)`, and `926 steps (926 passed)`.
+- [x] `./run-tests.sh --e2e` passes the permanent E2E suite: `22 features`,
+  `185 scenarios (185 passed)`, and `1053 steps (1053 passed)`.
+- [x] The active delta's unfiltered, non-E2E, and E2E commands pass with the
+  recorded all-E2E equal-count exception: full and `@e2e` each reported `3
+  scenarios (3 passed)` and `16 steps (16 passed)`; `not @e2e` reported `0
+  scenarios` and `0 steps`.
+- [x] `./measure-coverage.sh` and `./merge-coverages.sh` produce fresh reports;
   the E2E and merged Cobertura files show non-zero `src/cli/check.rs` and
-  `src/cli/archive.rs` line coverage.
-- [ ] `cargo fmt --check` and `cargo clippy --workspace --all-targets -- -D warnings`
+  `src/cli/archive.rs` line coverage. Final reports are non-E2E `2978/4093`,
+  E2E `2207/4093`, merged `5185/8186`; merged check is `57/98` and archive is
+  `143/168`.
+- [x] `cargo fmt --all -- --check` and `cargo clippy --workspace --all-targets -- -D warnings`
   pass.
-- [ ] Run `givn check review --change repository-wide-ownership-e2e` and record
-  verify, verify-e2e, integrity, overlap, and net-delta output.
-- [ ] Write `review.md` with the fabrication audit, interaction matrix,
-  Arc42 conformance, coverage evidence, and `REVIEW: PASS`.
+- [x] `givn check review --change repository-wide-ownership-e2e` passed
+  verify, verify-e2e, integrity, overlap, and net-delta: `net delta: 3 added,
+  0 modified, 0 removed`.
+- [x] Wrote `review.md` with the fabrication audit, interaction matrix, Arc42
+  conformance, coverage evidence, and `REVIEW: PASS`.
 - [ ] Run `givn archive --change repository-wide-ownership-e2e` and record the
   post-merge permanent-tree, E2E, and coverage gates.
