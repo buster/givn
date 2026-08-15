@@ -33,15 +33,13 @@ the repository that owns that contract.
 | Component | Path | Responsibility |
 |---|---|---|
 | Delta specifications | `givn/changes/repository-wide-ownership-e2e/specs/repository-ownership-fixtures/repository-ownership-fixtures.feature` | Executable review, archive, and rollback behavior |
-| Regular step definitions | `tests/steps/repository_ownership_fixtures_steps.rs` | Failing-archive rollback scenario |
-| CLI E2E step definitions | `tests/steps/repository_ownership_fixtures_e2e_steps.rs` | Review and successful archive scenarios |
+| CLI E2E step definitions | `tests/steps/repository_ownership_fixtures_steps.rs` | Review, successful archive, and failing pre-merge archive scenarios |
 | Shared fixture helpers | `tests/steps/repository_ownership_fixtures_support.rs` | Fixture layout, subprocess capture, snapshots, and repository-wide title checks |
-| Runner registration | `tests/steps/mod.rs` | Registers the three capability modules |
+| Runner registration | `tests/steps/mod.rs` | Registers the capability and shared support modules |
 | Existing runner | `tests/features_runner.rs` | Runs permanent specs or the path supplied through `GIVN_FEATURES` |
 
-The E2E and regular files are separate because the E2E scenarios use the real
-CLI boundary while the rollback scenario is a cheaper failure-path check. The
-shared helper file contains no Cucumber step functions.
+All three scenarios are E2E because each invokes the real Givn CLI. The shared
+helper file contains no Cucumber step functions.
 
 ## Fixture Lifecycle
 
@@ -74,6 +72,50 @@ The fixture layout is:
 <temp>/givn/commands.yaml
 ```
 
+The fixture writes these exact feature contents:
+
+```gherkin
+# givn/specs/fixture-existing/fixture-existing.feature
+Feature: Existing fixture
+
+  Scenario: Obsolete behavior
+    Given a fixture behavior
+    When the old behavior runs
+    Then the old result appears
+
+# givn/specs/fixture-retained/fixture-retained.feature
+Feature: Retained fixture
+
+  Scenario: Existing unrelated behavior
+    Given a different fixture behavior
+    When unrelated behavior runs
+    Then unrelated result appears
+
+# givn/changes/fixture-consolidation/specs/fixture-existing/fixture-existing.feature
+@givn.delta @fixture-existing
+Feature: Existing fixture
+
+  @givn.removed
+  Scenario: Obsolete behavior
+    Given this obsolete scenario is removed
+
+# givn/changes/fixture-consolidation/specs/fixture-retained/fixture-retained.feature
+@givn.delta @fixture-retained
+Feature: Retained fixture
+
+  @givn.added
+  Scenario: Canonical retained behavior
+    Given a fixture behavior
+    When the old behavior runs
+    Then the old result appears
+```
+
+The active tree therefore produces exactly one non-contradictory cross-
+capability shape match (`Obsolete behavior` / `Canonical retained behavior`),
+one added operation, and one removed operation. The unrelated scenario has a
+different assertion fingerprint, and no scenario exceeds the long-scenario
+threshold or creates a duplicate-title error.
+
 The permanent tree contains `Obsolete behavior` and an unrelated
 `Existing unrelated behavior` in separate capabilities. The delta removes the
 obsolete title from `fixture-existing` and adds `Canonical retained behavior`
@@ -102,6 +144,11 @@ verify:
   e2e_command: "true"
 ```
 
+The failure fixture writes the same configuration with only
+`verify.command: "false"`. Because `givn archive` runs the `verify` hook for
+the required `tasks`/`review` artifacts before creating the permanent-spec
+backup, this is an explicit pre-merge gate failure and no merge is attempted.
+
 The rollback scenario fails before any merge begins and snapshots the complete
 permanent tree before invoking archive. This is deliberately a pre-merge
 failure-preservation contract; multi-file post-merge rollback is already
@@ -127,17 +174,18 @@ GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test
 GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test features_runner -- --tags 'not @e2e'
 GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test features_runner -- --tags @e2e
 GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test features_runner -- --name "<scenario title>"
-GIVN_FEATURES=givn/changes/repository-wide-ownership-e2e/specs cargo test --test features_runner -- --tags @e2e --name "<scenario title>"
 ```
 
 The exact strict-mode mechanism is `.fail_on_skipped()` in
 `tests/features_runner.rs`. New step bodies start with `unimplemented!()` in
 the RED phase; a pending or undefined step therefore exits non-zero.
 
-The unfiltered active-delta command is the full in-scope count. The E2E
-projection must be strictly smaller than that count. The repository-level
-`./run-tests.sh` and `./run-tests.sh --e2e` commands remain the permanent-tree
-projections used by the existing project hooks.
+The unfiltered active-delta command is the full in-scope count. Every active
+scenario is intentionally tagged `@e2e`, so the E2E projection has the same
+count and this is stated explicitly rather than pretending it is a strict
+subset. The repository-level `./run-tests.sh` and `./run-tests.sh --e2e`
+commands remain the permanent-tree projections used by the existing project
+hooks.
 
 ## E2E Infrastructure
 
@@ -147,7 +195,7 @@ not a repository-only simulation.
 
 - E2E command: `./run-tests.sh --e2e` with the active change supplied through
   `GIVN_FEATURES` when the change is under implementation.
-- E2E step file: `tests/steps/repository_ownership_fixtures_e2e_steps.rs`.
+- E2E step file: `tests/steps/repository_ownership_fixtures_steps.rs`.
 - Local infrastructure: no server, database, queue, browser, container, or
   digital twin. `TempDir` is the only isolation boundary.
 - Primary assertions: subprocess exit status and captured stdout. Permanent
@@ -163,19 +211,18 @@ not a repository-only simulation.
 |---|---|---|---|
 | invoke repository-wide review for a project with explicit overlap dispositions | `Repository-wide review accepts explicit overlap dispositions` | CLI | Run the compiled `givn check review --change fixture-consolidation` subprocess in a fresh `TempDir`; assert exit status and stdout |
 | archive a consolidated project and publish its permanent specifications | `Archive publishes consolidated permanent specifications` | CLI | Run the compiled `givn archive --change fixture-consolidation` subprocess in a fresh `TempDir`; assert exit status and stdout, then inspect the resulting tree secondarily |
-
-The pre-merge failure scenario is a regular failure-path scenario, not a
-separate happy-path inventory entry. It still drives the real CLI subprocess;
-its byte-for-byte tree assertion is secondary to the non-zero CLI result.
+| invoke archive for a project whose pre-merge hook fails | `Pre-merge archive failure preserves the permanent specification tree` | CLI | Run the compiled `givn archive --change fixture-consolidation` subprocess with `verify.command: "false"`; assert non-zero exit status and unchanged tree |
 
 ## Coverage Boundaries
 
 The existing coverage command instruments the Givn library and the Gherkin
-runner. The new step modules are executed by the runner; the compiled child
-binary is the real interface under test and its CLI output is the acceptance
-boundary. The review must verify that the child invocation contributes a
-non-zero Givn production path to the merged report, or record the concrete
-instrumentation limitation rather than claiming child-process coverage. This
+runner. Run `./measure-coverage.sh` followed by `./merge-coverages.sh`, then
+inspect both `coverage/e2e-cobertura.xml` and the merged
+`coverage/cobertura-coverage.xml`. The review must record non-zero
+`lines-covered` for `src/cli/check.rs` and `src/cli/archive.rs` in the E2E
+report. If either path is absent or zero, coverage is invalid and the
+instrumentation must be fixed before review sign-off. The child binary is the
+real interface under test and its CLI output is the acceptance boundary. This
 change adds no production runtime branch.
 
 ## Risks and Mitigations
