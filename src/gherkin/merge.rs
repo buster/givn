@@ -1,5 +1,5 @@
 use crate::error::GivnError;
-use crate::gherkin::delta::{strip_givn_tags, DeltaOp, DeltaScenario};
+use crate::gherkin::delta::{DeltaOp, DeltaScenario, strip_givn_tags};
 /// Merge engine: apply delta scenarios to a permanent .feature file.
 ///
 /// Semantics (ADR-011, arc42 ch.8.3):
