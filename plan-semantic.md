@@ -3,8 +3,28 @@
 ## Status
 
 This document is the implementation sequence for extending Givn with
-scenario-level semantic exploration and consolidation. It is committed to the
-stack base so every subsequent PR inherits the same scope and ordering.
+scenario-level semantic exploration and consolidation. It is anchored on
+`main`, the root base branch of the complete stacked PR series, so every
+subsequent PR inherits the same scope and ordering. Changes to this plan belong
+on `main`, not on an individual feature branch.
+
+The current stack has twelve open PRs. PR 17 is the twelfth and has eleven
+stack predecessors. Superseded closed PRs are not counted.
+
+| Stack order | PR | Head branch | Base branch |
+|---:|---:|---|---|
+| 1 | #1 | `spec-refactoring` | `main` |
+| 2 | #5 | `spec-overlap-gates` | `spec-refactoring` |
+| 3 | #7 | `workflow-enforcement-wip-cleanup` | `spec-overlap-gates` |
+| 4 | #8 | `prose-consolidation` | `workflow-enforcement-wip-cleanup` |
+| 5 | #9 | `skill-rewrites` | `prose-consolidation` |
+| 6 | #10 | `spec-retrieval` | `skill-rewrites` |
+| 7 | #11 | `repository-wide-ownership-e2e` | `spec-retrieval` |
+| 8 | #13 | `experiments/cross-encoder-reranker` | `repository-wide-ownership-e2e` |
+| 9 | #14 | `experiments/nli-experiment` | `experiments/cross-encoder-reranker` |
+| 10 | #15 | `experiments/watn-corpus-comparison` | `experiments/nli-experiment` |
+| 11 | #16 | `semantic/01-spec-explore-permanent` | `experiments/watn-corpus-comparison` |
+| 12 | #17 | `semantic/02-spec-explore-change` | `semantic/01-spec-explore-permanent` |
 
 The existing experiment stack is:
 
@@ -14,10 +34,11 @@ experiments/cross-encoder-reranker
   -> experiments/watn-corpus-comparison
 ```
 
-The new implementation PRs continue on top of
-`experiments/watn-corpus-comparison`. Each PR is one independent capability
-slice. No later PR may silently pull an unfinished future slice into an earlier
-one.
+The semantic implementation PRs are the final two links currently in this
+stack. They continue on top of `experiments/watn-corpus-comparison`, which is
+itself inherited from the eleven earlier stack links. Each PR is one
+independent capability slice. No later PR may silently pull an unfinished
+future slice into an earlier one.
 
 ## Product Boundary
 
@@ -87,25 +108,42 @@ the scenarios already being written in the current change.
 
 ```text
 givn spec explore --change <id> --file <draft.feature>
+givn spec explore --change <id> --stdin
 ```
 
 **Scope:**
 
-- Keep all PR 1 behavior unchanged.
+- Preserve PR 1 input validation, permanent candidate set, ranking, and existing
+  output fields/order. Output metadata is intentionally additive rather than
+  byte-for-byte PR 1 compatibility: JSON results gain scope/owning-change
+  metadata for both no-change and change-aware calls, and text results identify
+  their source.
+- Accept both file and standard-input queries with an optional current-change
+  scope.
+- Cover `--change --stdin` as regular behavior; it does not create another
+  interaction-inventory entry or `@e2e` scenario.
 - Add active delta scenarios to the search set.
 - Exclude `@givn.removed` scenarios.
 - Handle `@givn.modified` identity without reporting a scenario against itself.
+- Normalize permanent, delta-source, projected-target, and query identities with
+  one project-relative forward-slash path rule for relative and absolute inputs.
 - Show whether a candidate comes from permanent specs or the current change.
 - Keep the index permanent-only; delta vectors are computed for the request and
   are not persisted as permanent entries.
 - Keep the output advisory and non-mutating.
+- Reject unsafe identifiers, missing changes, missing change specs directories,
+  and malformed delta features with clear non-zero errors before refreshing the
+  permanent index.
 
 **Out of scope:** projected archive semantics, classification, remediation,
 review blocking, BGE, NLI, and coverage.
 
 **Completion evidence:** A draft is found against a permanent twin and against
-another active delta scenario; removed deltas are absent; the permanent index is
-unchanged by the exploration.
+another active delta scenario; removed deltas are absent; added and modified
+queries exclude their own source and projected-target identities while another
+eligible candidate remains visible; file and `--stdin` change-aware queries are
+covered as regular scenarios; unsafe, missing, incomplete, and malformed change
+requests fail clearly without mutating the permanent index where observable.
 
 ### PR 3: Generate the Semantic Review Report
 
@@ -208,6 +246,11 @@ byte-for-byte unchanged.
 ### PR 6: BGE Reranking Evidence
 
 **Branch:** `semantic/06-bge-evidence`
+
+**Experiment reference:** The existing comparison implementation is kept on
+`experiments/cross-encoder-reranker` (GitHub PR #13). That branch is evidence for
+this later layer; it is not active in the PR 1 product build unless the explicit
+`cross-encoder-reranker` Cargo feature is enabled.
 
 **Base:** `semantic/05-spec-duplicates`
 
