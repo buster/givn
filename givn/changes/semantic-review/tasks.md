@@ -47,16 +47,21 @@ givn skills sync
 - [x] REFACTOR: preserve advisory `spec review` behavior and rerun. Evidence:
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Removed delta scenarios produce a clean semantic report`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Removed delta scenarios produce a clean semantic report`
+      Hash: `9ee7b81`
 
 ### The report distinguishes permanent and current-change candidate scopes
 
-- [ ] RED: bind strict report assertions and run the targeted command. Evidence: 
-- [ ] GREEN: generate delta-to-permanent and delta-to-delta candidates with
+- [x] RED: bind strict report assertions and run the targeted command. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the scope assertion
+      panicked with `not implemented`.
+- [x] GREEN: generate delta-to-permanent and delta-to-delta candidates with
       endpoint scopes, titles, hashes, scores, and facts. Production files:
-      `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: canonicalize endpoint identity and rerun. Evidence: 
+      `src/spec/retrieval.rs`, tests step files. Evidence: targeted run passed
+      with `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [x] REFACTOR: canonicalize endpoint identity and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `9 steps (9 passed)`.
 - [ ] COMMIT: `feat(semantic-review): The report distinguishes permanent and current-change candidate scopes`
       Hash: 
 

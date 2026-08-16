@@ -41,6 +41,14 @@ const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-
 const NLI_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const NLI_REPORT_LIMIT: usize = 20;
+#[cfg(feature = "spec-retrieval")]
+const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
+#[cfg(feature = "spec-retrieval")]
+const SEMANTIC_FINGERPRINT_SCHEMA_VERSION: u32 = 1;
+#[cfg(feature = "spec-retrieval")]
+const SEMANTIC_EVIDENCE_SCHEMA_VERSION: u32 = 1;
+#[cfg(feature = "spec-retrieval")]
+const SEMANTIC_SIMILARITY_THRESHOLD: f32 = 0.95;
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -128,6 +136,31 @@ struct DeltaScenario {
     scenario: ScenarioText,
     target_file: String,
     operation: crate::gherkin::delta::DeltaOp,
+    facts: crate::overlap::fingerprint::Fingerprint,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct SemanticEndpoint {
+    scope: &'static str,
+    file: String,
+    title: String,
+    content_hash: String,
+    evidence_hash: String,
+    operation: String,
+    projected_target: Option<(String, String)>,
+    facts: crate::overlap::fingerprint::Fingerprint,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct SemanticCandidate {
+    scope: &'static str,
+    left: SemanticEndpoint,
+    right: SemanticEndpoint,
+    score: f32,
+    candidate_id: String,
+    classification: String,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -293,22 +326,247 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let delta_root = delta_specs_path(&change_dir, change_id)?;
     let refresh = refresh_index(root)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
-    let active = delta
-        .iter()
-        .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
-        .count();
-    if active == 0 {
-        let report = format!(
-            "# Semantic Review\nReport schema version: 1\nChange: \"{change_id}\"\nStatus: PASS\nCandidate count: 0\n"
-        );
-        write_semantic_report(&change_dir.join("semantic-review.md"), &report)?;
+    let candidates = semantic_candidates(root, &refresh.index, &delta)?;
+    let report = render_semantic_report(change_id, &candidates);
+    write_semantic_report(&change_dir.join("semantic-review.md"), &report)?;
+    if candidates.is_empty() {
         return Ok(());
     }
-
-    let _ = refresh;
     bail!(
-        "semantic review blocked: {active} active delta scenario(s) require classification in semantic-review.md"
+        "semantic review blocked: {} candidate(s) remain UNCERTAIN; classify every candidate in semantic-review.md",
+        candidates.len()
     )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_candidates(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+) -> Result<Vec<SemanticCandidate>> {
+    let active: Vec<&DeltaScenario> = delta
+        .iter()
+        .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+        .collect();
+    if active.is_empty() {
+        return Ok(Vec::new());
+    }
+    let vectors = embed_texts(
+        root,
+        &active
+            .iter()
+            .map(|item| item.scenario.text.clone())
+            .collect::<Vec<_>>(),
+        EmbeddingRole::Passage,
+    )?;
+    let permanent = permanent_semantic_endpoints(root)?;
+    let mut candidates = BTreeMap::new();
+    for (item, vector) in active.iter().zip(vectors.iter()) {
+        for entry in &index.entries {
+            if item.operation == crate::gherkin::delta::DeltaOp::Modified
+                && entry.file == item.target_file
+                && entry.title == item.scenario.title
+            {
+                continue;
+            }
+            let score = cosine_similarity(vector, &entry.embedding);
+            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+                continue;
+            }
+            let left = semantic_delta_endpoint(item);
+            let right = permanent
+                .get(&(entry.file.clone(), entry.title.clone()))
+                .cloned()
+                .unwrap_or_else(|| SemanticEndpoint {
+                    scope: "permanent",
+                    file: entry.file.clone(),
+                    title: entry.title.clone(),
+                    content_hash: entry.content_hash.clone(),
+                    evidence_hash: entry.content_hash.clone(),
+                    operation: "permanent".to_string(),
+                    projected_target: None,
+                    facts: crate::overlap::fingerprint::Fingerprint {
+                        assertions: Vec::new(),
+                        facts: Default::default(),
+                    },
+                });
+            let candidate = semantic_candidate("delta-to-permanent", left, right, score);
+            candidates.insert(candidate.candidate_id.clone(), candidate);
+        }
+    }
+    for left_index in 0..active.len() {
+        for right_index in (left_index + 1)..active.len() {
+            let score = cosine_similarity(&vectors[left_index], &vectors[right_index]);
+            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+                continue;
+            }
+            let left = semantic_delta_endpoint(active[left_index]);
+            let right = semantic_delta_endpoint(active[right_index]);
+            let (left, right) = if semantic_endpoint_key(&left) <= semantic_endpoint_key(&right) {
+                (left, right)
+            } else {
+                (right, left)
+            };
+            let candidate = semantic_candidate("delta-to-delta", left, right, score);
+            candidates.insert(candidate.candidate_id.clone(), candidate);
+        }
+    }
+    let mut result: Vec<SemanticCandidate> = candidates.into_values().collect();
+    result.sort_by(|left, right| {
+        left.scope
+            .cmp(right.scope)
+            .then_with(|| right.score.total_cmp(&left.score))
+            .then_with(|| {
+                semantic_endpoint_key(&left.left).cmp(&semantic_endpoint_key(&right.left))
+            })
+            .then_with(|| {
+                semantic_endpoint_key(&left.right).cmp(&semantic_endpoint_key(&right.right))
+            })
+            .then_with(|| left.candidate_id.cmp(&right.candidate_id))
+    });
+    Ok(result)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn permanent_semantic_endpoints(
+    root: &Path,
+) -> Result<BTreeMap<(String, String), SemanticEndpoint>> {
+    let mut endpoints = BTreeMap::new();
+    for path in crate::gherkin::parse::collect_feature_files(&permanent_specs_path(root)) {
+        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
+            .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
+        let file = normalize_project_file_identity(root, &path);
+        for scenario in &feature.scenarios {
+            let endpoint =
+                semantic_endpoint_from_scenario(scenario, &file, "permanent", "permanent", None);
+            endpoints.insert((file.clone(), scenario.name.clone()), endpoint);
+        }
+        for rule in &feature.rules {
+            for scenario in &rule.scenarios {
+                let endpoint = semantic_endpoint_from_scenario(
+                    scenario,
+                    &file,
+                    "permanent",
+                    "permanent",
+                    None,
+                );
+                endpoints.insert((file.clone(), scenario.name.clone()), endpoint);
+            }
+        }
+    }
+    Ok(endpoints)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_delta_endpoint(item: &DeltaScenario) -> SemanticEndpoint {
+    SemanticEndpoint {
+        scope: "current-change",
+        file: item.scenario.file.clone(),
+        title: item.scenario.title.clone(),
+        content_hash: item.scenario.content_hash.clone(),
+        evidence_hash: item.scenario.content_hash.clone(),
+        operation: format_delta_operation(&item.operation),
+        projected_target: Some((item.target_file.clone(), item.scenario.title.clone())),
+        facts: item.facts.clone(),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_endpoint_from_scenario(
+    scenario: &gherkin::Scenario,
+    file: &str,
+    scope: &'static str,
+    operation: &str,
+    projected_target: Option<(String, String)>,
+) -> SemanticEndpoint {
+    let text = scenario_text(scenario, file);
+    let facts = crate::overlap::fingerprint::Fingerprint::of_scenario(scenario, None);
+    SemanticEndpoint {
+        scope,
+        file: file.to_string(),
+        title: scenario.name.clone(),
+        evidence_hash: text.content_hash.clone(),
+        content_hash: text.content_hash,
+        operation: operation.to_string(),
+        projected_target,
+        facts,
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn format_delta_operation(operation: &crate::gherkin::delta::DeltaOp) -> String {
+    match operation {
+        crate::gherkin::delta::DeltaOp::Added => "added".to_string(),
+        crate::gherkin::delta::DeltaOp::Modified => "modified".to_string(),
+        crate::gherkin::delta::DeltaOp::Removed => "removed".to_string(),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_endpoint_key(endpoint: &SemanticEndpoint) -> (String, String, String) {
+    (
+        endpoint.scope.to_string(),
+        endpoint.file.clone(),
+        endpoint.title.clone(),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_candidate(
+    scope: &'static str,
+    left: SemanticEndpoint,
+    right: SemanticEndpoint,
+    score: f32,
+) -> SemanticCandidate {
+    let score_text = format!("{score:.4}");
+    let identity = format!(
+        "{scope}|{}|{}|{}|{}|{}|{}",
+        left.scope, left.file, left.title, right.scope, right.file, right.title
+    );
+    let candidate_id = format!("{:016x}", stable_hash(identity.as_bytes()));
+    SemanticCandidate {
+        scope,
+        left,
+        right,
+        score: score_text.parse().unwrap_or(score),
+        candidate_id,
+        classification: "UNCERTAIN".to_string(),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> String {
+    let status = if candidates.is_empty() {
+        "PASS"
+    } else {
+        "BLOCKED"
+    };
+    let mut report = format!(
+        "# Semantic Review\nReport schema version: {SEMANTIC_REPORT_SCHEMA_VERSION}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
+        candidates.len()
+    );
+    for (index, candidate) in candidates.iter().enumerate() {
+        report.push_str(&format!(
+            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: null\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
+            index + 1,
+            candidate.candidate_id,
+            candidate.classification,
+            candidate.scope,
+            candidate.left.scope,
+            candidate.left.file,
+            candidate.left.title,
+            candidate.left.content_hash,
+            candidate.left.evidence_hash,
+            candidate.right.scope,
+            candidate.right.file,
+            candidate.right.title,
+            candidate.right.content_hash,
+            candidate.right.evidence_hash,
+            candidate.score,
+            candidate.left.facts.facts.contradicts(&candidate.right.facts.facts)
+        ));
+    }
+    report
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -887,6 +1145,7 @@ fn collect_delta_feature_scenarios(
             scenario: scenario_text(scenario, &file),
             target_file: target_file.to_string(),
             operation: crate::gherkin::delta::delta_op(scenario),
+            facts: crate::overlap::fingerprint::Fingerprint::of_scenario(scenario, None),
         });
     }
 }

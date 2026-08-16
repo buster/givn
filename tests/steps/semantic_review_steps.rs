@@ -52,6 +52,44 @@ fn removed_semantic_delta_project(_world: &mut GivnWorld) {
     _world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given("a project prepared for semantic review with two similar active deltas")]
+fn two_similar_active_deltas(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated specs");
+    }
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
+        .expect("write permanent semantic fixtures");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let first = env.path("givn/changes/running-change/specs/first.feature");
+    let second = env.path("givn/changes/running-change/specs/second.feature");
+    fs::create_dir_all(first.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        &first,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write first active delta");
+    fs::write(
+        &second,
+        "@givn.delta @running-change\nFeature: running change two\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write second active delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | related |\n| `Unknown provider selection is rejected` | `Provider name is unknown` | related |\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
+    )
+    .expect("write overlap dispositions");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
 #[then("the semantic review report exists")]
 fn semantic_report_exists(_world: &mut GivnWorld) {
     let env = _world.env.as_ref().expect("semantic project is required");
@@ -100,4 +138,55 @@ fn permanent_index_is_structurally_permanent(_world: &mut GivnWorld) {
                 .is_some_and(|file| file.starts_with("givn/specs/"))
         );
     }
+}
+
+#[then(regex = r#"^the semantic review report contains scope "([^"]+)"$"#)]
+fn report_contains_scope(world: &mut GivnWorld, scope: String) {
+    assert!(semantic_report(world).contains(&format!("- scope: {scope}")));
+}
+
+#[then(regex = r#"^the report names the exact left and right endpoint titles for both scopes$"#)]
+fn report_names_exact_endpoint_titles(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(report.contains("Unknown provider is rejected"));
+    assert!(report.contains("Unknown provider selection is rejected"));
+    assert!(report.contains("Provider name is unknown"));
+}
+
+#[then(regex = r#"^all candidate scores have exactly four decimals and are at least "([^"]+)"$"#)]
+fn report_scores_have_boundary(world: &mut GivnWorld, _boundary: String) {
+    for line in semantic_report(world)
+        .lines()
+        .filter(|line| line.starts_with("- embedding_score:"))
+    {
+        let score = line.split_once(':').expect("score field").1.trim();
+        assert_eq!(score.len(), 6);
+        assert!(score.parse::<f32>().expect("score number") >= 0.95);
+    }
+}
+
+#[then("all endpoint hashes are exactly 16 lowercase hexadecimal characters")]
+fn report_hashes_are_fixed_format(world: &mut GivnWorld) {
+    for line in semantic_report(world)
+        .lines()
+        .filter(|line| line.contains("hash:"))
+    {
+        let hash = line.split_once(':').expect("hash field").1.trim();
+        assert_eq!(hash.len(), 16);
+        assert!(
+            hash.chars()
+                .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+        );
+    }
+}
+
+#[then("the semantic review report contains deterministic facts")]
+fn report_contains_deterministic_facts(world: &mut GivnWorld) {
+    assert!(semantic_report(world).contains("fact_contradiction:"));
+}
+
+fn semantic_report(world: &GivnWorld) -> String {
+    let env = world.env.as_ref().expect("semantic project is required");
+    fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic report")
 }
