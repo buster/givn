@@ -137,6 +137,7 @@ struct DeltaScenario {
     target_file: String,
     operation: crate::gherkin::delta::DeltaOp,
     facts: crate::overlap::fingerprint::Fingerprint,
+    evidence_json: String,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -147,6 +148,7 @@ struct SemanticEndpoint {
     title: String,
     content_hash: String,
     evidence_hash: String,
+    evidence_json: String,
     operation: String,
     projected_target: Option<(String, String)>,
     facts: crate::overlap::fingerprint::Fingerprint,
@@ -379,6 +381,7 @@ fn semantic_candidates(
                     title: entry.title.clone(),
                     content_hash: entry.content_hash.clone(),
                     evidence_hash: entry.content_hash.clone(),
+                    evidence_json: "{}".to_string(),
                     operation: "permanent".to_string(),
                     projected_target: None,
                     facts: crate::overlap::fingerprint::Fingerprint {
@@ -464,13 +467,22 @@ fn permanent_semantic_endpoints(
             .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
         let file = normalize_project_file_identity(root, &path);
         for scenario in &feature.scenarios {
-            let endpoint =
-                semantic_endpoint_from_scenario(scenario, &file, "permanent", "permanent", None);
+            let endpoint = semantic_endpoint_from_scenario(
+                &feature,
+                None,
+                scenario,
+                &file,
+                "permanent",
+                "permanent",
+                None,
+            );
             endpoints.insert((file.clone(), scenario.name.clone()), endpoint);
         }
         for rule in &feature.rules {
             for scenario in &rule.scenarios {
                 let endpoint = semantic_endpoint_from_scenario(
+                    &feature,
+                    Some(rule),
                     scenario,
                     &file,
                     "permanent",
@@ -491,7 +503,8 @@ fn semantic_delta_endpoint(item: &DeltaScenario) -> SemanticEndpoint {
         file: item.scenario.file.clone(),
         title: item.scenario.title.clone(),
         content_hash: item.scenario.content_hash.clone(),
-        evidence_hash: item.scenario.content_hash.clone(),
+        evidence_hash: format!("{:016x}", stable_hash(item.evidence_json.as_bytes())),
+        evidence_json: item.evidence_json.clone(),
         operation: format_delta_operation(&item.operation),
         projected_target: Some((item.target_file.clone(), item.scenario.title.clone())),
         facts: item.facts.clone(),
@@ -500,6 +513,8 @@ fn semantic_delta_endpoint(item: &DeltaScenario) -> SemanticEndpoint {
 
 #[cfg(feature = "spec-retrieval")]
 fn semantic_endpoint_from_scenario(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
     scenario: &gherkin::Scenario,
     file: &str,
     scope: &'static str,
@@ -507,12 +522,18 @@ fn semantic_endpoint_from_scenario(
     projected_target: Option<(String, String)>,
 ) -> SemanticEndpoint {
     let text = scenario_text(scenario, file);
-    let facts = crate::overlap::fingerprint::Fingerprint::of_scenario(scenario, None);
+    let evidence_json = canonical_evidence_json(feature, rule, scenario);
+    let facts = crate::overlap::fingerprint::Fingerprint::of_scenario(
+        scenario,
+        rule.and_then(|rule| rule.background.as_ref())
+            .or(feature.background.as_ref()),
+    );
     SemanticEndpoint {
         scope,
         file: file.to_string(),
         title: scenario.name.clone(),
-        evidence_hash: text.content_hash.clone(),
+        evidence_hash: format!("{:016x}", stable_hash(evidence_json.as_bytes())),
+        evidence_json,
         content_hash: text.content_hash,
         operation: operation.to_string(),
         projected_target,
@@ -574,7 +595,7 @@ fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> 
     );
     for (index, candidate) in candidates.iter().enumerate() {
         report.push_str(&format!(
-            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: null\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
+            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: null\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
             index + 1,
             candidate.candidate_id,
             candidate.classification,
@@ -582,11 +603,13 @@ fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> 
             candidate.left.scope,
             candidate.left.file,
             candidate.left.title,
+            candidate.left.evidence_json,
             candidate.left.content_hash,
             candidate.left.evidence_hash,
             candidate.right.scope,
             candidate.right.file,
             candidate.right.title,
+            candidate.right.evidence_json,
             candidate.right.content_hash,
             candidate.right.evidence_hash,
             candidate.score,
@@ -1137,6 +1160,8 @@ fn collect_delta_scenarios(root: &Path, delta_root: &Path) -> Result<Vec<DeltaSc
             &feature.scenarios,
             &path,
             &target_file,
+            &feature,
+            None,
             &mut scenarios,
         );
         for rule in &feature.rules {
@@ -1145,6 +1170,8 @@ fn collect_delta_scenarios(root: &Path, delta_root: &Path) -> Result<Vec<DeltaSc
                 &rule.scenarios,
                 &path,
                 &target_file,
+                &feature,
+                Some(rule),
                 &mut scenarios,
             );
         }
@@ -1164,15 +1191,23 @@ fn collect_delta_feature_scenarios(
     source: &[gherkin::Scenario],
     path: &Path,
     target_file: &str,
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
     output: &mut Vec<DeltaScenario>,
 ) {
     let file = normalize_project_file_identity(root, path);
     for scenario in source {
+        let evidence_json = canonical_evidence_json(feature, rule, scenario);
         output.push(DeltaScenario {
             scenario: scenario_text(scenario, &file),
             target_file: target_file.to_string(),
             operation: crate::gherkin::delta::delta_op(scenario),
-            facts: crate::overlap::fingerprint::Fingerprint::of_scenario(scenario, None),
+            facts: crate::overlap::fingerprint::Fingerprint::of_scenario(
+                scenario,
+                rule.and_then(|rule| rule.background.as_ref())
+                    .or(feature.background.as_ref()),
+            ),
+            evidence_json,
         });
     }
 }
@@ -1189,6 +1224,79 @@ fn collect_feature_scenarios(
         }
         output.push(scenario_text(scenario, file));
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn canonical_evidence_json(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
+    scenario: &gherkin::Scenario,
+) -> String {
+    format!(
+        "{{\"feature_description\":{},\"feature_tags\":{},\"rule_description\":{},\"rule_tags\":{},\"scenario_description\":{},\"scenario_tags\":{},\"outline_name\":{},\"examples\":[{}],\"feature_background_steps\":{},\"rule_background_steps\":{},\"normalized_steps\":{}}}",
+        json_encoded(&feature.description),
+        json_encoded(&feature.tags),
+        json_encoded(&rule.and_then(|rule| rule.description.clone())),
+        json_encoded(&rule.map(|rule| rule.tags.clone()).unwrap_or_default()),
+        json_encoded(&scenario.description),
+        json_encoded(&scenario.tags),
+        json_encoded(&if scenario.examples.is_empty() {
+            None::<String>
+        } else {
+            Some(scenario.name.clone())
+        }),
+        scenario
+            .examples
+            .iter()
+            .map(canonical_examples)
+            .collect::<Vec<_>>()
+            .join(","),
+        canonical_background(feature.background.as_ref()),
+        canonical_background(rule.and_then(|rule| rule.background.as_ref())),
+        canonical_steps(&scenario.steps),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn canonical_background(background: Option<&gherkin::Background>) -> String {
+    background
+        .map(|background| canonical_steps(&background.steps))
+        .unwrap_or_else(|| "[]".to_string())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn canonical_steps(steps: &[gherkin::Step]) -> String {
+    format!(
+        "[{}]",
+        steps
+            .iter()
+            .map(|step| {
+                format!(
+                    "{{\"text\":{},\"docstring\":{},\"data_table\":{}}}",
+                    json_encoded(&format!("{} {}", step.keyword.trim(), step.value.trim())),
+                    json_encoded(&step.docstring),
+                    json_encoded(&step.table.as_ref().map(|table| table.rows.to_vec())),
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",")
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn canonical_examples(examples: &gherkin::Examples) -> String {
+    format!(
+        "{{\"name\":{},\"description\":{},\"tags\":{},\"table\":{}}}",
+        json_encoded(&examples.name),
+        json_encoded(&examples.description),
+        json_encoded(&examples.tags),
+        json_encoded(&examples.table.as_ref().map(|table| table.rows.to_vec())),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn json_encoded<T: serde::Serialize>(value: &T) -> String {
+    serde_json::to_string(value).expect("serialize semantic evidence value")
 }
 
 #[cfg(feature = "spec-retrieval")]

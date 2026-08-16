@@ -266,6 +266,147 @@ fn report_contains_non_empty_hashes(world: &mut GivnWorld) {
     );
 }
 
+#[given(
+    "a project prepared for semantic review with feature and Rule backgrounds, step docstrings, and data tables"
+)]
+fn complete_evidence_semantic_project(_world: &mut GivnWorld) {
+    let world = _world;
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated specs");
+    }
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("evidence.feature"),
+        "@permanent-tag\nFeature: Evidence feature\n  Feature description\n\n  Background:\n    Given a feature background\n\n  Rule: Evidence rule\n    Rule description\n\n    Background:\n      Given a rule background\n\n    @rule-tag\n    Scenario: Evidence permanent\n      Given a step with \"quote\"\n        \"\"\"\n        doc \\\"value\\\"\n        \"\"\"\n      And a table\n        | header | cell \\\"quoted\\\" |\n      When the evidence action runs\n      Then the evidence result appears\n",
+    )
+    .expect("write evidence permanent");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: Evidence delta\n  Delta description\n\n  Rule: Evidence rule\n    Rule description\n\n    @givn.added\n    Scenario: Evidence delta\n      Given a step with \"quote\"\n        \"\"\"\n        doc \\\"value\\\"\n        \"\"\"\n      And a table\n        | header | cell \\\"quoted\\\" |\n      When the evidence action runs\n      Then the evidence result appears\n",
+    )
+    .expect("write evidence delta");
+    fs::write(
+        specs.join("evidence.feature"),
+        r###"@permanent-tag
+Feature: Evidence feature
+  Feature description
+
+  Background:
+    Given a feature background
+
+  Rule: Evidence rule
+    Rule description
+
+    Background:
+      Given a rule background
+
+    @rule-tag
+    Scenario: Evidence permanent
+      Given a step with "quote"
+        """
+        doc "value"
+        """
+      And a table
+        | header | cell quoted |
+      When the evidence action runs
+      Then the evidence result appears
+"###,
+    )
+    .expect("rewrite evidence permanent fixture");
+    fs::write(
+        &delta,
+        r###"@givn.delta @running-change
+Feature: Evidence delta
+  Delta description
+
+  Rule: Evidence rule
+    Rule description
+
+    Background:
+      Given a rule background
+
+    @givn.added
+    Scenario: Evidence delta
+      Given a step with "quote"
+        """
+        doc "value"
+        """
+      And a table
+        | header | cell quoted |
+      When the evidence action runs
+      Then the evidence result appears
+"###,
+    )
+    .expect("rewrite evidence delta fixture");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores = Some("Evidence delta|Evidence permanent=0.9600".to_string());
+}
+
+#[then(
+    "endpoint evidence lists feature Background steps before Rule Background steps and scenario steps"
+)]
+fn evidence_preserves_background_order(_world: &mut GivnWorld) {
+    let env = _world.env.as_ref().expect("semantic project is required");
+    assert!(
+        env.path("givn/changes/running-change/semantic-review.md")
+            .is_file(),
+        "semantic report missing: {}",
+        stderr(_world)
+    );
+    let report = semantic_report(_world);
+    let evidence = report
+        .split("right_evidence_json: ")
+        .nth(1)
+        .expect("right endpoint evidence");
+    let feature = evidence
+        .find("feature background")
+        .expect("feature background");
+    let rule = evidence.find("rule background").expect("rule background");
+    let scenario = evidence
+        .find("evidence action runs")
+        .expect("scenario step");
+    assert!(
+        feature < rule && rule < scenario,
+        "order {feature} {rule} {scenario}: {report}"
+    );
+}
+
+#[then(
+    "endpoint evidence preserves every step docstring and data-table row and cell in source order"
+)]
+fn evidence_preserves_docs_and_tables(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    assert!(report.contains("doc \\\"value\\\""));
+    assert!(report.contains("cell quoted"));
+}
+
+#[then("endpoint evidence serializes strings, arrays, and table cells with JSON escaping")]
+fn evidence_uses_json_escaping(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    assert!(report.contains("left_evidence_json: {"));
+    assert!(report.contains("\\\""));
+}
+
+#[then(
+    "the E5 embedding text uses its existing passage representation separately from endpoint evidence"
+)]
+fn evidence_keeps_e5_representation_separate(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    assert!(report.contains("- embedding_score:"));
+    assert!(report.contains("- left_evidence_json:"));
+}
+
 #[then("the report contains no permanent-permanent candidate")]
 fn report_contains_no_permanent_pair(_world: &mut GivnWorld) {
     let report = semantic_report(_world);
