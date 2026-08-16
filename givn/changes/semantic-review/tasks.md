@@ -183,16 +183,21 @@ givn skills sync
 - [x] REFACTOR: preserve rationale carry-forward and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Every resolved semantic classification requires a rationale`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Every resolved semantic classification requires a rationale`
+      Hash: `ea6f198`
 
 ### A regenerated classified report is byte-for-byte deterministic
 
-- [ ] RED: target repeated regeneration with strict stubs. Evidence: 
-- [ ] GREEN: generate fixed bytes, field order, final newline, and stable
+- [x] RED: target repeated regeneration with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the report snapshot step
+      panicked with `not implemented`.
+- [x] GREEN: generate fixed bytes, field order, final newline, and stable
       candidate order. Production files: `src/spec/retrieval.rs`, tests step
-      files. Evidence: 
-- [ ] REFACTOR: remove run-dependent fields and rerun. Evidence: 
+      files. Evidence: targeted run passed with `1 scenario (1 passed)`, `13
+      steps (13 passed)`.
+- [x] REFACTOR: remove run-dependent fields and rerun. Evidence: after `cargo
+      fmt --all`, targeted run passed with `1 scenario (1 passed)`, `13 steps
+      (13 passed)`.
 - [ ] COMMIT: `feat(semantic-review): A regenerated classified report is byte-for-byte deterministic`
       Hash: 
 
