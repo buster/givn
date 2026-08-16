@@ -196,18 +196,21 @@ in its commit.
 - [x] REFACTOR: reuse the shared change resolver and rerun the targeted
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Unsafe change identifiers are rejected without changing the permanent index`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Unsafe change identifiers are rejected without changing the permanent index`
+      Hash: `58a56c2`
 
 ### A missing change is rejected without changing the permanent index
 
-- [ ] RED: remove only this scenario's `@wip`, retain strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: require an existing change directory and emit a clear missing
+- [x] RED: remove only this scenario's `@wip`, retain strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1
+      failed)`; the missing-change assertion panicked with `not implemented`.
+- [x] GREEN: require an existing change directory and emit a clear missing
       change error before refresh. Production files: `src/spec/retrieval.rs`,
-      `tests/steps/spec_explore_change_steps.rs`. Evidence: 
-- [ ] REFACTOR: keep missing-change validation separate from delta parsing and
-      rerun the targeted command. Evidence: 
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [x] REFACTOR: keep missing-change validation separate from delta parsing and
+      rerun the targeted command. Evidence: after `cargo fmt --all`, targeted
+      run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): A missing change is rejected without changing the permanent index`
       Hash: 
 

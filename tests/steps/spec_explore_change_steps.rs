@@ -361,6 +361,20 @@ fn stderr_says_change_id_must_be_kebab_case(world: &mut GivnWorld) {
     assert!(stderr(world).contains("change id must be kebab-case"));
 }
 
+#[given(regex = r#"^no change named "([^"]+)" exists$"#)]
+fn no_change_named_exists(world: &mut GivnWorld, change: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    assert!(!env.path(&format!("givn/changes/{change}")).exists());
+}
+
+#[then(regex = r#"^stderr clearly says change "([^"]+)" was not found$"#)]
+fn stderr_says_change_was_not_found(_world: &mut GivnWorld, _change: String) {
+    assert!(stderr(_world).contains(&format!("change `{_change}` was not found")));
+}
+
 fn exploration_json(world: &GivnWorld) -> serde_json::Value {
     serde_json::from_str(&stdout(world)).expect("exploration stdout must be JSON")
 }

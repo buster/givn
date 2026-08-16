@@ -180,7 +180,7 @@ Feature: Explore scenarios in the current change
     And stderr clearly says the change id must be kebab-case
     And the permanent exploration index is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A missing change is rejected without changing the permanent index
     Given a project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:
