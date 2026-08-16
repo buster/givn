@@ -243,34 +243,42 @@ in its commit.
 - [x] REFACTOR: preserve parser context and rerun the targeted command.
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): A malformed delta feature is rejected without changing the permanent index`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): A malformed delta feature is rejected without changing the permanent index`
+      Hash: `7e007bd`
 
 ## E2E setup
 
-- [ ] Configure and prove `verify.e2e_command` as `./run-tests.sh --e2e` after
+- [x] Configure and prove `verify.e2e_command` as `./run-tests.sh --e2e` after
       all non-e2e scenarios are green. Run `./run-tests.sh` and
       `./run-tests.sh --e2e`; record a strictly smaller e2e scenario count.
-      Evidence: 
-- [ ] Create the separate e2e step skeleton in
+      Evidence: full runner `223 scenarios (223 passed), 1254 steps`; e2e
+      runner `34 scenarios (34 passed), 203 steps`; `givn/commands.yaml`
+      remains configured with distinct commands.
+- [x] Create the separate e2e step skeleton in
       `tests/steps/spec_explore_change_e2e_steps.rs` with strict
       `unimplemented!()` bodies before the first e2e RED run. No server,
       browser, external service, or digital twin is required; the real CLI
-      subprocess is the interface. Evidence: 
+      subprocess is the interface. Evidence: module registered in
+      `tests/steps/mod.rs` and initial strict e2e stubs are present.
 
 ## E2E scenarios
 
 ### Change-aware file exploration finds permanent and active change candidates
 
-- [ ] RED: remove only this scenario's `@wip`, bind the separate e2e steps with
-      strict stubs, and run the tag-filtered targeted e2e command. Evidence: 
-- [ ] GREEN: drive the compiled `givn` process with `--change` and `--file` and
+- [x] RED: remove only this scenario's `@wip`, bind the separate e2e steps with
+      strict stubs, and run the targeted e2e scenario command. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the matched e2e Given step
+      panicked with `not implemented`.
+- [x] GREEN: drive the compiled `givn` process with `--change` and `--file` and
       assert terminal output contains permanent/current-change source labels,
       titles, and project-relative source paths. Production files:
       `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs`; e2e file:
-      `tests/steps/spec_explore_change_e2e_steps.rs`. Evidence: 
-- [ ] REFACTOR: keep assertions on real CLI stdout and rerun the targeted e2e
-      command. Evidence: 
+      `tests/steps/spec_explore_change_e2e_steps.rs`; fixture file:
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted e2e run
+      passed with `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR: keep assertions on real CLI stdout and rerun the targeted e2e
+      command. Evidence: after `cargo fmt --all`, targeted e2e run passed with
+      `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [ ] COMMIT: `test(e2e): Change-aware file exploration finds permanent and active change candidates`
       Hash: 
 

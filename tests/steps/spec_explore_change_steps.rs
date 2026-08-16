@@ -174,7 +174,7 @@ fn another_eligible_candidate(world: &mut GivnWorld) {
 }
 
 #[given("a project prepared for current-change exploration with an active added scenario")]
-fn active_added_scenario_project(world: &mut GivnWorld) {
+pub(crate) fn active_added_scenario_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
     clear_specs(&env);
     write_project_path(&env, "givn/specs/provider.feature", PERMANENT_CORPUS);
