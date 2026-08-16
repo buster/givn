@@ -343,16 +343,22 @@ givn skills sync
 - [x] REFACTOR: keep rebuilt index structurally permanent-only and rerun. Evidence:
       after `cargo fmt --all` and `cargo check --features spec-retrieval`, targeted
       run passed with `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [ ] COMMIT: `feat(semantic-review): A malformed permanent index is rebuilt before semantic review continues`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A malformed permanent index is rebuilt before semantic review continues`
+      Hash: `951a31d`
 
 ### A generated semantic report survives the existing archive move
 
-- [ ] RED: target archive retention with strict stubs. Evidence: 
-- [ ] GREEN: preserve the generated report when the existing archive command
-      moves the complete change directory. Production files: tests step files
-      and any required archive integration seam. Evidence: 
-- [ ] REFACTOR: verify archived bytes and permanent specs remain separate. Evidence: 
+- [x] RED: target archive retention with strict stubs. Evidence: `1 scenario
+      (1 failed)`, `1 step (1 failed)`; the archive fixture Given step panicked
+      with `not implemented`.
+- [x] GREEN: preserve the generated report when the existing archive command
+      moves the complete change directory. Production files: existing
+      `src/cli/archive.rs` behavior and `tests/steps/semantic_review_steps.rs`.
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `7 steps
+      (7 passed)`.
+- [x] REFACTOR: verify archived bytes and permanent specs remain separate. Evidence:
+      after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(semantic-review): A generated semantic report survives the existing archive move`
       Hash: 
 
