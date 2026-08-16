@@ -26,7 +26,7 @@ Feature: Explore scenarios in the current change
     And stdout identifies the current-change candidate with scope "current-change" and change "current-change"
     And stdout identifies the current-change candidate source as "givn/changes/current-change/specs/current-change/current-change.feature"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Change-aware JSON exploration labels candidate sources
     Given an end-to-end project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:
