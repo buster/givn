@@ -200,7 +200,7 @@ Feature: Explore scenarios in the current change
     And stderr clearly says change "missing-change" was not found
     And the permanent exploration index is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change without a specs directory is rejected without changing the permanent index
     Given a project prepared for current-change exploration with change "empty-change" but no specs directory
     And a .feature file at "draft.feature" with:
