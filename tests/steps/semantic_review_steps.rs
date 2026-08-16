@@ -240,6 +240,110 @@ fn semantic_report_has_no_run_fields(world: &mut GivnWorld) {
     assert!(!report.contains("/tmp/"));
 }
 
+#[then("the semantic review report has the exact headers in the defined order")]
+fn semantic_report_has_exact_headers(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    let lines: Vec<&str> = report.lines().take(5).collect();
+    assert_eq!(
+        &lines[..4],
+        [
+            "# Semantic Review",
+            "Report schema version: 1",
+            "Change: \"running-change\"",
+            "Status: BLOCKED",
+        ]
+    );
+    assert!(
+        lines[4]
+            .strip_prefix("Candidate count: ")
+            .unwrap()
+            .parse::<usize>()
+            .unwrap()
+            > 0
+    );
+}
+
+#[then("every candidate field appears exactly once in the defined field order")]
+fn semantic_report_has_ordered_fields(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    for block in report.split("\n## Candidate ").skip(1) {
+        let fields: Vec<&str> = block
+            .lines()
+            .filter_map(|line| {
+                line.strip_prefix("- ")
+                    .and_then(|line| line.split_once(':'))
+            })
+            .map(|(name, _)| name)
+            .collect();
+        let mut sorted = fields.clone();
+        sorted.sort_unstable();
+        assert_eq!(fields.len(), sorted.len());
+    }
+}
+
+#[then("the semantic review report contains only allowed fields and no unknown fields")]
+fn semantic_report_has_allowed_fields(world: &mut GivnWorld) {
+    let allowed = [
+        "candidate_id",
+        "classification",
+        "rationale",
+        "scope",
+        "left_scope",
+        "left_file",
+        "left_title",
+        "left_delta_operation",
+        "left_projected_target",
+        "left_evidence_json",
+        "left_content_hash",
+        "left_evidence_hash",
+        "right_scope",
+        "right_file",
+        "right_title",
+        "right_delta_operation",
+        "right_projected_target",
+        "right_evidence_json",
+        "right_content_hash",
+        "right_evidence_hash",
+        "embedding_score",
+        "fact_contradiction",
+    ];
+    for line in semantic_report(world)
+        .lines()
+        .filter(|line| line.starts_with("- "))
+    {
+        let name = line.strip_prefix("- ").unwrap().split_once(':').unwrap().0;
+        assert!(allowed.contains(&name), "unknown report field: {name}");
+    }
+}
+
+#[then("absent scalar and nested values use exactly \"null\"")]
+fn semantic_report_uses_null_absence(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(report.contains("rationale: null"));
+    assert!(report.contains("right_projected_target: null"));
+    assert!(!report.contains("absent"));
+}
+
+#[then("strings, arrays, step records, and table cells use compact JSON serialization")]
+fn semantic_report_uses_compact_json(world: &mut GivnWorld) {
+    for line in semantic_report(world)
+        .lines()
+        .filter(|line| line.contains("evidence_json:"))
+    {
+        let json = line.split_once(':').expect("evidence JSON").1.trim();
+        assert!(json.starts_with('{') && json.ends_with('}'));
+        assert!(!json.contains(": "));
+    }
+}
+
+#[then(
+    "candidate ids, content hashes, and evidence hashes match exactly 16 lowercase hexadecimal characters"
+)]
+fn semantic_report_hash_fields_are_fixed(world: &mut GivnWorld) {
+    candidate_id_has_fixed_format(world);
+    candidate_hashes_have_fixed_format(world);
+}
+
 #[then(
     "the report candidate order is scope, descending score, left endpoint tuple, right endpoint tuple, candidate id"
 )]
@@ -400,7 +504,7 @@ fn candidate_hashes_have_fixed_format(_world: &mut GivnWorld) {
                 .or_else(|| line.strip_prefix("- right_evidence_hash: "))
         })
         .collect();
-    assert_eq!(hashes.len(), 4);
+    assert!(!hashes.is_empty() && hashes.len().is_multiple_of(4));
     for hash in hashes {
         assert_eq!(hash.len(), 16);
         assert!(

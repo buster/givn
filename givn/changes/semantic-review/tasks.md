@@ -198,16 +198,21 @@ givn skills sync
 - [x] REFACTOR: remove run-dependent fields and rerun. Evidence: after `cargo
       fmt --all`, targeted run passed with `1 scenario (1 passed)`, `13 steps
       (13 passed)`.
-- [ ] COMMIT: `feat(semantic-review): A regenerated classified report is byte-for-byte deterministic`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A regenerated classified report is byte-for-byte deterministic`
+      Hash: `d899d9e`
 
 ### The semantic report obeys its strict wire grammar
 
-- [ ] RED: target grammar assertions with strict stubs. Evidence: 
-- [ ] GREEN: enforce UTF-8/LF, exact headers/fields, compact JSON escaping,
+- [x] RED: target grammar assertions with strict stubs. Evidence: `1 scenario
+      (1 failed)`, `1 step (1 failed)`; the header assertion panicked with
+      `not implemented`.
+- [x] GREEN: enforce UTF-8/LF, exact headers/fields, compact JSON escaping,
       `null` absence, fixed scores/hashes, and no unknown fields. Production
-      files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: atomically replace the complete report and rerun. Evidence: 
+      files: `src/spec/retrieval.rs`, tests step files. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: atomically replace the complete report and rerun. Evidence:
+      after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
 - [ ] COMMIT: `feat(semantic-review): The semantic report obeys its strict wire grammar`
       Hash: 
 
