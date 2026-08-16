@@ -12,7 +12,7 @@ After archiving a change and before starting the next one, update the local
 tool from this checkout and regenerate the agent integrations:
 
 ```sh
-cargo install --path . --locked --force
+cargo install --path . --locked --force --features spec-retrieval
 givn skills sync
 givn instructions
 ./run-tests.sh

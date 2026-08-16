@@ -279,22 +279,24 @@ under `givn/`; `givn spec search` reads that index and prints ranked candidates
 for an interactive query. Search remains an authoring aid.
 
 When the `spec-retrieval` feature is compiled, `givn spec review --change <id>`
-has a second responsibility: it embeds added and modified delta scenarios with
-the same `passage:` role as the permanent index, compares them with the
-pre-change permanent tree, projects the permanent tree after the delta's
-tagged add/modify/remove operations, and compares every distinct projected
-scenario pair. The embedding index retrieves top-K cross-feature candidates;
-same-file structural variants remain owned by the deterministic overlap gate.
-Each candidate is then scored in both directions by the local multilingual
-pair reranker and the raw logits are averaged.
+provides the local index, search, and existing advisory review path. The strict
+similarity gate is enabled only by `spec-similarity-gate`, which includes
+`spec-retrieval`: it embeds added and modified delta scenarios with the same
+`passage:` role as the permanent index, compares them with the pre-change
+permanent tree, projects the permanent tree after the delta's tagged
+add/modify/remove operations, and compares every distinct projected scenario
+pair. The embedding index retrieves top-K cross-feature candidates; same-file
+structural variants remain owned by the deterministic overlap gate. Each strict
+candidate is then scored in both directions by the local multilingual pair
+reranker and the raw logits are averaged.
 
 The binary-fixed reranker raw-logit boundary is `3.0`. A pair at or above the
 boundary is a hard failure. The output tells the agent to classify the case as
 `MERGE` (delete the true duplicate) or `KEEP-AS-BOUNDARY` (rewrite the retained
 title and steps until the reranker score is below the boundary). Neither note
 nor disposition table suppresses a candidate. A missing embedding or reranker
-model/cache is an explicit setup failure for the feature-enabled strict review
-path, never a false clean result.
+model/cache is an explicit setup failure for the `spec-similarity-gate` strict
+review path, never a false clean result.
 
 The default binary remains independent of ONNX Runtime. Without the retrieval
 feature, ordinary check and archive behavior is unchanged and direct retrieval
@@ -302,6 +304,14 @@ commands report that retrieval is unavailable. After a successful archive, a
 feature-enabled binary refreshes the generated index from the merged permanent
 tree; a refresh error is warned after archive completion and retried at the next
 review.
+
+The blocking semantic report is an additional, dedicated `givn check review
+--change <id>` gate, not a replacement for this retrieval contract. Its
+candidate boundary is the existing binary-fixed E5 cosine `0.9500`; its
+evidence is limited to E5 and deterministic Fingerprint facts. The advisory
+`givn spec review --change <id>` command continues to use its existing path and
+does not create `semantic-review.md`. BGE and NLI evidence remain outside this
+slice.
 
 ### 8.5b Permanent scenario exploration
 
@@ -350,6 +360,117 @@ source, and owning change where applicable. JSON keeps all PR 1 fields and
 their order, then appends `scope` and `change` to every result, including
 permanent-only calls. This is additive metadata, not byte-for-byte PR 1 output
 compatibility. `index.entries` remains the permanent count.
+
+### 8.5d Blocking semantic review report
+
+Only the blocking `givn check review --change <id>` path calls the dedicated
+semantic report entrypoint after the structural overlap gate. It creates or
+replaces the change-local `givn/changes/<id>/semantic-review.md` document. The
+existing archive move retains that generated file under `givn/archive/<id>/` as
+historical evidence; archive implementation is outside this slice. The report
+is a working document for the agent, not a permanent spec, a manifest artifact,
+or a source of automatic feature edits. The advisory `givn spec review
+--change <id>` path does not create it.
+
+The report's candidate set is deliberately bounded and thresholded:
+
+- Active `Added` and `Modified` scenarios in the requested change, including
+  `Rule:`-nested scenarios, are the only eligible delta endpoints.
+- A `delta-to-permanent` candidate pairs one eligible delta with one permanent
+  scenario when the existing E5 cosine score is at least `0.9500`.
+- A `delta-to-delta` candidate pairs two distinct eligible deltas from the same
+  current change at the same boundary, with canonical endpoint ordering and one
+  emitted pair.
+- Removed scenarios and permanent-permanent pairs are excluded.
+- In a delta-to-permanent comparison, a Modified scenario excludes only its own
+  projected `(target file, title)` endpoint; other scenarios in that target file
+  remain eligible.
+
+Candidates are ordered by ascending lexical scope (`delta-to-delta` before
+`delta-to-permanent`), descending score, left endpoint tuple, right endpoint
+tuple, and candidate id. The endpoint tuple is
+`(scope, normalized project-relative file, title)`. Scores are fixed four-decimal
+strings in `0.9500` through `1.0000`; candidate, content, and evidence hashes
+are exactly 16 lowercase hexadecimal characters. Reports contain no timestamps
+or environment fields. Equal-score candidates use the endpoint tuples and then
+candidate id as tie-breakers, and the exact `0.9500` boundary is included.
+
+Each candidate records a deterministic id (including the fixed score string),
+both endpoint scopes, normalized project-relative paths, titles, all normalized
+steps, background steps, table contents, delta operations, projected target
+identities, content hashes, full evidence hashes, E5 model/index metadata,
+fingerprint/evidence schema versions, the report schema version, and available
+deterministic `Fingerprint` facts. The canonical endpoint evidence orders
+feature `Background`, applicable `Rule` `Background`, and scenario steps, and
+retains every step docstring and data-table row and cell in source order. The
+existing E5 passage-text input remains separate from this evidence
+serialization. Facts include exit-code evidence, `contains` polarity by
+position, masked table facts, the `[DONE]` title marker, TTY mention, and fact
+contradiction. Missing facts use `null`; no fact combination assigns a Givn
+classification. The full evidence hash covers every listed component, so a
+changed content/table/background/operation/target/model/index/schema component
+invalidates a prior classification.
+
+The Markdown wire grammar is exact: UTF-8/LF with no BOM, fixed headers in the
+order `# Semantic Review`, `Report schema version`, `Change`, `Status`, and
+`Candidate count`, contiguous candidate ordinals, one blank line between
+blocks, exactly one final newline, and no trailing blank line. Every candidate
+contains the design-defined field list exactly once and in order. Strings,
+arrays, step records, and table cells use compact JSON serialization; `null` is
+the only absent representation. Unknown fields, omitted fields, bare `absent`,
+invalid JSON, timestamps, and environment values are invalid.
+
+```mermaid
+flowchart TD
+    A["active Added/Modified delta scenarios"] --> B["compare delta-to-permanent"]
+    A --> C["compare delta-to-delta"]
+    B --> D["E5 score + complete evidence + facts"]
+    C --> D
+    D --> E["deterministic candidate id and order"]
+    E --> F["carry only on unchanged id and evidence hashes"]
+    F --> G["write complete semantic-review.md"]
+    G --> H{"all classifications valid?"}
+    H -- yes --> I["review gate passes this layer"]
+    H -- no --> J["report remains; check review blocks"]
+```
+
+The classification vocabulary is exactly `DUPLIKAT`, `VARIANTE`,
+`VALID-BOUNDARY`, and `UNCERTAIN`. A missing or invalid value, or `UNCERTAIN`,
+blocks the change review. A candidate that appears unrelated but remains above
+the E5 boundary stays unresolved until its vocabulary and invariant are
+sharpened or it is resolved as a duplicate, variant, or explicit valid
+boundary. Before regeneration, a strict parser
+accepts only the exact report grammar, schema, field order, endpoint tuples,
+score/hash formats, and unique entries. Missing, invalid, duplicate, stale, or
+structurally malformed prior entries are discarded; report-level schema errors
+discard all prior entries. Status and candidate count are recomputed, and
+regenerated candidates without a valid match start as `UNCERTAIN`. A
+classification survives only when the candidate id and both complete endpoint
+evidence hashes are unchanged. The complete report is written through a
+same-directory temporary file and atomic rename before a blocked result, so
+stale entries cannot remain in the worklist.
+
+The agent edits classifications and feature files. Givn generates evidence and
+enforces completeness but never performs classification or remediation edits.
+If the permanent index is missing, malformed, stale, or incompatible, refresh
+treats it as stale, rebuilds a permanent-only index from the permanent
+specifications, and continues semantic review. The rebuilt index has no `Delta`
+state, delta vectors, classifications, or report state. An unavailable retrieval
+feature returns the existing
+`spec retrieval is unavailable in this build; rebuild with --features
+spec-retrieval` error, exits non-zero, and creates no report. The existing
+permanent-only index refresh may change bytes, but the index remains structurally
+permanent-only and contains no delta vectors, classifications, or report state.
+The semantic report gate does not replace or suppress the existing strict
+similarity gate. A `spec-similarity-gate` build runs that gate after the report
+gate, so its existing failure remains authoritative; semantic-report fixtures
+use `spec-retrieval` without `spec-similarity-gate`.
+The regular scenarios cover empty/removed input, Rule nesting, Modified target
+identity, scopes/facts/hashes, strict parser and atomic output, no-feature/model/
+index failures, uncertainty blocking and complete non-mutation, carry-forward,
+all evidence invalidation, deterministic order/bytes, and report retention
+boundary. The single `@e2e` scenario invokes the compiled CLI subprocess and
+asserts the child exit status and report output.
 
 ## 8.6 Filesystem-derived state
 
@@ -437,6 +558,14 @@ Standards-aligned, configurable-target emit (see ADR-013, ADR-036):
   unchanged. These describe spec well-formedness, not test results — "GREEN"
   comes from the test runner, not from `givn lint`.
 - Other commands: **0** success, non-zero on failure with a clear message.
+- `givn check review --change <id>` calls the dedicated semantic report entrypoint
+  only after structural overlap. It writes the complete semantic report before
+  returning a blocked result. Its semantic layer passes when there are no
+  candidates or every candidate has one of the four resolved classifications; it
+  blocks on any missing, invalid, or `UNCERTAIN` classification. Without
+  `spec-retrieval`, it returns the existing retrieval-unavailable error, does not
+  falsely pass, and does not create the report. Existing overlap, similarity,
+  coverage, and advisory review contracts remain separate gates.
 - Destructive operations (archive) validate all preconditions before any write.
 - Change-aware exploration treats an unsafe id, missing change, missing specs
   directory, or malformed delta as a non-zero request error and validates it

@@ -28,6 +28,11 @@ graph TD
     Q --> AGE["Agent ergonomics"]
     AGE --> AGE1["Standards-aligned (.agents/skills; AGENTS.md user-owned)"]
     AGE --> AGE2["Machine-readable instructions (--json)"]
+
+    Q --> SEM["Semantic review integrity"]
+    SEM --> SEM1["Complete deterministic change-local worklist"]
+    SEM --> SEM2["Evidence freshness via complete endpoint hashes"]
+    SEM --> SEM3["Blocking gate without feature mutation"]
 ```
 
 ## 10.2 Quality Scenarios
@@ -85,6 +90,21 @@ graph TD
 | Q-49 | Correctness | The same exploration identity is supplied through relative and absolute project paths. | One project-relative forward-slash normalization rule produces the same identity and filtering result for both forms. |
 | Q-50 | Recovery / Integrity | An unsafe, missing, incomplete, or malformed change-aware exploration request is rejected. | The command exits non-zero with a clear error before refreshing the permanent index; the existing index remains unchanged where observable. |
 | Q-51 | Agent ergonomics | An author supplies a complete change-aware draft through a file and through standard input. | Both regular interactions produce the same ranked candidate set; stdin adds no inventory entry or e2e scenario. |
+| Q-52 | Semantic review integrity | A change contains active added/modified scenarios with semantic candidates. | Dedicated blocking `givn check review --change <id>` writes `givn/changes/<id>/semantic-review.md` with only E5 candidates at `>= 0.9500`, deterministic ids/order, both endpoint scopes/paths/titles, complete evidence hashes, four-decimal scores, and deterministic facts; an unresolved candidate makes the command non-zero without editing feature files. |
+| Q-53 | Correctness | A change contains only removed scenarios, or has no eligible semantic pair. | The regenerated report has status `PASS`, candidate count `0`, excludes removed and permanent-permanent pairs, and leaves the permanent index structurally permanent-only. |
+| Q-54 | Semantic review integrity | An agent classifies every report candidate and reruns change review without changing either endpoint or its evidence metadata. | The report regenerates in identical deterministic byte/order form, preserves the classifications, reports `PASS`, leaves feature files, permanent specs, and review dispositions unchanged, and keeps delta vectors/classifications/report state out of the permanent index. |
+| Q-55 | Recovery / Integrity | A scenario, table, background, operation, projected target, model, index, fingerprint/evidence schema, or report schema changes after classification. | The complete endpoint evidence hash changes; the prior classification is not carried forward, the regenerated candidate is `UNCERTAIN`, the complete report is atomically written, and change review exits non-zero without Givn editing feature files. |
+| Q-56 | Repository-owned acceptance | The semantic report smoke test runs through the real user interface. | The single `@e2e` scenario starts the compiled CLI subprocess and treats its exit status and generated report output as the primary assertions; no second interaction-inventory entry or E2E variant is added. |
+| Q-57 | Semantic review integrity | A prior report is missing, invalid, duplicated, stale, or structurally malformed. | The strict parser discards the affected entries, never trusts prior status/count, recomputes both fields, starts regenerated candidates as `UNCERTAIN`, and atomically writes the complete blocked report before non-zero. |
+| Q-58 | Compatibility | Blocking check review runs without `spec-retrieval`, or its retrieval model is unavailable. | The command returns the existing retrieval-unavailable error, exits non-zero, does not falsely report `PASS`, and creates no semantic report. Advisory `givn spec review --change <id>` remains separate and creates no semantic report. |
+| Q-59 | Correctness | A Modified delta shares a target file with another permanent scenario. | Only the Modified scenario's own projected target endpoint is excluded; another candidate in the same target file remains eligible. Rule-nested active deltas are collected. |
+| Q-60 | Historical integrity | A generated report exists when the existing archive move relocates a completed change. | `semantic-review.md` is retained under `givn/archive/<id>/` as historical evidence without changing archive behavior or turning the report into a permanent specification. |
+| Q-61 | Semantic review integrity | A candidate is scored exactly at the fixed boundary, or multiple candidates have equal scores. | The `0.9500` candidate is included; every id/content/evidence hash matches exactly 16 lowercase hexadecimal characters; scores have four decimals; equal-score candidates use left tuple, right tuple, then candidate id ordering. |
+| Q-62 | Semantic review integrity | A report is regenerated or a prior report contains an unknown field, invalid field order, invalid JSON, or an absent value in the wrong representation. | The strict grammar accepts only the fixed headers, allowed fields, compact JSON serialization, `null` absence, one final newline, and exact field order; invalid prior state is discarded and a complete blocked report is atomically written. |
+| Q-63 | Semantic review integrity | A candidate endpoint contains feature/Rule backgrounds, docstrings, and data tables, or a prior report has older model/index/schema metadata. | Evidence lists feature Background, Rule Background, and scenario steps in source order, retains every docstring and table row/cell, keeps E5 passage text separate, and changes the specific candidate's evidence hash so classification becomes `UNCERTAIN`. |
+| Q-64 | Recovery / Integrity | The permanent retrieval index is malformed or incompatible when blocking semantic review. | Refresh treats it as stale, rebuilds a permanent-only index, semantic review continues and reports the active candidate, and the rebuilt index contains no `Delta` state, delta vectors, classifications, or report state. |
+| Q-65 | Semantic review integrity | A candidate appears unrelated but remains above the fixed E5 boundary. | The report remains blocked until the agent sharpens the overloaded vocabulary/invariant or resolves the candidate as `DUPLIKAT`, `VARIANTE`, or an explicitly justified `VALID-BOUNDARY`; no unexplained unrelated classification can pass. |
+| Q-66 | Operational compatibility | The repository dogfood workflow updates the local Givn binary after a change. | The install command enables `spec-retrieval`, `givn skills sync` refreshes all configured agent targets, and the retrieval-enabled full and E2E suites pass before the next change starts; a separate no-feature check proves explicit unavailability. |
 
 ## 10.3 Acceptance signals per phase
 

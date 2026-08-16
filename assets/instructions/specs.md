@@ -64,12 +64,19 @@ spec is incomplete. Variants, error cases, and flag combinations of the same
 user action do not create additional inventory entries or additional `@e2e`
 scenarios. The inventory is exhaustive after this normalization.
 
-## Deterministic overlap gates before retrieval
+## Semantic review and vocabulary
 
-Until the retrieval change is available, authors use the deterministic gates:
-inspect repository-wide title and shape findings, resolve each review
-disposition, and prefer the real interface before adding internal coverage.
-There is no `givn spec index` or semantic-search step in this guidance yet.
+When `spec-retrieval` is available, `givn check review --change <id>` generates
+the change-local `semantic-review.md` worklist after the structural gates.
+Classify every candidate as `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY`, with a
+written rationale; `UNCERTAIN` blocks the review. There is no `UNRELATED`
+escape classification. If two scenarios appear unrelated but remain above the
+active similarity boundary, sharpen the domain vocabulary and observable
+invariants, then regenerate the report. `givn spec review --change <id>` remains
+advisory and does not create the worklist.
+
+Without `spec-retrieval`, the blocking semantic gate must report retrieval
+unavailability rather than passing silently.
 
 ## Executable-spec invariant
 

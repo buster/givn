@@ -7,55 +7,26 @@ project's `givn/` directory, and writes artifacts and agent files.
 
 ## 5.2 Level 1 — Crate structure
 
-```
-givn/  (single published binary crate)
-|
-+-- src/
-|   +-- main.rs                 # clap dispatch / entrypoint; inline completions handler
-|   +-- cli/                    # one module per subcommand
-|   |   +-- init.rs
-|   |   +-- new.rs
-|   |   +-- instructions.rs
-|   |   +-- lint.rs              # static .feature check (syntax/@wip/tags)
-|   |   +-- check.rs            # run an artifact's post hooks (e.g. verify.command)
-|   |   +-- status.rs
-|   |   +-- archive.rs
-|   |   +-- eject.rs
-|   |   +-- addons.rs           # `addons list/enable/disable`
-|   |   +-- skills.rs           # `skills sync`
-|   |   +-- upgrade.rs          # re-render managed config scaffold, bump version
-|   |   +-- coverage_gate.rs     # archive-level coverage pipeline (measure, merge, validate, README)
-|   |   +-- missing_testrunner.rs  # sentinel default verify.command
-|   |   +-- spec.rs              # local retrieval index/search/review commands
-|   +-- config/
-|   |   +-- embedded.rs         # access to baked-in assets (rust-embed)
-|   |   +-- manifest.rs         # serde types for the YAML manifest
-|   |   +-- overlay.rs          # merge project overlay onto embedded graph
-|   |   +-- cascade.rs          # per-facet resolution (project <- embedded)
-|   |   +-- render.rs           # render documented, versioned config.yaml scaffold
-|   +-- gherkin/
-|   |   +-- parse.rs            # wrap the `gherkin` crate
-|   |   +-- delta.rs            # tag detection, split feature/scenario
-|   |   +-- merge.rs            # added/modified/removed merge + tag stripping
-|   +-- skills/
-|   |   +-- render.rs           # template -> SKILL.md
-|   |   +-- targets.rs          # emit to .agents, .claude, .opencode
-|   +-- hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
-|   +-- state.rs                # derive lifecycle state from the filesystem
-|   +-- error.rs                # error types (thiserror) + exit-code mapping
-|   +-- spec/
-|   |   +-- mod.rs
-|   |   +-- retrieval.rs         # local embeddings, index, ranking, advisory review
-+-- assets/                     # embedded via rust-embed
-|   +-- default-manifest.yaml   # the default artifact graph
-|   +-- config.yaml.tmpl        # documented, versioned project config scaffold
-|   +-- templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
-|   +-- instructions/           # per-artifact instruction files (proposal, specs, design, tasks, review)
-|   +-- commands/               # opencode slash command templates (givn-propose ... givn-archive)
-|   +-- skills/                 # default SKILL.md.tmpl templates per workflow step
-|   +-- addons/                 # opt-in addons (pre-packaged artifacts)
-|       +-- arc42-docs/         # instruction, marker template, 12 chapter templates + index
-+-- tests/                      # integration tests
+```mermaid
+flowchart TD
+    G["givn single published binary crate"]
+    G --> M["main.rs: clap dispatch and entrypoint"]
+    G --> C["cli modules"]
+    G --> CFG["config modules"]
+    G --> GH["gherkin modules"]
+    G --> O["overlap modules"]
+    G --> S["spec modules"]
+    G --> H["hooks, state, and error"]
+    G --> A["embedded assets"]
+    G --> T["integration tests"]
+
+    C --> CHECK["cli::check: hooks and mandatory review gates"]
+    C --> SPEC["cli::spec: index, search, explore, review"]
+    CFG --> MANIFEST["manifest, overlay, cascade, render"]
+    GH --> DELTA["parse, delta, merge"]
+    O --> FINGER["fingerprint and disposition"]
+    S --> RETRIEVAL["spec::retrieval: index, E5 ranking, semantic report"]
+    A --> ADDON["arc42-docs addon and workflow templates"]
 ```
 
 ## 5.3 Module responsibilities
@@ -67,14 +38,14 @@ givn/  (single published binary crate)
 | `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Calls the shared `resolve_change_dir` helper to validate `<id>` (kebab-case) and construct the path before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade`, `state` |
 | `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`); `specs` is the canonical source for E2E authoring policy. | `config::cascade`, `config::manifest` |
 | `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags) plus the tree-wide overlap scan; produce exit codes 0/1/3/2. Runs no tests. `--json` emits findings machine-readably. | `gherkin::parse`, `overlap::analysis` |
-| `cli::check` | Run an artifact's `post` hooks and mandatory review checks, including the strict embedding-similarity gate when the retrieval feature is compiled. | `hooks`, `config::manifest`, `overlap::analysis`, `spec::retrieval` |
+| `cli::check` | Run an artifact's `post` hooks and mandatory review checks, including structural overlap, the dedicated E5 semantic report/classification gate, and the existing strict embedding-similarity gate when `spec-similarity-gate` is compiled. `spec-retrieval` alone provides retrieval but does not enable the strict gate. Without retrieval it returns the existing unavailable error rather than passing or writing a report. | `hooks`, `config::manifest`, `overlap::analysis`, `spec::retrieval` |
 | `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
 | `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run coverage, move the change, then refresh the retrieval index. | `hooks`, `gherkin::merge`, `coverage_gate`, `spec::retrieval`, `config::manifest` |
 | `cli::coverage_gate` | Archive-level coverage pipeline: run the project measurement and merge commands, validate source and merged Cobertura XML, update README badges/summary, and restore all changed files on failure. | `cobertura`, `agents_block`, `config::manifest` |
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
-| `cli::spec` | Build, search, explore, or review the local scenario index; exploration can add request-local current-change candidates, while review audits permanent pairs and current deltas with the fixed threshold. | `spec::retrieval`, `gherkin::parse`, `state` |
+| `cli::spec` | Build, search, explore, or review the local permanent-only scenario index; exploration can add request-local current-change candidates, while `spec review --change` remains the existing advisory path and never creates the semantic report. | `spec::retrieval`, `gherkin::parse`, `state` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
@@ -90,7 +61,7 @@ givn/  (single published binary crate)
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries, rank interactive and complete-scenario queries, collect request-local active deltas, apply lifecycle identity filters, retrieve top-K review candidates, jointly rerank scenario pairs, and fail review on the fixed reranker boundary. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `state`, project FS |
+| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries, rank interactive and complete-scenario queries, collect request-local active deltas, apply lifecycle identity filters, keep the existing advisory review entrypoint separate, and generate the change-local E5 semantic report with the fixed `0.9500` boundary, complete endpoint evidence, strict carry-forward, deterministic order, and Fingerprint facts. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -145,3 +116,33 @@ scenarios and rejected requests never enter the candidate pool. The result
 record adds `scope` and `change` after the existing JSON result fields, while
 the text renderer identifies the source for both permanent and current-change
 records.
+
+### 5.3c Semantic review report additions
+
+The blocking `check review` path calls a dedicated report gate after structural
+overlap and before the existing feature-gated retrieval path completes.
+`spec::retrieval` collects only active `Added` and `Modified` scenarios from the
+requested change, including `Rule:`-nested scenarios, compares them with
+permanent entries and with other active deltas in that same change at E5
+`0.9500`, and excludes removed and permanent-permanent pairs. A Modified
+scenario excludes only its own projected target identity; other scenarios in the
+target file remain candidates. The report is change-local while active and is
+retained by the existing archive move; delta vectors, classifications, and
+report state are never persisted in the permanent index.
+
+The report uses the existing E5 cosine evidence and the public deterministic
+`overlap::fingerprint` facts model. Candidate identity, endpoint identities,
+content hashes, complete evidence hashes, candidate order, score formatting,
+strict prior parsing, and classification carry-forward are deterministic. The
+complete endpoint representation orders feature `Background`, applicable `Rule`
+`Background`, and scenario steps, retaining every docstring and data-table row
+and cell in source order. The report has an exact fixed-header/field-order
+grammar, compact JSON serialization, `null` as its only absent value, one final
+newline, no unknown fields, and no timestamps or environment values. A binary
+without `spec-retrieval` returns the existing unavailable error and does not
+create a report. If the permanent index is malformed or incompatible, refresh
+treats it as stale, rebuilds a permanent-only index, and continues the report
+gate without Delta state in the rebuilt index. Regular acceptance bindings
+exercise the filesystem boundary; the single E2E scenario invokes the compiled
+CLI subprocess and treats its exit status and report output as primary evidence.
+No new runtime or test dependency is introduced.
