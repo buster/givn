@@ -162,19 +162,23 @@ in its commit.
 - [x] REFACTOR: preserve PR-1 query/index/refresh text and rerun the targeted
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Permanent exploration text identifies permanent candidate sources`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Permanent exploration text identifies permanent candidate sources`
+      Hash: `7386892`
 
 ### Permanent exploration JSON adds source metadata while retaining legacy result fields
 
-- [ ] RED: remove only this scenario's `@wip`, use strict regular steps, and
-      run the targeted command. Evidence: 
-- [ ] GREEN: append `scope` and `change` to the existing JSON result fields,
+- [x] RED: remove only this scenario's `@wip`, use strict regular steps, and
+      run the targeted command. Evidence: `1 scenario (1 failed)`, `1 step
+      (1 failed)`; the matched When step was initially undefined, then the
+      first JSON assertion panicked with `not implemented` after binding.
+- [x] GREEN: append `scope` and `change` to the existing JSON result fields,
       label permanent-only results, and assert the single-document output.
       Production files: `src/spec/retrieval.rs`,
-      `tests/steps/spec_explore_change_steps.rs`. Evidence: 
-- [ ] REFACTOR: keep legacy field values/order stable and rerun the targeted
-      command. Evidence: 
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: keep legacy field values/order stable and rerun the targeted
+      command. Evidence: after `cargo fmt --all`, targeted run passed with `1
+      scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): Permanent exploration JSON adds source metadata while retaining legacy result fields`
       Hash: 
 
