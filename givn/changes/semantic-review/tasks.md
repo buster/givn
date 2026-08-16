@@ -106,18 +106,22 @@ givn skills sync
 - [x] REFACTOR: preserve feature/Rule background ordering and rerun. Evidence:
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `6 steps (6 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Rule-nested active deltas enter the semantic candidate universe`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Rule-nested active deltas enter the semantic candidate universe`
+      Hash: `e93db06`
 
 ### Endpoint evidence preserves complete Gherkin source order
 
-- [ ] RED: target the evidence scenario with strict stubs. Evidence: 
-- [ ] GREEN: reparse permanent and delta ASTs and include descriptions, tags,
+- [x] RED: target the evidence scenario with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the matched Given step
+      panicked with `not implemented`.
+- [x] GREEN: reparse permanent and delta ASTs and include descriptions, tags,
       Outline Examples, backgrounds, steps, docstrings, and table cells in the
       canonical evidence object. Production files: `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: keep E5 passage text separate from evidence serialization and
-      rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1
+      passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: keep E5 passage text separate from evidence serialization and
+      rerun. Evidence: after `cargo fmt --all`, targeted run passed with `1
+      scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Endpoint evidence preserves complete Gherkin source order`
       Hash: 
 
