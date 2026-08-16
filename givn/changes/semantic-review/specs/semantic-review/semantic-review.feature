@@ -81,7 +81,7 @@ Feature: Generate the semantic review report
     And endpoint evidence serializes strings, arrays, and table cells with JSON escaping
     And the E5 embedding text uses its existing passage representation separately from endpoint evidence
 
-  @givn.added @wip
+  @givn.added
   Scenario: A modified delta excludes only its own projected target
     Given a project prepared for semantic review with a modified scenario and another candidate in the same target file
     When the user runs `givn check review --change running-change`
