@@ -276,7 +276,7 @@ Feature: Generate the semantic review report
     And the report has no partial temporary output
     And stderr contains "UNCERTAIN"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Malformed delta input cannot produce a semantic pass
     Given a project prepared for semantic review with a malformed delta feature
     When the user runs `givn check review --change running-change`

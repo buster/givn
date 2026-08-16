@@ -315,15 +315,19 @@ givn skills sync
 - [x] REFACTOR: ensure no temporary report remains and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
-- [ ] COMMIT: `feat(semantic-review): A blocked report is atomically complete before failure`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A blocked report is atomically complete before failure`
+      Hash: `121c330`
 
 ### Malformed delta input cannot produce a semantic pass
 
-- [ ] RED: target malformed delta handling with strict stubs. Evidence: 
-- [ ] GREEN: fail before report creation when delta Gherkin is invalid. Production
+- [x] RED: target malformed delta handling with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the malformed-delta Given step
+      panicked with `not implemented`.
+- [x] GREEN: fail before report creation when delta Gherkin is invalid. Production
       files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: preserve parser context and rerun. Evidence: 
+      targeted run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: preserve parser context and rerun. Evidence: after `cargo fmt
+      --all`, targeted run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Malformed delta input cannot produce a semantic pass`
       Hash: 
 

@@ -525,6 +525,40 @@ fn report_has_no_partial_temp_output(world: &mut GivnWorld) {
     );
 }
 
+#[given("a project prepared for semantic review with a malformed delta feature")]
+fn malformed_semantic_delta_project(_world: &mut GivnWorld) {
+    let world = _world;
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated specs");
+    }
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
+        .expect("write permanent semantic fixtures");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(delta, "not valid Gherkin\nwithout a Feature keyword\n")
+        .expect("write malformed delta");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[then("the semantic review report does not exist")]
+fn semantic_report_does_not_exist(_world: &mut GivnWorld) {
+    let env = _world.env.as_ref().expect("semantic project is required");
+    assert!(
+        !env.path("givn/changes/running-change/semantic-review.md")
+            .exists()
+    );
+}
+
 #[then(
     "equal-score candidates are ordered by left endpoint tuple, right endpoint tuple, and candidate id"
 )]
