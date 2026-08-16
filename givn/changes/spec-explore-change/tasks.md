@@ -279,20 +279,24 @@ in its commit.
 - [x] REFACTOR: keep assertions on real CLI stdout and rerun the targeted e2e
       command. Evidence: after `cargo fmt --all`, targeted e2e run passed with
       `1 scenario (1 passed)`, `10 steps (10 passed)`.
-- [ ] COMMIT: `test(e2e): Change-aware file exploration finds permanent and active change candidates`
-      Hash: 
+- [x] COMMIT: `test(e2e): Change-aware file exploration finds permanent and active change candidates`
+      Hash: `2cc2d73`
 
 ### Change-aware JSON exploration labels candidate sources
 
-- [ ] RED: remove only this scenario's `@wip`, bind separate e2e steps with
-      strict stubs, and run the tag-filtered targeted e2e command. Evidence: 
-- [ ] GREEN: drive the real CLI with `--change`, `--file`, and `--format json`,
+- [x] RED: remove only this scenario's `@wip`, bind separate e2e steps with
+      strict stubs, and run the targeted e2e scenario command. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the matched JSON When step
+      panicked with `not implemented`.
+- [x] GREEN: drive the real CLI with `--change`, `--file`, and `--format json`,
       parse one stdout document, and assert exact scope, owning-change, source
       file, permanent-only index count, and legacy result fields. Production
       files: `src/spec/retrieval.rs`; e2e file:
-      `tests/steps/spec_explore_change_e2e_steps.rs`. Evidence: 
-- [ ] REFACTOR: keep JSON stdout free of refresh diagnostics and rerun the
-      targeted e2e command. Evidence: 
+      `tests/steps/spec_explore_change_e2e_steps.rs`. Evidence: targeted e2e
+      run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: keep JSON stdout free of refresh diagnostics and rerun the
+      targeted e2e command. Evidence: after `cargo fmt --all`, targeted e2e
+      run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: `test(e2e): Change-aware JSON exploration labels candidate sources`
       Hash: 
 
