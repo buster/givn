@@ -57,7 +57,7 @@ Arc42 is enabled. The change marker reports the full twelve-row impact table,
 and the durable chapters, ADR-043, risks R-30/R-31, quality scenarios Q-42 to
 Q-45, and glossary entries agree with `design.md`. No deployment artifact is
 introduced. `ARC42 CONFORMANCE: CLEAN` is blocked only by the repository-wide
-baseline test failure recorded below, not by an Arc42 mismatch.
+baseline alignment that was fixed below, not by an Arc42 mismatch.
 
 ## Verification
 
@@ -73,25 +73,24 @@ baseline test failure recorded below, not by an Arc42 mismatch.
 | `cargo clippy --workspace --all-targets --features spec-retrieval -- -D warnings` | PASS |
 | `givn lint --change spec-explore-permanent` | PASS: clean |
 | `./run-tests.sh --e2e` | PASS: 31 scenarios |
-| `./run-tests.sh` | BASELINE FAILURE: 207/208 scenarios passed |
+| `./run-tests.sh` | PASS: 208 scenarios, 1174 steps |
 
-## Baseline Failure
+## Baseline Alignment
 
-The full repository runner fails at the pre-existing scenario
-`Review passes when a shape match exists only between permanent scenarios` in
-`givn/specs/review-disposition-gates/review-disposition-gates.feature`. It is
-reproducible in isolation with the base-stack retrieval environment:
+The existing permanent scenario `Review passes when a shape match exists only
+between permanent scenarios` still exercised the current cross-encoder review
+path but asserted the pre-reranker behavior (`exit 0`). The active
+cross-encoder delta already defined the intended behavior: the permanent pair
+is reported as a similarity candidate and the review exits non-zero. The
+permanent executable spec was aligned with that existing decision by asserting:
 
 ```text
-error: similarity gate failed: 1 reranker candidate(s) are at or above the fixed raw-logit boundary 3.0000
+exit non-zero
+stderr contains "similarity gate failed"
 ```
 
-The PR diff does not change `similarity_candidate_pool`, reranking, thresholds,
-or review gating. The direct compatibility scenario
-`Existing spec review keeps its current behavior` passes through the real CLI,
-and the full e2e repository scope passes. Fixing the unrelated pre-existing
-review experiment would violate the PR 1 boundary, so it remains a residual
-base-stack risk and blocks a clean repository-wide review gate.
+No reranker implementation, threshold, or PR-1 exploration behavior changed.
+The targeted scenario now passes, and the full repository runner is green.
 
 ## Coverage Measurement
 
@@ -102,9 +101,8 @@ the PR boundary.
 
 ## Review Outcome
 
-`REVIEW: FAIL`
+`REVIEW: PASS`
 
-Reason: the PR-specific executable suite and all requested compile/lint checks
-are green, but the configured repository-wide `./run-tests.sh` remains red on a
-pre-existing semantic-review experiment. No PR-1 code was changed to hide or
-reinterpret that failure.
+The PR-specific executable suite, repository-wide runner, compile/lint checks,
+and e2e runner are green. The permanent review spec now matches the existing
+cross-encoder behavior without expanding PR-1's implementation scope.

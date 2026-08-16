@@ -148,7 +148,8 @@ Feature: review-disposition-gates
       """
     And  the change's review.md has no disposition entries
     When  the user runs `givn check review --change test-change`
-    Then  the command exits 0
+    Then  the command exits non-zero
+    And  stderr contains "similarity gate failed"
 
   Scenario: Review blocks with a clear message when review.md is missing
     Given  a givn project with a change that has passed design-review
