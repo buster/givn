@@ -4,7 +4,7 @@ use std::fs;
 
 use cucumber::{given, then, when};
 
-use super::{GivnWorld, stdout};
+use super::{GivnWorld, output, stdout};
 use crate::common;
 
 const PERMANENT_CORPUS: &str = "Feature: provider behavior
@@ -249,6 +249,90 @@ fn permanent_exploration_index_unchanged(world: &mut GivnWorld) {
         .expect("permanent exploration index was not snapshotted");
     let after = fs::read(env.path("givn/.spec-index.json")).expect("read permanent index after");
     assert_eq!(after, *before, "exploration changed the permanent index");
+}
+
+#[when(
+    "the user explores the modified delta scenario once by its relative path and once by its absolute project path against change \"current-change\""
+)]
+fn explore_modified_relative_and_absolute(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    let relative = "givn/changes/current-change/specs/current-change/current-change.feature";
+    let first = common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--change",
+            "current-change",
+            "--file",
+            relative,
+        ],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    );
+    let absolute = env.path(relative).to_string_lossy().into_owned();
+    let second = common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--change",
+            "current-change",
+            "--file",
+            &absolute,
+        ],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    );
+    world.previous_output = Some(first);
+    world.last_output = Some(second);
+}
+
+#[then("both requests exit 0")]
+fn both_requests_exit_zero(world: &mut GivnWorld) {
+    assert!(
+        world
+            .previous_output
+            .as_ref()
+            .expect("relative request output is missing")
+            .status
+            .success()
+    );
+    assert!(output(world).status.success(), "absolute request failed");
+}
+
+#[then(regex = r#"^neither result is titled "([^"]+)"$"#)]
+fn neither_result_is_titled(world: &mut GivnWorld, title: String) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("relative request output is missing");
+    assert!(!ranked_output_contains(first, &title));
+    assert!(!ranked_output_contains(output(world), &title));
+}
+
+#[then("both requests retain another eligible candidate")]
+fn both_requests_retain_candidate(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("relative request output is missing");
+    assert!(ranked_output_has_result(first));
+    assert!(ranked_output_has_result(output(world)));
+}
+
+fn ranked_output_contains(output: &std::process::Output, title: &str) -> bool {
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| line.trim_start().starts_with("rank "))
+        .any(|line| line.contains(title))
+}
+
+fn ranked_output_has_result(output: &std::process::Output) -> bool {
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .any(|line| line.trim_start().starts_with("rank "))
 }
 
 fn clear_specs(env: &common::TestEnv) {

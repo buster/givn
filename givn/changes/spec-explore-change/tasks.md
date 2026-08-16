@@ -113,19 +113,22 @@ in its commit.
       projected-target paths and rerun the targeted command. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`, `5
       steps (5 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself through its projected permanent target`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself through its projected permanent target`
+      Hash: `5de7ff0`
 
 ### Change-aware exploration normalizes relative and absolute scenario identities
 
-- [ ] RED: remove only this scenario's `@wip`, use strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: route relative and absolute query paths, delta source paths,
+- [x] RED: remove only this scenario's `@wip`, use strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1
+      failed)`; the matched When step panicked with `not implemented`.
+- [x] GREEN: route relative and absolute query paths, delta source paths,
       permanent paths, and projected target paths through one project-relative
       forward-slash helper. Production files: `src/spec/retrieval.rs`,
-      `tests/steps/spec_explore_change_steps.rs`. Evidence: 
-- [ ] REFACTOR: remove duplicate path conversions and rerun both targeted path
-      assertions. Evidence: 
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: remove duplicate path conversions and rerun both targeted path
+      assertions. Evidence: after `cargo fmt --all`, targeted run passed with
+      `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): Change-aware exploration normalizes relative and absolute scenario identities`
       Hash: 
 
