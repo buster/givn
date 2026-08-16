@@ -359,15 +359,20 @@ givn skills sync
 - [x] REFACTOR: verify archived bytes and permanent specs remain separate. Evidence:
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(semantic-review): A generated semantic report survives the existing archive move`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A generated semantic report survives the existing archive move`
+      Hash: `2e4ab0e`
 
 ### An unavailable retrieval model cannot produce a semantic pass
 
-- [ ] RED: target unavailable model handling with strict stubs. Evidence: 
-- [ ] GREEN: return retrieval-unavailable before report creation. Production
-      files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: preserve error context and rerun. Evidence: 
+- [x] RED: target unavailable model handling with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the semantic-model Given step
+      panicked with `not implemented`.
+- [x] GREEN: return retrieval-unavailable before report creation. Production
+      files: existing `src/spec/retrieval.rs` error path and
+      `tests/steps/semantic_review_steps.rs`. Evidence: targeted run passed with
+      `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: preserve error context and rerun. Evidence: after `cargo fmt
+      --all`, targeted run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: `feat(semantic-review): An unavailable retrieval model cannot produce a semantic pass`
       Hash: 
 
