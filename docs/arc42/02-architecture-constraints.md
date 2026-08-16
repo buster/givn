@@ -23,6 +23,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-14 | Spec retrieval is an **opt-in Cargo feature**. The default release and musl builds must not require its native ONNX Runtime or model cache. | Preserve TC-2/TC-3/DC-2 while permitting local authoring retrieval with an explicit feature build. |
 | TC-15 | The semantic similarity gate uses the private binary constant `0.95`; no project config, CLI flag, environment variable, or review note may raise or lower it. | Prevent an authoring agent from weakening the uniqueness gate to make its own review pass. |
 | TC-16 | The reranker experiment uses a local multilingual ONNX pair model behind the same opt-in retrieval feature and a private raw-logit boundary; no hosted inference is allowed. | Keep review reproducible, local, and independent of external services. |
+| TC-17 | Blocking semantic review requires a retrieval-enabled local build; the default feature-free build must fail explicitly rather than claim semantic completeness. | Keep the opt-in native retrieval dependency explicit while ensuring the dogfood binary and review/archive workflow use `--features spec-retrieval`. |
 
 ## 2.2 Distribution Constraints
 

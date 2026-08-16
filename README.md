@@ -30,6 +30,20 @@ coverage review → automatic delta merge on archive. Language- and
 test-runner-agnostic — it drives Cucumber-family runners in any stack, it
 does not replace them.
 
+Blocking `givn check review --change <id>` also generates a deterministic,
+agent-classified semantic worklist for active delta scenarios. The report is
+change-local while active and is retained as historical evidence when the
+existing archive move relocates the change.
+
+The report has a strict Markdown wire grammar: fixed headers and candidate field
+order, compact JSON escaping/serialization for strings, arrays, step records,
+and table cells, `null` as the only absent value, exactly one final newline,
+four-decimal E5 scores including the admitted `0.9500` boundary, and exactly
+16 lowercase hexadecimal candidate/content/evidence hashes. It contains no
+timestamps or environment fields. A malformed or incompatible permanent index
+is treated as stale, rebuilt as permanent-only, and followed by semantic review;
+the rebuilt index contains no `Delta` state.
+
 ---
 
 ## Table of contents
@@ -245,7 +259,7 @@ After archiving every change, update the local Givn binary and regenerate all
 agent integrations before starting the next change:
 
 ```sh
-cargo install --path . --locked --force
+cargo install --path . --locked --force --features spec-retrieval
 givn skills sync
 givn instructions
 ./run-tests.sh
@@ -314,7 +328,7 @@ Every `givn` subcommand:
 | `givn new <id> [--skip a,b,c]` | Create a new change scaffold under `givn/changes/<id>/`. `--skip` marks artifacts as intentionally not produced (reverse-engineering). |
 | `givn instructions [<artifact>] [--change <id>] [--json]` | No artifact: context-aware guidance on what to do next. With an artifact id: that artifact's writing instructions. |
 | `givn lint [--change <id>] [paths...]` | Static Gherkin check only (syntax, `@wip`, delta tags). Exit 0 clean / 1 parse error / 2 `@wip` present. **Runs no tests.** |
-| `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand (e.g. `verify`, `verify-e2e`, `lint`). |
+| `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the dedicated semantic report gate. |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps. Filesystem-derived, no separate state file. |
 | `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` dependency edges, optional/gates-archive flags, post hooks. Without `--change`, prints the general workflow from the manifest. With `--change`, overlays live status per artifact. |
 | `givn archive --change <id>` | Archive a completed change. Gated: `apply.requires` artifacts must exist, `REVIEW: PASS` present, all their hooks pass. |
@@ -411,8 +425,9 @@ givn/
 │   ├── proposal.md
 │   ├── specs/<cap>/<cap>.feature     # delta: @givn.delta + added|modified|removed
 │   ├── design.md  tasks.md  design-review.md  review.md
+│   ├── semantic-review.md             # generated evidence/classification worklist
 │   └── arc42.md                      # optional: arc42-docs addon marker (STATUS: DONE)
-├── archive/<id>/                     # archived changes
+├── archive/<id>/                     # archived changes, including the generated report
 └── (ejected overrides, on demand)
     artifacts/<id>/template.*
     artifacts/<id>/instructions.md

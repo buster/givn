@@ -19,8 +19,11 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
-| Scenario retrieval | Local multilingual embeddings and a persisted content-hash index retrieve candidates; permanent-scenario exploration and interactive search remain embedding-only and advisory, while a local multilingual pair reranker is reserved for experimental review. |
+| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates; the semantic report admits only scores `>= 0.9500`, while permanent-scenario exploration and the existing advisory `givn spec review` contract remain unchanged. The strict similarity gate itself is enabled by `spec-similarity-gate`, not by `spec-retrieval` alone. |
 | Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
+| Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved classifications without editing feature files. It does not replace or suppress the existing strict gate: a `spec-similarity-gate` build runs that gate afterward. |
+| Retrieval compatibility | A binary without `spec-retrieval` returns the existing unavailable error from blocking check review and creates no semantic report; `spec-retrieval` alone does not enable the strict similarity gate, which requires `spec-similarity-gate`; the advisory `givn spec review` behavior remains separate. |
+| Historical evidence | The generated report remains in the change directory and is retained by the existing archive move under `givn/archive/<id>/`; archive implementation is not changed by this slice. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 
 ## 4.2 How the strategy meets the top quality goals
@@ -60,12 +63,23 @@ own acceptance fixtures invoke the public CLI, while consumer repositories
 retain only their domain-specific permanent specifications. This keeps the
 deterministic gate implementation and its regression evidence in one place.
 
-The first semantic authoring slice deliberately uses the existing embedding
-representation and content-hash refresh. It does not introduce a second model,
-project-specific text heuristic, or a blocking decision into the exploratory
-path.
+The semantic authoring and review slices deliberately reuse the existing E5
+embedding representation, binary-fixed `0.9500` boundary, and content-hash
+refresh. The blocking report adds no BGE or NLI evidence and does not introduce
+automatic semantic decisions. The advisory exploratory path remains non-blocking
+and the existing `givn spec review --change <id>` behavior remains unchanged.
 
 The current-change slice extends that same advisory path without broadening the
 persisted catalogue. Permanent entries are refreshed as before; active delta
 vectors exist only for the request, and lifecycle identity filtering prevents a
 scenario from being compared with its own source or projected permanent target.
+The semantic report reuses the active-delta corpus for two explicit scopes,
+excludes only a Modified scenario's own projected target rather than its whole
+target file, records complete source-ordered evidence and Fingerprint facts, and
+keeps all feature-file and permanent-spec edits with the agent. Its Markdown wire
+grammar fixes headers, field order, compact JSON values, `null` absence, final
+newline, score/hash formats, and the absence of unknown/timestamp/environment
+fields. A malformed or incompatible index is treated as stale and rebuilt from
+the permanent specifications before report generation continues; its persisted
+entries remain permanent-only and contain no `Delta` state, delta vectors,
+classifications, or report state.

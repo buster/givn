@@ -145,6 +145,15 @@ Complete the **Overlap dispositions** table for every shape match, add a
 **split-or-keep** decision for every long scenario, and explain every
 removed+added pair as supersession or unrelated work before sign-off.
 
+### Semantic review classifications
+
+When `semantic-review.md` exists, classify every candidate as `DUPLIKAT`,
+`VARIANTE`, or `VALID-BOUNDARY` and write a rationale. `UNCERTAIN` or a missing
+rationale blocks `givn check review --change <id>`. There is no `UNRELATED`
+escape classification. A seemingly unrelated pair that remains above the
+active boundary requires sharper domain vocabulary and observable invariants,
+followed by a fresh review run.
+
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
 Failures: diagnose infrastructure (fix plumbing only) or coverage gap
