@@ -32,6 +32,8 @@ pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
 pub mod skill_rewrites_steps;
+pub mod spec_explore_change_e2e_steps;
+pub mod spec_explore_change_steps;
 pub mod spec_explore_permanent_e2e_steps;
 pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
@@ -72,6 +74,9 @@ pub struct GivnWorld {
     pub(crate) retrieval_reranker: Option<String>,
     /// Snapshot of permanent feature files for non-mutation assertions.
     pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the generated permanent retrieval index for non-mutation
+    /// assertions.
+    pub(crate) permanent_index_snapshot: Option<Vec<u8>>,
 }
 
 // --- helpers ---------------------------------------------------------------

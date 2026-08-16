@@ -20,6 +20,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
 | Scenario retrieval | Local multilingual embeddings and a persisted content-hash index retrieve candidates; permanent-scenario exploration and interactive search remain embedding-only and advisory, while a local multilingual pair reranker is reserved for experimental review. |
+| Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 
 ## 4.2 How the strategy meets the top quality goals
@@ -63,3 +64,8 @@ The first semantic authoring slice deliberately uses the existing embedding
 representation and content-hash refresh. It does not introduce a second model,
 project-specific text heuristic, or a blocking decision into the exploratory
 path.
+
+The current-change slice extends that same advisory path without broadening the
+persisted catalogue. Permanent entries are refreshed as before; active delta
+vectors exist only for the request, and lifecycle identity filtering prevents a
+scenario from being compared with its own source or projected permanent target.

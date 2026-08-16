@@ -37,7 +37,7 @@ graph TB
 | `givn/**` artifacts | in/out | Markdown + `.feature` files. |
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
 | `givn spec index/search/explore/review` | in/out | Local scenario-index construction, advisory free-form and complete-scenario retrieval, and retrieve-then-rerank candidate auditing during review. |
-| `givn spec explore --file/--stdin` | in/out | One complete Gherkin scenario in; permanent-corpus candidates, index metadata, and optional stable JSON out. |
+| `givn spec explore --file/--stdin [--change <id>]` | in/out | One complete Gherkin scenario in; permanent-corpus candidates plus optional active-change candidates, source metadata, index metadata, and optional stable JSON out. |
 | `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
 | Canonical authoring guidance | out | `givn instructions specs` emits the normative E2E and interaction-inventory policy consumed by agents. |
@@ -66,7 +66,8 @@ graph TB
 - Opt-in addons; bundled `arc42-docs` addon maintaining durable arc42 docs.
 - Distribution: release binaries, curl\|sh, brew, cargo.
 - Advisory permanent-scenario exploration from a complete file or stdin query;
-  the active change and semantic classifications remain outside this layer.
+  optional request-local exploration of active scenarios in the named current
+  change; semantic classifications remain outside this layer.
 
 ### Out of scope (deferred / non-goals)
 
@@ -79,4 +80,4 @@ graph TB
 | Workspace/multi-repo coordination | Out of scope for v1. |
 | Context stores / initiatives | Dropped weight from the prototype. |
 | Additional skill targets (cursor, gemini, …) | The built-in target set is fixed at opencode, .agents, .claude (selectable at init); other tools are achievable via `eject`; not shipped built-in in v1. |
-| Change-aware semantic exploration and classifications | Permanent-only exploration is the first semantic stack layer; active changes and review decisions are later layers. |
+| Semantic classifications and remediation decisions | Change-aware exploration is an advisory evidence layer; classifications, remediation, and review decisions remain later layers. |

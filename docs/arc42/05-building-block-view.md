@@ -74,7 +74,7 @@ givn/  (single published binary crate)
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
-| `cli::spec` | Build, search, or review the local scenario index; interactive search is advisory, while review audits permanent pairs and current deltas with the fixed threshold. | `spec::retrieval`, `gherkin::parse` |
+| `cli::spec` | Build, search, explore, or review the local scenario index; exploration can add request-local current-change candidates, while review audits permanent pairs and current deltas with the fixed threshold. | `spec::retrieval`, `gherkin::parse`, `state` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
@@ -90,7 +90,7 @@ givn/  (single published binary crate)
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist content-hash/vector entries, rank interactive and complete-scenario queries, retrieve top-K review candidates, jointly rerank scenario pairs, and fail review on the fixed reranker boundary. | `fastembed`, `gherkin::parse`, project FS |
+| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries, rank interactive and complete-scenario queries, collect request-local active deltas, apply lifecycle identity filters, retrieve top-K review candidates, jointly rerank scenario pairs, and fail review on the fixed reranker boundary. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `state`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -126,8 +126,22 @@ input sources before dispatch. `spec::retrieval` parses the complete query,
 reuses unchanged permanent vectors through the existing content hashes, ranks
 all permanent entries, and renders the advisory text/JSON contract. The exact
 identity filter is `(normalized file, scenario title)` and is applied only for
-file queries.
+file queries. All permanent, delta-source, projected-target, and query file
+identities use one project-relative forward-slash normalization helper that
+accepts relative and absolute paths.
 
 The repository-owned acceptance layer adds one capability module for regular
 steps and one separate module for e2e CLI steps. Both invoke the compiled
 binary; neither calls production retrieval functions in-process.
+
+### 5.3b Current-change exploration additions
+
+With `--change`, `cli::spec` passes the validated change identifier to
+`spec::retrieval`. Retrieval validates the change and parses its delta files
+before refreshing the permanent index. It collects only active added and
+modified scenarios, retains the delta source and projected permanent target
+identities, and embeds their text in memory for the current request. Removed
+scenarios and rejected requests never enter the candidate pool. The result
+record adds `scope` and `change` after the existing JSON result fields, while
+the text renderer identifies the source for both permanent and current-change
+records.

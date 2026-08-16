@@ -278,7 +278,8 @@ The retrieval and similarity-gate flow is:
 
 ## 6.8b `givn spec explore`
 
-The permanent exploration flow is intentionally separate from change review:
+The exploration flow is intentionally separate from change review. With no
+`--change`, its permanent-only path is:
 
 ```mermaid
 flowchart TD
@@ -296,9 +297,56 @@ new or changed permanent scenarios. The query then uses the existing `query:`
 embedding role. Same-file candidates remain eligible; only an exact file/title
 identity is excluded. The active change tree is never read.
 
-The text path may report refresh counts and index metadata. The JSON path emits
-one document only, with fixed query, index, and result fields so an agent can
-consume it without stripping log lines.
+The text path may report refresh counts and index metadata. Every ranked text
+line identifies its source scope. The JSON path emits one document only, with
+the fixed PR 1 query/index/result fields in their existing order followed by
+additive `scope` and `change` result metadata. An agent can consume it without
+stripping log lines.
+
+### 6.8c Change-aware request-local exploration
+
+When `--change <id>` is supplied, the command extends the same request with the
+active delta before producing the result:
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as givn spec explore
+    participant Delta as active change delta
+    participant Index as permanent index
+    participant Embedder as local embedder
+
+    User->>CLI: complete file or stdin query plus change id
+    CLI->>CLI: validate query cardinality and change id
+    CLI->>Delta: require specs directory and parse delta features
+    alt invalid change or malformed delta
+        Delta-->>CLI: clear error
+        CLI-->>User: non-zero; permanent index unchanged
+    else valid change
+        CLI->>Index: refresh permanent entries by content hash
+        Index-->>CLI: permanent vectors and metadata
+        CLI->>Embedder: embed active added/modified text in memory
+        Embedder-->>CLI: transient current-change vectors
+        CLI->>Embedder: embed query with query role
+        Embedder-->>CLI: query vector
+        CLI->>CLI: merge scopes and filter source/target identities
+        CLI-->>User: source-labeled top-five text or JSON
+    end
+```
+
+Only active `Added` and `Modified` delta scenarios enter the request-local
+corpus. Removed scenarios are excluded. A modified scenario is removed when
+the query names either its normalized delta source identity or its projected
+permanent target identity; an added scenario is removed when its source identity
+matches. Permanent index entries remain the only persisted catalogue, and
+current-change vectors are discarded after the invocation.
+
+The permanent, delta-source, projected-target, and query file identities all
+use one project-relative forward-slash normalization helper. Relative and
+absolute paths therefore compare identically. Change validation and delta
+collection complete before permanent refresh, so unsafe ids, missing changes,
+missing specs directories, and malformed delta features fail without a rejected
+request writing the index.
 
 ## 6.9 Running the test runner on a fresh project (sentinel)
 
