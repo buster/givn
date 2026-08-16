@@ -242,15 +242,20 @@ givn skills sync
 - [x] REFACTOR: preserve unchanged candidates and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Changing a candidate scenario invalidates its previous classification`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Changing a candidate scenario invalidates its previous classification`
+      Hash: `7c846a2`
 
 ### Changing a permanent endpoint invalidates its prior classification
 
-- [ ] RED: target permanent endpoint invalidation with strict stubs. Evidence: 
-- [ ] GREEN: reparse permanent evidence and reset only the affected candidate.
+- [x] RED: target permanent endpoint invalidation with strict stubs. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the permanent hash assertion
+      panicked with `not implemented`.
+- [x] GREEN: reparse permanent evidence and reset only the affected candidate.
       Production files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: retain permanent-only index refresh and rerun. Evidence: 
+      targeted run passed with `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: retain permanent-only index refresh and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Changing a permanent endpoint invalidates its prior classification`
       Hash: 
 

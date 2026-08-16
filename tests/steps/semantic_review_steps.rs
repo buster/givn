@@ -88,6 +88,9 @@ fn two_similar_active_deltas(world: &mut GivnWorld) {
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores = Some(
+        "Unknown provider is rejected|Provider name is unknown=0.9600;Unknown provider selection is rejected|Provider name is unknown=0.9600".to_string(),
+    );
 }
 
 #[given("a project prepared for semantic review with equal-score candidates")]
@@ -239,11 +242,12 @@ fn change_permanent_semantic_endpoint(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("semantic project is required");
     let path = env.path("givn/specs/retrieval.feature");
     let content = fs::read_to_string(&path).expect("read permanent endpoint");
-    fs::write(
-        path,
-        content.replace("unknown provider", "configured provider"),
-    )
-    .expect("change permanent endpoint");
+    let changed = content.replace("unknown provider", "configured provider");
+    assert_ne!(
+        content, changed,
+        "permanent fixture did not contain target text"
+    );
+    fs::write(path, changed).expect("change permanent endpoint");
 }
 
 #[when(
@@ -320,7 +324,31 @@ fn changed_endpoint_hashes_differ(world: &mut GivnWorld) {
 
 #[then("the changed permanent endpoint has a different content hash and evidence hash")]
 fn changed_permanent_hashes_differ(world: &mut GivnWorld) {
-    changed_candidate_hash_differs(world);
+    let before = String::from_utf8(
+        world
+            .semantic_report_snapshot
+            .as_ref()
+            .expect("prior semantic report snapshot")
+            .clone(),
+    )
+    .expect("UTF-8 report snapshot");
+    let before_hash = right_evidence_hash(&before, "Provider name is unknown");
+    let current_report = semantic_report(world);
+    let current_hash = right_evidence_hash(&current_report, "Provider name is unknown");
+    assert_ne!(before_hash, current_hash);
+}
+
+fn right_evidence_hash(report: &str, title: &str) -> String {
+    for block in report.split("\n## Candidate ").skip(1) {
+        if block.contains(&format!("- right_title: \"{title}\"")) {
+            return block
+                .lines()
+                .find_map(|line| line.strip_prefix("- right_evidence_hash: "))
+                .expect("right evidence hash")
+                .to_string();
+        }
+    }
+    panic!("missing candidate title {title:?}");
 }
 
 #[then("the semantic review report bytes and candidate order are snapshotted")]

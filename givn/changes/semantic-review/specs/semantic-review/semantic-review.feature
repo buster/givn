@@ -177,7 +177,7 @@ Feature: Generate the semantic review report
     And the changed endpoint has a different content hash and evidence hash
     And the semantic review report contains classification "UNCERTAIN"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Changing a permanent endpoint invalidates its prior classification
     Given a project prepared for semantic review with a similar active delta
     When the user runs `givn check review --change running-change`
