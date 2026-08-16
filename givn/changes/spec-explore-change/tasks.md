@@ -179,19 +179,23 @@ in its commit.
 - [x] REFACTOR: keep legacy field values/order stable and rerun the targeted
       command. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Permanent exploration JSON adds source metadata while retaining legacy result fields`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Permanent exploration JSON adds source metadata while retaining legacy result fields`
+      Hash: `ec9c082`
 
 ### Unsafe change identifiers are rejected without changing the permanent index
 
-- [ ] RED: remove only this scenario's `@wip`, bind strict validation and index
-      snapshot steps, and run the targeted command. Evidence: 
-- [ ] GREEN: pass `--change` through validation before any path construction or
+- [x] RED: remove only this scenario's `@wip`, bind strict validation and index
+      snapshot steps, and run the targeted command. Evidence: `1 scenario (1
+      failed)`, `1 step (1 failed)`; the unsafe-change When step panicked with
+      `not implemented`.
+- [x] GREEN: pass `--change` through validation before any path construction or
       refresh and report the kebab-case error. Production files:
       `src/spec/retrieval.rs`, `tests/steps/spec_explore_change_steps.rs`.
-      Evidence: 
-- [ ] REFACTOR: reuse the shared change resolver and rerun the targeted
-      command. Evidence: 
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `8 steps (8
+      passed)`.
+- [x] REFACTOR: reuse the shared change resolver and rerun the targeted
+      command. Evidence: after `cargo fmt --all`, targeted run passed with `1
+      scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): Unsafe change identifiers are rejected without changing the permanent index`
       Hash: 
 
