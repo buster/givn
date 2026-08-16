@@ -251,15 +251,15 @@ fn change_permanent_semantic_endpoint(world: &mut GivnWorld) {
 }
 
 #[when(
-    regex = r#"^the active endpoint (content|table contents|Background|delta operation|projected target|Scenario Outline Examples table|Feature description|Rule description|tags) changes$"#
+    regex = r#"^the (active endpoint (?:content|table contents|Background|delta operation|projected target|Scenario Outline Examples table) changes?|Feature description changes|Rule description changes|endpoint tags change)$"#
 )]
 fn apply_active_evidence_change(world: &mut GivnWorld, change: String) {
-    if change == "delta operation" || change == "projected target" {
+    if change.contains("delta operation") || change.contains("projected target") {
         let env = world.env.as_ref().expect("semantic project is required");
         let path = env.path("givn/changes/running-change/specs/first.feature");
         if path.exists() {
             let content = fs::read_to_string(&path).expect("read evidence fixture");
-            let replacement = if change == "delta operation" {
+            let replacement = if change.contains("delta operation") {
                 content.replace("@givn.added", "@givn.modified")
             } else {
                 content.replace("@running-change", "@other-target")
@@ -278,14 +278,20 @@ fn change_prior_report_metadata(world: &mut GivnWorld, _version: String) {
     let env = world.env.as_ref().expect("semantic project is required");
     let path = env.path("givn/changes/running-change/semantic-review.md");
     let content = fs::read_to_string(&path).expect("read semantic report");
-    fs::write(
-        path,
-        content.replace(
-            "- left_evidence_hash: ",
-            "- left_evidence_hash: 0000000000000000\n# old metadata\n- left_evidence_hash: ",
-        ),
-    )
-    .expect("write old report metadata");
+    let changed = content
+        .lines()
+        .map(|line| {
+            if line.starts_with("- left_evidence_hash: ") {
+                "- left_evidence_hash: 0000000000000000".to_string()
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    let changed = format!("{changed}\n");
+    world.semantic_report_snapshot = Some(changed.as_bytes().to_vec());
+    fs::write(path, changed).expect("write old report metadata");
 }
 
 #[then(

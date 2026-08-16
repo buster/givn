@@ -256,16 +256,21 @@ givn skills sync
 - [x] REFACTOR: retain permanent-only index refresh and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Changing a permanent endpoint invalidates its prior classification`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Changing a permanent endpoint invalidates its prior classification`
+      Hash: `b5456ae`
 
 ### Any changed endpoint evidence or prior-report metadata invalidates carry-forward
 
-- [ ] RED: target the Scenario Outline with strict stubs. Evidence: 
-- [ ] GREEN: invalidate for content, tables, backgrounds, operation, projected
+- [x] RED: target the Scenario Outline with strict stubs. Evidence: `14
+      scenarios (14 failed)` at the hash assertion seam; the matched step
+      panicked with `not implemented`.
+- [x] GREEN: invalidate for content, tables, backgrounds, operation, projected
       target, Examples/descriptions/tags, and older model/index/schema metadata.
       Production files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: keep pair contradiction candidate-level and rerun. Evidence: 
+      targeted run passed with `14 scenarios (14 passed)`, `154 steps (154 passed)`.
+- [x] REFACTOR: keep pair contradiction candidate-level and rerun. Evidence:
+      after `cargo fmt --all`, targeted run passed with `14 scenarios (14
+      passed)`, `154 steps (154 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Any changed endpoint evidence or prior-report metadata invalidates carry-forward`
       Hash: 
 
