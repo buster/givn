@@ -161,7 +161,7 @@ Feature: Explore scenarios in the current change
     And every JSON result retains rank title file and score fields in their PR1 order
     And every JSON result has scope "permanent" and no owning change
 
-  @givn.added @wip
+  @givn.added
   Scenario: Unsafe change identifiers are rejected without changing the permanent index
     Given a project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:
