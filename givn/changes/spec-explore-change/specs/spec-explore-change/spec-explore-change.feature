@@ -219,7 +219,7 @@ Feature: Explore scenarios in the current change
     And stderr clearly says change "empty-change" has no specs directory
     And the permanent exploration index is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed delta feature is rejected without changing the permanent index
     Given a project prepared for current-change exploration with a malformed delta feature
     And a .feature file at "draft.feature" with:
