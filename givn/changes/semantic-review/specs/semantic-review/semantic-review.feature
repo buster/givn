@@ -19,7 +19,7 @@ Feature: Generate the semantic review report
     And the candidate contains the concrete fact "fact_contradiction: false"
     And the semantic review report has no timestamp or environment fields
 
-  @givn.added @wip
+  @givn.added
   Scenario: Removed delta scenarios produce a clean semantic report
     Given a project prepared for semantic review with only a removed delta
     When the user runs `givn check review --change running-change`
