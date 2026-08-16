@@ -411,20 +411,31 @@ givn skills sync
 
 ## E2E setup
 
-- [ ] Configure `verify.e2e_command` as `./run-tests.sh --e2e`, register the
-      separate E2E module, and prove full versus E2E scenario counts.
-      Evidence: 
+- [x] Configure `verify.e2e_command` as `./run-tests.sh --e2e`, register the
+      separate E2E module, and prove full versus E2E scenario counts. Evidence:
+      `givn/commands.yaml` contains `./run-tests.sh --e2e`,
+      `tests/steps/semantic_review_e2e_steps.rs` is registered separately, and
+      `features_runner` uses `.fail_on_skipped()`. Full change run before E2E
+      implementation: `44 scenarios (43 passed, 1 failed)`, `421 steps (420
+      passed, 1 failed)`. E2E-filtered run: `1 scenario (1 failed)`, `1 step
+      (1 failed)`. The E2E count is strictly less than the full count and the
+      non-zero result is the intentional RED stub failure.
 
 ## E2E scenarios
 
 ### Change review generates a complete report for a semantic candidate
 
-- [ ] RED: remove only this scenario's `@wip`, bind real-process E2E stubs, and
-      run the targeted E2E command. Evidence: 
-- [ ] GREEN: invoke the compiled CLI with `check review --change`, assert exit
+- [x] RED: remove only this scenario's `@wip`, bind real-process E2E stubs, and
+      run the targeted E2E command. Evidence: `1 scenario (1 failed)`, `1 step
+      (1 failed)`; the Given step panicked with `not implemented`.
+- [x] GREEN: invoke the compiled CLI with `check review --change`, assert exit
       status and report evidence through the real subprocess. E2E file:
-      `tests/steps/semantic_review_e2e_steps.rs`. Evidence: 
-- [ ] REFACTOR: keep report/CLI assertions on the real interface and rerun. Evidence: 
+      `tests/steps/semantic_review_e2e_steps.rs`; shared fixture support is in
+      `tests/steps/semantic_review_steps.rs`. Evidence: E2E run passed with `1
+      scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] REFACTOR: keep report/CLI assertions on the real interface and rerun. Evidence:
+      after `cargo fmt --all`, E2E run passed with `1 scenario (1 passed)`,
+      `12 steps (12 passed)`.
 - [ ] COMMIT: `test(e2e): Change review generates a complete report for a semantic candidate`
       Hash: 
 

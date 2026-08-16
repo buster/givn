@@ -4,7 +4,7 @@
 @givn.delta @semantic-review
 Feature: Generate the semantic review report
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Change review generates a complete report for a semantic candidate
     Given an end-to-end project prepared for semantic review with a similar active delta
     When the end-to-end user runs change review for "running-change"
