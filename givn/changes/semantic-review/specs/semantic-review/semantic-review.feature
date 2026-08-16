@@ -316,7 +316,7 @@ Feature: Generate the semantic review report
     And stderr contains "retrieval model is unavailable"
     And the semantic review report does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Blocking review reports retrieval unavailability without its feature
     Given a project prepared for semantic review with a similar active delta
     When the user runs change review through a build without spec retrieval
