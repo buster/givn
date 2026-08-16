@@ -146,19 +146,22 @@ in its commit.
 - [x] REFACTOR: keep source metadata differences out of ranked-line parity and
       rerun the targeted command. Evidence: after `cargo fmt --all`, targeted
       run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Change-aware standard input returns the same ranked candidates as file input`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Change-aware standard input returns the same ranked candidates as file input`
+      Hash: `58043f3`
 
 ### Permanent exploration text identifies permanent candidate sources
 
-- [ ] RED: remove only this scenario's `@wip`, bind strict regular steps, and
-      run the targeted command. Evidence: 
-- [ ] GREEN: add source scope and source path to every human-readable result,
+- [x] RED: remove only this scenario's `@wip`, bind strict regular steps, and
+      run the targeted command. Evidence: `1 scenario (1 failed)`, `1 step
+      (1 failed)`; the matched Then step panicked with `not implemented`.
+- [x] GREEN: add source scope and source path to every human-readable result,
       including the no-change permanent-only path. Production files:
       `src/spec/retrieval.rs`, `tests/steps/spec_explore_change_steps.rs`.
-      Evidence: 
-- [ ] REFACTOR: preserve PR-1 query/index/refresh text and rerun the targeted
-      command. Evidence: 
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `7 steps (7
+      passed)`.
+- [x] REFACTOR: preserve PR-1 query/index/refresh text and rerun the targeted
+      command. Evidence: after `cargo fmt --all`, targeted run passed with `1
+      scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): Permanent exploration text identifies permanent candidate sources`
       Hash: 
 

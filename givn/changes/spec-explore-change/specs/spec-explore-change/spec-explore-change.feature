@@ -125,7 +125,7 @@ Feature: Explore scenarios in the current change
     And the user explores the same draft against change "current-change" through standard input
     Then the standard-input ranked results equal the file ranked results
 
-  @givn.added @wip
+  @givn.added
   Scenario: Permanent exploration text identifies permanent candidate sources
     Given a project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:
