@@ -373,16 +373,22 @@ givn skills sync
       `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] REFACTOR: preserve error context and rerun. Evidence: after `cargo fmt
       --all`, targeted run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: `feat(semantic-review): An unavailable retrieval model cannot produce a semantic pass`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): An unavailable retrieval model cannot produce a semantic pass`
+      Hash: `f9e8b5d`
 
 ### Blocking review reports retrieval unavailability without its feature
 
-- [ ] RED: target the no-feature subprocess with strict proof. Evidence: 
-- [ ] GREEN: make `check review --change` fail explicitly without
+- [x] RED: target the no-feature subprocess with strict proof. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the no-feature When step panicked
+      with `not implemented`.
+- [x] GREEN: make `check review --change` fail explicitly without
       `spec-retrieval`, without a report. Production files: `src/cli/check.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: keep archive's existing no-feature refresh behavior unchanged and rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1 passed)`,
+      `5 steps (5 passed)`.
+- [x] REFACTOR: keep archive's existing no-feature refresh behavior unchanged and
+      rerun. Evidence: after `cargo fmt --all`, `cargo check --no-default-features`,
+      and `cargo check --features spec-retrieval`, targeted run passed with `1
+      scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Blocking review reports retrieval unavailability without its feature`
       Hash: 
 
