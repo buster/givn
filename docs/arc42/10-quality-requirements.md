@@ -75,6 +75,10 @@ graph TD
 | Q-32 | Repository-owned acceptance | A maintainer reviews a generic change with explicit overlap dispositions. | The real Givn CLI exits 0 and prints the deterministic overlap and net-change receipt. |
 | Q-33 | Repository-owned acceptance | A maintainer archives a generic consolidated change. | The real Givn CLI exits 0; the retained scenario is published, the obsolete scenario is absent, and the permanent tree has no duplicate title. |
 | Q-34 | Recovery / Integrity | A pre-merge archive hook fails in the generic fixture. | The CLI exits non-zero and the complete permanent specification tree remains byte-for-byte unchanged. |
+| Q-42 | Agent ergonomics | An author supplies one complete draft scenario before adding it. | `givn spec explore --file` and `--stdin` return at most five deterministic permanent candidates with rank, title, file, score, model, and index metadata without changing feature files. |
+| Q-43 | Correctness | A file query names a permanent scenario in the same feature as related scenarios. | Only the exact `(file, title)` entry is omitted; other same-file scenarios remain eligible. |
+| Q-44 | Correctness | A permanent scenario is unchanged, then changed, across two explorations. | The first refresh reuses its vector; the second re-embeds the changed content and reports the refresh counts. |
+| Q-45 | Compatibility | The retrieval feature is absent while an author invokes `spec explore`. | The command exits non-zero with the existing retrieval-unavailable message; the default build still compiles. |
 
 ## 10.3 Acceptance signals per phase
 

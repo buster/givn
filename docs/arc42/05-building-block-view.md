@@ -90,7 +90,7 @@ givn/  (single published binary crate)
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist content-hash/vector entries, rank interactive queries, retrieve top-K review candidates, jointly rerank scenario pairs, and fail review on the fixed reranker boundary. | `fastembed`, `gherkin::parse`, project FS |
+| `spec::retrieval` | Embed scenario text, persist content-hash/vector entries, rank interactive and complete-scenario queries, retrieve top-K review candidates, jointly rerank scenario pairs, and fail review on the fixed reranker boundary. | `fastembed`, `gherkin::parse`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -118,3 +118,16 @@ environment seam.
 | `fastembed` | Optional local E5 embeddings for `spec::retrieval`; default features disabled, with Rustls Hub download and ONNX Runtime support. Transitive native/runtime dependencies are feature-gated with retrieval. | 5.17.2 |
 
 Versions are pinned in `Cargo.lock`. The dep-age policy (`scripts/check-dep-age.sh`) enforces that every locked dependency is ≥ 30 days old (TC-13).
+
+### 5.3a Permanent exploration additions
+
+`cli::spec` exposes the `explore` option set and rejects missing or conflicting
+input sources before dispatch. `spec::retrieval` parses the complete query,
+reuses unchanged permanent vectors through the existing content hashes, ranks
+all permanent entries, and renders the advisory text/JSON contract. The exact
+identity filter is `(normalized file, scenario title)` and is applied only for
+file queries.
+
+The repository-owned acceptance layer adds one capability module for regular
+steps and one separate module for e2e CLI steps. Both invoke the compiled
+binary; neither calls production retrieval functions in-process.

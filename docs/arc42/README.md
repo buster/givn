@@ -9,6 +9,10 @@ documents focused and reviewable.
 > (change `reverse-engineer-new-command`). All architecture decisions remain
 > binding — see chapter 9.
 
+The semantic retrieval surface currently includes advisory permanent-corpus
+exploration through `givn spec explore`; change-aware exploration and review
+classification remain later stack layers.
+
 When the `arc42` addon is enabled, completion review also cross-checks durable
 Arc42 facts against the change's design, mapped tasks, and completed
 implementation. See chapter 8.14 and ADR-035.

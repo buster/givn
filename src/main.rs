@@ -10,7 +10,9 @@ mod skills;
 mod spec;
 mod state;
 
-use clap::{CommandFactory, Parser, Subcommand};
+use std::path::PathBuf;
+
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{Shell, generate};
 
 /// givn — from Given to done.
@@ -175,12 +177,30 @@ enum SpecCommands {
         /// Behavior description or completed scenario text.
         query: String,
     },
+    /// Explore one complete draft scenario against permanent scenarios.
+    Explore {
+        /// Complete Gherkin file containing exactly one scenario.
+        #[arg(long)]
+        file: Option<PathBuf>,
+        /// Read one complete Gherkin scenario from standard input.
+        #[arg(long)]
+        stdin: bool,
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
+    },
     /// Refresh the permanent index and report advisory candidates for a change.
     Review {
         /// Active change identifier.
         #[arg(long)]
         change: String,
     },
+}
+
+#[derive(Clone, Copy, Debug, ValueEnum)]
+enum SpecFormat {
+    Text,
+    Json,
 }
 
 fn main() {
@@ -231,6 +251,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Spec { command } => match command {
             SpecCommands::Index => cli::spec::run_index(),
             SpecCommands::Search { query } => cli::spec::run_search(&query),
+            SpecCommands::Explore {
+                file,
+                stdin,
+                format,
+            } => cli::spec::run_explore(file, stdin, matches!(format, SpecFormat::Json)),
             SpecCommands::Review { change } => cli::spec::run_review(&change),
         },
         Commands::Upgrade => cli::upgrade::run(),
