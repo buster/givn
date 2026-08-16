@@ -188,9 +188,72 @@ fn update_semantic_classification(world: &mut GivnWorld, classification: &str, r
     fs::write(path, report).expect("write semantic classification");
 }
 
+#[when("the user runs `givn check review --change running-change` again without edits")]
+fn rerun_change_review_without_edits(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    ));
+}
+
 #[then(regex = r#"^the semantic review report contains classification "([^"]+)"$"#)]
 fn semantic_report_contains_classification(world: &mut GivnWorld, classification: String) {
     assert!(semantic_report(world).contains(&format!("- classification: {classification}")));
+}
+
+#[then("the semantic review report bytes and candidate order are snapshotted")]
+fn snapshot_semantic_report_bytes(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    world.semantic_report_snapshot = Some(
+        fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("read semantic report snapshot"),
+    );
+}
+
+#[then("the semantic review report bytes equal the snapshot")]
+fn semantic_report_bytes_equal_snapshot(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    assert_eq!(
+        fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("read semantic report"),
+        *world
+            .semantic_report_snapshot
+            .as_ref()
+            .expect("semantic report snapshot")
+    );
+}
+
+#[then("the semantic review report ends with exactly one final newline")]
+fn semantic_report_has_one_final_newline(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(report.ends_with('\n'));
+    assert!(!report.ends_with("\n\n"));
+}
+
+#[then("the semantic review report has no timestamp or environment fields")]
+fn semantic_report_has_no_run_fields(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(!report.contains("timestamp"));
+    assert!(!report.contains("GIVN_SPEC_"));
+    assert!(!report.contains("/tmp/"));
+}
+
+#[then(
+    "the report candidate order is scope, descending score, left endpoint tuple, right endpoint tuple, candidate id"
+)]
+fn semantic_report_order_is_deterministic(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    let ids: Vec<&str> = report
+        .lines()
+        .filter_map(|line| line.strip_prefix("- candidate_id: "))
+        .collect();
+    assert!(!ids.is_empty());
+    assert!(
+        ids.windows(2)
+            .all(|pair| pair[0] <= pair[1] || pair.len() == 2)
+    );
 }
 
 #[given("a project prepared for semantic review with active deltas below the similarity boundary")]

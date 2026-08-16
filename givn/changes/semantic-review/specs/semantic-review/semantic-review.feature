@@ -125,7 +125,7 @@ Feature: Generate the semantic review report
     Then the command exits non-zero
     And stderr contains "rationale"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A regenerated classified report is byte-for-byte deterministic
     Given a project prepared for semantic review with a similar active delta
     When the user runs `givn check review --change running-change`
