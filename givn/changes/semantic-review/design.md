@@ -227,6 +227,7 @@ scope
 left_scope
 left_file
 left_title
+left_evidence_json
 left_feature_description
 left_rule_description
 left_scenario_description
@@ -251,6 +252,7 @@ left_deterministic_facts
 right_scope
 right_file
 right_title
+right_evidence_json
 right_feature_description
 right_rule_description
 right_scenario_description

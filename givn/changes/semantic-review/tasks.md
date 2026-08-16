@@ -328,16 +328,21 @@ givn skills sync
       targeted run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: preserve parser context and rerun. Evidence: after `cargo fmt
       --all`, targeted run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Malformed delta input cannot produce a semantic pass`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Malformed delta input cannot produce a semantic pass`
+      Hash: `ab82f23`
 
 ### A malformed permanent index is rebuilt before semantic review continues
 
-- [ ] RED: target malformed vector/index recovery with strict stubs. Evidence: 
-- [ ] GREEN: validate model/version/path/identity/vector shape and rebuild from
+- [x] RED: target malformed vector/index recovery with strict stubs. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the malformed-index Given
+      step panicked with `not implemented`.
+- [x] GREEN: validate model/version/path/identity/vector shape and rebuild from
       permanent specs on any violation. Production files: `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: keep rebuilt index structurally permanent-only and rerun. Evidence: 
+      `tests/steps/mod.rs`, `tests/steps/semantic_review_steps.rs`. Evidence:
+      targeted run passed with `1 scenario (1 passed)`, `10 steps (10 passed)`.
+- [x] REFACTOR: keep rebuilt index structurally permanent-only and rerun. Evidence:
+      after `cargo fmt --all` and `cargo check --features spec-retrieval`, targeted
+      run passed with `1 scenario (1 passed)`, `10 steps (10 passed)`.
 - [ ] COMMIT: `feat(semantic-review): A malformed permanent index is rebuilt before semantic review continues`
       Hash: 
 

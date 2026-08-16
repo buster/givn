@@ -550,6 +550,74 @@ fn malformed_semantic_delta_project(_world: &mut GivnWorld) {
     world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given("the permanent index contains malformed or incompatible content")]
+fn malformed_permanent_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let content = br#"{
+  "version": 99,
+  "model": "wrong-model",
+  "entries": [
+    {
+      "title": "Provider name is unknown",
+      "file": "givn/changes/running-change/specs/running.feature",
+      "content_hash": "invalid",
+      "embedding": []
+    },
+    {
+      "title": "Provider name is unknown",
+      "file": "givn/specs/retrieval.feature",
+      "content_hash": "duplicate",
+      "embedding": [0.0]
+    }
+  ]
+}
+"#;
+    fs::write(env.path("givn/.spec-index.json"), content).expect("write malformed index");
+    world.malformed_index_snapshot = Some(content.to_vec());
+}
+
+#[then(
+    "the semantic review report contains the active candidate with classification \"UNCERTAIN\""
+)]
+fn semantic_report_contains_active_uncertain(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(report.contains("Unknown provider is rejected"));
+    assert!(report.contains("- classification: UNCERTAIN"));
+}
+
+#[then("the permanent index was rebuilt from the permanent specifications")]
+fn permanent_index_was_rebuilt(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let current = fs::read(env.path("givn/.spec-index.json")).expect("read rebuilt index");
+    assert_ne!(
+        current,
+        *world
+            .malformed_index_snapshot
+            .as_ref()
+            .expect("malformed index snapshot")
+    );
+    let value: serde_json::Value =
+        serde_json::from_slice(&current).expect("rebuilt index is valid JSON");
+    assert_eq!(value["model"], "intfloat/multilingual-e5-large");
+    assert_eq!(value["version"], 1);
+    assert_eq!(
+        value["entries"].as_array().expect("rebuilt entries").len(),
+        3
+    );
+}
+
+#[then("the rebuilt permanent index remains structurally permanent-only")]
+fn rebuilt_index_is_structurally_permanent(world: &mut GivnWorld) {
+    permanent_index_is_structurally_permanent(world);
+}
+
+#[then(
+    "the rebuilt permanent index contains no \"Delta\" state, delta vectors, classifications, or report state"
+)]
+fn rebuilt_index_contains_no_semantic_state(world: &mut GivnWorld) {
+    index_contains_no_semantic_state(world);
+}
+
 #[then("the semantic review report does not exist")]
 fn semantic_report_does_not_exist(_world: &mut GivnWorld) {
     let env = _world.env.as_ref().expect("semantic project is required");

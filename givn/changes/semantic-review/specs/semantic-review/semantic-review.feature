@@ -284,7 +284,7 @@ Feature: Generate the semantic review report
     And stderr contains "delta feature is not valid Gherkin"
     And the semantic review report does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed permanent index is rebuilt before semantic review continues
     Given a project prepared for semantic review with a similar active delta
     And the permanent index contains malformed or incompatible content
