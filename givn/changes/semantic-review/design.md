@@ -474,7 +474,25 @@ remains under the active change until the existing archive move places the
 complete change directory under `givn/archive/<id>/`; that historical retention
 is documented but archive implementation is outside this slice.
 
+## Internal Primitives
+
+| Primitive | Role |
+|---|---|
+| `DeltaScenario` | Parsed active/removed delta scenario with operation, projected target, Fingerprint facts, and canonical evidence. |
+| `SemanticEndpoint` | Complete report endpoint identity, hashes, evidence, operation/target metadata, and deterministic facts. |
+| `SemanticCandidate` | Ordered endpoint pair carrying score, candidate id, classification, and rationale. |
+| `semantic_review` / `semantic_review_enabled` | Public feature-gated entrypoint and blocking report lifecycle. |
+| `semantic_candidates` / `semantic_score` | Candidate-universe construction, boundary admission, and deterministic fixture score seam. |
+| `canonical_evidence_json` / `semantic_evidence_hash` | Stable source-ordered endpoint serialization and evidence invalidation hash. |
+| `apply_prior_classifications` / `render_semantic_report` / `write_semantic_report` | Strict carry-forward, fixed wire grammar, and atomic report replacement. |
+| `validate_index` | Permanent-only index identity, path, metadata, dimension, and finite-vector validation before reuse. |
+
 ## Step Definitions
+
+| Capability | Step definition file |
+|---|---|
+| Semantic review report, regular scenarios | `tests/steps/semantic_review_steps.rs` |
+| Semantic review report, CLI E2E scenario | `tests/steps/semantic_review_e2e_steps.rs` |
 
 The existing `features_runner` uses `.fail_on_skipped()` as strict mode. New
 regular bindings live in `tests/steps/semantic_review_steps.rs`; new E2E

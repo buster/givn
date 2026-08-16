@@ -66,6 +66,10 @@ scenarios. The inventory is exhaustive after this normalization.
 
 ## Semantic review and vocabulary
 
+The deterministic gates remain the first line of defence; semantic retrieval
+adds an evidence worklist after those structural checks rather than replacing
+them.
+
 When `spec-retrieval` is available, `givn check review --change <id>` generates
 the change-local `semantic-review.md` worklist after the structural gates.
 Classify every candidate as `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY`, with a
