@@ -670,5 +670,4 @@ Feature: Delta
         assert!(result.contains("| name |"), "{result}");
         assert!(result.contains("| Ada |"), "{result}");
     }
-
 }
