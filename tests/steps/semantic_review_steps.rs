@@ -90,6 +90,41 @@ fn two_similar_active_deltas(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given("a project prepared for semantic review with active deltas below the similarity boundary")]
+fn below_boundary_semantic_project(_world: &mut GivnWorld) {
+    let world = _world;
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated specs");
+    }
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
+        .expect("write permanent semantic fixtures");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        delta,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Quantum ledger opens a weather window\n    Given a quantum ledger\n    When the weather window opens\n    Then the ledger emits a blue result\n",
+    )
+    .expect("write below-boundary delta");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[then("the report contains no permanent-permanent candidate")]
+fn report_contains_no_permanent_pair(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    assert!(!report.contains("permanent-permanent"));
+    assert!(!report.contains("delta-to-permanent"));
+}
+
 #[then("the semantic review report exists")]
 fn semantic_report_exists(_world: &mut GivnWorld) {
     let env = _world.env.as_ref().expect("semantic project is required");
