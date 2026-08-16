@@ -303,6 +303,27 @@ feature-enabled binary refreshes the generated index from the merged permanent
 tree; a refresh error is warned after archive completion and retried at the next
 review.
 
+### 8.5b Permanent scenario exploration
+
+`givn spec explore` is the authoring boundary for a complete draft scenario. It
+accepts `--file` or `--stdin`, but never both, and requires a valid Gherkin
+document with exactly one scenario or scenario outline. Free text, malformed
+Gherkin, missing scenarios, multiple scenarios, and unreadable files fail with
+an explanatory non-zero result.
+
+The command refreshes only `givn/specs/**/*.feature`. Each index entry keeps
+the normalized scenario content hash, and a matching `(file, title, hash)` entry
+reuses its vector. A changed title/step representation is embedded again and
+deleted permanent entries disappear from the refreshed index. The query is
+embedded with the existing query role and compared with every refreshed
+permanent entry, including same-file entries. A file query excludes only the
+entry with the same normalized file and title; stdin has no identity to remove.
+
+The result is advisory. It reports at most five deterministic embedding-score
+candidates and index/model metadata, or the same data as stable JSON. It does
+not read active changes, invoke BGE/NLI, calculate coverage, classify a pair,
+block a workflow, or write a `.feature` file.
+
 ## 8.6 Filesystem-derived state
 
 There is no state file. Lifecycle state is computed from which files exist:

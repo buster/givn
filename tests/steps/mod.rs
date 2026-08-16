@@ -32,6 +32,8 @@ pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
 pub mod skill_rewrites_steps;
+pub mod spec_explore_permanent_e2e_steps;
+pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
 pub mod spec_retrieval_steps;
 pub mod validate_artifact_id_input_steps;
@@ -44,6 +46,8 @@ pub struct GivnWorld {
     env: Option<common::TestEnv>,
     /// Captured stdout/stderr/exit of the last `givn` invocation.
     last_output: Option<Output>,
+    /// Output from the previous command in a parity scenario.
+    pub(crate) previous_output: Option<Output>,
     /// The change id parsed from the last `givn new <id>` command, for steps
     /// that refer to "the proposal.md" without naming the path.
     last_change_id: Option<String>,
@@ -66,6 +70,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_embedder: Option<String>,
     /// Optional pair-reranker backend override for the current subprocess.
     pub(crate) retrieval_reranker: Option<String>,
+    /// Snapshot of permanent feature files for non-mutation assertions.
+    pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
 }
 
 // --- helpers ---------------------------------------------------------------

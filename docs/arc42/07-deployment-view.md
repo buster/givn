@@ -62,6 +62,8 @@ runtimes.
 
 Per-project footprint is created by `givn init` (see chapter 8.4 for the layout).
 No global config directory is used (NFR-3: all config in the project `givn/`).
+Permanent exploration uses the same feature-enabled local authoring build as
+`spec index` and `spec search`; it adds no service, port, or deployment artifact.
 When retrieval is enabled, `givn/.spec-index.json`, the embedding model cache,
 and the separate `givn/.spec-reranker-cache/` are project-local and generated.
 Interactive search remains advisory; review additionally runs the local
