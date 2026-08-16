@@ -259,6 +259,30 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
         }
     }
 
+    for examples in &scenario.examples {
+        let clean_tags = strip_givn_tags(&examples.tags);
+        if !clean_tags.is_empty() {
+            let tags: Vec<String> = clean_tags.iter().map(|tag| format!("@{tag}")).collect();
+            out.push_str(&format!("    {}\n", tags.join(" ")));
+        }
+        out.push_str("    Examples");
+        if let Some(name) = examples.name.as_deref().filter(|name| !name.is_empty()) {
+            out.push_str(&format!(": {name}"));
+        }
+        out.push('\n');
+        if let Some(description) = examples.description.as_deref() {
+            for line in description.lines() {
+                out.push_str(&format!("      {line}\n"));
+            }
+        }
+        if let Some(table) = &examples.table {
+            for row in &table.rows {
+                let cells: Vec<&str> = row.iter().map(|cell| cell.as_str()).collect();
+                out.push_str(&format!("      | {} |\n", cells.join(" | ")));
+            }
+        }
+    }
+
     out
 }
 
@@ -614,5 +638,36 @@ Feature: Brand new capability
         assert!(result.starts_with("Feature: Brand new capability\n"));
         assert!(!result.contains("(merged)"));
         assert!(result.contains("First scenario"));
+    }
+
+    #[test]
+    fn added_scenario_keeps_outline_examples() {
+        let delta_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario Outline: User resets password
+    Given a user named <name>
+    When they request a reset
+    Then they receive a reset email
+
+    Examples: users
+      | name |
+      | Ada  |
+"#;
+        let feature = parse_str(delta_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas(None, &[delta], "Delta").unwrap();
+        assert!(
+            result.contains("Scenario Outline: User resets password"),
+            "{result}"
+        );
+        assert!(result.contains("Examples: users"), "{result}");
+        assert!(result.contains("| name |"), "{result}");
+        assert!(result.contains("| Ada |"), "{result}");
     }
 }
