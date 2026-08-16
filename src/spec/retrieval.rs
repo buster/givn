@@ -163,6 +163,7 @@ struct SemanticCandidate {
     score: f32,
     candidate_id: String,
     classification: String,
+    rationale: Option<String>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -328,15 +329,23 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let delta_root = delta_specs_path(&change_dir, change_id)?;
     let refresh = refresh_index(root)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
-    let candidates = semantic_candidates(root, &refresh.index, &delta)?;
+    let report_path = change_dir.join("semantic-review.md");
+    let mut candidates = semantic_candidates(root, &refresh.index, &delta)?;
+    apply_prior_classifications(&report_path, &mut candidates)?;
     let report = render_semantic_report(change_id, &candidates);
-    write_semantic_report(&change_dir.join("semantic-review.md"), &report)?;
-    if candidates.is_empty() {
+    write_semantic_report(&report_path, &report)?;
+    let unresolved = candidates
+        .iter()
+        .filter(|candidate| {
+            candidate.classification == "UNCERTAIN" || candidate.rationale.is_none()
+        })
+        .count();
+    if unresolved == 0 {
         return Ok(());
     }
     bail!(
         "semantic review blocked: {} candidate(s) remain UNCERTAIN; classify every candidate in semantic-review.md",
-        candidates.len()
+        unresolved
     )
 }
 
@@ -579,12 +588,84 @@ fn semantic_candidate(
         score: score_text.parse().unwrap_or(score),
         candidate_id,
         classification: "UNCERTAIN".to_string(),
+        rationale: None,
     }
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]) -> Result<()> {
+    let Ok(content) = fs::read_to_string(path) else {
+        return Ok(());
+    };
+    let mut current_id: Option<String> = None;
+    let mut current_classification: Option<String> = None;
+    let mut current_rationale: Option<String> = None;
+    let mut current_left_hash: Option<String> = None;
+    let mut current_right_hash: Option<String> = None;
+    let mut prior = BTreeMap::new();
+    for line in content.lines() {
+        if let Some(value) = line.strip_prefix("- candidate_id: ") {
+            if let (Some(id), Some(classification), Some(rationale), Some(left), Some(right)) = (
+                current_id.take(),
+                current_classification.take(),
+                current_rationale.take(),
+                current_left_hash.take(),
+                current_right_hash.take(),
+            ) {
+                if !prior.contains_key(&id) {
+                    prior.insert(id, (classification, rationale, left, right));
+                }
+            }
+            current_id = Some(value.trim().to_string());
+        } else if let Some(value) = line.strip_prefix("- classification: ") {
+            current_classification = Some(value.trim().to_string());
+        } else if let Some(value) = line.strip_prefix("- rationale: ") {
+            let value = value.trim();
+            if value != "null" && !value.is_empty() {
+                current_rationale = Some(value.trim_matches('"').to_string());
+            }
+        } else if let Some(value) = line.strip_prefix("- left_evidence_hash: ") {
+            current_left_hash = Some(value.trim().to_string());
+        } else if let Some(value) = line.strip_prefix("- right_evidence_hash: ") {
+            current_right_hash = Some(value.trim().to_string());
+        }
+    }
+    if let (Some(id), Some(classification), Some(rationale), Some(left), Some(right)) = (
+        current_id,
+        current_classification,
+        current_rationale,
+        current_left_hash,
+        current_right_hash,
+    ) {
+        if !prior.contains_key(&id) {
+            prior.insert(id, (classification, rationale, left, right));
+        }
+    }
+    for candidate in candidates {
+        let Some((classification, rationale, left, right)) = prior.get(&candidate.candidate_id)
+        else {
+            continue;
+        };
+        if matches!(
+            classification.as_str(),
+            "DUPLIKAT" | "VARIANTE" | "VALID-BOUNDARY"
+        ) && left == &candidate.left.evidence_hash
+            && right == &candidate.right.evidence_hash
+            && !rationale.is_empty()
+        {
+            candidate.classification = classification.clone();
+            candidate.rationale = Some(rationale.clone());
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> String {
-    let status = if candidates.is_empty() {
+    let status = if candidates
+        .iter()
+        .all(|candidate| candidate.classification != "UNCERTAIN" && candidate.rationale.is_some())
+    {
         "PASS"
     } else {
         "BLOCKED"
@@ -595,10 +676,15 @@ fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> 
     );
     for (index, candidate) in candidates.iter().enumerate() {
         report.push_str(&format!(
-            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: null\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
+            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: {}\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
             index + 1,
             candidate.candidate_id,
             candidate.classification,
+            candidate
+                .rationale
+                .as_deref()
+                .map(|value| format!("\"{}\"", value.replace('"', "\\\"")))
+                .unwrap_or_else(|| "null".to_string()),
             candidate.scope,
             candidate.left.scope,
             candidate.left.file,

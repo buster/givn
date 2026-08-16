@@ -104,7 +104,7 @@ Feature: Generate the semantic review report
     And the permanent index structural snapshot still contains only permanent entries
     And the permanent index contains no delta vectors, classifications, or report state
 
-  @givn.added @wip
+  @givn.added
   Scenario: A complete classification allows change review and survives regeneration
     Given a project prepared for semantic review with a similar active delta
     When the user runs `givn check review --change running-change`
