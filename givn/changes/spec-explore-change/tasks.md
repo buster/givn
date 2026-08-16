@@ -211,19 +211,22 @@ in its commit.
 - [x] REFACTOR: keep missing-change validation separate from delta parsing and
       rerun the targeted command. Evidence: after `cargo fmt --all`, targeted
       run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): A missing change is rejected without changing the permanent index`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): A missing change is rejected without changing the permanent index`
+      Hash: `bcff09f`
 
 ### A change without a specs directory is rejected without changing the permanent index
 
-- [ ] RED: remove only this scenario's `@wip`, bind strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: require the change's specs directory before refresh and report the
+- [x] RED: remove only this scenario's `@wip`, bind strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1
+      failed)`; the missing-specs assertion panicked with `not implemented`.
+- [x] GREEN: require the change's specs directory before refresh and report the
       existing delta-path error with the change id. Production files:
       `src/spec/retrieval.rs`, `tests/steps/spec_explore_change_steps.rs`.
-      Evidence: 
-- [ ] REFACTOR: reuse `delta_specs_path` and rerun the targeted command.
-      Evidence: 
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `8 steps (8
+      passed)`.
+- [x] REFACTOR: reuse `delta_specs_path` and rerun the targeted command.
+      Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
+      (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): A change without a specs directory is rejected without changing the permanent index`
       Hash: 
 
