@@ -5,7 +5,7 @@
 @givn.delta @spec-explore-change
 Feature: Explore scenarios in the current change
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Change-aware file exploration finds permanent and active change candidates
     Given an end-to-end project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:

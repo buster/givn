@@ -594,10 +594,17 @@ fn print_explore_text(
     println!("Reused {} scenario vectors", refresh.reused);
     println!("Embedded {} new scenario vectors", refresh.embedded);
     for result in results {
-        println!(
-            "rank {}: '{}' (scope {}, source {}, embedding score {:.4})",
-            result.rank, result.title, result.scope, result.file, result.score
-        );
+        if let Some(change) = &result.change {
+            println!(
+                "rank {}: '{}' (scope {}, change {}, source {}, embedding score {:.4})",
+                result.rank, result.title, result.scope, change, result.file, result.score
+            );
+        } else {
+            println!(
+                "rank {}: '{}' (scope {}, source {}, embedding score {:.4})",
+                result.rank, result.title, result.scope, result.file, result.score
+            );
+        }
     }
 }
 
