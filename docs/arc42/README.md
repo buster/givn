@@ -9,10 +9,13 @@ documents focused and reviewable.
 > (change `reverse-engineer-new-command`). All architecture decisions remain
 > binding — see chapter 9.
 
-The semantic retrieval surface currently includes advisory exploration through
-`givn spec explore` over the permanent corpus and an optional request-local
-current-change corpus; review classification and remediation remain later stack
-layers.
+The semantic retrieval surface includes advisory exploration through
+`givn spec explore`, an optional request-local current-change corpus, and the
+blocking E5 `0.9500` semantic review worklist generated only by `givn check
+review --change <id>`. Remediation verification remains a later stack layer;
+the change-local generated report is retained under the archive by the existing
+move, its classification is owned by the agent, and it does not edit feature
+files. A build without retrieval fails this blocking layer rather than passing.
 
 When the `arc42` addon is enabled, completion review also cross-checks durable
 Arc42 facts against the change's design, mapped tasks, and completed
@@ -27,9 +30,9 @@ implementation. See chapter 8.14 and ADR-035.
 | 3 | [Context and Scope](03-context-and-scope.md) | System boundary, external interfaces, in/out of scope |
 | 4 | [Solution Strategy](04-solution-strategy.md) | Key strategic decisions in brief |
 | 5 | [Building Block View](05-building-block-view.md) | Static decomposition: crate, modules, responsibilities |
-| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks), permanent/current-change explore, strict similarity review, archive, eject |
+| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks and semantic report gate), permanent/current-change explore, strict similarity review, archive, eject |
 | 7 | [Deployment View](07-deployment-view.md) | Distribution, install methods, release pipeline |
-| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade engine, Gherkin delta model, TDD loop, coverage gate, skills, similarity gate |
+| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade engine, Gherkin delta model, TDD loop, coverage gate, skills, similarity and semantic review gates |
 | 9 | [Architecture Decisions](09-architecture-decisions.md) | ADRs — every decision from the Q&A, with rationale |
 | 10 | [Quality Requirements](10-quality-requirements.md) | Quality tree and concrete scenarios |
 | 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and planned debt |

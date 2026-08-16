@@ -5,62 +5,64 @@ chapter 5.
 
 ## 6.1 `givn init`
 
-```
-user → cli::init
-  1. detect project root (cwd)
-  2. create givn/ skeleton: specs/, changes/, archive/
-  3. config::render → write documented, versioned givn/config.yaml:
-       - every key present-but-commented with description/default/allowed-values
-       - verify.command uncommented as the sentinel "givn missing-testrunner"
-       - givn_config_version set to the current binary version
-  4. when config.yaml was (re)created: prompt for agent targets (multi-select
-     list: opencode, .agents, .claude; default opencode) and persist the
-     selection as the `skills:` block. Non-interactive (EOF) → default.
-     Re-init on an existing config skips the prompt and keeps the selection.
-  5. skills::render + skills::targets → write each skill template to the
-     configured targets only (default: .opencode/skills/), and each command
-     template to .opencode/commands/ only when opencode is selected.
-     AGENTS.md is intentionally not touched (user-owned)
-  6. print next steps (incl. "set verify.command to your test runner")
-```
+The runtime sequence is:
+
+1. `user` invokes `cli::init`, which detects the project root (`cwd`).
+2. Create the `givn/` skeleton: `specs/`, `changes/`, and `archive/`.
+3. `config::render` writes the documented, versioned `givn/config.yaml`:
+   - Every key is present but commented, with its description, default, and
+     allowed values.
+   - `verify.command` is uncommented as the sentinel `givn missing-testrunner`.
+   - `givn_config_version` is set to the current binary version.
+4. When `config.yaml` is (re)created, prompt for agent targets using a
+   multi-select list (`opencode`, `.agents`, `.claude`; default `opencode`) and
+   persist the selection as the `skills:` block. Non-interactive EOF uses the
+   default. Re-initialization with an existing config skips the prompt and keeps
+   the selection.
+5. `skills::render` and `skills::targets` write each skill template only to the
+   configured targets (default: `.opencode/skills/`), and write each command
+   template to `.opencode/commands/` only when `opencode` is selected.
+   `AGENTS.md` is intentionally not touched because it is user-owned.
+6. Print next steps, including "set verify.command to your test runner".
 
 Idempotent: existing files are not overwritten unless `--force`.
 
 ## 6.2 `givn new <change-id>`
 
-```
-user → cli::new
-  1. validate id:
-       - non-empty
-       - all chars are ASCII lowercase letters, digits, or hyphens
-         (rejects uppercase, underscores, spaces, dots, non-ASCII)
-        - does not start or end with a hyphen
-      (note: a leading-hyphen id passed without `--` is intercepted by clap
-       as an unexpected flag → exit 2, before this validator runs)
-      (note: the empty string `""` is NOT intercepted by clap — it is a valid
-       positional value, so `validate_id` runs and bails with
-       "change id must not be empty" → exit 1, not exit 2)
-  2. compute change_dir = <cwd>/givn/changes/<id>
-  3. if change_dir already exists → bail "change '<id>' already exists at <abs path>"
-  4. if <cwd>/givn/ does not exist → bail "givn/ not found. Run `givn init` first."
-     (the "already exists" check precedes the "not found" check; in practice
-      the already-exists branch is unreachable when givn/ is absent, because
-      its parent cannot exist — see ch.11 TD-5)
-  5. create givn/changes/<id>/
-  6. config::cascade::resolve_template("proposal", "proposal.md"):
-       - project override givn/artifacts/proposal/proposal.md if present
-       - else embedded templates/proposal.md
-       - (else embedded addons/proposal/template.md)
-  7. write the resolved template verbatim to givn/changes/<id>/proposal.md
-     (no placeholder substitution: the embedded template's `{{CHANGE_ID}}`
-      heading is written literally — see ch.11 TD-5)
-  8. print:
-       Created change '<id>'
-         <absolute path to proposal.md>
+The runtime sequence is:
 
-       Next: fill in proposal.md, then run:
-         givn instructions proposal --change <id>
-```
+1. `user` invokes `cli::new` and validates the id:
+   - It is non-empty.
+   - Every character is an ASCII lowercase letter, digit, or hyphen; uppercase
+     letters, underscores, spaces, dots, and non-ASCII characters are rejected.
+   - It does not start or end with a hyphen.
+   - A leading-hyphen id passed without `--` is intercepted by clap as an
+     unexpected flag and exits 2 before this validator runs.
+   - The empty string `""` is not intercepted by clap. It is a valid positional
+     value, so `validate_id` runs and bails with "change id must not be empty",
+     exiting 1 rather than 2.
+2. Compute `change_dir = <cwd>/givn/changes/<id>`.
+3. If `change_dir` already exists, bail with
+   "change '<id>' already exists at <abs path>".
+4. If `<cwd>/givn/` does not exist, bail with
+   "givn/ not found. Run `givn init` first." The already-exists check precedes
+   the not-found check; in practice, the already-exists branch is unreachable
+   when `givn/` is absent because its parent cannot exist (see ch.11 TD-5).
+5. Create `givn/changes/<id>/`.
+6. `config::cascade::resolve_template("proposal", "proposal.md")` resolves
+   the template in this order:
+   - Project override `givn/artifacts/proposal/proposal.md`, if present.
+   - Embedded `templates/proposal.md`.
+   - Embedded `addons/proposal/template.md` as the fallback.
+7. Write the resolved template verbatim to
+   `givn/changes/<id>/proposal.md`. No placeholder substitution occurs, so the
+   embedded template's `{{CHANGE_ID}}` heading is written literally (see ch.11
+   TD-5).
+8. Print:
+   - `Created change '<id>'`.
+   - `<absolute path to proposal.md>`.
+   - `Next: fill in proposal.md, then run:` followed by
+     `givn instructions proposal --change <id>`.
 
 Only `proposal.md` is produced — no `specs/`, `design.md`, `tasks.md`, or
 `review.md`. Exit 0 on success; any bail above exits 1 via the main error
@@ -68,14 +70,17 @@ mapper (clap argument errors exit 2 directly).
 
 ## 6.3 `givn instructions <artifact> --change <id> [--json]`
 
-```
-user/agent → cli::instructions
-  1. config::manifest: load embedded default-manifest.yaml
-  2. config::overlay: apply givn/config.yaml overlay
-  3. resolve artifact node (id, generates, requires, ...)
-  4. config::cascade: resolve `instructions` facet (project file ← embedded)
-  5. emit text, or JSON {id, generates, requires, instruction} when --json
-```
+The runtime sequence is:
+
+1. `user/agent` invokes `cli::instructions`.
+2. `config::manifest` loads the embedded `default-manifest.yaml`.
+3. `config::overlay` applies the `givn/config.yaml` overlay.
+4. Resolve the artifact node, including its id, generated paths, and
+   requirements.
+5. `config::cascade` resolves the `instructions` facet, using the project file
+   before the embedded instruction.
+6. Emit text, or emit JSON `{id, generates, requires, instruction}` when
+   `--json` is supplied.
 
 ## 6.4 `givn lint [path]`
 
@@ -84,37 +89,41 @@ Static check of `.feature` files. Runs **no** tests (that is the test runner,
 (`givn/specs/` + all active change deltas) **excluding `givn/archive/`**;
 explicit paths and `--change` keep their scoped semantics.
 
-```
-user/CI → cli::lint
-  1. collect target .feature files (default: active tree minus archive)
-  2. gherkin::parse each:
-       - parse error            → record (will exit 1)
-       - @wip or PENDING steps  → record (will exit 2)
-  3. tree-wide overlap scan (default scope only): overlap::analysis
-       - duplicate title (hard error, exit 3) — exemptions: removed
-         placeholders; exactly one modified-delta vs. its permanent target
-         in the same capability
-       - shape match (warning; related_scenario hint when facts contradict)
-       - subset (warning), long scenario > 14 steps (warning)
-  4. report findings (prose on stderr, or `--json` on stdout)
-  5. exit code: 1 if any parse error; else 3 if any duplicate title;
-     else 2 if any wip; else 0 (clean)
-```
+The runtime sequence is:
+
+1. `user/CI` invokes `cli::lint` and collects target `.feature` files. The
+   default is the whole active tree minus the archive.
+2. `gherkin::parse` parses each file:
+   - A parse error is recorded and produces exit 1.
+   - `@wip` or `PENDING` steps are recorded and produce exit 2.
+3. In the default scope, `overlap::analysis` performs a tree-wide overlap scan:
+   - A duplicate title is a hard error with exit 3. Exemptions are removed
+     placeholders and exactly one modified delta versus its permanent target in
+     the same capability.
+   - A shape match is a warning, with a `related_scenario` hint when facts
+     contradict.
+   - A subset and a scenario longer than 14 steps are warnings.
+4. Report findings as prose on stderr or as JSON on stdout when `--json` is
+   supplied.
+5. Return exit 1 if any parse error exists; otherwise return 3 if any duplicate
+   title exists, 2 if any WIP finding exists, or 0 for a clean result.
 
 Exit-code precedence: parse error (1) outranks duplicate title (3) outranks
 wip (2) outranks clean (0). Warnings never change the exit code.
 
 ## 6.5 `givn status --change <id>`
 
-```
-user/agent → cli::status
-  1. config::manifest + overlay → load effective manifest
-  2. state: walk artifact graph against filesystem → derive status per artifact
-  3. print artifact checklist (✓ Done / ~ Partial / · Pending / ⊘ Skipped)
-  4. if tasks artifact is Partial, read tasks.md and show next 3 pending
-     task lines (the `[ ]` descriptors)
-  5. print next required artifact, optional pending artifacts
-```
+The runtime sequence is:
+
+1. `user/agent` invokes `cli::status`.
+2. Load the effective manifest from `config::manifest` and its overlay.
+3. Walk the artifact graph against the filesystem with `state`, deriving the
+   status of each artifact.
+4. Print the artifact checklist with `✓ Done`, `~ Partial`, `· Pending`, or
+   `⊘ Skipped` statuses.
+5. If the `tasks` artifact is `Partial`, read `tasks.md` and show its next three
+   pending task lines, identified by `[ ]`.
+6. Print the next required artifact and any optional pending artifacts.
 
 `givn` tracks and reports; it does not drive the per-scenario TDD loop. That loop
 is run by the agent following the instructions, invoking `verify.command` for each
@@ -126,26 +135,81 @@ RED/GREEN. givn *does* run `verify.command` at gate points via hooks — see
 Runs an artifact's `post` hooks (see ch.8.12). This is how givn executes the test
 runner (`verify.command`) at gate points — e.g. after implementation and review.
 
-```
-user/agent/CI → cli::check
-  1. config::manifest + overlay → resolve target artifact(s):
-       - `givn check tasks`  → just the tasks artifact's post hooks
-       - `givn check`        → post hooks of every artifact whose output exists
-  2. hooks: for each post entry (verify | lint | shell):
-       - set GIVN_FEATURES (active change features in dev; givn/specs after archive)
-       - execute; stream output
-  3. if any hook fails (non-zero) and not allow_failure → exit non-zero (gate fails)
-     else → exit 0
+```mermaid
+flowchart TD
+    U["user/agent/CI"] --> C["cli::check"]
+    C --> M["config::manifest + overlay\nresolve target artifact(s)"]
+    M --> T["givn check tasks\nrun tasks post hooks"]
+    M --> A["givn check\nrun hooks for outputs that exist"]
+    T --> H["hooks: verify, lint, or shell\nset GIVN_FEATURES and stream output"]
+    A --> H
+    H --> R{"required hook fails?"}
+    R -- yes --> N["non-zero gate failure"]
+    R -- no --> Z["exit 0"]
 ```
 
 For `givn check review --change <id>` the mandatory review checks run in
-addition (after verify, verify-e2e, and integrity): the **overlap disposition
-gate** — every shape match without fact contradiction involving the change's
-delta needs a disposition row in review.md, every long delta scenario a
-split-or-keep row; the net-delta receipt (added/modified/removed counts) is
-printed on stdout. With `spec-retrieval` compiled, the strict similarity pass
-then refreshes the permanent index and fails on every permanent or projected
-delta pair at or above `0.95`. See 8.8, 8.5a, and ADR-037/ADR-041.
+addition (after verify, verify-e2e, and integrity) in this order:
+
+1. The **overlap disposition gate** requires a disposition row for every shape
+   match without fact contradiction involving the change's delta and a
+   split-or-keep row for every long delta scenario; the net-delta receipt
+   (added/modified/removed counts) is printed on stdout.
+2. The dedicated semantic report gate completely regenerates
+   `givn/changes/<id>/semantic-review.md` from active added/modified delta
+   scenarios. It compares only E5 candidates at or above `0.9500` in
+   delta-to-permanent and delta-to-delta scopes, writes complete endpoint
+   evidence and deterministic facts, carries only valid classifications whose id
+   and full evidence hashes are unchanged, and blocks when any classification is
+   missing, invalid, or `UNCERTAIN`.
+3. With `spec-similarity-gate` compiled (which includes `spec-retrieval`), the
+   existing strict similarity pass then refreshes the permanent index and fails
+   on every permanent or projected delta pair at or above `0.95`. Compiling
+   `spec-retrieval` alone does not enable this strict gate.
+
+The report gate writes its complete blocked report before returning non-zero.
+It does not edit feature files, permanent specs, review dispositions, or the
+permanent index's candidate content beyond the existing permanent-only refresh
+behavior. A malformed or incompatible index is treated as stale, rebuilt from
+the permanent specifications, and followed by semantic review. The rebuilt
+index is checked structurally rather than byte-for-byte and contains no `Delta`
+state, delta vectors, classifications, or report state. Without
+`spec-retrieval`, check review returns the existing retrieval-unavailable error,
+does not falsely pass, and does not create the report. See 8.8, 8.5a, 8.5d,
+ADR-037, ADR-041, and ADR-046.
+
+The semantic report gate does not replace or suppress the existing strict
+similarity gate. A `spec-similarity-gate` build runs that gate after the report
+gate, so a report classification cannot override a strict-gate failure. The
+semantic-report fixture matrix uses `spec-retrieval` without
+`spec-similarity-gate`; the strict-gate behavior remains an existing contract.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant Check as givn check review
+    participant Overlap as structural overlap gate
+    participant Report as semantic report gate
+    participant Delta as active change specs
+    participant Index as permanent E5 index
+    participant Retrieval as existing retrieval gate
+
+    User->>Check: review change
+    Check->>Overlap: run dispositions and net-delta receipt
+    Overlap-->>Check: pass or block
+    Check->>Report: regenerate semantic-review.md
+    Report->>Delta: collect active Added/Modified scenarios
+    Report->>Index: refresh existing permanent entries
+    Report->>Report: compare both scopes, facts, hashes, and ids
+    Report-->>Check: PASS or blocked report
+    alt unresolved classification
+        Check-->>User: non-zero with report path and UNCERTAIN count
+    else all classifications valid
+        Check->>Retrieval: run existing feature-gated retrieval path
+        Retrieval-->>Check: existing result
+        Check-->>User: review result
+    end
+```
 
 Example: after the agent finishes `tasks`, `givn check tasks` runs the configured
 test suite and confirms GREEN before review. With the sentinel default runner, it
@@ -153,74 +217,66 @@ fails loudly until `verify.command` is set.
 
 ## 6.6 `givn archive --change <id>`
 
-```
-user → cli::archive
-  1. config::manifest + overlay → check apply.requires satisfied
-       (tasks complete AND review.md present/PASS) else refuse
-  1b. GATE: run hooks of every apply.requires artifact (e.g. tasks.post + review.post)
-       → typically runs verify.command (the test suite). If any required hook
-         fails (non-zero, no allow_failure), refuse archive and exit non-zero.
-  2. for each delta givn/changes/<id>/specs/**/*.feature:
-       gherkin::delta: read @givn.delta + scenario tags
-       gherkin::merge: into givn/specs/<cap>/<cap>.feature
-         - @givn.added    → append (error if title exists)
-         - @givn.modified → replace by title (error if missing)
-         - @givn.removed  → delete by title (error if missing)
-       strip ALL @givn.* tags from the permanent output
-  3. write merged permanent specs (clean, runnable Gherkin)
-  4. post-merge verify gate:
-       run verify.command against givn/specs/ → if non-zero, rollback and bail
-  5. post-merge verify-e2e gate:
-       if verify.e2e_command is empty AND merged specs contain @e2e → rollback and bail
-         (mirrors per-change hook behaviour: @e2e without a configured runner is an
-          unenforced gap, not an optional one)
-       else if e2e_command is non-empty AND merged specs contain @e2e → run it;
-         if non-zero, rollback and bail
-       else if no @e2e in merged specs → skip silently
-   6. coverage gate (if addons.coverage):
-        run coverage.measure_command from project root with configured path env;
-        validate non-E2E and E2E reports;
-        remove stale coverage.output_path and run coverage.merge_command;
-        validate the freshly produced merged report;
-        update the managed README badges and coverage summary from that report;
-        on any failure, restore specs, README, and coverage files
-   7. move givn/changes/<id>/ → givn/archive/<id>/
-   8. with the retrieval feature, refresh givn/.spec-index.json from the merged
-      permanent tree; without the feature this is a no-op; refresh failure is a
-      visible warning after the archive has already succeeded
-   9. report summary
-```
+The archive runtime sequence is:
+
+1. Load the manifest and confirm that every `apply.requires` artifact is
+   satisfied (`tasks` is complete and `review.md` contains `PASS`). Otherwise,
+   refuse the archive.
+2. Run the hooks of every required artifact, typically `tasks.post` and
+   `review.post`. A required non-zero hook without `allow_failure` blocks the
+   archive.
+3. For each `givn/changes/<id>/specs/**/*.feature`, read the delta tags and
+   merge `@givn.added`, `@givn.modified`, and `@givn.removed` scenarios into the
+   matching permanent feature files. Strip all `@givn.*` tags from the merged
+   output. Any merge precondition failure aborts before partial writes.
+4. Run the post-merge `verify.command` gate against `givn/specs/`; a failure
+   rolls the permanent tree back.
+5. Run the post-merge E2E gate. If merged specs contain `@e2e`, an empty
+   `verify.e2e_command` is an unenforced gap and blocks; a configured command is
+   run and its failure rolls the merge back. If no merged scenario is tagged
+   `@e2e`, the gate is skipped.
+6. If coverage is enabled, run and validate the configured measurement and
+   merge commands, refresh the managed README coverage values, and restore
+   specs, README, and coverage files on any failure.
+7. Move the complete `givn/changes/<id>/` directory to
+   `givn/archive/<id>/`. This existing whole-directory move retains an existing
+   `semantic-review.md` unchanged as historical evidence.
+8. With `spec-retrieval`, refresh `givn/.spec-index.json` from the merged
+   permanent tree. Without the feature this is a no-op; a refresh failure is a
+   visible warning after archive success.
+9. Print the archive summary.
 
 If any merge precondition fails (e.g. modify a missing scenario), archive aborts
 without partial writes.
 
 ## 6.7 `givn eject <artifact>[:facet] | skill:<name> | manifest`
 
-```
-user → cli::eject
-  1. resolve what to eject:
-       - artifact:facet  → assets/templates or instruction for that artifact
-       - skill:<name>    → assets/skills/<name>
-       - manifest        → assets/default-manifest.yaml
-  2. config::embedded: read the default bytes
-  3. write into givn/ at the conventional override path
-       (refuse to overwrite an existing override unless --force)
-  4. print the path now under the user's control
-```
+The runtime sequence is:
+
+1. `user` invokes `cli::eject` and resolves what to eject:
+   - `artifact:facet` selects the assets/templates or instruction for that
+     artifact.
+   - `skill:<name>` selects `assets/skills/<name>`.
+   - `manifest` selects `assets/default-manifest.yaml`.
+2. `config::embedded` reads the default bytes.
+3. Write them into `givn/` at the conventional override path, refusing to
+   overwrite an existing override unless `--force` is supplied.
+4. Print the path now under the user's control.
 
 ## 6.8 `givn skills sync`
 
-```
-user → cli::skills
-  1. skills::render all skill templates (cascade-resolved)
-  2. config::overlay %load_skills_targets → resolve configured targets
-     (default: opencode)
-  3. skills::targets:
-       - write each skill to the configured targets only
-       - write .opencode/commands/<name>.md only when opencode is selected
-       - AGENTS.md is intentionally not touched (user-owned)
-  (Used after a binary upgrade or manifest change to refresh generated agent files.)
-```
+The runtime sequence is:
+
+1. `user` invokes `cli::skills`.
+2. `skills::render` renders all skill templates after resolving their cascade.
+3. `config::overlay` uses `%load_skills_targets` to resolve configured targets,
+   defaulting to `opencode`.
+4. `skills::targets` writes each skill only to the configured targets, writes
+   `.opencode/commands/<name>.md` only when `opencode` is selected, and leaves
+   `AGENTS.md` untouched because it is user-owned.
+
+This is used after a binary upgrade or manifest change to refresh generated
+agent files.
 
 ## 6.11 `givn status [--change <id>] [--json]`
 
@@ -228,21 +284,21 @@ user → cli::skills
 files exist — it computes completion per artifact, derives the next required
 step, and surfaces optional artifacts still pending.
 
-```
-user/agent/command → cli::status
-  1. config::manifest + overlay → load effective manifest
-  2. state::topological_sort → order artifacts by requires DAG
-  3. for each artifact: check generates paths against filesystem
-       - tasks.md: also parse [x]/[ ] checkboxes
-       - review.md: also detect REVIEW: PASS marker
-     → ArtifactStatus: Done | Partial | Pending
-  4. derive:
-       next_required  = first non-optional artifact not yet Done
-       optional_pending = optional artifacts still Pending
-       all_required_done = all non-optional artifacts are Done
-  5. --json: structured output for machine consumption by commands/scripts
-     default: human-readable checklist with next step instruction
-```
+The runtime sequence is:
+
+1. `user/agent/command` invokes `cli::status`.
+2. `config::manifest` and its overlay load the effective manifest.
+3. `state::topological_sort` orders artifacts by the `requires` DAG.
+4. For each artifact, check generated paths against the filesystem:
+   - For `tasks.md`, also parse `[x]` and `[ ]` checkboxes.
+   - For `review.md`, also detect the `REVIEW: PASS` marker.
+   - Derive `ArtifactStatus` as `Done`, `Partial`, or `Pending`.
+5. Derive `next_required` as the first non-optional artifact that is not yet
+   `Done`, `optional_pending` as optional artifacts still `Pending`, and
+   `all_required_done` as whether every non-optional artifact is `Done`.
+6. With `--json`, emit structured output for machine consumption by
+   commands/scripts; otherwise emit the human-readable checklist with its next
+   step instruction.
 
 This is the mechanism commands use to discover both the workflow sequence
 and the current position within it at runtime — without hardcoding artifact
@@ -260,18 +316,21 @@ The retrieval and similarity-gate flow is:
 2. `givn spec search "<query>"` embeds an interactive query with the `query:`
    role, ranks candidates by cosine similarity, and prints the top results. This
    authoring command remains advisory.
-3. `givn spec review --change <id>` refreshes the permanent index, retrieves the
-   top-K added/modified delta neighbours with the `passage:` role, and compares
-   them with the pre-change permanent tree.
-4. The same review projects the permanent tree after applying the delta's
-   capability-tagged added, modified, and removed scenarios, retrieves top-K
-   cross-feature pairs, and jointly scores each pair in both directions with the
+3. With `spec-retrieval` compiled, `givn spec review --change <id>` refreshes the
+   permanent index, retrieves the top-K added/modified delta neighbours with the
+   `passage:` role, and compares them with the pre-change permanent tree. With
+   retrieval alone this remains the existing advisory path.
+4. Only when `spec-similarity-gate` is compiled (it includes `spec-retrieval`)
+   does the same review project the permanent tree after applying the delta's
+   capability-tagged added, modified, and removed scenarios, retrieve top-K
+   cross-feature pairs, and jointly score each pair in both directions with the
    local multilingual reranker.
-5. The averaged reranker raw logit is compared with the binary-fixed reranker
-   boundary. A candidate prints its embedding score, raw reranker score,
-   diagnostic sigmoid, and remediation (`MERGE` means delete the duplicate;
-   `KEEP-AS-BOUNDARY` means rewrite the scenario below the reranker boundary),
-   then exits non-zero. A review note cannot suppress the candidate.
+5. In the `spec-similarity-gate` build, the averaged reranker raw logit is
+   compared with the binary-fixed reranker boundary. A candidate prints its
+   embedding score, raw reranker score, diagnostic sigmoid, and remediation
+   (`MERGE` means delete the duplicate; `KEEP-AS-BOUNDARY` means rewrite the
+   scenario below the reranker boundary), then exits non-zero. A review note
+   cannot suppress the candidate.
 6. After a successful archive, the change is moved to `givn/archive/` and the
    permanent index is refreshed. The refresh is best-effort and feature-gated;
    it never runs before a merge gate that could roll the permanent tree back.
@@ -348,18 +407,94 @@ collection complete before permanent refresh, so unsafe ids, missing changes,
 missing specs directories, and malformed delta features fail without a rejected
 request writing the index.
 
+### 6.8d Blocking semantic review report
+
+The semantic report is a change-local generated document under the active
+change, not a lifecycle artifact and not a permanent specification. The
+existing archive move retains it under `givn/archive/<id>/` as historical
+evidence; archive implementation is outside this slice. Its candidate corpus
+contains active `Added` and `Modified` scenarios from the requested change,
+including scenarios nested under `Rule:`. Each active delta is compared with
+permanent scenarios (`delta-to-permanent`) and with other active deltas in the
+same change (`delta-to-delta`) only when the existing E5 score is at least
+`0.9500`. Removed scenarios and permanent-permanent pairs are never reported.
+
+For a Modified scenario in a delta-to-permanent comparison, only the own
+projected `(target file, title)` endpoint is excluded. Other scenarios in that
+target file remain eligible. Delta-to-delta endpoints are canonicalized into one
+pair. Candidate ordering is ascending lexical scope (`delta-to-delta` before
+`delta-to-permanent`), descending score, left endpoint tuple, right endpoint
+tuple, then candidate id. Scores have exactly four decimals in `0.9500` through
+`1.0000`;
+candidate, content, and evidence hashes are exactly 16 lowercase hexadecimal
+characters; timestamps and environment fields are forbidden.
+
+The report wire grammar is fixed. It is UTF-8 with LF endings, no BOM, exactly
+one final newline, and no trailing blank line. Its first lines are exactly
+`# Semantic Review`, `Report schema version: 1`, `Change: <json-string>`,
+`Status: PASS|BLOCKED`, and `Candidate count: <canonical-unsigned-integer>`.
+For non-empty reports, candidate blocks are separated by one blank line and
+use contiguous `## Candidate <ordinal>` headers. Each block contains exactly
+the allowed fields in the design-defined order, with no unknown or omitted
+fields. Strings, arrays, step records, and table cells use compact JSON
+serialization; `null` is the only absent representation. The parser rejects
+bare `absent`, unknown fields, invalid field order, invalid JSON, timestamps,
+and environment values.
+
+Each candidate has a deterministic identity derived from the report schema,
+scope, canonical endpoint tuples, and both endpoint evidence hashes. Each
+endpoint records its scope, normalized project-relative path, title, all
+normalized steps, background steps, table contents, delta operation, projected
+target identity, content hash, full evidence hash, E5 model id, index version,
+fingerprint/evidence schema versions, and report schema version. The canonical
+endpoint representation orders feature `Background`, applicable `Rule`
+`Background`, and scenario steps, retaining every step docstring and data-table
+row and cell in source order. It also records the available deterministic
+`Fingerprint` facts, including fact contradiction. The existing E5 passage-text
+input remains a separate representation and is not replaced by the evidence
+serialization. Facts are evidence only; they do not assign a classification.
+
+The allowed classifications are only `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`,
+and `UNCERTAIN`. A missing or invalid classification is blocking, as is
+`UNCERTAIN`. A high-score seemingly-unrelated candidate requires vocabulary
+sharpening or one of these allowed classifications. Vocabulary sharpening
+includes making its invariant explicit; `UNCERTAIN` is allowed in the report
+grammar but remains blocking. The strict prior-report parser accepts only the
+exact report grammar, fixed field order, valid ids/scopes/scores/hashes, unique
+current entries, and matching schema. Missing, invalid, duplicate, stale, or
+structurally malformed prior entries are discarded. Status and candidate count
+are recomputed; new candidates start `UNCERTAIN`. A classification carries
+forward only when the candidate id and both complete endpoint evidence hashes
+match exactly. The report is written completely through a same-directory
+temporary file and atomic rename before a blocked result is returned.
+
+The dedicated semantic report entrypoint is called only by blocking `givn check
+review --change <id>`. The existing advisory `givn spec review --change <id>`
+does not create this report and retains its behavior. If the permanent index is
+missing, malformed, stale, or incompatible, refresh treats it as stale, rebuilds
+a permanent-only index from the permanent specifications, and semantic review
+continues. The rebuilt index contains no `Delta` state, delta vectors,
+classifications, or report state. Without `spec-retrieval`, blocking check
+review returns the existing retrieval-unavailable error, exits non-zero, and
+creates no report. Givn never edits feature files, permanent specs, `review.md`,
+or disposition rows. The acceptance surface has one CLI interaction inventory
+entry and exactly one `@e2e` scenario; that driver starts the compiled CLI
+subprocess and asserts its exit status and generated report output.
+
 ## 6.9 Running the test runner on a fresh project (sentinel)
 
 When a project has not configured `verify.command`, the manifest's default points
 at the sentinel:
 
-```
-agent/user runs the configured verify.command (= "givn missing-testrunner")
-  → cli::missing_testrunner
-      1. print "no test runner configured" + how to set verify.command
-      2. show per-language examples (cargo/mvn/cucumber-js/behave/go test/...)
-      3. exit non-zero (treated as "not GREEN" by CI and agents)
-```
+The runtime sequence is:
+
+1. `agent/user` runs the configured `verify.command`, whose sentinel value is
+   `givn missing-testrunner`.
+2. `cli::missing_testrunner` prints "no test runner configured" and explains
+   how to set `verify.command`.
+3. It shows per-language examples such as cargo, mvn, cucumber-js, behave, and
+   go test.
+4. It exits non-zero, which CI and agents treat as "not GREEN".
 
 Note: `givn lint` (static Gherkin check) is unaffected — it still runs and
 returns 0/1/2. Only the *test runner* (`verify.command`) is the sentinel until
@@ -368,12 +503,13 @@ configured. The two are complementary: `givn lint` checks the spec is well-forme
 
 ## 6.9a `givn completions <shell>`
 
-```
-user → main.rs (inline handler, no separate cli module)
-  1. clap_complete::generate(shell, &mut Cli::command(), "givn", stdout)
-     → emits a shell-specific completion script to stdout
-  2. exit 0
-```
+The runtime sequence is:
+
+1. `user` invokes the inline handler in `main.rs`; there is no separate CLI
+   module.
+2. `clap_complete::generate(shell, &mut Cli::command(), "givn", stdout)` emits
+   a shell-specific completion script to stdout.
+3. Exit 0.
 
 The script is printed to stdout so the user can eval it, pipe it, or redirect
 it to a completions file. No filesystem writes; no project config required.
@@ -396,25 +532,23 @@ givn completions fish > ~/.config/fish/completions/givn.fish
 
 ## 6.9b `givn addons list / enable / disable`
 
-```
-user → cli::addons
+The runtime sequence is:
 
-  list:
-    1. read givn/config.yaml (line scan) → parse which addons are enabled
-    2. print each known addon with [enabled] / [disabled] status + description
-
-  enable <name>:
-    1. validate name against known addon registry (currently: arc42)
-    2. read givn/config.yaml; locate or create the addons: block
-    3. write addons.<name>: true (line-based edit; preserves all comments
-       and other user overrides)
-    4. print confirmation + next-step hint
-       → givn status now shows arc42-docs in the workflow (optional, after design)
-
-  disable <name>:
-    1. same as enable but writes false
-    2. existing docs/arc42/ files are not deleted
-```
+1. `user` invokes `cli::addons`.
+2. For `list`:
+   - Read `givn/config.yaml` with a line scan and parse which addons are enabled.
+   - Print each known addon with its `[enabled]` or `[disabled]` status and
+     description.
+3. For `enable <name>`:
+   - Validate the name against the known addon registry, currently `arc42`.
+   - Read `givn/config.yaml` and locate or create the `addons:` block.
+   - Write `addons.<name>: true` with a line-based edit that preserves all
+     comments and other user overrides.
+   - Print confirmation and a next-step hint; `givn status` then shows
+     `arc42-docs` in the workflow as an optional artifact after design.
+4. For `disable <name>`:
+   - Perform the same steps as enable, but write `false`.
+   - Do not delete existing `docs/arc42/` files.
 
 Enabling an addon is equivalent to adding the artifact manually in the overlay —
 `addons: { arc42: true }` expands to the `arc42-docs` artifact definition during
@@ -423,18 +557,20 @@ edit `givn/config.yaml` directly.
 
 ## 6.10 `givn upgrade`
 
-```
-user → cli::upgrade
-  1. read givn/config.yaml: parse user overrides + givn_config_version
-  2. config::render: re-render the managed (commented) documentation scaffold
-       from the current binary's template
-  3. merge: preserve every user-uncommented key/value verbatim; refresh only
-       the managed comment regions; keep removed/renamed keys with a note
-  4. set givn_config_version to the current binary version
-  5. write givn/config.yaml (ordinary file write)
-  6. optionally run `skills sync` (or advise it)
-  7. print summary; user reviews via `git diff` and resolves conflicts in git
-```
+The runtime sequence is:
+
+1. `user` invokes `cli::upgrade`.
+2. Read `givn/config.yaml`, parsing user overrides and `givn_config_version`.
+3. `config::render` re-renders the managed, commented documentation scaffold
+   from the current binary's template.
+4. Merge the result while preserving every user-uncommented key/value verbatim,
+   refreshing only managed comment regions, and retaining removed or renamed
+   keys with a note.
+5. Set `givn_config_version` to the current binary version.
+6. Write `givn/config.yaml` with an ordinary file write.
+7. Optionally run `skills sync`, or advise the user to run it.
+8. Print a summary; the user reviews it with `git diff` and resolves conflicts
+   in git.
 
 Idempotent: running `givn upgrade` twice on the same binary produces no further
 diff. Never deletes user-set values.

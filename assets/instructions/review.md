@@ -201,6 +201,16 @@ threshold, record a **split-or-keep** decision. For every removed+added pair,
 record whether the new scenario supersedes the removed one or is unrelated.
 These decisions are review evidence, not score thresholds.
 
+## Semantic review classifications
+
+When `semantic-review.md` exists, classify every generated candidate as
+`DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` and provide a rationale. `UNCERTAIN`
+or a missing rationale blocks `givn check review --change <id>`. There is no
+`UNRELATED` escape classification. If a high-score pair appears to describe
+different behavior, sharpen the overloaded domain terms and observable
+invariants, then rerun the report. Do not use a score or an unexplained label
+to dismiss the candidate.
+
 ## Sign-off checklist
 
 - Fabrication audit: clean (or all findings remediated).

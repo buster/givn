@@ -52,6 +52,7 @@ flowchart LR
 | FR-25 | Use local retrieve-then-rerank scoring to distinguish true duplicate scenarios from valid boundary candidates during semantic review. |
 | FR-26 | Let an author explore exactly one complete draft scenario against all permanent scenarios from a file or stdin, with human-readable or stable JSON results, before creation. |
 | FR-27 | Let an author optionally explore that complete draft against active scenarios in a named current change, from a file or stdin, with source-labeled results and no persistence of delta candidates. |
+| FR-28 | During blocking `givn check review --change <id>`, generate a complete change-local semantic review worklist for active added/modified delta candidates at the fixed E5 `0.9500` boundary, require an agent classification for every candidate, emit a deterministic report with exact headers/field order and complete source-ordered endpoint evidence, leave feature files untouched, and retain the generated report as archive evidence. |
 
 ### Non-functional requirements (top)
 
@@ -74,8 +75,11 @@ Top three quality goals, in priority order (see chapter 10 for scenarios):
 | 3 | **Upgradeability** | Updating the binary must never break or overwrite project config. Defaults live in the binary; project files always win. |
 
 Secondary goals: correctness of the Gherkin merge (data integrity of the spec),
-AI-agent ergonomics (standards-aligned skill/rule generation), and consistency
-of that guidance across instructions, skills, commands, and project overrides.
+AI-agent ergonomics (standards-aligned skill/rule generation), consistency of
+that guidance across instructions, skills, commands, and project overrides, and
+semantic-review integrity (a complete deterministic worklist whose full endpoint
+evidence invalidates stale decisions without allowing the gate to edit feature
+files, while the permanent index remains structurally permanent-only).
 
 Scenario exploration adds a secondary agent-ergonomics goal: a draft comparison
 must be deterministic, advisory, and non-mutating so an author can inspect
@@ -88,9 +92,9 @@ changing the permanent specification.
 | --- | --- |
 | Tool author (Sebastian) | Standalone tool extracted from the OpenSpec fork; owns roadmap. |
 | OSS developers (end users) | Easy install; customise workflow without forking; clear docs. |
-| AI coding agents | Consume `givn instructions` and generated skills. `AGENTS.md` (if present) is user-authored. |
+| AI coding agents | Consume `givn instructions` and generated skills, inspect and classify `semantic-review.md`, and edit artifacts and code. `AGENTS.md` (if present) is user-authored. |
 | Contributors | Readable Rust; clear architecture (this document). |
-| CI systems | Run `givn lint` (static) and the project test runner (`verify.command`) deterministically. |
+| CI systems | Run `givn lint` (static), the project test runner (`verify.command`), and blocking review gates deterministically. |
 
 ## 1.5 Repository-owned acceptance
 
