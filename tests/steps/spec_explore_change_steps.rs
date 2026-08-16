@@ -140,6 +140,31 @@ Feature: current provider behavior
     world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given(
+    "a project prepared for current-change exploration with an active added scenario in a one-scenario delta file"
+)]
+fn active_added_single_scenario_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    clear_specs(&env);
+    write_project_path(&env, "givn/specs/provider.feature", PERMANENT_CORPUS);
+    write_project_path(
+        &env,
+        "givn/changes/current-change/specs/current-change/added-provider.feature",
+        "@givn.delta @current-change
+Feature: current provider behavior
+
+  @givn.added
+  Scenario: Current change rejects an unknown provider
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+",
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
 #[given("the permanent exploration index is built")]
 fn build_permanent_exploration_index(world: &mut GivnWorld) {
     let env = world
