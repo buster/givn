@@ -227,16 +227,21 @@ givn skills sync
 - [x] REFACTOR: keep score formatting separate from raw ordering and rerun.
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Equal-score candidates use deterministic tie ordering`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Equal-score candidates use deterministic tie ordering`
+      Hash: `c8673a7`
 
 ### Changing a candidate scenario invalidates its previous classification
 
-- [ ] RED: target active endpoint content invalidation with strict stubs. Evidence: 
-- [ ] GREEN: recompute complete content/evidence hashes and reset the changed
+- [x] RED: target active endpoint content invalidation with strict stubs. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the hash assertion panicked
+      with `not implemented`.
+- [x] GREEN: recompute complete content/evidence hashes and reset the changed
       candidate to UNCERTAIN. Production files: `src/spec/retrieval.rs`, tests
-      step files. Evidence: 
-- [ ] REFACTOR: preserve unchanged candidates and rerun. Evidence: 
+      step files. Evidence: targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
+- [x] REFACTOR: preserve unchanged candidates and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Changing a candidate scenario invalidates its previous classification`
       Hash: 
 

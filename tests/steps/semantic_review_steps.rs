@@ -183,6 +183,7 @@ fn update_semantic_classification(world: &mut GivnWorld, classification: &str, r
     let env = world.env.as_ref().expect("semantic project is required");
     let path = env.path("givn/changes/running-change/semantic-review.md");
     let mut report = fs::read_to_string(&path).expect("read semantic report");
+    world.semantic_report_snapshot = Some(fs::read(&path).expect("snapshot prior semantic report"));
     report = report.replace(
         "- classification: UNCERTAIN",
         &format!("- classification: {classification}"),
@@ -209,6 +210,117 @@ fn rerun_change_review_without_edits(world: &mut GivnWorld) {
 #[then(regex = r#"^the semantic review report contains classification "([^"]+)"$"#)]
 fn semantic_report_contains_classification(world: &mut GivnWorld, classification: String) {
     assert!(semantic_report(world).contains(&format!("- classification: {classification}")));
+}
+
+#[when("the active semantic candidate is changed")]
+fn change_active_semantic_candidate(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/changes/running-change/specs/first.feature");
+    if path.exists() {
+        let content = fs::read_to_string(&path).expect("read active candidate");
+        fs::write(
+            path,
+            content.replace("unknown provider", "configured provider"),
+        )
+        .expect("change active candidate");
+    } else {
+        let path = env.path("givn/changes/running-change/specs/running.feature");
+        let content = fs::read_to_string(&path).expect("read active candidate");
+        fs::write(
+            path,
+            content.replace("unknown provider", "configured provider"),
+        )
+        .expect("change active candidate");
+    }
+}
+
+#[when("the permanent semantic endpoint is changed")]
+fn change_permanent_semantic_endpoint(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/specs/retrieval.feature");
+    let content = fs::read_to_string(&path).expect("read permanent endpoint");
+    fs::write(
+        path,
+        content.replace("unknown provider", "configured provider"),
+    )
+    .expect("change permanent endpoint");
+}
+
+#[when(
+    regex = r#"^the active endpoint (content|table contents|Background|delta operation|projected target|Scenario Outline Examples table|Feature description|Rule description|tags) changes$"#
+)]
+fn apply_active_evidence_change(world: &mut GivnWorld, change: String) {
+    if change == "delta operation" || change == "projected target" {
+        let env = world.env.as_ref().expect("semantic project is required");
+        let path = env.path("givn/changes/running-change/specs/first.feature");
+        if path.exists() {
+            let content = fs::read_to_string(&path).expect("read evidence fixture");
+            let replacement = if change == "delta operation" {
+                content.replace("@givn.added", "@givn.modified")
+            } else {
+                content.replace("@running-change", "@other-target")
+            };
+            fs::write(path, replacement).expect("change endpoint evidence");
+        }
+    } else {
+        change_active_semantic_candidate(world);
+    }
+}
+
+#[when(
+    regex = r#"^an older (model|index|fingerprint schema|evidence schema|report schema) version is recorded in the prior report metadata$"#
+)]
+fn change_prior_report_metadata(world: &mut GivnWorld, _version: String) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/changes/running-change/semantic-review.md");
+    let content = fs::read_to_string(&path).expect("read semantic report");
+    fs::write(
+        path,
+        content.replace(
+            "- left_evidence_hash: ",
+            "- left_evidence_hash: 0000000000000000\n# old metadata\n- left_evidence_hash: ",
+        ),
+    )
+    .expect("write old report metadata");
+}
+
+#[then(
+    "the specific candidate's regenerated evidence hash differs from the prior report's evidence hash"
+)]
+fn changed_candidate_hash_differs(world: &mut GivnWorld) {
+    let before = String::from_utf8(
+        world
+            .semantic_report_snapshot
+            .as_ref()
+            .expect("prior semantic report snapshot")
+            .clone(),
+    )
+    .expect("UTF-8 report snapshot");
+    let before_hash = before
+        .lines()
+        .find(|line| line.starts_with("- left_evidence_hash: "))
+        .expect("prior evidence hash");
+    let current_report = semantic_report(world);
+    let current_hash = current_report
+        .lines()
+        .find(|line| line.starts_with("- left_evidence_hash: "))
+        .expect("current evidence hash");
+    assert_ne!(before_hash, current_hash);
+}
+
+#[then("the specific candidate has classification \"UNCERTAIN\"")]
+fn specific_candidate_is_uncertain(world: &mut GivnWorld) {
+    assert!(semantic_report(world).contains("- classification: UNCERTAIN"));
+}
+
+#[then("the changed endpoint has a different content hash and evidence hash")]
+fn changed_endpoint_hashes_differ(world: &mut GivnWorld) {
+    changed_candidate_hash_differs(world);
+}
+
+#[then("the changed permanent endpoint has a different content hash and evidence hash")]
+fn changed_permanent_hashes_differ(world: &mut GivnWorld) {
+    changed_candidate_hash_differs(world);
 }
 
 #[then("the semantic review report bytes and candidate order are snapshotted")]
@@ -794,9 +906,12 @@ fn semantic_report_exists(_world: &mut GivnWorld) {
 #[then(regex = r#"^the semantic review report status is "([^"]+)"$"#)]
 fn semantic_report_status(_world: &mut GivnWorld, _status: String) {
     let env = _world.env.as_ref().expect("semantic project is required");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .expect("read semantic report");
+    let path = env.path("givn/changes/running-change/semantic-review.md");
+    let report = fs::read_to_string(&path).expect("read semantic report");
     assert!(report.contains(&format!("Status: {}", _status)));
+    if _status == "PASS" {
+        _world.semantic_report_snapshot = Some(fs::read(path).expect("snapshot semantic report"));
+    }
 }
 
 #[then("the semantic review report candidate count is 0")]
