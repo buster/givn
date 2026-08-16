@@ -21,10 +21,11 @@ must distinguish a true duplicate from a valid boundary such as text output
 versus JSON output or two different commands with similar setup.
 
 Review checks the permanent scenario tree and the current change against the
-permanent tree. A true duplicate remains a review failure until the duplicate
-is deleted. A valid but overly similar boundary remains a review failure until
-the scenario is rewritten clearly enough for the pair assessment to fall below
-the selected reranker boundary.
+permanent tree. A true duplicate remains a review failure until the redundant
+scenario is deleted. A value or command variant of the same invariant must be
+merged or parameterised into one scenario. A genuinely different boundary
+remains a review failure until the scenario is rewritten clearly enough for the
+pair assessment to fall below the selected reranker boundary.
 
 The pair model and its decision boundary are local, versioned binary behavior.
 No project setting, CLI flag, environment variable, or review note may weaken

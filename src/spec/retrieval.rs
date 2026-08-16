@@ -224,7 +224,7 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     );
     for candidate in &candidates {
         println!(
-            "reranker candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}, rerank raw {:.4}, sigmoid {:.4}, boundary {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the boundary)",
+            "reranker candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}, rerank raw {:.4}, sigmoid {:.4}, boundary {:.4}; remediation: MERGE (delete an exact duplicate or parameterize a variant) or KEEP-AS-BOUNDARY (rewrite the distinct invariant below the boundary)",
             candidate.scopes.join(","),
             candidate.left.title,
             candidate.left.file,
