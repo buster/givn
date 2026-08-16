@@ -77,8 +77,10 @@ score-threshold candidate set before selecting a final default.
 
 The existing remediation contract remains:
 
-- a true duplicate is `MERGE` and the duplicate must be deleted;
-- a valid boundary is `KEEP-AS-BOUNDARY` and the retained scenario must be
+- an exact duplicate is `MERGE` and the redundant scenario must be deleted;
+- a same-invariant value or command variant is `MERGE` and must be combined or
+  parameterised into one scenario;
+- a genuinely different boundary is `KEEP-AS-BOUNDARY` and the retained scenario must be
   rewritten until the reranker score falls below the fixed boundary;
 - a review note never suppresses a score above the reranker boundary.
 
