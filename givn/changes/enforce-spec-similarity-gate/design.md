@@ -3,6 +3,9 @@
 ## Architecture
 
 The existing local retrieval path remains the source of embeddings and ranking.
+The strict gate is opt-in through the Cargo feature
+`spec-similarity-gate`, which also enables `spec-retrieval`; the default
+retrieval build remains advisory until this change is deliberately adopted.
 The change adds a strict similarity-review phase around it:
 
 - `givn spec review --change <id>` refreshes the permanent index, audits
@@ -194,7 +197,7 @@ Single-scenario command:
 ```text
 GIVN_FEATURES=givn/changes/enforce-spec-similarity-gate/specs \
 GIVN_SPEC_EMBEDDER=stub \
-cargo test --features spec-retrieval --test features_runner -- \
+cargo test --features spec-retrieval,spec-similarity-gate --test features_runner -- \
   --name '^Review blocks an unclassified permanent near-duplicate$'
 ```
 

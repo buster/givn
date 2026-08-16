@@ -626,6 +626,10 @@ aus dem erneuten Embedding-Vergleich abgeleitet.
 > Dieser Stack-Layer basiert auf `38c2f22` (`enforce-spec-similarity-gate`) und
 > wird auf einem separaten Branch gegen die harte Embedding-Grenze verglichen.
 > Permanente Szenarien werden während des Benchmarks nicht verändert.
+>
+> Die Implementierung ist im aktuellen Produkt standardmäßig deaktiviert. Sie
+> wird erst mit `--features spec-retrieval,cross-encoder-reranker` aktiviert;
+> der spätere Stack-Layer entscheidet über eine Freigabe als Gate.
 
 ### Hypothese
 
