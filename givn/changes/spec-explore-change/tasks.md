@@ -49,6 +49,23 @@ in its commit.
 - [x] COMMIT: `feat(spec-explore-change): Removed change scenarios are absent from exploration results`
       Hash: `0d36bd7`
 
+### Rule-nested active change scenarios are searchable
+
+- [x] RED: remove only this scenario's `@wip`, bind the Rule-nested fixture
+      step with `unimplemented!()`, and run the targeted command. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the matched Given step
+      panicked with `not implemented`.
+- [x] GREEN: collect active scenarios nested under `Rule:` and rank the
+      request-local candidate through the real CLI. Production files:
+      `src/spec/retrieval.rs`, `tests/steps/spec_explore_change_steps.rs`.
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `6 steps (6
+      passed)`.
+- [x] REFACTOR: preserve the shared delta collector and rerun the targeted
+      command after `cargo fmt --all`. Evidence: targeted run passed with `1
+      scenario (1 passed)`, `6 steps (6 passed)`.
+- [ ] COMMIT: `feat(spec-explore-change): Rule-nested active change scenarios are searchable`
+      Hash: 
+
 ### A modified change scenario is not reported against itself from its delta source
 
 - [x] RED: remove only this scenario's `@wip`, retain strict stubs, and run the
@@ -297,21 +314,30 @@ in its commit.
 - [x] REFACTOR: keep JSON stdout free of refresh diagnostics and rerun the
       targeted e2e command. Evidence: after `cargo fmt --all`, targeted e2e
       run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: `test(e2e): Change-aware JSON exploration labels candidate sources`
-      Hash: 
+- [x] COMMIT: `test(e2e): Change-aware JSON exploration labels candidate sources`
+      Hash: `b70e495`
 
 ## Completion Evidence
 
-- [ ] Remove each `@wip` tag only after its targeted GREEN and REFACTOR evidence
+- [x] Remove each `@wip` tag only after its targeted GREEN and REFACTOR evidence
       is recorded.
-- [ ] Run `givn lint --change spec-explore-change` and record exit 0.
-      Evidence: 
-- [ ] Run the change-specific full runner and e2e runner:
+      Evidence: `givn/changes/spec-explore-change/specs/spec-explore-change/spec-explore-change.feature` contains no `@wip` tags; all 15 scenarios have targeted GREEN and REFACTOR evidence above.
+- [x] Run `givn lint --change spec-explore-change` and record exit 0.
+      Evidence: `givn lint: 1 file(s) checked — clean`.
+- [x] Run the change-specific full runner and e2e runner:
       `GIVN_FEATURES=givn/changes/spec-explore-change/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub cargo test --features spec-retrieval --test features_runner`
       and the same command with `-- --tags @e2e`. Evidence: 
-- [ ] Run `./run-tests.sh`, `./run-tests.sh --e2e`, `cargo fmt --all -- --check`,
+      full `15 scenarios (15 passed)`, `100 steps (100 passed)`; e2e `2
+      scenarios (2 passed)`, `16 steps (16 passed)`.
+- [x] Run `./run-tests.sh`, `./run-tests.sh --e2e`, `cargo fmt --all -- --check`,
       `cargo check --features spec-retrieval`,
       `cargo check --no-default-features --locked`, retrieval and no-feature
-      library tests, and clippy with `-D warnings`. Evidence: 
-- [ ] Confirm no production feature files changed during exploration and the
-      permanent index remains permanent-only. Evidence: 
+      library tests, and clippy with `-D warnings`. Evidence: full runner
+      `223 scenarios (223 passed)`, e2e runner `34 scenarios (34 passed)`;
+      fmt check passed; retrieval/no-feature checks passed; library tests
+      passed `144`/`142`; clippy passed with `-D warnings`.
+- [x] Confirm no production feature files changed during exploration and the
+      permanent index remains permanent-only. Evidence: change-aware JSON
+      asserts `index.entries == 2` for two permanent scenarios plus an active
+      delta; the persistence scenario compares `.spec-index.json` byte-for-byte;
+      `git diff` contains no modifications under `givn/specs/`.

@@ -197,6 +197,34 @@ Feature: current provider behavior
 }
 
 #[given(
+    "a project prepared for current-change exploration with a Rule-nested active added scenario"
+)]
+fn rule_nested_active_added_project(_world: &mut GivnWorld) {
+    let world = _world;
+    let env = common::make_init_root();
+    clear_specs(&env);
+    write_project_path(&env, "givn/specs/provider.feature", PERMANENT_CORPUS);
+    write_project_path(
+        &env,
+        "givn/changes/current-change/specs/current-change/current-change.feature",
+        "@givn.delta @current-change
+Feature: current provider behavior
+
+  Rule: provider rules
+
+    @givn.added
+    Scenario: Rule nested rejects an unknown provider
+      Given a configured provider catalog
+      When the user selects an unknown provider
+      Then the command rejects the request
+",
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[given(
     "a project prepared for current-change exploration with an active added scenario in a one-scenario delta file"
 )]
 fn active_added_single_scenario_project(world: &mut GivnWorld) {
