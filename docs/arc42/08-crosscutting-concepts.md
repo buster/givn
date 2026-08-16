@@ -319,10 +319,37 @@ embedded with the existing query role and compared with every refreshed
 permanent entry, including same-file entries. A file query excludes only the
 entry with the same normalized file and title; stdin has no identity to remove.
 
-The result is advisory. It reports at most five deterministic embedding-score
-candidates and index/model metadata, or the same data as stable JSON. It does
-not read active changes, invoke BGE/NLI, calculate coverage, classify a pair,
-block a workflow, or write a `.feature` file.
+The no-change result is advisory. It reports at most five deterministic
+embedding-score candidates and index/model metadata, or the same data as stable
+JSON. It does not invoke BGE/NLI, calculate coverage, classify a pair, block a
+workflow, or write a `.feature` file.
+
+### 8.5c Current-change scenario exploration
+
+`givn spec explore --change <id>` adds a request-local active-delta corpus to the
+permanent exploration query. The command accepts the same complete one-scenario
+file or stdin input as the no-change path. It validates the change id, confirms
+the change and its specs directory exist, and parses every delta feature before
+refreshing the permanent index. Unsafe ids, missing changes, missing specs
+directories, and malformed delta features therefore fail with a clear non-zero
+error before a rejected request can write the index.
+
+Only `@givn.added` and `@givn.modified` scenarios participate. `@givn.removed`
+scenarios are excluded. Added and modified delta text is embedded in memory for
+the invocation and is never written as a permanent index entry. Modified
+scenarios carry both their normalized delta-source identity and their projected
+permanent-target identity; either identity is excluded when it is the query.
+
+One project-relative forward-slash normalization helper is used for every
+permanent index, delta source, projected target, and query file identity. It
+accepts relative and absolute paths, preventing the same scenario from being
+shown merely because callers used different path forms.
+
+The result remains advisory and deterministic. Human lines identify `scope`,
+source, and owning change where applicable. JSON keeps all PR 1 fields and
+their order, then appends `scope` and `change` to every result, including
+permanent-only calls. This is additive metadata, not byte-for-byte PR 1 output
+compatibility. `index.entries` remains the permanent count.
 
 ## 8.6 Filesystem-derived state
 
@@ -361,6 +388,10 @@ filesystem path. The validation uses the shared `resolve_change_dir` helper in
 `src/state.rs`, which is called by every command that constructs a
 `givn/changes/<id>/` path. This prevents path traversal (e.g. `--change ../etc`)
 from escaping the `givn/changes/` directory.
+
+`spec explore --change` performs this validation and delta collection before
+the permanent index refresh. A rejected change-aware request consequently has
+no persistence side effect at the index boundary.
 
 `givn check <artifact>` and `givn eject <artifact>:instruction` validate the
 artifact id against the effective manifest before any further processing,
@@ -407,6 +438,9 @@ Standards-aligned, configurable-target emit (see ADR-013, ADR-036):
   comes from the test runner, not from `givn lint`.
 - Other commands: **0** success, non-zero on failure with a clear message.
 - Destructive operations (archive) validate all preconditions before any write.
+- Change-aware exploration treats an unsafe id, missing change, missing specs
+  directory, or malformed delta as a non-zero request error and validates it
+  before refreshing the permanent index.
 
 ## 8.9 Coverage gate (completeness, not percentage)
 

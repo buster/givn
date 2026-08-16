@@ -118,6 +118,8 @@ struct ExploreResultOutput {
     title: String,
     file: String,
     score: f32,
+    scope: &'static str,
+    change: Option<String>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -126,6 +128,17 @@ struct DeltaScenario {
     scenario: ScenarioText,
     target_file: String,
     operation: crate::gherkin::delta::DeltaOp,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct ExploreCandidate {
+    title: String,
+    file: String,
+    embedding: Vec<f32>,
+    scope: &'static str,
+    change: Option<String>,
+    projected_file: Option<String>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -212,15 +225,21 @@ pub fn search(root: &Path, query: &str) -> Result<()> {
     }
 }
 
-pub fn explore(root: &Path, file: Option<&Path>, stdin: bool, json: bool) -> Result<()> {
+pub fn explore(
+    root: &Path,
+    file: Option<&Path>,
+    stdin: bool,
+    change: Option<&str>,
+    json: bool,
+) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        explore_enabled(root, file, stdin, json)
+        explore_enabled(root, file, stdin, change, json)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
     {
-        let _ = (root, file, stdin, json);
+        let _ = (root, file, stdin, change, json);
         bail!(
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
@@ -331,8 +350,25 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn explore_enabled(root: &Path, file: Option<&Path>, stdin: bool, json: bool) -> Result<()> {
+fn explore_enabled(
+    root: &Path,
+    file: Option<&Path>,
+    stdin: bool,
+    change: Option<&str>,
+    json: bool,
+) -> Result<()> {
     let query = read_explore_query(root, file, stdin)?;
+    let delta = if let Some(change_id) = change {
+        let change_dir = validated_review_change_dir(root, change_id)?;
+        anyhow::ensure!(change_dir.is_dir(), "change `{change_id}` was not found");
+        let delta_root = delta_specs_path(&change_dir, change_id)?;
+        Some((
+            change_id.to_string(),
+            collect_delta_scenarios(root, &delta_root)?,
+        ))
+    } else {
+        None
+    };
     let refresh = refresh_index(root)?;
     let query_vector = embed_texts(
         root,
@@ -343,22 +379,73 @@ fn explore_enabled(root: &Path, file: Option<&Path>, stdin: bool, json: bool) ->
     .next()
     .context("retrieval embedder returned no query vector")?;
 
-    let ranked = rank_entries(&refresh.index.entries, &query_vector);
-    let results: Vec<ExploreResultOutput> = ranked
-        .into_iter()
-        .filter(|(entry, _)| {
-            query
-                .file
-                .as_deref()
-                .is_none_or(|file| !(entry.file == file && entry.title == query.title))
-        })
-        .take(5)
-        .enumerate()
-        .map(|(index, (entry, score))| ExploreResultOutput {
-            rank: index + 1,
+    let mut candidates: Vec<ExploreCandidate> = refresh
+        .index
+        .entries
+        .iter()
+        .map(|entry| ExploreCandidate {
             title: entry.title.clone(),
             file: entry.file.clone(),
+            embedding: entry.embedding.clone(),
+            scope: "permanent",
+            change: None,
+            projected_file: None,
+        })
+        .collect();
+
+    if let Some((change_id, delta)) = &delta {
+        let active_delta: Vec<&DeltaScenario> = delta
+            .iter()
+            .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+            .collect();
+        let delta_texts: Vec<String> = active_delta
+            .iter()
+            .map(|item| item.scenario.text.clone())
+            .collect();
+        let delta_vectors = if delta_texts.is_empty() {
+            Vec::new()
+        } else {
+            embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
+        };
+        for (item, embedding) in active_delta.iter().zip(delta_vectors) {
+            candidates.push(ExploreCandidate {
+                title: item.scenario.title.clone(),
+                file: item.scenario.file.clone(),
+                embedding,
+                scope: "current-change",
+                change: Some(change_id.clone()),
+                projected_file: (item.operation == crate::gherkin::delta::DeltaOp::Modified)
+                    .then(|| item.target_file.clone()),
+            });
+        }
+    }
+
+    let mut ranked: Vec<(ExploreCandidate, f32)> = candidates
+        .into_iter()
+        .filter(|candidate| !matches_query_identity(candidate, &query))
+        .map(|candidate| {
+            let score = cosine_similarity(&query_vector, &candidate.embedding);
+            (candidate, score)
+        })
+        .collect();
+    ranked.sort_by(|(left, left_score), (right, right_score)| {
+        right_score
+            .total_cmp(left_score)
+            .then_with(|| left.scope.cmp(right.scope))
+            .then_with(|| left.file.cmp(&right.file))
+            .then_with(|| left.title.cmp(&right.title))
+    });
+    let results: Vec<ExploreResultOutput> = ranked
+        .into_iter()
+        .take(5)
+        .enumerate()
+        .map(|(index, (candidate, score))| ExploreResultOutput {
+            rank: index + 1,
+            title: candidate.title,
+            file: candidate.file,
             score,
+            scope: candidate.scope,
+            change: candidate.change,
         })
         .collect();
 
@@ -434,6 +521,11 @@ fn read_explore_query(root: &Path, file: Option<&Path>, stdin: bool) -> Result<E
 
 #[cfg(feature = "spec-retrieval")]
 fn normalize_input_file_identity(root: &Path, path: &Path) -> String {
+    normalize_project_file_identity(root, path)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn normalize_project_file_identity(root: &Path, path: &Path) -> String {
     let absolute = if path.is_absolute() {
         path.to_path_buf()
     } else {
@@ -443,6 +535,19 @@ fn normalize_input_file_identity(root: &Path, path: &Path) -> String {
         .strip_prefix(root)
         .map(|relative| relative.to_string_lossy().replace('\\', "/"))
         .unwrap_or_else(|_| path.to_string_lossy().replace('\\', "/"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn matches_query_identity(candidate: &ExploreCandidate, query: &ExploreQuery) -> bool {
+    let Some(query_file) = query.file.as_deref() else {
+        return false;
+    };
+    let source_matches = candidate.file == query_file && candidate.title == query.title;
+    let target_matches = candidate
+        .projected_file
+        .as_deref()
+        .is_some_and(|file| file == query_file && candidate.title == query.title);
+    source_matches || target_matches
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -462,8 +567,8 @@ fn print_explore_text(
     println!("Embedded {} new scenario vectors", refresh.embedded);
     for result in results {
         println!(
-            "rank {}: '{}' ({}, embedding score {:.4})",
-            result.rank, result.title, result.file, result.score
+            "rank {}: '{}' (scope {}, source {}, embedding score {:.4})",
+            result.rank, result.title, result.scope, result.file, result.score
         );
     }
 }
@@ -624,11 +729,7 @@ fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<Scenario
     for path in crate::gherkin::parse::collect_feature_files(specs_root) {
         let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
             .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
-        let file = path
-            .strip_prefix(root)
-            .unwrap_or(&path)
-            .to_string_lossy()
-            .replace('\\', "/");
+        let file = normalize_project_file_identity(root, &path);
         collect_feature_scenarios(&feature.scenarios, &file, &mut scenarios);
         for rule in &feature.rules {
             collect_feature_scenarios(&rule.scenarios, &file, &mut scenarios);
@@ -646,8 +747,14 @@ fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<Scenario
 fn collect_delta_scenarios(root: &Path, delta_root: &Path) -> Result<Vec<DeltaScenario>> {
     let mut scenarios = Vec::new();
     for path in crate::gherkin::parse::collect_feature_files(delta_root) {
-        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
-            .with_context(|| format!("failed to parse delta spec {}", path.display()))?;
+        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default()).map_err(
+            |error| {
+                anyhow::anyhow!(
+                    "delta feature is not valid Gherkin ({}): {error}",
+                    path.display()
+                )
+            },
+        )?;
         let capability = crate::gherkin::delta::capability_tag(&feature)
             .map(str::to_string)
             .or_else(|| {
@@ -662,10 +769,25 @@ fn collect_delta_scenarios(root: &Path, delta_root: &Path) -> Result<Vec<DeltaSc
                     .map(str::to_string)
             })
             .context("delta feature has no capability or filename for similarity projection")?;
-        let target_file = format!("givn/specs/{capability}/{capability}.feature");
-        collect_delta_feature_scenarios(&feature.scenarios, &path, &target_file, &mut scenarios);
+        let target_file = normalize_project_file_identity(
+            root,
+            Path::new(&format!("givn/specs/{capability}/{capability}.feature")),
+        );
+        collect_delta_feature_scenarios(
+            root,
+            &feature.scenarios,
+            &path,
+            &target_file,
+            &mut scenarios,
+        );
         for rule in &feature.rules {
-            collect_delta_feature_scenarios(&rule.scenarios, &path, &target_file, &mut scenarios);
+            collect_delta_feature_scenarios(
+                root,
+                &rule.scenarios,
+                &path,
+                &target_file,
+                &mut scenarios,
+            );
         }
     }
     scenarios.sort_by(|left, right| {
@@ -674,18 +796,18 @@ fn collect_delta_scenarios(root: &Path, delta_root: &Path) -> Result<Vec<DeltaSc
             .cmp(&right.scenario.file)
             .then_with(|| left.scenario.title.cmp(&right.scenario.title))
     });
-    let _ = root;
     Ok(scenarios)
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn collect_delta_feature_scenarios(
+    root: &Path,
     source: &[gherkin::Scenario],
     path: &Path,
     target_file: &str,
     output: &mut Vec<DeltaScenario>,
 ) {
-    let file = path.to_string_lossy().replace('\\', "/");
+    let file = normalize_project_file_identity(root, path);
     for scenario in source {
         output.push(DeltaScenario {
             scenario: scenario_text(scenario, &file),

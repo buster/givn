@@ -9,9 +9,10 @@ documents focused and reviewable.
 > (change `reverse-engineer-new-command`). All architecture decisions remain
 > binding — see chapter 9.
 
-The semantic retrieval surface currently includes advisory permanent-corpus
-exploration through `givn spec explore`; change-aware exploration and review
-classification remain later stack layers.
+The semantic retrieval surface currently includes advisory exploration through
+`givn spec explore` over the permanent corpus and an optional request-local
+current-change corpus; review classification and remediation remain later stack
+layers.
 
 When the `arc42` addon is enabled, completion review also cross-checks durable
 Arc42 facts against the change's design, mapped tasks, and completed
@@ -26,7 +27,7 @@ implementation. See chapter 8.14 and ADR-035.
 | 3 | [Context and Scope](03-context-and-scope.md) | System boundary, external interfaces, in/out of scope |
 | 4 | [Solution Strategy](04-solution-strategy.md) | Key strategic decisions in brief |
 | 5 | [Building Block View](05-building-block-view.md) | Static decomposition: crate, modules, responsibilities |
-| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks), strict similarity review, archive, eject |
+| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks), permanent/current-change explore, strict similarity review, archive, eject |
 | 7 | [Deployment View](07-deployment-view.md) | Distribution, install methods, release pipeline |
 | 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade engine, Gherkin delta model, TDD loop, coverage gate, skills, similarity gate |
 | 9 | [Architecture Decisions](09-architecture-decisions.md) | ADRs — every decision from the Q&A, with rationale |
