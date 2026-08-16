@@ -62,7 +62,7 @@ Feature: Generate the semantic review report
     And the candidate id is exactly 16 lowercase hexadecimal characters
     And the candidate content and evidence hashes are exactly 16 lowercase hexadecimal characters
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rule-nested active deltas enter the semantic candidate universe
     Given a project prepared for semantic review with a Rule-nested active delta
     When the user runs `givn check review --change running-change`

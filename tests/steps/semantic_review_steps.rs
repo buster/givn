@@ -188,6 +188,40 @@ fn candidate_id_has_fixed_format(_world: &mut GivnWorld) {
     );
 }
 
+#[given("a project prepared for semantic review with a Rule-nested active delta")]
+fn rule_nested_semantic_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated specs");
+    }
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
+        .expect("write permanent semantic fixtures");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: running change\n\n  Rule: provider rules\n\n    @givn.added\n    Scenario: Rule nested rejects an unknown provider\n      Given a configured provider catalog\n      When the user selects an unknown provider\n      Then the command rejects the request\n",
+    )
+    .expect("write Rule-nested delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+    )
+    .expect("write Rule overlap dispositions");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores =
+        Some("Rule nested rejects an unknown provider|Provider name is unknown=0.9600".to_string());
+}
+
 #[then("the candidate content and evidence hashes are exactly 16 lowercase hexadecimal characters")]
 fn candidate_hashes_have_fixed_format(_world: &mut GivnWorld) {
     let report = semantic_report(_world);
@@ -208,6 +242,28 @@ fn candidate_hashes_have_fixed_format(_world: &mut GivnWorld) {
                 .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
         );
     }
+}
+
+#[then(
+    regex = r#"^the semantic review report contains the exact Rule-nested endpoint title "([^"]+)"$"#
+)]
+fn report_contains_rule_nested_title(world: &mut GivnWorld, title: String) {
+    assert!(semantic_report(world).contains(&title));
+}
+
+#[then("the semantic review report contains non-empty content and evidence hashes")]
+fn report_contains_non_empty_hashes(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(
+        report
+            .lines()
+            .any(|line| { line.starts_with("- left_content_hash: ") && !line.ends_with(' ') })
+    );
+    assert!(
+        report
+            .lines()
+            .any(|line| { line.starts_with("- left_evidence_hash: ") && !line.ends_with(' ') })
+    );
 }
 
 #[then("the report contains no permanent-permanent candidate")]

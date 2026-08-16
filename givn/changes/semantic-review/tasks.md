@@ -92,15 +92,20 @@ givn skills sync
 - [x] REFACTOR: keep real E5 scoring unaffected and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(semantic-review): A candidate at the exact E5 boundary is included`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A candidate at the exact E5 boundary is included`
+      Hash: `c0d842a`
 
 ### Rule-nested active deltas enter the semantic candidate universe
 
-- [ ] RED: target the Rule-nested scenario with strict stubs. Evidence: 
-- [ ] GREEN: collect Rule-nested scenarios and build complete endpoint evidence.
-      Production files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: preserve feature/Rule background ordering and rerun. Evidence: 
+- [x] RED: target the Rule-nested scenario with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the matched Given step
+      panicked with `not implemented`.
+- [x] GREEN: collect Rule-nested scenarios and build complete endpoint evidence.
+      Production files: `src/spec/retrieval.rs`, tests step files. Evidence:
+      targeted run passed with `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: preserve feature/Rule background ordering and rerun. Evidence:
+      after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `6 steps (6 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Rule-nested active deltas enter the semantic candidate universe`
       Hash: 
 
