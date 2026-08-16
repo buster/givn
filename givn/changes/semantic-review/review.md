@@ -85,6 +85,7 @@ filter.
 | E2E command | `./run-tests.sh --e2e` with a real tag filter | Script runs `cargo test ... -- --tags @e2e` | Yes |
 | E2E driver | Compiled CLI subprocess | `common::run_givn_with_envs` starts `CARGO_BIN_EXE_givn` | Yes |
 | Internal primitives inventory | Design lists the introduced structs/functions | `design.md## Internal Primitives` matches `src/spec/retrieval.rs` | Yes |
+| Archive outline preservation | Existing archive interface; AST renderer preserves `Scenario Outline` `Examples` | `src/gherkin/merge.rs` renders examples and has a regression test | Yes |
 
 The Step Definitions markdown table and Internal Primitives section were added
 after the integrity hook exposed their required format. The design-review
@@ -162,6 +163,7 @@ cargo test --lib --no-default-features   142 passed: PASS
 cargo test --lib --features spec-retrieval 144 passed: PASS
 cargo clippy --workspace --all-targets -- -D warnings: PASS
 cargo fmt --all -- --check              PASS
+cargo test --lib gherkin::merge::tests::added_scenario_keeps_outline_examples: PASS
 ```
 
 `givn check review --change semantic-review` passed after all overlap

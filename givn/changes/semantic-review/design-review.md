@@ -107,6 +107,9 @@ not change the reviewed command, file layout, framework, interaction boundary,
 or scenario scope. The design review was rerun against the corrected section;
 no new scope, testability, E2E, risk, or Arc42 finding was introduced. The
 post-implementation primitive inventory was also added to `design.md` and
-cross-checked against the new retrieval/report structs and functions.
+cross-checked against the new retrieval/report structs and functions. The
+archive compatibility note now records the required preservation of
+`Scenario Outline` `Examples` blocks; the existing archive interface and scope
+remain unchanged, and the merge regression test passed.
 
 DESIGN-REVIEW: PASS
