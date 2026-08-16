@@ -213,16 +213,20 @@ givn skills sync
 - [x] REFACTOR: atomically replace the complete report and rerun. Evidence:
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
-- [ ] COMMIT: `feat(semantic-review): The semantic report obeys its strict wire grammar`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): The semantic report obeys its strict wire grammar`
+      Hash: `067d9fb`
 
 ### Equal-score candidates use deterministic tie ordering
 
-- [ ] RED: target tie ordering with strict stubs. Evidence: 
-- [ ] GREEN: apply left tuple, right tuple, and candidate id tie-breaks after
+- [x] RED: target tie ordering with strict stubs. Evidence: `1 scenario (1
+      failed)`, `1 step (1 failed)`; the equal-score assertion panicked with
+      `not implemented`.
+- [x] GREEN: apply left tuple, right tuple, and candidate id tie-breaks after
       equal scores. Production files: `src/spec/retrieval.rs`, tests step files.
-      Evidence: 
-- [ ] REFACTOR: keep score formatting separate from raw ordering and rerun. Evidence: 
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: keep score formatting separate from raw ordering and rerun.
+      Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
+      (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Equal-score candidates use deterministic tie ordering`
       Hash: 
 

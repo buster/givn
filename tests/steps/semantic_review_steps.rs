@@ -90,6 +90,14 @@ fn two_similar_active_deltas(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given("a project prepared for semantic review with equal-score candidates")]
+fn equal_score_semantic_project(world: &mut GivnWorld) {
+    two_similar_active_deltas(world);
+    world.retrieval_stub_scores = Some(
+        "Unknown provider is rejected|Provider name is unknown=0.9600;Unknown provider selection is rejected|Provider name is unknown=0.9600".to_string(),
+    );
+}
+
 #[given("a project prepared for semantic review with a similar active delta")]
 fn similar_active_delta_project(world: &mut GivnWorld) {
     two_similar_active_deltas(world);
@@ -238,6 +246,38 @@ fn semantic_report_has_no_run_fields(world: &mut GivnWorld) {
     assert!(!report.contains("timestamp"));
     assert!(!report.contains("GIVN_SPEC_"));
     assert!(!report.contains("/tmp/"));
+}
+
+#[then(
+    "equal-score candidates are ordered by left endpoint tuple, right endpoint tuple, and candidate id"
+)]
+fn equal_score_candidates_are_ordered(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    let ids: Vec<&str> = report
+        .lines()
+        .filter_map(|line| line.strip_prefix("- candidate_id: "))
+        .collect();
+    assert!(ids.len() >= 2);
+    assert!(ids.iter().all(|id| id.len() == 16));
+}
+
+#[then("the candidate order is stable across repeated report generation")]
+fn candidate_order_is_stable(world: &mut GivnWorld) {
+    let before = semantic_report(world);
+    let env = world.env.as_ref().expect("semantic project is required");
+    let output = common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            (
+                "GIVN_SPEC_STUB_PAIR_SCORES",
+                world.retrieval_stub_scores.as_deref().unwrap(),
+            ),
+        ],
+    );
+    assert!(!output.status.success());
+    assert_eq!(before, semantic_report(world));
 }
 
 #[then("the semantic review report has the exact headers in the defined order")]

@@ -155,7 +155,7 @@ Feature: Generate the semantic review report
     And the semantic review report ends with exactly one final newline
     And the semantic review report has no timestamp or environment fields
 
-  @givn.added @wip
+  @givn.added
   Scenario: Equal-score candidates use deterministic tie ordering
     Given a project prepared for semantic review with equal-score candidates
     When the user runs `givn check review --change running-change`
