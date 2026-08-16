@@ -2,7 +2,7 @@
 
 use std::fs;
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use super::{GivnWorld, stderr};
 use crate::common;
@@ -157,6 +157,40 @@ fn index_contains_no_semantic_state(world: &mut GivnWorld) {
     assert!(!index.contains("givn/changes/"));
     assert!(!index.contains("classification"));
     assert!(!index.contains("semantic-review"));
+}
+
+#[when(regex = r#"^the user classifies every semantic review candidate as "([^"]+)"$"#)]
+fn classify_every_semantic_candidate(world: &mut GivnWorld, classification: String) {
+    update_semantic_classification(world, &classification, true);
+}
+
+#[when(
+    regex = r#"^the user classifies every semantic review candidate as "([^"]+)" without a rationale$"#
+)]
+fn classify_every_without_rationale(world: &mut GivnWorld, classification: String) {
+    update_semantic_classification(world, &classification, false);
+}
+
+fn update_semantic_classification(world: &mut GivnWorld, classification: &str, rationale: bool) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/changes/running-change/semantic-review.md");
+    let mut report = fs::read_to_string(&path).expect("read semantic report");
+    report = report.replace(
+        "- classification: UNCERTAIN",
+        &format!("- classification: {classification}"),
+    );
+    if rationale {
+        report = report.replace(
+            "- rationale: null",
+            "- rationale: \"The candidate has the same observable behavior\"",
+        );
+    }
+    fs::write(path, report).expect("write semantic classification");
+}
+
+#[then(regex = r#"^the semantic review report contains classification "([^"]+)"$"#)]
+fn semantic_report_contains_classification(world: &mut GivnWorld, classification: String) {
+    assert!(semantic_report(world).contains(&format!("- classification: {classification}")));
 }
 
 #[given("a project prepared for semantic review with active deltas below the similarity boundary")]

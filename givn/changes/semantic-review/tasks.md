@@ -153,16 +153,21 @@ givn skills sync
 - [x] REFACTOR: write the complete blocked report atomically and rerun. Evidence:
       after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `11 steps (11 passed)`.
-- [ ] COMMIT: `feat(semantic-review): An uncertain semantic candidate blocks change review without editing specs`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): An uncertain semantic candidate blocks change review without editing specs`
+      Hash: `fa7bfe9`
 
 ### A complete classification allows change review and survives regeneration
 
-- [ ] RED: target classification carry-forward with strict stubs. Evidence: 
-- [ ] GREEN: parse an agent-edited rationale/classification and carry it only
+- [x] RED: target classification carry-forward with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the classification step
+      panicked with `not implemented`.
+- [x] GREEN: parse an agent-edited rationale/classification and carry it only
       across unchanged evidence. Production files: `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: recompute status/count and rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1
+      passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: recompute status/count and rerun. Evidence: after `cargo fmt
+      --all`, targeted run passed with `1 scenario (1 passed)`, `8 steps (8
+      passed)`.
 - [ ] COMMIT: `feat(semantic-review): A complete classification allows change review and survives regeneration`
       Hash: 
 
