@@ -32,6 +32,9 @@
 | **Embedding** | A numeric vector representation of scenario or query text used for interactive ranking and strict scenario-pair comparison. |
 | **Retrieval index** | The local persisted collection of scenario titles, paths, content hashes, and embeddings used by `givn spec search`. |
 | **Advisory match** | A result from interactive `givn spec search`; it informs an author but does not itself block the workflow. |
+| **Explore query** | One complete Gherkin scenario supplied through `givn spec explore` for comparison with permanent scenarios. |
+| **Exact scenario identity** | The pair `(normalized file path, scenario title)` used to omit only a file query's own permanent entry. |
+| **Embedding score** | The cosine similarity between the query vector and a permanent scenario vector; the advisory explore ranking signal. |
 | **Similarity candidate** | A distinct scenario pair whose passage-vector cosine score is at or above the binary-fixed `0.95` threshold. It is a hard review failure until resolved. |
 | **MERGE remediation** | The required response when a similarity candidate is a true duplicate: delete the duplicate scenario rather than keeping a second copy. |
 | **KEEP-AS-BOUNDARY remediation** | The required response when a similarity candidate is valid separate coverage: rewrite the retained title and steps so the observable distinction is explicit and the score falls below `0.95`; it is not an exception. |

@@ -50,6 +50,7 @@ flowchart LR
 | FR-23 | Provide local retrieval over permanent scenarios and enforce the fixed semantic-similarity gate during review and archive preparation. |
 | FR-24 | Keep interactive `givn spec search` advisory while requiring every permanent or current-delta scenario pair at or above the fixed `0.95` threshold to be rewritten or removed before review passes. |
 | FR-25 | Use local retrieve-then-rerank scoring to distinguish true duplicate scenarios from valid boundary candidates during semantic review. |
+| FR-26 | Let an author explore exactly one complete draft scenario against all permanent scenarios from a file or stdin, with human-readable or stable JSON results, before creation. |
 
 ### Non-functional requirements (top)
 
@@ -74,6 +75,10 @@ Top three quality goals, in priority order (see chapter 10 for scenarios):
 Secondary goals: correctness of the Gherkin merge (data integrity of the spec),
 AI-agent ergonomics (standards-aligned skill/rule generation), and consistency
 of that guidance across instructions, skills, commands, and project overrides.
+
+Permanent scenario exploration adds a secondary agent-ergonomics goal: a draft
+comparison must be deterministic, advisory, and non-mutating so an author can
+inspect evidence without changing the permanent specification.
 
 ## 1.4 Stakeholders
 

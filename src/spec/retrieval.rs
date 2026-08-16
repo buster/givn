@@ -15,6 +15,9 @@ use std::collections::BTreeMap;
 use std::fs;
 
 #[cfg(feature = "spec-retrieval")]
+use std::io::Read;
+
+#[cfg(feature = "spec-retrieval")]
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "spec-retrieval")]
@@ -46,6 +49,14 @@ struct SpecIndex {
 }
 
 #[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct IndexRefresh {
+    index: SpecIndex,
+    reused: usize,
+    embedded: usize,
+}
+
+#[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct IndexEntry {
     title: String,
@@ -61,6 +72,50 @@ struct ScenarioText {
     file: String,
     content_hash: String,
     text: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct ExploreQuery {
+    title: String,
+    source: &'static str,
+    file: Option<String>,
+    content_hash: String,
+    text: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct ExploreResponse {
+    query: ExploreQueryOutput,
+    index: ExploreIndexOutput,
+    results: Vec<ExploreResultOutput>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct ExploreQueryOutput {
+    title: String,
+    source: &'static str,
+    file: Option<String>,
+    content_hash: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct ExploreIndexOutput {
+    model: String,
+    version: u32,
+    entries: usize,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct ExploreResultOutput {
+    rank: usize,
+    title: String,
+    file: String,
+    score: f32,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -155,6 +210,21 @@ pub fn search(root: &Path, query: &str) -> Result<()> {
     }
 }
 
+pub fn explore(root: &Path, file: Option<&Path>, stdin: bool, json: bool) -> Result<()> {
+    #[cfg(feature = "spec-retrieval")]
+    {
+        explore_enabled(root, file, stdin, json)
+    }
+
+    #[cfg(not(feature = "spec-retrieval"))]
+    {
+        let _ = (root, file, stdin, json);
+        bail!(
+            "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+        );
+    }
+}
+
 pub fn review(root: &Path, change_id: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
@@ -172,6 +242,17 @@ pub fn review(root: &Path, change_id: &str) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn index_enabled(root: &Path) -> Result<()> {
+    let refresh = refresh_index(root)?;
+    println!(
+        "Indexed {} permanent scenarios",
+        refresh.index.entries.len()
+    );
+    println!("Reused {} scenario vectors", refresh.reused);
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn refresh_index(root: &Path) -> Result<IndexRefresh> {
     let entries = collect_scenarios(root)?;
     let index_path = spec_index_path(root);
     let previous = read_index(&index_path).unwrap_or_else(|_| SpecIndex {
@@ -193,6 +274,7 @@ fn index_enabled(root: &Path) -> Result<()> {
         }
     }
 
+    let embedded = pending.len();
     if !pending.is_empty() {
         let texts: Vec<String> = pending.iter().map(|item| item.text.clone()).collect();
         let vectors = embed_texts(root, &texts, EmbeddingRole::Passage)?;
@@ -219,9 +301,11 @@ fn index_enabled(root: &Path) -> Result<()> {
     };
     write_index(&index_path, &index)?;
 
-    println!("Indexed {} permanent scenarios", index.entries.len());
-    println!("Reused {} scenario vectors", reused);
-    Ok(())
+    Ok(IndexRefresh {
+        index,
+        reused,
+        embedded,
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -242,6 +326,144 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 
     print_search_results(&ranked);
     Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn explore_enabled(root: &Path, file: Option<&Path>, stdin: bool, json: bool) -> Result<()> {
+    let query = read_explore_query(root, file, stdin)?;
+    let refresh = refresh_index(root)?;
+    let query_vector = embed_texts(
+        root,
+        std::slice::from_ref(&query.text),
+        EmbeddingRole::Query,
+    )?
+    .into_iter()
+    .next()
+    .context("retrieval embedder returned no query vector")?;
+
+    let ranked = rank_entries(&refresh.index.entries, &query_vector);
+    let results: Vec<ExploreResultOutput> = ranked
+        .into_iter()
+        .filter(|(entry, _)| {
+            query
+                .file
+                .as_deref()
+                .is_none_or(|file| !(entry.file == file && entry.title == query.title))
+        })
+        .take(5)
+        .enumerate()
+        .map(|(index, (entry, score))| ExploreResultOutput {
+            rank: index + 1,
+            title: entry.title.clone(),
+            file: entry.file.clone(),
+            score,
+        })
+        .collect();
+
+    if json {
+        let response = ExploreResponse {
+            query: ExploreQueryOutput {
+                title: query.title,
+                source: query.source,
+                file: query.file,
+                content_hash: query.content_hash,
+            },
+            index: ExploreIndexOutput {
+                model: refresh.index.model,
+                version: refresh.index.version,
+                entries: refresh.index.entries.len(),
+            },
+            results,
+        };
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&response).context("serialize explore JSON")?
+        );
+    } else {
+        print_explore_text(&query, &refresh, &results);
+    }
+
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn read_explore_query(root: &Path, file: Option<&Path>, stdin: bool) -> Result<ExploreQuery> {
+    let (content, source, identity_file) = if let Some(path) = file {
+        let content = fs::read_to_string(path)
+            .with_context(|| format!("failed to read explore input file {}", path.display()))?;
+        (
+            content,
+            "file",
+            Some(normalize_input_file_identity(root, path)),
+        )
+    } else if stdin {
+        let mut content = String::new();
+        std::io::stdin()
+            .read_to_string(&mut content)
+            .context("failed to read explore input from stdin")?;
+        (content, "stdin", None)
+    } else {
+        bail!("spec explore requires exactly one input: use --file or --stdin");
+    };
+
+    let feature = gherkin::Feature::parse(&content, gherkin::GherkinEnv::default())
+        .map_err(|error| anyhow::anyhow!("explore input is not valid Gherkin: {error}"))?;
+    let mut scenarios = feature.scenarios.iter().collect::<Vec<_>>();
+    for rule in &feature.rules {
+        scenarios.extend(rule.scenarios.iter());
+    }
+    anyhow::ensure!(
+        scenarios.len() == 1,
+        "explore input must contain exactly one scenario; found {}",
+        scenarios.len()
+    );
+
+    let scenario = scenarios[0];
+    let file_identity = identity_file.as_deref().unwrap_or("");
+    let text = scenario_text(scenario, file_identity);
+    Ok(ExploreQuery {
+        title: text.title,
+        source,
+        file: identity_file,
+        content_hash: text.content_hash,
+        text: text.text,
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn normalize_input_file_identity(root: &Path, path: &Path) -> String {
+    let absolute = if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        root.join(path)
+    };
+    absolute
+        .strip_prefix(root)
+        .map(|relative| relative.to_string_lossy().replace('\\', "/"))
+        .unwrap_or_else(|_| path.to_string_lossy().replace('\\', "/"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn print_explore_text(
+    query: &ExploreQuery,
+    refresh: &IndexRefresh,
+    results: &[ExploreResultOutput],
+) {
+    println!("query: '{}' (source {})", query.title, query.source);
+    println!("model: {}", refresh.index.model);
+    println!(
+        "index: version {}, entries {}",
+        refresh.index.version,
+        refresh.index.entries.len()
+    );
+    println!("Reused {} scenario vectors", refresh.reused);
+    println!("Embedded {} new scenario vectors", refresh.embedded);
+    for result in results {
+        println!(
+            "rank {}: '{}' ({}, embedding score {:.4})",
+            result.rank, result.title, result.file, result.score
+        );
+    }
 }
 
 #[cfg(feature = "spec-retrieval")]

@@ -81,6 +81,16 @@ pub fn run_givn_with_envs(env: &TestEnv, args: &[&str], environments: &[(&str, &
 /// one stdin line written (`answer`), then stdin closed. Simulates an
 /// interactive answer to a prompt without a terminal.
 pub fn run_givn_with_stdin(env: &TestEnv, args: &[&str], answer: &str) -> Output {
+    run_givn_with_stdin_and_envs(env, args, answer, &[])
+}
+
+/// Invoke the `givn` binary with piped stdin and environment overrides.
+pub fn run_givn_with_stdin_and_envs(
+    env: &TestEnv,
+    args: &[&str],
+    input: &str,
+    environments: &[(&str, &str)],
+) -> Output {
     use std::io::Write;
     use std::process::Stdio;
 
@@ -88,6 +98,7 @@ pub fn run_givn_with_stdin(env: &TestEnv, args: &[&str], answer: &str) -> Output
     let mut child = Command::new(bin)
         .args(args)
         .current_dir(env.root())
+        .envs(environments.iter().copied())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -97,7 +108,7 @@ pub fn run_givn_with_stdin(env: &TestEnv, args: &[&str], answer: &str) -> Output
     {
         let mut stdin = child.stdin.take().expect("piped stdin");
         stdin
-            .write_all(answer.as_bytes())
+            .write_all(input.as_bytes())
             .expect("write answer to givn stdin");
     }
 

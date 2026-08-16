@@ -1571,3 +1571,74 @@ normal CI.
 The repository-ownership fixture change runs the compiled Givn CLI for review,
 archive, and pre-merge failure scenarios, then records both CLI and permanent
 tree evidence in the Gherkin run.
+
+---
+
+## ADR-043: Complete-scenario exploration is a permanent-only advisory query
+
+---
+status: accepted
+date: 2026-08-16
+decision-makers: givn maintainers
+---
+
+### Context and Problem Statement
+
+An author needs to compare a scenario before adding it to a change. Free-form
+`spec search` does not prove that the input is a complete scenario, can miss
+same-file candidates, and cannot distinguish an existing scenario's own
+identity from a related candidate. The first semantic stack layer must provide
+evidence without turning exploration into review or changing the specification.
+
+### Decision Drivers
+
+- Accept the same complete Gherkin boundary that will become a specification.
+- Refresh the permanent index incrementally and preserve existing vectors.
+- Include all permanent candidates, including same-file candidates.
+- Keep the result deterministic, machine-readable, and advisory.
+- Keep the default build free of retrieval dependencies and keep BGE/NLI out of
+  this slice.
+
+### Considered Options
+
+1. Accept free text and delegate validation to the caller.
+2. Search only scenarios from other feature files.
+3. Accept one complete scenario, refresh the permanent index, and exclude only
+   an exact file/title identity.
+
+### Decision Outcome
+
+Choose option 3. `givn spec explore` accepts exactly one complete Gherkin
+scenario through `--file` or `--stdin`, refreshes the permanent content-hash
+index, ranks all permanent entries with the existing embedding score, and
+returns at most five candidates in text or stable JSON. It excludes only the
+exact `(file, title)` identity for a file query. It never reads the active
+change and never invokes a reranker, NLI model, coverage function, or review
+decision.
+
+### Consequences
+
+- Good, because agents compare the same artifact shape they are about to write.
+- Good, because unchanged vectors are reused and same-file candidates are not
+  silently lost.
+- Good, because JSON can be consumed without interpreting human log output.
+- Good, because exploration remains read-only and cannot block a workflow.
+- Bad, because a local model/cache is still required for the feature-enabled
+  command; the no-feature build reports explicit unavailability.
+- Bad, because embedding similarity is advisory evidence, not a duplicate or
+  variant classification.
+- Bad, because a later change to query/index representation requires new
+  deterministic output evidence and may invalidate stored vectors.
+
+### Confirmation
+
+The executable `spec-explore-permanent` scenarios cover file and stdin parity,
+stable JSON, same-file identity filtering, incremental reuse and re-embedding,
+input failures, no-feature unavailability, non-mutation, and compatibility of
+the existing search and review commands.
+
+### More Information
+
+Related decisions: ADR-039 (local model-backed retrieval), ADR-040
+(repository-owned CLI fixtures), ADR-041 (strict review gate), chapters 3, 5,
+6, 8, 10, and risks R-18/R-19/R-30/R-31.

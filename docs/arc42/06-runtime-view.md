@@ -276,6 +276,30 @@ The retrieval and similarity-gate flow is:
    permanent index is refreshed. The refresh is best-effort and feature-gated;
    it never runs before a merge gate that could roll the permanent tree back.
 
+## 6.8b `givn spec explore`
+
+The permanent exploration flow is intentionally separate from change review:
+
+```mermaid
+flowchart TD
+    A[Complete file or stdin Gherkin] --> B{Exactly one scenario?}
+    B -- no --> E[Clear non-zero error]
+    B -- yes --> C[Refresh permanent content-hash index]
+    C --> D[Embed query and rank every permanent entry]
+    D --> F[Remove exact file/title identity only]
+    F --> G[Emit top five text or stable JSON]
+```
+
+The command validates and parses the input before changing the generated index.
+The refresh removes stale entries, reuses unchanged vectors, and embeds only
+new or changed permanent scenarios. The query then uses the existing `query:`
+embedding role. Same-file candidates remain eligible; only an exact file/title
+identity is excluded. The active change tree is never read.
+
+The text path may report refresh counts and index metadata. The JSON path emits
+one document only, with fixed query, index, and result fields so an agent can
+consume it without stripping log lines.
+
 ## 6.9 Running the test runner on a fresh project (sentinel)
 
 When a project has not configured `verify.command`, the manifest's default points
