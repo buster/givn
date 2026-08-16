@@ -853,6 +853,8 @@ dependencies = [
  "cucumber",
  "fastembed",
  "gherkin",
+ "ndarray",
+ "ort",
  "quick-xml",
  "rust-embed",
  "serde",
@@ -860,6 +862,7 @@ dependencies = [
  "serde_yaml_ng",
  "tempfile",
  "thiserror",
+ "tokenizers",
  "tokio",
 ]
 
