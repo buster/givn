@@ -1,6 +1,7 @@
 //! Regular black-box steps for the semantic review report.
 
 use std::fs;
+use std::process::Command;
 
 use cucumber::{given, then, when};
 
@@ -693,6 +694,36 @@ fn completed_semantic_review_change(world: &mut GivnWorld) {
 #[given("the semantic review retrieval model is unavailable")]
 fn semantic_review_retrieval_model_is_unavailable(world: &mut GivnWorld) {
     world.retrieval_embedder = Some("missing".to_string());
+}
+
+#[when("the user runs change review through a build without spec retrieval")]
+fn run_change_review_without_spec_retrieval(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let target_dir = repository.join("target/semantic-review-no-retrieval");
+    let build = Command::new("cargo")
+        .args([
+            "build",
+            "--no-default-features",
+            "--bin",
+            "givn",
+            "--target-dir",
+            target_dir.to_str().expect("target path is UTF-8"),
+        ])
+        .current_dir(repository)
+        .output()
+        .expect("build no-feature givn binary");
+    assert!(
+        build.status.success(),
+        "no-feature build failed: {}",
+        String::from_utf8_lossy(&build.stderr)
+    );
+    let output = Command::new(target_dir.join("debug/givn"))
+        .args(["check", "review", "--change", "running-change"])
+        .current_dir(env.root())
+        .output()
+        .expect("run no-feature givn binary");
+    world.last_output = Some(output);
 }
 
 #[given("the active semantic review report bytes are snapshotted")]
