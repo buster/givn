@@ -75,7 +75,7 @@ fn e2e_endpoint_hashes_are_fixed(world: &mut GivnWorld) {
             }
         })
         .collect();
-    assert!(!hashes.is_empty() && hashes.len() % 4 == 0);
+    assert!(!hashes.is_empty() && hashes.len().is_multiple_of(4));
     assert!(hashes.iter().all(|hash| {
         hash.len() == 16
             && hash
