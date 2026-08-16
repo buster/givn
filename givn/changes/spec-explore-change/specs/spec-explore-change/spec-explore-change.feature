@@ -59,6 +59,23 @@ Feature: Explore scenarios in the current change
     Then the command exits 0
     And no ranked result is titled "Removed provider behavior"
 
+  @givn.added @wip
+  Scenario: Rule-nested active change scenarios are searchable
+    Given a project prepared for current-change exploration with a Rule-nested active added scenario
+    And a .feature file at "draft.feature" with:
+      """
+      Feature: Draft exploration
+
+        Scenario: Provider selection rejects an unknown provider
+          Given a configured provider catalog
+          When the user selects an unknown provider
+          Then the command rejects the request
+      """
+    When the user explores "draft.feature" against change "current-change"
+    Then the command exits 0
+    And stdout contains "Rule nested rejects an unknown provider"
+    And stdout contains "scope current-change"
+
   @givn.added
   Scenario: A modified change scenario is not reported against itself from its delta source
     Given a project prepared for current-change exploration with a modified scenario
