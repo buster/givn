@@ -134,12 +134,15 @@ fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow
     {
         return Ok(());
     }
+    crate::spec::retrieval::semantic_review(project_root, change_id)?;
     crate::spec::retrieval::review(project_root, change_id)
 }
 
 #[cfg(not(feature = "spec-retrieval"))]
 fn run_retrieval_gate(_project_root: &std::path::Path, _change_id: &str) -> anyhow::Result<()> {
-    Ok(())
+    anyhow::bail!(
+        "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+    )
 }
 
 /// Check if an artifact's output files exist in the change directory.
