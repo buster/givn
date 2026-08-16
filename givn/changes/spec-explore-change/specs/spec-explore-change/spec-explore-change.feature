@@ -67,7 +67,7 @@ Feature: Explore scenarios in the current change
     And no ranked result is titled "Provider name is unknown"
     And another eligible candidate remains visible
 
-  @givn.added @wip
+  @givn.added
   Scenario: Change exploration does not persist delta scenarios in the permanent index
     Given a project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:

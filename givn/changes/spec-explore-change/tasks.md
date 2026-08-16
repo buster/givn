@@ -62,19 +62,22 @@ in its commit.
 - [x] REFACTOR: separate source identity filtering from ranking and rerun the
       targeted command. Evidence: after `cargo fmt --all`, targeted run
       passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself from its delta source`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself from its delta source`
+      Hash: `eb3831b`
 
 ### Change exploration does not persist delta scenarios in the permanent index
 
-- [ ] RED: remove only this scenario's `@wip`, use strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: rank request-local delta vectors without passing them to index
+- [x] RED: remove only this scenario's `@wip`, use strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1
+      failed)`; the matched Given step panicked with `not implemented`.
+- [x] GREEN: rank request-local delta vectors without passing them to index
       persistence and compare the snapped permanent index. Production files:
       `src/spec/retrieval.rs`, `tests/steps/mod.rs`,
-      `tests/steps/spec_explore_change_steps.rs`. Evidence: 
-- [ ] REFACTOR: preserve permanent refresh reuse and rerun the targeted
-      command. Evidence: 
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: preserve permanent refresh reuse and rerun the targeted
+      command. Evidence: after `cargo fmt --all`, targeted run passed with `1
+      scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): Change exploration does not persist delta scenarios in the permanent index`
       Hash: 
 
