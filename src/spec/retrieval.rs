@@ -512,7 +512,11 @@ fn semantic_delta_endpoint(item: &DeltaScenario) -> SemanticEndpoint {
         file: item.scenario.file.clone(),
         title: item.scenario.title.clone(),
         content_hash: item.scenario.content_hash.clone(),
-        evidence_hash: format!("{:016x}", stable_hash(item.evidence_json.as_bytes())),
+        evidence_hash: semantic_evidence_hash(
+            &item.evidence_json,
+            &format_delta_operation(&item.operation),
+            Some(&item.target_file),
+        ),
         evidence_json: item.evidence_json.clone(),
         operation: format_delta_operation(&item.operation),
         projected_target: Some((item.target_file.clone(), item.scenario.title.clone())),
@@ -541,13 +545,38 @@ fn semantic_endpoint_from_scenario(
         scope,
         file: file.to_string(),
         title: scenario.name.clone(),
-        evidence_hash: format!("{:016x}", stable_hash(evidence_json.as_bytes())),
+        evidence_hash: semantic_evidence_hash(&evidence_json, operation, None),
         evidence_json,
         content_hash: text.content_hash,
         operation: operation.to_string(),
         projected_target,
         facts,
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_evidence_hash(
+    evidence_json: &str,
+    operation: &str,
+    projected_target: Option<&String>,
+) -> String {
+    format!(
+        "{:016x}",
+        stable_hash(
+            format!(
+                "{}|{}|{:?}|{}|{}|{}|{}|{}",
+                evidence_json,
+                operation,
+                projected_target,
+                MODEL_ID,
+                INDEX_VERSION,
+                SEMANTIC_FINGERPRINT_SCHEMA_VERSION,
+                SEMANTIC_EVIDENCE_SCHEMA_VERSION,
+                SEMANTIC_REPORT_SCHEMA_VERSION
+            )
+            .as_bytes(),
+        )
+    )
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1323,7 +1352,7 @@ fn canonical_evidence_json(
     scenario: &gherkin::Scenario,
 ) -> String {
     format!(
-        "{{\"feature_description\":{},\"feature_tags\":{},\"rule_description\":{},\"rule_tags\":{},\"scenario_description\":{},\"scenario_tags\":{},\"outline_name\":{},\"examples\":[{}],\"feature_background_steps\":{},\"rule_background_steps\":{},\"normalized_steps\":{}}}",
+        "{{\"feature_description\":{},\"feature_tags\":{},\"rule_description\":{},\"rule_tags\":{},\"scenario_description\":{},\"scenario_tags\":{},\"outline_name\":{},\"examples\":[{}],\"feature_background_steps\":{},\"rule_background_steps\":{},\"normalized_steps\":{},\"model_id\":{},\"index_version\":{},\"fingerprint_schema_version\":{},\"evidence_schema_version\":{},\"report_schema_version\":{}}}",
         json_encoded(&feature.description),
         json_encoded(&feature.tags),
         json_encoded(&rule.and_then(|rule| rule.description.clone())),
@@ -1344,6 +1373,11 @@ fn canonical_evidence_json(
         canonical_background(feature.background.as_ref()),
         canonical_background(rule.and_then(|rule| rule.background.as_ref())),
         canonical_steps(&scenario.steps),
+        json_encoded(&MODEL_ID),
+        INDEX_VERSION,
+        SEMANTIC_FINGERPRINT_SCHEMA_VERSION,
+        SEMANTIC_EVIDENCE_SCHEMA_VERSION,
+        SEMANTIC_REPORT_SCHEMA_VERSION,
     )
 }
 
