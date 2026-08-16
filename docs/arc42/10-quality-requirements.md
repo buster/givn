@@ -75,10 +75,16 @@ graph TD
 | Q-32 | Repository-owned acceptance | A maintainer reviews a generic change with explicit overlap dispositions. | The real Givn CLI exits 0 and prints the deterministic overlap and net-change receipt. |
 | Q-33 | Repository-owned acceptance | A maintainer archives a generic consolidated change. | The real Givn CLI exits 0; the retained scenario is published, the obsolete scenario is absent, and the permanent tree has no duplicate title. |
 | Q-34 | Recovery / Integrity | A pre-merge archive hook fails in the generic fixture. | The CLI exits non-zero and the complete permanent specification tree remains byte-for-byte unchanged. |
-| Q-42 | Agent ergonomics | An author supplies one complete draft scenario before adding it. | `givn spec explore --file` and `--stdin` return at most five deterministic permanent candidates with rank, title, file, score, model, and index metadata without changing feature files. |
+| Q-42 | Agent ergonomics | An author supplies one complete draft scenario before adding it. | `givn spec explore --file` and `--stdin` return at most five deterministic candidates with rank, title, file, score, model, index metadata, and additive source metadata without changing feature files. An optional `--change` includes only request-local active candidates. |
 | Q-43 | Correctness | A file query names a permanent scenario in the same feature as related scenarios. | Only the exact `(file, title)` entry is omitted; other same-file scenarios remain eligible. |
 | Q-44 | Correctness | A permanent scenario is unchanged, then changed, across two explorations. | The first refresh reuses its vector; the second re-embeds the changed content and reports the refresh counts. |
 | Q-45 | Compatibility | The retrieval feature is absent while an author invokes `spec explore`. | The command exits non-zero with the existing retrieval-unavailable message; the default build still compiles. |
+| Q-46 | Agent ergonomics | An author explores a draft against a current change containing permanent and active candidates. | Text results identify permanent and current-change sources, while the permanent index remains the only persisted catalogue. |
+| Q-47 | Compatibility | An author consumes permanent-only exploration JSON after the source metadata extension. | Every result retains the PR 1 `rank`, `title`, `file`, and `score` fields in their existing order, followed by `scope` and `change`; permanent results report `scope: permanent` and `change: null`. |
+| Q-48 | Correctness | An author queries an added scenario from its delta source or a modified scenario from its delta source or projected permanent target. | The queried identity is absent, and another eligible candidate remains visible; removed scenarios are absent from the active corpus. |
+| Q-49 | Correctness | The same exploration identity is supplied through relative and absolute project paths. | One project-relative forward-slash normalization rule produces the same identity and filtering result for both forms. |
+| Q-50 | Recovery / Integrity | An unsafe, missing, incomplete, or malformed change-aware exploration request is rejected. | The command exits non-zero with a clear error before refreshing the permanent index; the existing index remains unchanged where observable. |
+| Q-51 | Agent ergonomics | An author supplies a complete change-aware draft through a file and through standard input. | Both regular interactions produce the same ranked candidate set; stdin adds no inventory entry or e2e scenario. |
 
 ## 10.3 Acceptance signals per phase
 

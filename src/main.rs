@@ -185,6 +185,9 @@ enum SpecCommands {
         /// Read one complete Gherkin scenario from standard input.
         #[arg(long)]
         stdin: bool,
+        /// Also compare against active scenarios in this change.
+        #[arg(long)]
+        change: Option<String>,
         /// Output format.
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
@@ -254,8 +257,14 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             SpecCommands::Explore {
                 file,
                 stdin,
+                change,
                 format,
-            } => cli::spec::run_explore(file, stdin, matches!(format, SpecFormat::Json)),
+            } => cli::spec::run_explore(
+                file,
+                stdin,
+                change.as_deref(),
+                matches!(format, SpecFormat::Json),
+            ),
             SpecCommands::Review { change } => cli::spec::run_review(&change),
         },
         Commands::Upgrade => cli::upgrade::run(),

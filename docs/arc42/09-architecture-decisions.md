@@ -1616,6 +1616,10 @@ exact `(file, title)` identity for a file query. It never reads the active
 change and never invokes a reranker, NLI model, coverage function, or review
 decision.
 
+This decision remains the no-change contract. ADR-044 extends the same command
+with an optional request-local current-change corpus; it does not alter the
+permanent-only meaning of a request that omits `--change`.
+
 ### Consequences
 
 - Good, because agents compare the same artifact shape they are about to write.
@@ -1642,3 +1646,226 @@ the existing search and review commands.
 Related decisions: ADR-039 (local model-backed retrieval), ADR-040
 (repository-owned CLI fixtures), ADR-041 (strict review gate), chapters 3, 5,
 6, 8, 10, and risks R-18/R-19/R-30/R-31.
+
+---
+
+## ADR-044: Request-local current-change exploration with additive source metadata
+
+---
+status: accepted
+date: 2026-08-16
+decision-makers: givn maintainers
+consulted: spec-explore-change proposal, executable scenarios, and design
+informed: authors consuming text or JSON exploration results
+---
+
+### Context and Problem Statement
+
+ADR-043 deliberately kept complete-scenario exploration permanent-only. An
+author working incrementally in a change also needs to compare a draft with the
+active scenarios already written there. Reading delta scenarios into the
+persisted permanent index would contaminate the permanent catalogue, make
+request order observable, and confuse later index/search operations.
+
+The capability has two external result consumers. A person reads source-labeled
+terminal text, while an agent or script consumes a machine-readable JSON
+document. The new source distinction must be explicit without falsely claiming
+that the output remains byte-for-byte compatible with PR 1.
+
+### Decision Drivers
+
+- Make active `Added` and `Modified` scenarios visible during the current
+  request while excluding `Removed` scenarios.
+- Keep permanent index persistence and `index.entries` permanent-only.
+- Preserve PR 1 validation, permanent ranking, candidate set, and old field
+  order while making source metadata additive.
+- Support both complete file and stdin queries without adding another e2e
+  inventory interaction.
+- Prevent a scenario from matching its own delta source or projected permanent
+  target identity.
+- Fail rejected change requests before a permanent index write.
+
+### Considered Options
+
+1. Persist delta scenarios in the permanent index during exploration.
+2. Keep exploration permanent-only and require a later review command for
+   current-change comparisons.
+3. Build a request-local active-delta corpus, merge it with permanent candidates
+   for ranking, and discard the delta vectors after rendering.
+
+### Decision Outcome
+
+Choose option 3. `givn spec explore --change <id>` validates the change, parses
+and collects its delta features, and then performs the existing permanent
+refresh. Active `Added` and `Modified` scenarios are embedded only for the
+current invocation; `Removed` scenarios are not candidates. A modified
+scenario's delta-source and projected-target identities, and an added
+scenario's source identity, are filtered when they equal the query identity.
+
+No-change requests retain PR 1 input validation, permanent candidate set,
+ranking, and existing result fields/order. The output contract is intentionally
+additive, not byte-for-byte PR 1 compatibility: each result adds `scope` and
+`change` in JSON, including permanent-only requests, and text results identify
+their source. The two requested e2e interactions remain separate because text
+terminal consumption and machine-readable JSON consumption are distinct
+consumer interactions. `--change --stdin` is regular coverage, not another
+inventory entry.
+
+### Consequences
+
+#### Good
+
+- Good, because an author sees permanent and active-change evidence before
+  archiving the change.
+- Good, because the permanent index remains a stable catalogue and delta
+  vectors cannot persist through an explore request.
+- Good, because old JSON fields and their relative order remain stable while
+  source ownership becomes explicit.
+- Good, because rejected change requests can be proven not to mutate the index
+  at the observable persistence boundary.
+
+#### Bad
+
+- Bad, because JSON consumers that reject unknown fields must adopt the
+  intentionally additive contract.
+- Bad, because active delta embedding adds request-local work and does not
+  benefit from permanent index reuse.
+- Bad, because lifecycle identity filtering depends on one canonical path rule;
+  a path mismatch can expose a false self-match or hide another candidate.
+
+### Confirmation
+
+The executable scenarios cover permanent and current-change text/JSON output,
+added self-identity, modified source and projected-target identities, removed
+scenario exclusion, another eligible candidate remaining visible, stdin/file
+parity, permanent-only metadata, and permanent-index non-persistence. Regular
+rejection scenarios cover unsafe ids, missing changes, missing specs
+directories, and malformed delta features with clear non-zero errors.
+
+### Pros and Cons of the Options
+
+#### Persist delta scenarios in the permanent index during exploration
+
+- Good, because subsequent requests could reuse delta vectors.
+- Bad, because request-local work becomes durable catalogue state.
+- Bad, because a rejected or abandoned change could alter permanent search
+  results without archive.
+
+#### Keep exploration permanent-only and defer current-change comparisons
+
+- Good, because the existing persistence boundary remains simple.
+- Bad, because an author cannot detect repetition among scenarios being written
+  in the same change.
+- Bad, because review-time comparison is too late for incremental authoring.
+
+#### Build a request-local active-delta corpus
+
+- Good, because the new evidence is available without changing permanent state.
+- Good, because the existing embedding and ranking path remains the basis for
+  both scopes.
+- Bad, because the request has a second transient corpus and lifecycle filters.
+
+### More Information
+
+Related decisions: ADR-039 (local model-backed retrieval), ADR-040
+(repository-owned CLI fixtures), ADR-043 (complete-scenario permanent-only
+exploration), chapter 6.8c, chapter 8.5c, and risks R-30, R-32, and R-33.
+
+---
+
+## ADR-045: One canonical project-relative path identity for exploration
+
+---
+status: accepted
+date: 2026-08-16
+decision-makers: givn maintainers
+consulted: retrieval identity scenarios and permanent exploration contract
+informed: authors supplying file paths to exploration
+---
+
+### Context and Problem Statement
+
+Exploration compares identities from different sources: permanent index files,
+active delta source files, projected permanent target files, and the query file.
+The same file may arrive as a relative path or an absolute path, and platform
+path separators can differ. Separate normalization at each call site can make
+the same scenario appear as a candidate against itself or remove an unrelated
+candidate.
+
+### Decision Drivers
+
+- Make all exploration identity comparisons deterministic.
+- Treat relative and absolute inputs for the same project file identically.
+- Use forward slashes in persisted and rendered project identities.
+- Keep identity semantics shared by permanent-only and change-aware requests.
+- Avoid a second path representation for projected targets.
+
+### Considered Options
+
+1. Compare paths in the form supplied by each caller.
+2. Store absolute filesystem paths as the identity.
+3. Route every permanent, delta-source, projected-target, and query identity
+   through one project-relative forward-slash normalization helper.
+
+### Decision Outcome
+
+Choose option 3. A single helper resolves relative and absolute inputs against
+the project root, produces the project-relative forward-slash identity, and is
+used for permanent index entries, active delta source files, projected target
+files, and file-query identities. Scenario titles remain the second component
+of identity. The helper is used before lifecycle filtering and ranking, not only
+when rendering output.
+
+### Consequences
+
+#### Good
+
+- Good, because relative and absolute queries have identical self-identity
+  behavior.
+- Good, because source metadata and projected-target filtering use the same
+  representation as permanent index entries.
+- Good, because forward-slash identities are stable in JSON, text, and index
+  data across host platforms.
+
+#### Bad
+
+- Bad, because every new identity-producing path must use the helper rather
+  than introducing a local conversion.
+- Bad, because changing the normalization rule would invalidate identity
+  comparisons and require fresh regression evidence.
+- Bad, because an input path outside the project root still needs a
+  deterministic normalized representation even though it has no permanent
+  project-relative counterpart.
+
+### Confirmation
+
+Regular scenarios query an added scenario from its delta source, query a
+modified scenario from both its delta source and projected permanent target,
+exercise relative/absolute path parity, and assert that another eligible
+candidate remains visible after self-filtering.
+
+### Pros and Cons of the Options
+
+#### Compare paths in the form supplied by each caller
+
+- Good, because no normalization helper is needed.
+- Bad, because equivalent relative and absolute inputs compare differently.
+- Bad, because source and target identities can silently diverge.
+
+#### Store absolute filesystem paths as the identity
+
+- Good, because one host's path can be compared directly on that host.
+- Bad, because persisted index data becomes checkout-location dependent.
+- Bad, because platform separators and project moves make identities unstable.
+
+#### Route all identities through one project-relative helper
+
+- Good, because every source participates in one deterministic identity model.
+- Good, because persisted data and user-visible metadata remain portable.
+- Bad, because the helper is a shared correctness boundary that requires
+  explicit coverage.
+
+### More Information
+
+Related decisions: ADR-043 (exact scenario identity), chapter 5.3a,
+chapter 5.3b, chapter 8.5c, and risk R-30.
