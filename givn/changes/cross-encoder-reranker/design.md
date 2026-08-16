@@ -51,6 +51,12 @@ embedding `0.95` boundary. It is private to the binary and cannot be changed by
 the project, CLI, environment, or review notes. Future calibration requires a
 new code/plan change and a new labeled evaluation.
 
+The pair-reranker path is behind the opt-in Cargo feature
+`cross-encoder-reranker`, which also enables `spec-similarity-gate` and
+`spec-retrieval`. The ordinary `spec-retrieval` build remains advisory; this
+experiment is not active until a later stack layer explicitly builds with
+`--features spec-retrieval,cross-encoder-reranker`.
+
 The model cache is separate from the embedding cache at
 `givn/.spec-reranker-cache/`. The default/no-feature binary remains free of the
 reranker and ONNX Runtime. `GIVN_SPEC_RERANKER=stub` is test-only deterministic
@@ -113,7 +119,7 @@ The executable specification remains:
 ```text
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub \
 GIVN_FEATURES=givn/changes/cross-encoder-reranker/specs \
-cargo test --features spec-retrieval --test features_runner
+cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner
 ```
 
 The runner uses `.fail_on_skipped()` in `tests/features_runner.rs`. The real
@@ -125,7 +131,7 @@ Single-scenario command:
 ```text
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub \
 GIVN_FEATURES=givn/changes/cross-encoder-reranker/specs \
-cargo test --features spec-retrieval --test features_runner -- \
+cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- \
   --name '^Review evaluates semantic candidates through the pair reranker$'
 ```
 
