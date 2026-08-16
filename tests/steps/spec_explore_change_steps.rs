@@ -375,6 +375,25 @@ fn stderr_says_change_was_not_found(_world: &mut GivnWorld, _change: String) {
     assert!(stderr(_world).contains(&format!("change `{_change}` was not found")));
 }
 
+#[given(
+    regex = r#"^a project prepared for current-change exploration with change "([^"]+)" but no specs directory$"#
+)]
+fn project_with_change_but_no_specs(world: &mut GivnWorld, change: String) {
+    let env = common::make_init_root();
+    clear_specs(&env);
+    write_project_path(&env, "givn/specs/provider.feature", PERMANENT_CORPUS);
+    fs::create_dir_all(env.path(&format!("givn/changes/{change}")))
+        .expect("create change without specs");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[then(regex = r#"^stderr clearly says change "([^"]+)" has no specs directory$"#)]
+fn stderr_says_change_has_no_specs(_world: &mut GivnWorld, _change: String) {
+    assert!(stderr(_world).contains(&format!("change `{_change}` has no specs directory")));
+}
+
 fn exploration_json(world: &GivnWorld) -> serde_json::Value {
     serde_json::from_str(&stdout(world)).expect("exploration stdout must be JSON")
 }
