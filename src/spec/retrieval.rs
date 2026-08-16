@@ -344,7 +344,7 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
         return Ok(());
     }
     bail!(
-        "semantic review blocked: {} candidate(s) remain UNCERTAIN; classify every candidate in semantic-review.md",
+        "semantic review blocked: {} candidate(s) remain UNCERTAIN or lack rationale; classify every candidate in semantic-review.md",
         unresolved
     )
 }

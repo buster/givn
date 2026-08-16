@@ -168,16 +168,21 @@ givn skills sync
 - [x] REFACTOR: recompute status/count and rerun. Evidence: after `cargo fmt
       --all`, targeted run passed with `1 scenario (1 passed)`, `8 steps (8
       passed)`.
-- [ ] COMMIT: `feat(semantic-review): A complete classification allows change review and survives regeneration`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A complete classification allows change review and survives regeneration`
+      Hash: `1d5e9fd`
 
 ### Every resolved semantic classification requires a rationale
 
-- [ ] RED: target missing-rationale behavior with strict stubs. Evidence: 
-- [ ] GREEN: reject resolved classifications without a non-empty rationale and
+- [x] RED: target missing-rationale behavior with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the no-rationale step panicked
+      with `not implemented`.
+- [x] GREEN: reject resolved classifications without a non-empty rationale and
       keep the gate blocked. Production files: `src/spec/retrieval.rs`, tests
-      step files. Evidence: 
-- [ ] REFACTOR: preserve rationale carry-forward and rerun. Evidence: 
+      step files. Evidence: targeted run passed with `1 scenario (1 passed)`,
+      `7 steps (7 passed)`.
+- [x] REFACTOR: preserve rationale carry-forward and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Every resolved semantic classification requires a rationale`
       Hash: 
 
