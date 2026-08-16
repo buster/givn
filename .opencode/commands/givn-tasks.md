@@ -92,6 +92,10 @@ design.md, so everything needed must be in the task.
 
 **After all non-@e2e scenarios: e2e setup + one task per @e2e scenario.**
 
+Read `givn instructions specs --change <id>` for the canonical normalized
+action scope and real-interface policy. This command defines task mechanics,
+not a second E2E policy.
+
 ```markdown
 - [ ] Setup: configure e2e test infrastructure, strict mode, and verify.e2e_command
       - Install the e2e framework from design.md (Playwright, Testcontainers, etc.)
