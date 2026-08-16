@@ -13,7 +13,7 @@ path = "src/lib.rs"
 
 [features]
 default = []
-spec-retrieval = ["dep:fastembed"]
+spec-retrieval = ["dep:fastembed", "dep:ndarray", "dep:ort", "dep:tokenizers"]
 
 [dependencies]
 clap = { version = "4.6", features = ["derive"] }
@@ -27,6 +27,9 @@ anyhow = "1.0"
 thiserror = "2.0"
 quick-xml = { version = "0.37", features = ["serialize"] }
 fastembed = { version = "=5.17.2", optional = true, default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries-rustls-tls"] }
+ndarray = { version = "=0.17.2", optional = true, default-features = false }
+ort = { version = "=2.0.0-rc.12", optional = true, default-features = false, features = ["api-24", "download-binaries", "ndarray", "std", "tls-rustls"] }
+tokenizers = { version = "=0.22.2", optional = true, default-features = false, features = ["onig"] }
 
 [dev-dependencies]
 tempfile = "3"

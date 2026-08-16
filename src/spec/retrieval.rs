@@ -6,6 +6,9 @@ use anyhow::{Result, bail};
 use anyhow::Context;
 
 #[cfg(feature = "spec-retrieval")]
+use ndarray::Array;
+
+#[cfg(feature = "spec-retrieval")]
 use std::collections::BTreeMap;
 
 #[cfg(feature = "spec-retrieval")]
@@ -13,6 +16,9 @@ use std::fs;
 
 #[cfg(feature = "spec-retrieval")]
 use serde::{Deserialize, Serialize};
+
+#[cfg(feature = "spec-retrieval")]
+use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
 
 #[cfg(feature = "spec-retrieval")]
 const INDEX_VERSION: u32 = 1;
@@ -24,6 +30,12 @@ const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_TOP_K: usize = 5;
+#[cfg(feature = "spec-retrieval")]
+const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7";
+#[cfg(feature = "spec-retrieval")]
+const NLI_MAX_LENGTH: usize = 512;
+#[cfg(feature = "spec-retrieval")]
+const NLI_REPORT_LIMIT: usize = 20;
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -73,6 +85,7 @@ struct SimilarityCandidate {
     right: SimilarityEndpoint,
     embedding_score: f32,
     rerank_score: f32,
+    nli: Option<NliEvidence>,
     scopes: Vec<&'static str>,
 }
 
@@ -82,6 +95,28 @@ struct ScenarioRecord {
     endpoint: SimilarityEndpoint,
     embedding: Vec<f32>,
 }
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Copy)]
+enum NliBackend {
+    Stub,
+    Local,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Copy)]
+struct NliEvidence {
+    forward: [f32; 3],
+    reverse: [f32; 3],
+    symmetric: [f32; 3],
+}
+
+#[cfg(feature = "spec-retrieval")]
+type CandidatePool = (
+    Vec<SimilarityCandidate>,
+    usize,
+    BTreeMap<(String, String), String>,
+);
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Copy)]
@@ -217,6 +252,12 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let index = read_index(&spec_index_path(root))?;
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
+    if let Some(backend) = nli_backend_from_env()? {
+        let (candidates, considered) = nli_similarity_candidates(root, &index, &delta, backend)?;
+        print_nli_results(&candidates, considered);
+        return Ok(());
+    }
+
     let (candidates, considered) = similarity_candidates(root, &index, &delta)?;
     println!(
         "reranker: model {}, top_k {}, considered {} candidate pairs, fixed raw-logit boundary {:.4}",
@@ -385,11 +426,11 @@ fn is_queryable_scenario(scenario: &gherkin::Scenario) -> bool {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn similarity_candidates(
+fn similarity_candidate_pool(
     root: &Path,
     index: &SpecIndex,
     delta: &[DeltaScenario],
-) -> Result<(Vec<SimilarityCandidate>, usize)> {
+) -> Result<CandidatePool> {
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
@@ -460,8 +501,18 @@ fn similarity_candidates(
         }
     }
 
-    let mut result: Vec<SimilarityCandidate> = candidates.into_values().collect();
+    let result: Vec<SimilarityCandidate> = candidates.into_values().collect();
     let considered = result.len();
+    Ok((result, considered, candidate_texts))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn similarity_candidates(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+) -> Result<(Vec<SimilarityCandidate>, usize)> {
+    let (mut result, considered, candidate_texts) = similarity_candidate_pool(root, index, delta)?;
     rerank_candidates(root, &mut result, &candidate_texts)?;
     result.retain(|candidate| candidate.rerank_score >= RERANKER_LOGIT_THRESHOLD);
     result.sort_by(|left, right| {
@@ -472,6 +523,381 @@ fn similarity_candidates(
             .then_with(|| left.right.cmp(&right.right))
     });
     Ok((result, considered))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_backend_from_env() -> Result<Option<NliBackend>> {
+    match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
+        Ok("nli") => Ok(Some(NliBackend::Local)),
+        Ok("nli-stub") => Ok(Some(NliBackend::Stub)),
+        Ok("nli-missing") => {
+            bail!("NLI model is unavailable; configure a local NLI model directory")
+        }
+        Ok(_) | Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(std::env::VarError::NotUnicode(_)) => {
+            bail!("GIVN_SPEC_RERANKER is not valid UTF-8")
+        }
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_similarity_candidates(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+    backend: NliBackend,
+) -> Result<(Vec<SimilarityCandidate>, usize)> {
+    let (mut result, considered, candidate_texts) = similarity_candidate_pool(root, index, delta)?;
+    score_nli_candidates(root, &mut result, &candidate_texts, backend)?;
+    result.sort_by(|left, right| {
+        nli_strength(right)
+            .total_cmp(&nli_strength(left))
+            .then_with(|| right.embedding_score.total_cmp(&left.embedding_score))
+            .then_with(|| left.left.cmp(&right.left))
+            .then_with(|| left.right.cmp(&right.right))
+    });
+    Ok((result, considered))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
+    let mut label_counts = [0usize; 3];
+    for candidate in candidates {
+        if let Some(evidence) = candidate.nli {
+            let (index, _) = evidence
+                .symmetric
+                .iter()
+                .copied()
+                .enumerate()
+                .max_by(|left, right| left.1.total_cmp(&right.1))
+                .unwrap_or((1, 0.0));
+            label_counts[index] += 1;
+        }
+    }
+    let report_limit = nli_report_limit();
+    println!(
+        "nli: model {}, top_k {}, considered {} candidate pairs; evidence is diagnostic only",
+        NLI_MODEL_ID, RERANKER_TOP_K, considered
+    );
+    println!(
+        "nli distribution: entailment {}, neutral {}, contradiction {}",
+        label_counts[0], label_counts[1], label_counts[2]
+    );
+    for candidate in candidates.iter().take(report_limit) {
+        let Some(evidence) = candidate.nli else {
+            continue;
+        };
+        println!(
+            "nli candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}; forward [entailment {:.4}, neutral {:.4}, contradiction {:.4}], reverse [entailment {:.4}, neutral {:.4}, contradiction {:.4}], symmetric [entailment {:.4}, neutral {:.4}, contradiction {:.4}], strongest {}",
+            candidate.scopes.join(","),
+            candidate.left.title,
+            candidate.left.file,
+            candidate.right.title,
+            candidate.right.file,
+            candidate.embedding_score,
+            evidence.forward[0],
+            evidence.forward[1],
+            evidence.forward[2],
+            evidence.reverse[0],
+            evidence.reverse[1],
+            evidence.reverse[2],
+            evidence.symmetric[0],
+            evidence.symmetric[1],
+            evidence.symmetric[2],
+            nli_label(&evidence.symmetric),
+        );
+    }
+    println!(
+        "nli diagnostic: reported at most {} candidates; NLI probabilities are not calibrated duplicate, variant, or boundary decisions",
+        report_limit
+    );
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_report_limit() -> usize {
+    std::env::var("GIVN_SPEC_NLI_REPORT_LIMIT")
+        .ok()
+        .and_then(|value| value.parse::<usize>().ok())
+        .filter(|value| *value > 0)
+        .unwrap_or(NLI_REPORT_LIMIT)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_strength(candidate: &SimilarityCandidate) -> f32 {
+    candidate
+        .nli
+        .map(|evidence| evidence.symmetric[0].max(evidence.symmetric[2]))
+        .unwrap_or(0.0)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn score_nli_candidates(
+    root: &Path,
+    candidates: &mut [SimilarityCandidate],
+    texts: &BTreeMap<(String, String), String>,
+    backend: NliBackend,
+) -> Result<()> {
+    if candidates.is_empty() {
+        return Ok(());
+    }
+
+    match backend {
+        NliBackend::Stub => {
+            for candidate in candidates {
+                let left = scenario_text_for(texts, &candidate.left)?;
+                let right = scenario_text_for(texts, &candidate.right)?;
+                candidate.nli = Some(nli_evidence(
+                    stub_nli_logits(left, right),
+                    stub_nli_logits(right, left),
+                ));
+            }
+        }
+        NliBackend::Local => {
+            let mut classifier = NliClassifier::load(root)
+                .context("NLI model is unavailable; check GIVN_SPEC_NLI_MODEL_DIR")?;
+            let mut pairs = Vec::with_capacity(candidates.len() * 2);
+            for candidate in candidates.iter() {
+                let left = scenario_text_for(texts, &candidate.left)?;
+                let right = scenario_text_for(texts, &candidate.right)?;
+                pairs.push((left.to_string(), right.to_string()));
+                pairs.push((right.to_string(), left.to_string()));
+            }
+            let logits = classifier.score_pairs(&pairs)?;
+            for (candidate, pair_logits) in candidates.iter_mut().zip(logits.chunks_exact(2)) {
+                candidate.nli = Some(nli_evidence(pair_logits[0], pair_logits[1]));
+            }
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_evidence(forward_logits: [f32; 3], reverse_logits: [f32; 3]) -> NliEvidence {
+    let forward = softmax3(forward_logits);
+    let reverse = softmax3(reverse_logits);
+    let symmetric = softmax3([
+        (forward_logits[0] + reverse_logits[0]) / 2.0,
+        (forward_logits[1] + reverse_logits[1]) / 2.0,
+        (forward_logits[2] + reverse_logits[2]) / 2.0,
+    ]);
+    NliEvidence {
+        forward,
+        reverse,
+        symmetric,
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn softmax3(logits: [f32; 3]) -> [f32; 3] {
+    let maximum = logits.into_iter().fold(f32::NEG_INFINITY, f32::max);
+    let exponentials = logits.map(|logit| (logit - maximum).exp());
+    let total = exponentials.into_iter().sum::<f32>();
+    exponentials.map(|value| value / total)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_label(probabilities: &[f32; 3]) -> &'static str {
+    let (index, _) = probabilities
+        .iter()
+        .copied()
+        .enumerate()
+        .max_by(|left, right| left.1.total_cmp(&right.1))
+        .unwrap_or((1, 0.0));
+    ["entailment", "neutral", "contradiction"][index]
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn stub_nli_logits(left: &str, right: &str) -> [f32; 3] {
+    let left_tokens = reranker_tokens(left);
+    let right_tokens = reranker_tokens(right);
+    let shared = left_tokens.intersection(&right_tokens).count() as f32;
+    let union = left_tokens.union(&right_tokens).count() as f32;
+    let overlap = if union == 0.0 { 0.0 } else { shared / union };
+    if overlap >= 0.55 {
+        [2.2, -0.2, 0.1]
+    } else {
+        [-0.4, 1.4, 0.2]
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+struct NliClassifier {
+    tokenizer: Tokenizer,
+    session: ort::session::Session,
+    label_indices: [usize; 3],
+    need_token_type_ids: bool,
+}
+
+#[cfg(feature = "spec-retrieval")]
+impl NliClassifier {
+    fn load(root: &Path) -> Result<Self> {
+        let model_dir = std::env::var_os("GIVN_SPEC_NLI_MODEL_DIR")
+            .map(std::path::PathBuf::from)
+            .unwrap_or_else(|| root.join("givn/.spec-nli-cache"));
+        let config_path = model_dir.join("config.json");
+        let config_bytes = fs::read(&config_path)
+            .with_context(|| format!("read NLI config {}", config_path.display()))?;
+        let config: serde_json::Value =
+            serde_json::from_slice(&config_bytes).context("parse NLI config.json")?;
+        let label_indices = nli_label_indices(&config)?;
+
+        let tokenizer_path = model_dir.join("tokenizer.json");
+        let tokenizer_config_path = model_dir.join("tokenizer_config.json");
+        let tokenizer_config_bytes = fs::read(&tokenizer_config_path).with_context(|| {
+            format!(
+                "read NLI tokenizer config {}",
+                tokenizer_config_path.display()
+            )
+        })?;
+        let tokenizer_config: serde_json::Value = serde_json::from_slice(&tokenizer_config_bytes)
+            .context("parse NLI tokenizer_config.json")?;
+        let pad_id = config["pad_token_id"].as_u64().unwrap_or(0) as u32;
+        let pad_token = tokenizer_config["pad_token"]
+            .as_str()
+            .or_else(|| config["pad_token"].as_str())
+            .unwrap_or("[PAD]")
+            .to_string();
+        let model_max_length = tokenizer_config["model_max_length"]
+            .as_u64()
+            .unwrap_or(NLI_MAX_LENGTH as u64) as usize;
+        let max_length = model_max_length.min(NLI_MAX_LENGTH);
+
+        let tokenizer_bytes = fs::read(&tokenizer_path)
+            .with_context(|| format!("read NLI tokenizer {}", tokenizer_path.display()))?;
+        let tokenizer = Tokenizer::from_bytes(tokenizer_bytes)
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?
+            .with_padding(Some(PaddingParams {
+                strategy: PaddingStrategy::BatchLongest,
+                pad_token,
+                pad_id,
+                ..Default::default()
+            }))
+            .with_truncation(Some(TruncationParams {
+                max_length,
+                ..Default::default()
+            }))
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?
+            .clone();
+
+        let model_path = model_dir.join("model.onnx");
+        let session = ort::session::Session::builder()
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?
+            .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?
+            .with_intra_threads(4)
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?
+            .commit_from_file(&model_path)
+            .with_context(|| format!("load NLI ONNX model {}", model_path.display()))?;
+        let need_token_type_ids = session
+            .inputs()
+            .iter()
+            .any(|input| input.name() == "token_type_ids");
+
+        Ok(Self {
+            tokenizer: tokenizer.into(),
+            session,
+            label_indices,
+            need_token_type_ids,
+        })
+    }
+
+    fn score_pairs(&mut self, pairs: &[(String, String)]) -> Result<Vec<[f32; 3]>> {
+        let mut scores = Vec::with_capacity(pairs.len());
+        for batch in pairs.chunks(32) {
+            let inputs: Vec<(&str, &str)> = batch
+                .iter()
+                .map(|(left, right)| (left.as_str(), right.as_str()))
+                .collect();
+            let encodings = self
+                .tokenizer
+                .encode_batch(inputs, true)
+                .map_err(|error| anyhow::anyhow!(error.to_string()))
+                .context("tokenize NLI scenario pairs")?;
+            let encoding_length = encodings
+                .first()
+                .context("NLI tokenizer returned no encodings")?
+                .len();
+            let batch_size = batch.len();
+            let mut ids = Vec::with_capacity(batch_size * encoding_length);
+            let mut masks = Vec::with_capacity(batch_size * encoding_length);
+            let mut type_ids = Vec::with_capacity(batch_size * encoding_length);
+            for encoding in &encodings {
+                ids.extend(encoding.get_ids().iter().map(|id| *id as i64));
+                masks.extend(
+                    encoding
+                        .get_attention_mask()
+                        .iter()
+                        .map(|mask| *mask as i64),
+                );
+                type_ids.extend(encoding.get_type_ids().iter().map(|id| *id as i64));
+            }
+
+            let ids = Array::from_shape_vec((batch_size, encoding_length), ids)?;
+            let masks = Array::from_shape_vec((batch_size, encoding_length), masks)?;
+            let type_ids = Array::from_shape_vec((batch_size, encoding_length), type_ids)?;
+            let mut session_inputs = ort::inputs![
+                "input_ids" => ort::value::Value::from_array(ids)?,
+                "attention_mask" => ort::value::Value::from_array(masks)?,
+            ];
+            if self.need_token_type_ids {
+                session_inputs.push((
+                    "token_type_ids".into(),
+                    ort::value::Value::from_array(type_ids)?.into(),
+                ));
+            }
+            let outputs = self.session.run(session_inputs)?;
+            let logits = outputs
+                .get("logits")
+                .context("NLI ONNX output has no logits tensor")?
+                .try_extract_array::<f32>()
+                .context("extract NLI logits")?;
+            let values: Vec<f32> = logits.iter().copied().collect();
+            anyhow::ensure!(
+                values.len() == batch_size * 3,
+                "NLI logits shape has {} values for {} pairs",
+                values.len(),
+                batch_size
+            );
+            for row in values.chunks_exact(3) {
+                scores.push([
+                    row[self.label_indices[0]],
+                    row[self.label_indices[1]],
+                    row[self.label_indices[2]],
+                ]);
+            }
+        }
+        Ok(scores)
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn nli_label_indices(config: &serde_json::Value) -> Result<[usize; 3]> {
+    let labels = config["id2label"]
+        .as_object()
+        .context("NLI config.json has no id2label object")?;
+    let mut indices = [None; 3];
+    for (key, value) in labels {
+        let index = key.parse::<usize>().context("parse NLI label index")?;
+        let label = value
+            .as_str()
+            .context("NLI id2label value is not a string")?
+            .to_ascii_lowercase();
+        let slot = if label.contains("entail") {
+            0
+        } else if label.contains("neutral") {
+            1
+        } else if label.contains("contrad") {
+            2
+        } else {
+            continue;
+        };
+        indices[slot] = Some(index);
+    }
+    Ok([
+        indices[0].context("NLI config has no entailment label")?,
+        indices[1].context("NLI config has no neutral label")?,
+        indices[2].context("NLI config has no contradiction label")?,
+    ])
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -577,6 +1003,7 @@ fn add_similarity_candidate(
             right,
             embedding_score: score,
             rerank_score: f32::NEG_INFINITY,
+            nli: None,
             scopes: vec![scope],
         },
     );
@@ -881,5 +1308,34 @@ fn print_search_results(ranked: &[(&IndexEntry, f32)]) {
             entry.file,
             score
         );
+    }
+}
+
+#[cfg(all(test, feature = "spec-retrieval"))]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn nli_evidence_averages_directional_logits_before_softmax() {
+        let evidence = nli_evidence([4.0, 0.0, 0.0], [0.0, 4.0, 0.0]);
+
+        assert!(evidence.forward[0] > 0.9);
+        assert!(evidence.reverse[1] > 0.9);
+        assert!(evidence.symmetric[0] > 0.45);
+        assert!(evidence.symmetric[1] > 0.45);
+        assert!((evidence.symmetric.iter().sum::<f32>() - 1.0).abs() < 1e-5);
+    }
+
+    #[test]
+    fn nli_labels_are_read_by_name_not_position() {
+        let config = serde_json::json!({
+            "id2label": {
+                "0": "contradiction",
+                "1": "entailment",
+                "2": "neutral"
+            }
+        });
+
+        assert_eq!(nli_label_indices(&config).unwrap(), [1, 2, 0]);
     }
 }

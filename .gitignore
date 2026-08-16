@@ -18,6 +18,7 @@ reports/
 givn/.spec-index.json
 givn/.spec-model-cache/
 givn/.spec-reranker-cache/
+givn/.spec-nli-cache/
 
 # Backup files
 **/*.rs.bk
