@@ -95,17 +95,10 @@ For each @e2e scenario:
               use the not-implemented stub, never an empty body.
             Run: verify.e2e_command, targeting this scenario only →
               MUST FAIL. Paste evidence.
-  GREEN:    Set up test infrastructure if needed. Replace stubs with real
-              assertions driving the actual interface AS THE PRIMARY
-              assertion (page content, HTTP response, redirect, CLI
-              output). Repository checks are secondary/additional only —
-              never the sole assertion. For a browser-UI capability, drive
-              the actual browser (click/type/navigate) — never an HTTP
-              request or in-page `fetch()` standing in for browser
-              interaction. If a real-interface obstacle appears, apply the
-              fix design.md names for it; if none is named, STOP — this is
-              a design gap, not a reason to downgrade to a repository-only
-              or HTTP/fetch() shortcut. List files touched.
+  GREEN:    Read `givn instructions specs --change <change-id>` and the
+              reviewed design's interface section. Set up the named
+              infrastructure and assert through the real interface as the
+              canonical policy requires. List files touched.
             Run: verify.e2e_command, targeting this scenario only →
               scenario PASSES. Paste evidence.
   REFACTOR: Clean up e2e code. Runner still PASSES. Paste evidence.
@@ -143,12 +136,9 @@ Then move to the next @e2e scenario.
   boxes at the end. Using `sed` or any text-replacement tool to
   mass-check boxes without filling in evidence and commit hashes is
   prohibited — each box is checked individually as each scenario is done.
-- A `@e2e` scenario whose Then steps assert only against a repository is not
-  done, no matter what the runner reports — it needs a real-interface assertion.
-- For a browser-UI capability, an `@e2e` scenario driven via HTTP request or
-  in-page `fetch()` instead of a real browser driver is not done — the
-  interaction was never real, regardless of what the assertion checks.
-- One `@e2e` scenario per distinct happy-path action, not per variant.
+- Read the canonical specs instruction before evaluating E2E action scope,
+  primary assertions, or driver fidelity. A scenario that violates it is not
+  done, regardless of the runner result.
 - Track progress: `givn status --change <change-id>`
 
 ## Verify command

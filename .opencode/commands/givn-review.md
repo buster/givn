@@ -92,11 +92,10 @@ Mechanical check, before trusting anything else:
    one exists, read all of them. Reviewing a weaker implementation while a
    stronger, real-interface one already exists elsewhere in the tree is
    itself a fabrication-audit finding — use and credit the strongest one.
-8. Check `@e2e` scope: each capability should have one `@e2e` scenario per
-   distinct happy-path action, not one per input variant/error case/enum
-   value. Record any capability with more than one `@e2e` scenario covering
-   the same action as an over-production finding — convert the excess to
-   regular scenarios.
+8. Read `givn instructions specs --change <id>` and apply its normalized
+   action scope. Record any capability with more than one `@e2e` scenario
+   covering the same action as over-production; convert the excess to regular
+   scenarios.
 9. Confirm the local run command (design.md's Local Runnability section)
    still starts the full stack — including every digital twin — cleanly.
 10. Read `verify.command` and `verify.e2e_command` from `givn/config.yaml`
@@ -140,6 +139,12 @@ or implementation and repeat the comparison; if design.md changes, re-run
 design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
 row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
 
+### Deterministic gate dispositions
+
+Complete the **Overlap dispositions** table for every shape match, add a
+**split-or-keep** decision for every long scenario, and explain every
+removed+added pair as supersession or unrelated work before sign-off.
+
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
 Failures: diagnose infrastructure (fix plumbing only) or coverage gap
@@ -171,15 +176,11 @@ downgraded `@e2e` scenario is always "Missing test," never excused.
 Per the table above; hard-to-test gaps get a written justification, no code change.
 
 ### 6. Confirm e2e coverage
-Every capability needs exactly one `@e2e` scenario per distinct happy-path
-action, with a real-interface primary assertion driven through the actual
-interface (real browser for a browser-UI capability — never HTTP/fetch()
-standing in for it). Missing, downgraded, driven via HTTP/fetch() instead
-of the real interface, or over-produced (one per variant) = classify as
-"missing test"/"needs fixing" and add, fix, or convert accordingly — never
-as an exception outside the three buckets. Before concluding a real driver
-is unavailable or not yet installed, search the tree yourself (including
-untracked files, per step 0.7) — do not take an absence at face value.
+Read the resolved specs instruction and verify its normalized inventory,
+real-interface primary assertions, and driver fidelity. Missing, downgraded,
+or over-produced coverage is unfinished work and must be added, fixed, or
+converted under the three buckets. Before concluding a real driver is
+unavailable, search the tree yourself, including untracked files.
 
 ### 7. Final GREEN confirmation
 Re-run both runners. Must pass after all gap resolutions.
@@ -213,8 +214,8 @@ trusting the subagent's report:
 3. Read every `@e2e` scenario's step definitions yourself. Confirm each has
    a real-interface assertion, not repository-only, and — for a browser-UI
    capability — is actually driven through a real browser, not HTTP/fetch().
-4. Confirm no capability has more than one `@e2e` scenario per happy-path
-   action.
+4. Read the canonical specs instruction and confirm no capability has more
+   than one `@e2e` scenario for the same normalized action.
 5. Independently confirm which file(s) `<verify.e2e_command>` invokes, and
    run `git status` / search the tree yourself for any other e2e
    implementation (including untracked files) the subagent's report did not
@@ -281,11 +282,9 @@ Display: "Run `/givn-archive` to archive this change."
 - `REVIEW: PASS` requires all gaps resolved AND a clean fabrication audit.
 - New scenarios added during review go through the full loop before sign-off.
 - `givn lint` is static only; GREEN comes from the runners.
-- Every capability needs exactly one `@e2e` scenario per distinct
-  happy-path action, with a real-interface primary assertion —
-  repository-only assertions, and HTTP/fetch() standing in for real browser
-  interaction on a browser-UI capability, never satisfy this. More than one
-  `@e2e` scenario per action is over-production, not thoroughness.
+- Apply the canonical E2E policy from the resolved specs instruction. Verify
+  normalized action coverage, real-interface primary assertions, and driver
+  fidelity; more than one scenario for the same action is over-production.
 - The local run command must start the full stack, digital twins included,
   cleanly — confirmed during this review, not assumed.
 - The three-bucket classification is exhaustive. No fourth bucket, no

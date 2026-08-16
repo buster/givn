@@ -34,53 +34,24 @@ Write the Gherkin spec delta for change `<change-id>`.
 - On archive, all `@givn.*` tags are stripped automatically.
   The `@e2e` tag is preserved (it is not a `@givn.*` tag).
 
-## User Interaction Inventory (mandatory, before writing any scenario)
+## Canonical interaction policy
 
-Enumerate every interaction a consumer performs against the system's black-box
-boundary — before writing any scenario text. An interaction is a discrete
-action that triggers an observable state change through the real interface.
-What counts as "the real interface" depends on the system type:
+Before writing any scenario, run:
 
-| System type | Real interface | Inventory must include |
-|---|---|---|
-| **Web UI** | Rendered browser (Playwright, Selenium) | Every button click, form submission, navigation link, SSE/WS event that changes visible content. |
-| **CLI / terminal** | Real subprocess invocation | Every subcommand, every flag combination that produces different output. |
-| **HTTP/REST API** | Real HTTP client against deployed server | Every endpoint, every side-effect-permitting operation. |
-| **Library / SDK** | Public API surface from real consumer code | Every public function or method a consumer invokes. |
-| **Message/event bus** | Real producer/consumer against running services | Every message type consumed, every side-effect-producing message published. |
-
-Record the inventory as a comment block at the very top of the `.feature`
-file, before the Feature header. One entry per interaction:
-
-```
-# User Interaction Inventory:
-# - <action description>
-# - <action description>
+```sh
+givn instructions specs --change <change-id>
 ```
 
-Each inventory entry MUST have at least one matching `@e2e` scenario in the
-same `.feature` file. The inventory is the exhaustive list — there is no
-second-class interaction that can skip e2e coverage. If an inventory entry
-has no corresponding `@e2e` scenario, the spec is incomplete — fill the gap
-before moving to design.
+That instruction is the normative source for the user interaction inventory,
+real-interface assertions, flag-variant classification, and one-E2E-per-action
+scope. This skill only choreographs when to read it and how to write the delta;
+it does not restate the policy.
 
-## End-to-end smoke tests (`@e2e`)
+## Deterministic gates before retrieval
 
-Every capability MUST include one `@e2e` smoke-test scenario per User
-Interaction Inventory entry, each exercising the real interaction surface
-(browser, CLI, API, etc.). The exact number is determined by the inventory:
-one `@e2e` scenario per entry, not fewer.
-
-- Tag `@e2e` alongside the delta tag: `@givn.added @e2e @wip`.
-- `@e2e` scenarios run via `verify.e2e_command`, not `verify.command`.
-- They use separate step definitions (location documented in `design.md`).
-- They cover the critical happy path through the real external boundary.
-- They are NOT unit tests wrapped in Gherkin, NOT in-process integration tests.
-- **Scope: one `@e2e` scenario per distinct happy-path action, not per
-  variant.** Do not add a second `@e2e` scenario for every input variant,
-  error case, or enum/dropdown value of the same action — those are regular
-  scenarios. Add another `@e2e` scenario only for a genuinely different
-  user-facing action.
+Until the retrieval change exists, use the deterministic lint and review gates
+and their human disposition tables. Do not add a `givn spec index` or semantic-
+search step here.
 
 ## Verify command
 
