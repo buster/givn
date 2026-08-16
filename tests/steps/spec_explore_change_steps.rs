@@ -256,6 +256,45 @@ fn permanent_exploration_index_unchanged(world: &mut GivnWorld) {
     assert_eq!(after, *before, "exploration changed the permanent index");
 }
 
+#[then(regex = r#"^stdout contains a permanent candidate titled "([^"]+)"$"#)]
+fn stdout_contains_permanent_candidate(_world: &mut GivnWorld, _title: String) {
+    let world = _world;
+    assert!(
+        stdout(world)
+            .lines()
+            .filter(|line| line.trim_start().starts_with("rank "))
+            .any(|line| line.contains(&_title)),
+        "permanent candidate is missing: {}",
+        stdout(world)
+    );
+}
+
+#[then(regex = r#"^stdout identifies the permanent candidate with scope "([^"]+)"$"#)]
+fn stdout_identifies_permanent_scope(_world: &mut GivnWorld, _scope: String) {
+    let world = _world;
+    assert!(
+        stdout(world)
+            .lines()
+            .filter(|line| line.trim_start().starts_with("rank "))
+            .any(|line| line.contains(&format!("scope {}", _scope))),
+        "permanent scope is missing: {}",
+        stdout(world)
+    );
+}
+
+#[then(regex = r#"^stdout identifies the permanent candidate source as "([^"]+)"$"#)]
+fn stdout_identifies_permanent_source(_world: &mut GivnWorld, _source: String) {
+    let world = _world;
+    assert!(
+        stdout(world)
+            .lines()
+            .filter(|line| line.trim_start().starts_with("rank "))
+            .any(|line| line.contains(&format!("source {}", _source))),
+        "permanent source is missing: {}",
+        stdout(world)
+    );
+}
+
 #[when(
     "the user explores the modified delta scenario once by its relative path and once by its absolute project path against change \"current-change\""
 )]
