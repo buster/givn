@@ -162,17 +162,24 @@ givn/changes/<id>/semantic-review.md
 
 **Scope:**
 
-- Generate candidates involving added and modified delta scenarios.
-- Compare delta scenarios against permanent scenarios and against active delta
-  scenarios.
-- Use the existing E5 candidate generation and deterministic candidate identity.
-- Record both endpoints, paths, titles, scores, scopes, and content hashes.
-- Record the available deterministic facts without adding BGE or NLI yet.
-- Require one of `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, `UNRELATED`, or
-  `UNCERTAIN` for every candidate.
-- Make missing or `UNCERTAIN` classifications fail the change review.
-- Regenerate the file completely on every run. The report is intentionally a
-  transient working document; the agent re-evaluates after each edit.
+- Generate the report only from blocking `givn check review --change <id>`;
+  preserve advisory `givn spec review --change <id>` behavior.
+- Include active Added/Modified delta-to-permanent and delta-to-delta candidates
+  whose E5 cosine score is at least the binary-fixed `0.9500` boundary. Exclude
+  Removed and permanent-permanent pairs; a Modified scenario excludes only its
+  own projected target.
+- Record both endpoints, paths, titles, scopes, scores, complete source-ordered
+  evidence, content/evidence hashes, and deterministic facts without BGE/NLI.
+- Require one of `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN` for
+  every candidate, with an agent-authored rationale for every resolved value.
+  A candidate that appears unrelated above the boundary is not a fourth class:
+  sharpen its domain vocabulary/invariant or resolve it as an allowed class.
+- Make missing, invalid, or `UNCERTAIN` classifications fail the change review.
+- Regenerate the complete change-local report atomically on every run, carry
+  classifications only across unchanged full evidence, and retain the report
+  as historical evidence when the existing archive move runs.
+- Treat a malformed permanent index as stale, rebuild it from permanent specs,
+  and keep the rebuilt index structurally permanent-only.
 - Keep the existing structural overlap and coverage review contracts intact.
 
 **Agent responsibility:** Givn generates evidence and the report. The agent
@@ -180,7 +187,9 @@ edits the current change. Givn does not rewrite or delete feature files itself.
 
 **Completion evidence:** A change with a semantic candidate receives a complete
 report; an unclassified candidate exits non-zero; a fully classified report
-exits zero while still leaving the specs untouched.
+exits zero while leaving feature files, permanent specs, and dispositions
+untouched; a seemingly unrelated high-score candidate cannot pass without
+vocabulary sharpening or an allowed classification.
 
 ### PR 4: Verify Semantic Remediation
 
@@ -341,9 +350,11 @@ runtime and tooling cost.
 
 ### Gherkin-Specific Pair Classifier
 
-Train or calibrate a classifier for `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, and
-`UNRELATED` using adjudicated Givn and Watn pairs. No off-the-shelf BGE or NLI
-score may be treated as this classifier.
+Train or calibrate a classifier for `DUPLIKAT`, `VARIANTE`, and
+`VALID-BOUNDARY` using adjudicated Givn and Watn pairs. A candidate that appears
+unrelated above the active boundary is not a fourth class: its vocabulary or
+invariant must be clarified. No off-the-shelf BGE or NLI score may be treated as
+this classifier.
 
 ### LLM-Assisted Adjudication
 
