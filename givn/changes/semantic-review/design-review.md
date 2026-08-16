@@ -97,4 +97,16 @@ and no parse or structural errors. `git diff --check` passes. Production code
 has not been written before tasks; the missing no-feature behavior and score
 seam remain explicit implementation tasks rather than hidden assumptions.
 
+## Post-sign-off Design Conformance
+
+After implementation, the integrity hook exposed that the `Step Definitions`
+section must begin with a markdown table. The design was corrected to list the
+regular and CLI-E2E step-definition files explicitly before the existing runner
+and command details. This is a documentation-format correction only; it does
+not change the reviewed command, file layout, framework, interaction boundary,
+or scenario scope. The design review was rerun against the corrected section;
+no new scope, testability, E2E, risk, or Arc42 finding was introduced. The
+post-implementation primitive inventory was also added to `design.md` and
+cross-checked against the new retrieval/report structs and functions.
+
 DESIGN-REVIEW: PASS

@@ -436,16 +436,34 @@ givn skills sync
 - [x] REFACTOR: keep report/CLI assertions on the real interface and rerun. Evidence:
       after `cargo fmt --all`, E2E run passed with `1 scenario (1 passed)`,
       `12 steps (12 passed)`.
-- [ ] COMMIT: `test(e2e): Change review generates a complete report for a semantic candidate`
-      Hash: 
+- [x] COMMIT: `test(e2e): Change review generates a complete report for a semantic candidate`
+      Hash: `4fe0259`
 
 ## Completion Evidence
 
-- [ ] Remove all `@wip` tags only after targeted GREEN and REFACTOR evidence.
-      Evidence: 
-- [ ] Run `givn lint --change semantic-review` and record exit 0. Evidence: 
-- [ ] Run the change-specific full runner and E2E runner. Evidence: 
-- [ ] Run `./run-tests.sh`, `./run-tests.sh --e2e`, format, retrieval/no-feature
-      checks, library tests, Clippy, and coverage measurement/merge. Evidence: 
-- [ ] Confirm the semantic report never mutates feature files, permanent specs,
-      dispositions, or the permanent-only index boundary. Evidence: 
+- [x] Remove all `@wip` tags only after targeted GREEN and REFACTOR evidence.
+      Evidence: `grep` over `givn/changes/semantic-review/specs` found no
+      `@wip` tags; the only E2E tag was retained and the E2E scenario passed its
+      targeted RED/GREEN/REFACTOR loop.
+- [x] Run `givn lint --change semantic-review` and record exit 0. Evidence:
+      `givn lint --change semantic-review` returned exit 0: `1 file(s) checked — clean`.
+- [x] Run the change-specific full runner and E2E runner. Evidence:
+      `GIVN_FEATURES=givn/changes/semantic-review/specs ./run-tests.sh` passed
+      with `44 scenarios (44 passed)`, `432 steps (432 passed)`; the E2E-filtered
+      command passed with `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] Run `./run-tests.sh`, `./run-tests.sh --e2e`, format, retrieval/no-feature
+      checks, library tests, Clippy, and coverage measurement/merge. Evidence:
+      repository full runner passed with `239 scenarios`, `1360 steps`; repository
+      E2E runner passed with `36 scenarios`, `219 steps`; `cargo fmt --all --
+      --check`, `cargo check --no-default-features`, `cargo check --features
+      spec-retrieval`, `cargo test --lib --no-default-features` (`142 passed`),
+      `cargo test --lib --features spec-retrieval` (`144 passed`), and
+      `cargo clippy --workspace --all-targets -- -D warnings` all passed.
+      `./measure-coverage.sh && ./merge-coverages.sh` passed and produced the
+      merged Cobertura report.
+- [x] Confirm the semantic report never mutates feature files, permanent specs,
+      dispositions, or the permanent-only index boundary. Evidence:
+      change-specific non-mutation scenario passed with snapshots for active
+      feature files, permanent specs, `review.md`, and the permanent index;
+      malformed-index recovery also passed the permanent-only structural checks;
+      archive retention passed with the report copied only to `givn/archive/`.
