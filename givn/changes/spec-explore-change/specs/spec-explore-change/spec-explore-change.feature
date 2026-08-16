@@ -143,7 +143,7 @@ Feature: Explore scenarios in the current change
     And stdout identifies the permanent candidate with scope "permanent"
     And stdout identifies the permanent candidate source as "givn/specs/provider.feature"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Permanent exploration JSON adds source metadata while retaining legacy result fields
     Given a project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:
