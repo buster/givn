@@ -307,10 +307,10 @@ Feature: Generate the semantic review report
     And the archived semantic review report bytes equal the active report snapshot
     And the archived report remains historical evidence rather than a permanent specification
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unavailable retrieval model cannot produce a semantic pass
     Given a project prepared for semantic review with a similar active delta
-    And the retrieval model is unavailable
+    And the semantic review retrieval model is unavailable
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
     And stderr contains "retrieval model is unavailable"
