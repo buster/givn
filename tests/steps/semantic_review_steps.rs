@@ -618,6 +618,125 @@ fn rebuilt_index_contains_no_semantic_state(world: &mut GivnWorld) {
     index_contains_no_semantic_state(world);
 }
 
+#[given("a completed semantic review change with a generated report and archive prerequisites")]
+fn completed_semantic_review_change(world: &mut GivnWorld) {
+    two_similar_active_deltas(world);
+    let env = world.env.as_ref().expect("semantic project is required");
+    let change_dir = env.path("givn/changes/running-change");
+    fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write archive proposal");
+    fs::write(change_dir.join("design.md"), "# Design\n").expect("write archive design");
+    fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write archive design review");
+    fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] all done\n- [x] COMMIT: `fixture-archive-0001`\n",
+    )
+    .expect("write archive tasks");
+    fs::write(
+        env.path("givn/config.yaml"),
+        "addons:\n  arc42: false\n  absolute_mode: false\n  readme: false\n  coverage: false\n  domain_modeling: false\n  dev_principles: false\n  grill_me: false\n  grill_with_docs: false\n",
+    )
+    .expect("disable archive fixture addons");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\naddons:\n  arc42: false\n  absolute_mode: false\n  readme: false\n  coverage: false\n  domain_modeling: false\n  dev_principles: false\n  grill_me: false\n  grill_with_docs: false\n",
+    )
+    .expect("write archive commands");
+
+    let scores = world
+        .retrieval_stub_scores
+        .clone()
+        .expect("semantic score fixture");
+    let output = common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_STUB_PAIR_SCORES", &scores),
+        ],
+    );
+    assert!(
+        !output.status.success(),
+        "initial semantic review should require classifications"
+    );
+    let report_path = change_dir.join("semantic-review.md");
+    let report = fs::read_to_string(&report_path).unwrap_or_else(|error| {
+        panic!(
+            "generated semantic report: {error}; stdout={}; stderr={}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr)
+        )
+    });
+    let report = report
+        .replace("- classification: UNCERTAIN", "- classification: DUPLIKAT")
+        .replace(
+            "- rationale: null",
+            "- rationale: \"The candidate has the same observable behavior\"",
+        );
+    fs::write(&report_path, report).expect("classify archive report");
+    let output = common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_STUB_PAIR_SCORES", &scores),
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "completed semantic review failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.semantic_report_snapshot = Some(fs::read(report_path).expect("snapshot active report"));
+}
+
+#[given("the active semantic review report bytes are snapshotted")]
+fn active_semantic_report_bytes_are_snapshotted(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let report = fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read active semantic report");
+    assert_eq!(
+        report,
+        *world
+            .semantic_report_snapshot
+            .as_ref()
+            .expect("active semantic report snapshot")
+    );
+}
+
+#[then("`givn/archive/running-change/semantic-review.md` exists")]
+fn archived_semantic_report_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    assert!(
+        env.path("givn/archive/running-change/semantic-review.md")
+            .is_file()
+    );
+}
+
+#[then("the archived semantic review report bytes equal the active report snapshot")]
+fn archived_semantic_report_matches_snapshot(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let archived = fs::read(env.path("givn/archive/running-change/semantic-review.md"))
+        .expect("read archived semantic report");
+    assert_eq!(
+        archived,
+        *world
+            .semantic_report_snapshot
+            .as_ref()
+            .expect("active semantic report snapshot")
+    );
+}
+
+#[then("the archived report remains historical evidence rather than a permanent specification")]
+fn archived_report_is_historical_evidence(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    assert!(!env.path("givn/specs/semantic-review.md").exists());
+    assert!(
+        env.path("givn/specs/running-change/running-change.feature")
+            .is_file()
+    );
+}
+
 #[then("the semantic review report does not exist")]
 fn semantic_report_does_not_exist(_world: &mut GivnWorld) {
     let env = _world.env.as_ref().expect("semantic project is required");

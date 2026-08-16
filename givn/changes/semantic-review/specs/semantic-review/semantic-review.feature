@@ -297,7 +297,7 @@ Feature: Generate the semantic review report
     And the rebuilt permanent index remains structurally permanent-only
     And the rebuilt permanent index contains no "Delta" state, delta vectors, classifications, or report state
 
-  @givn.added @wip
+  @givn.added
   Scenario: A generated semantic report survives the existing archive move
     Given a completed semantic review change with a generated report and archive prerequisites
     And the active semantic review report bytes are snapshotted
