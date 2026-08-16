@@ -54,7 +54,7 @@ fn removed_semantic_delta_project(_world: &mut GivnWorld) {
 }
 
 #[given("a project prepared for semantic review with two similar active deltas")]
-fn two_similar_active_deltas(world: &mut GivnWorld) {
+pub(crate) fn two_similar_active_deltas(world: &mut GivnWorld) {
     let env = common::make_init_root();
     let specs = env.path("givn/specs");
     if specs.exists() {
@@ -204,10 +204,14 @@ fn update_semantic_classification(world: &mut GivnWorld, classification: &str, r
 #[when("the user runs `givn check review --change running-change` again without edits")]
 fn rerun_change_review_without_edits(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("semantic project is required");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub")];
+    if let Some(scores) = world.retrieval_stub_scores.as_deref() {
+        environments.push(("GIVN_SPEC_STUB_PAIR_SCORES", scores));
+    }
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["check", "review", "--change", "running-change"],
-        &[("GIVN_SPEC_EMBEDDER", "stub")],
+        &environments,
     ));
 }
 
@@ -391,14 +395,13 @@ fn snapshot_semantic_report_bytes(world: &mut GivnWorld) {
 #[then("the semantic review report bytes equal the snapshot")]
 fn semantic_report_bytes_equal_snapshot(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("semantic project is required");
-    assert_eq!(
-        fs::read(env.path("givn/changes/running-change/semantic-review.md"))
-            .expect("read semantic report"),
-        *world
-            .semantic_report_snapshot
-            .as_ref()
-            .expect("semantic report snapshot")
-    );
+    let current = fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic report");
+    let expected = world
+        .semantic_report_snapshot
+        .as_ref()
+        .expect("semantic report snapshot");
+    assert_eq!(current, *expected);
 }
 
 #[then("the semantic review report ends with exactly one final newline")]
