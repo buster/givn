@@ -472,7 +472,9 @@ Normal runs never set this variable, so real E5 scoring is unaffected.
 The generated report is change-local evidence rather than a disposable file. It
 remains under the active change until the existing archive move places the
 complete change directory under `givn/archive/<id>/`; that historical retention
-is documented but archive implementation is outside this slice.
+is documented. The archive interface remains outside this slice, but its
+existing AST renderer must preserve `Scenario Outline` `Examples` blocks so the
+merged permanent feature remains valid Gherkin.
 
 ## Internal Primitives
 
