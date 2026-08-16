@@ -117,6 +117,69 @@ fn another_eligible_candidate(world: &mut GivnWorld) {
     );
 }
 
+#[given("a project prepared for current-change exploration with an active added scenario")]
+fn active_added_scenario_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    clear_specs(&env);
+    write_project_path(&env, "givn/specs/provider.feature", PERMANENT_CORPUS);
+    write_project_path(
+        &env,
+        "givn/changes/current-change/specs/current-change/current-change.feature",
+        "@givn.delta @current-change
+Feature: current provider behavior
+
+  @givn.added
+  Scenario: Current change rejects an unknown provider
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+",
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[given("the permanent exploration index is built")]
+fn build_permanent_exploration_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    let output =
+        common::run_givn_with_envs(env, &["spec", "index"], &[("GIVN_SPEC_EMBEDDER", "stub")]);
+    assert!(
+        output.status.success(),
+        "permanent index build failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+#[given("the permanent exploration index is snapshotted")]
+fn snapshot_permanent_exploration_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    world.permanent_index_snapshot = Some(
+        fs::read(env.path("givn/.spec-index.json")).expect("read permanent exploration index"),
+    );
+}
+
+#[then("the permanent exploration index is unchanged")]
+fn permanent_exploration_index_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    let before = world
+        .permanent_index_snapshot
+        .as_ref()
+        .expect("permanent exploration index was not snapshotted");
+    let after = fs::read(env.path("givn/.spec-index.json")).expect("read permanent index after");
+    assert_eq!(after, *before, "exploration changed the permanent index");
+}
+
 fn clear_specs(env: &common::TestEnv) {
     let specs = env.path("givn/specs");
     if specs.exists() {
