@@ -34,7 +34,7 @@ in its commit.
 ### Removed change scenarios are absent from exploration results
 
 - [x] RED: remove only this scenario's `@wip`, bind the new regular steps with
-      `unimplemented!()`, and run the targeted command. Evidence: 
+      `unimplemented!()`, and run the targeted command. Evidence:
       `1 scenario (1 failed)`, `1 step (1 failed)`; the matched Given step
       panicked with `not implemented`.
 - [x] GREEN: resolve the requested change, collect active delta scenarios, omit
@@ -326,7 +326,7 @@ in its commit.
       Evidence: `givn lint: 1 file(s) checked — clean` after the Rule-nested scenario was completed.
 - [x] Run the change-specific full runner and e2e runner:
       `GIVN_FEATURES=givn/changes/spec-explore-change/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub cargo test --features spec-retrieval --test features_runner`
-      and the same command with `-- --tags @e2e`. Evidence: 
+      and the same command with `-- --tags @e2e`. Evidence:
       full `16 scenarios (16 passed)`, `106 steps (106 passed)`; e2e `2
       scenarios (2 passed)`, `16 steps (16 passed)`.
 - [x] Run `./run-tests.sh`, `./run-tests.sh --e2e`, `cargo fmt --all -- --check`,
