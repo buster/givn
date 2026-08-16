@@ -262,7 +262,7 @@ Feature: Generate the semantic review report
       | unknown field               |
       | structurally malformed block |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A blocked report is atomically complete before failure
     Given a project prepared for semantic review with a similar active delta
     And a malformed prior semantic report
