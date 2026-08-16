@@ -40,8 +40,9 @@ Every measurement in this report is tied to a script under
 | `tools/approach-comparison/README.md` | Documents setup, script roles, candidate scopes, and rerun commands. | Operational reference. |
 
 The generated index and reports remain under `test-corpus/indexes/` and are
-ignored by Git. This keeps the data and tooling in this repository without
-adding generated model vectors to source control.
+checked in as experiment evidence. Large model weights and local model caches
+remain outside Git. This keeps the data, index, reports, and tooling together
+without checking in multi-gigabyte inference artifacts.
 
 ## Compared Approaches
 
@@ -229,3 +230,6 @@ The larger corpus changes the scale, not the conclusion:
 The correct next modeling step remains a Gherkin-specific classifier or review
 stage using E5, BGE, NLI, and deterministic Gherkin facts together. Neither
 off-the-shelf pair model should become an automatic merge gate.
+
+The separate Cobertura branch-attribution idea is documented as a future,
+optional experiment in [`future-coverage-experiment.md`](future-coverage-experiment.md).
