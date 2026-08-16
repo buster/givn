@@ -45,9 +45,9 @@ Scores are symmetric averages of both query/document directions.
 | Pair | Raw logit | Interpretation |
 |---|---:|---|
 | Placeholder COMMIT hash pair | `3.427780` | Clear duplicate candidate. |
-| Uninitialized `status` versus `new` pair | `6.198650` | Valid command boundary, not a true duplicate. |
-| Plain parse error versus JSON parse error | `1.354947` | Valid output boundary. |
-| Skipped-artifact status pair | `1.071740` | Strong overlap, but not an exact duplicate. |
+| Uninitialized `status` versus `new` pair | `6.198650` | Same invariant with command variants; merge into one parameterized scenario or shared behavior. |
+| Plain parse error versus JSON parse error | `1.354947` | Same parse-error invariant with output variants; merge into one scenario outline/Examples table. |
+| Skipped-artifact status pair | `1.071740` | Same status invariant with text/regression variants; merge or consolidate rather than keep two overlapping scenarios. |
 
 The false-positive ordering is the critical result: the valid `status`/`new`
 boundary scores substantially higher than the known duplicate. Raising the
@@ -57,21 +57,22 @@ that duplicate would retain the valid boundary and other command variants.
 ## Assessment
 
 The reranker reduces the number of final candidates compared with the full
-embedding threshold, but it does not reduce the manually estimated false
-positive rate enough. In the integrated seven-candidate set, one candidate is a
-clear duplicate and six are valid or ambiguous boundary/variant cases. The
-estimated false-positive share is therefore approximately `6/7` for this small
-manual sample.
+embedding threshold. The initial interpretation of six candidates as valid
+boundaries was wrong: after reviewing the actual invariants, the integrated
+seven-candidate set consists of duplicate or same-invariant command/input
+variants that should be merged or parameterised. No candidate in that sample
+is an established valid independent boundary.
 
-The branch does not demonstrate a safe replacement for the strict embedding
-gate. The root cause is model-task mismatch: a relevance reranker answers
-whether two texts are related, not whether they express the same executable
-invariant.
+The branch is promising but does not yet demonstrate a safe replacement for the
+strict embedding gate. The reranker surfaces the right merge queue in this
+sample, but the root cause remains: a relevance reranker answers whether two
+texts are related, not whether they express the same executable invariant. The
+manual merge/variant labels need a larger corpus before adoption.
 
 ## Decision
 
-Do not merge this reranker as the final semantic gate. Keep the branch and this
-report as the comparison artifact. A subsequent experiment needs either:
+Keep the branch as the comparison artifact and do not close the experiment as
+production-ready yet. A subsequent evaluation needs either:
 
 1. a cross-encoder trained or calibrated specifically for duplicate/variant/
    boundary classification with a larger labeled set; or

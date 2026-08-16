@@ -660,10 +660,13 @@ Duplikate weiterhin findet und die lokale Review-Laufzeit vertretbar bleibt.
 - Basis-Commit: `38c2f22`.
 - Keine permanenten Szenarien als Teil des Benchmarks geändert.
 - Realer Benchmark abgeschlossen: 839 integrierte Kandidaten, 7 Reranker-
-  Kandidaten über Raw-Logit `3.0`, `750.67 s`; nur 1/7 ist klarer Duplikatfall.
-- Der Branch ist damit ein Vergleichs-/Negativbefund und keine freigegebene
-  Ersatzlösung für das Gate. Kein finaler Merge ohne duplicate-spezifisches
-  Modell oder zusätzliche belastbare Klassifikationsstufe.
+  Kandidaten über Raw-Logit `3.0`, `750.67 s`; nach fachlicher Prüfung sind die
+  Kandidaten echte Duplikat- oder Same-Invariant-Varianten, die zu mergen oder
+  zu parametrisieren sind. Eine unabhängige Boundary wurde in dieser Stichprobe
+  nicht bestätigt.
+- Der Branch ist damit ein vielversprechender Vergleich, aber noch keine
+  freigegebene Ersatzlösung für das Gate: größere gelabelte Stichprobe,
+  Top-K-Recall und CPU-Laufzeit müssen vor dem finalen Merge bestätigt werden.
 
 ---
 

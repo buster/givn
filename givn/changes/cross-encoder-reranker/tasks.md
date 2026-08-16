@@ -16,25 +16,25 @@
   pair directions, prints raw/sigmoid scores, and fails above the branch
   boundary. Targeted Cucumber result: 1 feature, 6 scenarios, 33 steps passed
   with the deterministic reranker stub.
-- [x] COMMIT: Pending branch implementation commit.
+- [x] COMMIT: `a26580c` (branch implementation checkpoint).
 
 ## Scenario: Review does not block a valid boundary rejected by the pair reranker
 
 - [x] RED/GREEN/REFACTOR: The valid stderr/JSON-style boundary fixture passes
   despite its high embedding similarity. Targeted scenario passes.
-- [x] COMMIT: Pending branch implementation commit.
+- [x] COMMIT: `a26580c` (branch implementation checkpoint).
 
 ## Scenario: Review applies the pair reranker to current scenarios and the projected permanent tree
 
 - [x] RED/GREEN/REFACTOR: Projected duplicate removal passes through the real
   CLI and reranker path. Targeted scenario passes.
-- [x] COMMIT: Pending branch implementation commit.
+- [x] COMMIT: `a26580c` (branch implementation checkpoint).
 
 ## Scenario: Review reports pair-reranker setup failure
 
 - [x] RED/GREEN/REFACTOR: `GIVN_SPEC_RERANKER=missing` produces an explicit
   non-zero setup error. Targeted scenario passes.
-- [x] COMMIT: Pending branch implementation commit.
+- [x] COMMIT: `a26580c` (branch implementation checkpoint).
 
 ## Benchmark
 
