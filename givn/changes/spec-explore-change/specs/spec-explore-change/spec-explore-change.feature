@@ -59,7 +59,7 @@ Feature: Explore scenarios in the current change
     Then the command exits 0
     And no ranked result is titled "Removed provider behavior"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rule-nested active change scenarios are searchable
     Given a project prepared for current-change exploration with a Rule-nested active added scenario
     And a .feature file at "draft.feature" with:

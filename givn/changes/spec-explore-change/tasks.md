@@ -63,8 +63,8 @@ in its commit.
 - [x] REFACTOR: preserve the shared delta collector and rerun the targeted
       command after `cargo fmt --all`. Evidence: targeted run passed with `1
       scenario (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Rule-nested active change scenarios are searchable`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Rule-nested active change scenarios are searchable`
+      Hash: `df91758`
 
 ### A modified change scenario is not reported against itself from its delta source
 
@@ -321,13 +321,13 @@ in its commit.
 
 - [x] Remove each `@wip` tag only after its targeted GREEN and REFACTOR evidence
       is recorded.
-      Evidence: `givn/changes/spec-explore-change/specs/spec-explore-change/spec-explore-change.feature` contains no `@wip` tags; all 15 scenarios have targeted GREEN and REFACTOR evidence above.
+      Evidence: `givn/changes/spec-explore-change/specs/spec-explore-change/spec-explore-change.feature` contains no `@wip` tags; all 16 scenarios have targeted GREEN and REFACTOR evidence above.
 - [x] Run `givn lint --change spec-explore-change` and record exit 0.
-      Evidence: `givn lint: 1 file(s) checked — clean`.
+      Evidence: `givn lint: 1 file(s) checked — clean` after the Rule-nested scenario was completed.
 - [x] Run the change-specific full runner and e2e runner:
       `GIVN_FEATURES=givn/changes/spec-explore-change/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub cargo test --features spec-retrieval --test features_runner`
       and the same command with `-- --tags @e2e`. Evidence: 
-      full `15 scenarios (15 passed)`, `100 steps (100 passed)`; e2e `2
+      full `16 scenarios (16 passed)`, `106 steps (106 passed)`; e2e `2
       scenarios (2 passed)`, `16 steps (16 passed)`.
 - [x] Run `./run-tests.sh`, `./run-tests.sh --e2e`, `cargo fmt --all -- --check`,
       `cargo check --features spec-retrieval`,
@@ -335,7 +335,9 @@ in its commit.
       library tests, and clippy with `-D warnings`. Evidence: full runner
       `223 scenarios (223 passed)`, e2e runner `34 scenarios (34 passed)`;
       fmt check passed; retrieval/no-feature checks passed; library tests
-      passed `144`/`142`; clippy passed with `-D warnings`.
+      passed `144`/`142`; clippy passed with `-D warnings`; coverage merge
+      measured non-e2e `1185/5309` lines, e2e `1123/5309`, merged `2308/10618`
+      (`21.7367%`); branch counters were `0/0` in all three reports.
 - [x] Confirm no production feature files changed during exploration and the
       permanent index remains permanent-only. Evidence: change-aware JSON
       asserts `index.entries == 2` for two permanent scenarios plus an active
