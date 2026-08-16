@@ -96,19 +96,23 @@ in its commit.
       records and rerun the targeted command. Evidence: after `cargo fmt
       --all`, targeted run passed with `1 scenario (1 passed)`, `5 steps (5
       passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): An added change scenario is not reported against itself from its delta source`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): An added change scenario is not reported against itself from its delta source`
+      Hash: `af62538`
 
 ### A modified change scenario is not reported against itself through its projected permanent target
 
-- [ ] RED: remove only this scenario's `@wip`, bind strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: exclude a modified candidate when the query matches its projected
+- [x] RED: remove only this scenario's `@wip`, bind strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1
+      failed)`; the matched Given step panicked with `not implemented`.
+- [x] GREEN: exclude a modified candidate when the query matches its projected
       permanent target identity, while preserving another eligible candidate.
       Production files: `src/spec/retrieval.rs`,
-      `tests/steps/spec_explore_change_steps.rs`. Evidence: 
-- [ ] REFACTOR: reuse the same canonical identity predicate for source and
-      projected-target paths and rerun the targeted command. Evidence: 
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: reuse the same canonical identity predicate for source and
+      projected-target paths and rerun the targeted command. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`, `5
+      steps (5 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself through its projected permanent target`
       Hash: 
 
