@@ -237,7 +237,7 @@ Feature: Generate the semantic review report
     And the semantic review report candidate count is 0
     And the report contains no stale candidate id or classification
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: Invalid prior report entries never carry a classification
     Given a project prepared for semantic review with a similar active delta
     When the user runs `givn check review --change running-change`

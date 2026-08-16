@@ -285,16 +285,21 @@ givn skills sync
 - [x] REFACTOR: recompute zero-candidate PASS and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `12 steps (12 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Removed candidates disappear after classification`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Removed candidates disappear after classification`
+      Hash: `9cc1057`
 
 ### Invalid prior report entries never carry a classification
 
-- [ ] RED: target each strict-prior-report outline case with strict stubs. Evidence: 
-- [ ] GREEN: discard missing/invalid/duplicate/stale/unknown/malformed prior
+- [x] RED: target each strict-prior-report outline case with strict stubs. Evidence:
+      `6 scenarios (6 failed)`, `6 steps (6 failed)` at the complete-report
+      assertion seam; each matched step panicked with `not implemented`.
+- [x] GREEN: discard missing/invalid/duplicate/stale/unknown/malformed prior
       entries and regenerate UNCERTAIN candidates. Production files:
-      `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: validate status/count from regenerated candidates only and rerun. Evidence: 
+      `src/spec/retrieval.rs`, tests step files. Evidence: targeted run passed
+      with `6 scenarios (6 passed)`, `78 steps (78 passed)`.
+- [x] REFACTOR: validate status/count from regenerated candidates only and rerun.
+      Evidence: after `cargo fmt --all`, targeted run passed with `6 scenarios
+      (6 passed)`, `78 steps (78 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Invalid prior report entries never carry a classification`
       Hash: 
 
