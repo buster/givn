@@ -241,6 +241,17 @@ scripts are referenced by `givn/commands.yaml`:
 `merge-coverages.sh` writes the merged report used by the two badges and the
 managed coverage summary below.
 
+After archiving every change, update the local Givn binary and regenerate all
+agent integrations before starting the next change:
+
+```sh
+cargo install --path . --locked --force
+givn skills sync
+givn instructions
+./run-tests.sh
+./run-tests.sh --e2e
+```
+
 ## The workflow
 
 ```mermaid
