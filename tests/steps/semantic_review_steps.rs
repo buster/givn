@@ -344,6 +344,27 @@ fn changed_permanent_hashes_differ(world: &mut GivnWorld) {
     assert_ne!(before_hash, current_hash);
 }
 
+#[when("the classified active semantic delta is removed")]
+fn remove_classified_active_delta(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/changes/running-change/specs");
+    fs::remove_dir_all(&path).expect("remove classified semantic delta");
+    fs::create_dir_all(&path).expect("recreate removed delta");
+    fs::write(
+        path.join("running.feature"),
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.removed\n  Scenario: Removed classified candidate\n    Given a removed scenario\n",
+    )
+    .expect("write removed delta");
+}
+
+#[then("the report contains no stale candidate id or classification")]
+fn report_has_no_stale_candidate(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    assert!(report.contains("Candidate count: 0"));
+    assert!(!report.contains("candidate_id:"));
+    assert!(!report.contains("classification:"));
+}
+
 fn right_evidence_hash(report: &str, title: &str) -> String {
     for block in report.split("\n## Candidate ").skip(1) {
         if block.contains(&format!("- right_title: \"{title}\"")) {

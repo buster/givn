@@ -271,15 +271,20 @@ givn skills sync
 - [x] REFACTOR: keep pair contradiction candidate-level and rerun. Evidence:
       after `cargo fmt --all`, targeted run passed with `14 scenarios (14
       passed)`, `154 steps (154 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Any changed endpoint evidence or prior-report metadata invalidates carry-forward`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Any changed endpoint evidence or prior-report metadata invalidates carry-forward`
+      Hash: `d77a625`
 
 ### Removed candidates disappear after classification
 
-- [ ] RED: target stale-candidate removal with strict stubs. Evidence: 
-- [ ] GREEN: regenerate from the current corpus and omit stale report entries.
+- [x] RED: target stale-candidate removal with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the delta-removal step
+      panicked with `not implemented`.
+- [x] GREEN: regenerate from the current corpus and omit stale report entries.
       Production files: `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: recompute zero-candidate PASS and rerun. Evidence: 
+      targeted run passed with `1 scenario (1 passed)`, `12 steps (12 passed)`.
+- [x] REFACTOR: recompute zero-candidate PASS and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `12 steps (12 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Removed candidates disappear after classification`
       Hash: 
 
