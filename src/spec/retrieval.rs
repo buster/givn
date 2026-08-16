@@ -420,9 +420,22 @@ fn explore_enabled(
         }
     }
 
+    let modified_target_identities = delta
+        .as_ref()
+        .map(|(_, items)| {
+            items
+                .iter()
+                .filter(|item| {
+                    item.operation == crate::gherkin::delta::DeltaOp::Modified
+                        && delta_identity_matches_query(item, &query)
+                })
+                .map(|item| (item.target_file.clone(), item.scenario.title.clone()))
+                .collect::<Vec<_>>()
+        })
+        .unwrap_or_default();
     let mut ranked: Vec<(ExploreCandidate, f32)> = candidates
         .into_iter()
-        .filter(|candidate| !matches_query_identity(candidate, &query))
+        .filter(|candidate| !matches_query_identity(candidate, &query, &modified_target_identities))
         .map(|candidate| {
             let score = cosine_similarity(&query_vector, &candidate.embedding);
             (candidate, score)
@@ -538,7 +551,11 @@ fn normalize_project_file_identity(root: &Path, path: &Path) -> String {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn matches_query_identity(candidate: &ExploreCandidate, query: &ExploreQuery) -> bool {
+fn matches_query_identity(
+    candidate: &ExploreCandidate,
+    query: &ExploreQuery,
+    modified_target_identities: &[(String, String)],
+) -> bool {
     let Some(query_file) = query.file.as_deref() else {
         return false;
     };
@@ -547,7 +564,18 @@ fn matches_query_identity(candidate: &ExploreCandidate, query: &ExploreQuery) ->
         .projected_file
         .as_deref()
         .is_some_and(|file| file == query_file && candidate.title == query.title);
-    source_matches || target_matches
+    let projected_permanent_matches = modified_target_identities
+        .iter()
+        .any(|(file, title)| candidate.file == *file && candidate.title == *title);
+    source_matches || target_matches || projected_permanent_matches
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn delta_identity_matches_query(item: &DeltaScenario, query: &ExploreQuery) -> bool {
+    query.file.as_deref().is_some_and(|file| {
+        item.scenario.title == query.title
+            && (item.scenario.file == file || item.target_file == file)
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]
