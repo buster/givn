@@ -52,7 +52,7 @@ Feature: Generate the semantic review report
     And the semantic review report candidate count is 0
     And the report contains no permanent-permanent candidate
 
-  @givn.added @wip
+  @givn.added
   Scenario: A candidate at the exact E5 boundary is included
     Given a project prepared for semantic review with a candidate scored exactly at the similarity boundary
     When the user runs `givn check review --change running-change`

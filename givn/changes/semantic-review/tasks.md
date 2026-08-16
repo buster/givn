@@ -77,16 +77,21 @@ givn skills sync
 - [x] REFACTOR: keep below-boundary pairs out of both scopes and rerun.
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Active deltas below the E5 boundary produce no candidates`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Active deltas below the E5 boundary produce no candidates`
+      Hash: `2e982f6`
 
 ### A candidate at the exact E5 boundary is included
 
-- [ ] RED: target the exact-boundary scenario with strict stubs. Evidence: 
-- [ ] GREEN: implement the fixture-only report score override and admit exactly
+- [x] RED: target the exact-boundary scenario with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the candidate assertion
+      panicked with `not implemented`.
+- [x] GREEN: implement the fixture-only report score override and admit exactly
       `0.9500` before formatting. Production files: `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: keep real E5 scoring unaffected and rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1
+      passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: keep real E5 scoring unaffected and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(semantic-review): A candidate at the exact E5 boundary is included`
       Hash: 
 
