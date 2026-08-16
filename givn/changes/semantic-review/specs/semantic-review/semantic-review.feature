@@ -71,7 +71,7 @@ Feature: Generate the semantic review report
     And the semantic review report contains scope "delta-to-permanent"
     And the semantic review report contains non-empty content and evidence hashes
 
-  @givn.added @wip
+  @givn.added
   Scenario: Endpoint evidence preserves complete Gherkin source order
     Given a project prepared for semantic review with feature and Rule backgrounds, step docstrings, and data tables
     When the user runs `givn check review --change running-change`
