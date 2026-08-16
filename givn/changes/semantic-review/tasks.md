@@ -300,16 +300,21 @@ givn skills sync
 - [x] REFACTOR: validate status/count from regenerated candidates only and rerun.
       Evidence: after `cargo fmt --all`, targeted run passed with `6 scenarios
       (6 passed)`, `78 steps (78 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Invalid prior report entries never carry a classification`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Invalid prior report entries never carry a classification`
+      Hash: `3ddb541`
 
 ### A blocked report is atomically complete before failure
 
-- [ ] RED: target atomic blocked output with strict stubs. Evidence: 
-- [ ] GREEN: write a complete report via same-directory temporary file and rename
+- [x] RED: target atomic blocked output with strict stubs. Evidence: `1 scenario
+      (1 failed)`, `1 step (1 failed)`; the temporary-output assertion panicked
+      with `not implemented`.
+- [x] GREEN: write a complete report via same-directory temporary file and rename
       before returning the blocking error. Production files: `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: ensure no temporary report remains and rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1
+      passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: ensure no temporary report remains and rerun. Evidence: after
+      `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
 - [ ] COMMIT: `feat(semantic-review): A blocked report is atomically complete before failure`
       Hash: 
 

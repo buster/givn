@@ -412,6 +412,11 @@ fn regenerated_semantic_report_has_one_final_newline(world: &mut GivnWorld) {
     semantic_report_has_one_final_newline(world);
 }
 
+#[then("the report ends with exactly one final newline")]
+fn report_has_one_final_newline(world: &mut GivnWorld) {
+    semantic_report_has_one_final_newline(world);
+}
+
 #[then("the semantic review report has no timestamp or environment fields")]
 fn semantic_report_has_no_run_fields(world: &mut GivnWorld) {
     let report = semantic_report(world);
@@ -426,7 +431,8 @@ fn semantic_report_has_no_run_fields(world: &mut GivnWorld) {
 fn replace_prior_semantic_report(world: &mut GivnWorld, invalid: String) {
     let env = world.env.as_ref().expect("semantic project is required");
     let path = env.path("givn/changes/running-change/semantic-review.md");
-    let report = fs::read_to_string(&path).expect("read semantic report");
+    let report =
+        fs::read_to_string(&path).unwrap_or_else(|_| "# malformed semantic report\n".to_string());
     let changed = match invalid.as_str() {
         "missing classification" => report
             .lines()
@@ -465,6 +471,11 @@ fn regenerated_report_is_complete(world: &mut GivnWorld) {
     assert!(semantic_report(world).starts_with("# Semantic Review\n"));
 }
 
+#[then("the regenerated semantic review report is complete according to the strict grammar")]
+fn regenerated_report_is_strictly_complete(world: &mut GivnWorld) {
+    regenerated_report_is_complete(world);
+}
+
 #[then("the semantic review report candidate count is recomputed")]
 fn semantic_report_count_recomputed(world: &mut GivnWorld) {
     let report = semantic_report(world);
@@ -487,6 +498,31 @@ fn regenerated_report_has_exact_order(world: &mut GivnWorld) {
 #[then("the regenerated semantic review report contains only allowed fields and no unknown fields")]
 fn regenerated_report_has_allowed_fields(world: &mut GivnWorld) {
     semantic_report_has_allowed_fields(world);
+}
+
+#[then("the report headers and candidate fields are in the exact defined order")]
+fn report_headers_and_fields_ordered(world: &mut GivnWorld) {
+    semantic_report_has_exact_headers(world);
+    semantic_report_has_ordered_fields(world);
+}
+
+#[then("the report contains no unknown fields")]
+fn report_contains_no_unknown_fields(world: &mut GivnWorld) {
+    semantic_report_has_allowed_fields(world);
+}
+
+#[then("absent values are represented only by \"null\"")]
+fn report_absent_values_use_null(world: &mut GivnWorld) {
+    semantic_report_uses_null_absence(world);
+}
+
+#[then("the report has no partial temporary output")]
+fn report_has_no_partial_temp_output(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    assert!(
+        !env.path("givn/changes/running-change/semantic-review.md.tmp")
+            .exists()
+    );
 }
 
 #[then(
