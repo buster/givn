@@ -109,7 +109,7 @@ Feature: Explore scenarios in the current change
     And neither result is titled "Provider name is unknown"
     And both requests retain another eligible candidate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Change-aware standard input returns the same ranked candidates as file input
     Given a project prepared for current-change exploration with an active added scenario
     And a .feature file at "draft.feature" with:
