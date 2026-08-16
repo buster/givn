@@ -261,6 +261,21 @@ pub fn review(root: &Path, change_id: &str) -> Result<()> {
     }
 }
 
+pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
+    #[cfg(feature = "spec-retrieval")]
+    {
+        semantic_review_enabled(root, change_id)
+    }
+
+    #[cfg(not(feature = "spec-retrieval"))]
+    {
+        let _ = (root, change_id);
+        bail!(
+            "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+        );
+    }
+}
+
 #[cfg(feature = "spec-retrieval")]
 fn index_enabled(root: &Path) -> Result<()> {
     let refresh = refresh_index(root)?;
@@ -270,6 +285,30 @@ fn index_enabled(root: &Path) -> Result<()> {
     );
     println!("Reused {} scenario vectors", refresh.reused);
     Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
+    let change_dir = validated_review_change_dir(root, change_id)?;
+    let delta_root = delta_specs_path(&change_dir, change_id)?;
+    let refresh = refresh_index(root)?;
+    let delta = collect_delta_scenarios(root, &delta_root)?;
+    let active = delta
+        .iter()
+        .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+        .count();
+    if active == 0 {
+        let report = format!(
+            "# Semantic Review\nReport schema version: 1\nChange: \"{change_id}\"\nStatus: PASS\nCandidate count: 0\n"
+        );
+        write_semantic_report(&change_dir.join("semantic-review.md"), &report)?;
+        return Ok(());
+    }
+
+    let _ = refresh;
+    bail!(
+        "semantic review blocked: {active} active delta scenario(s) require classification in semantic-review.md"
+    )
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1715,6 +1754,16 @@ fn write_index(path: &Path, index: &SpecIndex) -> Result<()> {
         .with_context(|| format!("write temporary index {}", temp_path.display()))?;
     fs::rename(&temp_path, path)
         .with_context(|| format!("replace spec index {}", path.display()))?;
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn write_semantic_report(path: &Path, content: &str) -> Result<()> {
+    let temp_path = path.with_extension("md.tmp");
+    fs::write(&temp_path, content)
+        .with_context(|| format!("write temporary semantic report {}", temp_path.display()))?;
+    fs::rename(&temp_path, path)
+        .with_context(|| format!("replace semantic report {}", path.display()))?;
     Ok(())
 }
 

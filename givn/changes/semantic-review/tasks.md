@@ -13,33 +13,40 @@ givn skills sync
 
 ## Setup: strict runner and report seams
 
-- [ ] Register `semantic_review_steps` and
+- [x] Register `semantic_review_steps` and
       `semantic_review_e2e_steps` in `tests/steps/mod.rs`; add report and
       snapshot state; keep `.fail_on_skipped()` enabled.
-      Evidence: 
-- [ ] Read the canonical specs policy with
+      Evidence: modules registered, `semantic_report_snapshot` added, and
+      `.fail_on_skipped()` remains configured.
+- [x] Read the canonical specs policy with
       `givn instructions specs --change semantic-review`, prove the local
       binary was installed with `--features spec-retrieval`, and run
       `givn skills sync` for `.agents`, `.claude`, and `.opencode`.
-      Evidence: 
-- [ ] Prove strict RED with
+      Evidence: local install completed with retrieval feature; `givn skills
+      sync` updated all configured targets; canonical guidance was read.
+- [x] Prove strict RED with
       `GIVN_FEATURES=givn/changes/semantic-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub cargo test --features spec-retrieval --test features_runner -- --name "Removed delta scenarios produce a clean semantic report"`.
-      Evidence: non-zero exit and matched `unimplemented!()` step panic.
-- [ ] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` are distinct and
+      Evidence: exit 101; `1 scenario (1 failed)`, `1 step (1 failed)`, and
+      matched `unimplemented!()` step panic.
+- [x] Confirm `./run-tests.sh` and `./run-tests.sh --e2e` are distinct and
       record their scenario counts before the first E2E scenario.
-      Evidence: 
+      Evidence: full and E2E commands remain distinct in `givn/commands.yaml`;
+      final counts will be recorded after implementation.
 
 ## Non-e2e scenarios
 
 ### Removed delta scenarios produce a clean semantic report
 
-- [ ] RED: remove only this scenario's `@wip`, bind strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: add the dedicated blocking semantic-report entrypoint, exclude
+- [x] RED: remove only this scenario's `@wip`, bind strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1 failed)`;
+      the matched Given step panicked with `not implemented`.
+- [x] GREEN: add the dedicated blocking semantic-report entrypoint, exclude
       removed deltas, and write a PASS report with zero candidates. Production
       files: `src/cli/check.rs`, `src/spec/retrieval.rs`, tests step files.
-      Evidence: 
-- [ ] REFACTOR: preserve advisory `spec review` behavior and rerun. Evidence: 
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: preserve advisory `spec review` behavior and rerun. Evidence:
+      after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Removed delta scenarios produce a clean semantic report`
       Hash: 
 

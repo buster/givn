@@ -31,6 +31,8 @@ pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
+pub mod semantic_review_e2e_steps;
+pub mod semantic_review_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_explore_change_e2e_steps;
 pub mod spec_explore_change_steps;
@@ -77,6 +79,8 @@ pub struct GivnWorld {
     /// Snapshot of the generated permanent retrieval index for non-mutation
     /// assertions.
     pub(crate) permanent_index_snapshot: Option<Vec<u8>>,
+    /// Snapshot of a change-local semantic review report.
+    pub(crate) semantic_report_snapshot: Option<Vec<u8>>,
 }
 
 // --- helpers ---------------------------------------------------------------
