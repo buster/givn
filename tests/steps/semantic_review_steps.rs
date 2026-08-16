@@ -690,6 +690,11 @@ fn completed_semantic_review_change(world: &mut GivnWorld) {
     world.semantic_report_snapshot = Some(fs::read(report_path).expect("snapshot active report"));
 }
 
+#[given("the semantic review retrieval model is unavailable")]
+fn semantic_review_retrieval_model_is_unavailable(world: &mut GivnWorld) {
+    world.retrieval_embedder = Some("missing".to_string());
+}
+
 #[given("the active semantic review report bytes are snapshotted")]
 fn active_semantic_report_bytes_are_snapshotted(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("semantic project is required");
