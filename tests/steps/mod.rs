@@ -87,6 +87,8 @@ pub struct GivnWorld {
     pub(crate) semantic_active_snapshot: Option<Vec<(String, Vec<u8>)>>,
     /// Snapshot of the semantic-review disposition file.
     pub(crate) semantic_review_snapshot: Option<Vec<u8>>,
+    /// Bytes written before a malformed permanent index is rebuilt.
+    pub(crate) malformed_index_snapshot: Option<Vec<u8>>,
 }
 
 // --- helpers ---------------------------------------------------------------

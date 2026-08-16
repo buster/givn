@@ -2269,7 +2269,39 @@ fn read_index(path: &Path) -> Result<SpecIndex> {
     if index.version != INDEX_VERSION || index.model != MODEL_ID {
         bail!("spec index format or model version is incompatible; rebuild it");
     }
+    validate_index(&index)?;
     Ok(index)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn validate_index(index: &SpecIndex) -> Result<()> {
+    let mut identities = BTreeSet::new();
+    let mut dimensions = None;
+    for entry in &index.entries {
+        if entry.title.trim().is_empty()
+            || entry.content_hash.trim().is_empty()
+            || !entry.file.starts_with("givn/specs/")
+            || std::path::Path::new(&entry.file)
+                .components()
+                .any(|component| component == std::path::Component::ParentDir)
+        {
+            bail!("spec index contains an invalid permanent entry; rebuild it");
+        }
+        if !identities.insert((entry.file.as_str(), entry.title.as_str())) {
+            bail!("spec index contains duplicate permanent scenario identities; rebuild it");
+        }
+        if entry.embedding.is_empty() || entry.embedding.iter().any(|value| !value.is_finite()) {
+            bail!("spec index contains an invalid embedding vector; rebuild it");
+        }
+        match dimensions {
+            Some(expected) if expected != entry.embedding.len() => {
+                bail!("spec index contains vectors with inconsistent dimensions; rebuild it")
+            }
+            None => dimensions = Some(entry.embedding.len()),
+            _ => {}
+        }
+    }
+    Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]
