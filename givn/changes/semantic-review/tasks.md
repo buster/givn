@@ -406,8 +406,8 @@ givn skills sync
       fmt --all`, advisory targeted run passed with `1 scenario (1 passed)`, `5
       steps (5 passed)`; blocking path is covered by the no-feature and blocked
       semantic-review scenarios.
-- [ ] COMMIT: `feat(semantic-review): Advisory spec review does not create the semantic report`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Advisory spec review does not create the semantic report`
+      Hash: `1cb640f`
 
 ## E2E setup
 

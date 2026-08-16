@@ -30,7 +30,7 @@ Feature: Generate the semantic review report
     And the semantic review report does not mention "Removed scenario"
     And the permanent index remains structurally permanent-only
 
-  @givn.added @wip
+  @givn.added
   Scenario: The report distinguishes permanent and current-change candidate scopes
     Given a project prepared for semantic review with two similar active deltas
     When the user runs `givn check review --change running-change`
@@ -324,7 +324,7 @@ Feature: Generate the semantic review report
     And stderr contains "spec retrieval is unavailable"
     And the semantic review report does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Advisory spec review does not create the semantic report
     Given a project prepared for semantic review with a similar active delta
     When the user runs the advisory semantic review command
