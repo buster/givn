@@ -369,10 +369,6 @@ fn semantic_candidates(
             {
                 continue;
             }
-            let score = cosine_similarity(vector, &entry.embedding);
-            if score < SEMANTIC_SIMILARITY_THRESHOLD {
-                continue;
-            }
             let left = semantic_delta_endpoint(item);
             let right = permanent
                 .get(&(entry.file.clone(), entry.title.clone()))
@@ -390,16 +386,16 @@ fn semantic_candidates(
                         facts: Default::default(),
                     },
                 });
+            let score = semantic_score(&left, &right, cosine_similarity(vector, &entry.embedding))?;
+            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+                continue;
+            }
             let candidate = semantic_candidate("delta-to-permanent", left, right, score);
             candidates.insert(candidate.candidate_id.clone(), candidate);
         }
     }
     for left_index in 0..active.len() {
         for right_index in (left_index + 1)..active.len() {
-            let score = cosine_similarity(&vectors[left_index], &vectors[right_index]);
-            if score < SEMANTIC_SIMILARITY_THRESHOLD {
-                continue;
-            }
             let left = semantic_delta_endpoint(active[left_index]);
             let right = semantic_delta_endpoint(active[right_index]);
             let (left, right) = if semantic_endpoint_key(&left) <= semantic_endpoint_key(&right) {
@@ -407,6 +403,14 @@ fn semantic_candidates(
             } else {
                 (right, left)
             };
+            let score = semantic_score(
+                &left,
+                &right,
+                cosine_similarity(&vectors[left_index], &vectors[right_index]),
+            )?;
+            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+                continue;
+            }
             let candidate = semantic_candidate("delta-to-delta", left, right, score);
             candidates.insert(candidate.candidate_id.clone(), candidate);
         }
@@ -425,6 +429,29 @@ fn semantic_candidates(
             .then_with(|| left.candidate_id.cmp(&right.candidate_id))
     });
     Ok(result)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_score(left: &SemanticEndpoint, right: &SemanticEndpoint, raw: f32) -> Result<f32> {
+    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+        return Ok(raw);
+    }
+    let Some(overrides) = std::env::var_os("GIVN_SPEC_STUB_PAIR_SCORES") else {
+        return Ok(raw);
+    };
+    let key = format!("{}|{}", left.title, right.title);
+    let reverse_key = format!("{}|{}", right.title, left.title);
+    for entry in overrides.to_string_lossy().split(';') {
+        let Some((pair, score)) = entry.split_once('=') else {
+            continue;
+        };
+        if pair == key || pair == reverse_key {
+            return score
+                .parse::<f32>()
+                .with_context(|| format!("invalid semantic stub score `{score}`"));
+        }
+    }
+    Ok(raw)
 }
 
 #[cfg(feature = "spec-retrieval")]
