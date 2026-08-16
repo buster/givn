@@ -93,7 +93,7 @@ Feature: Explore scenarios in the current change
     And no ranked result is titled "Current change rejects an unknown provider"
     And another eligible candidate remains visible
 
-  @givn.added @wip
+  @givn.added
   Scenario: A modified change scenario is not reported against itself through its projected permanent target
     Given a project prepared for current-change exploration with a modified scenario and a separate eligible candidate
     When the user explores "givn/specs/current-change/current-change.feature" against change "current-change"
