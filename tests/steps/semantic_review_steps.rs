@@ -407,12 +407,86 @@ fn semantic_report_has_one_final_newline(world: &mut GivnWorld) {
     assert!(!report.ends_with("\n\n"));
 }
 
+#[then("the regenerated semantic review report ends with exactly one final newline")]
+fn regenerated_semantic_report_has_one_final_newline(world: &mut GivnWorld) {
+    semantic_report_has_one_final_newline(world);
+}
+
 #[then("the semantic review report has no timestamp or environment fields")]
 fn semantic_report_has_no_run_fields(world: &mut GivnWorld) {
     let report = semantic_report(world);
     assert!(!report.contains("timestamp"));
     assert!(!report.contains("GIVN_SPEC_"));
     assert!(!report.contains("/tmp/"));
+}
+
+#[when(
+    regex = r#"^the prior semantic report is replaced with a (missing classification|invalid classification|duplicate candidate|stale candidate|unknown field|structurally malformed block)$"#
+)]
+fn replace_prior_semantic_report(world: &mut GivnWorld, invalid: String) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/changes/running-change/semantic-review.md");
+    let report = fs::read_to_string(&path).expect("read semantic report");
+    let changed = match invalid.as_str() {
+        "missing classification" => report
+            .lines()
+            .filter(|line| !line.starts_with("- classification: "))
+            .collect::<Vec<_>>()
+            .join("\n"),
+        "invalid classification" => {
+            report.replace("- classification: UNCERTAIN", "- classification: INVALID")
+        }
+        "duplicate candidate" => {
+            let id = report
+                .lines()
+                .find(|line| line.starts_with("- candidate_id: "))
+                .expect("candidate id")
+                .to_string();
+            format!("{report}\n{id}\n")
+        }
+        "stale candidate" => report.replace(
+            "- candidate_id: ",
+            "- candidate_id: deadbeefdeadbeef\n# stale\n- candidate_id: ",
+        ),
+        "unknown field" => format!("{report}- unknown_field: \"not allowed\"\n"),
+        "structurally malformed block" => "# malformed semantic report\n".to_string(),
+        other => panic!("unsupported prior report fixture: {other}"),
+    };
+    fs::write(path, format!("{changed}\n")).expect("write invalid prior report");
+}
+
+#[given("a malformed prior semantic report")]
+fn malformed_prior_semantic_report(world: &mut GivnWorld) {
+    replace_prior_semantic_report(world, "structurally malformed block".to_string());
+}
+
+#[then("the regenerated semantic review report is complete")]
+fn regenerated_report_is_complete(world: &mut GivnWorld) {
+    assert!(semantic_report(world).starts_with("# Semantic Review\n"));
+}
+
+#[then("the semantic review report candidate count is recomputed")]
+fn semantic_report_count_recomputed(world: &mut GivnWorld) {
+    let report = semantic_report(world);
+    let count = report
+        .lines()
+        .find_map(|line| line.strip_prefix("Candidate count: "))
+        .expect("candidate count")
+        .parse::<usize>()
+        .expect("candidate count integer");
+    let blocks = report.matches("\n## Candidate ").count();
+    assert_eq!(count, blocks);
+}
+
+#[then("the regenerated semantic review report has the exact headers and candidate field order")]
+fn regenerated_report_has_exact_order(world: &mut GivnWorld) {
+    semantic_report_has_exact_headers(world);
+    semantic_report_has_ordered_fields(world);
+}
+
+#[then("the regenerated semantic review report contains only allowed fields and no unknown fields")]
+fn regenerated_report_has_allowed_fields(world: &mut GivnWorld) {
+    semantic_report_has_allowed_fields(world);
 }
 
 #[then(

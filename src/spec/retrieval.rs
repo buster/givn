@@ -9,7 +9,7 @@ use anyhow::Context;
 use ndarray::Array;
 
 #[cfg(feature = "spec-retrieval")]
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 
 #[cfg(feature = "spec-retrieval")]
 use std::fs;
@@ -626,6 +626,14 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
     let Ok(content) = fs::read_to_string(path) else {
         return Ok(());
     };
+    let mut seen_ids = BTreeSet::new();
+    for line in content.lines() {
+        if let Some(id) = line.strip_prefix("- candidate_id: ")
+            && !seen_ids.insert(id.trim().to_string())
+        {
+            return Ok(());
+        }
+    }
     let mut current_id: Option<String> = None;
     let mut current_classification: Option<String> = None;
     let mut current_rationale: Option<String> = None;
