@@ -4,7 +4,7 @@ use std::fs;
 
 use cucumber::{given, then, when};
 
-use super::{GivnWorld, output, stdout};
+use super::{GivnWorld, output, stderr, stdout};
 use crate::common;
 
 const PERMANENT_CORPUS: &str = "Feature: provider behavior
@@ -340,6 +340,25 @@ fn json_results_have_permanent_scope(world: &mut GivnWorld, scope: String) {
         assert_eq!(result["scope"], scope);
         assert!(result["change"].is_null());
     }
+}
+
+#[when(regex = r#"^the user explores "([^"]+)" against unsafe change "([^"]+)"$"#)]
+fn explore_against_unsafe_change(_world: &mut GivnWorld, _path: String, _change: String) {
+    let world = _world;
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--change", &_change, "--file", &_path],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    ));
+}
+
+#[then("stderr clearly says the change id must be kebab-case")]
+fn stderr_says_change_id_must_be_kebab_case(world: &mut GivnWorld) {
+    assert!(stderr(world).contains("change id must be kebab-case"));
 }
 
 fn exploration_json(world: &GivnWorld) -> serde_json::Value {
