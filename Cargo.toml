@@ -14,6 +14,8 @@ path = "src/lib.rs"
 [features]
 default = []
 spec-retrieval = ["dep:fastembed", "dep:ndarray", "dep:ort", "dep:tokenizers"]
+spec-similarity-gate = ["spec-retrieval"]
+cross-encoder-reranker = ["spec-similarity-gate"]
 
 [dependencies]
 clap = { version = "4.6", features = ["derive"] }

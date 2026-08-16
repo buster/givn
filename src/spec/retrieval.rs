@@ -27,9 +27,11 @@ use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
 const INDEX_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
+const SIMILARITY_THRESHOLD: f32 = 0.95;
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_TOP_K: usize = 5;
@@ -474,13 +476,98 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let index = read_index(&spec_index_path(root))?;
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
+    if !cfg!(feature = "spec-similarity-gate") {
+        return advisory_review(root, &index, &delta, &change_dir.join("review.md"));
+    }
     if let Some(backend) = nli_backend_from_env()? {
         let (candidates, considered) = nli_similarity_candidates(root, &index, &delta, backend)?;
         print_nli_results(&candidates, considered);
         return Ok(());
     }
 
-    let (candidates, considered) = similarity_candidates(root, &index, &delta)?;
+    #[cfg(feature = "cross-encoder-reranker")]
+    return run_reranker_review(root, &index, &delta);
+
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    return run_embedding_review(root, &index, &delta);
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn advisory_review(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+    review_path: &Path,
+) -> Result<()> {
+    let (dispositions, _) = crate::overlap::disposition::parse_review(review_path);
+    for item in delta
+        .iter()
+        .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+    {
+        let query_vector = embed_texts(
+            root,
+            std::slice::from_ref(&item.scenario.text),
+            EmbeddingRole::Query,
+        )?
+        .into_iter()
+        .next()
+        .context("retrieval embedder returned no review vector")?;
+        let ranked = rank_entries(&index.entries, &query_vector);
+        for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
+            if crate::overlap::disposition::disposed(
+                &dispositions,
+                &item.scenario.title,
+                &entry.title,
+            ) {
+                continue;
+            }
+            println!(
+                "retrieval advisory: '{}' resembles '{}' (rank {}, score {:.4})",
+                item.scenario.title,
+                entry.title,
+                rank + 1,
+                score
+            );
+        }
+    }
+    Ok(())
+}
+
+#[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
+fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
+    let (candidates, considered) = embedding_similarity_candidates(root, index, delta)?;
+    for candidate in &candidates {
+        println!(
+            "similarity candidate [{}]: '{}' ({}) resembles '{}' ({}) score {:.4}, threshold {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the threshold)",
+            candidate.scopes.join(","),
+            candidate.left.title,
+            candidate.left.file,
+            candidate.right.title,
+            candidate.right.file,
+            candidate.embedding_score,
+            SIMILARITY_THRESHOLD,
+        );
+    }
+    println!(
+        "retrieval advisory: embedding similarity evaluated {} candidate pairs",
+        considered
+    );
+    if !candidates.is_empty() {
+        bail!(
+            "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
+            candidates.len()
+        );
+    }
+    println!(
+        "similarity gate: no scenario pair at or above fixed threshold {:.4}",
+        SIMILARITY_THRESHOLD
+    );
+    Ok(())
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn run_reranker_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
+    let (candidates, considered) = similarity_candidates(root, index, delta)?;
     println!(
         "reranker: model {}, top_k {}, considered {} candidate pairs, fixed raw-logit boundary {:.4}",
         RERANKER_MODEL_ID, RERANKER_TOP_K, considered, RERANKER_LOGIT_THRESHOLD,
@@ -728,7 +815,77 @@ fn similarity_candidate_pool(
     Ok((result, considered, candidate_texts))
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
+fn embedding_similarity_candidates(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+) -> Result<(Vec<SimilarityCandidate>, usize)> {
+    let active_delta: Vec<&DeltaScenario> = delta
+        .iter()
+        .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+        .collect();
+    let delta_texts: Vec<String> = active_delta
+        .iter()
+        .map(|item| item.scenario.text.clone())
+        .collect();
+    let delta_vectors = if delta_texts.is_empty() {
+        Vec::new()
+    } else {
+        embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
+    };
+
+    let mut candidates = BTreeMap::new();
+    for (delta, vector) in active_delta.iter().zip(delta_vectors.iter()) {
+        let own_target = (delta.target_file.as_str(), delta.scenario.title.as_str());
+        for entry in &index.entries {
+            if delta.operation == crate::gherkin::delta::DeltaOp::Modified
+                && (entry.file.as_str(), entry.title.as_str()) == own_target
+            {
+                continue;
+            }
+            let score = cosine_similarity(vector, &entry.embedding);
+            if score >= SIMILARITY_THRESHOLD {
+                add_similarity_candidate(
+                    &mut candidates,
+                    "delta-to-permanent",
+                    endpoint(&delta.target_file, &delta.scenario.title),
+                    endpoint(&entry.file, &entry.title),
+                    score,
+                );
+            }
+        }
+    }
+
+    let projected = project_records(index, delta, &delta_vectors, &active_delta)?;
+    for (left, right) in projected.iter().enumerate() {
+        for other in projected.iter().skip(left + 1) {
+            let score = cosine_similarity(&right.embedding, &other.embedding);
+            if score >= SIMILARITY_THRESHOLD {
+                add_similarity_candidate(
+                    &mut candidates,
+                    "projected-permanent",
+                    right.endpoint.clone(),
+                    other.endpoint.clone(),
+                    score,
+                );
+            }
+        }
+    }
+
+    let mut result: Vec<SimilarityCandidate> = candidates.into_values().collect();
+    let considered = result.len();
+    result.sort_by(|left, right| {
+        right
+            .embedding_score
+            .total_cmp(&left.embedding_score)
+            .then_with(|| left.left.cmp(&right.left))
+            .then_with(|| left.right.cmp(&right.right))
+    });
+    Ok((result, considered))
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn similarity_candidates(
     root: &Path,
     index: &SpecIndex,
@@ -1215,6 +1372,7 @@ fn add_similarity_candidate(
         }
         if score > existing.embedding_score {
             existing.embedding_score = score;
+            existing.rerank_score = score;
         }
         return;
     }
@@ -1231,7 +1389,7 @@ fn add_similarity_candidate(
     );
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn rerank_candidates(
     root: &Path,
     candidates: &mut [SimilarityCandidate],
@@ -1263,7 +1421,7 @@ fn rerank_candidates(
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn rerank_with_fastembed(
     root: &Path,
     candidates: &mut [SimilarityCandidate],
@@ -1334,7 +1492,7 @@ fn scenario_text_for<'a>(
         .with_context(|| format!("missing scenario text for '{}'", endpoint.title))
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn stub_reranker_score(left: &str, right: &str) -> f32 {
     let left_tokens = reranker_tokens(left);
     let right_tokens = reranker_tokens(right);
@@ -1360,7 +1518,7 @@ fn reranker_tokens(text: &str) -> std::collections::BTreeSet<String> {
         .collect()
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn sigmoid(value: f32) -> f32 {
     1.0 / (1.0 + (-value).exp())
 }
