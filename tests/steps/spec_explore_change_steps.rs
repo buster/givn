@@ -145,6 +145,11 @@ fn explore_file_against_change(world: &mut GivnWorld, path: String, change: Stri
     explore_against_change(world, path, change);
 }
 
+#[when(regex = r#"^the user explores "([^"]+)" with JSON output$"#)]
+fn explore_file_with_json_output(world: &mut GivnWorld, path: String) {
+    super::spec_explore_permanent_steps::run_file_explore(world, &path, true);
+}
+
 #[then(regex = r#"^no ranked result is titled "([^"]+)"$"#)]
 fn no_ranked_result(world: &mut GivnWorld, title: String) {
     assert!(
@@ -293,6 +298,52 @@ fn stdout_identifies_permanent_source(_world: &mut GivnWorld, _source: String) {
         "permanent source is missing: {}",
         stdout(world)
     );
+}
+
+#[then("stdout is a permanent exploration JSON document")]
+fn stdout_is_permanent_exploration_json(world: &mut GivnWorld) {
+    let value = exploration_json(world);
+    assert!(value.is_object(), "exploration JSON must be an object");
+    assert!(
+        value["results"].is_array(),
+        "exploration JSON must have results"
+    );
+}
+
+#[then("every JSON result retains rank title file and score fields in their PR1 order")]
+fn json_results_retain_legacy_fields(world: &mut GivnWorld) {
+    let raw = stdout(world);
+    let value = exploration_json(world);
+    let results = value["results"].as_array().expect("results array");
+    assert!(
+        !results.is_empty(),
+        "exploration JSON should contain results"
+    );
+    let raw_results = &raw[raw.find("\"results\"").expect("results field")..];
+    let rank = raw_results.find("\"rank\"").expect("rank field");
+    let title = raw_results.find("\"title\"").expect("title field");
+    let file = raw_results.find("\"file\"").expect("file field");
+    let score = raw_results.find("\"score\"").expect("score field");
+    assert!(rank < title && title < file && file < score);
+    for result in results {
+        assert!(result["rank"].as_u64().is_some());
+        assert!(result["title"].as_str().is_some());
+        assert!(result["file"].as_str().is_some());
+        assert!(result["score"].as_f64().is_some());
+    }
+}
+
+#[then(regex = r#"^every JSON result has scope "([^"]+)" and no owning change$"#)]
+fn json_results_have_permanent_scope(world: &mut GivnWorld, scope: String) {
+    let value = exploration_json(world);
+    for result in value["results"].as_array().expect("results array") {
+        assert_eq!(result["scope"], scope);
+        assert!(result["change"].is_null());
+    }
+}
+
+fn exploration_json(world: &GivnWorld) -> serde_json::Value {
+    serde_json::from_str(&stdout(world)).expect("exploration stdout must be JSON")
 }
 
 #[when(
