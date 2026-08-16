@@ -172,14 +172,15 @@ givn/changes/<id>/semantic-review.md
   evidence, content/evidence hashes, and deterministic facts without BGE/NLI.
 - Require one of `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN` for
   every candidate, with an agent-authored rationale for every resolved value.
-  A candidate that appears unrelated above the boundary is not a fourth class:
-  sharpen its domain vocabulary/invariant or resolve it as an allowed class.
+  A candidate that appears unrelated above the boundary remains unresolved
+  until its vocabulary and invariant are sharpened or it receives an allowed
+  classification.
 - Make missing, invalid, or `UNCERTAIN` classifications fail the change review.
 - Regenerate the complete change-local report atomically on every run, carry
   classifications only across unchanged full evidence, and retain the report
   as historical evidence when the existing archive move runs.
 - Treat a malformed permanent index as stale, rebuild it from permanent specs,
-  and keep the rebuilt index structurally permanent-only.
+  validate its permanent-only structure, and continue semantic review.
 - Keep the existing structural overlap and coverage review contracts intact.
 
 **Agent responsibility:** Givn generates evidence and the report. The agent
