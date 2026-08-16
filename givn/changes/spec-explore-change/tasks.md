@@ -129,20 +129,23 @@ in its commit.
 - [x] REFACTOR: remove duplicate path conversions and rerun both targeted path
       assertions. Evidence: after `cargo fmt --all`, targeted run passed with
       `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Change-aware exploration normalizes relative and absolute scenario identities`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Change-aware exploration normalizes relative and absolute scenario identities`
+      Hash: `2fd7acf`
 
 ### Change-aware standard input returns the same ranked candidates as file input
 
-- [ ] RED: remove only this scenario's `@wip`, use strict regular steps, and
-      run the targeted command. Evidence: 
-- [ ] GREEN: pass the optional change through the stdin path and compare the
+- [x] RED: remove only this scenario's `@wip`, use strict regular steps, and
+      run the targeted command. Evidence: `1 scenario (1 failed)`, `1 step
+      (1 failed)`; the matched stdin step panicked with `not implemented`.
+- [x] GREEN: pass the optional change through the stdin path and compare the
       ranked result lines against file input while preserving source metadata.
       Production files: `src/main.rs`, `src/cli/spec.rs`,
       `src/spec/retrieval.rs`, `tests/steps/spec_explore_change_steps.rs`.
-      Evidence: 
-- [ ] REFACTOR: keep source metadata differences out of ranked-line parity and
-      rerun the targeted command. Evidence: 
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `5 steps (5
+      passed)`.
+- [x] REFACTOR: keep source metadata differences out of ranked-line parity and
+      rerun the targeted command. Evidence: after `cargo fmt --all`, targeted
+      run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): Change-aware standard input returns the same ranked candidates as file input`
       Hash: 
 
