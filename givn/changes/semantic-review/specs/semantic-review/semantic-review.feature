@@ -163,7 +163,7 @@ Feature: Generate the semantic review report
     And equal-score candidates are ordered by left endpoint tuple, right endpoint tuple, and candidate id
     And the candidate order is stable across repeated report generation
 
-  @givn.added @wip
+  @givn.added
   Scenario: Changing a candidate scenario invalidates its previous classification
     Given a project prepared for semantic review with a similar active delta
     When the user runs `givn check review --change running-change`
