@@ -115,7 +115,7 @@ Feature: Generate the semantic review report
     And the semantic review report status is "PASS"
     And the semantic review report contains classification "DUPLIKAT"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Every resolved semantic classification requires a rationale
     Given a project prepared for semantic review with a similar active delta
     When the user runs `givn check review --change running-change`
