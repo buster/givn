@@ -85,7 +85,7 @@ Feature: Explore scenarios in the current change
     Then the command exits 0
     And the permanent exploration index is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: An added change scenario is not reported against itself from its delta source
     Given a project prepared for current-change exploration with an active added scenario in a one-scenario delta file
     When the user explores "givn/changes/current-change/specs/current-change/added-provider.feature" against change "current-change"
