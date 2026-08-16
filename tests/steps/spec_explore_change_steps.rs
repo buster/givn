@@ -140,6 +140,11 @@ fn explore_against_change(world: &mut GivnWorld, path: String, change: String) {
     ));
 }
 
+#[when(regex = r#"^the user explores "([^"]+)" against change "([^"]+)" with the file input$"#)]
+fn explore_file_against_change(world: &mut GivnWorld, path: String, change: String) {
+    explore_against_change(world, path, change);
+}
+
 #[then(regex = r#"^no ranked result is titled "([^"]+)"$"#)]
 fn no_ranked_result(world: &mut GivnWorld, title: String) {
     assert!(
@@ -320,6 +325,45 @@ fn both_requests_retain_candidate(world: &mut GivnWorld) {
         .expect("relative request output is missing");
     assert!(ranked_output_has_result(first));
     assert!(ranked_output_has_result(output(world)));
+}
+
+#[when(
+    regex = r#"^the user explores the same draft against change "([^"]+)" through standard input$"#
+)]
+fn explore_same_draft_through_stdin(world: &mut GivnWorld, change: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("current-change project is required");
+    let draft = fs::read_to_string(env.path("draft.feature")).expect("read draft feature");
+    if let Some(previous) = world.last_output.take() {
+        world.previous_output = Some(previous);
+    }
+    world.last_output = Some(common::run_givn_with_stdin_and_envs(
+        env,
+        &["spec", "explore", "--change", &change, "--stdin"],
+        &draft,
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    ));
+}
+
+#[then("the standard-input ranked results equal the file ranked results")]
+fn standard_input_ranked_results_equal_file(world: &mut GivnWorld) {
+    let file_output = world
+        .previous_output
+        .as_ref()
+        .expect("file exploration output is missing");
+    let file_stdout = String::from_utf8_lossy(&file_output.stdout);
+    let file_results: Vec<&str> = file_stdout
+        .lines()
+        .filter(|line| line.trim_start().starts_with("rank "))
+        .collect();
+    let stdin_stdout = stdout(world);
+    let stdin_results: Vec<&str> = stdin_stdout
+        .lines()
+        .filter(|line| line.trim_start().starts_with("rank "))
+        .collect();
+    assert_eq!(stdin_results, file_results);
 }
 
 fn ranked_output_contains(output: &std::process::Output, title: &str) -> bool {
