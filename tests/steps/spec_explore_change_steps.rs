@@ -394,6 +394,26 @@ fn stderr_says_change_has_no_specs(_world: &mut GivnWorld, _change: String) {
     assert!(stderr(_world).contains(&format!("change `{_change}` has no specs directory")));
 }
 
+#[given("a project prepared for current-change exploration with a malformed delta feature")]
+fn malformed_delta_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    clear_specs(&env);
+    write_project_path(&env, "givn/specs/provider.feature", PERMANENT_CORPUS);
+    write_project_path(
+        &env,
+        "givn/changes/current-change/specs/current-change/malformed.feature",
+        "this is not valid Gherkin\nwithout a Feature keyword\n",
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[then("stderr clearly says the delta feature is not valid Gherkin")]
+fn stderr_says_delta_is_not_valid(_world: &mut GivnWorld) {
+    assert!(stderr(_world).contains("delta feature is not valid Gherkin"));
+}
+
 fn exploration_json(world: &GivnWorld) -> serde_json::Value {
     serde_json::from_str(&stdout(world)).expect("exploration stdout must be JSON")
 }
