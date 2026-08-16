@@ -389,16 +389,23 @@ givn skills sync
       rerun. Evidence: after `cargo fmt --all`, `cargo check --no-default-features`,
       and `cargo check --features spec-retrieval`, targeted run passed with `1
       scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Blocking review reports retrieval unavailability without its feature`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Blocking review reports retrieval unavailability without its feature`
+      Hash: `1e1e2ee`
 
 ### Advisory spec review does not create the semantic report
 
-- [ ] RED: target advisory separation with strict stubs. Evidence: 
-- [ ] GREEN: leave `spec review` on the existing advisory entrypoint and assert
+- [x] RED: target advisory separation with strict stubs. Evidence: `1 scenario
+      (1 failed)`, `1 step (1 failed)`; the advisory-command When step panicked
+      with `not implemented`.
+- [x] GREEN: leave `spec review` on the existing advisory entrypoint and assert
       its retrieval advisory output with no semantic report. Production files:
-      `src/cli/check.rs`, `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: rerun both advisory and blocking paths. Evidence: 
+      existing `src/cli/spec.rs`/`src/spec/retrieval.rs` behavior and tests step
+      files. Evidence: targeted run passed with `1 scenario (1 passed)`, `5
+      steps (5 passed)`.
+- [x] REFACTOR: rerun both advisory and blocking paths. Evidence: after `cargo
+      fmt --all`, advisory targeted run passed with `1 scenario (1 passed)`, `5
+      steps (5 passed)`; blocking path is covered by the no-feature and blocked
+      semantic-review scenarios.
 - [ ] COMMIT: `feat(semantic-review): Advisory spec review does not create the semantic report`
       Hash: 
 

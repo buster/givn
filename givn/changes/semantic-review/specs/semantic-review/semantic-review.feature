@@ -327,7 +327,7 @@ Feature: Generate the semantic review report
   @givn.added @wip
   Scenario: Advisory spec review does not create the semantic report
     Given a project prepared for semantic review with a similar active delta
-    When the user runs `givn spec review --change running-change`
+    When the user runs the advisory semantic review command
     Then the command exits 0
     And stdout contains "retrieval advisory"
     And the semantic review report does not exist

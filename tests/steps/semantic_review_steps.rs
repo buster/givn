@@ -726,6 +726,16 @@ fn run_change_review_without_spec_retrieval(world: &mut GivnWorld) {
     world.last_output = Some(output);
 }
 
+#[when("the user runs the advisory semantic review command")]
+fn run_advisory_semantic_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    ));
+}
+
 #[given("the active semantic review report bytes are snapshotted")]
 fn active_semantic_report_bytes_are_snapshotted(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("semantic project is required");
