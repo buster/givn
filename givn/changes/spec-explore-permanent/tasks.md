@@ -22,12 +22,11 @@ verified against the final diff.
       the matched e2e step panicked with `not implemented`.
 - [x] Prove the full runner command and the strict `@e2e` subset are distinct;
       record the scenario counts from `./run-tests.sh` and
-      `./run-tests.sh --e2e`. Evidence: full repository scope reported `208
-      scenarios (207 passed, 1 pre-existing review-disposition failure)`;
-      e2e scope reported `31 scenarios (31 passed)`. The e2e scope is strictly
-      smaller.
-- [x] Setup evidence: strict RED is proven; the full/e2e count proof remains a
-      completion item below.
+      `./run-tests.sh --e2e`. Evidence: full repository scope reports `208
+      scenarios (208 passed)`; e2e scope reports `31 scenarios (31 passed)`.
+      The e2e scope is strictly smaller.
+- [x] Setup evidence: strict RED is proven and both configured runner scopes
+      are green.
 
 ## Non-e2e scenarios
 
@@ -254,5 +253,5 @@ verified against the final diff.
       cargo checks before moving to review. The change-only runner passed
       `15 scenarios (15 passed)`, `81 steps (81 passed)`; the change-only e2e
       runner passed `3 scenarios (3 passed)`, `20 steps (20 passed)`. The
-      repository-wide script retains the one pre-existing failure recorded
-      above.
+      repository-wide script passed `208 scenarios (208 passed)` after the
+      permanent review baseline was aligned with the active reranker behavior.
