@@ -595,7 +595,7 @@ fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> 
     );
     for (index, candidate) in candidates.iter().enumerate() {
         report.push_str(&format!(
-            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: null\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
+            "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: null\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
             index + 1,
             candidate.candidate_id,
             candidate.classification,
@@ -603,12 +603,16 @@ fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> 
             candidate.left.scope,
             candidate.left.file,
             candidate.left.title,
+            candidate.left.operation,
+            json_encoded(&candidate.left.projected_target),
             candidate.left.evidence_json,
             candidate.left.content_hash,
             candidate.left.evidence_hash,
             candidate.right.scope,
             candidate.right.file,
             candidate.right.title,
+            candidate.right.operation,
+            json_encoded(&candidate.right.projected_target),
             candidate.right.evidence_json,
             candidate.right.content_hash,
             candidate.right.evidence_hash,

@@ -122,16 +122,21 @@ givn skills sync
 - [x] REFACTOR: keep E5 passage text separate from evidence serialization and
       rerun. Evidence: after `cargo fmt --all`, targeted run passed with `1
       scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: `feat(semantic-review): Endpoint evidence preserves complete Gherkin source order`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): Endpoint evidence preserves complete Gherkin source order`
+      Hash: `6e36553`
 
 ### A modified delta excludes only its own projected target
 
-- [ ] RED: target Modified identity behavior with strict stubs. Evidence: 
-- [ ] GREEN: exclude only the Modified endpoint's projected target and retain
+- [x] RED: target Modified identity behavior with strict stubs. Evidence: `1
+      scenario (1 failed)`, `1 step (1 failed)`; the target assertion panicked
+      with `not implemented`.
+- [x] GREEN: exclude only the Modified endpoint's projected target and retain
       another candidate in the same target file. Production files:
-      `src/spec/retrieval.rs`, tests step files. Evidence: 
-- [ ] REFACTOR: centralize Modified target identity filtering and rerun. Evidence: 
+      `src/spec/retrieval.rs`, tests step files. Evidence: targeted run passed
+      with `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: centralize Modified target identity filtering and rerun.
+      Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
+      (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: `feat(semantic-review): A modified delta excludes only its own projected target`
       Hash: 
 

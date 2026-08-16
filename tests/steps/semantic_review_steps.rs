@@ -407,6 +407,64 @@ fn evidence_keeps_e5_representation_separate(_world: &mut GivnWorld) {
     assert!(report.contains("- left_evidence_json:"));
 }
 
+#[given(
+    "a project prepared for semantic review with a modified scenario and another candidate in the same target file"
+)]
+fn modified_target_semantic_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let permanent_root = env.path("givn/specs");
+    if permanent_root.exists() {
+        fs::remove_dir_all(&permanent_root).expect("remove generated specs");
+    }
+    fs::create_dir_all(&permanent_root).expect("create permanent specs");
+    let specs = env.path("givn/specs/running-change");
+    fs::create_dir_all(&specs).expect("create target specs");
+    fs::write(
+        specs.join("running-change.feature"),
+        "Feature: current change\n\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Authentication token is missing\n    Given a configured provider catalog\n    When the user authenticates without a token\n    Then authentication is rejected\n",
+    )
+    .expect("write target permanent specs");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: current change\n\n  @givn.modified\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider from the updated catalog\n    Then the command rejects the request\n",
+    )
+    .expect("write modified delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+    )
+    .expect("write modified overlap dispositions");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores =
+        Some("Provider name is unknown|Authentication token is missing=0.9600".to_string());
+}
+
+#[then("the report excludes the modified scenario's own projected target endpoint")]
+fn report_excludes_modified_target(_world: &mut GivnWorld) {
+    assert!(!semantic_report(_world).contains("right_title: \"Provider name is unknown\""));
+}
+
+#[then("the report still contains the other candidate in that target file")]
+fn report_keeps_other_target_candidate(_world: &mut GivnWorld) {
+    assert!(semantic_report(_world).contains("Authentication token is missing"));
+}
+
+#[then("the report records the modified delta operation and projected target identity")]
+fn report_records_modified_identity(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    assert!(report.contains("left_delta_operation: modified"));
+    assert!(report.contains("left_projected_target: [\"givn/specs/running-change/running-change.feature\",\"Provider name is unknown\"]"));
+}
+
 #[then("the report contains no permanent-permanent candidate")]
 fn report_contains_no_permanent_pair(_world: &mut GivnWorld) {
     let report = semantic_report(_world);
