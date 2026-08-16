@@ -90,7 +90,7 @@ Feature: Generate the semantic review report
     And the report still contains the other candidate in that target file
     And the report records the modified delta operation and projected target identity
 
-  @givn.added @wip
+  @givn.added
   Scenario: An uncertain semantic candidate blocks change review without editing specs
     Given a project prepared for semantic review with a similar active delta
     And the permanent specifications are snapshotted

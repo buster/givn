@@ -90,6 +90,75 @@ fn two_similar_active_deltas(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given("a project prepared for semantic review with a similar active delta")]
+fn similar_active_delta_project(world: &mut GivnWorld) {
+    two_similar_active_deltas(world);
+}
+
+#[given("the active feature files, review dispositions, and index boundary are snapshotted")]
+fn snapshot_semantic_boundaries(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let change_specs = env.path("givn/changes/running-change/specs");
+    let mut files = Vec::new();
+    for path in givn::gherkin::parse::collect_feature_files(&change_specs) {
+        let relative = path
+            .strip_prefix(env.root())
+            .expect("active feature under project root")
+            .to_string_lossy()
+            .replace('\\', "/");
+        files.push((relative, fs::read(path).expect("read active feature")));
+    }
+    world.semantic_active_snapshot = Some(files);
+    world.semantic_review_snapshot = Some(
+        fs::read(env.path("givn/changes/running-change/review.md"))
+            .expect("read semantic review dispositions"),
+    );
+    if !env.path("givn/.spec-index.json").exists() {
+        let output =
+            common::run_givn_with_envs(env, &["spec", "index"], &[("GIVN_SPEC_EMBEDDER", "stub")]);
+        assert!(output.status.success(), "build semantic index");
+    }
+    world.permanent_index_snapshot =
+        Some(fs::read(env.path("givn/.spec-index.json")).expect("read semantic index boundary"));
+}
+
+#[then("the active feature files are unchanged")]
+fn active_feature_files_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    for (relative, expected) in world
+        .semantic_active_snapshot
+        .as_ref()
+        .expect("active snapshot")
+    {
+        assert_eq!(
+            fs::read(env.path(relative)).expect("read active feature"),
+            *expected
+        );
+    }
+}
+
+#[then("the review dispositions are unchanged")]
+fn review_dispositions_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    assert_eq!(
+        fs::read(env.path("givn/changes/running-change/review.md"))
+            .expect("read review dispositions"),
+        *world
+            .semantic_review_snapshot
+            .as_ref()
+            .expect("review snapshot")
+    );
+}
+
+#[then("the permanent index contains no delta vectors, classifications, or report state")]
+fn index_contains_no_semantic_state(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project is required");
+    let index = fs::read_to_string(env.path("givn/.spec-index.json")).expect("read index");
+    assert!(!index.contains("givn/changes/"));
+    assert!(!index.contains("classification"));
+    assert!(!index.contains("semantic-review"));
+}
+
 #[given("a project prepared for semantic review with active deltas below the similarity boundary")]
 fn below_boundary_semantic_project(_world: &mut GivnWorld) {
     let world = _world;
@@ -520,6 +589,11 @@ fn permanent_index_is_structurally_permanent(_world: &mut GivnWorld) {
                 .is_some_and(|file| file.starts_with("givn/specs/"))
         );
     }
+}
+
+#[then("the permanent index structural snapshot still contains only permanent entries")]
+fn permanent_index_snapshot_is_structural(world: &mut GivnWorld) {
+    permanent_index_is_structurally_permanent(world);
 }
 
 #[then(regex = r#"^the semantic review report contains scope "([^"]+)"$"#)]

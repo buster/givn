@@ -83,6 +83,10 @@ pub struct GivnWorld {
     pub(crate) permanent_index_snapshot: Option<Vec<u8>>,
     /// Snapshot of a change-local semantic review report.
     pub(crate) semantic_report_snapshot: Option<Vec<u8>>,
+    /// Snapshot of active semantic-review files and dispositions.
+    pub(crate) semantic_active_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the semantic-review disposition file.
+    pub(crate) semantic_review_snapshot: Option<Vec<u8>>,
 }
 
 // --- helpers ---------------------------------------------------------------

@@ -137,17 +137,22 @@ givn skills sync
 - [x] REFACTOR: centralize Modified target identity filtering and rerun.
       Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
       (1 passed)`, `6 steps (6 passed)`.
-- [ ] COMMIT: `feat(semantic-review): A modified delta excludes only its own projected target`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): A modified delta excludes only its own projected target`
+      Hash: `3843dd1`
 
 ### An uncertain semantic candidate blocks change review without editing specs
 
-- [ ] RED: target the blocking/non-mutation scenario with strict stubs. Evidence: 
-- [ ] GREEN: block on missing/invalid/UNCERTAIN classification and preserve
+- [x] RED: target the blocking/non-mutation scenario with strict stubs. Evidence:
+      `1 scenario (1 failed)`, `1 step (1 failed)`; the final index-state step
+      panicked with `not implemented`.
+- [x] GREEN: block on missing/invalid/UNCERTAIN classification and preserve
       feature files, permanent specs, review dispositions, and permanent-only
       index state. Production files: `src/cli/check.rs`, `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: write the complete blocked report atomically and rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1
+      passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: write the complete blocked report atomically and rerun. Evidence:
+      after `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
 - [ ] COMMIT: `feat(semantic-review): An uncertain semantic candidate blocks change review without editing specs`
       Hash: 
 
