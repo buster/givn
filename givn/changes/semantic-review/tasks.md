@@ -62,16 +62,21 @@ givn skills sync
 - [x] REFACTOR: canonicalize endpoint identity and rerun. Evidence: after
       `cargo fmt --all`, targeted run passed with `1 scenario (1 passed)`,
       `9 steps (9 passed)`.
-- [ ] COMMIT: `feat(semantic-review): The report distinguishes permanent and current-change candidate scopes`
-      Hash: 
+- [x] COMMIT: `feat(semantic-review): The report distinguishes permanent and current-change candidate scopes`
+      Hash: `b3ee6c0`
 
 ### Active deltas below the E5 boundary produce no candidates
 
-- [ ] RED: target the scenario with strict stubs. Evidence: 
-- [ ] GREEN: enforce `score >= 0.9500` before candidate admission and produce a
+- [x] RED: target the scenario with strict stubs. Evidence: `1 scenario (1
+      failed)`, `1 step (1 failed)`; the matched Given step panicked with
+      `not implemented`.
+- [x] GREEN: enforce `score >= 0.9500` before candidate admission and produce a
       clean report below the boundary. Production files: `src/spec/retrieval.rs`,
-      tests step files. Evidence: 
-- [ ] REFACTOR: keep below-boundary pairs out of both scopes and rerun. Evidence: 
+      tests step files. Evidence: targeted run passed with `1 scenario (1
+      passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: keep below-boundary pairs out of both scopes and rerun.
+      Evidence: after `cargo fmt --all`, targeted run passed with `1 scenario
+      (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: `feat(semantic-review): Active deltas below the E5 boundary produce no candidates`
       Hash: 
 
