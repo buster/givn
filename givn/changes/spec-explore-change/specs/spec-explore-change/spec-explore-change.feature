@@ -101,7 +101,7 @@ Feature: Explore scenarios in the current change
     And no ranked result is titled "Provider name is unknown"
     And another eligible candidate remains visible
 
-  @givn.added @wip
+  @givn.added
   Scenario: Change-aware exploration normalizes relative and absolute scenario identities
     Given a project prepared for current-change exploration with a modified scenario
     When the user explores the modified delta scenario once by its relative path and once by its absolute project path against change "current-change"
