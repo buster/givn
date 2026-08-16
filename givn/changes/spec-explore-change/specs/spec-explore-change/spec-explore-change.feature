@@ -59,7 +59,7 @@ Feature: Explore scenarios in the current change
     Then the command exits 0
     And no ranked result is titled "Removed provider behavior"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A modified change scenario is not reported against itself from its delta source
     Given a project prepared for current-change exploration with a modified scenario
     When the user explores "givn/changes/current-change/specs/current-change/current-change.feature" against change "current-change"

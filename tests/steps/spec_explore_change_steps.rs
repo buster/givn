@@ -43,6 +43,44 @@ Feature: current provider behavior
     world.retrieval_reranker = Some("stub".to_string());
 }
 
+#[given("a project prepared for current-change exploration with a modified scenario")]
+fn modified_scenario_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    clear_specs(&env);
+    write_project_path(
+        &env,
+        "givn/specs/current-change/current-change.feature",
+        "Feature: current provider behavior
+
+  Scenario: Provider name is unknown
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+
+  Scenario: Authentication token is missing
+    Given a configured provider catalog
+    When the user authenticates without a token
+    Then authentication is rejected
+",
+    );
+    write_project_path(
+        &env,
+        "givn/changes/current-change/specs/current-change/current-change.feature",
+        "@givn.delta @current-change
+Feature: current provider behavior
+
+  @givn.modified
+  Scenario: Provider name is unknown
+    Given a configured provider catalog
+    When the user selects an unknown provider from the updated catalog
+    Then the command rejects the request
+",
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+}
+
 #[when(regex = r#"^the user explores "([^"]+)" against change "([^"]+)"$"#)]
 fn explore_against_change(world: &mut GivnWorld, path: String, change: String) {
     let env = world
@@ -64,6 +102,17 @@ fn no_ranked_result(world: &mut GivnWorld, title: String) {
             .filter(|line| line.trim_start().starts_with("rank "))
             .any(|line| line.contains(&title)),
         "ranked result unexpectedly contains {title:?}: {}",
+        stdout(world)
+    );
+}
+
+#[then("another eligible candidate remains visible")]
+fn another_eligible_candidate(world: &mut GivnWorld) {
+    assert!(
+        stdout(world)
+            .lines()
+            .any(|line| line.trim_start().starts_with("rank ")),
+        "expected another ranked candidate: {}",
         stdout(world)
     );
 }

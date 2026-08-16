@@ -46,19 +46,22 @@ in its commit.
 - [x] REFACTOR: keep removed scenarios out of transient embeddings and rerun
       the targeted command. Evidence: after `cargo fmt --all`, targeted run
       passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: `feat(spec-explore-change): Removed change scenarios are absent from exploration results`
-      Hash: 
+- [x] COMMIT: `feat(spec-explore-change): Removed change scenarios are absent from exploration results`
+      Hash: `0d36bd7`
 
 ### A modified change scenario is not reported against itself from its delta source
 
-- [ ] RED: remove only this scenario's `@wip`, retain strict stubs, and run the
-      targeted command. Evidence: 
-- [ ] GREEN: normalize the delta source identity and filter the modified
+- [x] RED: remove only this scenario's `@wip`, retain strict stubs, and run the
+      targeted command. Evidence: `1 scenario (1 failed)`, `1 step (1
+      failed)`; the matched Given step panicked with `not implemented`.
+- [x] GREEN: normalize the delta source identity and filter the modified
       scenario against its own source while retaining another candidate.
       Production files: `src/spec/retrieval.rs`,
-      `tests/steps/spec_explore_change_steps.rs`. Evidence: 
-- [ ] REFACTOR: separate source identity filtering from ranking and rerun the
-      targeted command. Evidence: 
+      `tests/steps/spec_explore_change_steps.rs`. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: separate source identity filtering from ranking and rerun the
+      targeted command. Evidence: after `cargo fmt --all`, targeted run
+      passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: `feat(spec-explore-change): A modified change scenario is not reported against itself from its delta source`
       Hash: 
 
