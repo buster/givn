@@ -42,7 +42,7 @@ Feature: Generate the semantic review report
     And all endpoint hashes are exactly 16 lowercase hexadecimal characters
     And the semantic review report contains deterministic facts
 
-  @givn.added @wip
+  @givn.added
   Scenario: Active deltas below the E5 boundary produce no candidates
     Given a project prepared for semantic review with active deltas below the similarity boundary
     When the user runs `givn check review --change running-change`
