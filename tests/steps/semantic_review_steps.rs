@@ -4,7 +4,7 @@ use std::fs;
 
 use cucumber::{given, then};
 
-use super::GivnWorld;
+use super::{GivnWorld, stderr};
 use crate::common;
 
 const PERMANENT_CORPUS: &str = "Feature: retrieval fixtures
@@ -116,6 +116,98 @@ fn below_boundary_semantic_project(_world: &mut GivnWorld) {
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_reranker = Some("stub".to_string());
+}
+
+#[given(
+    "a project prepared for semantic review with a candidate scored exactly at the similarity boundary"
+)]
+fn exact_boundary_semantic_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated specs");
+    }
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("boundary.feature"),
+        "Feature: boundary fixtures\n\n  Scenario: Exact boundary permanent\n    Given a boundary catalog\n    When the boundary action runs\n    Then the boundary result appears\n",
+    )
+    .expect("write boundary permanent");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write semantic review commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        delta,
+        "@givn.delta @running-change\nFeature: boundary delta\n\n  @givn.added\n  Scenario: Exact boundary delta\n    Given a boundary catalog\n    When the boundary action runs\n    Then the boundary result appears\n",
+    )
+    .expect("write boundary delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Exact boundary delta` | `Exact boundary permanent` | related |\n",
+    )
+    .expect("write boundary dispositions");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores =
+        Some("Exact boundary delta|Exact boundary permanent=0.9500".to_string());
+}
+
+#[then(regex = r#"^the candidate embedding score is exactly "([^"]+)"$"#)]
+fn candidate_score_is_exact(world: &mut GivnWorld, expected: String) {
+    assert!(semantic_report(world).contains(&format!("- embedding_score: {expected}")));
+}
+
+#[then("the semantic review report contains a candidate")]
+fn semantic_report_contains_candidate(_world: &mut GivnWorld) {
+    let env = _world.env.as_ref().expect("semantic project is required");
+    let path = env.path("givn/changes/running-change/semantic-review.md");
+    assert!(
+        path.is_file(),
+        "semantic report missing: {}",
+        stderr(_world)
+    );
+    assert!(semantic_report(_world).contains("Candidate count: 1"));
+}
+
+#[then("the candidate id is exactly 16 lowercase hexadecimal characters")]
+fn candidate_id_has_fixed_format(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    let id = report
+        .lines()
+        .find_map(|line| line.strip_prefix("- candidate_id: "))
+        .expect("candidate id");
+    assert_eq!(id.len(), 16);
+    assert!(
+        id.chars()
+            .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+    );
+}
+
+#[then("the candidate content and evidence hashes are exactly 16 lowercase hexadecimal characters")]
+fn candidate_hashes_have_fixed_format(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    let hashes: Vec<&str> = report
+        .lines()
+        .filter_map(|line| {
+            line.strip_prefix("- left_content_hash: ")
+                .or_else(|| line.strip_prefix("- left_evidence_hash: "))
+                .or_else(|| line.strip_prefix("- right_content_hash: "))
+                .or_else(|| line.strip_prefix("- right_evidence_hash: "))
+        })
+        .collect();
+    assert_eq!(hashes.len(), 4);
+    for hash in hashes {
+        assert_eq!(hash.len(), 16);
+        assert!(
+            hash.chars()
+                .all(|c| c.is_ascii_hexdigit() && !c.is_ascii_uppercase())
+        );
+    }
 }
 
 #[then("the report contains no permanent-permanent candidate")]
