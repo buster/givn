@@ -60,7 +60,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the response lists the generated paths and prerequisites
     And the response contains the resolved instruction text
 
-  @givn.added @wip
+  @givn.added
   Scenario: Artifact instructions reject an unknown change context
     Given the effective specs artifact metadata is available
     When an agent requests the specs instructions for an unknown change context
