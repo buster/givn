@@ -49,6 +49,8 @@ const SEMANTIC_FINGERPRINT_SCHEMA_VERSION: u32 = 1;
 const SEMANTIC_EVIDENCE_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_SIMILARITY_THRESHOLD: f32 = 0.95;
+#[cfg(feature = "spec-retrieval")]
+const DUPLICATE_REPORT_SCHEMA_VERSION: u32 = 1;
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -285,6 +287,36 @@ struct DuplicateCandidate {
 }
 
 #[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateJsonEvidence {
+    relation: &'static str,
+    assertion_shape: Option<DuplicateAssertionShape>,
+    facts: Option<DuplicateFactsEvidence>,
+    distinguishing_facts: Vec<DistinguishingFact>,
+    fact_contradiction: bool,
+    score: Option<String>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateJsonCandidate {
+    rank: usize,
+    kind: &'static str,
+    left: DuplicateEndpoint,
+    right: DuplicateEndpoint,
+    evidence: DuplicateJsonEvidence,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct DuplicateJsonReport {
+    schema_version: u32,
+    scanned_scenarios: usize,
+    candidate_count: usize,
+    candidates: Vec<DuplicateJsonCandidate>,
+}
+
+#[cfg(feature = "spec-retrieval")]
 type DuplicatePairKey = ((String, String), (String, String));
 
 #[cfg(feature = "spec-retrieval")]
@@ -397,15 +429,15 @@ pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
     }
 }
 
-pub fn duplicates(root: &Path) -> Result<()> {
+pub fn duplicates(root: &Path, json: bool) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        duplicates_enabled(root)
+        duplicates_enabled(root, json)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
     {
-        let _ = root;
+        let _ = (root, json);
         bail!(
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
@@ -424,17 +456,52 @@ fn index_enabled(root: &Path) -> Result<()> {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn duplicates_enabled(root: &Path) -> Result<()> {
+fn duplicates_enabled(root: &Path, json: bool) -> Result<()> {
     let scenarios = collect_duplicate_scenarios(root)?;
     let candidates = duplicate_candidates(root, &scenarios)?;
 
-    println!("Givn spec duplicates");
-    println!("Scanned scenarios: {}", scenarios.len());
-    println!("Candidate count: {}", candidates.len());
-    for (rank, candidate) in candidates.iter().enumerate() {
-        println!("{}", render_duplicate_candidate(rank + 1, candidate));
+    if json {
+        println!("{}", render_duplicate_json(scenarios.len(), &candidates)?);
+    } else {
+        println!("Givn spec duplicates");
+        println!("Scanned scenarios: {}", scenarios.len());
+        println!("Candidate count: {}", candidates.len());
+        for (rank, candidate) in candidates.iter().enumerate() {
+            println!("{}", render_duplicate_candidate(rank + 1, candidate));
+        }
     }
     Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn render_duplicate_json(
+    scanned_scenarios: usize,
+    candidates: &[DuplicateCandidate],
+) -> Result<String> {
+    let report = DuplicateJsonReport {
+        schema_version: DUPLICATE_REPORT_SCHEMA_VERSION,
+        scanned_scenarios,
+        candidate_count: candidates.len(),
+        candidates: candidates
+            .iter()
+            .enumerate()
+            .map(|(index, candidate)| DuplicateJsonCandidate {
+                rank: index + 1,
+                kind: candidate.kind,
+                left: candidate.left.clone(),
+                right: candidate.right.clone(),
+                evidence: DuplicateJsonEvidence {
+                    relation: candidate.relation,
+                    assertion_shape: candidate.assertion_shape.clone(),
+                    facts: candidate.facts.clone(),
+                    distinguishing_facts: candidate.distinguishing_facts.clone(),
+                    fact_contradiction: candidate.fact_contradiction,
+                    score: candidate.score.map(|score| format!("{score:.4}")),
+                },
+            })
+            .collect(),
+    };
+    serde_json::to_string(&report).context("serialize duplicate audit JSON")
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1637,7 +1704,7 @@ fn collect_duplicate_scenario(
     output.push(DuplicateScenario {
         endpoint: DuplicateEndpoint {
             file: file.to_string(),
-            title: scenario.name.clone(),
+            title: duplicate_endpoint_title(&scenario.name),
         },
         behavior: duplicate_behavior_body(feature, rule, scenario),
         fingerprint: crate::overlap::fingerprint::Fingerprint::of_scenario(
@@ -1647,6 +1714,15 @@ fn collect_duplicate_scenario(
         ),
         text: scenario_text(scenario, file).text,
     });
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_endpoint_title(title: &str) -> String {
+    title
+        .strip_prefix("[DONE]")
+        .map(str::trim_start)
+        .unwrap_or(title)
+        .to_string()
 }
 
 #[cfg(feature = "spec-retrieval")]

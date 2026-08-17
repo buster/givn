@@ -663,6 +663,357 @@ fn duplicate_audit_report(output: &Output) -> DuplicateAuditReport {
     }
 }
 
+#[then("stdout is a valid JSON audit document")]
+fn json_audit_document(world: &mut GivnWorld) {
+    let document = json_document(world);
+    assert!(
+        document.is_object(),
+        "duplicate audit JSON must be an object"
+    );
+}
+
+#[then("the JSON schema_version is exactly 1")]
+fn json_schema_version(world: &mut GivnWorld) {
+    assert_eq!(json_document(world)["schema_version"], serde_json::json!(1));
+}
+
+#[then(
+    "the JSON top-level keys are exactly `schema_version,scanned_scenarios,candidate_count,candidates` in that order"
+)]
+fn json_top_level_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(
+        &stdout(world),
+        r#"{"schema_version":"#,
+        &[
+            "schema_version",
+            "scanned_scenarios",
+            "candidate_count",
+            "candidates",
+        ],
+    );
+}
+
+#[then("every JSON candidate has keys exactly `rank,kind,left,right,evidence` in that order")]
+fn json_candidate_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(
+        &stdout(world),
+        r#"{"rank":"#,
+        &["rank", "kind", "left", "right", "evidence"],
+    );
+}
+
+#[then("every JSON endpoint has keys exactly `file,title` in that order")]
+fn json_endpoint_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(&stdout(world), r#"{"file":"#, &["file", "title"]);
+}
+
+#[then(
+    "every JSON evidence object has keys exactly `relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score` in that order"
+)]
+fn json_evidence_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(
+        &stdout(world),
+        r#"{"relation":"#,
+        &[
+            "relation",
+            "assertion_shape",
+            "facts",
+            "distinguishing_facts",
+            "fact_contradiction",
+            "score",
+        ],
+    );
+}
+
+#[then(
+    "every JSON candidate has an exact classification, both scenario identities, a relation, and a rank"
+)]
+fn json_candidate_fields(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    let expected = [
+        (
+            1,
+            "exact_duplicate",
+            "givn/specs/provider/provider.feature",
+            "Provider is rejected",
+            "givn/specs/provider/provider.feature",
+            "Unknown provider is rejected",
+            "identical_behavior",
+        ),
+        (
+            2,
+            "structural_overlap",
+            "givn/specs/overlap/overlap.feature",
+            "Provider exits successfully",
+            "givn/specs/overlap/overlap.feature",
+            "Provider exits with a warning",
+            "same_assertion_shape",
+        ),
+        (
+            3,
+            "semantic_candidate",
+            "givn/specs/account/account.feature",
+            "Account access needs credentials",
+            "givn/specs/session/session.feature",
+            "Session credentials are needed",
+            "semantic_similarity",
+        ),
+        (
+            4,
+            "semantic_candidate",
+            "givn/specs/auth/auth.feature",
+            "Token is required",
+            "givn/specs/token/token.feature",
+            "Authentication needs a token",
+            "semantic_similarity",
+        ),
+    ];
+    assert_eq!(candidates.len(), expected.len());
+    for (candidate, (rank, kind, left_file, left_title, right_file, right_title, relation)) in
+        candidates.iter().zip(expected)
+    {
+        assert_eq!(candidate["rank"], serde_json::json!(rank));
+        assert_eq!(candidate["kind"], serde_json::json!(kind));
+        assert_eq!(candidate["left"]["file"], serde_json::json!(left_file));
+        assert_eq!(candidate["left"]["title"], serde_json::json!(left_title));
+        assert_eq!(candidate["right"]["file"], serde_json::json!(right_file));
+        assert_eq!(candidate["right"]["title"], serde_json::json!(right_title));
+        assert_eq!(
+            candidate["evidence"]["relation"],
+            serde_json::json!(relation)
+        );
+    }
+
+    let exact_evidence = &candidates[0]["evidence"];
+    assert_eq!(exact_evidence["assertion_shape"], serde_json::Value::Null);
+    assert_eq!(exact_evidence["facts"], serde_json::Value::Null);
+    assert_eq!(exact_evidence["score"], serde_json::Value::Null);
+
+    let structural_evidence = &candidates[1]["evidence"];
+    assert!(structural_evidence["assertion_shape"].is_object());
+    assert!(structural_evidence["facts"].is_object());
+    assert_eq!(structural_evidence["score"], serde_json::Value::Null);
+
+    for candidate in &candidates[2..] {
+        let evidence = &candidate["evidence"];
+        assert_eq!(evidence["assertion_shape"], serde_json::Value::Null);
+        assert_eq!(evidence["facts"], serde_json::Value::Null);
+        assert_eq!(evidence["distinguishing_facts"], serde_json::json!([]));
+        assert_eq!(evidence["fact_contradiction"], serde_json::json!(false));
+        assert_eq!(evidence["score"], serde_json::json!("0.9600"));
+    }
+}
+
+#[then("the JSON candidates follow the deterministic audit ordering")]
+fn json_candidate_order(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    let kinds: Vec<&str> = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["kind"]
+                .as_str()
+                .expect("candidate kind is a string")
+        })
+        .collect();
+    assert_eq!(
+        kinds,
+        vec![
+            "exact_duplicate",
+            "structural_overlap",
+            "semantic_candidate",
+            "semantic_candidate",
+        ]
+    );
+    assert_eq!(
+        (
+            candidates[2]["left"]["file"].as_str(),
+            candidates[2]["left"]["title"].as_str(),
+            candidates[2]["right"]["file"].as_str(),
+            candidates[2]["right"]["title"].as_str(),
+        ),
+        (
+            Some("givn/specs/account/account.feature"),
+            Some("Account access needs credentials"),
+            Some("givn/specs/session/session.feature"),
+            Some("Session credentials are needed"),
+        )
+    );
+    assert_eq!(
+        (
+            candidates[3]["left"]["file"].as_str(),
+            candidates[3]["left"]["title"].as_str(),
+            candidates[3]["right"]["file"].as_str(),
+            candidates[3]["right"]["title"].as_str(),
+        ),
+        (
+            Some("givn/specs/auth/auth.feature"),
+            Some("Token is required"),
+            Some("givn/specs/token/token.feature"),
+            Some("Authentication needs a token"),
+        )
+    );
+}
+
+#[then("JSON ranks are contiguous from 1 through candidate_count")]
+fn json_contiguous_ranks(world: &mut GivnWorld) {
+    let document = json_document(world);
+    let candidates = document["candidates"]
+        .as_array()
+        .expect("JSON candidates is an array");
+    assert_eq!(document["candidate_count"], serde_json::json!(4));
+    assert_eq!(
+        document["candidate_count"].as_u64(),
+        Some(candidates.len() as u64)
+    );
+    let ranks: Vec<u64> = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["rank"]
+                .as_u64()
+                .expect("candidate rank is an integer")
+        })
+        .collect();
+    assert_eq!(ranks, (1..=candidates.len() as u64).collect::<Vec<_>>());
+}
+
+#[then("JSON scanned_scenarios equals the number of eligible non-removed permanent scenarios")]
+fn json_scanned_scenarios(world: &mut GivnWorld) {
+    let document = json_document(world);
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(8));
+}
+
+fn json_document(world: &GivnWorld) -> serde_json::Value {
+    serde_json::from_str(&stdout(world)).expect("duplicate audit stdout must be valid JSON")
+}
+
+fn json_candidates(world: &GivnWorld) -> Vec<serde_json::Value> {
+    json_document(world)["candidates"]
+        .as_array()
+        .expect("JSON candidates is an array")
+        .clone()
+}
+
+fn assert_json_object_key_order(raw: &str, marker: &str, expected: &[&str]) {
+    let starts: Vec<usize> = raw.match_indices(marker).map(|(index, _)| index).collect();
+    assert!(
+        !starts.is_empty(),
+        "JSON object marker `{marker}` is missing"
+    );
+    for start in starts {
+        let actual = json_object_keys(raw, start);
+        assert_eq!(
+            actual, expected,
+            "JSON object key order changed at byte {start}"
+        );
+    }
+}
+
+fn json_object_keys(raw: &str, start: usize) -> Vec<String> {
+    let bytes = raw.as_bytes();
+    assert_eq!(
+        bytes[start], b'{',
+        "JSON object marker must start with an object"
+    );
+    let end = json_container_end(raw, start);
+    let mut index = start + 1;
+    let mut keys = Vec::new();
+    while index < end {
+        index = skip_json_whitespace(bytes, index);
+        if index == end {
+            break;
+        }
+        let key_end = json_string_end(raw, index);
+        let key: String =
+            serde_json::from_str(&raw[index..=key_end]).expect("JSON key is a string");
+        keys.push(key);
+        index = skip_json_whitespace(bytes, key_end + 1);
+        assert_eq!(bytes[index], b':', "JSON object key is missing its colon");
+        index = skip_json_value(raw, index + 1);
+        index = skip_json_whitespace(bytes, index);
+        if index < end {
+            assert_eq!(
+                bytes[index], b',',
+                "JSON object member is missing its comma"
+            );
+            index += 1;
+        }
+    }
+    keys
+}
+
+fn json_container_end(raw: &str, start: usize) -> usize {
+    let bytes = raw.as_bytes();
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (index, byte) in bytes.iter().copied().enumerate().skip(start) {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                in_string = false;
+            }
+            continue;
+        }
+        match byte {
+            b'"' => in_string = true,
+            b'{' | b'[' => depth += 1,
+            b'}' | b']' => {
+                depth -= 1;
+                if depth == 0 {
+                    return index;
+                }
+            }
+            _ => {}
+        }
+    }
+    panic!("JSON container starting at byte {start} is not closed");
+}
+
+fn json_string_end(raw: &str, start: usize) -> usize {
+    let bytes = raw.as_bytes();
+    assert_eq!(bytes[start], b'"', "JSON key must start with a quote");
+    let mut escaped = false;
+    for (index, byte) in bytes.iter().copied().enumerate().skip(start + 1) {
+        if escaped {
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == b'"' {
+            return index;
+        }
+    }
+    panic!("JSON string starting at byte {start} is not closed");
+}
+
+fn skip_json_value(raw: &str, start: usize) -> usize {
+    let bytes = raw.as_bytes();
+    let start = skip_json_whitespace(bytes, start);
+    match bytes[start] {
+        b'"' => json_string_end(raw, start) + 1,
+        b'{' | b'[' => json_container_end(raw, start) + 1,
+        _ => {
+            let mut index = start;
+            while index < bytes.len() && bytes[index] != b',' && bytes[index] != b'}' {
+                index += 1;
+            }
+            while index > start && bytes[index - 1].is_ascii_whitespace() {
+                index -= 1;
+            }
+            index
+        }
+    }
+}
+
+fn skip_json_whitespace(bytes: &[u8], mut index: usize) -> usize {
+    while index < bytes.len() && bytes[index].is_ascii_whitespace() {
+        index += 1;
+    }
+    index
+}
+
 fn parse_report_count(line: Option<&&str>, prefix: &str) -> usize {
     line.and_then(|line| line.strip_prefix(prefix))
         .unwrap_or_else(|| panic!("duplicate audit is missing `{prefix}`"))
