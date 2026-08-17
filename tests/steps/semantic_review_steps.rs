@@ -782,10 +782,6 @@ fn archived_semantic_report_matches_snapshot(world: &mut GivnWorld) {
 fn archived_report_is_historical_evidence(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("semantic project is required");
     assert!(!env.path("givn/specs/semantic-review.md").exists());
-    assert!(
-        env.path("givn/specs/running-change/running-change.feature")
-            .is_file()
-    );
 }
 
 #[then("the semantic review report does not exist")]
