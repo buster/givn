@@ -8,7 +8,7 @@ scenario-level semantic exploration and consolidation. It is anchored on
 subsequent PR inherits the same scope and ordering. Changes to this plan belong
 on `main`, not on an individual feature branch.
 
-The current stack has twelve open PRs. PR 17 is the twelfth and has eleven
+The current stack has thirteen open PRs. PR 18 is the thirteenth and has twelve
 stack predecessors. Superseded closed PRs are not counted.
 
 | Stack order | PR | Head branch | Base branch |
@@ -25,6 +25,7 @@ stack predecessors. Superseded closed PRs are not counted.
 | 10 | #15 | `experiments/watn-corpus-comparison` | `experiments/nli-experiment` |
 | 11 | #16 | `semantic/01-spec-explore-permanent` | `experiments/watn-corpus-comparison` |
 | 12 | #17 | `semantic/02-spec-explore-change` | `semantic/01-spec-explore-permanent` |
+| 13 | #18 | `semantic/03-semantic-review` | `semantic/02-spec-explore-change` |
 
 The existing experiment stack is:
 
@@ -34,9 +35,10 @@ experiments/cross-encoder-reranker
   -> experiments/watn-corpus-comparison
 ```
 
-The semantic implementation PRs are the final two links currently in this
-stack. They continue on top of `experiments/watn-corpus-comparison`, which is
-itself inherited from the eleven earlier stack links. Each PR is one
+The semantic implementation PRs are the final three links currently in this
+stack. PR 19 is the next planned semantic-remediation link on top of PR 18.
+They continue on top of `experiments/watn-corpus-comparison`, which is itself
+inherited from the twelve earlier stack links. Each PR is one
 independent capability slice. No later PR may silently pull an unfinished
 future slice into an earlier one.
 
