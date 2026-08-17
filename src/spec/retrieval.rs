@@ -223,6 +223,27 @@ struct ScenarioRecord {
 }
 
 #[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateEndpoint {
+    file: String,
+    title: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct DuplicateScenario {
+    endpoint: DuplicateEndpoint,
+    behavior: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct ExactDuplicateCandidate {
+    left: DuplicateEndpoint,
+    right: DuplicateEndpoint,
+}
+
+#[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Copy)]
 enum NliBackend {
     Stub,
@@ -332,6 +353,21 @@ pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
     }
 }
 
+pub fn duplicates(root: &Path) -> Result<()> {
+    #[cfg(feature = "spec-retrieval")]
+    {
+        duplicates_enabled(root)
+    }
+
+    #[cfg(not(feature = "spec-retrieval"))]
+    {
+        let _ = root;
+        bail!(
+            "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+        );
+    }
+}
+
 #[cfg(feature = "spec-retrieval")]
 fn index_enabled(root: &Path) -> Result<()> {
     let refresh = refresh_index(root)?;
@@ -340,6 +376,25 @@ fn index_enabled(root: &Path) -> Result<()> {
         refresh.index.entries.len()
     );
     println!("Reused {} scenario vectors", refresh.reused);
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicates_enabled(root: &Path) -> Result<()> {
+    let scenarios = collect_duplicate_scenarios(root)?;
+    let candidates = exact_duplicate_candidates(&scenarios);
+
+    println!("Givn spec duplicates");
+    println!("Scanned scenarios: {}", scenarios.len());
+    println!("Candidate count: {}", candidates.len());
+    for (rank, candidate) in candidates.iter().enumerate() {
+        println!(
+            "rank {}: kind=exact_duplicate left={} right={} relation=identical_behavior assertion_shape=null facts=null distinguishing_facts=[] fact_contradiction=false score=null",
+            rank + 1,
+            json_encoded(&candidate.left),
+            json_encoded(&candidate.right),
+        );
+    }
     Ok(())
 }
 
@@ -1483,6 +1538,87 @@ fn spec_index_path(root: &Path) -> std::path::PathBuf {
 #[cfg(feature = "spec-retrieval")]
 fn permanent_specs_path(root: &Path) -> std::path::PathBuf {
     root.join("givn/specs")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn collect_duplicate_scenarios(root: &Path) -> Result<Vec<DuplicateScenario>> {
+    let mut scenarios = Vec::new();
+    for path in crate::gherkin::parse::collect_feature_files(&permanent_specs_path(root)) {
+        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
+            .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
+        let file = normalize_project_file_identity(root, &path);
+        for scenario in &feature.scenarios {
+            collect_duplicate_scenario(&feature, None, scenario, &file, &mut scenarios);
+        }
+        for rule in &feature.rules {
+            for scenario in &rule.scenarios {
+                collect_duplicate_scenario(&feature, Some(rule), scenario, &file, &mut scenarios);
+            }
+        }
+    }
+    scenarios.sort_by(|left, right| {
+        left.endpoint
+            .file
+            .cmp(&right.endpoint.file)
+            .then_with(|| left.endpoint.title.cmp(&right.endpoint.title))
+    });
+    Ok(scenarios)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn collect_duplicate_scenario(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
+    scenario: &gherkin::Scenario,
+    file: &str,
+    output: &mut Vec<DuplicateScenario>,
+) {
+    if !is_queryable_scenario(scenario) {
+        return;
+    }
+    output.push(DuplicateScenario {
+        endpoint: DuplicateEndpoint {
+            file: file.to_string(),
+            title: scenario.name.clone(),
+        },
+        behavior: duplicate_behavior_body(feature, rule, scenario),
+    });
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_behavior_body(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
+    scenario: &gherkin::Scenario,
+) -> String {
+    format!(
+        "{{\"feature_background\":{},\"rule_background\":{},\"steps\":{},\"examples\":[{}]}}",
+        canonical_background(feature.background.as_ref()),
+        canonical_background(rule.and_then(|rule| rule.background.as_ref())),
+        canonical_steps(&scenario.steps),
+        scenario
+            .examples
+            .iter()
+            .map(canonical_examples)
+            .collect::<Vec<_>>()
+            .join(","),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn exact_duplicate_candidates(scenarios: &[DuplicateScenario]) -> Vec<ExactDuplicateCandidate> {
+    let mut candidates = Vec::new();
+    for (left_index, left) in scenarios.iter().enumerate() {
+        for right in scenarios.iter().skip(left_index + 1) {
+            if left.behavior == right.behavior {
+                candidates.push(ExactDuplicateCandidate {
+                    left: left.endpoint.clone(),
+                    right: right.endpoint.clone(),
+                });
+            }
+        }
+    }
+    candidates
 }
 
 #[cfg(feature = "spec-retrieval")]
