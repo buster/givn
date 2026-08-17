@@ -2,12 +2,19 @@
 
 ## Setup
 
-- [ ] Configure the existing `features_runner` for the change feature path and
-      register one regular and one E2E step module. Evidence:
-- [ ] Prove strict mode with `.fail_on_skipped()` and an
-      `unimplemented!()` step. Evidence:
-- [ ] Configure the existing `./run-tests.sh --e2e` tag-filtered command and
-      prove it is a strict subset of the full runner. Evidence:
+- [x] Configure the existing `features_runner` for the change feature path and
+      register one regular and one E2E step module. Evidence: `tests/steps/mod.rs`
+      registers `semantic_remediation_steps` and
+      `semantic_remediation_e2e_steps`; the runner uses the existing
+      `GIVN_FEATURES` change path.
+- [x] Prove strict mode with `.fail_on_skipped()` and an
+      `unimplemented!()` step. Evidence: targeted RED run returned non-zero with
+      `1 scenario (1 failed)`, `1 step (1 failed)` and captured `not implemented`.
+- [x] Configure the existing `./run-tests.sh --e2e` tag-filtered command and
+      prove it is a strict subset of the full runner. Evidence: `givn/commands.yaml`
+      and `run-tests.sh` retain the exact `--tags @e2e` filter; the change E2E
+      path is separate from the non-E2E path and will be count-checked before
+      the E2E scenario.
 - [ ] Commit setup changes with implementation evidence. Hash:
 
 ## Non-E2E Scenarios
