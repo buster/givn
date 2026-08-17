@@ -62,7 +62,7 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate rank 1 has assertion shapes `{"left":["the command exits *"],"right":["the command exits *","the output contains *"]}`
     And candidate rank 1 has score `null`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Semantically related scenarios are reported as candidates
     Given the permanent scenario "Token is required" at "givn/specs/auth/auth.feature" and "Authentication needs a token" at "givn/specs/token/token.feature" describe closely related behaviour with different wording
     When the user runs `givn spec duplicates`

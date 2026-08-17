@@ -235,6 +235,7 @@ struct DuplicateScenario {
     endpoint: DuplicateEndpoint,
     behavior: String,
     fingerprint: crate::overlap::fingerprint::Fingerprint,
+    text: String,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -280,7 +281,11 @@ struct DuplicateCandidate {
     facts: Option<DuplicateFactsEvidence>,
     distinguishing_facts: Vec<DistinguishingFact>,
     fact_contradiction: bool,
+    score: Option<f32>,
 }
+
+#[cfg(feature = "spec-retrieval")]
+type DuplicatePairKey = ((String, String), (String, String));
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Copy)]
@@ -421,7 +426,7 @@ fn index_enabled(root: &Path) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn duplicates_enabled(root: &Path) -> Result<()> {
     let scenarios = collect_duplicate_scenarios(root)?;
-    let candidates = duplicate_candidates(&scenarios);
+    let candidates = duplicate_candidates(root, &scenarios)?;
 
     println!("Givn spec duplicates");
     println!("Scanned scenarios: {}", scenarios.len());
@@ -434,8 +439,12 @@ fn duplicates_enabled(root: &Path) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> String {
+    let score = candidate
+        .score
+        .map(|score| format!("{score:.4}"))
+        .unwrap_or_else(|| "null".to_string());
     format!(
-        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score=null",
+        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score={score}",
         candidate.kind,
         json_encoded(&candidate.left),
         json_encoded(&candidate.right),
@@ -1636,6 +1645,7 @@ fn collect_duplicate_scenario(
             rule.and_then(|rule| rule.background.as_ref())
                 .or(feature.background.as_ref()),
         ),
+        text: scenario_text(scenario, file).text,
     });
 }
 
@@ -1660,10 +1670,14 @@ fn duplicate_behavior_body(
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn duplicate_candidates(scenarios: &[DuplicateScenario]) -> Vec<DuplicateCandidate> {
+fn duplicate_candidates(
+    root: &Path,
+    scenarios: &[DuplicateScenario],
+) -> Result<Vec<DuplicateCandidate>> {
     let mut candidates = Vec::new();
+    let mut classified = BTreeSet::new();
     for (left_index, left) in scenarios.iter().enumerate() {
-        for right in scenarios.iter().skip(left_index + 1) {
+        for (right_index, right) in scenarios.iter().enumerate().skip(left_index + 1) {
             if left.behavior == right.behavior {
                 candidates.push(DuplicateCandidate {
                     kind: "exact_duplicate",
@@ -1674,20 +1688,68 @@ fn duplicate_candidates(scenarios: &[DuplicateScenario]) -> Vec<DuplicateCandida
                     facts: None,
                     distinguishing_facts: Vec::new(),
                     fact_contradiction: false,
+                    score: None,
                 });
+                classified.insert((left_index, right_index));
             } else if !left.fingerprint.assertions.is_empty()
                 && left.fingerprint.assertions == right.fingerprint.assertions
             {
                 candidates.push(structural_candidate(left, right, "same_assertion_shape"));
+                classified.insert((left_index, right_index));
             } else if let Some(relation) = assertion_subset_relation(
                 &left.fingerprint.assertions,
                 &right.fingerprint.assertions,
             ) {
                 candidates.push(structural_candidate(left, right, relation));
+                classified.insert((left_index, right_index));
             }
         }
     }
-    candidates
+
+    let score_overrides = duplicate_score_overrides()?;
+    let embeddings = if scenarios.is_empty() {
+        Vec::new()
+    } else {
+        embed_texts(
+            root,
+            &scenarios
+                .iter()
+                .map(|scenario| scenario.text.clone())
+                .collect::<Vec<_>>(),
+            EmbeddingRole::Passage,
+        )?
+    };
+    for (left_index, left) in scenarios.iter().enumerate() {
+        for (right_index, right) in scenarios.iter().enumerate().skip(left_index + 1) {
+            if classified.contains(&(left_index, right_index)) {
+                continue;
+            }
+            let raw_score = cosine_similarity(&embeddings[left_index], &embeddings[right_index]);
+            let score = score_overrides
+                .as_ref()
+                .and_then(|overrides| {
+                    overrides.get(&duplicate_pair_key(&left.endpoint, &right.endpoint))
+                })
+                .copied()
+                .unwrap_or(raw_score);
+            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+                continue;
+            }
+            candidates.push(DuplicateCandidate {
+                kind: "semantic_candidate",
+                left: left.endpoint.clone(),
+                right: right.endpoint.clone(),
+                relation: "semantic_similarity",
+                assertion_shape: None,
+                facts: None,
+                distinguishing_facts: Vec::new(),
+                fact_contradiction: false,
+                score: Some(score),
+            });
+        }
+    }
+    candidates.sort_by(duplicate_candidate_order);
+    Ok(candidates)
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1714,7 +1776,156 @@ fn structural_candidate(
             &right.fingerprint.facts,
         ),
         fact_contradiction: left.fingerprint.facts.contradicts(&right.fingerprint.facts),
+        score: None,
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_candidate_order(
+    left: &DuplicateCandidate,
+    right: &DuplicateCandidate,
+) -> std::cmp::Ordering {
+    duplicate_kind_order(left.kind)
+        .cmp(&duplicate_kind_order(right.kind))
+        .then_with(|| {
+            duplicate_relation_order(left.relation).cmp(&duplicate_relation_order(right.relation))
+        })
+        .then_with(|| match (left.score, right.score) {
+            (Some(left), Some(right)) => right.total_cmp(&left),
+            _ => std::cmp::Ordering::Equal,
+        })
+        .then_with(|| duplicate_endpoint_key(&left.left).cmp(&duplicate_endpoint_key(&right.left)))
+        .then_with(|| {
+            duplicate_endpoint_key(&left.right).cmp(&duplicate_endpoint_key(&right.right))
+        })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_kind_order(kind: &str) -> u8 {
+    match kind {
+        "exact_duplicate" => 0,
+        "structural_overlap" => 1,
+        "semantic_candidate" => 2,
+        _ => 3,
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_relation_order(relation: &str) -> u8 {
+    match relation {
+        "same_assertion_shape" => 0,
+        "left_assertions_subset_of_right" => 1,
+        "right_assertions_subset_of_left" => 2,
+        _ => 0,
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_endpoint_key(endpoint: &DuplicateEndpoint) -> (&str, &str) {
+    (&endpoint.file, &endpoint.title)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_pair_key(left: &DuplicateEndpoint, right: &DuplicateEndpoint) -> DuplicatePairKey {
+    let left = (left.file.clone(), left.title.clone());
+    let right = (right.file.clone(), right.title.clone());
+    if left <= right {
+        (left, right)
+    } else {
+        (right, left)
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_score_overrides() -> Result<Option<BTreeMap<DuplicatePairKey, f32>>> {
+    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+        return Ok(None);
+    }
+    let Some(raw) = std::env::var_os("GIVN_SPEC_DUPLICATES_TEST_SCORES") else {
+        return Ok(None);
+    };
+    let raw = raw
+        .to_str()
+        .context("GIVN_SPEC_DUPLICATES_TEST_SCORES is not valid UTF-8")?;
+    if raw.trim().is_empty() {
+        bail!("GIVN_SPEC_DUPLICATES_TEST_SCORES must not be empty");
+    }
+
+    let mut overrides = BTreeMap::new();
+    for entry in raw.split(';') {
+        let entry = entry.trim();
+        if entry.is_empty() {
+            bail!("GIVN_SPEC_DUPLICATES_TEST_SCORES contains an empty entry");
+        }
+        let (pair, score) = entry.rsplit_once('=').with_context(|| {
+            format!(
+                "malformed duplicate score entry `{entry}`; expected <endpoint>::<endpoint>=<score>"
+            )
+        })?;
+        let (left, right) = pair.split_once("::").with_context(|| {
+            format!("malformed duplicate score pair `{pair}`; expected two endpoint identities")
+        })?;
+        let left = parse_duplicate_endpoint_key(left)?;
+        let right = parse_duplicate_endpoint_key(right)?;
+        if left == right {
+            bail!("duplicate score pair must contain two distinct endpoints: `{pair}`");
+        }
+        let score = parse_duplicate_score(score)?;
+        let key = if left <= right {
+            (left, right)
+        } else {
+            (right, left)
+        };
+        if overrides.insert(key, score).is_some() {
+            bail!("duplicate score pair is repeated: `{pair}`");
+        }
+    }
+    Ok(Some(overrides))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn parse_duplicate_endpoint_key(value: &str) -> Result<(String, String)> {
+    let (file, title) = value.split_once('|').with_context(|| {
+        format!("malformed duplicate endpoint `{value}`; expected <file>|<title>")
+    })?;
+    let file = file.trim().replace('\\', "/");
+    let title = title.trim();
+    if !file.starts_with("givn/specs/")
+        || file.contains("//")
+        || file.split('/').any(|part| part == "." || part == "..")
+        || title.is_empty()
+        || title.contains('\n')
+        || title.contains('\r')
+    {
+        bail!("invalid duplicate endpoint identity `{value}`");
+    }
+    Ok((file, title.to_string()))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn parse_duplicate_score(value: &str) -> Result<f32> {
+    let valid_shape = value.len() >= 6
+        && value.matches('.').count() == 1
+        && value.split_once('.').is_some_and(|(whole, fraction)| {
+            !whole.is_empty()
+                && fraction.len() == 4
+                && whole
+                    .strip_prefix('-')
+                    .unwrap_or(whole)
+                    .chars()
+                    .all(|character| character.is_ascii_digit())
+                && fraction.chars().all(|character| character.is_ascii_digit())
+        });
+    if !valid_shape {
+        bail!("invalid duplicate score `{value}`; expected four decimal places");
+    }
+    let score = value
+        .parse::<f32>()
+        .with_context(|| format!("invalid duplicate score `{value}`"))?;
+    if !score.is_finite() || !(-1.0..=1.0).contains(&score) {
+        bail!("duplicate score `{value}` is outside the cosine range -1.0000..=1.0000");
+    }
+    Ok(score)
 }
 
 #[cfg(feature = "spec-retrieval")]

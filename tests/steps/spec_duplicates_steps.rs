@@ -42,6 +42,20 @@ const LONG_ASSERTION_FEATURE: &str = r#"Feature: provider assertions
     Then the command exits 0
     And the output contains 1
 "#;
+const SEMANTIC_AUTH_FEATURE: &str = r#"Feature: auth
+
+  Scenario: Token is required
+    Given a client request
+    When the client sends a request without credentials
+    Then the server responds with unauthorized status
+"#;
+const SEMANTIC_TOKEN_FEATURE: &str = r#"Feature: token
+
+  Scenario: Authentication needs a token
+    Given an identity service
+    When the client authenticates without a token
+    Then access is denied with message "token required"
+"#;
 
 #[given(
     regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" has the assertion sequence of "([^"]+)" at "([^"]+)"$"##
@@ -134,6 +148,66 @@ fn structural_subset_shapes(world: &mut GivnWorld) {
     assert!(candidate_line(world).contains(
         r#"assertion_shape={"left":["the command exits *"],"right":["the command exits *","the output contains *"]}"#
     ));
+}
+
+#[given(
+    regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" and "([^"]+)" at "([^"]+)" describe closely related behaviour with different wording$"##
+)]
+fn semantic_candidate_fixture(
+    world: &mut GivnWorld,
+    left_title: String,
+    left_file: String,
+    right_title: String,
+    right_file: String,
+) {
+    assert_eq!(left_title, "Token is required");
+    assert_eq!(left_file, "givn/specs/auth/auth.feature");
+    assert_eq!(right_title, "Authentication needs a token");
+    assert_eq!(right_file, "givn/specs/token/token.feature");
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/auth/auth.feature", SEMANTIC_AUTH_FEATURE),
+            ("givn/specs/token/token.feature", SEMANTIC_TOKEN_FEATURE),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600".to_string(),
+    );
+}
+
+#[then("candidate rank 1 is classified as `semantic_candidate`")]
+fn semantic_candidate_kind(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("kind=semantic_candidate"));
+}
+
+#[then("candidate rank 1 has relation `semantic_similarity`")]
+fn semantic_candidate_relation(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("relation=semantic_similarity"));
+}
+
+#[then("candidate rank 1 has score `0.9600`")]
+fn semantic_candidate_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=0.9600"));
+}
+
+#[then("candidate rank 1 has null assertion shape and null fingerprint facts")]
+fn semantic_candidate_null_structural_evidence(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("assertion_shape=null facts=null"));
+}
+
+#[then("candidate rank 1 has empty distinguishing facts and fact contradiction `false`")]
+fn semantic_candidate_non_contradictory(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("distinguishing_facts=[] fact_contradiction=false"));
+}
+
+#[then("the semantic candidate is advisory and is not an automatic duplicate decision")]
+fn semantic_candidate_advisory(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(output.contains("kind=semantic_candidate"));
+    assert!(!output.contains("kind=exact_duplicate"));
+    assert!(!output.contains("kind=structural_overlap"));
+    assert!(!output.contains("automatic duplicate"));
 }
 
 #[given("a permanent feature contains two scenarios with identical behaviour")]
