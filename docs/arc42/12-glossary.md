@@ -19,6 +19,12 @@
 | **Manifest** | The YAML document defining the artifact graph, `apply`, and `verify`. Embedded default + project overlay. |
 | **Overlay / patch** | The project's `givn/config.yaml`, merged onto the embedded default manifest (add/modify/remove). |
 | **Permanent spec** | The merged, tag-stripped `.feature` under `givn/specs/` — the source of truth after archive. |
+| **Permanent scenario audit** | The complete read-only inspection produced by `givn spec duplicates` over eligible scenarios under `givn/specs/`, using current permanent files and transient embeddings rather than `.spec-index.json`. |
+| **Candidate pair** | Two distinct permanent scenarios for which the audit has exact, structural, or semantic evidence. |
+| **Exact duplicate** | Two scenarios with the same canonical behavior body regardless of title or file location. |
+| **Structural overlap** | Two scenarios with the same masked assertion shape or a strict masked assertion-subset relationship, reported with the existing `Fingerprint` fact model and distinguishing values; Given/When action structure is not part of the relation. |
+| **Semantic candidate** | A permanent scenario pair outside deterministic findings whose local E5 passage similarity reaches the inclusive `0.9500` threshold; advisory evidence, not an automatic duplicate decision. |
+| **Scenario identity** | The stable pair of project-relative feature file and scenario title identifying one audit endpoint. |
 | **Scenario** | A Gherkin scenario (Given/When/Then). The unit of the TDD loop. |
 | **Shape match** | Two scenarios whose masked assertion sequences are equal but whose titles differ; a lint warning that requires a disposition at review unless their facts contradict. See ADR-037. |
 | **Semantic review report** | The change-local generated Markdown worklist at `givn/changes/<id>/semantic-review.md`, regenerated only by blocking `givn check review --change <id>` and containing candidate evidence plus agent-owned classifications. The existing archive move retains it under `givn/archive/<id>/` as historical evidence; it is not a permanent specification. |

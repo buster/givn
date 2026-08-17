@@ -506,6 +506,45 @@ be absent; `VARIANTE` requires a single parameterized outline with examples; and
 invariant and a score strictly below `0.9500`. Givn emits a deterministic
 verification receipt but never edits feature files.
 
+### 8.5f Complete permanent duplicate audit
+
+`givn spec duplicates` is advisory and separate from both `givn spec explore` and
+the blocking change-review gates. It parses only non-removed scenarios under
+`givn/specs/`; active changes and `givn/archive/` are outside its aggregate. It
+reads current permanent files and transient embeddings, never reads or writes
+`.spec-index.json`, and permits only the existing local model-cache creation.
+A missing `givn/specs/` directory is an empty successful corpus; malformed or
+unreadable permanent features fail with their project-relative path.
+
+The audit classifies pairs in priority order:
+
+1. Exact duplicates use a canonical behavior body containing backgrounds, step
+   types and values, docstrings, tables, and examples while excluding title,
+   path, and tags.
+2. Structural overlaps use only the existing masked assertion `Fingerprint`
+   shape, strict assertion-subset relation, extracted fact model, and
+   distinguishing values. The audit does not compare Given/When action
+   structure.
+3. Remaining pairs whose in-memory E5 passage vectors reach the existing fixed
+   threshold become advisory semantic candidates, not automatic duplicate
+   decisions. Semantic evidence is not structural evidence.
+
+Each eligible scenario is embedded once, each pair is canonicalized once, and
+remaining cosine scores are computed in memory. The complete result is sorted
+by class, structural relation or descending semantic score, and endpoint
+identity. Text and JSON renderers use the same rank values and tie-breakers.
+Their stable contract has the fixed text header/candidate grammar and ordered
+JSON fields `schema_version`, `scanned_scenarios`, `candidate_count`,
+`candidates`, followed by candidate `rank`, `kind`, `left`, `right`, and
+`evidence`. Evidence orders `relation`, `assertion_shape`, `facts`,
+`distinguishing_facts`, `fact_contradiction`, and `score`; subset relations
+name their left/right direction. Semantic scores serialize as four-decimal
+strings, deterministic scores as null, and `0.9500` is inclusive while
+`0.9499` is excluded. Ranks are contiguous and candidate_count equals the
+array length. Model availability remains an explicit setup boundary for the
+feature-enabled build; tests use the deterministic stub embedder and its
+normalized-endpoint score seam.
+
 ## 8.6 Filesystem-derived state
 
 There is no state file. Lifecycle state is computed from which files exist:
