@@ -27,6 +27,44 @@ const STRUCTURAL_OVERLAP_FEATURE: &str = r#"Feature: provider
       | gcp      |
 "#;
 const STRUCTURAL_FACTS: &str = r#"facts={"left":{"exit_code":"0","contains_polarity":{"0":"positive"},"tables":{"provider":"aws"},"done":false,"tty":false},"right":{"exit_code":"2","contains_polarity":{"0":"negative"},"tables":{"provider":"gcp"},"done":true,"tty":true}}"#;
+const SHORT_ASSERTION_FEATURE: &str = r#"Feature: provider assertions
+
+  Scenario: Short provider assertion
+    Given a configured provider catalog
+    When the provider command is run
+    Then the command exits 0
+"#;
+const LONG_ASSERTION_FEATURE: &str = r#"Feature: provider assertions
+
+  Scenario: Long provider assertion
+    Given a configured provider catalog
+    When the provider command is run
+    Then the command exits 0
+    And the output contains 1
+"#;
+
+#[given(
+    regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" has the assertion sequence of "([^"]+)" at "([^"]+)"$"##
+)]
+fn structural_subset_fixture(
+    world: &mut GivnWorld,
+    short_title: String,
+    short_file: String,
+    long_title: String,
+    long_file: String,
+) {
+    assert_eq!(short_title, "Short provider assertion");
+    assert_eq!(short_file, "givn/specs/a/a.feature");
+    assert_eq!(long_title, "Long provider assertion");
+    assert_eq!(long_file, "givn/specs/b/b.feature");
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/a/a.feature", SHORT_ASSERTION_FEATURE),
+            ("givn/specs/b/b.feature", LONG_ASSERTION_FEATURE),
+        ],
+    );
+}
 
 #[given(
     "permanent scenarios share the same masked assertion shape but have different fingerprint facts"
@@ -84,6 +122,18 @@ fn structural_overlap_no_action_evidence(world: &mut GivnWorld) {
     assert!(!line.contains("Given"));
     assert!(!line.contains("When"));
     assert!(!line.contains("action-structure"));
+}
+
+#[then("candidate rank 1 has relation `left_assertions_subset_of_right`")]
+fn structural_subset_relation(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("relation=left_assertions_subset_of_right"));
+}
+
+#[then(r#"candidate rank 1 has assertion shapes `{"left":["the command exits *"],"right":["the command exits *","the output contains *"]}`"#)]
+fn structural_subset_shapes(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains(
+        r#"assertion_shape={"left":["the command exits *"],"right":["the command exits *","the output contains *"]}"#
+    ));
 }
 
 #[given("a permanent feature contains two scenarios with identical behaviour")]

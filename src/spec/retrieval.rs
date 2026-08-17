@@ -1678,32 +1678,65 @@ fn duplicate_candidates(scenarios: &[DuplicateScenario]) -> Vec<DuplicateCandida
             } else if !left.fingerprint.assertions.is_empty()
                 && left.fingerprint.assertions == right.fingerprint.assertions
             {
-                candidates.push(DuplicateCandidate {
-                    kind: "structural_overlap",
-                    left: left.endpoint.clone(),
-                    right: right.endpoint.clone(),
-                    relation: "same_assertion_shape",
-                    assertion_shape: Some(DuplicateAssertionShape {
-                        left: left.fingerprint.assertions.clone(),
-                        right: right.fingerprint.assertions.clone(),
-                    }),
-                    facts: Some(DuplicateFactsEvidence {
-                        left: DuplicateFacts::from_fingerprint(&left.fingerprint),
-                        right: DuplicateFacts::from_fingerprint(&right.fingerprint),
-                    }),
-                    distinguishing_facts: distinguishing_facts(
-                        &left.fingerprint.facts,
-                        &right.fingerprint.facts,
-                    ),
-                    fact_contradiction: left
-                        .fingerprint
-                        .facts
-                        .contradicts(&right.fingerprint.facts),
-                });
+                candidates.push(structural_candidate(left, right, "same_assertion_shape"));
+            } else if let Some(relation) = assertion_subset_relation(
+                &left.fingerprint.assertions,
+                &right.fingerprint.assertions,
+            ) {
+                candidates.push(structural_candidate(left, right, relation));
             }
         }
     }
     candidates
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn structural_candidate(
+    left: &DuplicateScenario,
+    right: &DuplicateScenario,
+    relation: &'static str,
+) -> DuplicateCandidate {
+    DuplicateCandidate {
+        kind: "structural_overlap",
+        left: left.endpoint.clone(),
+        right: right.endpoint.clone(),
+        relation,
+        assertion_shape: Some(DuplicateAssertionShape {
+            left: left.fingerprint.assertions.clone(),
+            right: right.fingerprint.assertions.clone(),
+        }),
+        facts: Some(DuplicateFactsEvidence {
+            left: DuplicateFacts::from_fingerprint(&left.fingerprint),
+            right: DuplicateFacts::from_fingerprint(&right.fingerprint),
+        }),
+        distinguishing_facts: distinguishing_facts(
+            &left.fingerprint.facts,
+            &right.fingerprint.facts,
+        ),
+        fact_contradiction: left.fingerprint.facts.contradicts(&right.fingerprint.facts),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn assertion_subset_relation(left: &[String], right: &[String]) -> Option<&'static str> {
+    if left.is_empty() || right.is_empty() {
+        return None;
+    }
+    if left.len() < right.len() && is_subsequence(left, right) {
+        Some("left_assertions_subset_of_right")
+    } else if right.len() < left.len() && is_subsequence(right, left) {
+        Some("right_assertions_subset_of_left")
+    } else {
+        None
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn is_subsequence(needle: &[String], haystack: &[String]) -> bool {
+    let mut haystack = haystack.iter();
+    needle
+        .iter()
+        .all(|assertion| haystack.any(|candidate| candidate == assertion))
 }
 
 #[cfg(feature = "spec-retrieval")]
