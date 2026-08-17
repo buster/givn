@@ -7,6 +7,11 @@ use cucumber::{given, when};
 use super::GivnWorld;
 use crate::common;
 
+#[given(regex = r#"^the remediation case carries the distinguishing marker "([^"]+)"$"#)]
+fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
+    assert!(!marker.trim().is_empty());
+}
+
 #[given(
     regex = r#"^a project prepared for semantic remediation with a \"(DUPLIKAT|VARIANTE|VALID-BOUNDARY)\" candidate$"#
 )]

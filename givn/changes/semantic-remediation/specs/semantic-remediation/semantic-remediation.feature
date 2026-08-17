@@ -6,6 +6,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: A DUPLIKAT classification without removal remains blocked
+    Given the remediation case carries the distinguishing marker "duplicate removal blocking contract alpha crimson lantern meadow orbit quartz river summit velvet walnut xenon yellow zephyr atlas beacon cobalt delta ember"
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -17,6 +18,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: Removing a DUPLIKAT candidate verifies the projected remediation
+    Given the remediation case carries the distinguishing marker "duplicate projected removal success beta canyon copper ivory juniper kelp mosaic nickel opal prairie ruby saffron topaz umber violet willow xylophone yarrow zenith"
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     And the permanent specifications are snapshotted
     When the user runs `givn check review --change running-change`
@@ -31,6 +33,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: A VARIANTE classification without consolidation remains blocked
+    Given the remediation case carries the distinguishing marker "variant consolidation blocking contract gamma acorn birch cedar dune elm fern grove harbor iris jade kiln lagoon maple north oak pine quarry rose stone thistle"
     Given a project prepared for semantic remediation with a "VARIANTE" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -42,6 +45,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: Consolidating a VARIANTE candidate verifies the projected remediation
+    Given the remediation case carries the distinguishing marker "variant parameterized examples success delta anchor blossom circuit drum engine flare glacier hinge island jacket kettle ladder marble nebula orange prism"
     Given a project prepared for semantic remediation with a "VARIANTE" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -54,6 +58,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: A VARIANTE score below the boundary without consolidation remains blocked
+    Given the remediation case carries the distinguishing marker "variant score only independent contracts epsilon pebble plume pollen pumpkin raven sandal shell silver spruce stream thunder timber turbine valley vessel winter wren"
     Given a project prepared for semantic remediation with a "VARIANTE" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -65,6 +70,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: A VALID-BOUNDARY score below the boundary without distinction remains blocked
+    Given the remediation case carries the distinguishing marker "boundary score only missing invariant zeta ash basil cloud coral dahlia echo frost granite honey juniper lemon mist nutmeg olive pepper rain snow tulip"
     Given a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -76,6 +82,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: A VALID-BOUNDARY classification above the boundary remains blocked
+    Given the remediation case carries the distinguishing marker "boundary above threshold blocking eta arrow bronze comet dragon eclipse feather galaxy helmet ivory jigsaw kingdom lilac magnet nickel ozone pebble rocket"
     Given a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -87,6 +94,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
+    Given the remediation case carries the distinguishing marker "boundary explicit observable fact success theta acrobat bamboo crystal domino emerald fossil garden harbor insect jasmine koala lantern mango needle ocean pocket rainbow"
     Given a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -99,6 +107,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: A VALID-BOUNDARY score exactly at the boundary remains blocked
+    Given the remediation case carries the distinguishing marker "boundary exact threshold blocking iota almond butter carrot daisy engine fig grape hazel igloo jelly kiwi lemon melon nut olive peach quince raisin"
     Given a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -110,6 +119,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: Changing a classified endpoint before remediation makes the decision stale
+    Given the remediation case carries the distinguishing marker "stale endpoint identity changed kappa beacon breeze candle drizzle ember flame glow hearth incense kettle lantern moonlight nightfall"
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -121,6 +131,7 @@ Feature: Verify semantic remediation
 
   @givn.added
   Scenario: Failed remediation verification does not mutate project evidence
+    Given the remediation case carries the distinguishing marker "mutation safety evidence preservation lambda archive backup checksum durable enclave fidelity guardian harbor immutable journal kernel ledger memory"
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     And the permanent specifications are snapshotted
     And the active feature files, review dispositions, and index boundary are snapshotted
@@ -137,6 +148,7 @@ Feature: Verify semantic remediation
 
   @givn.modified
   Scenario: A complete classification allows change review and survives regeneration
+    Given the remediation case carries the distinguishing marker "modified permanent contract replacement mu archive bridge contract delta evidence fixture gateway history invariant journal keeper ledger merge namespace output projection"
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero

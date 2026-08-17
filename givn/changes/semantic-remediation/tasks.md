@@ -190,13 +190,18 @@
       passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: rerun the filtered E2E command. Evidence: after formatting, E2E
       run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: `test(e2e): Real CLI review reports successful duplicate remediation` Hash: `PENDING`
+- [x] COMMIT: `test(e2e): Real CLI review reports successful duplicate remediation` Hash: `aef6f0a`
 
 ## Completion Evidence
 
-- [ ] Remove all `@wip` tags only after targeted GREEN and REFACTOR evidence. Evidence:
-- [ ] Run `givn lint --change semantic-remediation` and record exit 0. Evidence:
-- [ ] Run the change-specific full runner and E2E runner. Evidence:
+- [x] Remove all `@wip` tags only after targeted GREEN and REFACTOR evidence.
+      Evidence: no `@wip` tags remain in the change feature; all 12 regular
+      scenarios and the E2E scenario have targeted GREEN/REFACTOR evidence.
+- [x] Run `givn lint --change semantic-remediation` and record exit 0. Evidence:
+      `givn lint --change semantic-remediation` returned `1 file(s) checked — clean`.
+- [x] Run the change-specific full runner and E2E runner. Evidence: full change
+      runner passed with `13 scenarios (13 passed)`, `112 steps (112 passed)`;
+      filtered E2E runner passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] Run repository full/E2E suites, format, retrieval/no-feature checks,
       library tests, Clippy, coverage measurement/merge. Evidence:
 - [ ] Complete review, archive the change, install the retrieval-enabled local
