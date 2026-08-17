@@ -179,7 +179,7 @@
       scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A regenerated classified report is byte-for-byte deterministic` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A regenerated classified report is byte-for-byte deterministic` Hash: `0b04b3f`
 
 ### Changing a candidate scenario invalidates its previous classification
 
@@ -191,7 +191,7 @@
       passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Changing a candidate scenario invalidates its previous classification` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Changing a candidate scenario invalidates its previous classification` Hash: `ca3f6d1`
 
 ### Changing a permanent endpoint invalidates its previous classification
 
@@ -203,7 +203,7 @@
       (8 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Changing a permanent endpoint invalidates its previous classification` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Changing a permanent endpoint invalidates its previous classification` Hash: `8c9482b`
 
 ### Any changed endpoint evidence or prior-report metadata invalidates carry-forward
 
@@ -215,7 +215,7 @@
       passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Any changed endpoint evidence or prior-report metadata invalidates carry-forward` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Any changed endpoint evidence or prior-report metadata invalidates carry-forward` Hash: `89568bb`
 
 ### Removed candidates disappear after classification
 
@@ -227,7 +227,7 @@
       (9 passed)`.
 - [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
       scenario passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Removed candidates disappear after classification` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Removed candidates disappear after classification` Hash: `da5a83b`
 
 ## E2E Setup
 
