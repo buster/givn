@@ -44,15 +44,18 @@
 - [x] REFACTOR: rerun the named scenario and non-mutation assertions. Evidence:
       after `cargo fmt --all` and `cargo check --features spec-retrieval`,
       targeted run passed with `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Removing a DUPLIKAT candidate verifies the projected remediation` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Removing a DUPLIKAT candidate verifies the projected remediation` Hash: `4790a70`
 
 ### A VARIANTE classification without consolidation remains blocked
 
-- [ ] RED: target the named scenario with strict stubs. Evidence:
-- [ ] GREEN: reject an unchanged VARIANTE classification with the exact
+- [x] RED: target the named scenario with strict stubs. Evidence: strict setup
+      proof was non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`.
+- [x] GREEN: reject an unchanged VARIANTE classification with the exact
       consolidation finding. Production files: `src/spec/retrieval.rs`, step
-      files. Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+      files. Evidence: targeted run passed with `1 scenario (1 passed)`, `8
+      steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): A VARIANTE classification without consolidation remains blocked` Hash:
 
 ### Consolidating a VARIANTE candidate verifies the projected remediation
