@@ -2570,11 +2570,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic pair below the threshold is not reported`
-    - Commit hash: ``
+    - Commit hash: `8ca9a69844f95dd16d8307c9187dad4ea1ac3d06`
 
 ## Scenario 24: `Candidate classes take precedence and equal semantic scores use endpoint order`
 
-- [ ] Scenario: `Candidate classes take precedence and equal semantic scores use endpoint order`
+- [x] Scenario: `Candidate classes take precedence and equal semantic scores use endpoint order`
   - RED:
     - Remove `@wip` only from this scenario and leave every other tag unchanged.
     - Add regular bindings with explicit `unimplemented!()` bodies in
@@ -2583,28 +2583,186 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Candidate classes take precedence and equal semantic scores use endpoint order$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.57s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Candidate classes take precedence and equal semantic scores use endpoint order
+   ✘  Given the corpus contains one exact duplicate, one structural overlap, and two semantic candidates
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:236:5
+      Matched: tests/steps/spec_duplicates_steps.rs:90:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3230233) panicked at $HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Implement and assert exact-over-structural-over-semantic precedence, two
       equal `0.9600` semantic scores, endpoint ordering by left file/title then
       right file/title, and contiguous ranks `1,2,3,4`.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Production file modified in GREEN: `src/spec/retrieval.rs`.
+    - Test file modified: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 ($HOME/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.96s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.61s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Candidate classes take precedence and equal semantic scores use endpoint order
+   ✔  Given the corpus contains one exact duplicate, one structural overlap, and two semantic candidates
+   ✔  And the two semantic candidates have equal test score `0.9600`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then candidate rank 1 is the exact duplicate
+   ✔  And candidate rank 2 is the structural overlap
+   ✔  And candidate ranks 3 and 4 are semantic candidates with score `0.9600`
+   ✔  And equal-score semantic candidates are ordered by left file, left title, right file, and right title
+   ✔  And candidate ranks are exactly `1,2,3,4`
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured.
   - REFACTOR:
     - Verify sorting keys are explicit and deterministic, semantic candidates do
       not suppress deterministic findings, and all structural evidence fields
-      retain the required null/non-null contract. Run `cargo fmt --check` and
+      retain the required null/non-null contract. Run `cargo fmt -- --check` and
       rerun the targeted command.
+    - Extracted the shared equal-score permanent fixture override and JSON endpoint assertion helper without changing behavior.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Final `cargo check --features spec-retrieval` exited 0:
+      ```text
+    Checking givn v0.2.0 ($HOME/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.98s
+      ```
+    - Stub scan output:
+      ```text
+No files found
+      ```
+    - Empty-function-body scan output:
+      ```text
+No files found
+      ```
+    - Required targeted command output:
+      ```text
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.84s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Candidate classes take precedence and equal semantic scores use endpoint order
+   ✔  Given the corpus contains one exact duplicate, one structural overlap, and two semantic candidates
+   ✔  And the two semantic candidates have equal test score `0.9600`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then candidate rank 1 is the exact duplicate
+   ✔  And candidate rank 2 is the structural overlap
+   ✔  And candidate ranks 3 and 4 are semantic candidates with score `0.9600`
+   ✔  And equal-score semantic candidates are ordered by left file, left title, right file, and right title
+   ✔  And candidate ranks are exactly `1,2,3,4`
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
+      ```
+    - Regression target command for Scenarios 1-5 and 8:
+      `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^(Exact duplicates in one feature are reported together|Exact duplicates across features are reported together|Structurally overlapping scenarios retain their distinguishing facts|A structural subset is reported as an overlap|Semantically related scenarios are reported as candidates|Repeating an unchanged audit produces the same report)$'`
+    - Regression output:
+      ```text
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Exact duplicates in one feature are reported together
+   ✔  Given a permanent feature contains two scenarios with identical behaviour
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 1
+   ✔  And candidate rank 1 is classified as `exact_duplicate`
+   ✔  And candidate rank 1 has left identity ("givn/specs/provider/provider.feature", "Provider is rejected")
+   ✔  And candidate rank 1 has right identity ("givn/specs/provider/provider.feature", "Unknown provider is rejected")
+   ✔  And candidate rank 1 has relation `identical_behavior`
+   ✔  And candidate rank 1 has score `null`
+  Scenario: Exact duplicates across features are reported together
+   ✔  Given two permanent features contain scenarios with identical behaviour
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 1
+   ✔  And candidate rank 1 is classified as `exact_duplicate`
+   ✔  And candidate rank 1 has left identity ("givn/specs/auth/auth.feature", "Unknown provider is rejected")
+   ✔  And candidate rank 1 has right identity ("givn/specs/provider/provider.feature", "Provider is rejected")
+   ✔  And candidate rank 1 has relation `identical_behavior`
+   ✔  And candidate rank 1 has score `null`
+  Scenario: Structurally overlapping scenarios retain their distinguishing facts
+   ✔  Given permanent scenarios share the same masked assertion shape but have different fingerprint facts
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then candidate rank 1 is classified as `structural_overlap`
+   ✔  And candidate rank 1 has relation `same_assertion_shape`
+   ✔  And candidate rank 1 has left fingerprint facts `{"exit_code":"0","contains_polarity":{"0":"positive"},"tables":{"provider":"aws"},"done":false,"tty":false}`
+   ✔  And candidate rank 1 has right fingerprint facts `{"exit_code":"2","contains_polarity":{"0":"negative"},"tables":{"provider":"gcp"},"done":true,"tty":true}`
+   ✔  And candidate rank 1 has distinguishing facts `[{"field":"exit_code","left":"0","right":"2"},{"field":"contains_polarity[0]","left":"positive","right":"negative"},{"field":"tables[provider]","left":"aws","right":"gcp"},{"field":"done","left":false,"right":true},{"field":"tty","left":false,"right":true}]`
+   ✔  And candidate rank 1 has fact contradiction `true`
+   ✔  And candidate rank 1 has no Given/When action-structure evidence
+  Scenario: A structural subset is reported as an overlap
+   ✔  Given the permanent scenario "Short provider assertion" at "givn/specs/a/a.feature" has the assertion sequence of "Long provider assertion" at "givn/specs/b/b.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then candidate rank 1 is classified as `structural_overlap`
+   ✔  And candidate rank 1 has left identity ("givn/specs/a/a.feature", "Short provider assertion")
+   ✔  And candidate rank 1 has right identity ("givn/specs/b/b.feature", "Long provider assertion")
+   ✔  And candidate rank 1 has relation `left_assertions_subset_of_right`
+   ✔  And candidate rank 1 has assertion shapes `{"left":["the command exits *"],"right":["the command exits *","the output contains *"]}`
+   ✔  And candidate rank 1 has score `null`
+  Scenario: Semantically related scenarios are reported as candidates
+   ✔  Given the permanent scenario "Token is required" at "givn/specs/auth/auth.feature" and "Authentication needs a token" at "givn/specs/token/token.feature" describe closely related behaviour with different wording
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 1
+   ✔  And candidate rank 1 is classified as `semantic_candidate`
+   ✔  And candidate rank 1 has left identity ("givn/specs/auth/auth.feature", "Token is required")
+   ✔  And candidate rank 1 has right identity ("givn/specs/token/token.feature", "Authentication needs a token")
+   ✔  And candidate rank 1 has relation `semantic_similarity`
+   ✔  And candidate rank 1 has score `0.9600`
+   ✔  And candidate rank 1 has null assertion shape and null fingerprint facts
+   ✔  And candidate rank 1 has empty distinguishing facts and fact contradiction `false`
+   ✔  And the semantic candidate is advisory and is not an automatic duplicate decision
+  Scenario: Repeating an unchanged audit produces the same report
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates` twice without changing the corpus
+   ✔  Then both audit reports are byte-for-byte identical
+   ✔  And both reports have the same scanned scenario count, candidate count, ranks, and evidence
+[Summary]
+1 feature
+6 scenarios (6 passed)
+48 steps (48 passed)
+      ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 24 tag only), `tests/steps/spec_duplicates_steps.rs`, `src/spec/retrieval.rs`, and this Scenario 24 task entry. No `design.md` or Scenario 25 `@e2e @wip` tag changed.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.84s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Candidate classes take precedence and equal semantic scores use endpoint order
+   ✔  Given the corpus contains one exact duplicate, one structural overlap, and two semantic candidates
+   ✔  And the two semantic candidates have equal test score `0.9600`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then candidate rank 1 is the exact duplicate
+   ✔  And candidate rank 2 is the structural overlap
+   ✔  And candidate ranks 3 and 4 are semantic candidates with score `0.9600`
+   ✔  And equal-score semantic candidates are ordered by left file, left title, right file, and right title
+   ✔  And candidate ranks are exactly `1,2,3,4`
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
       ```
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.

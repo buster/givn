@@ -72,6 +72,7 @@ const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
     When the client connects without a login
     Then the session service refuses access with message "credentials required"
 "#;
+const EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES: &str = "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600";
 const INCLUSIVE_THRESHOLD_LEFT_FEATURE: &str = r#"Feature: threshold left
 
   Scenario: Left semantic boundary
@@ -86,6 +87,104 @@ const INCLUSIVE_THRESHOLD_RIGHT_FEATURE: &str = r#"Feature: threshold right
     When the gateway receives a credentialless request
     Then the gateway returns an access denied response
 "#;
+
+#[given(
+    "the corpus contains one exact duplicate, one structural overlap, and two semantic candidates"
+)]
+fn mixed_candidate_classes_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("the two semantic candidates have equal test score `0.9600`")]
+fn equal_semantic_candidate_scores(world: &mut GivnWorld) {
+    world.retrieval_duplicate_scores = Some(EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES.to_string());
+}
+
+#[then("candidate rank 2 is the structural overlap")]
+fn structural_overlap_rank_two(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates[1]["rank"], serde_json::json!(2));
+    assert_eq!(
+        candidates[1]["kind"],
+        serde_json::json!("structural_overlap")
+    );
+    assert!(candidates[1]["evidence"]["assertion_shape"].is_object());
+    assert!(candidates[1]["evidence"]["facts"].is_object());
+    assert_eq!(candidates[1]["evidence"]["score"], serde_json::Value::Null);
+}
+
+#[then("candidate rank 1 is the exact duplicate")]
+fn exact_duplicate_rank_one(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates[0]["rank"], serde_json::json!(1));
+    assert_eq!(candidates[0]["kind"], serde_json::json!("exact_duplicate"));
+    assert_eq!(
+        candidates[0]["evidence"]["assertion_shape"],
+        serde_json::Value::Null
+    );
+    assert_eq!(candidates[0]["evidence"]["facts"], serde_json::Value::Null);
+    assert_eq!(candidates[0]["evidence"]["score"], serde_json::Value::Null);
+}
+
+#[then("candidate ranks 3 and 4 are semantic candidates with score `0.9600`")]
+fn equal_score_semantic_candidate_ranks(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 4);
+    for (rank, candidate) in [3, 4].into_iter().zip(&candidates[2..]) {
+        assert_eq!(candidate["rank"], serde_json::json!(rank));
+        assert_eq!(candidate["kind"], serde_json::json!("semantic_candidate"));
+        assert_eq!(
+            candidate["evidence"]["assertion_shape"],
+            serde_json::Value::Null
+        );
+        assert_eq!(candidate["evidence"]["facts"], serde_json::Value::Null);
+        assert_eq!(
+            candidate["evidence"]["distinguishing_facts"],
+            serde_json::json!([])
+        );
+        assert_eq!(
+            candidate["evidence"]["fact_contradiction"],
+            serde_json::json!(false)
+        );
+        assert_eq!(candidate["evidence"]["score"], serde_json::json!("0.9600"));
+    }
+}
+
+#[then(
+    "equal-score semantic candidates are ordered by left file, left title, right file, and right title"
+)]
+fn equal_score_semantic_candidate_order(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_json_candidate_endpoints(
+        &candidates[2],
+        "givn/specs/account/account.feature",
+        "Account access needs credentials",
+        "givn/specs/session/session.feature",
+        "Session credentials are needed",
+    );
+    assert_json_candidate_endpoints(
+        &candidates[3],
+        "givn/specs/auth/auth.feature",
+        "Token is required",
+        "givn/specs/token/token.feature",
+        "Authentication needs a token",
+    );
+}
+
+#[then("candidate ranks are exactly `1,2,3,4`")]
+fn mixed_candidate_ranks_are_contiguous(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    let ranks = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["rank"]
+                .as_u64()
+                .expect("candidate rank is an integer")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(ranks, vec![1, 2, 3, 4]);
+}
+
 const NO_CANDIDATE_FEATURE: &str = r#"Feature: unrelated operations
 
   Scenario: Glacier replication completes
@@ -1164,9 +1263,7 @@ fn repeated_audit_fixture(world: &mut GivnWorld) {
             ),
         ],
     );
-    world.retrieval_duplicate_scores = Some(
-        "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600".to_string(),
-    );
+    world.retrieval_duplicate_scores = Some(EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES.to_string());
 }
 
 #[given("a permanent corpus with duplicate and related-scenario candidates")]
@@ -1834,6 +1931,19 @@ fn json_candidates(world: &GivnWorld) -> Vec<serde_json::Value> {
         .as_array()
         .expect("JSON candidates is an array")
         .clone()
+}
+
+fn assert_json_candidate_endpoints(
+    candidate: &serde_json::Value,
+    left_file: &str,
+    left_title: &str,
+    right_file: &str,
+    right_title: &str,
+) {
+    assert_eq!(candidate["left"]["file"].as_str(), Some(left_file));
+    assert_eq!(candidate["left"]["title"].as_str(), Some(left_title));
+    assert_eq!(candidate["right"]["file"].as_str(), Some(right_file));
+    assert_eq!(candidate["right"]["title"].as_str(), Some(right_title));
 }
 
 fn assert_json_object_key_order(raw: &str, marker: &str, expected: &[&str]) {
