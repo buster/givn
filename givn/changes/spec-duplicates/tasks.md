@@ -2465,11 +2465,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic candidate at the inclusive threshold is reported`
-    - Commit hash: ``
+    - Commit hash: `bc4e3c1d7fb6d6af46fb9bf5ac52f8c8c2984213`
 
 ## Scenario 23: `A semantic pair below the threshold is not reported`
 
-- [ ] Scenario: `A semantic pair below the threshold is not reported`
+- [x] Scenario: `A semantic pair below the threshold is not reported`
   - RED:
     - Remove `@wip` only from this scenario. Do not touch any other scenario's
       @wip tag.
@@ -2479,28 +2479,94 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A semantic pair below the threshold is not reported$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.49s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A semantic pair below the threshold is not reported
+   ✔  Given permanent scenarios have no exact or structural relationship
+   ✘  And the test score for their normalized endpoint pair is `0.9499`
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:228:5
+      Matched: tests/steps/spec_duplicates_steps.rs:548:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
 
+thread 'main' (3226247) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Set the normalized endpoint pair score to exactly `0.9499` through the
       stub-only seam and exclude it before serialization; assert candidate count
       zero and no score `0.9499`.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Production files modified in GREEN: none. The existing duplicate-audit
+      path in `src/spec/retrieval.rs` compares the raw score against the
+      inclusive threshold before JSON rendering, so a below-threshold score is
+      not rounded up into a candidate.
+    - Test file modified: `tests/steps/spec_duplicates_steps.rs`.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.72s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A semantic pair below the threshold is not reported
+   ✔  Given permanent scenarios have no exact or structural relationship
+   ✔  And the test score for their normalized endpoint pair is `0.9499`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the JSON report has candidate_count 0
+   ✔  And no candidate has score `0.9499`
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
   - REFACTOR:
     - Check admission happens before four-decimal formatting and that excluded
       pairs do not receive ranks. Run `cargo fmt --check` and rerun the targeted
       command.
+    - Shared the normalized threshold score override helper with Scenario 22;
+      both `0.9500` and `0.9499` still use the same unordered endpoint pair.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan output:
+      ```text
+No files found
+      ```
+    - Empty-function-body scan output:
+      ```text
+No files found
+      ```
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.46s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A semantic pair below the threshold is not reported
+   ✔  Given permanent scenarios have no exact or structural relationship
+   ✔  And the test score for their normalized endpoint pair is `0.9499`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the JSON report has candidate_count 0
+   ✔  And no candidate has score `0.9499`
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 23 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 22 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic pair below the threshold is not reported`

@@ -222,7 +222,7 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate rank 1 has relation `semantic_similarity`
     And candidate rank 1 has score `0.9500`
 
-  @givn.added @wip
+  @givn.added
   Scenario: A semantic pair below the threshold is not reported
     Given permanent scenarios have no exact or structural relationship
     And the test score for their normalized endpoint pair is `0.9499`
