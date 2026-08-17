@@ -85,7 +85,7 @@ Feature: Verify semantic remediation
     And stderr contains "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary"
     And the semantic review report status is "BLOCKED"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
     Given a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
     When the user runs `givn check review --change running-change`
