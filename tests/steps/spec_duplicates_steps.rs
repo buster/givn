@@ -334,13 +334,13 @@ fn set_unreadable_permissions(_path: &Path) -> bool {
     false
 }
 
-#[given(regex = r##"^a malformed permanent feature at "([^"]+)"$"##)]
+#[given(regex = r##"^a permanent feature with invalid Gherkin syntax at "([^"]+)"$"##)]
 fn malformed_permanent_feature(world: &mut GivnWorld, path: String) {
     assert_eq!(path, "givn/specs/broken/broken.feature");
     permanent_project(world, &[(path.as_str(), MALFORMED_PERMANENT_FEATURE)]);
 }
 
-#[given(regex = r##"^an unreadable permanent feature at "([^"]+)"$"##)]
+#[given(regex = r##"^a permanent feature that exists but cannot be read at "([^"]+)"$"##)]
 fn unreadable_permanent_feature(world: &mut GivnWorld, path: String) {
     assert_eq!(path, "givn/specs/private/private.feature");
     permanent_project(world, &[(path.as_str(), UNREADABLE_PERMANENT_FEATURE)]);
@@ -620,7 +620,9 @@ fn semantic_candidate_fixture(
     );
 }
 
-#[given("permanent scenarios have no exact or structural relationship")]
+#[given(
+    "permanent scenarios exercise inclusive semantic admission with no exact or structural relationship"
+)]
 fn inclusive_threshold_fixture(world: &mut GivnWorld) {
     permanent_project(
         world,
@@ -637,12 +639,19 @@ fn inclusive_threshold_fixture(world: &mut GivnWorld) {
     );
 }
 
-#[given("the test score for their normalized endpoint pair is `0.9500`")]
+#[given(
+    "permanent scenarios exercise below-boundary semantic exclusion with no exact or structural relationship"
+)]
+fn below_threshold_fixture(world: &mut GivnWorld) {
+    inclusive_threshold_fixture(world);
+}
+
+#[given("the normalized endpoint pair is assigned the inclusive admission score `0.9500`")]
 fn inclusive_threshold_score(world: &mut GivnWorld) {
     set_threshold_score(world, "0.9500");
 }
 
-#[given("the test score for their normalized endpoint pair is `0.9499`")]
+#[given("the normalized endpoint pair is assigned the exclusion score `0.9499`")]
 fn below_threshold_score(world: &mut GivnWorld) {
     set_threshold_score(world, "0.9499");
 }
@@ -662,6 +671,11 @@ fn semantic_candidate_kind(world: &mut GivnWorld) {
     } else {
         assert!(candidate_line(world).contains("kind=semantic_candidate"));
     }
+}
+
+#[then("candidate rank 1 is admitted as a `semantic_candidate`")]
+fn semantic_candidate_admitted(world: &mut GivnWorld) {
+    semantic_candidate_kind(world);
 }
 
 #[then("candidate rank 1 has relation `semantic_similarity`")]
@@ -689,7 +703,7 @@ fn inclusive_threshold_score_output(world: &mut GivnWorld) {
     );
 }
 
-#[then("the JSON report has candidate_count 0")]
+#[then("the JSON report excludes all semantic candidates")]
 fn below_threshold_candidate_count(world: &mut GivnWorld) {
     assert_eq!(
         json_document(world)["candidate_count"],
@@ -734,7 +748,7 @@ fn no_candidate_fixture(world: &mut GivnWorld) {
     );
 }
 
-#[given("active change files and archive contents are snapshotted")]
+#[given("the active-change and archive trees are snapshotted before the read-only audit")]
 fn snapshot_active_change_and_archive(world: &mut GivnWorld) {
     let env = world
         .env
@@ -746,7 +760,7 @@ fn snapshot_active_change_and_archive(world: &mut GivnWorld) {
     world.archive_snapshot = Some(snapshot_fixture_tree(env, ARCHIVE_AUDIT_ROOT));
 }
 
-#[then("active change files are unchanged byte-for-byte")]
+#[then("active-change files are unchanged byte-for-byte")]
 fn active_change_files_unchanged_byte_for_byte(world: &mut GivnWorld) {
     let out = output(world);
     assert!(
@@ -774,7 +788,7 @@ fn active_change_files_unchanged_byte_for_byte(world: &mut GivnWorld) {
     assert_fixture_tree_unchanged(env, ACTIVE_AUDIT_ROOT, before);
 }
 
-#[then("archive contents are unchanged byte-for-byte")]
+#[then("archive files are unchanged byte-for-byte")]
 fn archive_contents_unchanged_byte_for_byte(world: &mut GivnWorld) {
     let env = world
         .env
@@ -850,8 +864,11 @@ fn missing_specs_json_report(world: &mut GivnWorld) {
     );
 }
 
-#[given("a permanent feature contains two scenarios with identical behaviour")]
-fn duplicate_feature(world: &mut GivnWorld) {
+#[given(
+    regex = r##"^the permanent feature file "([^"]+)" contains two separately named scenarios with the same canonical body$"##
+)]
+fn duplicate_feature(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, "givn/specs/provider/provider.feature");
     permanent_project(
         world,
         &[(
@@ -861,8 +878,23 @@ fn duplicate_feature(world: &mut GivnWorld) {
     );
 }
 
-#[given("two permanent features contain scenarios with identical behaviour")]
-fn duplicate_features(world: &mut GivnWorld) {
+#[given("the corpus cardinality is one source file with two scenario nodes")]
+fn intra_file_duplicate_topology(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("duplicate fixture is required");
+    assert!(env.path("givn/specs/provider/provider.feature").is_file());
+    assert!(!env.path("givn/specs/auth/auth.feature").exists());
+    assert_eq!(
+        givn::gherkin::parse::collect_feature_files(&env.path("givn/specs")).len(),
+        1
+    );
+}
+
+#[given(
+    regex = r##"^the permanent feature files "([^"]+)" and "([^"]+)" each contain one separately named scenario with the same canonical body$"##
+)]
+fn duplicate_features(world: &mut GivnWorld, first: String, second: String) {
+    assert_eq!(first, "givn/specs/auth/auth.feature");
+    assert_eq!(second, "givn/specs/provider/provider.feature");
     permanent_project(
         world,
         &[
@@ -872,6 +904,17 @@ fn duplicate_features(world: &mut GivnWorld) {
             ),
             ("givn/specs/auth/auth.feature", CROSS_FEATURE_AUTH),
         ],
+    );
+}
+
+#[given("the corpus cardinality is two source files with one scenario node per file")]
+fn inter_file_duplicate_topology(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("duplicate fixture is required");
+    assert!(env.path("givn/specs/provider/provider.feature").is_file());
+    assert!(env.path("givn/specs/auth/auth.feature").is_file());
+    assert_eq!(
+        givn::gherkin::parse::collect_feature_files(&env.path("givn/specs")).len(),
+        2
     );
 }
 
@@ -1196,37 +1239,160 @@ fn candidate_endpoint_file<'a>(evidence: &'a str, side: &str) -> &'a str {
         .expect("duplicate candidate endpoint has no title")
 }
 
-#[then(regex = r"^the audit reports candidate count (\d+)$")]
+#[then(
+    regex = r"^(?:the (?:same-feature|cross-feature|intra-file|inter-file) audit|the audit) reports candidate count (\d+)$"
+)]
 fn candidate_count(world: &mut GivnWorld, count: String) {
     assert!(stdout(world).contains(&format!("Candidate count: {count}\n")));
 }
 
-#[then("candidate rank 1 is classified as `exact_duplicate`")]
+#[then(
+    regex = r"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 is classified as `exact_duplicate`$"
+)]
 fn exact_duplicate_kind(world: &mut GivnWorld) {
     assert!(candidate_line(world).contains("kind=exact_duplicate"));
 }
 
-#[then(regex = r##"^candidate rank 1 has left identity \("([^\"]+)", "([^\"]+)"\)$"##)]
+#[then(
+    regex = r##"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has left identity \("([^\"]+)", "([^\"]+)"\)$"##
+)]
 fn exact_duplicate_left_identity(world: &mut GivnWorld, file: String, title: String) {
     assert!(candidate_line(world).contains(&format!(
         "left={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
     )));
 }
 
-#[then(regex = r##"^candidate rank 1 has right identity \("([^\"]+)", "([^\"]+)"\)$"##)]
+#[then(
+    regex = r##"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has right identity \("([^\"]+)", "([^\"]+)"\)$"##
+)]
 fn exact_duplicate_right_identity(world: &mut GivnWorld, file: String, title: String) {
     assert!(candidate_line(world).contains(&format!(
         "right={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
     )));
 }
 
-#[then("candidate rank 1 has relation `identical_behavior`")]
+#[then(
+    regex = r"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has relation `identical_behavior`$"
+)]
 fn exact_duplicate_relation(world: &mut GivnWorld) {
     assert!(candidate_line(world).contains("relation=identical_behavior"));
 }
 
-#[then("candidate rank 1 has score `null`")]
+#[then("candidate rank 1 has an intra-file identity boundary")]
+fn intra_file_identity_boundary(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains(
+        r#"left={"file":"givn/specs/provider/provider.feature","title":"Provider is rejected"}"#
+    ));
+    assert!(line.contains(
+        r#"right={"file":"givn/specs/provider/provider.feature","title":"Unknown provider is rejected"}"#
+    ));
+}
+
+#[then("candidate rank 1 has an inter-file identity boundary")]
+fn inter_file_identity_boundary(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains(
+        r#"left={"file":"givn/specs/auth/auth.feature","title":"Unknown provider is rejected"}"#
+    ));
+    assert!(line.contains(
+        r#"right={"file":"givn/specs/provider/provider.feature","title":"Provider is rejected"}"#
+    ));
+}
+
+#[then("title-only variation is collapsed under one source-file identity")]
+fn exact_duplicate_endpoints_share_one_feature_path(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert_eq!(
+        line.matches("givn/specs/provider/provider.feature").count(),
+        2
+    );
+    assert!(!line.contains("givn/specs/auth/auth.feature"));
+}
+
+#[then("both scenario names remain distinct under that identity")]
+fn exact_duplicate_titles_are_distinct(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("Provider is rejected"));
+    assert!(line.contains("Unknown provider is rejected"));
+}
+
+#[then("source-file variation remains visible despite identical scenario bodies")]
+fn exact_duplicate_endpoints_use_two_feature_paths(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("givn/specs/auth/auth.feature"));
+    assert!(line.contains("givn/specs/provider/provider.feature"));
+}
+
+#[then("each source file supplies one named endpoint")]
+fn each_duplicate_feature_path_contributes_one_title(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("Unknown provider is rejected"));
+    assert!(line.contains("Provider is rejected"));
+}
+
+#[then("sibling scenarios remain co-located after title normalization")]
+fn sibling_scenarios_remain_colocated(world: &mut GivnWorld) {
+    exact_duplicate_endpoints_share_one_feature_path(world);
+}
+
+#[then("disjoint source paths remain distinct after body normalization")]
+fn disjoint_source_paths_remain_distinct(world: &mut GivnWorld) {
+    exact_duplicate_endpoints_use_two_feature_paths(world);
+}
+
+#[then(
+    regex = r"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has score `null`$"
+)]
 fn exact_duplicate_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=null"));
+}
+
+#[then("the one-file audit contains exactly one candidate")]
+fn one_file_audit_candidate_count(world: &mut GivnWorld) {
+    assert!(stdout(world).contains("Candidate count: 1\n"));
+}
+
+#[then("the two-file audit contains exactly one candidate")]
+fn two_file_audit_candidate_count(world: &mut GivnWorld) {
+    assert!(stdout(world).contains("Candidate count: 1\n"));
+}
+
+#[then(regex = r"^the (?:one-file|two-file) result is classified as `exact_duplicate`$")]
+fn exact_duplicate_result_kind(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("kind=exact_duplicate"));
+}
+
+#[then(
+    regex = r##"^the (?:one-file|two-file) result has left identity \("([^"]+)", "([^"]+)"\)$"##
+)]
+fn exact_duplicate_result_left_identity(world: &mut GivnWorld, file: String, title: String) {
+    assert!(candidate_line(world).contains(&format!(
+        "left={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
+    )));
+}
+
+#[then(
+    regex = r##"^the (?:one-file|two-file) result has right identity \("([^"]+)", "([^"]+)"\)$"##
+)]
+fn exact_duplicate_result_right_identity(world: &mut GivnWorld, file: String, title: String) {
+    assert!(candidate_line(world).contains(&format!(
+        "right={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
+    )));
+}
+
+#[then(regex = r"^the (?:one-file|two-file) result has relation `identical_behavior`$")]
+fn exact_duplicate_result_relation(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("relation=identical_behavior"));
+}
+
+#[then("the one-file result has score `null`")]
+fn one_file_result_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=null"));
+}
+
+#[then("the two-file result has score `null`")]
+fn two_file_result_score(world: &mut GivnWorld) {
     assert!(candidate_line(world).ends_with("score=null"));
 }
 
@@ -1236,6 +1402,50 @@ fn candidate_line(world: &GivnWorld) -> String {
         .find(|line| line.starts_with("rank 1: "))
         .expect("duplicate audit rank 1 is missing")
         .to_string()
+}
+
+#[given("the permanent-specification audit corpus contains duplicate and related scenarios")]
+fn permanent_specification_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("the canonical permanent feature bytes are snapshotted before auditing")]
+fn snapshot_canonical_permanent_feature_bytes(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    world.permanent_spec_snapshot = Some(permanent_feature_snapshot(env));
+}
+
+#[given("the persistent-index audit corpus contains duplicate and related scenarios")]
+fn persistent_index_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("a permanent corpus is passed to a binary compiled without the spec-retrieval capability")]
+fn no_retrieval_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("a feature-enabled permanent corpus requires runtime E5 model loading")]
+fn feature_enabled_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("runtime E5 model loading fails before candidate scoring")]
+fn configured_e5_retrieval_model_unavailable(world: &mut GivnWorld) {
+    world.retrieval_embedder = Some("missing".to_string());
+}
+
+#[given("an audit corpus with an absent persistent-index file")]
+fn absent_persistent_index_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("an audit corpus with malformed persistent-index bytes")]
+fn malformed_persistent_index_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
 }
 
 #[given("a permanent scenario corpus with duplicate and related-scenario candidates")]
@@ -1266,12 +1476,14 @@ fn repeated_audit_fixture(world: &mut GivnWorld) {
     world.retrieval_duplicate_scores = Some(EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES.to_string());
 }
 
-#[given("a permanent corpus with duplicate and related-scenario candidates")]
+#[given(
+    "the audit has separate active-change and archive trees alongside permanent candidate specifications"
+)]
 fn audited_boundary_fixture(world: &mut GivnWorld) {
     repeated_audit_fixture(world);
 }
 
-#[given("no persistent retrieval index exists")]
+#[given("the persistent retrieval index file is absent before auditing")]
 fn no_persistent_retrieval_index(world: &mut GivnWorld) {
     let env = world
         .env
@@ -1287,7 +1499,7 @@ fn no_persistent_retrieval_index(world: &mut GivnWorld) {
     );
 }
 
-#[given("the persistent retrieval index contains the bytes \"not-json\"")]
+#[given("the persistent retrieval index file contains invalid JSON bytes \"not-json\"")]
 fn malformed_persistent_retrieval_index(world: &mut GivnWorld) {
     let env = world
         .env
@@ -1362,7 +1574,7 @@ fn malformed_index_audit_report(world: &mut GivnWorld) {
     audit_uses_current_permanent_files_and_transient_embeddings(world);
 }
 
-#[then("the persistent retrieval index still contains the bytes \"not-json\"")]
+#[then("the malformed index bytes remain exactly \"not-json\"")]
 fn malformed_persistent_retrieval_index_is_unchanged(world: &mut GivnWorld) {
     let env = world
         .env
@@ -1420,7 +1632,7 @@ fn duplicates_without_retrieval_feature(world: &mut GivnWorld) {
     world.last_output = Some(output);
 }
 
-#[given("the persistent retrieval index is built and snapshotted")]
+#[given("the built `.spec-index.json` bytes are snapshotted before auditing")]
 fn build_and_snapshot_persistent_retrieval_index(world: &mut GivnWorld) {
     let env = world
         .env
@@ -1436,7 +1648,7 @@ fn build_and_snapshot_persistent_retrieval_index(world: &mut GivnWorld) {
     world.permanent_index_snapshot = Some(persistent_index_bytes(env));
 }
 
-#[then("the persistent retrieval index is unchanged byte-for-byte")]
+#[then("the built `.spec-index.json` bytes are unchanged byte-for-byte")]
 fn persistent_retrieval_index_unchanged_byte_for_byte(world: &mut GivnWorld) {
     let output = super::output(world);
     assert!(
@@ -1479,7 +1691,12 @@ fn persistent_retrieval_index_remains_absent(world: &mut GivnWorld) {
     );
 }
 
-#[then("the permanent specifications are unchanged byte-for-byte")]
+#[then("the persistent retrieval index remains nonexistent")]
+fn persistent_retrieval_index_remains_nonexistent(world: &mut GivnWorld) {
+    persistent_retrieval_index_remains_absent(world);
+}
+
+#[then("the canonical permanent feature bytes are unchanged byte-for-byte")]
 fn permanent_specs_unchanged_byte_for_byte(world: &mut GivnWorld) {
     let out = super::output(world);
     assert!(

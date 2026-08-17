@@ -19,25 +19,37 @@ Feature: Audit duplicate and related permanent scenarios
 
   @givn.added
   Scenario: Exact duplicates in one feature are reported together
-    Given a permanent feature contains two scenarios with identical behaviour
+    The boundary under test is title-only variation within one source-file identity.
+    Given the permanent feature file "givn/specs/provider/provider.feature" contains two separately named scenarios with the same canonical body
+    And the corpus cardinality is one source file with two scenario nodes
     When the user runs `givn spec duplicates`
-    Then the audit reports candidate count 1
-    And candidate rank 1 is classified as `exact_duplicate`
-    And candidate rank 1 has left identity ("givn/specs/provider/provider.feature", "Provider is rejected")
-    And candidate rank 1 has right identity ("givn/specs/provider/provider.feature", "Unknown provider is rejected")
-    And candidate rank 1 has relation `identical_behavior`
-    And candidate rank 1 has score `null`
+    Then the one-file audit contains exactly one candidate
+    And the one-file result is classified as `exact_duplicate`
+    And the one-file result has left identity ("givn/specs/provider/provider.feature", "Provider is rejected")
+    And the one-file result has right identity ("givn/specs/provider/provider.feature", "Unknown provider is rejected")
+    And the one-file result has relation `identical_behavior`
+    And candidate rank 1 has an intra-file identity boundary
+    And title-only variation is collapsed under one source-file identity
+    And both scenario names remain distinct under that identity
+    And sibling scenarios remain co-located after title normalization
+    And the one-file result has score `null`
 
   @givn.added
   Scenario: Exact duplicates across features are reported together
-    Given two permanent features contain scenarios with identical behaviour
+    The boundary under test is source-file variation between two endpoint identities.
+    Given the permanent feature files "givn/specs/auth/auth.feature" and "givn/specs/provider/provider.feature" each contain one separately named scenario with the same canonical body
+    And the corpus cardinality is two source files with one scenario node per file
     When the user runs `givn spec duplicates`
-    Then the audit reports candidate count 1
-    And candidate rank 1 is classified as `exact_duplicate`
-    And candidate rank 1 has left identity ("givn/specs/auth/auth.feature", "Unknown provider is rejected")
-    And candidate rank 1 has right identity ("givn/specs/provider/provider.feature", "Provider is rejected")
-    And candidate rank 1 has relation `identical_behavior`
-    And candidate rank 1 has score `null`
+    Then the two-file audit contains exactly one candidate
+    And the two-file result is classified as `exact_duplicate`
+    And the two-file result has left identity ("givn/specs/auth/auth.feature", "Unknown provider is rejected")
+    And the two-file result has right identity ("givn/specs/provider/provider.feature", "Provider is rejected")
+    And the two-file result has relation `identical_behavior`
+    And candidate rank 1 has an inter-file identity boundary
+    And source-file variation remains visible despite identical scenario bodies
+    And each source file supplies one named endpoint
+    And disjoint source paths remain distinct after body normalization
+    And the two-file result has score `null`
 
   @givn.added
   Scenario: Structurally overlapping scenarios retain their distinguishing facts
@@ -109,17 +121,17 @@ Feature: Audit duplicate and related permanent scenarios
 
   @givn.added
   Scenario: Auditing leaves permanent specifications unchanged
-    Given a permanent scenario corpus with duplicate and related-scenario candidates
-    And the permanent specifications are snapshotted
+    Given the permanent-specification audit corpus contains duplicate and related scenarios
+    And the canonical permanent feature bytes are snapshotted before auditing
     When the user runs `givn spec duplicates`
-    Then the permanent specifications are unchanged byte-for-byte
+    Then the canonical permanent feature bytes are unchanged byte-for-byte
 
   @givn.added
   Scenario: Auditing leaves the persistent retrieval index unchanged
-    Given a permanent scenario corpus with duplicate and related-scenario candidates
-    And the persistent retrieval index is built and snapshotted
+    Given the persistent-index audit corpus contains duplicate and related scenarios
+    And the built `.spec-index.json` bytes are snapshotted before auditing
     When the user runs `givn spec duplicates`
-    Then the persistent retrieval index is unchanged byte-for-byte
+    Then the built `.spec-index.json` bytes are unchanged byte-for-byte
 
   @givn.added
   Scenario: Active change scenarios are not part of the permanent audit
@@ -140,22 +152,22 @@ Feature: Audit duplicate and related permanent scenarios
 
   @givn.added
   Scenario: The audit reports retrieval unavailable without the retrieval feature
-    Given a permanent scenario corpus with duplicate and related-scenario candidates
+    Given a permanent corpus is passed to a binary compiled without the spec-retrieval capability
     When the user runs `givn spec duplicates` through a build without spec retrieval
     Then the command exits non-zero
     And stderr contains "spec retrieval is unavailable"
 
   @givn.added
   Scenario: The audit reports an unavailable retrieval model
-    Given a permanent scenario corpus with duplicate and related-scenario candidates
-    And the retrieval model is unavailable
+    Given a feature-enabled permanent corpus requires runtime E5 model loading
+    And runtime E5 model loading fails before candidate scoring
     When the user runs `givn spec duplicates`
     Then the command exits non-zero
     And stderr contains "retrieval model is unavailable"
 
   @givn.added
   Scenario: A malformed permanent feature reports its path
-    Given a malformed permanent feature at "givn/specs/broken/broken.feature"
+    Given a permanent feature with invalid Gherkin syntax at "givn/specs/broken/broken.feature"
     When the user runs `givn spec duplicates`
     Then the command exits non-zero
     And stderr contains the project-relative path "givn/specs/broken/broken.feature"
@@ -163,7 +175,7 @@ Feature: Audit duplicate and related permanent scenarios
 
   @givn.added
   Scenario: An unreadable permanent feature reports its path
-    Given an unreadable permanent feature at "givn/specs/private/private.feature"
+    Given a permanent feature that exists but cannot be read at "givn/specs/private/private.feature"
     When the user runs `givn spec duplicates`
     Then the command exits non-zero
     And stderr contains the project-relative path "givn/specs/private/private.feature"
@@ -188,47 +200,47 @@ Feature: Audit duplicate and related permanent scenarios
 
   @givn.added
   Scenario: Auditing leaves active changes and archive contents unchanged
-    Given a permanent corpus with duplicate and related-scenario candidates
-    And active change files and archive contents are snapshotted
+    Given the audit has separate active-change and archive trees alongside permanent candidate specifications
+    And the active-change and archive trees are snapshotted before the read-only audit
     When the user runs `givn spec duplicates`
-    Then active change files are unchanged byte-for-byte
-    And archive contents are unchanged byte-for-byte
+    Then active-change files are unchanged byte-for-byte
+    And archive files are unchanged byte-for-byte
 
   @givn.added
   Scenario: An absent persistent index is ignored and remains absent
-    Given a permanent scenario corpus with duplicate and related-scenario candidates
-    And no persistent retrieval index exists
+    Given an audit corpus with an absent persistent-index file
+    And the persistent retrieval index file is absent before auditing
     When the user runs `givn spec duplicates --format json`
     Then the command exits 0
     And the audit uses current permanent files and transient embeddings
-    And the persistent retrieval index remains absent
+    And the persistent retrieval index remains nonexistent
 
   @givn.added
   Scenario: A malformed persistent index is ignored and unchanged
-    Given a permanent scenario corpus with duplicate and related-scenario candidates
-    And the persistent retrieval index contains the bytes "not-json"
+    Given an audit corpus with malformed persistent-index bytes
+    And the persistent retrieval index file contains invalid JSON bytes "not-json"
     When the user runs `givn spec duplicates --format json`
     Then the command exits 0
     And the audit report is valid JSON with the permanent candidates
-    And the persistent retrieval index still contains the bytes "not-json"
+    And the malformed index bytes remain exactly "not-json"
 
   @givn.added
   Scenario: A semantic candidate at the inclusive threshold is reported
-    Given permanent scenarios have no exact or structural relationship
-    And the test score for their normalized endpoint pair is `0.9500`
+    Given permanent scenarios exercise inclusive semantic admission with no exact or structural relationship
+    And the normalized endpoint pair is assigned the inclusive admission score `0.9500`
     When the user runs `givn spec duplicates --format json`
     Then the command exits 0
-    And candidate rank 1 is classified as `semantic_candidate`
+    And candidate rank 1 is admitted as a `semantic_candidate`
     And candidate rank 1 has relation `semantic_similarity`
     And candidate rank 1 has score `0.9500`
 
   @givn.added
   Scenario: A semantic pair below the threshold is not reported
-    Given permanent scenarios have no exact or structural relationship
-    And the test score for their normalized endpoint pair is `0.9499`
+    Given permanent scenarios exercise below-boundary semantic exclusion with no exact or structural relationship
+    And the normalized endpoint pair is assigned the exclusion score `0.9499`
     When the user runs `givn spec duplicates --format json`
     Then the command exits 0
-    And the JSON report has candidate_count 0
+    And the JSON report excludes all semantic candidates
     And no candidate has score `0.9499`
 
   @givn.added
