@@ -234,13 +234,52 @@ struct DuplicateEndpoint {
 struct DuplicateScenario {
     endpoint: DuplicateEndpoint,
     behavior: String,
+    fingerprint: crate::overlap::fingerprint::Fingerprint,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateAssertionShape {
+    left: Vec<String>,
+    right: Vec<String>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateFacts {
+    exit_code: Option<String>,
+    contains_polarity: BTreeMap<usize, String>,
+    tables: BTreeMap<String, String>,
+    done: bool,
+    tty: bool,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateFactsEvidence {
+    left: DuplicateFacts,
+    right: DuplicateFacts,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DistinguishingFact {
+    field: String,
+    left: serde_json::Value,
+    right: serde_json::Value,
 }
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone)]
-struct ExactDuplicateCandidate {
+struct DuplicateCandidate {
+    kind: &'static str,
     left: DuplicateEndpoint,
     right: DuplicateEndpoint,
+    relation: &'static str,
+    assertion_shape: Option<DuplicateAssertionShape>,
+    facts: Option<DuplicateFactsEvidence>,
+    distinguishing_facts: Vec<DistinguishingFact>,
+    fact_contradiction: bool,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -382,20 +421,30 @@ fn index_enabled(root: &Path) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn duplicates_enabled(root: &Path) -> Result<()> {
     let scenarios = collect_duplicate_scenarios(root)?;
-    let candidates = exact_duplicate_candidates(&scenarios);
+    let candidates = duplicate_candidates(&scenarios);
 
     println!("Givn spec duplicates");
     println!("Scanned scenarios: {}", scenarios.len());
     println!("Candidate count: {}", candidates.len());
     for (rank, candidate) in candidates.iter().enumerate() {
-        println!(
-            "rank {}: kind=exact_duplicate left={} right={} relation=identical_behavior assertion_shape=null facts=null distinguishing_facts=[] fact_contradiction=false score=null",
-            rank + 1,
-            json_encoded(&candidate.left),
-            json_encoded(&candidate.right),
-        );
+        println!("{}", render_duplicate_candidate(rank + 1, candidate));
     }
     Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> String {
+    format!(
+        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score=null",
+        candidate.kind,
+        json_encoded(&candidate.left),
+        json_encoded(&candidate.right),
+        candidate.relation,
+        json_encoded(&candidate.assertion_shape),
+        json_encoded(&candidate.facts),
+        json_encoded(&candidate.distinguishing_facts),
+        candidate.fact_contradiction,
+    )
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1582,6 +1631,11 @@ fn collect_duplicate_scenario(
             title: scenario.name.clone(),
         },
         behavior: duplicate_behavior_body(feature, rule, scenario),
+        fingerprint: crate::overlap::fingerprint::Fingerprint::of_scenario(
+            scenario,
+            rule.and_then(|rule| rule.background.as_ref())
+                .or(feature.background.as_ref()),
+        ),
     });
 }
 
@@ -1606,19 +1660,130 @@ fn duplicate_behavior_body(
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn exact_duplicate_candidates(scenarios: &[DuplicateScenario]) -> Vec<ExactDuplicateCandidate> {
+fn duplicate_candidates(scenarios: &[DuplicateScenario]) -> Vec<DuplicateCandidate> {
     let mut candidates = Vec::new();
     for (left_index, left) in scenarios.iter().enumerate() {
         for right in scenarios.iter().skip(left_index + 1) {
             if left.behavior == right.behavior {
-                candidates.push(ExactDuplicateCandidate {
+                candidates.push(DuplicateCandidate {
+                    kind: "exact_duplicate",
                     left: left.endpoint.clone(),
                     right: right.endpoint.clone(),
+                    relation: "identical_behavior",
+                    assertion_shape: None,
+                    facts: None,
+                    distinguishing_facts: Vec::new(),
+                    fact_contradiction: false,
+                });
+            } else if !left.fingerprint.assertions.is_empty()
+                && left.fingerprint.assertions == right.fingerprint.assertions
+            {
+                candidates.push(DuplicateCandidate {
+                    kind: "structural_overlap",
+                    left: left.endpoint.clone(),
+                    right: right.endpoint.clone(),
+                    relation: "same_assertion_shape",
+                    assertion_shape: Some(DuplicateAssertionShape {
+                        left: left.fingerprint.assertions.clone(),
+                        right: right.fingerprint.assertions.clone(),
+                    }),
+                    facts: Some(DuplicateFactsEvidence {
+                        left: DuplicateFacts::from_fingerprint(&left.fingerprint),
+                        right: DuplicateFacts::from_fingerprint(&right.fingerprint),
+                    }),
+                    distinguishing_facts: distinguishing_facts(
+                        &left.fingerprint.facts,
+                        &right.fingerprint.facts,
+                    ),
+                    fact_contradiction: left
+                        .fingerprint
+                        .facts
+                        .contradicts(&right.fingerprint.facts),
                 });
             }
         }
     }
     candidates
+}
+
+#[cfg(feature = "spec-retrieval")]
+impl DuplicateFacts {
+    fn from_fingerprint(fingerprint: &crate::overlap::fingerprint::Fingerprint) -> Self {
+        Self {
+            exit_code: fingerprint.facts.exit_code.clone(),
+            contains_polarity: fingerprint.facts.contains_polarity.clone(),
+            tables: fingerprint.facts.tables.clone(),
+            done: fingerprint.facts.done,
+            tty: fingerprint.facts.tty,
+        }
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn distinguishing_facts(
+    left: &crate::overlap::fingerprint::Facts,
+    right: &crate::overlap::fingerprint::Facts,
+) -> Vec<DistinguishingFact> {
+    let mut facts = Vec::new();
+    if left.exit_code != right.exit_code {
+        facts.push(DistinguishingFact {
+            field: "exit_code".to_string(),
+            left: json_encoded_value(&left.exit_code),
+            right: json_encoded_value(&right.exit_code),
+        });
+    }
+
+    let positions: BTreeSet<usize> = left
+        .contains_polarity
+        .keys()
+        .chain(right.contains_polarity.keys())
+        .copied()
+        .collect();
+    for position in positions {
+        let left_value = left.contains_polarity.get(&position);
+        let right_value = right.contains_polarity.get(&position);
+        if left_value != right_value {
+            facts.push(DistinguishingFact {
+                field: format!("contains_polarity[{position}]"),
+                left: json_encoded_value(&left_value),
+                right: json_encoded_value(&right_value),
+            });
+        }
+    }
+
+    let table_keys: BTreeSet<&String> = left.tables.keys().chain(right.tables.keys()).collect();
+    for key in table_keys {
+        let left_value = left.tables.get(key);
+        let right_value = right.tables.get(key);
+        if left_value != right_value {
+            facts.push(DistinguishingFact {
+                field: format!("tables[{key}]"),
+                left: json_encoded_value(&left_value),
+                right: json_encoded_value(&right_value),
+            });
+        }
+    }
+
+    if left.done != right.done {
+        facts.push(DistinguishingFact {
+            field: "done".to_string(),
+            left: serde_json::Value::Bool(left.done),
+            right: serde_json::Value::Bool(right.done),
+        });
+    }
+    if left.tty != right.tty {
+        facts.push(DistinguishingFact {
+            field: "tty".to_string(),
+            left: serde_json::Value::Bool(left.tty),
+            right: serde_json::Value::Bool(right.tty),
+        });
+    }
+    facts
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn json_encoded_value<T: serde::Serialize>(value: &T) -> serde_json::Value {
+    serde_json::to_value(value).expect("serialize distinguishing fact")
 }
 
 #[cfg(feature = "spec-retrieval")]
