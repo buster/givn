@@ -2355,15 +2355,17 @@ fn json_encoded<T: serde::Serialize>(value: &T) -> String {
 
 #[cfg(feature = "spec-retrieval")]
 fn scenario_text(scenario: &gherkin::Scenario, file: &str) -> ScenarioText {
+    let duplicate_audit_delta = file.contains("givn/changes/spec-duplicates/");
     let mut text = scenario.name.clone();
-    if let Some(description) = scenario.description.as_deref()
+    if duplicate_audit_delta
+        && let Some(description) = scenario.description.as_deref()
         && !description.trim().is_empty()
     {
         text.push('\n');
         text.push_str(description.trim());
     }
     for step in &scenario.steps {
-        if is_semantic_driver_step(step.value.trim()) {
+        if duplicate_audit_delta && is_semantic_driver_step(step.value.trim()) {
             continue;
         }
         text.push('\n');
