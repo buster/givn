@@ -64,23 +64,33 @@ spec is incomplete. Variants, error cases, and flag combinations of the same
 user action do not create additional inventory entries or additional `@e2e`
 scenarios. The inventory is exhaustive after this normalization.
 
-## Semantic review and vocabulary
+## Semantic review and retrieval vocabulary
 
 The deterministic gates remain the first line of defence; semantic retrieval
 adds an evidence worklist after those structural checks rather than replacing
 them.
 
-When `spec-retrieval` is available, `givn check review --change <id>` generates
-the change-local `semantic-review.md` worklist after the structural gates.
+When `spec-retrieval` is available:
+
+- `givn spec index` builds or refreshes the permanent scenario index.
+- `givn spec search` and `givn spec explore` provide advisory authoring
+  results; they do not block a change.
+- `givn check review --change <id>` generates the change-local
+  `semantic-review.md` worklist after the structural gates and blocks until
+  every candidate is classified and remediated.
+
 Classify every candidate as `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY`, with a
 written rationale; `UNCERTAIN` blocks the review. There is no `UNRELATED`
 escape classification. If two scenarios appear unrelated but remain above the
 active similarity boundary, sharpen the domain vocabulary and observable
 invariants, then regenerate the report. `givn spec review --change <id>` remains
-advisory and does not create the worklist.
+advisory and does not create the blocking worklist. A build with
+`spec-similarity-gate` additionally enforces the strict similarity gate.
 
-Without `spec-retrieval`, the blocking semantic gate must report retrieval
-unavailability rather than passing silently.
+Without `spec-retrieval`, the blocking semantic gate must report the explicit
+`retrieval-unavailable` result rather than passing silently. Feature-free
+guidance must not prohibit retrieval-capable builds from using the authoring
+commands above.
 
 ## Executable-spec invariant
 

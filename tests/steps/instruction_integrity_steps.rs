@@ -231,3 +231,49 @@ fn unknown_change_is_rejected(world: &mut GivnWorld) {
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("change 'missing-change' not found"), "{stderr}");
 }
+
+fn retrieval_guidance(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("retrieval guidance was not loaded")
+}
+
+#[given("retrieval workflow guidance is available")]
+fn retrieval_workflow_guidance_available(world: &mut GivnWorld) {
+    let specs = std::fs::read_to_string("assets/instructions/specs.md")
+        .expect("read specs instruction");
+    let command = std::fs::read_to_string("assets/commands/givn-spec.md")
+        .expect("read specs command");
+    let skill = std::fs::read_to_string("assets/skills/givn-spec/SKILL.md.tmpl")
+        .expect("read specs skill");
+    world.additional_output = Some(format!("{specs}\n{command}\n{skill}"));
+}
+
+#[when("an author compares retrieval-capable and feature-free guidance")]
+fn author_compares_retrieval_guidance(world: &mut GivnWorld) {
+    assert!(
+        !retrieval_guidance(world).is_empty(),
+        "retrieval guidance must not be empty"
+    );
+}
+
+#[then("the guidance explains the advisory and blocking retrieval paths")]
+fn guidance_explains_retrieval_paths(world: &mut GivnWorld) {
+    let content = retrieval_guidance(world);
+    assert!(content.contains("givn spec search"));
+    assert!(content.contains("givn check review"));
+}
+
+#[then("the guidance preserves an explicit unavailable result for feature-free builds")]
+fn guidance_preserves_unavailable_result(world: &mut GivnWorld) {
+    assert!(retrieval_guidance(world).contains("retrieval-unavailable"));
+}
+
+#[then("the guidance does not prohibit retrieval in a retrieval-capable build")]
+fn guidance_does_not_prohibit_retrieval(world: &mut GivnWorld) {
+    let content = retrieval_guidance(world);
+    assert!(content.contains("givn spec index"));
+    assert!(content.contains("givn spec explore"));
+    assert!(!content.contains("Until the retrieval change exists"));
+}

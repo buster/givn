@@ -47,11 +47,13 @@ real-interface assertions, flag-variant classification, and one-E2E-per-action
 scope. This skill only choreographs when to read it and how to write the delta;
 it does not restate the policy.
 
-## Deterministic gates before retrieval
+## Retrieval-aware authoring
 
-Until the retrieval change exists, use the deterministic lint and review gates
-and their human disposition tables. Do not add a `givn spec index` or semantic-
-search step here.
+In a retrieval-capable build, use `givn spec index` for the permanent index and
+`givn spec search` or `givn spec explore` for advisory authoring evidence. The
+blocking review path is `givn check review --change {{CHANGE_ID}}`. In a
+feature-free build, preserve the explicit `retrieval-unavailable` result;
+never treat unavailable retrieval as a clean blocking review.
 
 ## Verify command
 

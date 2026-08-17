@@ -72,7 +72,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When the agent requests the specs instructions as JSON through the Givn CLI
     Then the response is valid JSON with artifact paths prerequisites and instructions
 
-  @givn.added @wip
+  @givn.added
   Scenario: Retrieval guidance distinguishes build capabilities
     Given retrieval workflow guidance is available
     When an author compares retrieval-capable and feature-free guidance
