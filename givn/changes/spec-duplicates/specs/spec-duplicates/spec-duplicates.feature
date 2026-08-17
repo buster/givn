@@ -312,3 +312,10 @@ Feature: Audit duplicate and related permanent scenarios
       | out-of-range score | givn/specs/score/a.feature\|A::givn/specs/score/b.feature\|B=1.0001 | outside the cosine range |
     When the user validates each duplicate score override
     Then every invalid duplicate score override fails with its expected diagnostic
+
+  @givn.added
+  Scenario: Reversed score override endpoint pairs normalize canonically
+    Given two permanent semantic scenarios have a reversed score override pair
+    When the user runs `givn spec duplicates --format json`
+    Then the reversed score override reports one semantic candidate at `0.9600`
+    And the reversed score candidate uses canonical endpoint order

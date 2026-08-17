@@ -188,6 +188,21 @@ const SCORE_VALIDATION_FEATURE: &str = r#"Feature: duplicate score validation
     When the beta score validation action runs
     Then beta score validation is complete
 "#;
+const REVERSED_SCORE_LEFT_FEATURE: &str = r#"Feature: reversed score left
+
+  Scenario: Canonical score left
+    Given the canonical score left context
+    When the canonical score left action runs
+    Then canonical score left is complete
+"#;
+const REVERSED_SCORE_RIGHT_FEATURE: &str = r#"Feature: reversed score right
+
+  Scenario: Canonical score right
+    Given the canonical score right context
+    When the canonical score right action runs
+    Then canonical score right is complete
+"#;
+const REVERSED_SCORE_OVERRIDE: &str = "givn/specs/reverse/b.feature|Canonical score right::givn/specs/reverse/a.feature|Canonical score left=0.9600";
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -506,6 +521,51 @@ fn invalid_duplicate_score_overrides_fail(world: &mut GivnWorld) {
             fields[3]
         );
     }
+}
+
+#[given("two permanent semantic scenarios have a reversed score override pair")]
+fn reversed_score_override_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/reverse/a.feature", REVERSED_SCORE_LEFT_FEATURE),
+            ("givn/specs/reverse/b.feature", REVERSED_SCORE_RIGHT_FEATURE),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(REVERSED_SCORE_OVERRIDE.to_string());
+}
+
+#[then("the reversed score override reports one semantic candidate at `0.9600`")]
+fn reversed_score_override_candidate(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(
+        candidates[0]["kind"],
+        serde_json::json!("semantic_candidate")
+    );
+    assert_eq!(
+        candidates[0]["evidence"]["score"],
+        serde_json::json!("0.9600")
+    );
+}
+
+#[then("the reversed score candidate uses canonical endpoint order")]
+fn reversed_score_override_endpoint_order(world: &mut GivnWorld) {
+    let candidate = &json_candidates(world)[0];
+    assert_eq!(
+        candidate["left"],
+        serde_json::json!({
+            "file": "givn/specs/reverse/a.feature",
+            "title": "Canonical score left"
+        })
+    );
+    assert_eq!(
+        candidate["right"],
+        serde_json::json!({
+            "file": "givn/specs/reverse/b.feature",
+            "title": "Canonical score right"
+        })
+    );
 }
 
 #[given(
