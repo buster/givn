@@ -624,7 +624,7 @@ fn rebuilt_index_contains_no_semantic_state(world: &mut GivnWorld) {
 
 #[given("a completed semantic review change with a generated report and archive prerequisites")]
 fn completed_semantic_review_change(world: &mut GivnWorld) {
-    two_similar_active_deltas(world);
+    super::semantic_remediation_steps::remediation_project(world, "DUPLIKAT".to_string());
     let env = world.env.as_ref().expect("semantic project is required");
     let change_dir = env.path("givn/changes/running-change");
     fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write archive proposal");
