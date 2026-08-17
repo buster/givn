@@ -71,6 +71,17 @@ const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
     When the client connects without a login
     Then the session service refuses access with message "credentials required"
 "#;
+const PERMANENT_RELATED_FEATURE_PATH: &str = "givn/specs/provider/provider.feature";
+const ACTIVE_CHANGE_FEATURE_PATH: &str =
+    "givn/changes/active-provider/specs/provider/provider.feature";
+const ACTIVE_CHANGE_SCENARIO_TITLE: &str = "Active provider is rejected";
+const ACTIVE_CHANGE_FEATURE: &str = r#"Feature: active provider
+
+  Scenario: Active provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#;
 const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
 const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
     (
@@ -417,6 +428,95 @@ fn permanent_project(world: &mut GivnWorld, features: &[(&str, &str)]) {
     }
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
+}
+
+#[given("a permanent scenario corpus with one related scenario")]
+fn permanent_related_scenario_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(PERMANENT_RELATED_FEATURE_PATH, EXACT_DUPLICATE_FEATURE)],
+    );
+}
+
+#[given("an active change contains another scenario with related behaviour")]
+fn active_related_scenario_fixture(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("permanent duplicate fixture is required");
+    let path = env.path(ACTIVE_CHANGE_FEATURE_PATH);
+    fs::create_dir_all(path.parent().expect("active feature parent"))
+        .expect("create active feature directory");
+    fs::write(path, ACTIVE_CHANGE_FEATURE).expect("write active feature fixture");
+}
+
+#[then("the audit reports only relationships between permanent scenarios")]
+fn permanent_only_audit(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let report = duplicate_audit_report(out);
+    assert_eq!(report.scanned_scenarios, 2);
+    assert_eq!(report.candidate_count, 1);
+    assert_eq!(report.candidates[0].rank, 1);
+    assert!(
+        report.candidates[0]
+            .evidence
+            .contains("kind=exact_duplicate")
+    );
+    assert_eq!(
+        candidate_endpoint_file(&report.candidates[0].evidence, "left"),
+        PERMANENT_RELATED_FEATURE_PATH
+    );
+    assert_eq!(
+        candidate_endpoint_file(&report.candidates[0].evidence, "right"),
+        PERMANENT_RELATED_FEATURE_PATH
+    );
+}
+
+#[then("the active change scenario identity is absent from every candidate")]
+fn active_identity_absent(world: &mut GivnWorld) {
+    let identity = format!(
+        "\"file\":\"{ACTIVE_CHANGE_FEATURE_PATH}\",\"title\":\"{ACTIVE_CHANGE_SCENARIO_TITLE}\""
+    );
+    assert!(
+        !stdout(world).contains(&identity),
+        "active change identity appeared in the audit: {}",
+        stdout(world)
+    );
+}
+
+#[then("every candidate endpoint file starts with `givn/specs/`")]
+fn candidate_endpoints_are_permanent(world: &mut GivnWorld) {
+    let report = duplicate_audit_report(super::output(world));
+    for candidate in report.candidates {
+        for side in ["left", "right"] {
+            let file = candidate_endpoint_file(&candidate.evidence, side);
+            assert!(
+                file.starts_with("givn/specs/"),
+                "{side} candidate endpoint is not permanent: {file}"
+            );
+        }
+    }
+}
+
+fn candidate_endpoint_file<'a>(evidence: &'a str, side: &str) -> &'a str {
+    let marker = match side {
+        "left" => "left={\"file\":\"",
+        "right" => "right={\"file\":\"",
+        _ => panic!("unsupported duplicate candidate endpoint side: {side}"),
+    };
+    let start = evidence
+        .find(marker)
+        .map(|index| index + marker.len())
+        .unwrap_or_else(|| panic!("duplicate candidate is missing its {side} endpoint"));
+    evidence[start..]
+        .split_once("\",\"title\":\"")
+        .map(|(file, _)| file)
+        .expect("duplicate candidate endpoint has no title")
 }
 
 #[then(regex = r"^the audit reports candidate count (\d+)$")]

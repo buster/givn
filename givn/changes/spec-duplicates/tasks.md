@@ -1178,11 +1178,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves the persistent retrieval index unchanged`
-    - Commit hash: ``
+    - Commit hash: `f1e50ac6208b067044b0a2ac1e3e2e82e20ca632`
 
 ## Scenario 11: `Active change scenarios are not part of the permanent audit`
 
-- [ ] Scenario: `Active change scenarios are not part of the permanent audit`
+- [x] Scenario: `Active change scenarios are not part of the permanent audit`
   - RED:
     - Remove `@wip` only from this scenario; do not touch any other @wip tag.
     - Add regular fixture and assertion bindings with `unimplemented!()` in
@@ -1191,28 +1191,95 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Active change scenarios are not part of the permanent audit$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.27s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Active change scenarios are not part of the permanent audit
+   ✘  Given a permanent scenario corpus with one related scenario
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:126:5
+      Matched: tests/steps/spec_duplicates_steps.rs:422:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3179756) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Restrict the audit aggregate and endpoint identities to eligible permanent
       non-removed scenarios under `givn/specs/`; assert active identities are
       absent and every endpoint file starts with `givn/specs/`.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Production files modified in GREEN: none; the existing
+      `collect_duplicate_scenarios` path in `src/spec/retrieval.rs` already
+      collects only `permanent_specs_path(root)` and does not scan changes or
+      archive paths.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+      Exact output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.68s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Active change scenarios are not part of the permanent audit
+   ✔  Given a permanent scenario corpus with one related scenario
+   ✔  And an active change contains another scenario with related behaviour
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports only relationships between permanent scenarios
+   ✔  And the active change scenario identity is absent from every candidate
+   ✔  And every candidate endpoint file starts with `givn/specs/`
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Keep active-change and archive path filtering at collection boundaries,
-      not as a renderer-only suppression. Run `cargo fmt --check` and rerun the
-      targeted command.
+    - Keep active-change path filtering at the collection boundary, not as a
+      renderer-only suppression. Name the permanent and active fixture paths
+      explicitly and parse both candidate endpoint files before asserting their
+      `givn/specs/` prefix. Run `cargo fmt --check` and rerun the targeted
+      command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Step-file scan for `unimplemented!()` or `todo!()` returned `No files
+      found`.
+    - Empty-function-body scan returned `No files found`.
+    - Bare-return-body scan returned `No files found`.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.40s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Active change scenarios are not part of the permanent audit
+   ✔  Given a permanent scenario corpus with one related scenario
+   ✔  And an active change contains another scenario with related behaviour
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports only relationships between permanent scenarios
+   ✔  And the active change scenario identity is absent from every candidate
+   ✔  And every candidate endpoint file starts with `givn/specs/`
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 11 tag only), `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 10
+      hash update). No production source file was modified because the existing
+      `src/spec/retrieval.rs` collection boundary is already permanent-only.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Active change scenarios are not part of the permanent audit`
