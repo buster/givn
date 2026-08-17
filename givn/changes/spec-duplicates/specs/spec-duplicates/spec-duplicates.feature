@@ -5,7 +5,7 @@
 
 Feature: Audit duplicate and related permanent scenarios
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Maintainer inspects the complete permanent scenario audit
     Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
     When the end-to-end user runs `givn spec duplicates`
