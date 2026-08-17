@@ -106,3 +106,47 @@ fn design_requires_infrastructure(world: &mut GivnWorld) {
 fn design_requires_coverage_matrix(world: &mut GivnWorld) {
     assert!(design_guidance(world).contains("Interaction Coverage Matrix"));
 }
+
+fn review_guidance(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("review guidance was not loaded")
+}
+
+#[given("a semantic review contains classified candidates")]
+fn semantic_review_contains_candidates(world: &mut GivnWorld) {
+    let instruction = std::fs::read_to_string("assets/instructions/review.md")
+        .expect("read review instruction");
+    let template = std::fs::read_to_string("assets/templates/review.md")
+        .expect("read review template");
+    world.additional_output = Some(format!("{instruction}\n{template}"));
+}
+
+#[when("the reviewer completes the review artifact")]
+fn reviewer_completes_review_artifact(world: &mut GivnWorld) {
+    assert!(!review_guidance(world).is_empty(), "review guidance must not be empty");
+}
+
+#[then("the review records the remediation contract for each classification")]
+fn review_records_remediation_contracts(world: &mut GivnWorld) {
+    let content = review_guidance(world);
+    for class in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY"] {
+        assert!(content.contains(class), "review guidance missing {class} contract");
+    }
+    assert!(content.contains("remediation"));
+}
+
+#[then("the review records the projected-tree evidence and verification receipt")]
+fn review_records_projected_evidence(world: &mut GivnWorld) {
+    let content = review_guidance(world);
+    assert!(content.contains("projected"));
+    assert!(content.contains("semantic remediation verified"));
+}
+
+#[then("an unresolved or stale remediation remains blocking")]
+fn stale_remediation_remains_blocking(world: &mut GivnWorld) {
+    let content = review_guidance(world);
+    assert!(content.contains("stale"));
+    assert!(content.contains("blocks") || content.contains("blocking"));
+}
