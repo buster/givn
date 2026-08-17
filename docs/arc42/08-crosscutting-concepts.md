@@ -472,6 +472,18 @@ all evidence invalidation, deterministic order/bytes, and report retention
 boundary. The single `@e2e` scenario invokes the compiled CLI subprocess and
 asserts the child exit status and report output.
 
+### 8.5e Projected remediation verification
+
+The semantic report is a worklist, not proof that an agent applied the required
+edit. Blocking review therefore evaluates prior classified entries against a
+read-only projected permanent tree. A candidate that disappears or falls below
+the E5 admission boundary is recomputed from its prior endpoint identities
+rather than silently discarded. `DUPLIKAT` requires the redundant endpoint to
+be absent; `VARIANTE` requires a single parameterized outline with examples; and
+`VALID-BOUNDARY` requires both endpoints plus a changed observable fact or
+invariant and a score strictly below `0.9500`. Givn emits a deterministic
+verification receipt but never edits feature files.
+
 ## 8.6 Filesystem-derived state
 
 There is no state file. Lifecycle state is computed from which files exist:

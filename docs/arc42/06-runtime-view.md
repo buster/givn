@@ -481,6 +481,18 @@ or disposition rows. The acceptance surface has one CLI interaction inventory
 entry and exactly one `@e2e` scenario; that driver starts the compiled CLI
 subprocess and asserts its exit status and generated report output.
 
+After the prior report is parsed and the current projected tree is built, the
+remediation verifier resolves each prior classified entry before the regenerated
+report can return PASS. It recomputes the pair even when the score is below the
+report boundary. Exact identity/hash matches are checked first, then changed
+evidence, endpoint disappearance, and finally no-match stale state. A duplicate
+must disappear from the projected tree; a variant must resolve to one
+parameterized outline with examples; a valid boundary must retain both endpoints
+with a changed observable fact or invariant and a score strictly below `0.9500`.
+Failure writes a complete BLOCKED report atomically and emits a remediation
+finding; success emits the deterministic `semantic remediation verified`
+receipt.
+
 ## 6.9 Running the test runner on a fresh project (sentinel)
 
 When a project has not configured `verify.command`, the manifest's default points

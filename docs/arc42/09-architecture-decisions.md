@@ -2105,3 +2105,74 @@ Related decisions: ADR-037 (deterministic Fingerprint facts), ADR-039 (local
 embeddings), ADR-041 (strict similarity gate), ADR-043/044/045 (exploration
 identity and current-change corpus), and ADR-040 (repository-owned CLI
 acceptance). Related chapters: 1, 3, 4, 5, 6, 8, 10, 11, and 12.
+
+---
+
+## ADR-047: Verify Classified Semantic Remediation Against a Projected Tree
+
+---
+status: accepted
+date: 2026-08-17
+decision-makers: givn maintainers
+consulted: semantic-remediation proposal, executable feature, design, and plan
+informed: agents and CI users running `givn check review --change <id>`
+---
+
+### Context and Problem Statement
+
+PR 3 proves that an agent classified the current semantic candidate, but a
+classification does not prove that the projected specification changed as
+required. A candidate can disappear because it was removed, renamed, or fell
+below the report threshold, and a lower embedding score alone does not prove a
+variant consolidation or valid boundary.
+
+### Decision Drivers
+
+- Keep classification and feature-file ownership with the agent.
+- Verify disappeared and below-boundary candidates instead of silently dropping
+  them from the report.
+- Use deterministic projected-tree and endpoint evidence rather than a new
+  semantic classifier.
+- Require a parameterized outline for `VARIANTE` and an observable invariant for
+  `VALID-BOUNDARY`.
+- Keep the existing E5 boundary, report grammar, archive boundary, and advisory
+  retrieval behavior.
+
+### Considered Options
+
+1. Treat a disappeared or below-boundary candidate as automatically resolved.
+2. Let Givn edit or classify the feature files automatically.
+3. Verify prior classifications against a projected tree and recompute prior
+   pairs independently of report admission.
+
+### Decision Outcome
+
+Choose option 3. Blocking review parses prior remediation entries, projects the
+current delta in memory, resolves endpoint identities, recomputes pair scores
+even below `0.9500`, and applies the class-specific remediation contract before
+returning PASS. Givn emits deterministic findings and a verification receipt;
+it does not edit feature files or select classifications.
+
+### Consequences
+
+#### Good
+
+- Good, because a classification cannot substitute for the required projected
+  specification change.
+- Good, because endpoint disappearance and score-threshold transitions remain
+  explicit verification cases rather than silent worklist deletion.
+- Good, because the implementation reuses deterministic evidence and the
+  permanent-only index without adding a model classifier.
+
+#### Bad
+
+- Bad, because agents must provide a concrete parameterized variant or
+  observable boundary invariant instead of relying on a lower score.
+- Bad, because prior-entry verification adds a second deterministic path beside
+  ordinary report candidate generation.
+
+### Confirmation
+
+The remediation feature scenarios cover each class's blocking and successful
+contracts, disappearance, below-boundary recomputation, stale identity, false
+score-only remediation, non-mutation, and the real CLI verification boundary.
