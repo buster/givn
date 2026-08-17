@@ -22,7 +22,10 @@ fn e2e_duplicate_remediation_project(world: &mut GivnWorld) {
             ),
         ],
     );
-    assert!(!output.status.success(), "initial remediation review passed");
+    assert!(
+        !output.status.success(),
+        "initial remediation review passed"
+    );
     let report_path = env.path("givn/changes/running-change/semantic-review.md");
     let report = fs::read_to_string(&report_path).expect("read remediation report");
     let report = report
@@ -36,7 +39,7 @@ fn e2e_duplicate_remediation_project(world: &mut GivnWorld) {
         .expect("remove duplicate delta for E2E");
 }
 
-#[when(regex = r#"^the end-to-end user runs change review for "([^"]+)"$"#)]
+#[when(regex = r#"^the remediation E2E user runs change review for "([^"]+)"$"#)]
 fn e2e_run_change_review(world: &mut GivnWorld, change: String) {
     let env = world.env.as_ref().expect("remediation project is required");
     world.last_output = Some(common::run_givn_with_envs(
