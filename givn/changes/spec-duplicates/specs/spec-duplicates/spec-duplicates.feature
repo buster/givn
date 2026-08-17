@@ -186,7 +186,7 @@ Feature: Audit duplicate and related permanent scenarios
     And no JSON candidate identity contains `givn/archive/old-change/`
     And the archived matching scenario does not change candidate_count
 
-  @givn.added @wip
+  @givn.added
   Scenario: Auditing leaves active changes and archive contents unchanged
     Given a permanent corpus with duplicate and related-scenario candidates
     And active change files and archive contents are snapshotted

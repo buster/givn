@@ -2029,41 +2029,109 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Archived scenarios are excluded from the audit`
-    - Commit hash: ``
+    - Commit hash: `1703be4cc9ad934843c1830b0b7c5464644556a7`
 
 ## Scenario 19: `Auditing leaves active changes and archive contents unchanged`
 
-- [ ] Scenario: `Auditing leaves active changes and archive contents unchanged`
+- [x] Scenario: `Auditing leaves active changes and archive contents unchanged`
   - RED:
     - Remove `@wip` only from this scenario. Do not modify other scenario tags.
-    - Add regular snapshot bindings with non-empty `unimplemented!()` bodies in
-      `tests/steps/spec_duplicates_steps.rs`.
+    - Add regular fixture and snapshot bindings with non-empty `unimplemented!()`
+      bodies in `tests/steps/spec_duplicates_steps.rs`.
     - Target only this scenario:
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Auditing leaves active changes and archive contents unchanged$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.53s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves active changes and archive contents unchanged
+   ✘  Given a permanent corpus with duplicate and related-scenario candidates
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:191:5
+      Matched: tests/steps/spec_duplicates_steps.rs:945:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3214303) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
-    - Snapshot active-change files and archive contents before the real
-      subprocess, run the permanent-only audit, and assert both trees are
+    - Create a permanent duplicate/related candidate corpus, active-change
+      files under `givn/changes/audit-boundary/`, and archive files under
+      `givn/archive/audit-boundary/`. Snapshot every byte in each fixture tree
+      before the real subprocess, run the permanent-only audit, assert its
+      successful report and candidate counts, then assert both trees are
       byte-for-byte unchanged.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Production files modified in GREEN: none. `src/spec/retrieval.rs` was
+      unchanged because the existing audit already reads only `givn/specs/`.
+    - Test files modified: `tests/steps/mod.rs` and
+      `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.39s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves active changes and archive contents unchanged
+   ✔  Given a permanent corpus with duplicate and related-scenario candidates
+   ✔  And active change files and archive contents are snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then active change files are unchanged byte-for-byte
+   ✔  And archive contents are unchanged byte-for-byte
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; no
+      production source file changed, so production coverage is unmeasured for
+      this scenario.
   - REFACTOR:
-    - Keep non-mutation assertions independent for active and archive trees and
-      preserve the permitted model-cache side effect boundary. Run
-      `cargo fmt --check` and rerun the targeted command.
+    - Factor deterministic recursive snapshots for the scoped active and
+      archive fixture roots, retain project-relative paths in the snapshot,
+      sort traversal and entries deterministically, and keep active/archive
+      assertions independent. Preserve the permitted model-cache side effect
+      boundary. Run `cargo fmt -- --check` and rerun the targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan output:
+      ```text
+No files found
+      ```
+    - Empty-function-body scan output:
+      ```text
+No files found
+      ```
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.63s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves active changes and archive contents unchanged
+   ✔  Given a permanent corpus with duplicate and related-scenario candidates
+   ✔  And active change files and archive contents are snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then active change files are unchanged byte-for-byte
+   ✔  And archive contents are unchanged byte-for-byte
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 19 tag only), `tests/steps/mod.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 18 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves active changes and archive contents unchanged`
