@@ -101,6 +101,19 @@ const RULE_NESTED_DUPLICATE_FEATURE: &str = r#"Feature: rule nested providers
       When the user selects an unknown provider
       Then the command rejects the request
 "#;
+const REMOVED_PERMANENT_FEATURE: &str = r#"Feature: removed providers
+
+  @givn.removed
+  Scenario: Removed provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+
+  Scenario: Retained provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#;
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -169,6 +182,39 @@ fn blocked_permanent_specs_path(world: &mut GivnWorld) {
     );
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
+}
+
+#[given("a permanent feature contains a removed duplicate beside a retained scenario")]
+fn removed_permanent_scenario_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/removed/removed.feature",
+            REMOVED_PERMANENT_FEATURE,
+        )],
+    );
+}
+
+#[then("the JSON report scans 1 eligible scenario")]
+fn removed_scenario_scanned_count(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["scanned_scenarios"],
+        serde_json::json!(1)
+    );
+}
+
+#[then("the removed scenario does not create a candidate")]
+fn removed_scenario_candidate_count(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["candidate_count"],
+        serde_json::json!(0)
+    );
+    assert_eq!(json_document(world)["candidates"], serde_json::json!([]));
+}
+
+#[then(regex = r##"^no candidate identity contains "([^"]+)"$"##)]
+fn removed_scenario_identity_absent(world: &mut GivnWorld, title: String) {
+    assert!(!stdout(world).contains(&title));
 }
 
 #[given(

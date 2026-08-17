@@ -269,3 +269,11 @@ Feature: Audit duplicate and related permanent scenarios
     Then the command exits non-zero
     And stderr contains the project-relative path "givn/specs"
     And stdout is empty
+
+  @givn.added
+  Scenario: Removed permanent scenarios are excluded from the audit
+    Given a permanent feature contains a removed duplicate beside a retained scenario
+    When the user runs `givn spec duplicates --format json`
+    Then the JSON report scans 1 eligible scenario
+    And the removed scenario does not create a candidate
+    And no candidate identity contains "Removed provider is rejected"
