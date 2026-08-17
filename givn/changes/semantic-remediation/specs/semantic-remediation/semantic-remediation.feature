@@ -4,7 +4,7 @@
 @givn.delta @semantic-remediation
 Feature: Verify semantic remediation
 
-  @givn.added @wip
+  @givn.added
   Scenario: A DUPLIKAT classification without removal remains blocked
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     When the user runs `givn check review --change running-change`
