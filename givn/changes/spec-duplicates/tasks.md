@@ -858,11 +858,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Repeating an unchanged audit produces the same report`
-    - Commit hash: ``
+    - Commit hash: `b6e2a040cf732b67255b673378f33e5466b943cb`
 
 ## Scenario 8: `JSON output identifies every audit candidate`
 
-- [ ] Scenario: `JSON output identifies every audit candidate`
+- [x] Scenario: `JSON output identifies every audit candidate`
   - RED:
     - Remove `@wip` only from this scenario; preserve every other scenario tag.
     - Add regular bindings with explicit `unimplemented!()` stubs in
@@ -871,29 +871,109 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^JSON output identifies every audit candidate$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.37s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: JSON output identifies every audit candidate
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✘  Then stdout is a valid JSON audit document
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:99:5
+      Matched: tests/steps/spec_duplicates_steps.rs:666:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+3 steps (2 passed, 1 failed)
 
+thread 'main' (3167838) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Implement the exact JSON schema, field order, endpoint key order,
       evidence key order, classifications, relations, deterministic ordering,
-      contiguous ranks, and eligible non-removed scanned count.
-    - Production files expected in GREEN: `src/spec/retrieval.rs` and, only if
-      required by the existing format dispatch, `src/cli/spec.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+      contiguous ranks, eligible non-removed scanned count, canonical endpoint
+      identities, four-decimal semantic score strings, and null structural
+      evidence for exact and semantic candidates.
+    - Production files modified in GREEN: `src/main.rs`, `src/cli/spec.rs`, and
+      `src/spec/retrieval.rs`.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+      Exact output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.78s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.82s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: JSON output identifies every audit candidate
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then stdout is a valid JSON audit document
+   ✔  And the JSON schema_version is exactly 1
+   ✔  And the JSON top-level keys are exactly `schema_version,scanned_scenarios,candidate_count,candidates` in that order
+   ✔  And every JSON candidate has keys exactly `rank,kind,left,right,evidence` in that order
+   ✔  And every JSON endpoint has keys exactly `file,title` in that order
+   ✔  And every JSON evidence object has keys exactly `relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score` in that order
+   ✔  And every JSON candidate has an exact classification, both scenario identities, a relation, and a rank
+   ✔  And the JSON candidates follow the deterministic audit ordering
+   ✔  And JSON ranks are contiguous from 1 through candidate_count
+   ✔  And JSON scanned_scenarios equals the number of eligible non-removed permanent scenarios
+[Summary]
+1 feature
+1 scenario (1 passed)
+12 steps (12 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Verify text and JSON share one sorted candidate model and that no map or
-      serializer change makes key order unstable. Run `cargo fmt --check` and
-      rerun the targeted command.
+    - Text and JSON consume the same sorted `duplicate_candidates` vector.
+      JSON uses ordered structs rather than maps for the report, candidates,
+      endpoints, and evidence; fingerprint maps remain `BTreeMap`s. Endpoint
+      ordering, contiguous rank assignment, null structural evidence, semantic
+      empty facts, false contradiction, and four-decimal score strings are
+      asserted by the regular steps.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no `unimplemented!()`,
+      `todo!()`, or empty step bodies.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.52s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: JSON output identifies every audit candidate
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then stdout is a valid JSON audit document
+   ✔  And the JSON schema_version is exactly 1
+   ✔  And the JSON top-level keys are exactly `schema_version,scanned_scenarios,candidate_count,candidates` in that order
+   ✔  And every JSON candidate has keys exactly `rank,kind,left,right,evidence` in that order
+   ✔  And every JSON endpoint has keys exactly `file,title` in that order
+   ✔  And every JSON evidence object has keys exactly `relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score` in that order
+   ✔  And every JSON candidate has an exact classification, both scenario identities, a relation, and a rank
+   ✔  And the JSON candidates follow the deterministic audit ordering
+   ✔  And JSON ranks are contiguous from 1 through candidate_count
+   ✔  And JSON scanned_scenarios equals the number of eligible non-removed permanent scenarios
+[Summary]
+1 feature
+1 scenario (1 passed)
+12 steps (12 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 8 tag only), `src/main.rs`, `src/cli/spec.rs`,
+      `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 7
+      post-commit hash update).
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): JSON output identifies every audit candidate`
