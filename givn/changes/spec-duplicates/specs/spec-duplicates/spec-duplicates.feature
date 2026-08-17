@@ -12,7 +12,7 @@ Feature: Audit duplicate and related permanent scenarios
     Then the command exits 0
     And stdout identifies every duplicate and related-scenario candidate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Exact duplicates in one feature are reported together
     Given a permanent feature contains two scenarios with identical behaviour
     When the user runs `givn spec duplicates`
