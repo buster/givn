@@ -277,3 +277,10 @@ Feature: Audit duplicate and related permanent scenarios
     Then the JSON report scans 1 eligible scenario
     And the removed scenario does not create a candidate
     And no candidate identity contains "Removed provider is rejected"
+
+  @givn.added
+  Scenario: Structural relations are ordered by relation class
+    Given a permanent corpus contains same-shape, left-subset, and right-subset overlaps
+    When the user runs `givn spec duplicates --format json`
+    Then structural candidates are ordered `same_assertion_shape,left_assertions_subset_of_right,right_assertions_subset_of_left`
+    And every structural candidate has a null semantic score
