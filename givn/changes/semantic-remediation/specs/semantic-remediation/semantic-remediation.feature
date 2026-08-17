@@ -135,7 +135,7 @@ Feature: Verify semantic remediation
     And the review dispositions are unchanged
     And the permanent index contains no delta vectors, classifications, or report state
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: A complete classification allows change review and survives regeneration
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     When the user runs `givn check review --change running-change`
