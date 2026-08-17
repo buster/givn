@@ -22,6 +22,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates; the semantic report admits only scores `>= 0.9500`, while permanent-scenario exploration and the existing advisory `givn spec review` contract remain unchanged. The strict similarity gate itself is enabled by `spec-similarity-gate`, not by `spec-retrieval` alone. |
 | Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
 | Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved classifications without editing feature files. It does not replace or suppress the existing strict gate: a `spec-similarity-gate` build runs that gate afterward. |
+| Semantic remediation gate | Before returning PASS, verify every prior resolved classification against a read-only projected tree. Recompute prior pairs even below `0.9500`; require duplicate removal, a parameterized variant contract, or changed observable facts for a boundary below the threshold. |
 | Retrieval compatibility | A binary without `spec-retrieval` returns the existing unavailable error from blocking check review and creates no semantic report; `spec-retrieval` alone does not enable the strict similarity gate, which requires `spec-similarity-gate`; the advisory `givn spec review` behavior remains separate. |
 | Historical evidence | The generated report remains in the change directory and is retained by the existing archive move under `givn/archive/<id>/`; archive implementation is not changed by this slice. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
@@ -83,3 +84,10 @@ fields. A malformed or incompatible index is treated as stale and rebuilt from
 the permanent specifications before report generation continues; its persisted
 entries remain permanent-only and contain no `Delta` state, delta vectors,
 classifications, or report state.
+
+The remediation slice adds a second, prior-entry verification path after report
+generation. It resolves prior endpoint identities against an in-memory projected
+tree, distinguishes exact matches, changed evidence, disappearance, and no
+match, and only then accepts a classification whose observable contract is
+satisfied. This prevents a vanished or below-boundary candidate from being
+treated as an automatic resolution.

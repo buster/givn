@@ -38,7 +38,7 @@ graph TB
 | `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
 | `givn spec index/search/explore/review` | in/out | Local permanent-only scenario-index construction, advisory free-form and complete-scenario retrieval, and the existing advisory review contract. `spec review --change` does not create the semantic report. |
 | `givn spec explore --file/--stdin [--change <id>]` | in/out | One complete Gherkin scenario in; permanent-corpus candidates plus optional active-change candidates, source metadata, index metadata, and optional stable JSON out. |
-| `givn check review --change <id>` | in/out | Runs the existing review checks, calls the dedicated E5 semantic-report gate, writes `givn/changes/<id>/semantic-review.md` atomically when retrieval is available, rebuilds a malformed/incompatible permanent index as permanent-only before continuing, and exits non-zero for missing/invalid/`UNCERTAIN` classifications or the existing retrieval-unavailable error. |
+| `givn check review --change <id>` | in/out | Runs the existing review checks, calls the dedicated E5 semantic-report and remediation-verification gates, writes `givn/changes/<id>/semantic-review.md` atomically when retrieval is available, rebuilds a malformed/incompatible permanent index as permanent-only before continuing, and exits non-zero for missing/invalid/stale/unremediated classifications or the existing retrieval-unavailable error. |
 | `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
 | Canonical authoring guidance | out | `givn instructions specs` emits the normative E2E and interaction-inventory policy consumed by agents. |
@@ -88,4 +88,4 @@ graph TB
 | Workspace/multi-repo coordination | Out of scope for v1. |
 | Context stores / initiatives | Dropped weight from the prototype. |
 | Additional skill targets (cursor, gemini, …) | The built-in target set is fixed at opencode, .agents, .claude (selectable at init); other tools are achievable via `eject`; not shipped built-in in v1. |
-| Automatic classification, remediation verification, and full-corpus auditing | The report records E5 evidence and requires an agent classification; Givn does not classify, edit feature files, verify remediation, or audit removed/permanent-permanent pairs in this slice. BGE/NLI evidence remains outside PR3. |
+| Automatic classification, automatic feature-file edits, and full-corpus auditing | The report records E5 evidence, the agent classifies and edits, and Givn verifies the projected remediation without choosing or applying edits; permanent-permanent auditing and BGE/NLI evidence remain outside this slice. |
