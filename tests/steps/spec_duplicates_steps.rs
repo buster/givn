@@ -187,6 +187,30 @@ fn unreadable_permanent_feature(world: &mut GivnWorld, path: String) {
     world.unreadable_feature = Some(make_unreadable_feature_guard(feature_path));
 }
 
+#[given("a project without a `givn/specs/` directory")]
+fn missing_permanent_specs_directory(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    assert!(
+        specs.is_dir(),
+        "givn init did not create the specs directory"
+    );
+    fs::remove_dir_all(&specs).expect("remove initialized permanent specs directory");
+    assert!(!specs.exists(), "permanent specs directory still exists");
+
+    let index = env.path(PERSISTENT_INDEX_PATH);
+    if index.exists() {
+        fs::remove_file(&index).expect("remove pre-existing persistent retrieval index");
+    }
+    assert!(
+        !index.exists(),
+        "persistent retrieval index unexpectedly exists"
+    );
+
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
 #[then(regex = r##"^stderr contains the project-relative path "([^"]+)"$"##)]
 fn stderr_contains_project_relative_path(world: &mut GivnWorld, path: String) {
     let message = stderr(world);
@@ -515,6 +539,30 @@ fn empty_duplicate_json_report(world: &mut GivnWorld) {
     assert_eq!(document["candidates"], serde_json::json!([]));
 }
 
+#[then("the JSON report has scanned_scenarios 0, candidate_count 0, and an empty candidates array")]
+fn missing_specs_json_report(world: &mut GivnWorld) {
+    let output = super::output(world);
+    assert!(
+        output.status.success(),
+        "missing specs JSON audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document = duplicate_json_document(output);
+    assert_eq!(document["schema_version"], serde_json::json!(1));
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(0));
+    assert_eq!(document["candidate_count"], serde_json::json!(0));
+    assert_eq!(document["candidates"], serde_json::json!([]));
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("missing specs fixture is required");
+    assert!(
+        !env.path("givn/specs").exists(),
+        "duplicate audit recreated the permanent specs directory"
+    );
+}
+
 #[given("a permanent feature contains two scenarios with identical behaviour")]
 fn duplicate_feature(world: &mut GivnWorld) {
     permanent_project(
@@ -838,6 +886,18 @@ fn persistent_retrieval_index_unchanged_byte_for_byte(world: &mut GivnWorld) {
 
 fn persistent_index_bytes(env: &common::TestEnv) -> Vec<u8> {
     fs::read(env.path(PERSISTENT_INDEX_PATH)).expect("read persistent retrieval index")
+}
+
+#[then("the persistent retrieval index remains absent")]
+fn persistent_retrieval_index_remains_absent(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("missing specs fixture is required");
+    assert!(
+        !env.path(PERSISTENT_INDEX_PATH).exists(),
+        "duplicate audit created the persistent retrieval index"
+    );
 }
 
 #[then("the permanent specifications are unchanged byte-for-byte")]

@@ -1828,11 +1828,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An unreadable permanent feature reports its path`
-    - Commit hash: ``
+    - Commit hash: `673e5c9457a6e443e121744284169e6aca36cd54`
 
 ## Scenario 17: `A missing permanent specifications directory is an empty corpus`
 
-- [ ] Scenario: `A missing permanent specifications directory is an empty corpus`
+- [x] Scenario: `A missing permanent specifications directory is an empty corpus`
   - RED:
     - Remove `@wip` only from this scenario and leave all other @wip tags.
     - Add regular step bindings with explicit `unimplemented!()` bodies in
@@ -1841,7 +1841,25 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A missing permanent specifications directory is an empty corpus$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.44s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A missing permanent specifications directory is an empty corpus
+   ✘  Given a project without a `givn/specs/` directory
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:174:5
+      Matched: tests/steps/spec_duplicates_steps.rs:190:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3207109) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
     - Treat a missing `givn/specs/` directory as a successful empty corpus,
@@ -1850,19 +1868,58 @@ Feature: Audit duplicate and related permanent scenarios
     - Production files expected in GREEN: `src/spec/retrieval.rs`.
     - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.98s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.90s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A missing permanent specifications directory is an empty corpus
+   ✔  Given a project without a `givn/specs/` directory
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the JSON report has scanned_scenarios 0, candidate_count 0, and an empty candidates array
+   ✔  And the persistent retrieval index remains absent
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Keep missing-directory handling distinct from malformed-file errors and
       ensure no index is created as a retrieval side effect. Run
       `cargo fmt --check` and rerun the targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan of `tests/steps/spec_duplicates_steps.rs` for
+      `unimplemented!()`/`todo!()`: `No files found`.
+    - Empty-function-body scan of `tests/steps/spec_duplicates_steps.rs`:
+      `No files found`.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.70s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A missing permanent specifications directory is an empty corpus
+   ✔  Given a project without a `givn/specs/` directory
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the JSON report has scanned_scenarios 0, candidate_count 0, and an empty candidates array
+   ✔  And the persistent retrieval index remains absent
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 17 tag only), `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 16 hash update). No design artifact or later `@wip` tag was changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A missing permanent specifications directory is an empty corpus`
