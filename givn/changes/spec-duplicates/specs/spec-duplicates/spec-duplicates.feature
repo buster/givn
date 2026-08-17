@@ -121,7 +121,7 @@ Feature: Audit duplicate and related permanent scenarios
     When the user runs `givn spec duplicates`
     Then the persistent retrieval index is unchanged byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: Active change scenarios are not part of the permanent audit
     Given a permanent scenario corpus with one related scenario
     And an active change contains another scenario with related behaviour
