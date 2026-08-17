@@ -2254,3 +2254,136 @@ the filtered E2E runner both execute the change scenarios.
 
 Related decisions: ADR-005, ADR-007, ADR-013, ADR-036, ADR-038, ADR-039,
 ADR-041, ADR-046, and ADR-047.
+
+---
+
+## ADR-049: Complete permanent duplicate audit is advisory and in-memory
+
+---
+status: accepted
+date: 2026-08-17
+decision-makers: givn maintainers
+consulted: spec-duplicates proposal, executable feature, design, Fingerprint owners, and retrieval maintainers
+informed: maintainers and agents consuming duplicate-audit text or JSON output
+---
+
+### Context and Problem Statement
+
+Interactive exploration starts from one draft scenario and intentionally shows
+only a small ranked result set. Blocking semantic review focuses on active
+change deltas. Maintainers still need a complete view of duplicate and related
+behaviour already present in the permanent corpus, but an audit must not mutate
+permanent specifications, active changes, archive contents, or the persistent
+retrieval catalogue merely by being run.
+
+### Decision Drivers
+
+- Make every eligible permanent scenario pair inspectable, including
+  same-feature pairs.
+- Preserve the permanent-only boundary of the persisted retrieval index.
+- Keep exact and structural findings deterministic and explainable through the
+  existing masked assertion `Fingerprint` and fact model.
+- Reuse the existing local E5 embedding path for remaining semantic candidates.
+- Keep semantic evidence advisory and separate from automatic duplicate
+  decisions, blocking review, and remediation.
+- Provide one stable text and JSON contract with identical ranks and evidence.
+- Keep the complete scan measurable while leaving room for a bounded/indexed
+  approach at the documented corpus threshold.
+
+### Considered Options
+
+1. Treat interactive exploration and blocking change review as sufficient and
+   provide no complete permanent audit.
+2. Refresh and extend the persistent index as part of every full audit.
+3. Compute a complete permanent-only audit in memory, classify deterministic
+   findings first, and report remaining E5 candidates without writing state.
+
+### Decision Outcome
+
+Choose option 3. `givn spec duplicates` parses all eligible permanent scenarios,
+emits exact duplicates and structural overlaps from canonical behavior and the
+existing `Fingerprint` assertion/fact evidence, then scores remaining pairs
+with one in-memory local E5 vector per scenario. It emits every candidate in a
+fixed text or JSON order, admits raw scores at or above `0.9500` inclusively,
+and writes neither feature files nor `givn/.spec-index.json`. The command
+remains advisory; maintainer review and any remediation happen outside the
+command. Structural evidence is never inferred from Given/When action
+structure, and semantic evidence is never rendered as structural evidence.
+
+### Consequences
+
+#### Good
+
+- Good, because maintainers can inspect the complete permanent corpus instead of
+  only a draft-centered top-five view.
+- Good, because deterministic findings expose pair identities, masked assertion
+  relations, fingerprint facts, and distinguishing values before model
+  evidence is considered.
+- Good, because an audit cannot contaminate the persistent permanent-only index
+  or alter permanent specs, active changes, or archive history.
+- Good, because the same complete candidate order, ranks, and null/score rules
+  are available to humans and machine consumers.
+- Good, because one embedding per scenario and in-memory pair scoring make the
+  current quadratic cost measurable against a known corpus baseline.
+
+#### Bad
+
+- Bad, because an exhaustive pair scan has quadratic candidate work and can
+  become expensive as the corpus grows past the documented bounded-scan
+  threshold.
+- Bad, because semantic candidates still require the local retrieval feature
+  and model setup even though deterministic findings do not.
+- Bad, because E5 recall and precision can produce missed or noisy advisory
+  candidates, so the report cannot make automatic duplicate decisions.
+
+### Confirmation
+
+The executable scenarios assert the exact text header and candidate grammar,
+JSON field order, endpoint identities, class precedence, direction-specific
+subset relations, Fingerprint facts, distinguishing values, four-decimal
+score/null semantics, contiguous ranks, inclusive threshold boundary, equal
+score ordering, empty/missing corpus behavior, path-specific read/parse errors,
+archive and active-change exclusion, and byte-for-byte non-mutation of the
+read-only boundary. The absent and malformed index scenarios prove that audit
+evidence comes from current permanent files and transient embeddings rather
+than `.spec-index.json`. A separate labeled fixture measurement records
+semantic precision and recall; the CLI E2E scenario invokes the compiled
+binary with the stub embedder and the standalone scoped command.
+
+### Pros and Cons of the Options
+
+#### No complete permanent audit
+
+- Good, because it adds no command, output contract, model work, or runtime
+  cost.
+- Bad, because maintainers cannot inventory permanent-permanent relationships
+  or inspect candidates beyond the interactive top five.
+- Bad, because active-change review cannot answer what already overlaps in the
+  unchanged permanent corpus.
+
+#### Refresh and extend the persistent index for every audit
+
+- Good, because indexed vectors could be reused by later searches and avoid
+  recomputing unchanged embeddings.
+- Good, because a persisted catalogue could support larger future corpora.
+- Bad, because a read-only inspection would mutate `.spec-index.json` and make
+  an audit dependent on persistent state.
+- Bad, because the index boundary would need to represent audit-only evidence,
+  increasing stale-state and compatibility risk.
+
+#### Complete in-memory permanent-only audit
+
+- Good, because the report uses current permanent files and cannot consume stale
+  or active-change index evidence.
+- Good, because deterministic exact/Fingerprint classification precedes the
+  advisory E5 layer and both renderers share one ordered result model.
+- Good, because the model-quality and quadratic costs are measurable before a
+  bounded/indexed optimization is introduced.
+- Bad, because each invocation pays the complete pair-scan cost and may need a
+  local model cache even when only deterministic candidates exist.
+
+### More Information
+
+Related decisions: ADR-037 (deterministic overlap fingerprint), ADR-039 (local
+retrieval), ADR-041 (strict semantic uniqueness gate), and ADR-044 (request-local
+current-change exploration). Related risks: R-50 and R-51.

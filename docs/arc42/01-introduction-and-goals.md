@@ -56,6 +56,7 @@ flowchart LR
 | FR-29 | During blocking change review, verify that each resolved semantic classification has produced the required projected remediation: remove duplicates, consolidate variants, or make valid boundaries explicit below the active boundary. |
 | FR-30 | Provide one complete, interface-consistent authoring policy for interaction inventories and E2E evidence, including the distinction between public interfaces and secondary repository evidence. |
 | FR-31 | Emit the documented machine-readable instruction contract with the effective artifact id, generated paths, prerequisites, and resolved instruction text. |
+| FR-32 | Provide a read-only `givn spec duplicates` audit over the complete permanent scenario corpus, reporting deterministic exact and Fingerprint-based structural candidates plus advisory E5 candidates in a fixed text/JSON contract without blocking ordinary change work. |
 
 ### Non-functional requirements (top)
 
@@ -82,7 +83,10 @@ AI-agent ergonomics (standards-aligned skill/rule generation), consistency of
 that guidance across instructions, skills, commands, and project overrides, and
 semantic-review integrity (a complete deterministic worklist whose full endpoint
 evidence invalidates stale decisions without allowing the gate to edit feature
-files, while the permanent index remains structurally permanent-only).
+files, while the permanent index remains structurally permanent-only), complete
+permanent-corpus visibility through a deterministic, non-mutating duplicate
+audit, and measured semantic recall/precision without automatic model
+decisions.
 
 Scenario exploration adds a secondary agent-ergonomics goal: a draft comparison
 must be deterministic, advisory, and non-mutating so an author can inspect
