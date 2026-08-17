@@ -108,7 +108,7 @@ Feature: Verify semantic remediation
     Then the command exits non-zero
     And stderr contains "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Changing a classified endpoint before remediation makes the decision stale
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     When the user runs `givn check review --change running-change`

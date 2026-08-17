@@ -127,14 +127,18 @@
       scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score exactly at the boundary remains blocked` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score exactly at the boundary remains blocked` Hash: `09c199e`
 
 ### Changing a classified endpoint before remediation makes the decision stale
 
-- [ ] RED: target the named stale-entry scenario with strict stubs. Evidence:
-- [ ] GREEN: apply prior-entry identity precedence and block stale changes.
-      Production files: `src/spec/retrieval.rs`, step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+- [x] RED: target the named stale-entry scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: apply prior-entry identity precedence and block stale changes.
+      Production files: `src/spec/retrieval.rs`, step files. Evidence: targeted
+      run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): Changing a classified endpoint before remediation makes the decision stale` Hash:
 
 ### Failed remediation verification does not mutate project evidence
