@@ -139,15 +139,19 @@
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Changing a classified endpoint before remediation makes the decision stale` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Changing a classified endpoint before remediation makes the decision stale` Hash: `6e6303f`
 
 ### Failed remediation verification does not mutate project evidence
 
-- [ ] RED: target the named non-mutation scenario with strict stubs. Evidence:
-- [ ] GREEN: atomically write the complete blocked report and preserve active
+- [x] RED: target the named non-mutation scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: atomically write the complete blocked report and preserve active
       files, permanent specs, dispositions, and permanent-only index. Production
-      files: `src/spec/retrieval.rs`, step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+      files: `src/spec/retrieval.rs`, step files. Evidence: targeted run passed
+      with `1 scenario (1 passed)`, `13 steps (13 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `13 steps (13 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): Failed remediation verification does not mutate project evidence` Hash:
 
 ### A complete classification allows change review and survives regeneration

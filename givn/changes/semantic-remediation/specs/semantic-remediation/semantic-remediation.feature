@@ -119,7 +119,7 @@ Feature: Verify semantic remediation
     Then the command exits non-zero
     And stderr contains "semantic classification is stale"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Failed remediation verification does not mutate project evidence
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     And the permanent specifications are snapshotted
