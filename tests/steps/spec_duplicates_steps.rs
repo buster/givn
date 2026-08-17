@@ -5,7 +5,7 @@ use std::process::{Command, Output, Stdio};
 
 use cucumber::{given, then, when};
 
-use super::{GivnWorld, stdout};
+use super::{GivnWorld, output, stderr, stdout};
 use crate::common;
 
 const EXACT_DUPLICATE_FEATURE: &str = "Feature: provider\n\n  Scenario: Provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
@@ -95,6 +95,33 @@ const ACTIVE_CHANGE_FEATURE: &str = r#"Feature: active provider
     Then the command rejects the request
 "#;
 const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
+const MALFORMED_PERMANENT_FEATURE: &str =
+    "this is not a Gherkin feature document\nwithout a structural keyword\n";
+
+#[given(regex = r##"^a malformed permanent feature at "([^"]+)"$"##)]
+fn malformed_permanent_feature(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, "givn/specs/broken/broken.feature");
+    permanent_project(world, &[(path.as_str(), MALFORMED_PERMANENT_FEATURE)]);
+}
+
+#[then(regex = r##"^stderr contains the project-relative path "([^"]+)"$"##)]
+fn stderr_contains_project_relative_path(world: &mut GivnWorld, path: String) {
+    let message = stderr(world);
+    assert!(
+        message.contains(&path),
+        "stderr missing project-relative path {path:?}: {message}"
+    );
+}
+
+#[then("stdout is empty")]
+fn stdout_is_empty(world: &mut GivnWorld) {
+    assert!(
+        output(world).stdout.is_empty(),
+        "malformed duplicate audit emitted stdout: {}",
+        stdout(world)
+    );
+}
+
 const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
     (
         "givn/specs/alpha/alpha.feature",

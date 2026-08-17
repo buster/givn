@@ -153,7 +153,7 @@ Feature: Audit duplicate and related permanent scenarios
     Then the command exits non-zero
     And stderr contains "retrieval model is unavailable"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed permanent feature reports its path
     Given a malformed permanent feature at "givn/specs/broken/broken.feature"
     When the user runs `givn spec duplicates`
