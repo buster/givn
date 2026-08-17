@@ -1,9 +1,11 @@
 //! Regular black-box steps for the permanent scenario duplicate audit.
 
+use std::ffi::OsString;
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
+use cucumber::gherkin::Step;
 use cucumber::{given, then, when};
 
 use super::{GivnWorld, output, stderr, stdout};
@@ -174,6 +176,18 @@ const RIGHT_TIE_BETA_FEATURE: &str = r#"Feature: beta semantic target
     Then beta semantic result is complete
 "#;
 const RIGHT_ENDPOINT_TIE_SCORE_OVERRIDES: &str = "givn/specs/a/shared.feature|Shared semantic source::givn/specs/b/alpha.feature|Alpha semantic target=0.9600;givn/specs/a/shared.feature|Shared semantic source::givn/specs/b/beta.feature|Beta semantic target=0.9600;givn/specs/b/alpha.feature|Alpha semantic target::givn/specs/b/beta.feature|Beta semantic target=0.0000";
+const SCORE_VALIDATION_FEATURE: &str = r#"Feature: duplicate score validation
+
+  Scenario: Alpha score validation case
+    Given the alpha score validation context
+    When the alpha score validation action runs
+    Then alpha score validation is complete
+
+  Scenario: Beta score validation case
+    Given the beta score validation context
+    When the beta score validation action runs
+    Then beta score validation is complete
+"#;
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -374,6 +388,123 @@ fn right_endpoint_tie_order(world: &mut GivnWorld) {
 fn right_endpoint_tie_scores_output(world: &mut GivnWorld) {
     for candidate in json_candidates(world) {
         assert_eq!(candidate["evidence"]["score"], serde_json::json!("0.9600"));
+    }
+}
+
+#[given("a permanent corpus for duplicate score validation")]
+fn duplicate_score_validation_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/score-validation/score-validation.feature",
+            SCORE_VALIDATION_FEATURE,
+        )],
+    );
+}
+
+#[given(regex = r"^the duplicate score seam has these invalid entries:$")]
+fn duplicate_score_validation_entries(world: &mut GivnWorld, step: &Step) {
+    let rows = step
+        .table
+        .as_ref()
+        .expect("duplicate score validation table is required")
+        .rows
+        .to_vec();
+    assert_eq!(
+        rows.first()
+            .map(|row| row.iter().map(String::as_str).collect::<Vec<_>>()),
+        Some(vec!["case", "raw", "expected"])
+    );
+    let entries = rows
+        .into_iter()
+        .skip(1)
+        .map(|row| {
+            assert_eq!(
+                row.len(),
+                3,
+                "invalid score validation row has three columns"
+            );
+            row.join("\x1f")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(entries.len(), 12);
+    world.additional_output = Some(entries.join("\n"));
+}
+
+#[when("the user validates each duplicate score override")]
+fn validate_duplicate_score_overrides(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate score validation project is missing");
+    let entries = world
+        .additional_output
+        .take()
+        .expect("duplicate score validation entries are missing");
+    let mut evidence = String::new();
+    for entry in entries.lines() {
+        let fields = entry.splitn(3, '\x1f').collect::<Vec<_>>();
+        assert_eq!(fields.len(), 3, "malformed invalid score validation row");
+        let (label, raw, expected) = (fields[0], fields[1], fields[2]);
+        let value = if label == "invalid UTF-8" {
+            #[cfg(unix)]
+            {
+                use std::os::unix::ffi::OsStringExt;
+
+                OsString::from_vec(vec![0xff, 0xfe])
+            }
+            #[cfg(not(unix))]
+            {
+                OsString::from(raw)
+            }
+        } else {
+            OsString::from(raw)
+        };
+        let mut command = Command::new(env!("CARGO_BIN_EXE_givn"));
+        let output = command
+            .args(["spec", "duplicates"])
+            .current_dir(env.root())
+            .env("GIVN_SPEC_EMBEDDER", "stub")
+            .env("GIVN_SPEC_DUPLICATES_TEST_SCORES", value)
+            .output()
+            .expect("run duplicate score validation subprocess");
+        let stderr = String::from_utf8_lossy(&output.stderr)
+            .replace('\r', " ")
+            .replace('\n', " ");
+        evidence.push_str(&format!(
+            "{label}\x1f{expected}\x1f{}\x1f{stderr}\n",
+            output.status.success()
+        ));
+    }
+    world.additional_output = Some(evidence);
+}
+
+#[then("every invalid duplicate score override fails with its expected diagnostic")]
+fn invalid_duplicate_score_overrides_fail(world: &mut GivnWorld) {
+    let evidence = world
+        .additional_output
+        .as_deref()
+        .expect("duplicate score validation evidence is missing");
+    let records = evidence.lines().collect::<Vec<_>>();
+    assert_eq!(records.len(), 12);
+    for record in records {
+        let fields = record.splitn(4, '\x1f').collect::<Vec<_>>();
+        assert_eq!(
+            fields.len(),
+            4,
+            "malformed score validation evidence: {record}"
+        );
+        assert_eq!(
+            fields[2], "false",
+            "score override unexpectedly succeeded: {record}"
+        );
+        assert!(
+            fields[3].contains(fields[1]),
+            "{} diagnostic missing {:?}: {}",
+            fields[0],
+            fields[1],
+            fields[3]
+        );
     }
 }
 
