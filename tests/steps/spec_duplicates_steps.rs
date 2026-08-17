@@ -540,9 +540,18 @@ fn inclusive_threshold_fixture(world: &mut GivnWorld) {
 
 #[given("the test score for their normalized endpoint pair is `0.9500`")]
 fn inclusive_threshold_score(world: &mut GivnWorld) {
-    world.retrieval_duplicate_scores = Some(
-        "givn/specs/threshold/left.feature|Left semantic boundary::givn/specs/threshold/right.feature|Right semantic boundary=0.9500".to_string(),
-    );
+    set_threshold_score(world, "0.9500");
+}
+
+#[given("the test score for their normalized endpoint pair is `0.9499`")]
+fn below_threshold_score(world: &mut GivnWorld) {
+    set_threshold_score(world, "0.9499");
+}
+
+fn set_threshold_score(world: &mut GivnWorld, score: &str) {
+    world.retrieval_duplicate_scores = Some(format!(
+        "givn/specs/threshold/left.feature|Left semantic boundary::givn/specs/threshold/right.feature|Right semantic boundary={score}"
+    ));
 }
 
 #[then("candidate rank 1 is classified as `semantic_candidate`")]
@@ -579,6 +588,21 @@ fn inclusive_threshold_score_output(world: &mut GivnWorld) {
         json_candidates(world)[0]["evidence"]["score"],
         serde_json::json!("0.9500")
     );
+}
+
+#[then("the JSON report has candidate_count 0")]
+fn below_threshold_candidate_count(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["candidate_count"],
+        serde_json::json!(0)
+    );
+}
+
+#[then("no candidate has score `0.9499`")]
+fn below_threshold_score_output(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_ne!(candidate["evidence"]["score"], serde_json::json!("0.9499"));
+    }
 }
 
 #[then("candidate rank 1 has null assertion shape and null fingerprint facts")]
