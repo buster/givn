@@ -78,3 +78,30 @@ fn cli_contains_e2e_design_decisions(world: &mut GivnWorld) {
         assert!(output.contains(required), "design guidance missing {required}");
     }
 }
+
+#[when("the reviewer requests the review instructions through the Givn CLI")]
+fn reviewer_requests_review_instructions(world: &mut GivnWorld) {
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(
+            env,
+            &["instructions", "review", "--change", "instruction-integrity"],
+        )
+    };
+    world.last_output = Some(output);
+}
+
+#[then("the CLI output contains semantic classification and remediation checks")]
+fn cli_contains_remediation_checks(world: &mut GivnWorld) {
+    let output = stdout(world);
+    for required in [
+        "Semantic remediation verification",
+        "DUPLIKAT",
+        "VARIANTE",
+        "VALID-BOUNDARY",
+    ] {
+        assert!(output.contains(required), "review guidance missing {required}");
+    }
+    assert!(output.contains("semantic"));
+    assert!(output.contains("remediation verified"));
+}

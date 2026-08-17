@@ -46,7 +46,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the review records the projected-tree evidence and verification receipt
     And an unresolved or stale remediation remains blocking
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A reviewer requests remediation-aware review guidance
     Given a Givn project with an active change
     When the reviewer requests the review instructions through the Givn CLI
