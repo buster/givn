@@ -327,3 +327,15 @@ Feature: Audit duplicate and related permanent scenarios
     Then the empty assertion scenario produces no structural candidate
     And the reverse subset candidate has relation `right_assertions_subset_of_left`
     And the reverse subset candidate retains its two assertion shapes
+
+  @givn.added
+  Scenario: Semantic quality evidence is measured from labeled stub scores
+    Given a small semantic-quality fixture has labeled true-positive, false-positive, and false-negative pairs
+    Given its expected labels and stub scores are:
+      | label | expected relation | stub score |
+      | true positive | related | 0.9600 |
+      | false positive | unrelated | 0.9600 |
+      | false negative | related | 0.9499 |
+    When the user measures semantic quality at threshold `0.9500`
+    Then semantic-quality evidence reports TP 1, FP 1, FN 1, precision `0.5000`, and recall `0.5000`
+    And semantic-quality evidence remains advisory
