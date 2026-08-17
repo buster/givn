@@ -152,16 +152,20 @@
       with `1 scenario (1 passed)`, `13 steps (13 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `13 steps (13 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Failed remediation verification does not mutate project evidence` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Failed remediation verification does not mutate project evidence` Hash: `e7ed60a`
 
 ### A complete classification allows change review and survives regeneration
 
-- [ ] RED: target the modified PR 3 contract with strict stubs. Evidence:
-- [ ] GREEN: update the permanent semantic-review contract so a classification
+- [x] RED: target the modified PR 3 contract with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: update the permanent semantic-review contract so a classification
       is accepted only after projected remediation. Production files:
-      `src/spec/retrieval.rs`, feature and step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario and the existing semantic-review
-      regression. Evidence:
+      `src/spec/retrieval.rs`, feature and step files. Evidence: targeted run
+      passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [x] REFACTOR: rerun the named scenario and the existing semantic-review
+      regression. Evidence: after formatting, targeted run passed with `1
+      scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash:
 
 ## E2E Setup
