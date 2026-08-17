@@ -232,6 +232,58 @@ fn unknown_change_is_rejected(world: &mut GivnWorld) {
     assert!(stderr.contains("change 'missing-change' not found"), "{stderr}");
 }
 
+const OVERRIDE_SENTINEL: &str = "PROJECT SPECS OVERRIDE SENTINEL";
+
+#[given("a project specs instruction override is prepared")]
+fn project_specs_override_prepared(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let output = crate::common::run_givn(&env, &["new", "instruction-integrity"]);
+    assert!(output.status.success(), "create fixture change failed");
+    crate::common::write_override(
+        &env,
+        "specs",
+        "instructions.md",
+        &format!("# {OVERRIDE_SENTINEL}\n"),
+    );
+    world.env = Some(env);
+}
+
+#[when("the agent synchronizes skills and requests the specs instructions")]
+fn agent_syncs_and_requests_specs(world: &mut GivnWorld) {
+    let sync_output = {
+        let env = world.env.as_ref().expect("override fixture is missing");
+        crate::common::run_givn(env, &["skills", "sync"])
+    };
+    assert!(sync_output.status.success(), "skill sync failed");
+    world.previous_output = Some(sync_output);
+    let instruction_output = {
+        let env = world.env.as_ref().expect("override fixture is missing");
+        crate::common::run_givn(
+            env,
+            &["instructions", "specs", "--change", "instruction-integrity"],
+        )
+    };
+    world.last_output = Some(instruction_output);
+}
+
+#[then("the resolved instruction contains the project override")]
+fn resolved_instruction_contains_override(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("override instruction command was not run");
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains(OVERRIDE_SENTINEL));
+}
+
+#[then("the project override file remains unchanged")]
+fn project_override_remains_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("override fixture is missing");
+    let content = std::fs::read_to_string(env.path("givn/artifacts/specs/instructions.md"))
+        .expect("read project specs override");
+    assert_eq!(content, format!("# {OVERRIDE_SENTINEL}\n"));
+}
+
 fn retrieval_guidance(world: &GivnWorld) -> &str {
     world
         .additional_output
