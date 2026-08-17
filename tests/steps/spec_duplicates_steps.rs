@@ -233,6 +233,49 @@ const REVERSE_SUBSET_SHORT_FEATURE: &str = r#"Feature: reverse subset short case
     Then reverse subset secondary result is complete
 "#;
 const EMPTY_AND_REVERSE_SUBSET_SCORE_OVERRIDES: &str = "givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/empty/b-long.feature|Long unrelated assertion=0.0000;givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/subset/a-long.feature|Long reverse subset=0.0000;givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/subset/b-short.feature|Short reverse subset=0.0000;givn/specs/empty/b-long.feature|Long unrelated assertion::givn/specs/subset/a-long.feature|Long reverse subset=0.0000;givn/specs/empty/b-long.feature|Long unrelated assertion::givn/specs/subset/b-short.feature|Short reverse subset=0.0000";
+const QUALITY_FALSE_NEGATIVE_LEFT_FEATURE: &str = r#"Feature: quality false negative left
+
+  Scenario: Valid boundary left
+    Given the valid boundary left context
+    When the valid boundary left action runs
+    Then valid boundary left result is observed
+"#;
+const QUALITY_FALSE_NEGATIVE_RIGHT_FEATURE: &str = r#"Feature: quality false negative right
+
+  Scenario: Valid boundary right
+    Given the valid boundary right context
+    When the valid boundary right action runs
+    Then valid boundary right result is observed
+"#;
+const QUALITY_FALSE_POSITIVE_LEFT_FEATURE: &str = r#"Feature: quality false positive left
+
+  Scenario: Unrelated glacier left
+    Given the unrelated glacier left context
+    When the unrelated glacier left action runs
+    Then unrelated glacier left result is observed
+"#;
+const QUALITY_FALSE_POSITIVE_RIGHT_FEATURE: &str = r#"Feature: quality false positive right
+
+  Scenario: Unrelated orchard right
+    Given the unrelated orchard right context
+    When the unrelated orchard right action runs
+    Then unrelated orchard right result is observed
+"#;
+const QUALITY_TRUE_POSITIVE_LEFT_FEATURE: &str = r#"Feature: quality true positive left
+
+  Scenario: Known token wording
+    Given the known token wording context
+    When the known token wording action runs
+    Then known token wording result is observed
+"#;
+const QUALITY_TRUE_POSITIVE_RIGHT_FEATURE: &str = r#"Feature: quality true positive right
+
+  Scenario: Known credential wording
+    Given the known credential wording context
+    When the known credential wording action runs
+    Then known credential wording result is observed
+"#;
+const QUALITY_SCORE_OVERRIDES: &str = "givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/false-negative-right.feature|Valid boundary right=0.9499;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/false-positive-left.feature|Unrelated glacier left=0.0000;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/false-positive-right.feature|Unrelated orchard right=0.0000;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/false-positive-left.feature|Unrelated glacier left=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/false-positive-right.feature|Unrelated orchard right=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/false-positive-left.feature|Unrelated glacier left::givn/specs/quality/false-positive-right.feature|Unrelated orchard right=0.9600;givn/specs/quality/false-positive-left.feature|Unrelated glacier left::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-positive-left.feature|Unrelated glacier left::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/false-positive-right.feature|Unrelated orchard right::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-positive-right.feature|Unrelated orchard right::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/true-positive-left.feature|Known token wording::givn/specs/quality/true-positive-right.feature|Known credential wording=0.9600";
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -648,6 +691,171 @@ fn reverse_subset_shapes(world: &mut GivnWorld) {
             "right": ["reverse subset secondary result is complete"]
         })
     );
+}
+
+#[given(
+    "a small semantic-quality fixture has labeled true-positive, false-positive, and false-negative pairs"
+)]
+fn semantic_quality_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/quality/false-negative-left.feature",
+                QUALITY_FALSE_NEGATIVE_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/false-negative-right.feature",
+                QUALITY_FALSE_NEGATIVE_RIGHT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/false-positive-left.feature",
+                QUALITY_FALSE_POSITIVE_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/false-positive-right.feature",
+                QUALITY_FALSE_POSITIVE_RIGHT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/true-positive-left.feature",
+                QUALITY_TRUE_POSITIVE_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/true-positive-right.feature",
+                QUALITY_TRUE_POSITIVE_RIGHT_FEATURE,
+            ),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(QUALITY_SCORE_OVERRIDES.to_string());
+}
+
+#[given(regex = r#"^its expected labels and stub scores are:$"#)]
+fn semantic_quality_labels(world: &mut GivnWorld, step: &Step) {
+    let rows = step
+        .table
+        .as_ref()
+        .expect("semantic-quality label table is required")
+        .rows
+        .to_vec();
+    assert_eq!(
+        rows.first()
+            .map(|row| row.iter().map(String::as_str).collect::<Vec<_>>()),
+        Some(vec!["label", "expected relation", "stub score"])
+    );
+    let entries = rows
+        .into_iter()
+        .skip(1)
+        .map(|row| {
+            assert_eq!(row.len(), 3, "semantic-quality row has three columns");
+            row.join("\x1f")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(entries.len(), 3);
+    world.additional_output = Some(entries.join("\n"));
+}
+
+#[when("the user measures semantic quality at threshold `0.9500`")]
+fn measure_semantic_quality(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("semantic-quality fixture is missing");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_DUPLICATES_TEST_SCORES", QUALITY_SCORE_OVERRIDES),
+        ],
+    );
+    world.last_output = Some(output);
+}
+
+#[then(
+    "semantic-quality evidence reports TP 1, FP 1, FN 1, precision `0.5000`, and recall `0.5000`"
+)]
+fn semantic_quality_metrics(world: &mut GivnWorld) {
+    let labels = world
+        .additional_output
+        .as_deref()
+        .expect("semantic-quality labels are missing");
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 2);
+    let mut true_positives = 0;
+    let mut false_positives = 0;
+    let mut false_negatives = 0;
+    for entry in labels.lines() {
+        let fields = entry.splitn(3, '\x1f').collect::<Vec<_>>();
+        assert_eq!(fields.len(), 3, "malformed semantic-quality label: {entry}");
+        let (left_file, left_title, right_file, right_title) = semantic_quality_pair(fields[0]);
+        let candidate = candidates.iter().find(|candidate| {
+            candidate["left"] == serde_json::json!({"file": left_file, "title": left_title})
+                && candidate["right"]
+                    == serde_json::json!({"file": right_file, "title": right_title})
+        });
+        let expected_positive = fields[0] != "false positive";
+        if let Some(candidate) = candidate {
+            assert_eq!(
+                candidate["kind"],
+                serde_json::json!("semantic_candidate"),
+                "labeled semantic pair was not classified semantically"
+            );
+            assert_eq!(candidate["evidence"]["score"], serde_json::json!(fields[2]));
+            if expected_positive {
+                true_positives += 1;
+            } else {
+                false_positives += 1;
+            }
+        } else if expected_positive {
+            false_negatives += 1;
+        }
+    }
+
+    let precision = true_positives as f32 / (true_positives + false_positives) as f32;
+    let recall = true_positives as f32 / (true_positives + false_negatives) as f32;
+    assert_eq!(true_positives, 1);
+    assert_eq!(false_positives, 1);
+    assert_eq!(false_negatives, 1);
+    assert_eq!(format!("{precision:.4}"), "0.5000");
+    assert_eq!(format!("{recall:.4}"), "0.5000");
+    println!(
+        "semantic-quality threshold=0.9500 true_positives={true_positives} false_positives={false_positives} false_negatives={false_negatives} precision={precision:.4} recall={recall:.4} formulas=TP/(TP+FP),TP/(TP+FN)"
+    );
+}
+
+#[then("semantic-quality evidence remains advisory")]
+fn semantic_quality_remains_advisory(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_eq!(
+            candidate["kind"],
+            serde_json::json!("semantic_candidate"),
+            "semantic evidence changed deterministic classification"
+        );
+    }
+}
+
+fn semantic_quality_pair(label: &str) -> (&'static str, &'static str, &'static str, &'static str) {
+    match label {
+        "true positive" => (
+            "givn/specs/quality/true-positive-left.feature",
+            "Known token wording",
+            "givn/specs/quality/true-positive-right.feature",
+            "Known credential wording",
+        ),
+        "false positive" => (
+            "givn/specs/quality/false-positive-left.feature",
+            "Unrelated glacier left",
+            "givn/specs/quality/false-positive-right.feature",
+            "Unrelated orchard right",
+        ),
+        "false negative" => (
+            "givn/specs/quality/false-negative-left.feature",
+            "Valid boundary left",
+            "givn/specs/quality/false-negative-right.feature",
+            "Valid boundary right",
+        ),
+        other => panic!("unknown semantic-quality label: {other}"),
+    }
 }
 
 #[given(
