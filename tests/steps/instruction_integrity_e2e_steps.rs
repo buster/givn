@@ -52,3 +52,29 @@ fn cli_distinguishes_retrieval_behavior(world: &mut GivnWorld) {
     assert!(output.contains("givn spec index"));
     assert!(output.contains("retrieval-unavailable"));
 }
+
+#[when("the author requests the design instructions through the Givn CLI")]
+fn author_requests_design_instructions(world: &mut GivnWorld) {
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(
+            env,
+            &["instructions", "design", "--change", "instruction-integrity"],
+        )
+    };
+    world.last_output = Some(output);
+}
+
+#[then("the CLI output contains every required E2E design decision")]
+fn cli_contains_e2e_design_decisions(world: &mut GivnWorld) {
+    let output = stdout(world);
+    for required in [
+        "E2E smoke test infrastructure",
+        "verify.e2e_command",
+        "Local test infrastructure",
+        "E2E framework choice and justification",
+        "Interaction Coverage Matrix",
+    ] {
+        assert!(output.contains(required), "design guidance missing {required}");
+    }
+}
