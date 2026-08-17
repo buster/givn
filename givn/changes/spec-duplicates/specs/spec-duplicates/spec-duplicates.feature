@@ -169,7 +169,7 @@ Feature: Audit duplicate and related permanent scenarios
     And stderr contains the project-relative path "givn/specs/private/private.feature"
     And stdout is empty
 
-  @givn.added @wip
+  @givn.added
   Scenario: A missing permanent specifications directory is an empty corpus
     Given a project without a `givn/specs/` directory
     When the user runs `givn spec duplicates --format json`
