@@ -114,6 +114,44 @@ const REMOVED_PERMANENT_FEATURE: &str = r#"Feature: removed providers
     When the user selects an unknown provider
     Then the command rejects the request
 "#;
+const SAME_SHAPE_RELATION_FEATURE: &str = r#"Feature: same shape relation
+
+  Scenario: Same shape left
+    Given the left alpha context
+    When the left alpha action runs
+    Then alpha result is ready
+
+  Scenario: Same shape right
+    Given the right alpha context
+    When the right alpha action runs
+    Then alpha result is ready
+"#;
+const LEFT_SUBSET_RELATION_FEATURE: &str = r#"Feature: left subset relation
+
+  Scenario: A short beta assertion
+    Given the short beta context
+    When the short beta action runs
+    Then beta result is ready
+
+  Scenario: Z long beta assertion
+    Given the long beta context
+    When the long beta action runs
+    Then beta result is ready
+    And gamma result is complete
+"#;
+const RIGHT_SUBSET_RELATION_FEATURE: &str = r#"Feature: right subset relation
+
+  Scenario: Long delta assertion
+    Given the long delta context
+    When the long delta action runs
+    Then delta result is ready
+    And epsilon result is complete
+
+  Scenario: Short epsilon assertion
+    Given the short epsilon context
+    When the short epsilon action runs
+    Then epsilon result is complete
+"#;
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -215,6 +253,53 @@ fn removed_scenario_candidate_count(world: &mut GivnWorld) {
 #[then(regex = r##"^no candidate identity contains "([^"]+)"$"##)]
 fn removed_scenario_identity_absent(world: &mut GivnWorld, title: String) {
     assert!(!stdout(world).contains(&title));
+}
+
+#[given("a permanent corpus contains same-shape, left-subset, and right-subset overlaps")]
+fn structural_relation_order_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/a/same-shape.feature",
+                SAME_SHAPE_RELATION_FEATURE,
+            ),
+            (
+                "givn/specs/b/left-subset/a-short.feature",
+                LEFT_SUBSET_RELATION_FEATURE,
+            ),
+            (
+                "givn/specs/c/right-subset/a-long.feature",
+                RIGHT_SUBSET_RELATION_FEATURE,
+            ),
+        ],
+    );
+}
+
+#[then(regex = r##"^structural candidates are ordered `([^`]+)`$"##)]
+fn structural_candidate_relation_order(world: &mut GivnWorld, relations: String) {
+    let expected = relations.split(',').collect::<Vec<_>>();
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), expected.len());
+    assert_eq!(
+        candidates
+            .iter()
+            .map(|candidate| candidate["evidence"]["relation"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        expected
+    );
+    assert!(
+        candidates
+            .iter()
+            .all(|candidate| candidate["kind"] == serde_json::json!("structural_overlap"))
+    );
+}
+
+#[then("every structural candidate has a null semantic score")]
+fn structural_candidates_have_null_scores(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_eq!(candidate["evidence"]["score"], serde_json::Value::Null);
+    }
 }
 
 #[given(
