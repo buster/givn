@@ -1923,11 +1923,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A missing permanent specifications directory is an empty corpus`
-    - Commit hash: ``
+    - Commit hash: `5df4f7cede8dc86b71b453a82fb5c4b8a8c882ad`
 
 ## Scenario 18: `Archived scenarios are excluded from the audit`
 
-- [ ] Scenario: `Archived scenarios are excluded from the audit`
+- [x] Scenario: `Archived scenarios are excluded from the audit`
   - RED:
     - Remove `@wip` only from this scenario; leave all other tags unchanged.
     - Add regular bindings with explicit `unimplemented!()` bodies in
@@ -1936,28 +1936,96 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Archived scenarios are excluded from the audit$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.33s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Archived scenarios are excluded from the audit
+   ✘  Given a permanent corpus with one candidate
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:182:5
+      Matched: tests/steps/spec_duplicates_steps.rs:713:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+
+thread 'main' (3211136) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
 
       ```
   - GREEN:
-    - Collect only permanent files under `givn/specs/`; assert archive endpoint
-      prefixes, absence of `givn/archive/old-change/`, and unchanged candidate
-      count when the matching archived scenario is present.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Create a permanent corpus with one exact candidate, add the matching
+      archive fixture at `givn/archive/old-change/specs/old/old.feature`, and
+      compare parsed JSON candidate counts before and after archive creation.
+      Assert every parsed endpoint is rooted at `givn/specs/` and no parsed
+      endpoint identity contains `givn/archive/old-change/`.
+    - Production source changed: none. `src/spec/retrieval.rs` already collects
+      duplicate features exclusively from `root/givn/specs`, so the permanent
+      boundary did not leak archive data.
+    - Test file changed: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.83s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Archived scenarios are excluded from the audit
+   ✔  Given a permanent corpus with one candidate
+   ✔  And the archive contains a matching scenario at "givn/archive/old-change/specs/old/old.feature"
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then every JSON candidate endpoint file starts with `givn/specs/`
+   ✔  And no JSON candidate identity contains `givn/archive/old-change/`
+   ✔  And the archived matching scenario does not change candidate_count
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
 
       ```
+    - Coverage: the targeted runner output contained no coverage summary; no
+      production source file changed, so production coverage is unmeasured for
+      this scenario.
   - REFACTOR:
-    - Check archive exclusion is enforced by input collection and not by
-      deleting or mutating archive fixtures. Run `cargo fmt --check` and rerun
-      the targeted command.
+    - Keep the archive path and matching fixture explicit. The baseline and
+      post-archive JSON reports are parsed independently through the real
+      subprocess boundary; the archive is not deleted or mutated by the audit.
+      Run `cargo fmt -- --check` and rerun the targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub and empty-function-body scan output:
+      ```text
+No unimplemented!()/todo!() stubs found in tests/steps/spec_duplicates_steps.rs
+No empty function bodies found in tests/steps/spec_duplicates_steps.rs
+      ```
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.57s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Archived scenarios are excluded from the audit
+   ✔  Given a permanent corpus with one candidate
+   ✔  And the archive contains a matching scenario at "givn/archive/old-change/specs/old/old.feature"
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then every JSON candidate endpoint file starts with `givn/specs/`
+   ✔  And no JSON candidate identity contains `givn/archive/old-change/`
+   ✔  And the archived matching scenario does not change candidate_count
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
 
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 18 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 17 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Archived scenarios are excluded from the audit`

@@ -177,7 +177,7 @@ Feature: Audit duplicate and related permanent scenarios
     And the JSON report has scanned_scenarios 0, candidate_count 0, and an empty candidates array
     And the persistent retrieval index remains absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archived scenarios are excluded from the audit
     Given a permanent corpus with one candidate
     And the archive contains a matching scenario at "givn/archive/old-change/specs/old/old.feature"
