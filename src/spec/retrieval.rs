@@ -1791,7 +1791,14 @@ fn duplicate_candidates(
     }
 
     let score_overrides = duplicate_score_overrides()?;
-    let embeddings = if scenarios.is_empty() {
+    let needs_semantic_embedding = scenarios.iter().enumerate().any(|(left_index, _)| {
+        scenarios
+            .iter()
+            .enumerate()
+            .skip(left_index + 1)
+            .any(|(right_index, _)| !classified.contains(&(left_index, right_index)))
+    });
+    let embeddings = if !needs_semantic_embedding {
         Vec::new()
     } else {
         embed_texts(
