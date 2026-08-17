@@ -1090,6 +1090,75 @@ fn audited_boundary_fixture(world: &mut GivnWorld) {
     repeated_audit_fixture(world);
 }
 
+#[given("no persistent retrieval index exists")]
+fn no_persistent_retrieval_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let index = env.path(PERSISTENT_INDEX_PATH);
+    if index.exists() {
+        fs::remove_file(&index).expect("remove pre-existing persistent retrieval index");
+    }
+    assert!(
+        !index.exists(),
+        "persistent retrieval index unexpectedly exists before audit"
+    );
+}
+
+#[then("the audit uses current permanent files and transient embeddings")]
+fn audit_uses_current_permanent_files_and_transient_embeddings(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let document = duplicate_json_document(out);
+    assert_eq!(document["schema_version"], serde_json::json!(1));
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(8));
+    assert_eq!(document["candidate_count"], serde_json::json!(4));
+
+    let candidates = document["candidates"]
+        .as_array()
+        .expect("duplicate audit candidates must be an array");
+    let kinds = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["kind"]
+                .as_str()
+                .expect("duplicate candidate kind must be a string")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        kinds,
+        vec![
+            "exact_duplicate",
+            "structural_overlap",
+            "semantic_candidate",
+            "semantic_candidate",
+        ]
+    );
+    assert!(
+        candidates.iter().any(|candidate| {
+            candidate["evidence"]["relation"] == serde_json::json!("semantic_similarity")
+                && candidate["evidence"]["score"] == serde_json::json!("0.9600")
+        }),
+        "duplicate audit did not report a transient semantic candidate"
+    );
+    for candidate in candidates {
+        for side in ["left", "right"] {
+            let file = candidate[side]["file"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint file is not a string"));
+            assert!(
+                file.starts_with("givn/specs/"),
+                "JSON {side} candidate endpoint is not a current permanent file: {file}"
+            );
+        }
+    }
+}
+
 #[when("the user runs `givn spec duplicates` through a build without spec retrieval")]
 fn duplicates_without_retrieval_feature(world: &mut GivnWorld) {
     let env = world
