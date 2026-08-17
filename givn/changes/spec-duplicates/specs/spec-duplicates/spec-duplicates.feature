@@ -261,3 +261,11 @@ Feature: Audit duplicate and related permanent scenarios
     Then the JSON report scans 2 eligible scenarios
     And the Rule-nested scenarios produce one exact duplicate
     And the Rule-nested candidate retains both scenario identities
+
+  @givn.added
+  Scenario: A blocked permanent specifications path reports its I/O error
+    Given the permanent specifications path is blocked by a non-directory
+    When the user runs `givn spec duplicates`
+    Then the command exits non-zero
+    And stderr contains the project-relative path "givn/specs"
+    And stdout is empty
