@@ -211,3 +211,23 @@ fn response_lists_paths_and_prerequisites(world: &mut GivnWorld) {
 fn response_contains_instruction_text(world: &mut GivnWorld) {
     assert!(instruction_json(world)["instruction"].is_string());
 }
+
+#[when("an agent requests the specs instructions for an unknown change context")]
+fn agent_requests_unknown_change(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("instruction fixture is missing");
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &["instructions", "specs", "--change", "missing-change"],
+    ));
+}
+
+#[then("the Givn CLI rejects the request with a clear change-not-found error")]
+fn unknown_change_is_rejected(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("unknown-change command was not run");
+    assert!(!output.status.success());
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("change 'missing-change' not found"), "{stderr}");
+}
