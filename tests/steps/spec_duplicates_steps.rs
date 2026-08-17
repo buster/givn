@@ -512,7 +512,10 @@ fn duplicate_score_validation_entries(world: &mut GivnWorld, step: &Step) {
                 3,
                 "invalid score validation row has three columns"
             );
-            row.join("\x1f")
+            row.into_iter()
+                .map(|value| value.replace("__PIPE__", "|"))
+                .collect::<Vec<_>>()
+                .join("\x1f")
         })
         .collect::<Vec<_>>();
     assert_eq!(entries.len(), 12);
