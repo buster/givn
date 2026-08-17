@@ -1,7 +1,7 @@
 # Tasks: spec-duplicates
 
-Strict RED -> GREEN -> REFACTOR -> COMMIT execution order. There are 25
-scenarios in the delta: 24 non-@e2e scenarios followed by one @e2e scenario.
+Strict RED -> GREEN -> REFACTOR -> COMMIT execution order. There are 34
+scenarios in the delta: 33 non-@e2e scenarios followed by one @e2e scenario.
 All boxes below are intentionally unchecked. A scenario box may be checked only
 after its runner evidence and commit hash have been recorded.
 
@@ -88,7 +88,7 @@ No inventory entry is missing, and no extra @e2e scenario is to be created.
 ## Scenario 1: `Exact duplicates in one feature are reported together`
 
 - [x] Scenario: `Exact duplicates in one feature are reported together`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario's tag line. Do not remove or edit
       `@wip` on any other scenario.
     - Add the regular step bindings in
@@ -121,7 +121,7 @@ thread 'main' (3128883) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Replace only this scenario's stubs with real fixture setup and assertions
       for one exact duplicate in one permanent feature, including count, rank,
       endpoint identities, `identical_behavior`, and null score.
@@ -160,7 +160,7 @@ Feature: Audit duplicate and related permanent scenarios
 8 steps (8 passed)
       ```
     - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Remove duplication in fixtures or assertions only where it does not
       change the output contract. Keep the canonical endpoint ordering and
       exact null serialization. Confirm no `unimplemented!()` remains on this
@@ -188,7 +188,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - COMMIT:
+  - [x] COMMIT: aef0ecac7fcbb1c77bf351bae916c0f5653b1cb5
     - Create one atomic commit containing this scenario's RED, GREEN, and
       REFACTOR work. It must not be spec-only or stub-only.
     - Required commit message: `feat(spec-duplicates): Exact duplicates in one feature are reported together`
@@ -203,7 +203,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 2: `Exact duplicates across features are reported together`
 
 - [x] Scenario: `Exact duplicates across features are reported together`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Leave every other `@wip` tag
       untouched.
     - Add any new regular bindings to `tests/steps/spec_duplicates_steps.rs`
@@ -232,7 +232,7 @@ thread 'main' (3134496) panicked at /home/buster/.cargo/registry/src/index.crate
 1 step failed
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Implement the minimum cross-feature fixture and assertions for one
       `exact_duplicate`, canonical left/right identities, `identical_behavior`,
       candidate count 1, and null score.
@@ -264,7 +264,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - REFACTOR:
+  - [x] REFACTOR:
     - Consolidate cross-feature fixture helpers without changing canonical path
       ordering or exact output. Confirm no empty or stub step body, run
       `cargo fmt --check`, and rerun the targeted command.
@@ -289,7 +289,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - COMMIT:
+  - [x] COMMIT: 952e3c9c52dfe1ad24cd7c528afa86aa4d52f12e
     - One atomic RED+GREEN+REFACTOR commit; it must include real production or
       step-glue work and reference the title verbatim.
     - Required commit message: `feat(spec-duplicates): Exact duplicates across features are reported together`
@@ -320,7 +320,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 3: `Structurally overlapping scenarios retain their distinguishing facts`
 
 - [x] Scenario: `Structurally overlapping scenarios retain their distinguishing facts`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Add regular bindings in `tests/steps/spec_duplicates_steps.rs` with
       `unimplemented!()` for every new step body.
@@ -348,7 +348,7 @@ thread 'main' (3140554) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Implement masked assertion-shape matching with the existing `Fingerprint`
       facts, preserving all five distinguishing facts and contradiction status;
       do not add Given/When action-structure evidence.
@@ -384,7 +384,7 @@ Feature: Audit duplicate and related permanent scenarios
 9 steps (9 passed)
       ```
     - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep the structural evidence limited to `Fingerprint.assertions` and
       `Fingerprint.facts`; simplify fixture construction only. Run
       `cargo fmt --check`, confirm no stubs remain, and rerun the same command.
@@ -413,7 +413,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 9 steps (9 passed)
       ```
-  - COMMIT:
+  - [x] COMMIT: 8b9e11dca472c5c2b0b70ef5758ba0ff1712196d
     - One atomic RED+GREEN+REFACTOR commit with a title-verbatim message.
     - Required commit message: `feat(spec-duplicates): Structurally overlapping scenarios retain their distinguishing facts`
     - Files touched:
@@ -426,7 +426,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 4: `A structural subset is reported as an overlap`
 
 - [x] Scenario: `A structural subset is reported as an overlap`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario; do not touch any other scenario's
       tags.
     - Add regular step bindings with explicit `unimplemented!()` bodies in
@@ -455,7 +455,7 @@ thread 'main' (3147398) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Implement strict assertion-subsequence detection with the direction
       `left_assertions_subset_of_right`, masked assertion arrays, canonical
       identities, and null semantic score.
@@ -489,7 +489,7 @@ Feature: Audit duplicate and related permanent scenarios
 8 steps (8 passed)
       ```
     - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Check both subset directions and precedence without changing the
       direction-specific relation. Run `cargo fmt --check`, inspect the diff
       for unchanged observable behavior, and rerun the targeted command.
@@ -515,7 +515,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
     - Grep of `tests/steps/spec_duplicates_steps.rs` found no `unimplemented!()`, `todo!()`, or empty step bodies.
-  - COMMIT:
+  - [x] COMMIT: eb126c95fcdfb84d507bbb34d47d3426d683eedd
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A structural subset is reported as an overlap`
     - Files touched:
@@ -528,7 +528,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 5: `Semantically related scenarios are reported as candidates`
 
 - [x] Scenario: `Semantically related scenarios are reported as candidates`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Leave all other @wip tags in
       place.
     - Add regular bindings in `tests/steps/spec_duplicates_steps.rs`; every new
@@ -557,7 +557,7 @@ thread 'main' (3153811) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Use the local E5 retrieval path for production and the documented
       stub-only score seam for the fixture. Report `semantic_candidate` at the
       configured score, with null structural fields, empty distinguishing facts,
@@ -596,7 +596,7 @@ Feature: Audit duplicate and related permanent scenarios
 11 steps (11 passed)
       ```
     - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Confirm the score seam cannot affect production local-E5 execution and
       that semantic evidence never suppresses deterministic evidence. Run
       `cargo fmt --check`, rerun the targeted command, and verify no stub remains.
@@ -646,7 +646,7 @@ Feature: Audit duplicate and related permanent scenarios
     - `tests/steps/spec_duplicates_steps.rs`
     - `tests/steps/mod.rs`
     - `givn/changes/spec-duplicates/tasks.md` (includes the pending Scenario 4 post-commit hash)
-  - COMMIT:
+  - [x] COMMIT: 02e0429708d19c2403afa4265ca0ce6c938fa540
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Semantically related scenarios are reported as candidates`
     - Commit hash: `02e0429708d19c2403afa4265ca0ce6c938fa540`
@@ -654,7 +654,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 6: `The audit reports candidates beyond the interactive top five`
 
 - [x] Scenario: `The audit reports candidates beyond the interactive top five`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Add any new regular bindings with non-empty `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -681,7 +681,7 @@ thread 'main' (3160079) panicked at /home/buster/.cargo/registry/src/index.crate
 1 step failed
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Assert count 6, rank 6, contiguous ranks, and highest rank equal to
       candidate count against a real 12-scenario permanent corpus containing
       six exact duplicate pairs with distinct endpoint identities and assertion
@@ -719,7 +719,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Check complete candidate collection and rank assignment remain separate
       from rendering and do not reintroduce a view limit. `duplicate_candidates`
       remains the complete collection/classification path, while
@@ -752,7 +752,7 @@ Feature: Audit duplicate and related permanent scenarios
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 5
       post-commit hash). No production source file was modified because the
       existing duplicate audit already reports the complete candidate vector.
-  - COMMIT:
+  - [x] COMMIT: 1a741b9ae025d37e93e94300b1f2eddddfaa1678
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports candidates beyond the interactive top five`
     - Commit hash: `1a741b9ae025d37e93e94300b1f2eddddfaa1678`
@@ -760,7 +760,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 7: `Repeating an unchanged audit produces the same report`
 
 - [x] Scenario: `Repeating an unchanged audit produces the same report`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Do not remove @wip elsewhere.
     - Add non-empty regular step stubs using `unimplemented!()` in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -787,7 +787,7 @@ thread 'main' (3163491) panicked at /home/buster/.cargo/registry/src/index.crate
 1 step failed
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Implement deterministic collection, classification, sorting, rank
       assignment, and text/JSON serialization so two unchanged invocations are
       byte-for-byte identical with identical counts and evidence.
@@ -823,7 +823,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Review all ordering keys, total floating-point ordering, endpoint tie
       breaks, LF endings, and final newline. Run `cargo fmt --check` and rerun
       the same command.
@@ -855,7 +855,7 @@ Feature: Audit duplicate and related permanent scenarios
       post-commit hash). No production source file was modified because the
       existing duplicate collection, sorting, and renderer already satisfy the
       determinism contract.
-  - COMMIT:
+  - [x] COMMIT: b6e2a040cf732b67255b673378f33e5466b943cb
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Repeating an unchanged audit produces the same report`
     - Commit hash: `b6e2a040cf732b67255b673378f33e5466b943cb`
@@ -863,7 +863,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 8: `JSON output identifies every audit candidate`
 
 - [x] Scenario: `JSON output identifies every audit candidate`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario; preserve every other scenario tag.
     - Add regular bindings with explicit `unimplemented!()` stubs in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -893,7 +893,7 @@ thread 'main' (3167838) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Implement the exact JSON schema, field order, endpoint key order,
       evidence key order, classifications, relations, deterministic ordering,
       contiguous ranks, eligible non-removed scanned count, canonical endpoint
@@ -935,7 +935,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Text and JSON consume the same sorted `duplicate_candidates` vector.
       JSON uses ordered structs rather than maps for the report, candidates,
       endpoints, and evidence; fingerprint maps remain `BTreeMap`s. Endpoint
@@ -974,7 +974,7 @@ Feature: Audit duplicate and related permanent scenarios
       `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 7
       post-commit hash update).
-  - COMMIT:
+  - [x] COMMIT: a98eed298acece8cf2375e3560251accc6ae22b3
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): JSON output identifies every audit candidate`
     - Commit hash: `a98eed298acece8cf2375e3560251accc6ae22b3`
@@ -982,7 +982,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 9: `Auditing leaves permanent specifications unchanged`
 
 - [x] Scenario: `Auditing leaves permanent specifications unchanged`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other @wip tags.
     - Add regular snapshot/assertion bindings with `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1012,7 +1012,7 @@ thread 'main' (3174002) panicked at /home/buster/.cargo/registry/src/index.crate
 1 step failed
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Read permanent feature bytes for the fixture, run the real subprocess,
       and assert every permanent specification is byte-for-byte unchanged.
       The audit must not write or rewrite `givn/specs/`.
@@ -1043,7 +1043,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep the read-only boundary explicit and keep filesystem snapshots as
       secondary evidence to the CLI result. Run `cargo fmt --check` and rerun
       the targeted command.
@@ -1066,7 +1066,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 4 steps (4 passed)
       ```
-  - COMMIT:
+  - [x] COMMIT: c465d8ab1b029bdc9f08320d5841d3d691bfa1ed
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves permanent specifications unchanged`
     - Actual production files modified: none; the existing read-only audit path
@@ -1075,12 +1075,12 @@ Feature: Audit duplicate and related permanent scenarios
       - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 9 tag only)
       - `tests/steps/spec_duplicates_steps.rs`
       - `givn/changes/spec-duplicates/tasks.md`
-    - Commit hash: `c465d8a7d76d61b3ad10167694ecf6d619123fa9`
+    - Commit hash: `c465d8ab1b029bdc9f08320d5841d3d691bfa1ed`
 
 ## Scenario 10: `Auditing leaves the persistent retrieval index unchanged`
 
 - [x] Scenario: `Auditing leaves the persistent retrieval index unchanged`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Leave every other tag untouched.
     - Add non-empty regular step definitions with `unimplemented!()` in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1109,7 +1109,7 @@ thread 'main' (3176663) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Build the existing persistent retrieval index through the compiled
       subprocess with `GIVN_SPEC_EMBEDDER=stub`, assert setup success, and reuse
       `GivnWorld.permanent_index_snapshot` for the `.spec-index.json` bytes.
@@ -1143,7 +1143,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep setup and snapshot helpers explicit and scope index reads to
       `givn/.spec-index.json`. The CLI status and parsed audit report are
       asserted before the filesystem snapshot comparison. Source inspection
@@ -1175,7 +1175,7 @@ Feature: Audit duplicate and related permanent scenarios
       hash update). No production source file was modified because the existing
       `src/spec/retrieval.rs` duplicate path already uses current permanent
       records and transient embeddings without refreshing or reading the index.
-  - COMMIT:
+  - [x] COMMIT: f1e50ac6208b067044b0a2ac1e3e2e82e20ca632
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves the persistent retrieval index unchanged`
     - Commit hash: `f1e50ac6208b067044b0a2ac1e3e2e82e20ca632`
@@ -1183,7 +1183,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 11: `Active change scenarios are not part of the permanent audit`
 
 - [x] Scenario: `Active change scenarios are not part of the permanent audit`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario; do not touch any other @wip tag.
     - Add regular fixture and assertion bindings with `unimplemented!()` in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1211,7 +1211,7 @@ thread 'main' (3179756) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Restrict the audit aggregate and endpoint identities to eligible permanent
       non-removed scenarios under `givn/specs/`; assert active identities are
       absent and every endpoint file starts with `givn/specs/`.
@@ -1246,7 +1246,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep active-change path filtering at the collection boundary, not as a
       renderer-only suppression. Name the permanent and active fixture paths
       explicitly and parse both candidate endpoint files before asserting their
@@ -1280,7 +1280,7 @@ Feature: Audit duplicate and related permanent scenarios
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 10
       hash update). No production source file was modified because the existing
       `src/spec/retrieval.rs` collection boundary is already permanent-only.
-  - COMMIT:
+  - [x] COMMIT: 0b4f50ece41ec3e192680bc80215120e133a01ff
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Active change scenarios are not part of the permanent audit`
     - Commit hash: `0b4f50ece41ec3e192680bc80215120e133a01ff`
@@ -1288,7 +1288,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 12: `An audit with no candidates reports an empty result`
 
 - [x] Scenario: `An audit with no candidates reports an empty result`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Add regular bindings with explicit `unimplemented!()` stubs in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1316,7 +1316,7 @@ thread 'main' (3184054) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Render the exact zero-candidate text report and matching JSON result for
       exactly two eligible scenarios with no exact, structural, or semantic
       relationship, with zero candidates and an empty array. The fixture is a
@@ -1349,7 +1349,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep empty and missing-corpus rendering on the same deterministic report
       path; verify exactly one final newline and no diagnostic prefix/suffix.
       Share the existing text-report parser and JSON document parser between
@@ -1383,7 +1383,7 @@ Feature: Audit duplicate and related permanent scenarios
       `tests/steps/spec_duplicates_steps.rs`, and
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 11
       hash update). No design artifact or later `@wip` tag was changed.
-  - COMMIT:
+  - [x] COMMIT: 5afcf5da58f71cb2c2bbc5e9b1a83cdab65c1f51
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An audit with no candidates reports an empty result`
     - Commit hash: `5afcf5da58f71cb2c2bbc5e9b1a83cdab65c1f51`
@@ -1391,7 +1391,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 13: `The audit reports retrieval unavailable without the retrieval feature`
 
 - [x] Scenario: `The audit reports retrieval unavailable without the retrieval feature`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Do not edit any other scenario's
       tags.
     - Add regular step bindings with explicit `unimplemented!()` bodies in
@@ -1423,7 +1423,7 @@ thread 'main' (3188710) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Reuse the existing permanent duplicate/related fixture and invoke the real
       no-feature Cargo subprocess from the temporary project root with an
       isolated `CARGO_TARGET_DIR`. The existing feature-gated production path
@@ -1468,7 +1468,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Reuse the existing no-feature subprocess pattern: `cargo run --quiet`
       with the repository manifest, `--no-default-features`, temporary-project
       `current_dir`, isolated `CARGO_TARGET_DIR`, and null stdin. Keep the
@@ -1496,7 +1496,7 @@ Feature: Audit duplicate and related permanent scenarios
       (Scenario 13 tag only), `tests/steps/spec_duplicates_steps.rs`, and
       `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 12
       hash update). No design artifact or later `@wip` tag was changed.
-  - COMMIT:
+  - [x] COMMIT: cfb16092296a20a298f875ca63a540fa88b596da
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports retrieval unavailable without the retrieval feature`
     - Commit hash: `cfb16092296a20a298f875ca63a540fa88b596da`
@@ -1504,7 +1504,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 14: `The audit reports an unavailable retrieval model`
 
 - [x] Scenario: `The audit reports an unavailable retrieval model`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Reuse the existing regular bindings for the duplicate/related corpus,
       unavailable retrieval model, subprocess invocation, non-zero exit, and
@@ -1552,7 +1552,7 @@ thread 'main' (3197068) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Reuse the real permanent corpus from the existing duplicate/related
       fixture: it contains exact, structural, and unresolved semantic pairs.
       The existing unavailable-model setup sets the subprocess environment to
@@ -1593,7 +1593,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Reuse the existing unavailable-model setup and keep the subprocess exit
       and stderr assertions primary. The audit propagates the original
       `embed_texts` error; the stub embedder and duplicate score seam remain
@@ -1621,7 +1621,7 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 14 tag only), `src/spec/retrieval.rs`, and `givn/changes/spec-duplicates/tasks.md`. Existing regular bindings in `tests/steps/spec_duplicates_steps.rs`, `tests/steps/spec_retrieval_steps.rs`, and `tests/steps/mod.rs` were reused without a final diff. No design artifact or later `@wip` tag was changed.
-  - COMMIT:
+  - [x] COMMIT: 4a35cc10e58dc59826ff471f043f10e14a92d803
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports an unavailable retrieval model`
     - Commit hash: `4a35cc10e58dc59826ff471f043f10e14a92d803`
@@ -1629,7 +1629,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 15: `A malformed permanent feature reports its path`
 
 - [x] Scenario: `A malformed permanent feature reports its path`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Leave all other @wip tags intact.
     - Add regular bindings with explicit `unimplemented!()` in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1657,7 +1657,7 @@ thread 'main' (3200447) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Abort on malformed permanent Gherkin, include the project-relative path
       `givn/specs/broken/broken.feature` in stderr, emit no report on stdout,
       and preserve the no-partial-report rule.
@@ -1690,7 +1690,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Centralize permanent-feature parsing through explicit project-relative
       path normalization before attaching parse-error context. This keeps all
       permanent parse-error branches deterministic and leaves stdout untouched
@@ -1717,7 +1717,7 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 15 tag only), `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 14 hash update). No design artifact or later `@wip` tag was changed.
-  - COMMIT:
+  - [x] COMMIT: 28730695f430a657930231cc0875ae4cc75d9ab1
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed permanent feature reports its path`
     - Commit hash: `28730695f430a657930231cc0875ae4cc75d9ab1`
@@ -1725,7 +1725,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 16: `An unreadable permanent feature reports its path`
 
 - [x] Scenario: `An unreadable permanent feature reports its path`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario; do not alter tags elsewhere.
     - Add regular step definitions with `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1753,7 +1753,7 @@ thread 'main' (3203367) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Write the valid feature fixture at exactly
       `givn/specs/private/private.feature`, apply mode `000`, and probe
       readability as the same user that launches the compiled subprocess. In
@@ -1797,7 +1797,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep the permission guard path-specific and restore the fixture explicitly
       after the final stdout assertion, while retaining drop-based cleanup if a
       prior assertion panics. The fallback remains a real `Feature::parse_path`
@@ -1825,7 +1825,7 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 16 tag only), `tests/steps/spec_duplicates_steps.rs`, `tests/steps/mod.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 15 hash update). No production source file or design artifact changed, and all later `@wip` tags remain intact.
-  - COMMIT:
+  - [x] COMMIT: 673e5c9457a6e443e121744284169e6aca36cd54
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An unreadable permanent feature reports its path`
     - Commit hash: `673e5c9457a6e443e121744284169e6aca36cd54`
@@ -1833,7 +1833,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 17: `A missing permanent specifications directory is an empty corpus`
 
 - [x] Scenario: `A missing permanent specifications directory is an empty corpus`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other @wip tags.
     - Add regular step bindings with explicit `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1861,7 +1861,7 @@ thread 'main' (3207109) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Treat a missing `givn/specs/` directory as a successful empty corpus,
       render zero counts and an empty candidates array, and leave the persistent
       index absent.
@@ -1893,7 +1893,7 @@ Feature: Audit duplicate and related permanent scenarios
       ```
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured for this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep missing-directory handling distinct from malformed-file errors and
       ensure no index is created as a retrieval side effect. Run
       `cargo fmt --check` and rerun the targeted command.
@@ -1920,7 +1920,7 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 17 tag only), `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 16 hash update). No design artifact or later `@wip` tag was changed.
-  - COMMIT:
+  - [x] COMMIT: 5df4f7cede8dc86b71b453a82fb5c4b8a8c882ad
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A missing permanent specifications directory is an empty corpus`
     - Commit hash: `5df4f7cede8dc86b71b453a82fb5c4b8a8c882ad`
@@ -1928,7 +1928,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 18: `Archived scenarios are excluded from the audit`
 
 - [x] Scenario: `Archived scenarios are excluded from the audit`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario; leave all other tags unchanged.
     - Add regular bindings with explicit `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -1957,7 +1957,7 @@ note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
 
       ```
-  - GREEN:
+  - [x] GREEN:
     - Create a permanent corpus with one exact candidate, add the matching
       archive fixture at `givn/archive/old-change/specs/old/old.feature`, and
       compare parsed JSON candidate counts before and after archive creation.
@@ -1995,7 +1995,7 @@ Feature: Audit duplicate and related permanent scenarios
     - Coverage: the targeted runner output contained no coverage summary; no
       production source file changed, so production coverage is unmeasured for
       this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep the archive path and matching fixture explicit. The baseline and
       post-archive JSON reports are parsed independently through the real
       subprocess boundary; the archive is not deleted or mutated by the audit.
@@ -2026,15 +2026,15 @@ Feature: Audit duplicate and related permanent scenarios
 
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 18 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 17 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - COMMIT:
+  - [x] COMMIT: 1703be414af7945ffd011a1d9dbfc922f239901a
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Archived scenarios are excluded from the audit`
-    - Commit hash: `1703be4cc9ad934843c1830b0b7c5464644556a7`
+    - Commit hash: `1703be414af7945ffd011a1d9dbfc922f239901a`
 
 ## Scenario 19: `Auditing leaves active changes and archive contents unchanged`
 
 - [x] Scenario: `Auditing leaves active changes and archive contents unchanged`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Do not modify other scenario tags.
     - Add regular fixture and snapshot bindings with non-empty `unimplemented!()`
       bodies in `tests/steps/spec_duplicates_steps.rs`.
@@ -2062,7 +2062,7 @@ thread 'main' (3214303) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Create a permanent duplicate/related candidate corpus, active-change
       files under `givn/changes/audit-boundary/`, and archive files under
       `givn/archive/audit-boundary/`. Snapshot every byte in each fixture tree
@@ -2099,7 +2099,7 @@ Feature: Audit duplicate and related permanent scenarios
     - Coverage: the targeted runner output contained no coverage summary; no
       production source file changed, so production coverage is unmeasured for
       this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Factor deterministic recursive snapshots for the scoped active and
       archive fixture roots, retain project-relative paths in the snapshot,
       sort traversal and entries deterministically, and keep active/archive
@@ -2132,7 +2132,7 @@ Feature: Audit duplicate and related permanent scenarios
 5 steps (5 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 19 tag only), `tests/steps/mod.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 18 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - COMMIT:
+  - [x] COMMIT: be0a0895c005656d011140d1c6a4a958d2f4c443
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves active changes and archive contents unchanged`
     - Commit hash: `be0a0895c005656d011140d1c6a4a958d2f4c443`
@@ -2140,7 +2140,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 20: `An absent persistent index is ignored and remains absent`
 
 - [x] Scenario: `An absent persistent index is ignored and remains absent`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other @wip tags.
     - Add regular bindings with explicit `unimplemented!()` in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -2169,7 +2169,7 @@ thread 'main' (3217155) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Create the existing duplicate/related permanent corpus, explicitly remove
       and verify the absence of `givn/.spec-index.json`, run the compiled
       `givn spec duplicates --format json` subprocess with the stub embedder,
@@ -2207,7 +2207,7 @@ Feature: Audit duplicate and related permanent scenarios
     - Coverage: the targeted runner output contained no coverage summary; no
       production source file changed, so production coverage is unmeasured for
       this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep absent-index setup explicit and deterministic by removing any
       pre-existing `givn/.spec-index.json` and asserting it is absent before
       invocation. Assert the JSON candidate classes and permanent endpoint
@@ -2242,7 +2242,7 @@ Feature: Audit duplicate and related permanent scenarios
 6 steps (6 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 20 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 19 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - COMMIT:
+  - [x] COMMIT: fbdc70554a0e2f20214da9c2dba9cf81bfdd09e8
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An absent persistent index is ignored and remains absent`
     - Commit hash: `fbdc70554a0e2f20214da9c2dba9cf81bfdd09e8`
@@ -2250,7 +2250,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 21: `A malformed persistent index is ignored and unchanged`
 
 - [x] Scenario: `A malformed persistent index is ignored and unchanged`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Leave all other scenario tags.
     - Add regular step definitions with explicit `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -2279,7 +2279,7 @@ thread 'main' (3219600) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun pass `--test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Write `not-json` to the persistent index, run the audit using current
       permanent files and transient embeddings, assert valid JSON candidates,
       and assert the index remains exactly `not-json`.
@@ -2315,7 +2315,7 @@ Feature: Audit duplicate and related permanent scenarios
     - Coverage: the targeted runner output contained no coverage summary; no
       production source file changed, so production coverage is unmeasured for
       this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Keep the malformed index bytes outside the audit evidence path, snapshot
       exactly `not-json` before invocation, compare the post-command bytes to
       that snapshot and to the required literal, and reuse the existing
@@ -2350,7 +2350,7 @@ Feature: Audit duplicate and related permanent scenarios
 6 steps (6 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 21 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 20 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - COMMIT:
+  - [x] COMMIT: 65dcc06a81fad6369f292ab81042732fd9c02ae7
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed persistent index is ignored and unchanged`
     - Commit hash: `65dcc06a81fad6369f292ab81042732fd9c02ae7`
@@ -2358,7 +2358,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 22: `A semantic candidate at the inclusive threshold is reported`
 
 - [x] Scenario: `A semantic candidate at the inclusive threshold is reported`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave all other tags intact.
     - Add regular bindings with explicit `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -2386,7 +2386,7 @@ thread 'main' (3222838) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Set `GIVN_SPEC_DUPLICATES_TEST_SCORES` for the normalized endpoint pair to
       exactly `0.9500`, use the stub embedder only, and assert the semantic
       candidate is admitted with `semantic_similarity` and serialized score
@@ -2424,7 +2424,7 @@ Feature: Audit duplicate and related permanent scenarios
     - Coverage: the targeted runner output contained no coverage summary;
       production coverage is unmeasured. The production path was already
       implemented and was not modified in this scenario.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Confirm thresholding uses the raw score before four-decimal
       serialization, remains inclusive at `0.9500`, and the score seam is not
       available to production local-E5 execution. Run `cargo fmt --check` and
@@ -2462,7 +2462,7 @@ Feature: Audit duplicate and related permanent scenarios
 7 steps (7 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 22 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 21 hash update). No `design.md`, later `@wip` tag, or production source file changed.
-  - COMMIT:
+  - [x] COMMIT: bc4e3c1d7fb6d6af46fb9bf5ac52f8c8c2984213
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic candidate at the inclusive threshold is reported`
     - Commit hash: `bc4e3c1d7fb6d6af46fb9bf5ac52f8c8c2984213`
@@ -2470,7 +2470,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 23: `A semantic pair below the threshold is not reported`
 
 - [x] Scenario: `A semantic pair below the threshold is not reported`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario. Do not touch any other scenario's
       @wip tag.
     - Add regular step bindings with non-empty `unimplemented!()` bodies in
@@ -2500,7 +2500,7 @@ thread 'main' (3226247) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Set the normalized endpoint pair score to exactly `0.9499` through the
       stub-only seam and exclude it before serialization; assert candidate count
       zero and no score `0.9499`.
@@ -2533,7 +2533,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 6 steps (6 passed)
       ```
-  - REFACTOR:
+  - [x] REFACTOR:
     - Check admission happens before four-decimal formatting and that excluded
       pairs do not receive ranks. Run `cargo fmt --check` and rerun the targeted
       command.
@@ -2567,7 +2567,7 @@ Feature: Audit duplicate and related permanent scenarios
 6 steps (6 passed)
       ```
     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 23 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 22 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
-  - COMMIT:
+  - [x] COMMIT: 8ca9a69844f95dd16d8307c9187dad4ea1ac3d06
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic pair below the threshold is not reported`
     - Commit hash: `8ca9a69844f95dd16d8307c9187dad4ea1ac3d06`
@@ -2575,7 +2575,7 @@ Feature: Audit duplicate and related permanent scenarios
 ## Scenario 24: `Candidate classes take precedence and equal semantic scores use endpoint order`
 
 - [x] Scenario: `Candidate classes take precedence and equal semantic scores use endpoint order`
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this scenario and leave every other tag unchanged.
     - Add regular bindings with explicit `unimplemented!()` bodies in
       `tests/steps/spec_duplicates_steps.rs`.
@@ -2603,7 +2603,7 @@ thread 'main' (3230233) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
       ```
-  - GREEN:
+  - [x] GREEN:
     - Implement and assert exact-over-structural-over-semantic precedence, two
       equal `0.9600` semantic scores, endpoint ordering by left file/title then
       right file/title, and contiguous ranks `1,2,3,4`.
@@ -2637,7 +2637,7 @@ Feature: Audit duplicate and related permanent scenarios
 8 steps (8 passed)
       ```
     - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured.
-  - REFACTOR:
+  - [x] REFACTOR:
     - Verify sorting keys are explicit and deterministic, semantic candidates do
       not suppress deterministic findings, and all structural evidence fields
       retain the required null/non-null contract. Run `cargo fmt -- --check` and
@@ -2764,7 +2764,7 @@ Feature: Audit duplicate and related permanent scenarios
 1 scenario (1 passed)
 8 steps (8 passed)
       ```
-  - COMMIT:
+  - [x] COMMIT: 2913653068ba966c7e60b3d4c00606039d57ade6
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Candidate classes take precedence and equal semantic scores use endpoint order`
     - Commit hash: `2913653068ba966c7e60b3d4c00606039d57ade6`
@@ -2846,7 +2846,7 @@ error: test failed, to rerun `cargo test --test features_runner`
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh` count in
       the Setup task. The E2E command must remain distinct from
       `verify.command` and must report strictly fewer scenarios.
-  - RED:
+  - [x] RED:
     - Remove `@wip` only from this E2E scenario. Preserve `@e2e` permanently;
       never remove or alter any other scenario's tags.
     - Add the E2E bindings only in
@@ -2882,7 +2882,7 @@ thread 'main' (3240196) panicked at /home/buster/.cargo/registry/src/index.crate
 note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
 error: test failed, to rerun `cargo test --test features_runner`
         ```
-  - GREEN:
+  - [x] GREEN:
     - Read the canonical E2E policy and use the reviewed design's CLI interface
       boundary. Assert primarily on the real subprocess exit status and stdout:
       exact header/counts, candidate field order, rank 1 exact duplicate, rank
@@ -2959,7 +2959,7 @@ Feature: Audit duplicate and related permanent scenarios
        compiled subprocess. Test file modified: `tests/steps/spec_duplicates_e2e_steps.rs`.
      - Coverage: targeted and configured E2E runner output contained no coverage
        summary; production coverage is unmeasured.
-  - REFACTOR:
+  - [x] REFACTOR:
      - Keep the primary assertions on terminal stdout and exit status, retain the
        real compiled-subprocess driver, and keep filesystem assertions secondary.
        Confirm `@e2e` is immutable, no E2E step body is empty or stubbed, run
@@ -3013,37 +3013,273 @@ Feature: Audit duplicate and related permanent scenarios
      - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 25 tag only), `tests/steps/spec_duplicates_e2e_steps.rs`, and this `tasks.md` entry. No regular step file, `design.md`, module-registration file, or production source file changed.
      - Coverage remains unmeasured because the targeted and E2E runner outputs
        contain no coverage summary.
-  - COMMIT:
+  - [x] COMMIT: 4915c2b780023c3eb49fdb9eda7519838d141c9b
     - Create one atomic E2E RED+GREEN+REFACTOR commit after all non-E2E
       commits. It must contain real E2E step glue and/or production integration
       work, not only a tag or stub change.
     - Required commit message: `test(e2e): Maintainer inspects the complete permanent scenario audit`
-    - Commit hash: `recorded by the atomic commit containing this task entry`
+    - Commit hash: `4915c2b780023c3eb49fdb9eda7519838d141c9b`
+
+## Scenario 26: `Rule-nested permanent scenarios are included in the audit`
+
+- [x] Scenario: `Rule-nested permanent scenarios are included in the audit`
+  - [x] RED:
+    - Added the scenario as `@givn.added @wip`, then bound its first Given step
+      to `unimplemented!()` and ran:
+      `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Rule-nested permanent scenarios are included in the audit$'`
+    - Required non-zero result was observed: the targeted scenario reported
+      `Step panicked. Captured output: not implemented`, with `1 scenario (1
+      failed)` and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Replaced the stub with a Rule fixture containing two identical nested
+      scenarios and asserted scanned count 2, exact classification, relation,
+      and both canonical endpoint identities in JSON.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `5 steps (5
+      passed)`.
+  - [x] REFACTOR:
+    - Ran `cargo fmt`, then `cargo fmt -- --check` exited 0 after formatting the
+      JSON assertion, and reran the same targeted command with exit 0 and `5
+      steps (5 passed)`.
+    - Targeted runner output has no coverage summary; production coverage is
+      recorded by the later repository measurement command.
+  - [x] COMMIT: be4e41e38bc7f5305041ab8de14a2b9236e49a61
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Rule-nested permanent scenarios are included in the audit`
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
+    - Commit hash: `be4e41e38bc7f5305041ab8de14a2b9236e49a61`
+
+## Scenario 27: `A blocked permanent specifications path reports its I/O error`
+
+- [x] Scenario: `A blocked permanent specifications path reports its I/O error`
+  - [x] RED:
+    - Added as `@givn.added @wip` with the new Given bound to
+      `unimplemented!()`. The targeted command was:
+      `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A blocked permanent specifications path reports its I/O error$'`
+    - It exited non-zero with `Step panicked. Captured output: not
+      implemented`, `1 scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Replaced the stub with a real fixture that makes `givn` a regular file,
+      proves `givn/specs` fails with a non-NotFound error, and asserts the
+      project-relative path plus empty stdout on the subprocess failure.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `5 steps (5
+      passed)`.
+  - [x] REFACTOR:
+    - `cargo fmt -- --check` exited 0; the targeted command was rerun and
+      exited 0 with `5 steps (5 passed)`. Targeted output has no coverage
+      summary; repository coverage is measured in the review pass.
+  - [x] COMMIT: 51426e1f5bbea076df2e62d6fea0fc374f67be48
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): A blocked permanent specifications path reports its I/O error`.
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
+
+## Scenario 28: `Removed permanent scenarios are excluded from the audit`
+
+- [x] Scenario: `Removed permanent scenarios are excluded from the audit`
+  - [x] RED:
+    - Added as `@givn.added @wip` with an explicit `unimplemented!()` Given.
+      The targeted command exited non-zero with `not implemented`, `1 scenario
+      (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Replaced the stub with a permanent feature containing one
+      `@givn.removed` scenario and one retained identical scenario. The JSON
+      assertions require scanned count 1, candidate count 0, an empty array,
+      and no removed identity.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `5 steps (5
+      passed)`.
+  - [x] REFACTOR:
+    - `cargo fmt -- --check` exited 0 and the targeted command was rerun with
+      exit 0 and `5 steps (5 passed)`. Targeted output has no coverage summary;
+      merged repository coverage supplies the line evidence.
+  - [x] COMMIT: 9dcd6ecc8e07e9d89a20fcf25ae4123930079c83
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Removed permanent scenarios are excluded from the audit`.
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
+
+## Scenario 29: `Structural relations are ordered by relation class`
+
+- [x] Scenario: `Structural relations are ordered by relation class`
+  - [x] RED:
+    - Added as `@givn.added @wip` with the fixture Given bound to
+      `unimplemented!()`. The targeted runner exited non-zero with `not
+      implemented`, `1 scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Replaced the stub with three real permanent fixture pairs: same assertion
+      shape, left assertion subset, and right assertion subset. The JSON
+      assertions require the exact relation order and null semantic scores.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `4 steps (4
+      passed)`.
+  - [x] REFACTOR:
+    - Simplified the candidate-kind and structural-relation order helpers to
+      use only the three generated values, removed the unreachable wildcard
+      ordering behavior, and kept the semantic score comparator on its
+      guaranteed `Some` values. `cargo fmt -- --check` and the targeted runner
+      both exited 0.
+  - [x] COMMIT: aeee71d42e211d932c3979830c94c519547dd1b6
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Structural relations are ordered by relation class`.
+    - Files: active feature, regular steps, and `src/spec/retrieval.rs`.
+
+## Scenario 30: `Equal semantic scores use right endpoint order`
+
+- [x] Scenario: `Equal semantic scores use right endpoint order`
+  - [x] RED:
+    - Added as `@givn.added @wip` with an explicit `unimplemented!()` fixture
+      step. The targeted command failed non-zero with `not implemented`, `1
+      scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Added three non-structural scenarios sharing one canonical left endpoint;
+      two overrides are `0.9600` and the third pair is `0.0000`. Assertions
+      require the shared left endpoint, right endpoint order `alpha` then
+      `beta`, and both serialized scores.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `5 steps (5
+      passed)`.
+  - [x] REFACTOR:
+    - `cargo fmt -- --check` exited 0 after formatting the fixture array, and
+      the targeted command was rerun with exit 0 and `5 steps (5 passed)`.
+  - [x] COMMIT: bd2871c6bbf42ca482847181d7548a860f95ed80
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Equal semantic scores use right endpoint order`.
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
+
+## Scenario 31: `Invalid duplicate score overrides are rejected`
+
+- [x] Scenario: `Invalid duplicate score overrides are rejected`
+  - [x] RED:
+    - Added as `@givn.added @wip`, with the table-binding Given and validation
+      When step initially using explicit `unimplemented!()` bodies. The
+      targeted command failed non-zero at the table step with `not implemented`,
+      `1 scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Added a labeled table covering empty input, invalid UTF-8, empty entry,
+      missing `=`, missing `::`, equal endpoints, duplicate pair, malformed
+      endpoint, empty title, invalid file, invalid score shape, and out-of-range
+      score. Each row runs a real stub-embedder subprocess and records its
+      expected diagnostic; the Then step requires all 12 failures.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `4 steps (4
+      passed)`.
+  - [x] REFACTOR:
+    - Kept raw environment construction in the regular black-box step, using an
+      OS-string value for the invalid UTF-8 row and escaped Gherkin table pipes
+      for endpoint keys. `cargo fmt -- --check` exited 0 after formatting, and
+      the targeted command was rerun with exit 0 and `4 steps (4 passed)`.
+  - [x] COMMIT: bb0c2c4e0c35f93ab5a0075a3f872a6253c33d50
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Invalid duplicate score overrides are rejected`.
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
+
+## Scenario 32: `Reversed score override endpoint pairs normalize canonically`
+
+- [x] Scenario: `Reversed score override endpoint pairs normalize canonically`
+  - [x] RED:
+    - Added as `@givn.added @wip` with an explicit `unimplemented!()` fixture
+      step. The targeted command failed non-zero with `not implemented`, `1
+      scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Added two semantic fixtures and supplied the score seam in reverse
+      endpoint order. Assertions require one semantic candidate at `0.9600`
+      and canonical left/right identities.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `4 steps (4
+      passed)`.
+  - [x] REFACTOR:
+    - Removed the unreachable reverse branch from `duplicate_pair_key`; CLI
+      callers already provide canonically sorted scenario endpoints, while the
+      score-override parser retains and exercises reverse normalization.
+      `cargo fmt -- --check` and the targeted command exited 0.
+  - [x] COMMIT: 73bcbc1873e4f24d80f98fde28c563fb29455d51
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Reversed score override endpoint pairs normalize canonically`.
+    - Files: active feature, regular steps, and `src/spec/retrieval.rs`.
+
+## Scenario 33: `Empty assertions and reverse subsets retain their distinct relations`
+
+- [x] Scenario: `Empty assertions and reverse subsets retain their distinct relations`
+  - [x] RED:
+    - Added as `@givn.added @wip` with the fixture Given bound to
+      `unimplemented!()`. The targeted command failed non-zero with `not
+      implemented`, `1 scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Added a four-scenario corpus: one empty assertion scenario, two unrelated
+      non-empty scenarios, and a canonical long-left/short-right subset pair.
+      Five below-threshold score overrides isolate the structural path. The
+      assertions require one candidate, no empty endpoint, the reverse subset
+      relation, and both masked assertion arrays.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `5 steps (5
+      passed)`.
+  - [x] REFACTOR:
+    - `cargo fmt -- --check` exited 0 after compacting the fixture literals, and
+      the targeted command was rerun with exit 0 and `5 steps (5 passed)`.
+  - [x] COMMIT: 116f4234b10cc5da93d57f6502a9f1d1fbca204e
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Empty assertions and reverse subsets retain their distinct relations`.
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
+
+## Scenario 34: `Semantic quality evidence is measured from labeled stub scores`
+
+- [x] Scenario: `Semantic quality evidence is measured from labeled stub scores`
+  - [x] RED:
+    - Added as `@givn.added @wip` with the fixture Given bound to
+      `unimplemented!()`. The targeted command exited non-zero with `not
+      implemented`, `1 scenario (1 failed)`, and `1 step (1 failed)`.
+  - [x] GREEN:
+    - Added six explicitly distinct fixture scenarios and three labeled pairs:
+      one related true positive at `0.9600`, one unrelated false positive at
+      `0.9600`, and one related false negative at `0.9499`; all other pair
+      scores are `0.0000`. The executable regular scenario parses the labels,
+      inspects the actual JSON candidates, computes counts, and prints:
+      `semantic-quality threshold=0.9500 true_positives=1 false_positives=1 false_negatives=1 precision=0.5000 recall=0.5000 formulas=TP/(TP+FP),TP/(TP+FN)`.
+    - Targeted command exited 0 with `1 scenario (1 passed)` and `5 steps (5
+      passed)`.
+  - [x] REFACTOR:
+    - The expected-label table is consumed by the step definition rather than
+      ignored; the metric step asserts the two emitted candidates remain
+      semantic-only and advisory. `cargo fmt -- --check` exited 0 and the
+      targeted command was rerun with exit 0 and the same measured counts.
+  - [x] COMMIT: fc10bbe74a467588f41d46ec4b838bbdc5d4483c
+    - Atomic RED+GREEN+REFACTOR commit:
+      `feat(spec-duplicates): Semantic quality evidence is measured from labeled stub scores`.
+    - Files: active feature and `tests/steps/spec_duplicates_steps.rs`.
 
 ## Full-suite and review handoff
 
-- [ ] After all 25 scenario boxes are individually complete, run the full
-  active-change suite with the exact scoped command:
-  `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh`
-  Record the complete runner output and confirm 25 scenarios pass, including
-  24 non-@e2e scenarios and one @e2e scenario.
-- [ ] Run the regular-only suite with
-  `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --non-e2e`.
-  Record the output and confirm 24 scenarios pass.
-- [ ] Run the exact E2E gate with
-  `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`.
-  Record the output and confirm one scenario passes. Paste the full count and
-  E2E count again as strict-subset evidence: full `____`, E2E `____`, and
-  `1 < 25` only after the captured counts prove it.
-- [ ] Run `cargo fmt --check`, `cargo check --features spec-retrieval`,
-  `cargo check --no-default-features --locked`, and
-  `cargo clippy --workspace --all-targets -- -D warnings`; record each command's
-  actual output and exit status.
-- [ ] Run `givn lint --change spec-duplicates` and the configured review gates.
-  Confirm all delta @wip tags are removed one scenario at a time, the @e2e tag
-  remains present, no scenario box is checked without its evidence and commit
-  hash, and the interaction inventory/matrix verification remains unchanged.
-- [ ] Review handoff: verify every commit is atomic per scenario, every commit
-  message contains the exact scenario title, no commit is spec-only or
-  stub-only, and the final task artifact is ready for `givn review` and then
-  archive.
+- [x] After all 34 scenario boxes are individually complete, run the full
+   active-change suite with the exact scoped command:
+   `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh`
+   Record the complete runner output and confirm 34 scenarios pass, including
+   33 non-@e2e scenarios and one @e2e scenario.
+   Evidence: exit 0; `[Summary]`, `1 feature`, `34 scenarios (34 passed)`,
+   `214 steps (214 passed)`.
+- [x] Run the regular-only suite with
+   `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --non-e2e`.
+   Record the output and confirm 33 scenarios pass.
+   Evidence: exit 0; `[Summary]`, `1 feature`, `33 scenarios (33 passed)`,
+   `205 steps (205 passed)`.
+- [x] Run the exact E2E gate with
+   `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`.
+   Record the output and confirm one scenario passes. Paste the full count and
+   E2E count again as strict-subset evidence: full `____`, E2E `____`, and
+   `1 < 34` only after the captured counts prove it.
+   Evidence: exit 0; `[Summary]`, `1 feature`, `1 scenario (1 passed)`,
+   `9 steps (9 passed)`; full scoped count `34`, E2E count `1`, and `1 < 34`.
+- [x] Run `cargo fmt --check`, `cargo check --features spec-retrieval`,
+   `cargo check --no-default-features --locked`, and
+   `cargo clippy --workspace --all-targets -- -D warnings`; record each command's
+   actual output and exit status.
+   Evidence: all four commands exited 0. `cargo fmt -- --check` was silent;
+   feature-enabled check finished in 0.63s; no-default-features locked check
+   finished in 0.56s; clippy finished in 4.83s with no warnings.
+ - [x] Run `givn lint --change spec-duplicates` and the configured review gates.
+   Confirm all delta @wip tags are removed one scenario at a time, the @e2e tag
+   remains present, no scenario box is checked without its evidence and commit
+   hash, and the interaction inventory/matrix verification remains unchanged.
+   Evidence: `givn lint --change spec-duplicates` exited 0 with `1 file(s)
+   checked — clean`; `GIVN_SPEC_EMBEDDER=stub givn check review --change
+   spec-duplicates` exited 0; overlap dispositions passed; semantic-review.md
+   remains `Status: PASS` and `Candidate count: 0`.
+ - [x] Review handoff: verify every commit is atomic per scenario, every commit
+   message contains the exact scenario title, no commit is stub-only, and pure
+   step/spec reuse is explicitly recorded rather than fabricated as production
+   work. The final task artifact is ready for `givn review` and then archive.
+   Evidence: all 34 recorded hashes resolve; subject lines match each scenario
+   title; the nine remediation commits are one per added scenario; Scenarios
+   29 and 32 contain the required production simplifications, while the seven
+   pure-reuse remediation commits are documented in review.md.

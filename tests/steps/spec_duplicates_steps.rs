@@ -556,9 +556,7 @@ fn validate_duplicate_score_overrides(world: &mut GivnWorld) {
             .env("GIVN_SPEC_DUPLICATES_TEST_SCORES", value)
             .output()
             .expect("run duplicate score validation subprocess");
-        let stderr = String::from_utf8_lossy(&output.stderr)
-            .replace('\r', " ")
-            .replace('\n', " ");
+        let stderr = String::from_utf8_lossy(&output.stderr).replace(['\r', '\n'], " ");
         evidence.push_str(&format!(
             "{label}\x1f{expected}\x1f{}\x1f{stderr}\n",
             output.status.success()
