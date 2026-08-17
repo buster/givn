@@ -34,8 +34,10 @@ missing or skipped design-review.
 givn instructions tasks --change <id>
 ```
 
-Parse `output`, `template`, `instruction`, `context`/`rules` (do not copy
-into the file), `dependencies`.
+When `--json` is supplied, parse `id`, `generates`, `requires`, and
+`instruction`. Use `generates` for the output path and `requires` for
+prerequisite artifacts; do not copy instruction prose into the file. Without
+`--json`, the command emits the resolved instruction text only.
 
 ### 3. Read the inputs
 

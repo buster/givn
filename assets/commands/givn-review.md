@@ -37,7 +37,10 @@ Read `tasks.md`, `specs/**/*.feature`, `design.md`, `verify.command` and
 givn instructions review --change <id>
 ```
 
-Capture `output`, `template`, `instruction`, `rules`, `dependencies`.
+When `--json` is supplied, capture `id`, `generates`, `requires`, and
+`instruction`. Use `generates` and `requires` to orient the review; the
+instruction text is the resolved policy. Without `--json`, capture the
+resolved instruction text only.
 
 ### 3. Spawn a review subagent
 
