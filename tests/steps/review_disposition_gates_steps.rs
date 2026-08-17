@@ -50,6 +50,35 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
             "- rationale: \"The existing disposition covers this behavior\"",
         );
     std::fs::write(report_path, report).expect("classify semantic seed report");
+
+    // This legacy fixture verifies structural dispositions and net-delta output.
+    // Keep its two added scenarios structurally present but make the semantic
+    // seed obsolete so the remediation gate does not change that contract.
+    let delta_path = change_dir(world).join("specs/cap/cap.feature");
+    let delta = std::fs::read_to_string(&delta_path).expect("read disposition delta");
+    let delta = delta
+        .replace(
+            "Scenario: Reviewed shape one",
+            "Scenario: Reviewed shape one distinct audit alpha",
+        )
+        .replace(
+            "Scenario: Reviewed shape two",
+            "Scenario: Reviewed shape two distinct audit beta",
+        )
+        .replace(
+            "Then the command exits 0",
+            "Then the semantic fixture records distinct audit evidence",
+        );
+    std::fs::write(delta_path, delta).expect("rewrite disposition delta");
+    let updated_review = std::fs::read_to_string(&path)
+        .expect("read disposition review")
+        .replace(&title_a, "Reviewed shape one distinct audit alpha")
+        .replace(&title_b, "Reviewed shape two distinct audit beta");
+    std::fs::write(path, updated_review).expect("rewrite disposition review");
+    let semantic_report = change_dir(world).join("semantic-review.md");
+    if semantic_report.exists() {
+        std::fs::remove_file(semantic_report).expect("remove obsolete semantic seed");
+    }
 }
 
 #[given(regex = r#"^the change's review\.md contains a split-or-keep row for "([^"]+)"$"#)]
