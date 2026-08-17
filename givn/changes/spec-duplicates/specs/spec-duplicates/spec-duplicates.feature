@@ -138,7 +138,7 @@ Feature: Audit duplicate and related permanent scenarios
     And the text report is exactly `Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n`
     And the JSON report has scanned_scenarios 2, candidate_count 0, and an empty candidates array
 
-  @givn.added @wip
+  @givn.added
   Scenario: The audit reports retrieval unavailable without the retrieval feature
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     When the user runs `givn spec duplicates` through a build without spec retrieval
