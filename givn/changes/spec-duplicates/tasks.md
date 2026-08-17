@@ -1283,11 +1283,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Active change scenarios are not part of the permanent audit`
-    - Commit hash: ``
+    - Commit hash: `0b4f50ece41ec3e192680bc80215120e133a01ff`
 
 ## Scenario 12: `An audit with no candidates reports an empty result`
 
-- [ ] Scenario: `An audit with no candidates reports an empty result`
+- [x] Scenario: `An audit with no candidates reports an empty result`
   - RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Add regular bindings with explicit `unimplemented!()` stubs in
@@ -1296,27 +1296,93 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^An audit with no candidates reports an empty result$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.31s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An audit with no candidates reports an empty result
+   ✘  Given a permanent scenario corpus with no duplicate or related behaviour
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:135:5
+      Matched: tests/steps/spec_duplicates_steps.rs:345:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3184054) panicked at $HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Render the exact zero-candidate text report and matching JSON result for
-      two eligible scenarios, with zero candidates and an empty array.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+      exactly two eligible scenarios with no exact, structural, or semantic
+      relationship, with zero candidates and an empty array. The fixture is a
+      non-empty corpus and does not exercise missing or empty-directory behavior.
+    - Production file modified in GREEN: `src/spec/retrieval.rs`.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+      Exact output:
+      ```text
+    Checking givn v0.2.0 ($HOME/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.12s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.29s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An audit with no candidates reports an empty result
+   ✔  Given a permanent scenario corpus with no duplicate or related behaviour
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And the text report is exactly `Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n`
+   ✔  And the JSON report has scanned_scenarios 2, candidate_count 0, and an empty candidates array
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Keep empty and missing-corpus rendering on the same deterministic report
       path; verify exactly one final newline and no diagnostic prefix/suffix.
-      Run `cargo fmt --check` and rerun the targeted command.
+      Share the existing text-report parser and JSON document parser between
+      the empty-result assertions and the candidate assertions without changing
+      exact text or JSON bytes. Run `cargo fmt -- --check` and rerun the
+      targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Step-file scan for `unimplemented!()` or `todo!()` returned `No files
+      found`.
+    - Empty-function-body scan returned `No files found`.
+    - Bare-return-body scan returned `No files found`.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.57s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An audit with no candidates reports an empty result
+   ✔  Given a permanent scenario corpus with no duplicate or related behaviour
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And the text report is exactly `Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n`
+   ✔  And the JSON report has scanned_scenarios 2, candidate_count 0, and an empty candidates array
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 12 tag only), `src/spec/retrieval.rs`,
+      `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 11
+      hash update). No design artifact or later `@wip` tag was changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An audit with no candidates reports an empty result`
