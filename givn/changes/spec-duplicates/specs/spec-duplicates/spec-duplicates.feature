@@ -292,3 +292,23 @@ Feature: Audit duplicate and related permanent scenarios
     When the user runs `givn spec duplicates --format json`
     Then equal-score candidates with one left endpoint are ordered by right endpoint
     And both right-endpoint candidates retain score `0.9600`
+
+  @givn.added
+  Scenario: Invalid duplicate score overrides are rejected
+    Given a permanent corpus for duplicate score validation
+    And the duplicate score seam has these invalid entries:
+      | case | raw | expected |
+      | empty input |  | must not be empty |
+      | invalid UTF-8 | __INVALID_UTF8__ | not valid UTF-8 |
+      | empty entry | givn/specs/score/a.feature\|A::givn/specs/score/b.feature\|B=0.9600; | empty entry |
+      | missing equals | givn/specs/score/a.feature\|A::givn/specs/score/b.feature\|B | expected <endpoint>::<endpoint>=<score> |
+      | missing pair separator | givn/specs/score/a.feature\|A=0.9600 | expected two endpoint identities |
+      | equal endpoints | givn/specs/score/a.feature\|A::givn/specs/score/a.feature\|A=0.9600 | two distinct endpoints |
+      | duplicate pair | givn/specs/score/a.feature\|A::givn/specs/score/b.feature\|B=0.9600;givn/specs/score/b.feature\|B::givn/specs/score/a.feature\|A=0.9500 | pair is repeated |
+      | malformed endpoint | givn/specs/score/a.feature\|A::broken=0.9600 | expected <file>\|<title> |
+      | empty title | givn/specs/score/a.feature\|::givn/specs/score/b.feature\|B=0.9600 | invalid duplicate endpoint identity |
+      | invalid file | project/spec.feature\|A::givn/specs/score/b.feature\|B=0.9600 | invalid duplicate endpoint identity |
+      | invalid score shape | givn/specs/score/a.feature\|A::givn/specs/score/b.feature\|B=0.960 | expected four decimal places |
+      | out-of-range score | givn/specs/score/a.feature\|A::givn/specs/score/b.feature\|B=1.0001 | outside the cosine range |
+    When the user validates each duplicate score override
+    Then every invalid duplicate score override fails with its expected diagnostic
