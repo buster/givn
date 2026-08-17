@@ -30,13 +30,13 @@ Identify the active change. Announce: "Using change: <id>".
 givn instructions specs --change <id>
 ```
 
-Parse the output for:
-- `output`: glob pattern for delta spec paths
-  (typically `givn/changes/<id>/specs/<capability>/<capability>.feature`)
-- `template`: structure to follow
-- `instruction`: guidance on what to produce
-- `context` / `rules`: constraints for you — **do not copy these into the file**
-- `dependencies`: completed artifacts to read (proposal.md)
+When `--json` is supplied, parse the documented object:
+- `id`: effective artifact id
+- `generates`: output paths or globs for the artifact
+- `requires`: prerequisite artifact ids
+- `instruction`: resolved writing guidance; do not copy it into the file
+
+Without `--json`, the command emits the resolved instruction text only.
 
 ### 3. Read the proposal
 

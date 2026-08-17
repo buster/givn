@@ -22,7 +22,10 @@ fn canonical_specs_guidance_requested(world: &mut GivnWorld) {
 
 #[when("an author reads the interaction and E2E policy")]
 fn author_reads_interaction_policy(world: &mut GivnWorld) {
-    assert!(!policy(world).is_empty(), "canonical policy must not be empty");
+    assert!(
+        !policy(world).is_empty(),
+        "canonical policy must not be empty"
+    );
 }
 
 #[then("the guidance requires primary assertions on the named real interface")]
@@ -70,14 +73,17 @@ fn design_guidance(world: &GivnWorld) -> &str {
 
 #[given("the design instructions are requested")]
 fn design_instructions_requested(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("assets/instructions/design.md")
-        .expect("read design instruction");
+    let content =
+        std::fs::read_to_string("assets/instructions/design.md").expect("read design instruction");
     world.additional_output = Some(content);
 }
 
 #[when("an author prepares the technical design")]
 fn author_prepares_design(world: &mut GivnWorld) {
-    assert!(!design_guidance(world).is_empty(), "design guidance must not be empty");
+    assert!(
+        !design_guidance(world).is_empty(),
+        "design guidance must not be empty"
+    );
 }
 
 #[then("the guidance requires the E2E runner and its tag isolation")]
@@ -116,23 +122,29 @@ fn review_guidance(world: &GivnWorld) -> &str {
 
 #[given("a semantic review contains classified candidates")]
 fn semantic_review_contains_candidates(world: &mut GivnWorld) {
-    let instruction = std::fs::read_to_string("assets/instructions/review.md")
-        .expect("read review instruction");
-    let template = std::fs::read_to_string("assets/templates/review.md")
-        .expect("read review template");
+    let instruction =
+        std::fs::read_to_string("assets/instructions/review.md").expect("read review instruction");
+    let template =
+        std::fs::read_to_string("assets/templates/review.md").expect("read review template");
     world.additional_output = Some(format!("{instruction}\n{template}"));
 }
 
 #[when("the reviewer completes the review artifact")]
 fn reviewer_completes_review_artifact(world: &mut GivnWorld) {
-    assert!(!review_guidance(world).is_empty(), "review guidance must not be empty");
+    assert!(
+        !review_guidance(world).is_empty(),
+        "review guidance must not be empty"
+    );
 }
 
 #[then("the review records the remediation contract for each classification")]
 fn review_records_remediation_contracts(world: &mut GivnWorld) {
     let content = review_guidance(world);
     for class in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY"] {
-        assert!(content.contains(class), "review guidance missing {class} contract");
+        assert!(
+            content.contains(class),
+            "review guidance missing {class} contract"
+        );
     }
     assert!(content.contains("remediation"));
 }
@@ -149,4 +161,53 @@ fn stale_remediation_remains_blocking(world: &mut GivnWorld) {
     let content = review_guidance(world);
     assert!(content.contains("stale"));
     assert!(content.contains("blocks") || content.contains("blocking"));
+}
+
+fn instruction_json(world: &GivnWorld) -> serde_json::Value {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("instruction command was not run");
+    assert!(output.status.success(), "instruction command failed");
+    serde_json::from_slice(&output.stdout).expect("instruction output is not JSON")
+}
+
+#[given("the effective specs artifact metadata is available")]
+fn effective_specs_metadata_available(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let output = crate::common::run_givn(&env, &["new", "instruction-integrity"]);
+    assert!(output.status.success(), "create fixture change failed");
+    world.env = Some(env);
+}
+
+#[when("an agent inspects the specs instructions as JSON")]
+fn agent_inspects_specs_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("instruction fixture is missing");
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &[
+            "instructions",
+            "specs",
+            "--change",
+            "instruction-integrity",
+            "--json",
+        ],
+    ));
+}
+
+#[then("the response identifies the artifact")]
+fn response_identifies_artifact(world: &mut GivnWorld) {
+    assert_eq!(instruction_json(world)["id"], "specs");
+}
+
+#[then("the response lists the generated paths and prerequisites")]
+fn response_lists_paths_and_prerequisites(world: &mut GivnWorld) {
+    let value = instruction_json(world);
+    assert!(value["generates"].is_array());
+    assert!(value["requires"].is_array());
+}
+
+#[then("the response contains the resolved instruction text")]
+fn response_contains_instruction_text(world: &mut GivnWorld) {
+    assert!(instruction_json(world)["instruction"].is_string());
 }

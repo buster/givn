@@ -79,7 +79,10 @@ Check the `artifacts` array:
 givn instructions design-review --change <id>
 ```
 
-Capture `output` path, `template`, `instruction`, `dependencies`.
+When `--json` is supplied, capture `id`, `generates`, `requires`, and
+`instruction`. Use `generates` and `requires` to orient the review; the
+instruction text is the resolved policy. Without `--json`, capture the
+resolved instruction text only.
 
 ### 3. Spawn the grilling subagent
 

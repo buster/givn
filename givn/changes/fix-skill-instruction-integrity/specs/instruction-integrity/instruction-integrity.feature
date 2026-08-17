@@ -52,7 +52,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When the reviewer requests the review instructions through the Givn CLI
     Then the CLI output contains semantic classification and remediation checks
 
-  @givn.added @wip
+  @givn.added
   Scenario: Machine-readable instructions describe the effective artifact
     Given the effective specs artifact metadata is available
     When an agent inspects the specs instructions as JSON
