@@ -1,6 +1,7 @@
 //! Regular black-box steps for the permanent scenario duplicate audit.
 
 use std::fs;
+use std::path::{Path, PathBuf};
 use std::process::{Command, Output, Stdio};
 
 use cucumber::{given, then, when};
@@ -97,11 +98,93 @@ const ACTIVE_CHANGE_FEATURE: &str = r#"Feature: active provider
 const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
 const MALFORMED_PERMANENT_FEATURE: &str =
     "this is not a Gherkin feature document\nwithout a structural keyword\n";
+const UNREADABLE_PERMANENT_FEATURE: &str = r#"Feature: private
+
+  Scenario: Private fixture is readable
+    Given a private fixture
+    When the private fixture is inspected
+    Then the private fixture is readable
+"#;
+
+#[derive(Debug)]
+pub(crate) struct UnreadableFeatureGuard {
+    path: PathBuf,
+    original_permissions: fs::Permissions,
+    fallback_backup: Option<PathBuf>,
+}
+
+impl Drop for UnreadableFeatureGuard {
+    fn drop(&mut self) {
+        if let Some(backup) = self.fallback_backup.take() {
+            let _ = fs::remove_dir_all(&self.path);
+            let _ = fs::rename(backup, &self.path);
+        }
+        let _ = fs::set_permissions(&self.path, self.original_permissions.clone());
+    }
+}
+
+fn make_unreadable_feature_guard(path: PathBuf) -> UnreadableFeatureGuard {
+    let original_permissions = fs::metadata(&path)
+        .expect("read unreadable feature metadata")
+        .permissions();
+    let permission_is_enforced = set_unreadable_permissions(&path);
+    let fallback_backup = if permission_is_enforced {
+        None
+    } else {
+        // Elevated test users can bypass mode 000. A directory at the same
+        // .feature path makes Feature::parse_path fail with an I/O error
+        // (EISDIR) instead of exercising malformed-Gherkin parsing.
+        let backup = path.with_extension("readable");
+        fs::rename(&path, &backup).expect("move readable feature for I/O fallback");
+        if let Err(error) = fs::set_permissions(&backup, original_permissions.clone()) {
+            let _ = fs::rename(&backup, &path);
+            panic!("restore readable feature permissions for I/O fallback: {error}");
+        }
+        if let Err(error) = fs::create_dir(&path) {
+            let _ = fs::rename(&backup, &path);
+            panic!("create unreadable feature I/O fixture directory: {error}");
+        }
+        Some(backup)
+    };
+
+    UnreadableFeatureGuard {
+        path,
+        original_permissions,
+        fallback_backup,
+    }
+}
+
+#[cfg(unix)]
+fn set_unreadable_permissions(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+
+    if fs::set_permissions(path, fs::Permissions::from_mode(0o000)).is_err() {
+        return false;
+    }
+    fs::read_to_string(path).is_err()
+}
+
+#[cfg(not(unix))]
+fn set_unreadable_permissions(_path: &Path) -> bool {
+    false
+}
 
 #[given(regex = r##"^a malformed permanent feature at "([^"]+)"$"##)]
 fn malformed_permanent_feature(world: &mut GivnWorld, path: String) {
     assert_eq!(path, "givn/specs/broken/broken.feature");
     permanent_project(world, &[(path.as_str(), MALFORMED_PERMANENT_FEATURE)]);
+}
+
+#[given(regex = r##"^an unreadable permanent feature at "([^"]+)"$"##)]
+fn unreadable_permanent_feature(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, "givn/specs/private/private.feature");
+    permanent_project(world, &[(path.as_str(), UNREADABLE_PERMANENT_FEATURE)]);
+    let feature_path = world
+        .env
+        .as_ref()
+        .expect("unreadable feature project is initialized")
+        .path(&path);
+    world.unreadable_feature = Some(make_unreadable_feature_guard(feature_path));
 }
 
 #[then(regex = r##"^stderr contains the project-relative path "([^"]+)"$"##)]
@@ -117,9 +200,10 @@ fn stderr_contains_project_relative_path(world: &mut GivnWorld, path: String) {
 fn stdout_is_empty(world: &mut GivnWorld) {
     assert!(
         output(world).stdout.is_empty(),
-        "malformed duplicate audit emitted stdout: {}",
+        "duplicate audit emitted stdout: {}",
         stdout(world)
     );
+    drop(world.unreadable_feature.take());
 }
 
 const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
