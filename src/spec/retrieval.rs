@@ -1908,10 +1908,7 @@ fn duplicate_candidate_order(
         })
         .then_with(|| {
             if left.kind == "semantic_candidate" && right.kind == "semantic_candidate" {
-                match (left.score, right.score) {
-                    (Some(left), Some(right)) => right.total_cmp(&left),
-                    _ => std::cmp::Ordering::Equal,
-                }
+                right.score.unwrap().total_cmp(&left.score.unwrap())
             } else {
                 std::cmp::Ordering::Equal
             }
@@ -1924,22 +1921,26 @@ fn duplicate_candidate_order(
 
 #[cfg(feature = "spec-retrieval")]
 fn duplicate_kind_order(kind: &str) -> u8 {
-    match kind {
-        "exact_duplicate" => 0,
-        "structural_overlap" => 1,
-        "semantic_candidate" => 2,
-        _ => 3,
-    }
+    [
+        "exact_duplicate",
+        "structural_overlap",
+        "semantic_candidate",
+    ]
+    .iter()
+    .position(|candidate| *candidate == kind)
+    .unwrap() as u8
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn duplicate_relation_order(relation: &str) -> u8 {
-    match relation {
-        "same_assertion_shape" => 0,
-        "left_assertions_subset_of_right" => 1,
-        "right_assertions_subset_of_left" => 2,
-        _ => 0,
-    }
+    [
+        "same_assertion_shape",
+        "left_assertions_subset_of_right",
+        "right_assertions_subset_of_left",
+    ]
+    .iter()
+    .position(|candidate| *candidate == relation)
+    .unwrap() as u8
 }
 
 #[cfg(feature = "spec-retrieval")]
