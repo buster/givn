@@ -21,7 +21,7 @@ flowchart TD
     G --> T["integration tests"]
 
     C --> CHECK["cli::check: hooks and mandatory review gates"]
-    C --> SPEC["cli::spec: index, search, explore, review"]
+    C --> SPEC["cli::spec: index, search, explore, review, duplicates"]
     CFG --> MANIFEST["manifest, overlay, cascade, render"]
     GH --> DELTA["parse, delta, merge"]
     O --> FINGER["fingerprint and disposition"]
@@ -45,7 +45,7 @@ flowchart TD
 | `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
 | `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
 | `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
-| `cli::spec` | Build, search, explore, or review the local permanent-only scenario index; exploration can add request-local current-change candidates, while `spec review --change` remains the existing advisory path and never creates the semantic report. | `spec::retrieval`, `gherkin::parse`, `state` |
+| `cli::spec` | Build, search, explore, audit, or review the local permanent-only scenario corpus; exploration can add request-local current-change candidates, while `spec review --change` remains the existing advisory path and never creates the semantic report. | `spec::retrieval`, `gherkin::parse`, `state` |
 | `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
 | `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
 | `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
@@ -61,7 +61,7 @@ flowchart TD
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries, rank interactive and complete-scenario queries, collect request-local active deltas, apply lifecycle identity filters, keep the existing advisory review entrypoint separate, generate the change-local E5 semantic report, and verify projected remediation for prior classifications. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
+| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries for existing retrieval commands, rank interactive and complete-scenario queries, audit every permanent pair in memory, render the fixed duplicate-audit text/JSON contract, collect request-local active deltas, apply lifecycle identity filters, keep the existing advisory review entrypoint separate, generate the change-local E5 semantic report, and verify projected remediation for prior classifications. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -156,3 +156,15 @@ verifiable. `DUPLIKAT` requires removal of the redundant endpoint, `VARIANTE`
 requires one parameterized `Scenario Outline` with a non-empty `Examples`
 table, and `VALID-BOUNDARY` requires a changed deterministic observable fact or
 explicit condition/outcome invariant plus a score strictly below `0.9500`.
+
+### 5.3e Permanent duplicate audit additions
+
+The duplicate audit adds an in-memory permanent-corpus record and candidate
+renderer inside `spec::retrieval`. It reuses `gherkin::parse` for Rules and
+backgrounds, `overlap::fingerprint` for masked assertion shape/subset and fact
+evidence, and the existing local E5 embedding path for advisory semantic
+candidates. It deliberately does not read or call the persistent index refresh
+path. The repository-owned acceptance layer adds one regular step module and
+one separate CLI E2E module, both invoking the compiled binary through a
+temporary project. The test-only score seam is keyed by normalized endpoint
+identity and is available only with the stub embedder.

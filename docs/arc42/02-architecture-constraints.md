@@ -24,6 +24,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-15 | The semantic similarity gate uses the private binary constant `0.95`; no project config, CLI flag, environment variable, or review note may raise or lower it. | Prevent an authoring agent from weakening the uniqueness gate to make its own review pass. |
 | TC-16 | The reranker experiment uses a local multilingual ONNX pair model behind the same opt-in retrieval feature and a private raw-logit boundary; no hosted inference is allowed. | Keep review reproducible, local, and independent of external services. |
 | TC-17 | Blocking semantic review requires a retrieval-enabled local build; the default feature-free build must fail explicitly rather than claim semantic completeness. | Keep the opt-in native retrieval dependency explicit while ensuring the dogfood binary and review/archive workflow use `--features spec-retrieval`. |
+| TC-18 | The complete permanent duplicate audit is advisory and read-only: it reads current permanent specs, excludes active changes and archive contents, never uses or writes `.spec-index.json`, and computes transient embeddings in memory. Existing local model-cache creation is allowed. | Preserve ordinary authoring and review state while giving maintainers a complete corpus view. |
 
 ## 2.2 Distribution Constraints
 

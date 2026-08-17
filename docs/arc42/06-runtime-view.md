@@ -411,7 +411,53 @@ collection complete before permanent refresh, so unsafe ids, missing changes,
 missing specs directories, and malformed delta features fail without a rejected
 request writing the index.
 
-### 6.8d Blocking semantic review report
+### 6.8d Complete permanent duplicate audit
+
+`givn spec duplicates` is a separate advisory command. It does not accept a
+current change and never includes active delta or archive scenarios. It reads
+only current permanent files under `givn/specs/`; a missing directory is an
+empty successful corpus, while a malformed or unreadable feature fails with
+its project-relative path.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as givn spec duplicates
+    participant Specs as permanent feature tree
+    participant Fingerprint as deterministic overlap evidence
+    participant Embedder as local E5 embedder
+
+    User->>CLI: run audit with text or JSON format
+    CLI->>Specs: parse every permanent feature and Rule scenario
+    CLI->>Fingerprint: build canonical behavior and facts
+    Fingerprint-->>CLI: exact and structural candidates
+    CLI->>Embedder: embed each eligible scenario once
+    CLI->>Embedder: score remaining permanent pairs in memory
+    Embedder-->>CLI: semantic candidate evidence
+    CLI-->>User: complete deterministically ranked report
+```
+
+The command emits each unordered permanent pair at most once. Exact behavior
+duplicates are classified before structural overlaps; structural overlaps use
+only the existing masked assertion `Fingerprint` shape/subset and fact model,
+not a Given/When action-structure comparison. Semantic candidates are scored
+only after deterministic findings are removed and are advisory threshold hits,
+not automatic duplicate decisions. The result contains all candidates, not the
+interactive top five. Text and JSON share the same fixed header/field grammar,
+rank values, relation enum, structural facts, distinguishing values, score/null
+semantics, and tie-breaking order. The command does not read or call the
+persistent index, so permanent specs, active changes, archive contents, and
+the index remain unchanged after an audit; existing model-cache creation is
+allowed.
+
+The text header is exactly `Givn spec duplicates`, `Scanned scenarios: N`, and
+`Candidate count: N`. JSON has exactly the ordered top-level fields
+`schema_version`, `scanned_scenarios`, `candidate_count`, and `candidates`.
+Candidate ranks are contiguous and equal to the candidate array length;
+semantic scores are four-decimal strings and deterministic candidates use null.
+The raw threshold is inclusive at `0.9500`, so a raw `0.9499` pair is absent.
+
+### 6.8e Blocking semantic review report
 
 The semantic report is a change-local generated document under the active
 change, not a lifecycle artifact and not a permanent specification. The

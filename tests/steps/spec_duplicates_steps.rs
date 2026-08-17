@@ -8,18 +8,46 @@ use super::{GivnWorld, stdout};
 use crate::common;
 
 const EXACT_DUPLICATE_FEATURE: &str = "Feature: provider\n\n  Scenario: Provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
+const CROSS_FEATURE_PROVIDER: &str = "Feature: provider\n\n  Scenario: Provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
+const CROSS_FEATURE_AUTH: &str = "Feature: auth\n\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
 
 #[given("a permanent feature contains two scenarios with identical behaviour")]
 fn duplicate_feature(world: &mut GivnWorld) {
+    duplicate_project(
+        world,
+        &[(
+            "givn/specs/provider/provider.feature",
+            EXACT_DUPLICATE_FEATURE,
+        )],
+    );
+}
+
+#[given("two permanent features contain scenarios with identical behaviour")]
+fn duplicate_features(world: &mut GivnWorld) {
+    duplicate_project(
+        world,
+        &[
+            (
+                "givn/specs/provider/provider.feature",
+                CROSS_FEATURE_PROVIDER,
+            ),
+            ("givn/specs/auth/auth.feature", CROSS_FEATURE_AUTH),
+        ],
+    );
+}
+
+fn duplicate_project(world: &mut GivnWorld, features: &[(&str, &str)]) {
     let env = common::make_init_root();
     let specs = env.path("givn/specs");
     if specs.exists() {
         fs::remove_dir_all(&specs).expect("remove generated permanent specs");
     }
-    let feature = env.path("givn/specs/provider/provider.feature");
-    fs::create_dir_all(feature.parent().expect("provider feature parent"))
-        .expect("create permanent feature directory");
-    fs::write(feature, EXACT_DUPLICATE_FEATURE).expect("write exact duplicate fixture");
+    for (path, content) in features {
+        let feature = env.path(path);
+        fs::create_dir_all(feature.parent().expect("duplicate feature parent"))
+            .expect("create permanent feature directory");
+        fs::write(feature, content).expect("write exact duplicate fixture");
+    }
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
 }

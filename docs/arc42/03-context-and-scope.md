@@ -36,7 +36,7 @@ graph TB
 | `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files, including the deterministic `semantic-review.md` wire grammar with fixed headers/field order, compact JSON values, `null` absence, exact score/hash formats, and no timestamp/environment fields. |
 | `givn instructions --json` | out | One JSON object `{id, generates, requires, instruction}` for AI agents, resolved from the effective manifest and instruction cascade. |
-| `givn spec index/search/explore/review` | in/out | Local permanent-only scenario-index construction, advisory free-form and complete-scenario retrieval, and the existing advisory review contract. `spec review --change` does not create the semantic report. |
+| `givn spec index/search/explore/review/duplicates` | in/out | Local permanent-only scenario-index construction, advisory retrieval and review, and the complete read-only duplicate audit. `spec review --change` does not create the semantic report; `spec duplicates` reads current `givn/specs/` files, ignores active/archive/index evidence, and emits the fixed text/JSON candidate contract. |
 | `givn spec explore --file/--stdin [--change <id>]` | in/out | One complete Gherkin scenario in; permanent-corpus candidates plus optional active-change candidates, source metadata, index metadata, and optional stable JSON out. |
 | `givn check review --change <id>` | in/out | Runs the existing review checks, calls the dedicated E5 semantic-report and remediation-verification gates, writes `givn/changes/<id>/semantic-review.md` atomically when retrieval is available, rebuilds a malformed/incompatible permanent index as permanent-only before continuing, and exits non-zero for missing/invalid/stale/unremediated classifications or the existing retrieval-unavailable error. |
 | `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
@@ -69,6 +69,10 @@ graph TB
 - Advisory permanent-scenario exploration from a complete file or stdin query;
   optional request-local exploration of active scenarios in the named current
   change.
+- Complete read-only permanent-corpus duplicate auditing with deterministic text
+  or JSON output for exact, Fingerprint-based structural, and advisory E5
+  candidates; the semantic layer is threshold-eligible evidence, not an
+  automatic duplicate decision.
 - Blocking semantic review report generation for active added/modified delta
   scenarios against permanent and current-change candidates at E5 `0.9500`, with
   agent-owned classifications, complete source-ordered evidence invalidation,
@@ -88,4 +92,5 @@ graph TB
 | Workspace/multi-repo coordination | Out of scope for v1. |
 | Context stores / initiatives | Dropped weight from the prototype. |
 | Additional skill targets (cursor, gemini, …) | The built-in target set is fixed at opencode, .agents, .claude (selectable at init); other tools are achievable via `eject`; not shipped built-in in v1. |
-| Automatic classification, automatic feature-file edits, and full-corpus auditing | The report records E5 evidence, the agent classifies and edits, and Givn verifies the projected remediation without choosing or applying edits; permanent-permanent auditing and BGE/NLI evidence remain outside this slice. |
+| Automatic classification and automatic feature-file edits | The report records evidence, the agent classifies and edits, and Givn verifies projected remediation without choosing or applying edits. |
+| BGE/NLI evidence for the permanent audit | This slice uses the existing E5 embedding threshold; later model-evidence slices provide reranking and NLI evidence. |
