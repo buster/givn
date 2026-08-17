@@ -1682,7 +1682,7 @@ fn parse_permanent_feature(root: &Path, path: &Path) -> Result<gherkin::Feature>
 #[cfg(feature = "spec-retrieval")]
 fn collect_duplicate_scenarios(root: &Path) -> Result<Vec<DuplicateScenario>> {
     let mut scenarios = Vec::new();
-    for path in crate::gherkin::parse::collect_feature_files(&permanent_specs_path(root)) {
+    for path in collect_duplicate_feature_files(root)? {
         let feature = parse_permanent_feature(root, &path)?;
         let file = normalize_project_file_identity(root, &path);
         for scenario in &feature.scenarios {
@@ -1701,6 +1701,21 @@ fn collect_duplicate_scenarios(root: &Path) -> Result<Vec<DuplicateScenario>> {
             .then_with(|| left.endpoint.title.cmp(&right.endpoint.title))
     });
     Ok(scenarios)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn collect_duplicate_feature_files(root: &Path) -> Result<Vec<std::path::PathBuf>> {
+    let specs_root = permanent_specs_path(root);
+    match fs::metadata(&specs_root) {
+        Ok(_) => Ok(crate::gherkin::parse::collect_feature_files(&specs_root)),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(Vec::new()),
+        Err(error) => Err(error).with_context(|| {
+            format!(
+                "failed to inspect permanent specs directory {}",
+                normalize_project_file_identity(root, &specs_root)
+            )
+        }),
+    }
 }
 
 #[cfg(feature = "spec-retrieval")]
