@@ -91,8 +91,11 @@ Feature: My Capability
 the inventory, real-interface, and one-E2E-per-distinct-action rules. This
 command only choreographs the spec-writing steps and must not restate them.
 
-Until the retrieval change exists, use deterministic lint and review gates;
-do not add a `givn spec index` or semantic-search step.
+Retrieval-aware authoring is feature-dependent. In a retrieval-capable build,
+use `givn spec index` to refresh permanent scenarios and `givn spec search` or
+`givn spec explore` for advisory authoring evidence. The blocking path is
+`givn check review --change <id>`. In a feature-free build, preserve the
+explicit `retrieval-unavailable` failure rather than passing silently.
 
 ### 5. Validate syntax
 
