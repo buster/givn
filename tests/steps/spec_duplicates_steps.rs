@@ -154,6 +154,23 @@ fn rule_nested_candidate_identities(world: &mut GivnWorld) {
     );
 }
 
+#[given("the permanent specifications path is blocked by a non-directory")]
+fn blocked_permanent_specs_path(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let givn_root = env.path("givn");
+    fs::remove_dir_all(&givn_root).expect("remove initialized givn directory");
+    fs::write(&givn_root, b"not-a-directory").expect("write blocking givn path");
+
+    let error = fs::metadata(env.path("givn/specs")).expect_err("givn/specs unexpectedly exists");
+    assert_ne!(
+        error.kind(),
+        std::io::ErrorKind::NotFound,
+        "blocking fixture produced the missing-directory case"
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
 #[given(
     "the corpus contains one exact duplicate, one structural overlap, and two semantic candidates"
 )]
