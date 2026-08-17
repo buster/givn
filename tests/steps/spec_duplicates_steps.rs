@@ -152,6 +152,28 @@ const RIGHT_SUBSET_RELATION_FEATURE: &str = r#"Feature: right subset relation
     When the short epsilon action runs
     Then epsilon result is complete
 "#;
+const RIGHT_TIE_SHARED_FEATURE: &str = r#"Feature: shared semantic source
+
+  Scenario: Shared semantic source
+    Given the shared semantic context
+    When the shared semantic action runs
+    Then shared semantic result is complete
+"#;
+const RIGHT_TIE_ALPHA_FEATURE: &str = r#"Feature: alpha semantic target
+
+  Scenario: Alpha semantic target
+    Given the alpha semantic context
+    When the alpha semantic action runs
+    Then alpha semantic result is complete
+"#;
+const RIGHT_TIE_BETA_FEATURE: &str = r#"Feature: beta semantic target
+
+  Scenario: Beta semantic target
+    Given the beta semantic context
+    When the beta semantic action runs
+    Then beta semantic result is complete
+"#;
+const RIGHT_ENDPOINT_TIE_SCORE_OVERRIDES: &str = "givn/specs/a/shared.feature|Shared semantic source::givn/specs/b/alpha.feature|Alpha semantic target=0.9600;givn/specs/a/shared.feature|Shared semantic source::givn/specs/b/beta.feature|Beta semantic target=0.9600;givn/specs/b/alpha.feature|Alpha semantic target::givn/specs/b/beta.feature|Beta semantic target=0.0000";
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -299,6 +321,59 @@ fn structural_candidate_relation_order(world: &mut GivnWorld, relations: String)
 fn structural_candidates_have_null_scores(world: &mut GivnWorld) {
     for candidate in json_candidates(world) {
         assert_eq!(candidate["evidence"]["score"], serde_json::Value::Null);
+    }
+}
+
+#[given("two semantic candidates share one left endpoint and have distinct right endpoints")]
+fn right_endpoint_tie_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/a/shared.feature", RIGHT_TIE_SHARED_FEATURE),
+            ("givn/specs/b/alpha.feature", RIGHT_TIE_ALPHA_FEATURE),
+            ("givn/specs/b/beta.feature", RIGHT_TIE_BETA_FEATURE),
+        ],
+    );
+}
+
+#[given("both right-endpoint candidates have equal test score `0.9600`")]
+fn right_endpoint_tie_scores(world: &mut GivnWorld) {
+    world.retrieval_duplicate_scores = Some(RIGHT_ENDPOINT_TIE_SCORE_OVERRIDES.to_string());
+}
+
+#[then("equal-score candidates with one left endpoint are ordered by right endpoint")]
+fn right_endpoint_tie_order(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 2);
+    for candidate in &candidates {
+        assert_eq!(
+            candidate["left"],
+            serde_json::json!({
+                "file": "givn/specs/a/shared.feature",
+                "title": "Shared semantic source"
+            })
+        );
+    }
+    assert_eq!(
+        candidates[0]["right"],
+        serde_json::json!({
+            "file": "givn/specs/b/alpha.feature",
+            "title": "Alpha semantic target"
+        })
+    );
+    assert_eq!(
+        candidates[1]["right"],
+        serde_json::json!({
+            "file": "givn/specs/b/beta.feature",
+            "title": "Beta semantic target"
+        })
+    );
+}
+
+#[then("both right-endpoint candidates retain score `0.9600`")]
+fn right_endpoint_tie_scores_output(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_eq!(candidate["evidence"]["score"], serde_json::json!("0.9600"));
     }
 }
 
