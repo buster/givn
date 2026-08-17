@@ -130,7 +130,7 @@ Feature: Audit duplicate and related permanent scenarios
     And the active change scenario identity is absent from every candidate
     And every candidate endpoint file starts with `givn/specs/`
 
-  @givn.added @wip
+  @givn.added
   Scenario: An audit with no candidates reports an empty result
     Given a permanent scenario corpus with no duplicate or related behaviour
     When the user runs `givn spec duplicates`
