@@ -319,3 +319,11 @@ Feature: Audit duplicate and related permanent scenarios
     When the user runs `givn spec duplicates --format json`
     Then the reversed score override reports one semantic candidate at `0.9600`
     And the reversed score candidate uses canonical endpoint order
+
+  @givn.added
+  Scenario: Empty assertions and reverse subsets retain their distinct relations
+    Given a corpus contains an empty assertion scenario and a reverse subset pair
+    When the user runs `givn spec duplicates --format json`
+    Then the empty assertion scenario produces no structural candidate
+    And the reverse subset candidate has relation `right_assertions_subset_of_left`
+    And the reverse subset candidate retains its two assertion shapes

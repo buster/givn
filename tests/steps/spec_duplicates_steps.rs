@@ -203,6 +203,36 @@ const REVERSED_SCORE_RIGHT_FEATURE: &str = r#"Feature: reversed score right
     Then canonical score right is complete
 "#;
 const REVERSED_SCORE_OVERRIDE: &str = "givn/specs/reverse/b.feature|Canonical score right::givn/specs/reverse/a.feature|Canonical score left=0.9600";
+const EMPTY_ASSERTION_FEATURE: &str = r#"Feature: empty assertion case
+
+  Scenario: Empty assertion scenario
+    Given the empty assertion context
+    When the empty assertion action runs
+"#;
+const EMPTY_PAIR_LONG_FEATURE: &str = r#"Feature: empty pair long case
+
+  Scenario: Long unrelated assertion
+    Given the long unrelated context
+    When the long unrelated action runs
+    Then long unrelated result is ready
+    And long unrelated details are complete
+"#;
+const REVERSE_SUBSET_LONG_FEATURE: &str = r#"Feature: reverse subset long case
+
+  Scenario: Long reverse subset
+    Given the long reverse subset context
+    When the long reverse subset action runs
+    Then reverse subset primary result is ready
+    And reverse subset secondary result is complete
+"#;
+const REVERSE_SUBSET_SHORT_FEATURE: &str = r#"Feature: reverse subset short case
+
+  Scenario: Short reverse subset
+    Given the short reverse subset context
+    When the short reverse subset action runs
+    Then reverse subset secondary result is complete
+"#;
+const EMPTY_AND_REVERSE_SUBSET_SCORE_OVERRIDES: &str = "givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/empty/b-long.feature|Long unrelated assertion=0.0000;givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/subset/a-long.feature|Long reverse subset=0.0000;givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/subset/b-short.feature|Short reverse subset=0.0000;givn/specs/empty/b-long.feature|Long unrelated assertion::givn/specs/subset/a-long.feature|Long reverse subset=0.0000;givn/specs/empty/b-long.feature|Long unrelated assertion::givn/specs/subset/b-short.feature|Short reverse subset=0.0000";
 
 #[given("a permanent feature has two identical scenarios nested under a Rule")]
 fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
@@ -564,6 +594,58 @@ fn reversed_score_override_endpoint_order(world: &mut GivnWorld) {
         serde_json::json!({
             "file": "givn/specs/reverse/b.feature",
             "title": "Canonical score right"
+        })
+    );
+}
+
+#[given("a corpus contains an empty assertion scenario and a reverse subset pair")]
+fn empty_and_reverse_subset_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/empty/a-empty.feature", EMPTY_ASSERTION_FEATURE),
+            ("givn/specs/empty/b-long.feature", EMPTY_PAIR_LONG_FEATURE),
+            (
+                "givn/specs/subset/a-long.feature",
+                REVERSE_SUBSET_LONG_FEATURE,
+            ),
+            (
+                "givn/specs/subset/b-short.feature",
+                REVERSE_SUBSET_SHORT_FEATURE,
+            ),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(EMPTY_AND_REVERSE_SUBSET_SCORE_OVERRIDES.to_string());
+}
+
+#[then("the empty assertion scenario produces no structural candidate")]
+fn empty_assertion_no_structural_candidate(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 1);
+    assert!(candidates.iter().all(|candidate| {
+        candidate["left"]["title"] != serde_json::json!("Empty assertion scenario")
+            && candidate["right"]["title"] != serde_json::json!("Empty assertion scenario")
+    }));
+}
+
+#[then("the reverse subset candidate has relation `right_assertions_subset_of_left`")]
+fn reverse_subset_relation(world: &mut GivnWorld) {
+    assert_eq!(
+        json_candidates(world)[0]["evidence"]["relation"],
+        serde_json::json!("right_assertions_subset_of_left")
+    );
+}
+
+#[then("the reverse subset candidate retains its two assertion shapes")]
+fn reverse_subset_shapes(world: &mut GivnWorld) {
+    assert_eq!(
+        json_candidates(world)[0]["evidence"]["assertion_shape"],
+        serde_json::json!({
+            "left": [
+                "reverse subset primary result is ready",
+                "reverse subset secondary result is complete"
+            ],
+            "right": ["reverse subset secondary result is complete"]
         })
     );
 }
