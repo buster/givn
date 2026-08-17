@@ -315,7 +315,7 @@ Feature: Audit duplicate and related permanent scenarios
       - `tests/steps/spec_duplicates_e2e_steps.rs`
       - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
       - `tests/steps/spec_duplicates_steps.rs`
-    - Commit hash: ``
+    - Commit hash: `952e3c9c52dfe1ad24cd7c528afa86aa4d52f12e`
 
 ## Scenario 3: `Structurally overlapping scenarios retain their distinguishing facts`
 
