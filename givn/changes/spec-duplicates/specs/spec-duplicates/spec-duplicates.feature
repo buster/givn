@@ -284,3 +284,11 @@ Feature: Audit duplicate and related permanent scenarios
     When the user runs `givn spec duplicates --format json`
     Then structural candidates are ordered `same_assertion_shape,left_assertions_subset_of_right,right_assertions_subset_of_left`
     And every structural candidate has a null semantic score
+
+  @givn.added
+  Scenario: Equal semantic scores use right endpoint order
+    Given two semantic candidates share one left endpoint and have distinct right endpoints
+    And both right-endpoint candidates have equal test score `0.9600`
+    When the user runs `givn spec duplicates --format json`
+    Then equal-score candidates with one left endpoint are ordered by right endpoint
+    And both right-endpoint candidates retain score `0.9600`
