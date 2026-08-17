@@ -16,7 +16,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the guidance requires a real browser for browser UI interactions
     And the guidance treats an unresolved interface obstacle as a design gap
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An author requests the canonical interaction and E2E guidance
     Given a Givn project with an active change
     When the author requests the specs instructions through the Givn CLI
