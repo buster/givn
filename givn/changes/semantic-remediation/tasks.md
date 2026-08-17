@@ -56,15 +56,18 @@
       steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A VARIANTE classification without consolidation remains blocked` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A VARIANTE classification without consolidation remains blocked` Hash: `3ebd24c`
 
 ### Consolidating a VARIANTE candidate verifies the projected remediation
 
-- [ ] RED: target the named scenario with strict stubs. Evidence:
-- [ ] GREEN: require one parameterized outline with Examples and verify the
+- [x] RED: target the named scenario with strict stubs. Evidence: strict setup
+      proof was non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`.
+- [x] GREEN: require one parameterized outline with Examples and verify the
       projected result. Production files: `src/spec/retrieval.rs`, step files.
-      Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+      Evidence: targeted run passed with `1 scenario (1 passed)`, `9 steps
+      (9 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): Consolidating a VARIANTE candidate verifies the projected remediation` Hash:
 
 ### A VARIANTE score below the boundary without consolidation remains blocked

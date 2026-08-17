@@ -40,7 +40,7 @@ Feature: Verify semantic remediation
     And stderr contains "VARIANTE remediation requires consolidation"
     And the semantic review report status is "BLOCKED"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Consolidating a VARIANTE candidate verifies the projected remediation
     Given a project prepared for semantic remediation with a "VARIANTE" candidate
     When the user runs `givn check review --change running-change`
