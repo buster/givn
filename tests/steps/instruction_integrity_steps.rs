@@ -60,3 +60,49 @@ fn guidance_treats_obstacle_as_design_gap(world: &mut GivnWorld) {
         "canonical policy does not define the interface obstacle as a design gap"
     );
 }
+
+fn design_guidance(world: &GivnWorld) -> &str {
+    world
+        .additional_output
+        .as_deref()
+        .expect("design guidance was not loaded")
+}
+
+#[given("the design instructions are requested")]
+fn design_instructions_requested(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string("assets/instructions/design.md")
+        .expect("read design instruction");
+    world.additional_output = Some(content);
+}
+
+#[when("an author prepares the technical design")]
+fn author_prepares_design(world: &mut GivnWorld) {
+    assert!(!design_guidance(world).is_empty(), "design guidance must not be empty");
+}
+
+#[then("the guidance requires the E2E runner and its tag isolation")]
+fn design_requires_e2e_runner(world: &mut GivnWorld) {
+    let content = design_guidance(world);
+    assert!(content.contains("verify.e2e_command"));
+    assert!(content.contains("filtered to"));
+    assert!(content.contains("`@e2e`"));
+}
+
+#[then("the guidance requires the step-definition location and driving mechanism")]
+fn design_requires_step_location(world: &mut GivnWorld) {
+    let content = design_guidance(world);
+    assert!(content.contains("E2E step definition location"));
+    assert!(content.contains("driving mechanism"));
+}
+
+#[then("the guidance requires local infrastructure and framework decisions")]
+fn design_requires_infrastructure(world: &mut GivnWorld) {
+    let content = design_guidance(world);
+    assert!(content.contains("Local test infrastructure"));
+    assert!(content.contains("E2E framework choice and justification"));
+}
+
+#[then("the guidance requires the interaction coverage matrix")]
+fn design_requires_coverage_matrix(world: &mut GivnWorld) {
+    assert!(design_guidance(world).contains("Interaction Coverage Matrix"));
+}
