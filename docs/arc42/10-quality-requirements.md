@@ -109,6 +109,10 @@ graph TD
 | Q-68 | Semantic remediation integrity | A `VARIANTE` classification is resolved. | The projected result contains one parameterized `Scenario Outline` contract with a non-empty `Examples` table covering the variant; two independent scenarios with a lower score remain blocked. |
 | Q-69 | Semantic remediation integrity | A `VALID-BOUNDARY` classification is resolved. | Both endpoints remain, an observable deterministic fact or condition/outcome invariant changes, and the recomputed score is strictly below `0.9500`; a score-only edit remains blocked. |
 | Q-70 | Recovery / Integrity | A prior classified candidate disappears or falls below report admission. | Prior endpoint identities are resolved against the projected tree and recomputed independently of the report candidate list; disappearance without a satisfied class contract is stale and blocking. |
+| Q-71 | Authoring policy integrity | An author requests the canonical specs instruction. | It contains primary real-interface assertions, browser-driver fidelity, the no-weaker-interface rule, normalized E2E scope, and build-aware retrieval behavior without contradictory interface wording. |
+| Q-72 | Design/review guidance integrity | An author or reviewer requests design/review guidance. | Design receives the full E2E setup fields; review receives semantic classification and class-specific remediation evidence, including the verification receipt. |
+| Q-73 | Agent ergonomics | An agent requests `givn instructions <artifact> --json`. | One valid JSON object contains exactly the effective artifact id, generated paths, prerequisites, and resolved instruction text. |
+| Q-74 | Upgradeability | A project has an instruction or skill override and regenerates guidance. | The override remains effective, generated snapshots refresh only through `givn skills sync`, and the report distinguishes the running binary from checkout assets. |
 
 ## 10.3 Acceptance signals per phase
 

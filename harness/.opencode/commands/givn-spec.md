@@ -30,13 +30,13 @@ Identify the active change. Announce: "Using change: <id>".
 givn instructions specs --change <id>
 ```
 
-Parse the output for:
-- `output`: glob pattern for delta spec paths
-  (typically `givn/changes/<id>/specs/<capability>/<capability>.feature`)
-- `template`: structure to follow
-- `instruction`: guidance on what to produce
-- `context` / `rules`: constraints for you — **do not copy these into the file**
-- `dependencies`: completed artifacts to read (proposal.md)
+When `--json` is supplied, parse the documented object:
+- `id`: effective artifact id
+- `generates`: output paths or globs for the artifact
+- `requires`: prerequisite artifact ids
+- `instruction`: resolved writing guidance; do not copy it into the file
+
+Without `--json`, the command emits the resolved instruction text only.
 
 ### 3. Read the proposal
 
@@ -86,16 +86,16 @@ Feature: My Capability
 - `@givn.removed` scenarios: include exactly one placeholder step.
 - All `@givn.*` tags are stripped automatically on archive.
 
-**`@e2e` smoke tests (mandatory):** every capability includes at least one
-`@e2e` scenario exercising the real interaction surface (browser, CLI,
-API — whatever the user/client actually touches). Tag it
-`@givn.added @e2e @wip`. It runs via `verify.e2e_command`, not
-`verify.command`, using separate step definitions (location documented in
-`design.md`). **Scope: one `@e2e` scenario per distinct happy-path action —
-not one per variant.** Do not add another `@e2e` scenario for every input
-variant, error case, or enum/dropdown value of the same action; those are
-regular (non-`@e2e`) scenarios. Add a second `@e2e` scenario only when it
-covers a genuinely different user-facing action.
+**Canonical E2E policy:** before writing scenarios, run
+`givn instructions specs --change <id>`. That resolved instruction defines
+the inventory, real-interface, and one-E2E-per-distinct-action rules. This
+command only choreographs the spec-writing steps and must not restate them.
+
+Retrieval-aware authoring is feature-dependent. In a retrieval-capable build,
+use `givn spec index` to refresh permanent scenarios and `givn spec search` or
+`givn spec explore` for advisory authoring evidence. The blocking path is
+`givn check review --change <id>`. In a feature-free build, preserve the
+explicit `retrieval-unavailable` failure rather than passing silently.
 
 ### 5. Validate syntax
 

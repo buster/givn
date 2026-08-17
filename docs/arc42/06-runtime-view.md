@@ -79,8 +79,12 @@ The runtime sequence is:
    requirements.
 5. `config::cascade` resolves the `instructions` facet, using the project file
    before the embedded instruction.
-6. Emit text, or emit JSON `{id, generates, requires, instruction}` when
-   `--json` is supplied.
+6. Emit the resolved instruction text, or emit exactly one JSON object
+   `{id, generates, requires, instruction}` when `--json` is supplied. The
+   generated paths and requirements come from the effective manifest; the
+   instruction text comes from the project-overrides-first cascade. The
+   instruction content is global for the artifact even when `--change` selects
+   the lifecycle context.
 
 ## 6.4 `givn lint [path]`
 

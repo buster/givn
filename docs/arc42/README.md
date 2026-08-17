@@ -12,7 +12,7 @@ documents focused and reviewable.
 The semantic retrieval surface includes advisory exploration through
 `givn spec explore`, an optional request-local current-change corpus, and the
 blocking E5 `0.9500` semantic review worklist generated only by `givn check
-review --change <id>`. Remediation verification remains a later stack layer;
+review --change <id>`. Remediation verification is part of that blocking layer;
 the change-local generated report is retained under the archive by the existing
 move, its classification is owned by the agent, and it does not edit feature
 files. A build without retrieval fails this blocking layer rather than passing.

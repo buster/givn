@@ -676,7 +676,7 @@ fn completed_semantic_review_change(world: &mut GivnWorld) {
         .replace(
             "- rationale: null",
             "- rationale: \"The candidate has the same observable behavior\"",
-    );
+        );
     fs::write(&report_path, report).expect("classify archive report");
     fs::remove_dir_all(change_dir.join("specs")).expect("remove classified archive delta");
     fs::create_dir_all(change_dir.join("specs")).expect("recreate archive delta directory");

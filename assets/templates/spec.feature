@@ -33,7 +33,7 @@ Feature: {{FEATURE_TITLE}}
     When {{action}}
     Then {{observable_outcome}}
 
-  # @e2e smoke tests — one per inventory entry; use verify.e2e_command + e2e step definitions.
+  # @e2e smoke tests — one per normalized inventory entry; use verify.e2e_command + e2e step definitions.
 
   @givn.added @e2e @wip
   Scenario: {{E2E_SCENARIO_TITLE}}
