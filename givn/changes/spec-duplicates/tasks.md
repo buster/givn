@@ -523,11 +523,11 @@ Feature: Audit duplicate and related permanent scenarios
       - `src/spec/retrieval.rs`
       - `tests/steps/spec_duplicates_steps.rs`
       - `givn/changes/spec-duplicates/tasks.md` (includes the prior Scenario 3 post-commit evidence and hash)
-    - Commit hash: ``
+    - Commit hash: `eb126c95fcdfb84d507bbb34d47d3426d683eedd`
 
 ## Scenario 5: `Semantically related scenarios are reported as candidates`
 
-- [ ] Scenario: `Semantically related scenarios are reported as candidates`
+- [x] Scenario: `Semantically related scenarios are reported as candidates`
   - RED:
     - Remove `@wip` only from this scenario. Leave all other @wip tags in
       place.
@@ -537,7 +537,25 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Semantically related scenarios are reported as candidates$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.06s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Semantically related scenarios are reported as candidates
+   ✘  Given the permanent scenario "Token is required" at "givn/specs/auth/auth.feature" and "Authentication needs a token" at "givn/specs/token/token.feature" describe closely related behaviour with different wording
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:67:5
+      Matched: tests/steps/spec_duplicates_steps.rs:139:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3153811) panicked at $HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
     - Use the local E5 retrieval path for production and the documented
@@ -545,21 +563,89 @@ Feature: Audit duplicate and related permanent scenarios
       configured score, with null structural fields, empty distinguishing facts,
       false contradiction, and advisory-only semantics.
     - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Test files: `tests/steps/spec_duplicates_steps.rs` and
+      `tests/steps/mod.rs` for the separate duplicate-audit score environment.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+      Exact output:
+      ```text
+    Checking givn v0.2.0 ($HOME/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.15s
+      ```
     - Rerun the targeted command. Required result: exit 0 and score `0.9600`.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 8.17s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Semantically related scenarios are reported as candidates
+   ✔  Given the permanent scenario "Token is required" at "givn/specs/auth/auth.feature" and "Authentication needs a token" at "givn/specs/token/token.feature" describe closely related behaviour with different wording
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 1
+   ✔  And candidate rank 1 is classified as `semantic_candidate`
+   ✔  And candidate rank 1 has left identity ("givn/specs/auth/auth.feature", "Token is required")
+   ✔  And candidate rank 1 has right identity ("givn/specs/token/token.feature", "Authentication needs a token")
+   ✔  And candidate rank 1 has relation `semantic_similarity`
+   ✔  And candidate rank 1 has score `0.9600`
+   ✔  And candidate rank 1 has null assertion shape and null fingerprint facts
+   ✔  And candidate rank 1 has empty distinguishing facts and fact contradiction `false`
+   ✔  And the semantic candidate is advisory and is not an automatic duplicate decision
+[Summary]
+1 feature
+1 scenario (1 passed)
+11 steps (11 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Confirm the score seam cannot affect production local-E5 execution and
       that semantic evidence never suppresses deterministic evidence. Run
       `cargo fmt --check`, rerun the targeted command, and verify no stub remains.
-    - Required result: exit 0; paste exact REFACTOR output:
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - The malformed stub seam probe exited non-zero with:
       ```text
-
+error: malformed duplicate score entry `malformed`; expected <endpoint>::<endpoint>=<score>
       ```
+    - The unset seam stub audit completed through the normal audit path and
+      emitted candidates; the output was truncated by the terminal tool and
+      saved at `$HOME/.local/share/opencode/tool-output/tool_0109c962e001d8x2jKxrTfVFcM`.
+    - The non-stub boundary probe ignored the duplicate seam and returned the
+      existing retrieval-model error:
+      ```text
+error: retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER
+      ```
+      A local-E5 production scoring run was not feasible because the model is
+      unavailable in this environment.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no
+      `unimplemented!()`, `todo!()`, or empty step bodies.
+    - Required targeted runner output, exit 0:
+      ```text
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.62s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Semantically related scenarios are reported as candidates
+   ✔  Given the permanent scenario "Token is required" at "givn/specs/auth/auth.feature" and "Authentication needs a token" at "givn/specs/token/token.feature" describe closely related behaviour with different wording
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 1
+   ✔  And candidate rank 1 is classified as `semantic_candidate`
+   ✔  And candidate rank 1 has left identity ("givn/specs/auth/auth.feature", "Token is required")
+   ✔  And candidate rank 1 has right identity ("givn/specs/token/token.feature", "Authentication needs a token")
+   ✔  And candidate rank 1 has relation `semantic_similarity`
+   ✔  And candidate rank 1 has score `0.9600`
+   ✔  And candidate rank 1 has null assertion shape and null fingerprint facts
+   ✔  And candidate rank 1 has empty distinguishing facts and fact contradiction `false`
+   ✔  And the semantic candidate is advisory and is not an automatic duplicate decision
+[Summary]
+1 feature
+1 scenario (1 passed)
+11 steps (11 passed)
+      ```
+  - Files touched:
+    - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 5 tag only)
+    - `src/spec/retrieval.rs`
+    - `tests/steps/spec_duplicates_steps.rs`
+    - `tests/steps/mod.rs`
+    - `givn/changes/spec-duplicates/tasks.md` (includes the pending Scenario 4 post-commit hash)
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Semantically related scenarios are reported as candidates`
