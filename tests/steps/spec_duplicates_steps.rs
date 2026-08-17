@@ -490,6 +490,53 @@ fn repeated_audit_fixture(world: &mut GivnWorld) {
     );
 }
 
+#[then("the permanent specifications are unchanged byte-for-byte")]
+fn permanent_specs_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        stdout(world).starts_with("Givn spec duplicates\n"),
+        "duplicate audit did not produce its report header: {}",
+        stdout(world)
+    );
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .permanent_spec_snapshot
+        .as_ref()
+        .expect("permanent specifications were not snapshotted");
+    let after = permanent_feature_snapshot(env);
+    assert_eq!(
+        &after, before,
+        "permanent feature bytes changed after duplicate audit"
+    );
+}
+
+fn permanent_feature_snapshot(env: &common::TestEnv) -> Vec<(String, Vec<u8>)> {
+    let specs = env.path("givn/specs");
+    givn::gherkin::parse::collect_feature_files(&specs)
+        .into_iter()
+        .map(|path| {
+            let relative = path
+                .strip_prefix(env.root())
+                .expect("permanent feature under project root")
+                .to_string_lossy()
+                .replace('\\', "/");
+            (
+                relative,
+                fs::read(path).expect("read permanent feature after audit"),
+            )
+        })
+        .collect()
+}
+
 #[when("the user runs `givn spec duplicates` twice without changing the corpus")]
 fn repeated_audit_runs(world: &mut GivnWorld) {
     let env = world
