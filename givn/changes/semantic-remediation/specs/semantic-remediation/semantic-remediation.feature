@@ -159,6 +159,68 @@ Feature: Verify semantic remediation
     And stdout contains "semantic remediation verified"
     And the semantic review report status is "PASS"
 
+  @givn.modified
+  Scenario: A regenerated classified report is byte-for-byte deterministic
+    Given the remediation case carries the distinguishing marker "regression deterministic report omega glacier harbor invariant matrix nonce ordered receipt stable"
+    Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    When the user classifies every semantic review candidate as "DUPLIKAT"
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+    And the semantic review report status is "PASS"
+
+  @givn.modified
+  Scenario: Changing a candidate scenario invalidates its previous classification
+    Given the remediation case carries the distinguishing marker "regression active candidate invalidation sigma texture vector antler birch comet dune ember fjord granite harbor island juniper kiln lagoon marble nebula olive prism quartz rocket sandal timber umber"
+    Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    When the user classifies every semantic review candidate as "DUPLIKAT"
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+
+  @givn.modified
+  Scenario: Changing a permanent endpoint invalidates its prior classification
+    Given the remediation case carries the distinguishing marker "regression permanent endpoint invalidation tau unmodified baseline acorn beacon copper delta engine frost grove hickory iris jade kettle lemon mosaic nickel opal pebble ruby stone thistle"
+    Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    When the user classifies every semantic review candidate as "DUPLIKAT"
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+
+  @givn.modified
+  Scenario: Any changed endpoint evidence or prior-report metadata invalidates carry-forward
+    Given the remediation case carries the distinguishing marker "regression evidence metadata invalidation upsilon version hash"
+    Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    When the user classifies every semantic review candidate as "DUPLIKAT"
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+
+  @givn.modified
+  Scenario: Removed candidates disappear after classification
+    Given the remediation case carries the distinguishing marker "regression removed candidate disappearance phi projected state"
+    Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    When the user classifies every semantic review candidate as "DUPLIKAT"
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+    And the semantic review report status is "PASS"
+
   @givn.added @e2e
   Scenario: Real CLI review reports successful duplicate remediation
     Given an end-to-end project prepared for a duplicate remediation

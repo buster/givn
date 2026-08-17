@@ -168,6 +168,67 @@
       scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash: `687b20e`
 
+### A regenerated classified report is byte-for-byte deterministic
+
+- [x] RED: target the modified regression scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: update the permanent contract to require projected remediation
+      before a classified report passes. Production evidence: existing
+      `src/spec/retrieval.rs` verifier; targeted scenario passed with `1
+      scenario (1 passed)`, `9 steps (9 passed)`.
+- [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
+      scenario passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [ ] COMMIT: `feat(semantic-remediation): A regenerated classified report is byte-for-byte deterministic` Hash:
+
+### Changing a candidate scenario invalidates its previous classification
+
+- [x] RED: target the modified regression scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: preserve the projected-remediation contract for active endpoint
+      invalidation. Evidence: targeted scenario passed with `1 scenario (1
+      passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
+      scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [ ] COMMIT: `feat(semantic-remediation): Changing a candidate scenario invalidates its previous classification` Hash:
+
+### Changing a permanent endpoint invalidates its previous classification
+
+- [x] RED: target the modified regression scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: preserve permanent-endpoint invalidation under remediation checks.
+      Evidence: targeted scenario passed with `1 scenario (1 passed)`, `8 steps
+      (8 passed)`.
+- [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
+      scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [ ] COMMIT: `feat(semantic-remediation): Changing a permanent endpoint invalidates its previous classification` Hash:
+
+### Any changed endpoint evidence or prior-report metadata invalidates carry-forward
+
+- [x] RED: target the modified regression scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: preserve prior-entry invalidation and projected remediation
+      verification. Evidence: targeted scenario passed with `1 scenario (1
+      passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
+      scenario passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [ ] COMMIT: `feat(semantic-remediation): Any changed endpoint evidence or prior-report metadata invalidates carry-forward` Hash:
+
+### Removed candidates disappear after classification
+
+- [x] RED: target the modified regression scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: preserve verified duplicate removal and PASS report behavior.
+      Evidence: targeted scenario passed with `1 scenario (1 passed)`, `9 steps
+      (9 passed)`.
+- [x] REFACTOR: rerun the modified scenario. Evidence: after formatting, targeted
+      scenario passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [ ] COMMIT: `feat(semantic-remediation): Removed candidates disappear after classification` Hash:
+
 ## E2E Setup
 
 - [x] Bring up the CLI-only local environment, register the separate E2E module,

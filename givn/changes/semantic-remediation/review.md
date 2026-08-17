@@ -123,6 +123,28 @@
 | `Path traversal id is rejected by instructions` | `A VALID-BOUNDARY score below the boundary without distinction remains blocked` | boundary |
 | `Path traversal id is rejected by instructions` | `A VALID-BOUNDARY score exactly at the boundary remains blocked` | boundary |
 | `Path traversal id is rejected by instructions` | `Changing a classified endpoint before remediation makes the decision stale` | boundary |
+| `Consolidating a VARIANTE candidate verifies the projected remediation` | `A regenerated classified report is byte-for-byte deterministic` | boundary |
+| `Consolidating a VARIANTE candidate verifies the projected remediation` | `Removed candidates disappear after classification` | boundary |
+| `Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation` | `A regenerated classified report is byte-for-byte deterministic` | boundary |
+| `Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation` | `Removed candidates disappear after classification` | boundary |
+| `A complete classification allows change review and survives regeneration` | `A regenerated classified report is byte-for-byte deterministic` | boundary |
+| `A complete classification allows change review and survives regeneration` | `Removed candidates disappear after classification` | boundary |
+| `A regenerated classified report is byte-for-byte deterministic` | `Removed candidates disappear after classification` | boundary |
+| `A regenerated classified report is byte-for-byte deterministic` | `Real CLI review reports successful duplicate remediation` | boundary |
+| `Changing a candidate scenario invalidates its previous classification` | `Changing a permanent endpoint invalidates its prior classification` | boundary |
+| `Changing a candidate scenario invalidates its previous classification` | `Any changed endpoint evidence or prior-report metadata invalidates carry-forward` | boundary |
+| `Changing a permanent endpoint invalidates its previous classification` | `Any changed endpoint evidence or prior-report metadata invalidates carry-forward` | boundary |
+| `Changing a permanent endpoint invalidates its prior classification` | `Any changed endpoint evidence or prior-report metadata invalidates carry-forward` | boundary |
+| `Removed candidates disappear after classification` | `Real CLI review reports successful duplicate remediation` | boundary |
+| `Integrity hook passes when tasks.md commit hashes are present` | `Changing a candidate scenario invalidates its previous classification` | boundary |
+| `Integrity hook passes when tasks.md commit hashes are present` | `Changing a permanent endpoint invalidates its prior classification` | boundary |
+| `Integrity hook passes when tasks.md commit hashes are present` | `Any changed endpoint evidence or prior-report metadata invalidates carry-forward` | boundary |
+| `Integrity hook skips arc42 check when slug cannot be resolved` | `Changing a candidate scenario invalidates its previous classification` | boundary |
+| `Integrity hook skips arc42 check when slug cannot be resolved` | `Changing a permanent endpoint invalidates its prior classification` | boundary |
+| `Integrity hook skips arc42 check when slug cannot be resolved` | `Any changed endpoint evidence or prior-report metadata invalidates carry-forward` | boundary |
+| `Existing spec review keeps its current behavior` | `Changing a candidate scenario invalidates its previous classification` | boundary |
+| `Existing spec review keeps its current behavior` | `Changing a permanent endpoint invalidates its prior classification` | boundary |
+| `Existing spec review keeps its current behavior` | `Any changed endpoint evidence or prior-report metadata invalidates carry-forward` | boundary |
 
 ## Fabrication Audit
 
