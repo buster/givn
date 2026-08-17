@@ -253,3 +253,11 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate ranks 3 and 4 are semantic candidates with score `0.9600`
     And equal-score semantic candidates are ordered by left file, left title, right file, and right title
     And candidate ranks are exactly `1,2,3,4`
+
+  @givn.added
+  Scenario: Rule-nested permanent scenarios are included in the audit
+    Given a permanent feature has two identical scenarios nested under a Rule
+    When the user runs `givn spec duplicates --format json`
+    Then the JSON report scans 2 eligible scenarios
+    And the Rule-nested scenarios produce one exact duplicate
+    And the Rule-nested candidate retains both scenario identities

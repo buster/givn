@@ -87,6 +87,72 @@ const INCLUSIVE_THRESHOLD_RIGHT_FEATURE: &str = r#"Feature: threshold right
     When the gateway receives a credentialless request
     Then the gateway returns an access denied response
 "#;
+const RULE_NESTED_DUPLICATE_FEATURE: &str = r#"Feature: rule nested providers
+
+  Rule: provider validation
+    Background:
+      Given a configured provider catalog
+
+    Scenario: Provider is rejected in a rule
+      When the user selects an unknown provider
+      Then the command rejects the request
+
+    Scenario: Unknown provider is rejected in a rule
+      When the user selects an unknown provider
+      Then the command rejects the request
+"#;
+
+#[given("a permanent feature has two identical scenarios nested under a Rule")]
+fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/rule-nested/rule-nested.feature",
+            RULE_NESTED_DUPLICATE_FEATURE,
+        )],
+    );
+}
+
+#[then("the JSON report scans 2 eligible scenarios")]
+fn rule_nested_scanned_scenarios(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["scanned_scenarios"],
+        serde_json::json!(2)
+    );
+}
+
+#[then("the Rule-nested scenarios produce one exact duplicate")]
+fn rule_nested_exact_duplicate(world: &mut GivnWorld) {
+    let document = json_document(world);
+    assert_eq!(document["candidate_count"], serde_json::json!(1));
+    assert_eq!(
+        document["candidates"][0]["kind"],
+        serde_json::json!("exact_duplicate")
+    );
+    assert_eq!(
+        document["candidates"][0]["evidence"]["relation"],
+        serde_json::json!("identical_behavior")
+    );
+}
+
+#[then("the Rule-nested candidate retains both scenario identities")]
+fn rule_nested_candidate_identities(world: &mut GivnWorld) {
+    let candidate = &json_document(world)["candidates"][0];
+    assert_eq!(
+        candidate["left"],
+        serde_json::json!({
+            "file": "givn/specs/rule-nested/rule-nested.feature",
+            "title": "Provider is rejected in a rule"
+        })
+    );
+    assert_eq!(
+        candidate["right"],
+        serde_json::json!({
+            "file": "givn/specs/rule-nested/rule-nested.feature",
+            "title": "Unknown provider is rejected in a rule"
+        })
+    );
+}
 
 #[given(
     "the corpus contains one exact duplicate, one structural overlap, and two semantic candidates"
