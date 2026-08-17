@@ -66,6 +66,13 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When an agent requests the specs instructions for an unknown change context
     Then the Givn CLI rejects the request with a clear change-not-found error
 
+  @givn.added
+  Scenario: Project instruction overrides survive skill synchronization
+    Given a project specs instruction override is prepared
+    When the agent synchronizes skills and requests the specs instructions
+    Then the resolved instruction contains the project override
+    And the project override file remains unchanged
+
   @givn.added @e2e
   Scenario: An agent requests machine-readable artifact guidance
     Given a Givn project with an active change
@@ -79,9 +86,3 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the guidance explains the advisory and blocking retrieval paths
     And the guidance preserves an explicit unavailable result for feature-free builds
     And the guidance does not prohibit retrieval in a retrieval-capable build
-
-  @givn.added @wip
-  Scenario: An author requests retrieval-aware workflow guidance
-    Given a Givn project with an active change
-    When the author requests the specs instructions through the Givn CLI
-    Then the CLI output distinguishes available and unavailable retrieval behavior
