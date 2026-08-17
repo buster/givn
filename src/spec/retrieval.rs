@@ -331,9 +331,16 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
     let mut candidates = semantic_candidates(root, &refresh.index, &delta)?;
-    apply_prior_classifications(&report_path, &mut candidates)?;
-    let report = render_semantic_report(change_id, &candidates);
+    let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
+    let remediation = verify_semantic_remediation(&candidates);
+    let report = render_semantic_report(change_id, &candidates, remediation.is_err());
     write_semantic_report(&report_path, &report)?;
+    if let Err(error) = remediation {
+        bail!("{error}");
+    }
+    if carried_classifications > 0 {
+        println!("semantic remediation verified: {carried_classifications}");
+    }
     let unresolved = candidates
         .iter()
         .filter(|candidate| {
@@ -622,16 +629,16 @@ fn semantic_candidate(
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]) -> Result<()> {
+fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]) -> Result<usize> {
     let Ok(content) = fs::read_to_string(path) else {
-        return Ok(());
+        return Ok(0);
     };
     let mut seen_ids = BTreeSet::new();
     for line in content.lines() {
         if let Some(id) = line.strip_prefix("- candidate_id: ")
             && !seen_ids.insert(id.trim().to_string())
         {
-            return Ok(());
+            return Ok(0);
         }
     }
     let mut current_id: Option<String> = None;
@@ -678,6 +685,7 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
             prior.insert(id, (classification, rationale, left, right));
         }
     }
+    let mut carried = 0;
     for candidate in candidates {
         let Some((classification, rationale, left, right)) = prior.get(&candidate.candidate_id)
         else {
@@ -692,16 +700,54 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
         {
             candidate.classification = classification.clone();
             candidate.rationale = Some(rationale.clone());
+            carried += 1;
         }
     }
-    Ok(())
+    Ok(carried)
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn render_semantic_report(change_id: &str, candidates: &[SemanticCandidate]) -> String {
+fn verify_semantic_remediation(candidates: &[SemanticCandidate]) -> Result<usize> {
+    let mut verified = 0;
+    for candidate in candidates {
+        match candidate.classification.as_str() {
+            "DUPLIKAT" if candidate.left.scope == "current-change" => {
+                bail!(
+                    "DUPLIKAT remediation requires removing the redundant scenario (candidate {})",
+                    candidate.candidate_id
+                );
+            }
+            "VARIANTE" => {
+                bail!(
+                    "VARIANTE remediation requires consolidation (candidate {})",
+                    candidate.candidate_id
+                );
+            }
+            "VALID-BOUNDARY" => {
+                bail!(
+                    "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {})",
+                    candidate.candidate_id
+                );
+            }
+            _ => {}
+        }
+        if candidate.classification != "UNCERTAIN" {
+            verified += 1;
+        }
+    }
+    Ok(verified)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn render_semantic_report(
+    change_id: &str,
+    candidates: &[SemanticCandidate],
+    remediation_blocked: bool,
+) -> String {
     let status = if candidates
         .iter()
         .all(|candidate| candidate.classification != "UNCERTAIN" && candidate.rationale.is_some())
+        && !remediation_blocked
     {
         "PASS"
     } else {
