@@ -57,6 +57,11 @@
 | **Permanent-only index boundary** | The rule that the persisted retrieval index may refresh permanent entries but contains no active-delta vectors, semantic classifications, or report state. |
 | **Semantic report gate** | The dedicated entrypoint called only from blocking `givn check review --change`; it generates the report, enforces complete classification, and returns the existing retrieval-unavailable error when the feature is absent. |
 | **Permanent-index refresh recovery** | The existing behavior for a missing, malformed, stale, or incompatible permanent index: treat it as stale, rebuild it from permanent specifications, continue semantic review, and keep the rebuilt index free of `Delta` state, delta vectors, classifications, and report state. |
+| **Projected remediation** | The read-only permanent-specification view obtained by applying the active delta in memory to verify whether an agent's semantic classification was actually resolved. |
+| **Prior remediation entry** | The strict historical candidate identity, endpoint identities/hashes, classification, and rationale used to verify a candidate even when it disappears from the regenerated report. |
+| **Parameterized variant contract** | A projected `Scenario Outline` with a non-empty `Examples` table that represents a `VARIANTE` without retaining two independent contracts. |
+| **Observable boundary invariant** | A changed condition, outcome, or deterministic fact that makes a `VALID-BOUNDARY` distinction explicit in the projected endpoint evidence. |
+| **Semantic remediation receipt** | The deterministic `semantic remediation verified` output emitted only after all prior resolved classifications satisfy their projected contracts. |
 | **Project-relative path identity** | A file identity normalized through one helper relative to the project root and rendered with forward slashes, regardless of whether input was relative or absolute. |
 | **Similarity candidate** | A distinct scenario pair whose passage-vector cosine score is at or above the binary-fixed `0.95` threshold. It is a hard review failure until resolved. |
 | **MERGE remediation** | The required response when a similarity candidate is a true duplicate: delete the duplicate scenario rather than keeping a second copy. |

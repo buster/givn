@@ -53,6 +53,7 @@ flowchart LR
 | FR-26 | Let an author explore exactly one complete draft scenario against all permanent scenarios from a file or stdin, with human-readable or stable JSON results, before creation. |
 | FR-27 | Let an author optionally explore that complete draft against active scenarios in a named current change, from a file or stdin, with source-labeled results and no persistence of delta candidates. |
 | FR-28 | During blocking `givn check review --change <id>`, generate a complete change-local semantic review worklist for active added/modified delta candidates at the fixed E5 `0.9500` boundary, require an agent classification for every candidate, emit a deterministic report with exact headers/field order and complete source-ordered endpoint evidence, leave feature files untouched, and retain the generated report as archive evidence. |
+| FR-29 | During blocking change review, verify that each resolved semantic classification has produced the required projected remediation: remove duplicates, consolidate variants, or make valid boundaries explicit below the active boundary. |
 
 ### Non-functional requirements (top)
 
