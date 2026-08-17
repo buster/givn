@@ -8,8 +8,8 @@ scenario-level semantic exploration and consolidation. It is anchored on
 subsequent PR inherits the same scope and ordering. Changes to this plan belong
 on `main`, not on an individual feature branch.
 
-The current stack has fourteen open PRs. PR 19 is the fourteenth and has
-thirteen stack predecessors. Superseded closed PRs are not counted.
+The current stack has fifteen open PRs. PR 20 is the fifteenth and has
+fourteen stack predecessors. Superseded closed PRs are not counted.
 
 | Stack order | PR | Head branch | Base branch |
 |---:|---:|---|---|
@@ -27,6 +27,7 @@ thirteen stack predecessors. Superseded closed PRs are not counted.
 | 12 | #17 | `semantic/02-spec-explore-change` | `semantic/01-spec-explore-permanent` |
 | 13 | #18 | `semantic/03-semantic-review` | `semantic/02-spec-explore-change` |
 | 14 | #19 | `semantic/04-semantic-remediation` | `semantic/03-semantic-review` |
+| 15 | #20 | `semantic/05-instruction-integrity` | `semantic/04-semantic-remediation` |
 
 The existing experiment stack is:
 
@@ -36,11 +37,11 @@ experiments/cross-encoder-reranker
   -> experiments/watn-corpus-comparison
 ```
 
-The semantic implementation PRs are the final four links currently in this
-stack. They continue on top of `experiments/watn-corpus-comparison`, which is
-itself inherited from the thirteen earlier stack links. Each PR is one
-independent capability slice. No later PR may silently pull an unfinished
-future slice into an earlier one.
+The semantic implementation PRs and the instruction-integrity maintenance PR
+are the final five links currently in this stack. They continue on top of
+`experiments/watn-corpus-comparison`, which is itself inherited from the
+fourteen earlier stack links. Each PR is one independent capability slice. No
+later PR may silently pull an unfinished future slice into an earlier one.
 
 ## Product Boundary
 
@@ -224,11 +225,43 @@ automatic feature-file edits.
 changing the projected tree remains red; an actual consolidation becomes green;
 a retained boundary that remains above the boundary remains red.
 
-### PR 5: Read-Only Permanent Duplicate Audit
+### PR 5: Instruction and Skill Guidance Integrity
 
-**Branch:** `semantic/05-spec-duplicates`
+**Branch:** `semantic/05-instruction-integrity`
 
 **Base:** `semantic/04-semantic-remediation`
+
+**Enabler:** The workflow's canonical instructions, generated skills, review
+guidance, and machine-readable instruction contract are complete and
+consistent before the remaining semantic slices continue.
+
+**Scope:**
+
+- Restore complete real-interface, browser-driver, and interface-obstacle
+  policy in the canonical specs instruction.
+- Restore design-owned E2E setup fields and remove conflicting lower-level
+  interface examples.
+- Document class-specific semantic-remediation evidence in generic review
+  guidance and templates.
+- Make retrieval guidance feature-aware for advisory, blocking, and unavailable
+  modes.
+- Preserve project instruction overrides through skill synchronization.
+- Emit the documented `givn instructions --json` contract
+  `{id, generates, requires, instruction}` and reject unsafe change ids.
+- Synchronize `.opencode`, `.agents`, `.claude`, and harness guidance.
+
+**Out of scope:** semantic scoring, projected remediation algorithms, project
+override precedence, and lifecycle order.
+
+**Completion evidence:** Canonical policy, design, review, retrieval, override,
+and JSON scenarios pass through the real CLI; the full repository and E2E
+suites pass; the change is archived with the review report and Arc42 updates.
+
+### PR 6: Read-Only Permanent Duplicate Audit
+
+**Branch:** `semantic/06-spec-duplicates`
+
+**Base:** `semantic/05-instruction-integrity`
 
 **Enabler:** A maintainer can inspect the entire permanent corpus independently
 of a particular change.
@@ -255,16 +288,16 @@ byte-for-byte unchanged.
 
 ## Model Evidence Layers
 
-### PR 6: BGE Reranking Evidence
+### PR 7: BGE Reranking Evidence
 
-**Branch:** `semantic/06-bge-evidence`
+**Branch:** `semantic/07-bge-evidence`
 
 **Experiment reference:** The existing comparison implementation is kept on
 `experiments/cross-encoder-reranker` (GitHub PR #13). That branch is evidence for
 this later layer; it is not active in the PR 1 product build unless the explicit
 `cross-encoder-reranker` Cargo feature is enabled.
 
-**Base:** `semantic/05-spec-duplicates`
+**Base:** `semantic/06-spec-duplicates`
 
 **Enabler:** Semantic candidates can be prioritized with a jointly scored local
 relevance model.
@@ -281,11 +314,11 @@ relevance model.
 **Out of scope:** treating the BGE raw logit as a Givn class probability,
 automatic deletion, and a new hard threshold without labeled evidence.
 
-### PR 7: NLI Evidence
+### PR 8: NLI Evidence
 
 **Branch:** `semantic/07-nli-evidence`
 
-**Base:** `semantic/06-bge-evidence`
+**Base:** `semantic/07-bge-evidence`
 
 **Enabler:** Candidates expose bidirectional entailment, neutral, and
 contradiction evidence in addition to similarity and relevance.
@@ -304,7 +337,7 @@ directly to `DUPLIKAT`/`VARIANTE`/`VALID-BOUNDARY`, and automatic gates.
 
 ## Full Audit In Normal Review
 
-### PR 8: Permanent Audit in Normal Review
+### PR 9: Permanent Audit in Normal Review
 
 **Branch:** `semantic/08-permanent-audit-review`
 
