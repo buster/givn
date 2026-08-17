@@ -145,7 +145,7 @@ Feature: Audit duplicate and related permanent scenarios
     Then the command exits non-zero
     And stderr contains "spec retrieval is unavailable"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The audit reports an unavailable retrieval model
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     And the retrieval model is unavailable

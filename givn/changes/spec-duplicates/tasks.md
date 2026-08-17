@@ -1499,42 +1499,128 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports retrieval unavailable without the retrieval feature`
-    - Commit hash: ``
+    - Commit hash: `cfb16092296a20a298f875ca63a540fa88b596da`
 
 ## Scenario 14: `The audit reports an unavailable retrieval model`
 
-- [ ] Scenario: `The audit reports an unavailable retrieval model`
+- [x] Scenario: `The audit reports an unavailable retrieval model`
   - RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
-    - Add regular bindings with non-empty `unimplemented!()` bodies in
-      `tests/steps/spec_duplicates_steps.rs`.
+    - Reuse the existing regular bindings for the duplicate/related corpus,
+      unavailable retrieval model, subprocess invocation, non-zero exit, and
+      stderr assertion. The reused corpus binding was temporarily replaced by
+      an explicit `unimplemented!()` body for the strict RED proof, then
+      restored before GREEN.
     - Target only this scenario:
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^The audit reports an unavailable retrieval model$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+warning: constant `SEMANTIC_ACCOUNT_FEATURE` is never used
+  --> tests/steps/spec_duplicates_steps.rs:60:7
+   |
+60 | const SEMANTIC_ACCOUNT_FEATURE: &str = r#"Feature: account
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
 
+warning: constant `SEMANTIC_SESSION_FEATURE` is never used
+  --> tests/steps/spec_duplicates_steps.rs:67:7
+   |
+67 | const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
+   |       ^^^^^^^^^^^^^^^^^^^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` on by default
+
+warning: `givn` (test "features_runner") generated 2 warnings
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.47s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports an unavailable retrieval model
+   ✘  Given a permanent scenario corpus with duplicate and related-scenario candidates
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:150:5
+      Matched: tests/steps/spec_duplicates_steps.rs:626:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+
+thread 'main' (3197068) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
-    - Exercise a real subprocess with the retrieval model unavailable, assert a
-      non-zero exit and stderr containing `retrieval model is unavailable`, and
-      keep the deterministic fixture override separate from production model
-      availability.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Reuse the real permanent corpus from the existing duplicate/related
+      fixture: it contains exact, structural, and unresolved semantic pairs.
+      The existing unavailable-model setup sets the subprocess environment to
+      `GIVN_SPEC_EMBEDDER=missing`; the generic subprocess binding passes that
+      value to the compiled `givn spec duplicates` process. The audit therefore
+      requires semantic embedding when deterministic classification leaves an
+      unresolved pair, and propagates the model error without converting it to
+      success. The primary assertions are the non-zero exit and stderr wording
+      `retrieval model is unavailable`; deterministic score overrides remain
+      isolated to the stub embedder path.
+    - Production file modified in GREEN: `src/spec/retrieval.rs`.
+    - Existing test bindings reused; no final step-definition file changed.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
-    - Rerun the targeted command. Required result: exit 0 for the scenario.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.97s
+      ```
+    - Rerun the targeted command. Required result: exit 0 for the scenario
+      while the inner compiled `givn` subprocess exits non-zero with the model
+      error.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.77s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports an unavailable retrieval model
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the retrieval model is unavailable
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains "retrieval model is unavailable"
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Check error context identifies model availability without swallowing the
-      original failure and that the stub path remains deterministic. Run
-      `cargo fmt --check` and rerun the targeted command.
+    - Reuse the existing unavailable-model setup and keep the subprocess exit
+      and stderr assertions primary. The audit propagates the original
+      `embed_texts` error; the stub embedder and duplicate score seam remain
+      unchanged.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan of `tests/steps/spec_duplicates_steps.rs` and
+      `tests/steps/spec_retrieval_steps.rs`: `unimplemented!()`/`todo!()` —
+      `No files found`.
+    - Empty-function-body scan: `No files found`.
+    - Bare-return-body scan: `No files found`.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports an unavailable retrieval model
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the retrieval model is unavailable
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains "retrieval model is unavailable"
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 14 tag only), `src/spec/retrieval.rs`, and `givn/changes/spec-duplicates/tasks.md`. Existing regular bindings in `tests/steps/spec_duplicates_steps.rs`, `tests/steps/spec_retrieval_steps.rs`, and `tests/steps/mod.rs` were reused without a final diff. No design artifact or later `@wip` tag was changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports an unavailable retrieval model`
