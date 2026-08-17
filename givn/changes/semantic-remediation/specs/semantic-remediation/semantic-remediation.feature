@@ -15,7 +15,7 @@ Feature: Verify semantic remediation
     And stderr contains "DUPLIKAT remediation requires removing the redundant scenario"
     And the semantic review report status is "BLOCKED"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Removing a DUPLIKAT candidate verifies the projected remediation
     Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
     And the permanent specifications are snapshotted
