@@ -95,6 +95,15 @@ const ACTIVE_CHANGE_FEATURE: &str = r#"Feature: active provider
     When the user selects an unknown provider
     Then the command rejects the request
 "#;
+const ARCHIVE_MATCHING_FEATURE_PATH: &str = "givn/archive/old-change/specs/old/old.feature";
+const ARCHIVE_PATH_PREFIX: &str = "givn/archive/old-change/";
+const ARCHIVE_MATCHING_FEATURE: &str = r#"Feature: old
+
+  Scenario: Archived provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#;
 const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
 const MALFORMED_PERMANENT_FEATURE: &str =
     "this is not a Gherkin feature document\nwithout a structural keyword\n";
@@ -708,6 +717,112 @@ fn active_identity_absent(world: &mut GivnWorld) {
         "active change identity appeared in the audit: {}",
         stdout(world)
     );
+}
+
+#[given("a permanent corpus with one candidate")]
+fn archived_audit_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/provider/provider.feature",
+            EXACT_DUPLICATE_FEATURE,
+        )],
+    );
+    let env = world
+        .env
+        .as_ref()
+        .expect("archived audit fixture is initialized");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    );
+    assert!(
+        output.status.success(),
+        "baseline archived audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document = duplicate_json_document(&output);
+    assert_eq!(document["candidate_count"], serde_json::json!(1));
+    world.previous_output = Some(output);
+}
+
+#[given(regex = r##"^the archive contains a matching scenario at \"([^\"]+)\"$"##)]
+fn archived_matching_scenario_fixture(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, ARCHIVE_MATCHING_FEATURE_PATH);
+    let env = world
+        .env
+        .as_ref()
+        .expect("archived audit fixture is initialized");
+    let feature_path = env.path(&path);
+    fs::create_dir_all(
+        feature_path
+            .parent()
+            .expect("archive matching feature parent"),
+    )
+    .expect("create archive matching feature directory");
+    fs::write(feature_path, ARCHIVE_MATCHING_FEATURE).expect("write archive matching feature");
+}
+
+#[then("every JSON candidate endpoint file starts with `givn/specs/`")]
+fn json_candidate_endpoints_are_permanent(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert!(
+        !candidates.is_empty(),
+        "archive audit produced no candidates"
+    );
+    for candidate in candidates {
+        for side in ["left", "right"] {
+            let file = candidate[side]["file"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint file is not a string"));
+            assert!(
+                file.starts_with("givn/specs/"),
+                "JSON {side} candidate endpoint is not permanent: {file}"
+            );
+        }
+    }
+}
+
+#[then(regex = r##"^no JSON candidate identity contains `([^`]+)`$"##)]
+fn no_json_candidate_archive_identity(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, ARCHIVE_PATH_PREFIX);
+    for candidate in json_candidates(world) {
+        for side in ["left", "right"] {
+            let endpoint = &candidate[side];
+            let file = endpoint["file"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint file is not a string"));
+            let title = endpoint["title"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint title is not a string"));
+            assert!(
+                !file.contains(&path) && !title.contains(&path),
+                "JSON {side} candidate identity contains {path}: {file}::{title}"
+            );
+        }
+    }
+}
+
+#[then("the archived matching scenario does not change candidate_count")]
+fn archived_scenario_does_not_change_candidate_count(world: &mut GivnWorld) {
+    assert!(
+        output(world).status.success(),
+        "archived audit failed: {}",
+        stderr(world)
+    );
+    let before = world
+        .previous_output
+        .as_ref()
+        .expect("baseline archived audit output is missing");
+    let before_document = duplicate_json_document(before);
+    let after_document = json_document(world);
+    assert_eq!(before_document["candidate_count"], serde_json::json!(1));
+    assert_eq!(
+        after_document["candidate_count"],
+        before_document["candidate_count"]
+    );
+    assert_eq!(after_document["candidate_count"], serde_json::json!(1));
 }
 
 #[then("every candidate endpoint file starts with `givn/specs/`")]
