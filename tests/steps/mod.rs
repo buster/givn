@@ -24,6 +24,8 @@ pub mod enforce_spec_similarity_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod init_agent_target_selection_steps;
+pub mod instruction_integrity_e2e_steps;
+pub mod instruction_integrity_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;

@@ -106,12 +106,30 @@ run via `verify.e2e_command` (configured in `givn/config.yaml`), not
 
 **What makes a scenario `@e2e`:**
 - It interacts through the real external boundary: a browser (via Playwright,
-  Selenium, etc.), a real CLI invocation, a real HTTP client, a real database
-  connection — whatever the system exposes.
+  Selenium, etc.), a real CLI invocation, a real HTTP client, a public library
+  API, or a real message producer/consumer — whatever the system exposes.
 - It may require local test infrastructure: a running application server,
   a test database, fake containers (Testcontainers), stub services.
 - It covers the critical happy path: "can a consumer actually do the thing
   through the real interface?"
+
+**Primary assertion rule:** each `@e2e` scenario's primary assertion is on what
+the named real interface returned, displayed, acknowledged, or made visible.
+Repository/database checks are secondary evidence and are never the sole
+assertion when the system exposes a higher-level consumer interface. Database
+state is a valid primary boundary only when the database itself is the public
+interface used by the consumer.
+
+**Real-interface driving rule:** for a browser-UI capability, drive the actual
+browser through a real browser driver: click, type, navigate, and read the
+rendered page. An HTTP request to a backend route, or `fetch()`/
+`XMLHttpRequest` from page JavaScript, exercises an API rather than the UI and
+is not a valid browser E2E substitute. For an API-only capability, a real HTTP
+client is the correct interface.
+
+**Interface obstacle rule:** an interface obstacle is a design gap, not a
+reason to weaken the assertion or switch to a lower-level boundary. Apply the
+concrete fix documented in `design.md` before implementing the scenario.
 
 **Canonical scope: one E2E evidence scenario per distinct real user action.**
 Each normalized inventory entry has exactly one matching `@e2e` scenario that
