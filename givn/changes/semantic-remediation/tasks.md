@@ -91,15 +91,18 @@
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY classification above the boundary remains blocked` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY classification above the boundary remains blocked` Hash: `66b6e16`
 
 ### Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
 
-- [ ] RED: target the named scenario with strict stubs. Evidence:
-- [ ] GREEN: require both endpoints, changed observable facts, and a strict
+- [x] RED: target the named scenario with strict stubs. Evidence: strict setup
+      proof was non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`.
+- [x] GREEN: require both endpoints, changed observable facts, and a strict
       below-boundary score. Production files: `src/spec/retrieval.rs`, step
-      files. Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+      files. Evidence: targeted run passed with `1 scenario (1 passed)`, `9
+      steps (9 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation` Hash:
 
 ### A VALID-BOUNDARY score below the boundary without distinction remains blocked
