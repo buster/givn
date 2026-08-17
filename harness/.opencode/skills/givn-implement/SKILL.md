@@ -12,7 +12,7 @@ Implement change `<change-id>` using scenario-by-scenario TDD.
 - Tasks: `givn/changes/<change-id>/tasks.md`
 - Spec: `givn/changes/<change-id>/specs/`
 - Design: `givn/changes/<change-id>/design.md`
-- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
+- Test runner: `./run-tests.sh`
 - Features path: `GIVN_FEATURES=givn/specs`
 
 ## Before starting
@@ -51,7 +51,7 @@ at this scenario only** and captures output as evidence.
 1. Remove `@wip` from this scenario only.
 2. Unimplemented steps use the not-implemented stub from design.md — never
    an empty body.
-3. Run `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`, targeting this scenario (single-scenario
+3. Run `./run-tests.sh`, targeting this scenario (single-scenario
    command from design.md). Capture output. Must exit non-zero. Exit 0 =
    step is empty or runner isn't strict — STOP, fix before writing code.
 
@@ -61,7 +61,7 @@ at this scenario only** and captures output as evidence.
    means investigate before calling this GREEN.
 5. Run targeting this scenario → zero exit. Capture output.
 
-5a. Confirm the new code is covered. The `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` output
+5a. Confirm the new code is covered. The `./run-tests.sh` output
     contains coverage data when the runner is configured with coverage
     instrumentation. Extract the summary: every production file
     created/modified in this scenario must show non-zero coverage. If
@@ -102,26 +102,18 @@ Before the first @e2e scenario: bring up the local environment from
 design.md's Local Runnability section (local run command, all
 dependencies, all digital twins, isolated network). Confirm clean startup.
 
-Same loop, `verify.e2e_command`, e2e step location (one file per
-capability, separate from non-e2e). GREEN sets up test infrastructure
-(server/browser/DB) and writes glue driving the real interface.
-After GREEN: confirm coverage via `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` output. If the
+Same loop, `verify.e2e_command`, and the separate step location named in
+design.md. Before implementing E2E steps, read the canonical policy with
+`givn instructions specs --change <change-id>`; GREEN applies its resolved
+action scope and real-interface rules while setting up the design's
+infrastructure.
+After GREEN: confirm coverage via `./run-tests.sh` output. If the
 e2e runner does not produce coverage data, state this explicitly —
 @e2e coverage must still be estimated and classified in review.
 
-**Rule: assert the real interface, not instead of it.** Then steps assert
-PRIMARILY on what the real interface returned/displayed (page content, HTTP
-response, redirect, CLI output). Repository/database checks are secondary
-and additional only, never the sole assertion. For a browser-UI capability,
-the glue driving the interface must actually click/type/navigate through a
-real browser driver — never an HTTP request or in-page `fetch()` standing
-in for browser interaction. If a real-interface obstacle appears (browser
-session/cookie issue, auth redirect, flaky selector), apply the fix
-design.md names in its Anticipated Interface Obstacles section. If none is
-named for this obstacle, STOP — report it as a blocker. Do not substitute a
-repository-only assertion or an HTTP/fetch() shortcut and continue; that
-produces a GREEN scenario that proves nothing about the feature working
-through the interface a real user or client would use.
+The canonical specs policy owns primary assertions and real-interface fidelity.
+If an interface obstacle appears, apply the concrete fix named in design.md;
+do not substitute a repository-only or alternate-interface shortcut.
 
 Commit message: `test(e2e): <title>`.
 
@@ -132,19 +124,13 @@ already verified individually:
 1. Run the FULL suite (both runners, not scenario-targeted). Confirm zero exit.
 2. Grep every step definition file touched for empty/no-op bodies. Must be 0.
 3. Confirm commit count matches scenario task count.
-4. Confirm coverage. Re-run `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` and extract the coverage
+4. Confirm coverage. Re-run `./run-tests.sh` and extract the coverage
    summary. If the runner is coverage-instrumented, every new/modified
    production file must show non-zero line/branch coverage. If coverage
    data is absent from the output, note this as an unmeasured gap — the
    review step will need to classify uncovered regions manually.
-4. Read every `@e2e` scenario's Then steps. Confirm each has a
-   real-interface assertion — none downgraded to repository-only.
-5. For a browser-UI capability, read every `@e2e` step definition's
-   implementation. Confirm it drives a real browser — none downgraded to
-   an HTTP request or in-page `fetch()`.
-6. Cross-reference the spec's User Interaction Inventory against the
-   completed tasks: every inventory entry should have a checked `@e2e`
-   task. Flag any inventory entry missing a completed e2e task.
+4. Read the canonical specs policy and cross-reference its normalized
+   inventory against completed E2E tasks and real-interface assertions.
 
 Run `givn status --change <change-id>` to confirm progress. Proceed to review.
 
@@ -152,7 +138,7 @@ Run `givn status --change <change-id>` to confirm progress. Proceed to review.
 
 Unit/integration:
 ```
-uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
+./run-tests.sh
 ```
 
 E2E smoke tests:

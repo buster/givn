@@ -107,11 +107,10 @@
 
 ## E2E Smoke Test Infrastructure
 
-> **Interface type** (browser UI / CLI / API-only):
+> **Interface type** (Web UI / CLI / HTTP API / Library / Message bus):
 > ```
-> (e.g. "Browser UI — Playwright drives the rendered page." or
->  "API-only — no UI consumes this endpoint, an HTTP client is the real
->  interface.")
+> (e.g. "Web UI — Playwright drives the rendered page." or
+>  "HTTP API — an HTTP client is the public consumer interface.")
 > ```
 > **E2E runner command** (→ `verify.e2e_command`):
 > ```

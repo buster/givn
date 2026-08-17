@@ -12,7 +12,7 @@ Write the design for change `<change-id>`.
 - Design file: `givn/changes/<change-id>/design.md`
 - Instructions: run `givn instructions design --change <change-id>`
 - Spec (WHAT): `givn/changes/<change-id>/specs/`
-- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
+- Test runner: `./run-tests.sh`
 
 ## This is the HOW layer
 
@@ -81,29 +81,36 @@ is not an acceptable outcome — it is a design gap.
   concrete fix here. A scenario blocked on an undesigned interface problem
   during implementation is a design gap, not a reason to test something weaker.
 
-## E2E smoke test infrastructure
+## Canonical E2E policy
 
-The design MUST document the e2e test infrastructure for `@e2e` scenarios:
+Read `givn instructions specs --change <change-id>` before designing E2E
+coverage. That instruction owns inventory normalization, action scope,
+real-interface assertions, and driver fidelity. This skill owns only the
+technical design fields and the coverage matrix below.
 
-- **E2E runner command** → becomes `verify.e2e_command` in `givn/config.yaml`.
-- **E2E step definition location** (separate from unit/integration steps).
-- **Test infrastructure**: what is needed locally (browser driver, test server,
-  test database, Testcontainers, fake services). How it starts/stops.
-- **E2E framework choice** and justification.
-- **Real-interface assertion rule**: every `@e2e` scenario's primary
-  assertion is on what the real interface returned/displayed — repository/
-  database assertions are secondary and additional only, never a replacement.
-- **The real interface is whichever one a real user/client uses.** For a
-  browser-UI capability, that means a real browser driver clicking/typing/
-  navigating — never an HTTP request or in-page `fetch()` standing in for
-  browser interaction. State explicitly which interface type this
-  capability has (browser UI / CLI / API-only) and name the matching
-  driving mechanism.
+## Black-Box-First policy
+
+Prefer the real interface. For every internal test retained, answer the
+question: **which case this test covers that the E2E does not**? Without a
+concrete answer, use the E2E scenario instead of adding a weaker duplicate.
+
+## Coverage process boundaries (when enabled)
+
+| Process | Started by | Instrumented artifact | Profile output | Merge step | Non-zero production probe |
+|---|---|---|---|---|---|
+
+Include the runner and every production process started by tests. For each:
+
+- Launch the instrumented artifact, not the normal build.
+- Use collision-safe profile output.
+- Flush data before shutdown.
+- Merge its profile before export.
+- Name one exercised production path expected to be non-zero.
 
 ### Interaction Coverage Matrix (mandatory)
 
-Map every entry from the spec's User Interaction Inventory to its matching
-`@e2e` scenario and driving mechanism. One row per inventory entry:
+Map every normalized entry from the canonical specs policy to its matching
+`@e2e` scenario and driving mechanism. One row per entry:
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
@@ -122,14 +129,15 @@ E2E fidelity branch. If the interface type is HTTP/REST API (no browser
 involved), an HTTP client IS the real interface and that is the correct
 driving mechanism.
 
-The matrix is proven at design time and verified at review time. If an
-inventory entry has no matching row, the design is incomplete.
+Every row must name a concrete interface and driving mechanism. The matrix is
+proven at design time and verified at review time; policy semantics come from
+the resolved specs instruction.
 
 ## Verify command
 
 Unit/integration:
 ```
-uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
+./run-tests.sh
 ```
 
 E2E smoke tests:

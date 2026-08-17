@@ -2176,3 +2176,81 @@ it does not edit feature files or select classifications.
 The remediation feature scenarios cover each class's blocking and successful
 contracts, disappearance, below-boundary recomputation, stale identity, false
 score-only remediation, non-mutation, and the real CLI verification boundary.
+
+---
+
+## ADR-048: Complete effective authoring policy and instruction JSON contract
+
+**Status:** Accepted
+**Date:** 2026-08-17
+**Decision-makers:** givn maintainers
+
+### Context and Problem Statement
+
+The canonical Specs instruction was declared authoritative for E2E interaction
+policy, but parts of the real-interface and browser-driver rules remained only
+in templates or review guidance. Design-specific E2E setup fields were also
+removed from the design instruction. In parallel, workflow Commands described
+structured instruction metadata that the JSON command did not emit.
+
+### Decision Drivers
+
+- Agents need one complete resolved policy before authoring or reviewing.
+- Artifact-specific choreography must not create a competing E2E policy.
+- Project overrides and generated snapshots must remain distinguishable.
+- Machine consumers need a stable JSON object without parsing human output.
+- Retrieval-enabled and feature-free binaries need explicit, non-conflicting
+  guidance.
+
+### Considered Options
+
+1. Keep the missing policy clauses distributed across templates and skills and
+   keep parsing human/undocumented instruction output.
+2. Complete the resolved `specs` instruction, restore design-owned fields,
+   update derived guidance, and emit the documented JSON object.
+3. Add a runtime include system and a new metadata schema containing every
+   template and command detail.
+
+### Decision Outcome
+
+Choose option 2. The effective `specs` instruction owns the complete
+interaction/E2E policy. Design, review, tasks, skills, Commands, and templates
+retain only artifact-specific requirements, derived evidence checks, and
+choreography. `givn instructions <artifact> --json` emits exactly
+`{id, generates, requires, instruction}` from the effective manifest and
+instruction cascade. Human-readable output remains the resolved instruction
+text.
+
+### Consequences
+
+#### Good
+
+- Good, because agents no longer need to reconstruct primary-interface and
+  browser-driver rules from multiple entry points.
+- Good, because project overrides are represented by the same effective
+  instruction path as human output.
+- Good, because commands consume explicit artifact metadata instead of parsing
+  undocumented fields.
+- Good, because feature-free retrieval failures and retrieval-enabled authoring
+  paths are both described without pretending they are the same build.
+
+#### Bad
+
+- Bad, because the resolved specs instruction becomes a larger policy facet and
+  project overrides must be reviewed for parity.
+- Bad, because generated skill snapshots can still become stale until
+  `givn skills sync` is run.
+- Bad, because JSON consumers must adopt the documented field names and not
+  rely on the previous incorrect `artifact`-only shape.
+
+### Confirmation
+
+The instruction-integrity feature checks canonical policy content, design and
+review evidence, retrieval-mode wording, override semantics, generated target
+parity, and one valid JSON document from the compiled CLI. The full runner and
+the filtered E2E runner both execute the change scenarios.
+
+### More Information
+
+Related decisions: ADR-005, ADR-007, ADR-013, ADR-036, ADR-038, ADR-039,
+ADR-041, ADR-046, and ADR-047.

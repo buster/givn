@@ -33,10 +33,11 @@ re-run it now and paste the output -->
 ```
 
 **Downgraded e2e scenario scan** — every `@e2e` scenario's Then steps
-checked for a real-interface primary assertion (page content, HTTP
-response, redirect, CLI output), not repository-only; for a browser-UI
-capability, the step definitions checked for actually driving the browser
-(click/type/navigate), not an HTTP request or in-page `fetch()`:
+checked for a primary assertion on the observable output, return value,
+acknowledgement, or visible state of the interface named in design.md, not
+repository-only; for a browser-UI capability, the step definitions checked
+for actually driving the browser (click/type/navigate), not an HTTP request or
+in-page `fetch()`:
 
 | @e2e Scenario | Real-interface assertion present? | Driven via real browser (if UI)? | Downgraded? |
 |---|---|---|---|
