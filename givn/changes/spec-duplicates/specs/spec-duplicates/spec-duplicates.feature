@@ -85,7 +85,7 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate ranks are exactly `1,2,3,4,5,6`
     And the highest rank equals the candidate count
 
-  @givn.added @wip
+  @givn.added
   Scenario: Repeating an unchanged audit produces the same report
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     When the user runs `givn spec duplicates` twice without changing the corpus

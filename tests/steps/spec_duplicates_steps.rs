@@ -1,8 +1,9 @@
 //! Regular black-box steps for the permanent scenario duplicate audit.
 
 use std::fs;
+use std::process::Output;
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use super::{GivnWorld, stdout};
 use crate::common;
@@ -55,6 +56,20 @@ const SEMANTIC_TOKEN_FEATURE: &str = r#"Feature: token
     Given an identity service
     When the client authenticates without a token
     Then access is denied with message "token required"
+"#;
+const SEMANTIC_ACCOUNT_FEATURE: &str = r#"Feature: account
+
+  Scenario: Account access needs credentials
+    Given an account gateway
+    When the client sends a request without a login
+    Then the account service denies access with message "credentials required"
+"#;
+const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
+
+  Scenario: Session credentials are needed
+    Given a session gateway
+    When the client connects without a login
+    Then the session service refuses access with message "credentials required"
 "#;
 const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
     (
@@ -148,6 +163,19 @@ const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
 "#,
     ),
 ];
+
+#[derive(Debug, PartialEq, Eq)]
+struct DuplicateAuditReport {
+    scanned_scenarios: usize,
+    candidate_count: usize,
+    candidates: Vec<DuplicateAuditCandidate>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct DuplicateAuditCandidate {
+    rank: usize,
+    evidence: String,
+}
 
 #[given(
     regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" has the assertion sequence of "([^"]+)" at "([^"]+)"$"##
@@ -430,4 +458,214 @@ fn candidate_line(world: &GivnWorld) -> String {
         .find(|line| line.starts_with("rank 1: "))
         .expect("duplicate audit rank 1 is missing")
         .to_string()
+}
+
+#[given("a permanent scenario corpus with duplicate and related-scenario candidates")]
+fn repeated_audit_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/provider/provider.feature",
+                EXACT_DUPLICATE_FEATURE,
+            ),
+            (
+                "givn/specs/overlap/overlap.feature",
+                STRUCTURAL_OVERLAP_FEATURE,
+            ),
+            ("givn/specs/auth/auth.feature", SEMANTIC_AUTH_FEATURE),
+            ("givn/specs/token/token.feature", SEMANTIC_TOKEN_FEATURE),
+            (
+                "givn/specs/account/account.feature",
+                SEMANTIC_ACCOUNT_FEATURE,
+            ),
+            (
+                "givn/specs/session/session.feature",
+                SEMANTIC_SESSION_FEATURE,
+            ),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600".to_string(),
+    );
+}
+
+#[when("the user runs `givn spec duplicates` twice without changing the corpus")]
+fn repeated_audit_runs(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("repeated audit fixture is required");
+    let score_overrides = world
+        .retrieval_duplicate_scores
+        .as_deref()
+        .expect("repeated audit score overrides are required");
+    let environments = [
+        ("GIVN_SPEC_EMBEDDER", "stub"),
+        ("GIVN_SPEC_DUPLICATES_TEST_SCORES", score_overrides),
+    ];
+    let first = common::run_givn_with_envs(env, &["spec", "duplicates"], &environments);
+    let second = common::run_givn_with_envs(env, &["spec", "duplicates"], &environments);
+    world.previous_output = Some(first);
+    world.last_output = Some(second);
+}
+
+#[then("both audit reports are byte-for-byte identical")]
+fn repeated_audit_bytes(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first duplicate audit output is missing");
+    let second = world
+        .last_output
+        .as_ref()
+        .expect("second duplicate audit output is missing");
+    assert!(
+        first.status.success(),
+        "first audit failed: {:?}",
+        first.status
+    );
+    assert!(
+        second.status.success(),
+        "second audit failed: {:?}",
+        second.status
+    );
+    assert_eq!(first.stdout, second.stdout);
+    assert_eq!(
+        duplicate_audit_report(first),
+        duplicate_audit_report(second)
+    );
+}
+
+#[then("both reports have the same scanned scenario count, candidate count, ranks, and evidence")]
+fn repeated_audit_evidence(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first duplicate audit output is missing");
+    let second = world
+        .last_output
+        .as_ref()
+        .expect("second duplicate audit output is missing");
+    let first_report = duplicate_audit_report(first);
+    let second_report = duplicate_audit_report(second);
+
+    assert_eq!(
+        first_report.scanned_scenarios,
+        second_report.scanned_scenarios
+    );
+    assert_eq!(first_report.candidate_count, second_report.candidate_count);
+    assert_eq!(
+        first_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.rank)
+            .collect::<Vec<_>>(),
+        second_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.rank)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        first_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.evidence.as_str())
+            .collect::<Vec<_>>(),
+        second_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.evidence.as_str())
+            .collect::<Vec<_>>()
+    );
+
+    assert_eq!(first_report.scanned_scenarios, 8);
+    assert_eq!(first_report.candidate_count, 4);
+    assert_eq!(
+        first_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.rank)
+            .collect::<Vec<_>>(),
+        vec![1, 2, 3, 4]
+    );
+    assert!(
+        first_report.candidates[0]
+            .evidence
+            .starts_with("kind=exact_duplicate")
+    );
+    assert!(first_report.candidates[0].evidence.ends_with("score=null"));
+    assert!(
+        first_report.candidates[1]
+            .evidence
+            .starts_with("kind=structural_overlap")
+    );
+    assert!(first_report.candidates[1].evidence.ends_with("score=null"));
+    assert!(first_report.candidates[2].evidence.starts_with(
+        "kind=semantic_candidate left={\"file\":\"givn/specs/account/account.feature\""
+    ));
+    assert!(
+        first_report.candidates[3]
+            .evidence
+            .starts_with("kind=semantic_candidate left={\"file\":\"givn/specs/auth/auth.feature\"")
+    );
+    assert!(
+        first_report.candidates[2]
+            .evidence
+            .ends_with("score=0.9600")
+    );
+    assert!(
+        first_report.candidates[3]
+            .evidence
+            .ends_with("score=0.9600")
+    );
+}
+
+fn duplicate_audit_report(output: &Output) -> DuplicateAuditReport {
+    let text = std::str::from_utf8(&output.stdout).expect("duplicate audit stdout is UTF-8");
+    assert!(!text.contains('\r'), "duplicate audit uses CRLF endings");
+    assert!(
+        text.ends_with('\n'),
+        "duplicate audit is missing its final newline"
+    );
+    assert!(
+        !text.ends_with("\n\n"),
+        "duplicate audit has multiple final newlines"
+    );
+
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.first().copied(), Some("Givn spec duplicates"));
+    let scanned_scenarios = parse_report_count(lines.get(1), "Scanned scenarios: ");
+    let candidate_count = parse_report_count(lines.get(2), "Candidate count: ");
+    let candidates: Vec<DuplicateAuditCandidate> = lines
+        .iter()
+        .skip(3)
+        .map(|line| {
+            let value = line
+                .strip_prefix("rank ")
+                .expect("duplicate audit candidate line has rank prefix");
+            let (rank, evidence) = value
+                .split_once(": ")
+                .expect("duplicate audit candidate line has field separator");
+            DuplicateAuditCandidate {
+                rank: rank.parse().expect("duplicate audit rank is an integer"),
+                evidence: evidence.to_string(),
+            }
+        })
+        .collect();
+    assert_eq!(candidates.len(), candidate_count);
+
+    DuplicateAuditReport {
+        scanned_scenarios,
+        candidate_count,
+        candidates,
+    }
+}
+
+fn parse_report_count(line: Option<&&str>, prefix: &str) -> usize {
+    line.and_then(|line| line.strip_prefix(prefix))
+        .unwrap_or_else(|| panic!("duplicate audit is missing `{prefix}`"))
+        .parse()
+        .expect("duplicate audit count is an integer")
 }
