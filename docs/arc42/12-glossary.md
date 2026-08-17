@@ -37,6 +37,9 @@
 | **Test runner** | The command that actually executes step definitions against code, configured in `verify.command`. Invoked by the agent/CI, not by givn. Confirms GREEN. |
 | **`verify.command`** | The manifest config key holding the test-runner command (default sentinel `givn missing-testrunner`). Read after overlay resolution; written by `init`/`upgrade`; invoked by agent/CI. |
 | **Canonical authoring policy** | The resolved `specs` instruction containing the normative rules for interaction inventories and E2E evidence. Other guidance references it instead of restating it. |
+| **Effective instruction** | The instruction facet selected by the project override cascade or, when no override exists, the embedded asset in the running binary. |
+| **Instruction JSON contract** | The single machine-readable object emitted by `givn instructions --json`: `id`, `generates`, `requires`, and `instruction`. |
+| **Derived guidance** | Artifact-specific fields, audit procedures, or choreography that may reference the canonical policy but may not redefine it. |
 | **Embedding** | A numeric vector representation of scenario or query text used for interactive ranking and strict scenario-pair comparison. |
 | **Retrieval index** | The local persisted collection of scenario titles, paths, content hashes, and embeddings used by `givn spec search`. |
 | **Advisory match** | A result from interactive `givn spec search`; it informs an author but does not itself block the workflow. |

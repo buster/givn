@@ -35,13 +35,13 @@ graph TB
 | CLI args | in | `clap`-parsed subcommands and flags. |
 | `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
 | `givn/**` artifacts | in/out | Markdown + `.feature` files, including the deterministic `semantic-review.md` wire grammar with fixed headers/field order, compact JSON values, `null` absence, exact score/hash formats, and no timestamp/environment fields. |
-| `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
+| `givn instructions --json` | out | One JSON object `{id, generates, requires, instruction}` for AI agents, resolved from the effective manifest and instruction cascade. |
 | `givn spec index/search/explore/review` | in/out | Local permanent-only scenario-index construction, advisory free-form and complete-scenario retrieval, and the existing advisory review contract. `spec review --change` does not create the semantic report. |
 | `givn spec explore --file/--stdin [--change <id>]` | in/out | One complete Gherkin scenario in; permanent-corpus candidates plus optional active-change candidates, source metadata, index metadata, and optional stable JSON out. |
 | `givn check review --change <id>` | in/out | Runs the existing review checks, calls the dedicated E5 semantic-report and remediation-verification gates, writes `givn/changes/<id>/semantic-review.md` atomically when retrieval is available, rebuilds a malformed/incompatible permanent index as permanent-only before continuing, and exits non-zero for missing/invalid/stale/unremediated classifications or the existing retrieval-unavailable error. |
 | `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
 | `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
-| Canonical authoring guidance | out | `givn instructions specs` emits the normative E2E and interaction-inventory policy consumed by agents. |
+| Canonical authoring guidance | out | `givn instructions specs` emits the complete normative E2E and interaction-inventory policy consumed by agents; project overrides may replace the effective policy. |
 | Exit codes | out | For `givn lint`: 0 clean / 1 parse error / 3 duplicate scenario title / 2 wip (1 > 3 > 2); standard 0/non-0 elsewhere. |
 | `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
 | Embedded assets | in | Compiled-in default manifest, templates, skill templates. |

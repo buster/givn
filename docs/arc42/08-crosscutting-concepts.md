@@ -214,6 +214,28 @@ and supplies only artifact-specific choreography. This prevents generated
 entry points from drifting into contradictory rules. The existing cascade
 still lets a consuming project override the effective instruction deliberately.
 
+The canonical policy requires the primary assertion to observe the named
+consumer interface. Repository or database state is secondary evidence unless
+the database is itself the public consumer interface. Browser UI capabilities
+must be driven through a real browser; backend HTTP, in-page `fetch()`, and
+`XMLHttpRequest` are not substitutes. An obstacle to the real interface is a
+design gap, not permission to weaken the assertion.
+
+Artifact instructions may retain derived audit checks and output fields, but
+they must not create a competing E2E policy. Skills and slash commands are
+choreography only. Generated targets are snapshots and have no independent
+authority. The effective instruction may come from the embedded asset in the
+running binary or from a project override under `givn/artifacts/`.
+
+### 8.3b Machine-readable instruction contract
+
+`givn instructions <artifact> --json` emits one object with `id`, `generates`,
+`requires`, and `instruction`. The first three fields describe the effective
+artifact graph; the final field is the resolved instruction facet. Human output
+remains the instruction text only. This keeps agents from parsing human
+choreography and makes project overrides explicit without adding a runtime
+include mechanism.
+
 ### 8.3.1 Repository-owned CLI fixtures
 
 The same boundary applies to Givn's own acceptance tests. A fixture invokes

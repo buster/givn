@@ -37,7 +37,10 @@ Read `tasks.md`, `specs/**/*.feature`, `design.md`, `verify.command` and
 givn instructions review --change <id>
 ```
 
-Capture `output`, `template`, `instruction`, `rules`, `dependencies`.
+When `--json` is supplied, capture `id`, `generates`, `requires`, and
+`instruction`. Use `generates` and `requires` to orient the review; the
+instruction text is the resolved policy. Without `--json`, capture the
+resolved instruction text only.
 
 ### 3. Spawn a review subagent
 
@@ -92,11 +95,10 @@ Mechanical check, before trusting anything else:
    one exists, read all of them. Reviewing a weaker implementation while a
    stronger, real-interface one already exists elsewhere in the tree is
    itself a fabrication-audit finding — use and credit the strongest one.
-8. Check `@e2e` scope: each capability should have one `@e2e` scenario per
-   distinct happy-path action, not one per input variant/error case/enum
-   value. Record any capability with more than one `@e2e` scenario covering
-   the same action as an over-production finding — convert the excess to
-   regular scenarios.
+8. Read `givn instructions specs --change <id>` and apply its normalized
+   action scope. Record any capability with more than one `@e2e` scenario
+   covering the same action as over-production; convert the excess to regular
+   scenarios.
 9. Confirm the local run command (design.md's Local Runnability section)
    still starts the full stack — including every digital twin — cleanly.
 10. Read `verify.command` and `verify.e2e_command` from `givn/config.yaml`
@@ -125,20 +127,51 @@ Mechanical check, before trusting anything else:
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
-### 1. Confirm all tests pass
+### Arc42 implementation conformance (conditional)
+If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled`.
+If it is enabled, read the durable `docs/arc42/` chapters and the change-level
+`arc42.md`, independently derive the affected chapters and architecture facts,
+and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
+evidence from the completed implementation. Fill review.md's **Arc42
+implementation conformance** table.
+
+This is a fresh post-implementation check, not a copy of design-review. It
+must catch both stale Arc42 chapters and implementation drift from documented
+facts. Any omission or contradiction is a finding. Fix the affected artifact
+or implementation and repeat the comparison; if design.md changes, re-run
+design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
+row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
+
+### Deterministic gate dispositions
+
+Complete the **Overlap dispositions** table for every shape match, add a
+**split-or-keep** decision for every long scenario, and explain every
+removed+added pair as supersession or unrelated work before sign-off.
+
+### Semantic review classifications
+
+When `semantic-review.md` exists, classify every candidate as `DUPLIKAT`,
+`VARIANTE`, or `VALID-BOUNDARY` and write a rationale. `UNCERTAIN` or a missing
+rationale blocks `givn check review --change <id>`. There is no `UNRELATED`
+escape classification. A seemingly unrelated pair that remains above the
+active boundary requires sharper domain vocabulary and observable invariants,
+followed by a fresh review run.
+
+### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
 Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 (classify below). Never change production code to force a pass.
 
-### 2. Measure and record coverage
-Run the coverage tool from design.md. Record percentage and raw output in
-review.md — a fact, not a threshold gate.
+### 3. Measure and record coverage
+Run `coverage.measure_command`, then `coverage.merge_command` from
+`givn/commands.yaml`. Record the merged line and branch percentages and raw
+report counters in review.md — a fact, not a threshold gate.
 
-If `coverage.command` is still the sentinel (`givn missing-coverage`),
-the review gate is blocked. Install and configure a coverage tool before
+If either coverage command is still the sentinel (`givn missing-coverage`), the
+review gate is blocked. Install and configure the project scripts before
 continuing. Do not write "not measured" or any placeholder text.
 
-### 3. Classify every gap
+### 4. Classify every gap
 | Bucket | Meaning | Action |
 |---|---|---|
 | Dead code | YAGNI/KISS | Delete; re-run tests. |
@@ -151,28 +184,24 @@ These three buckets are exhaustive — **do not invent a fourth**. Phrases like
 buckets above are themselves a fabrication-audit finding. A missing or
 downgraded `@e2e` scenario is always "Missing test," never excused.
 
-### 4. Resolve each gap
+### 5. Resolve each gap
 Per the table above; hard-to-test gaps get a written justification, no code change.
 
-### 5. Confirm e2e coverage
-Every capability needs exactly one `@e2e` scenario per distinct happy-path
-action, with a real-interface primary assertion driven through the actual
-interface (real browser for a browser-UI capability — never HTTP/fetch()
-standing in for it). Missing, downgraded, driven via HTTP/fetch() instead
-of the real interface, or over-produced (one per variant) = classify as
-"missing test"/"needs fixing" and add, fix, or convert accordingly — never
-as an exception outside the three buckets. Before concluding a real driver
-is unavailable or not yet installed, search the tree yourself (including
-untracked files, per step 0.7) — do not take an absence at face value.
+### 6. Confirm e2e coverage
+Read the resolved specs instruction and verify its normalized inventory,
+real-interface primary assertions, and driver fidelity. Missing, downgraded,
+or over-produced coverage is unfinished work and must be added, fixed, or
+converted under the three buckets. Before concluding a real driver is
+unavailable, search the tree yourself, including untracked files.
 
-### 6. Final GREEN confirmation
+### 7. Final GREEN confirmation
 Re-run both runners. Must pass after all gap resolutions.
 
-### 7. Write review.md
+### 8. Write review.md
 Coverage percentage + tool output, gap table, test suite output, sign-off
 checklist, final line REVIEW: PASS.
 
-### 8. Run the review hook
+### 9. Run the review hook
 `givn check review --change <id>`. Fix failures before reporting back.
 
 ## Report back with
@@ -197,8 +226,8 @@ trusting the subagent's report:
 3. Read every `@e2e` scenario's step definitions yourself. Confirm each has
    a real-interface assertion, not repository-only, and — for a browser-UI
    capability — is actually driven through a real browser, not HTTP/fetch().
-4. Confirm no capability has more than one `@e2e` scenario per happy-path
-   action.
+4. Read the canonical specs instruction and confirm no capability has more
+   than one `@e2e` scenario for the same normalized action.
 5. Independently confirm which file(s) `<verify.e2e_command>` invokes, and
    run `git status` / search the tree yourself for any other e2e
    implementation (including untracked files) the subagent's report did not
@@ -265,11 +294,9 @@ Display: "Run `/givn-archive` to archive this change."
 - `REVIEW: PASS` requires all gaps resolved AND a clean fabrication audit.
 - New scenarios added during review go through the full loop before sign-off.
 - `givn lint` is static only; GREEN comes from the runners.
-- Every capability needs exactly one `@e2e` scenario per distinct
-  happy-path action, with a real-interface primary assertion —
-  repository-only assertions, and HTTP/fetch() standing in for real browser
-  interaction on a browser-UI capability, never satisfy this. More than one
-  `@e2e` scenario per action is over-production, not thoroughness.
+- Apply the canonical E2E policy from the resolved specs instruction. Verify
+  normalized action coverage, real-interface primary assertions, and driver
+  fidelity; more than one scenario for the same action is over-production.
 - The local run command must start the full stack, digital twins included,
   cleanly — confirmed during this review, not assumed.
 - The three-bucket classification is exhaustive. No fourth bucket, no

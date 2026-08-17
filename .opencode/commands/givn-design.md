@@ -30,12 +30,13 @@ Identify the active change. Announce: "Using change: <id>".
 givn instructions design --change <id>
 ```
 
-Parse the output for:
-- `output`: path to write the design (typically `givn/changes/<id>/design.md`)
-- `template`: structure to follow
-- `instruction`: guidance on what to produce
-- `context` / `rules`: constraints for you — **do not copy these into the file**
-- `dependencies`: completed artifacts to read (proposal.md, specs/)
+When `--json` is supplied, parse the documented object:
+- `id`: effective artifact id
+- `generates`: output paths or globs for the artifact
+- `requires`: prerequisite artifact ids
+- `instruction`: resolved writing guidance; do not copy it into the file
+
+Without `--json`, the command emits the resolved instruction text only.
 
 ### 3. Read the inputs
 
