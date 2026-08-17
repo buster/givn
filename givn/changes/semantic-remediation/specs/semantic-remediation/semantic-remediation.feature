@@ -1,7 +1,7 @@
 # User Interaction Inventory:
 # - invoke `givn check review --change <id>` and inspect remediation verification and exit status
 
-@givn.delta @semantic-remediation
+@givn.delta @semantic-review @semantic-remediation
 Feature: Verify semantic remediation
 
   @givn.added
@@ -134,6 +134,18 @@ Feature: Verify semantic remediation
     And the permanent specifications are unchanged
     And the review dispositions are unchanged
     And the permanent index contains no delta vectors, classifications, or report state
+
+  @givn.modified @wip
+  Scenario: A complete classification allows change review and survives regeneration
+    Given a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    When the user classifies every semantic review candidate as "DUPLIKAT"
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+    And the semantic review report status is "PASS"
 
   @givn.added @e2e @wip
   Scenario: Real CLI review reports successful duplicate remediation

@@ -138,6 +138,8 @@ struct DeltaScenario {
     operation: crate::gherkin::delta::DeltaOp,
     facts: crate::overlap::fingerprint::Fingerprint,
     evidence_json: String,
+    is_outline: bool,
+    has_examples: bool,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -164,6 +166,24 @@ struct SemanticCandidate {
     candidate_id: String,
     classification: String,
     rationale: Option<String>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct PriorRemediationEntry {
+    candidate_id: String,
+    classification: String,
+    rationale: String,
+    left_scope: String,
+    left_file: String,
+    left_title: String,
+    left_content_hash: String,
+    left_evidence_hash: String,
+    right_scope: String,
+    right_file: String,
+    right_title: String,
+    right_content_hash: String,
+    right_evidence_hash: String,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -331,15 +351,21 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
     let mut candidates = semantic_candidates(root, &refresh.index, &delta)?;
+    let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
-    let remediation = verify_semantic_remediation(&candidates);
+    let remediation =
+        verify_semantic_remediation(root, &refresh.index, &delta, &prior, &candidates);
     let report = render_semantic_report(change_id, &candidates, remediation.is_err());
     write_semantic_report(&report_path, &report)?;
-    if let Err(error) = remediation {
-        bail!("{error}");
-    }
-    if carried_classifications > 0 {
-        println!("semantic remediation verified: {carried_classifications}");
+    let verified_remediations = match remediation {
+        Ok(count) => count,
+        Err(error) => bail!("{error}"),
+    };
+    if carried_classifications > 0 || verified_remediations > 0 {
+        println!(
+            "semantic remediation verified: {}",
+            carried_classifications.max(verified_remediations)
+        );
     }
     let unresolved = candidates
         .iter()
@@ -707,35 +733,216 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn verify_semantic_remediation(candidates: &[SemanticCandidate]) -> Result<usize> {
+fn read_prior_remediation_entries(path: &Path) -> Vec<PriorRemediationEntry> {
+    let Ok(content) = fs::read_to_string(path) else {
+        return Vec::new();
+    };
+    let mut entries = Vec::new();
+    let mut fields = BTreeMap::new();
+    for line in content.lines().chain(std::iter::once("## Candidate end")) {
+        if line.starts_with("## Candidate") && !fields.is_empty() {
+            if let Some(entry) = prior_remediation_entry(&fields) {
+                entries.push(entry);
+            }
+            fields.clear();
+        }
+        let Some(value) = line.strip_prefix("- ") else {
+            continue;
+        };
+        let Some((key, value)) = value.split_once(": ") else {
+            continue;
+        };
+        fields.insert(key.to_string(), report_scalar(value));
+    }
+    entries
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn prior_remediation_entry(fields: &BTreeMap<String, String>) -> Option<PriorRemediationEntry> {
+    let classification = fields.get("classification")?;
+    if !matches!(
+        classification.as_str(),
+        "DUPLIKAT" | "VARIANTE" | "VALID-BOUNDARY"
+    ) {
+        return None;
+    }
+    let rationale = fields.get("rationale")?;
+    if rationale.is_empty() || rationale == "null" {
+        return None;
+    }
+    Some(PriorRemediationEntry {
+        candidate_id: fields.get("candidate_id")?.clone(),
+        classification: classification.clone(),
+        rationale: rationale.clone(),
+        left_scope: fields.get("left_scope")?.clone(),
+        left_file: fields.get("left_file")?.clone(),
+        left_title: fields.get("left_title")?.clone(),
+        left_content_hash: fields.get("left_content_hash")?.clone(),
+        left_evidence_hash: fields.get("left_evidence_hash")?.clone(),
+        right_scope: fields.get("right_scope")?.clone(),
+        right_file: fields.get("right_file")?.clone(),
+        right_title: fields.get("right_title")?.clone(),
+        right_content_hash: fields.get("right_content_hash")?.clone(),
+        right_evidence_hash: fields.get("right_evidence_hash")?.clone(),
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn report_scalar(value: &str) -> String {
+    value.trim().trim_matches('"').replace("\\\"", "\"")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn verify_semantic_remediation(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+    prior: &[PriorRemediationEntry],
+    candidates: &[SemanticCandidate],
+) -> Result<usize> {
+    let permanent = permanent_semantic_endpoints(root)?;
     let mut verified = 0;
-    for candidate in candidates {
-        match candidate.classification.as_str() {
-            "DUPLIKAT" if candidate.left.scope == "current-change" => {
-                bail!(
-                    "DUPLIKAT remediation requires removing the redundant scenario (candidate {})",
-                    candidate.candidate_id
-                );
+    for entry in prior {
+        if entry.rationale.is_empty()
+            || entry.left_scope != "current-change"
+            || entry.right_scope != "permanent"
+            || entry.left_file.is_empty()
+            || entry.left_title.is_empty()
+            || entry.left_content_hash.is_empty()
+            || entry.left_evidence_hash.is_empty()
+            || entry.right_content_hash.is_empty()
+            || entry.right_evidence_hash.is_empty()
+        {
+            bail!(
+                "semantic classification is stale (candidate {})",
+                entry.candidate_id
+            );
+        }
+        let current_candidate = candidates
+            .iter()
+            .find(|candidate| candidate.candidate_id == entry.candidate_id);
+        let current_left = delta.iter().find(|item| {
+            item.scenario.file == entry.left_file
+                && item.scenario.title == entry.left_title
+                && item.operation != crate::gherkin::delta::DeltaOp::Removed
+        });
+        let right = permanent.get(&(entry.right_file.clone(), entry.right_title.clone()));
+        match entry.classification.as_str() {
+            "DUPLIKAT" => {
+                if let Some(left) = current_left {
+                    let endpoint = semantic_delta_endpoint(left);
+                    if endpoint.content_hash != entry.left_content_hash
+                        || endpoint.evidence_hash != entry.left_evidence_hash
+                    {
+                        bail!(
+                            "semantic classification is stale (candidate {})",
+                            entry.candidate_id
+                        );
+                    }
+                }
+                if current_candidate.is_some()
+                    || current_left.is_some()
+                    || right.is_none_or(|endpoint| {
+                        endpoint.content_hash != entry.right_content_hash
+                            || endpoint.evidence_hash != entry.right_evidence_hash
+                    })
+                {
+                    bail!(
+                        "DUPLIKAT remediation requires removing the redundant scenario (candidate {})",
+                        entry.candidate_id
+                    );
+                }
+                verified += 1;
             }
             "VARIANTE" => {
-                bail!(
-                    "VARIANTE remediation requires consolidation (candidate {})",
-                    candidate.candidate_id
-                );
+                let Some(left) = current_left else {
+                    bail!(
+                        "semantic classification is stale (candidate {})",
+                        entry.candidate_id
+                    );
+                };
+                let Some(right) = right else {
+                    bail!(
+                        "semantic classification is stale (candidate {})",
+                        entry.candidate_id
+                    );
+                };
+                let score = recompute_prior_pair_score(root, index, left, right)?;
+                if current_candidate.is_some()
+                    || !left.is_outline
+                    || !left.has_examples
+                    || semantic_delta_endpoint(left).content_hash == entry.left_content_hash
+                    || semantic_delta_endpoint(left).evidence_hash == entry.left_evidence_hash
+                    || right.content_hash != entry.right_content_hash
+                    || right.evidence_hash != entry.right_evidence_hash
+                    || score >= SEMANTIC_SIMILARITY_THRESHOLD
+                {
+                    bail!(
+                        "VARIANTE remediation requires consolidation (candidate {})",
+                        entry.candidate_id
+                    );
+                }
+                verified += 1;
             }
             "VALID-BOUNDARY" => {
-                bail!(
-                    "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {})",
-                    candidate.candidate_id
-                );
+                let Some(left) = current_left else {
+                    bail!(
+                        "semantic classification is stale (candidate {})",
+                        entry.candidate_id
+                    );
+                };
+                let Some(right) = right else {
+                    bail!(
+                        "semantic classification is stale (candidate {})",
+                        entry.candidate_id
+                    );
+                };
+                let score = recompute_prior_pair_score(root, index, left, right)?;
+                let left_endpoint = semantic_delta_endpoint(left);
+                if current_candidate.is_some()
+                    || left_endpoint.content_hash == entry.left_content_hash
+                    || left_endpoint.evidence_hash == entry.left_evidence_hash
+                    || right.content_hash != entry.right_content_hash
+                    || right.evidence_hash != entry.right_evidence_hash
+                    || score >= SEMANTIC_SIMILARITY_THRESHOLD
+                    || !observable_distinction(&left_endpoint, right)
+                {
+                    bail!(
+                        "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {})",
+                        entry.candidate_id
+                    );
+                }
+                verified += 1;
             }
             _ => {}
         }
-        if candidate.classification != "UNCERTAIN" {
-            verified += 1;
-        }
     }
     Ok(verified)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn recompute_prior_pair_score(
+    root: &Path,
+    index: &SpecIndex,
+    left: &DeltaScenario,
+    right: &SemanticEndpoint,
+) -> Result<f32> {
+    let right_entry = index
+        .entries
+        .iter()
+        .find(|entry| entry.file == right.file && entry.title == right.title)
+        .with_context(|| format!("permanent endpoint missing from index: {}", right.title))?;
+    let left_vector = embed_texts(root, &[left.scenario.text.clone()], EmbeddingRole::Passage)?
+        .into_iter()
+        .next()
+        .context("retrieval embedder returned no remediation vector")?;
+    let raw = cosine_similarity(&left_vector, &right_entry.embedding);
+    semantic_score(&semantic_delta_endpoint(left), right, raw)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn observable_distinction(left: &SemanticEndpoint, right: &SemanticEndpoint) -> bool {
+    left.facts.facts != right.facts.facts || left.facts.assertions != right.facts.assertions
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1381,6 +1588,8 @@ fn collect_delta_feature_scenarios(
                     .or(feature.background.as_ref()),
             ),
             evidence_json,
+            is_outline: scenario.keyword == "Scenario Outline",
+            has_examples: !scenario.examples.is_empty(),
         });
     }
 }
