@@ -84,6 +84,9 @@ pub struct GivnWorld {
     pub(crate) retrieval_stub_scores: Option<String>,
     /// Optional deterministic duplicate-audit score overrides for fixtures.
     pub(crate) retrieval_duplicate_scores: Option<String>,
+    /// Guard that restores the unreadable-feature fixture after its subprocess
+    /// invocation, including when a scenario assertion panics.
+    pub(crate) unreadable_feature: Option<spec_duplicates_steps::UnreadableFeatureGuard>,
     /// Snapshot of permanent feature files for non-mutation assertions.
     pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
     /// Snapshot of the generated permanent retrieval index for non-mutation

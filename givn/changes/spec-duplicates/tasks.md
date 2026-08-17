@@ -1720,11 +1720,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed permanent feature reports its path`
-    - Commit hash: ``
+    - Commit hash: `28730695f430a657930231cc0875ae4cc75d9ab1`
 
 ## Scenario 16: `An unreadable permanent feature reports its path`
 
-- [ ] Scenario: `An unreadable permanent feature reports its path`
+- [x] Scenario: `An unreadable permanent feature reports its path`
   - RED:
     - Remove `@wip` only from this scenario; do not alter tags elsewhere.
     - Add regular step definitions with `unimplemented!()` bodies in
@@ -1733,29 +1733,98 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^An unreadable permanent feature reports its path$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.39s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An unreadable permanent feature reports its path
+   ✘  Given an unreadable permanent feature at "givn/specs/private/private.feature"
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:166:5
+      Matched: tests/steps/spec_duplicates_steps.rs:107:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3203367) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
-    - Abort on an unreadable permanent file, include the project-relative path
+    - Write the valid feature fixture at exactly
+      `givn/specs/private/private.feature`, apply mode `000`, and probe
+      readability as the same user that launches the compiled subprocess. In
+      this environment the permission is enforced, so `Feature::parse_path`
+      receives a real permission-denied I/O error. If an elevated test user can
+      bypass mode `000`, the guard moves the valid file aside and creates a
+      directory at the same `.feature` path; `Feature::parse_path` then receives
+      a deterministic `EISDIR` I/O error rather than a malformed Gherkin input.
+      The RAII guard restores the original file and permissions on scenario
+      completion or assertion panic.
+    - Abort on the unreadable permanent file, include the project-relative path
       `givn/specs/private/private.feature` in stderr, and emit no stdout report.
-      The fixture must produce a real read failure for the subprocess.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Production files modified in GREEN: none. The existing
+      `src/spec/retrieval.rs` `parse_permanent_feature` boundary centralized by
+      Scenario 15 was exercised for the real `Feature::parse_path` I/O error.
+    - Test files modified in GREEN: `tests/steps/spec_duplicates_steps.rs` and
+      `tests/steps/mod.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.15s
+      ```
     - Rerun the targeted command. Required result: exit 0 for the scenario while
       the inner command exits non-zero.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 6.25s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An unreadable permanent feature reports its path
+   ✔  Given an unreadable permanent feature at "givn/specs/private/private.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains the project-relative path "givn/specs/private/private.feature"
+   ✔  And stdout is empty
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Check permissions/read errors are path-specific and not silently dropped;
-      do not weaken the fixture to a parse error. Run `cargo fmt --check` and
-      rerun the targeted command.
+    - Keep the permission guard path-specific and restore the fixture explicitly
+      after the final stdout assertion, while retaining drop-based cleanup if a
+      prior assertion panics. The fallback remains a real `Feature::parse_path`
+      I/O failure, not a malformed parse case.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan of `tests/steps/spec_duplicates_steps.rs` for
+      `unimplemented!()`/`todo!()`: `No files found`.
+    - Empty-function-body scan of `tests/steps/spec_duplicates_steps.rs` and
+      `tests/steps/mod.rs`: `No files found`.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.24s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An unreadable permanent feature reports its path
+   ✔  Given an unreadable permanent feature at "givn/specs/private/private.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains the project-relative path "givn/specs/private/private.feature"
+   ✔  And stdout is empty
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 16 tag only), `tests/steps/spec_duplicates_steps.rs`, `tests/steps/mod.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 15 hash update). No production source file or design artifact changed, and all later `@wip` tags remain intact.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An unreadable permanent feature reports its path`
