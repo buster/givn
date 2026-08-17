@@ -56,6 +56,98 @@ const SEMANTIC_TOKEN_FEATURE: &str = r#"Feature: token
     When the client authenticates without a token
     Then access is denied with message "token required"
 "#;
+const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
+    (
+        "givn/specs/alpha/alpha.feature",
+        r#"Feature: alpha
+
+  Scenario: Alpha behavior
+    Given alpha setup
+    When alpha action
+    Then alpha result is stable
+
+  Scenario: Alpha behavior copy
+    Given alpha setup
+    When alpha action
+    Then alpha result is stable
+"#,
+    ),
+    (
+        "givn/specs/bravo/bravo.feature",
+        r#"Feature: bravo
+
+  Scenario: Bravo behavior
+    Given bravo setup
+    When bravo action
+    Then bravo result is stable
+
+  Scenario: Bravo behavior copy
+    Given bravo setup
+    When bravo action
+    Then bravo result is stable
+"#,
+    ),
+    (
+        "givn/specs/charlie/charlie.feature",
+        r#"Feature: charlie
+
+  Scenario: Charlie behavior
+    Given charlie setup
+    When charlie action
+    Then charlie result is stable
+
+  Scenario: Charlie behavior copy
+    Given charlie setup
+    When charlie action
+    Then charlie result is stable
+"#,
+    ),
+    (
+        "givn/specs/delta/delta.feature",
+        r#"Feature: delta
+
+  Scenario: Delta behavior
+    Given delta setup
+    When delta action
+    Then delta result is stable
+
+  Scenario: Delta behavior copy
+    Given delta setup
+    When delta action
+    Then delta result is stable
+"#,
+    ),
+    (
+        "givn/specs/echo/echo.feature",
+        r#"Feature: echo
+
+  Scenario: Echo behavior
+    Given echo setup
+    When echo action
+    Then echo result is stable
+
+  Scenario: Echo behavior copy
+    Given echo setup
+    When echo action
+    Then echo result is stable
+"#,
+    ),
+    (
+        "givn/specs/foxtrot/foxtrot.feature",
+        r#"Feature: foxtrot
+
+  Scenario: Foxtrot behavior
+    Given foxtrot setup
+    When foxtrot action
+    Then foxtrot result is stable
+
+  Scenario: Foxtrot behavior copy
+    Given foxtrot setup
+    When foxtrot action
+    Then foxtrot result is stable
+"#,
+    ),
+];
 
 #[given(
     regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" has the assertion sequence of "([^"]+)" at "([^"]+)"$"##
@@ -235,6 +327,53 @@ fn duplicate_features(world: &mut GivnWorld) {
     );
 }
 
+#[given("the permanent corpus contains more than five duplicate and related-scenario candidates")]
+fn many_duplicate_candidates_fixture(world: &mut GivnWorld) {
+    permanent_project(world, &MANY_DUPLICATE_FEATURES);
+}
+
+#[then("the audit includes the candidate at rank 6")]
+fn candidate_rank_six(world: &mut GivnWorld) {
+    assert!(
+        stdout(world)
+            .lines()
+            .any(|line| line.starts_with("rank 6: ")),
+        "duplicate audit rank 6 is missing:\n{}",
+        stdout(world)
+    );
+}
+
+#[then("candidate ranks are exactly `1,2,3,4,5,6`")]
+fn candidate_ranks_are_contiguous(world: &mut GivnWorld) {
+    assert_eq!(candidate_ranks(world), vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[then("the highest rank equals the candidate count")]
+fn highest_rank_equals_candidate_count(world: &mut GivnWorld) {
+    let highest_rank = candidate_ranks(world)
+        .into_iter()
+        .max()
+        .expect("duplicate audit has no candidate ranks");
+    let candidate_count = stdout(world)
+        .lines()
+        .find_map(|line| line.strip_prefix("Candidate count: "))
+        .expect("duplicate audit candidate count is missing")
+        .parse::<usize>()
+        .expect("duplicate audit candidate count is not an integer");
+    assert_eq!(highest_rank, candidate_count);
+}
+
+fn candidate_ranks(world: &GivnWorld) -> Vec<usize> {
+    stdout(world)
+        .lines()
+        .filter_map(|line| {
+            line.strip_prefix("rank ")
+                .and_then(|line| line.split_once(':'))
+                .and_then(|(rank, _)| rank.parse::<usize>().ok())
+        })
+        .collect()
+}
+
 fn permanent_project(world: &mut GivnWorld, features: &[(&str, &str)]) {
     let env = common::make_init_root();
     let specs = env.path("givn/specs");
@@ -253,8 +392,7 @@ fn permanent_project(world: &mut GivnWorld, features: &[(&str, &str)]) {
 
 #[then(regex = r"^the audit reports candidate count (\d+)$")]
 fn candidate_count(world: &mut GivnWorld, count: String) {
-    assert_eq!(count, "1");
-    assert!(stdout(world).contains("Candidate count: 1\n"));
+    assert!(stdout(world).contains(&format!("Candidate count: {count}\n")));
 }
 
 #[then("candidate rank 1 is classified as `exact_duplicate`")]

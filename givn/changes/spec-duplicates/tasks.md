@@ -649,11 +649,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Semantically related scenarios are reported as candidates`
-    - Commit hash: ``
+    - Commit hash: `02e0429708d19c2403afa4265ca0ce6c938fa540`
 
 ## Scenario 6: `The audit reports candidates beyond the interactive top five`
 
-- [ ] Scenario: `The audit reports candidates beyond the interactive top five`
+- [x] Scenario: `The audit reports candidates beyond the interactive top five`
   - RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Add any new regular bindings with non-empty `unimplemented!()` bodies in
@@ -662,27 +662,96 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^The audit reports candidates beyond the interactive top five$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.08s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports candidates beyond the interactive top five
+   ✘  Given the permanent corpus contains more than five duplicate and related-scenario candidates
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:81:5
+      Matched: tests/steps/spec_duplicates_steps.rs:238:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3160079) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
-    - Remove any top-five truncation from the complete report and assert count
-      6, rank 6, contiguous ranks, and highest rank equal to candidate count.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Assert count 6, rank 6, contiguous ranks, and highest rank equal to
+      candidate count against a real 12-scenario permanent corpus containing
+      six exact duplicate pairs with distinct endpoint identities and assertion
+      shapes. The existing duplicate audit already passes its complete
+      candidate collection to rendering, so no production file required a
+      change.
+    - Production files modified in GREEN: none; `src/spec/retrieval.rs`
+      already keeps complete candidate collection separate from rendering and
+      has no top-five limit in the duplicate audit path.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+      Exact output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.77s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.58s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports candidates beyond the interactive top five
+   ✔  Given the permanent corpus contains more than five duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 6
+   ✔  And the audit includes the candidate at rank 6
+   ✔  And candidate ranks are exactly `1,2,3,4,5,6`
+   ✔  And the highest rank equals the candidate count
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Check complete candidate collection and rank assignment remain separate
-      from rendering and do not reintroduce a view limit. Run `cargo fmt --check`
-      and rerun the targeted command.
+      from rendering and do not reintroduce a view limit. `duplicate_candidates`
+      remains the complete collection/classification path, while
+      `duplicates_enabled` assigns ranks during rendering; no `.take(5)` occurs
+      in the duplicate audit path. Run `cargo fmt -- --check` and rerun the
+      targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no
+      `unimplemented!()`, `todo!()`, or empty step bodies.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.40s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports candidates beyond the interactive top five
+   ✔  Given the permanent corpus contains more than five duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the audit reports candidate count 6
+   ✔  And the audit includes the candidate at rank 6
+   ✔  And candidate ranks are exactly `1,2,3,4,5,6`
+   ✔  And the highest rank equals the candidate count
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 6 tag only), `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 5
+      post-commit hash). No production source file was modified because the
+      existing duplicate audit already reports the complete candidate vector.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports candidates beyond the interactive top five`

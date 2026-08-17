@@ -76,7 +76,7 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate rank 1 has empty distinguishing facts and fact contradiction `false`
     And the semantic candidate is advisory and is not an automatic duplicate decision
 
-  @givn.added @wip
+  @givn.added
   Scenario: The audit reports candidates beyond the interactive top five
     Given the permanent corpus contains more than five duplicate and related-scenario candidates
     When the user runs `givn spec duplicates`
