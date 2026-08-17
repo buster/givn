@@ -2135,11 +2135,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves active changes and archive contents unchanged`
-    - Commit hash: ``
+    - Commit hash: `be0a0895c005656d011140d1c6a4a958d2f4c443`
 
 ## Scenario 20: `An absent persistent index is ignored and remains absent`
 
-- [ ] Scenario: `An absent persistent index is ignored and remains absent`
+- [x] Scenario: `An absent persistent index is ignored and remains absent`
   - RED:
     - Remove `@wip` only from this scenario and leave all other @wip tags.
     - Add regular bindings with explicit `unimplemented!()` in
@@ -2148,28 +2148,100 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^An absent persistent index is ignored and remains absent$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.53s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An absent persistent index is ignored and remains absent
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✘  And no persistent retrieval index exists
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:200:5
+      Matched: tests/steps/spec_duplicates_steps.rs:1093:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
 
+thread 'main' (3217155) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
-    - Run the audit from current permanent files with transient embeddings,
-      assert a successful JSON report, and assert `.spec-index.json` is still
-      absent.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Create the existing duplicate/related permanent corpus, explicitly remove
+      and verify the absence of `givn/.spec-index.json`, run the compiled
+      `givn spec duplicates --format json` subprocess with the stub embedder,
+      and assert the successful JSON report contains the exact, structural, and
+      transient semantic candidates rooted in current `givn/specs/` files.
+    - Production files modified in GREEN: none. `src/spec/retrieval.rs` was
+      inspected and remains unchanged because `duplicates_enabled` collects
+      current permanent files, embeds them in memory, and does not call
+      `refresh_index` or read/write `.spec-index.json`.
+    - Test file modified: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.86s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An absent persistent index is ignored and remains absent
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And no persistent retrieval index exists
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the audit uses current permanent files and transient embeddings
+   ✔  And the persistent retrieval index remains absent
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; no
+      production source file changed, so production coverage is unmeasured for
+      this scenario.
   - REFACTOR:
-    - Verify the audit path does not call the persistent index refresh path and
-      does not create an index accidentally. Run `cargo fmt --check` and rerun
-      the targeted command.
+    - Keep absent-index setup explicit and deterministic by removing any
+      pre-existing `givn/.spec-index.json` and asserting it is absent before
+      invocation. Assert the JSON candidate classes and permanent endpoint
+      roots independently from the post-command absence check. Verify the
+      audit path does not call the persistent index refresh path and does not
+      create an index accidentally. Run `cargo fmt -- --check` and rerun the
+      targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan output:
+      ```text
+No files found
+      ```
+    - Empty-function-body scan output:
+      ```text
+No files found
+      ```
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: An absent persistent index is ignored and remains absent
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And no persistent retrieval index exists
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the audit uses current permanent files and transient embeddings
+   ✔  And the persistent retrieval index remains absent
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 20 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 19 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An absent persistent index is ignored and remains absent`

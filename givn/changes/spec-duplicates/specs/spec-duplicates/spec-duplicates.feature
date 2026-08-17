@@ -194,7 +194,7 @@ Feature: Audit duplicate and related permanent scenarios
     Then active change files are unchanged byte-for-byte
     And archive contents are unchanged byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: An absent persistent index is ignored and remains absent
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     And no persistent retrieval index exists
