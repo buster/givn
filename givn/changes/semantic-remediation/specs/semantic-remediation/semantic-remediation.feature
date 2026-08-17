@@ -52,7 +52,7 @@ Feature: Verify semantic remediation
     And stdout contains "semantic remediation verified"
     And the semantic review report status is "PASS"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A VARIANTE score below the boundary without consolidation remains blocked
     Given a project prepared for semantic remediation with a "VARIANTE" candidate
     When the user runs `givn check review --change running-change`

@@ -68,14 +68,18 @@
       (9 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): Consolidating a VARIANTE candidate verifies the projected remediation` Hash:
+- [x] COMMIT: `feat(semantic-remediation): Consolidating a VARIANTE candidate verifies the projected remediation` Hash: `36e978f`
 
 ### A VARIANTE score below the boundary without consolidation remains blocked
 
-- [ ] RED: target the named falsification scenario with strict stubs. Evidence:
-- [ ] GREEN: block score-only VARIANTE remediation when independent contracts
+- [x] RED: target the named falsification scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: block score-only VARIANTE remediation when independent contracts
       remain. Production files: `src/spec/retrieval.rs`, step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+      targeted run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): A VARIANTE score below the boundary without consolidation remains blocked` Hash:
 
 ### A VALID-BOUNDARY classification above the boundary remains blocked
