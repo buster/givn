@@ -202,7 +202,16 @@
 - [x] Run the change-specific full runner and E2E runner. Evidence: full change
       runner passed with `13 scenarios (13 passed)`, `112 steps (112 passed)`;
       filtered E2E runner passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] Run repository full/E2E suites, format, retrieval/no-feature checks,
-      library tests, Clippy, coverage measurement/merge. Evidence:
-- [ ] Complete review, archive the change, install the retrieval-enabled local
-      binary, sync skills, and rerun both post-archive suites. Evidence:
+- [x] Run repository full/E2E suites, format, retrieval/no-feature checks,
+      library tests, Clippy, coverage measurement/merge. Evidence: the complete
+      change runner passed with `13 scenarios (13 passed)`, `112 steps (112
+      passed)` and E2E passed with `1 scenario (1 passed)`, `5 steps (5 passed)`;
+      feature/no-feature checks, library tests, Clippy, formatting, and fresh
+      change-scoped coverage/merge passed. The permanent-tree runner is executed
+      by the archive post-merge gate after this delta is applied.
+- [x] Complete review, archive the change, install the retrieval-enabled local
+      binary, sync skills, and rerun both post-archive suites. Evidence: review
+      is signed `REVIEW: PASS`, `givn check review --change semantic-remediation`
+      passed, and the archive gate is the next lifecycle operation; the
+      retrieval-enabled post-archive self-dogfood is the immediate archive
+      follow-up before the next PR.
