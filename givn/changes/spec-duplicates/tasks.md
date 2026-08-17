@@ -2245,11 +2245,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An absent persistent index is ignored and remains absent`
-    - Commit hash: ``
+    - Commit hash: `fbdc70554a0e2f20214da9c2dba9cf81bfdd09e8`
 
 ## Scenario 21: `A malformed persistent index is ignored and unchanged`
 
-- [ ] Scenario: `A malformed persistent index is ignored and unchanged`
+- [x] Scenario: `A malformed persistent index is ignored and unchanged`
   - RED:
     - Remove `@wip` only from this scenario. Leave all other scenario tags.
     - Add regular step definitions with explicit `unimplemented!()` bodies in
@@ -2258,28 +2258,98 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A malformed persistent index is ignored and unchanged$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.54s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A malformed persistent index is ignored and unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✘  And the persistent retrieval index contains the bytes "not-json"
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:209:5
+      Matched: tests/steps/spec_duplicates_steps.rs:1109:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
 
+thread 'main' (3219600) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
     - Write `not-json` to the persistent index, run the audit using current
       permanent files and transient embeddings, assert valid JSON candidates,
       and assert the index remains exactly `not-json`.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Production files modified in GREEN: none. `src/spec/retrieval.rs` was
+      inspected and remains unchanged because `duplicates_enabled` collects
+      current permanent files, embeds them in memory, and does not call
+      `read_index` or `refresh_index` or read/write `.spec-index.json`.
+    - Test file modified: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.14s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.11s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A malformed persistent index is ignored and unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the persistent retrieval index contains the bytes "not-json"
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the audit report is valid JSON with the permanent candidates
+   ✔  And the persistent retrieval index still contains the bytes "not-json"
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; no
+      production source file changed, so production coverage is unmeasured for
+      this scenario.
   - REFACTOR:
-    - Keep malformed index bytes outside the audit evidence path and avoid
-      repairing or rewriting them. Run `cargo fmt --check` and rerun the
-      targeted command.
+    - Keep the malformed index bytes outside the audit evidence path, snapshot
+      exactly `not-json` before invocation, compare the post-command bytes to
+      that snapshot and to the required literal, and reuse the existing
+      permanent-candidate JSON assertion. The audit path does not call
+      `read_index` or `refresh_index` and does not repair or rewrite the file.
+      Run `cargo fmt -- --check` and rerun the targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan output:
+      ```text
+No files found
+      ```
+    - Empty-function-body scan output:
+      ```text
+No files found
+      ```
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.81s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A malformed persistent index is ignored and unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the persistent retrieval index contains the bytes "not-json"
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And the audit report is valid JSON with the permanent candidates
+   ✔  And the persistent retrieval index still contains the bytes "not-json"
+[Summary]
+1 feature
+1 scenario (1 passed)
+6 steps (6 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 21 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 20 hash update). No `src/spec/retrieval.rs`, `design.md`, or later `@wip` tag changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed persistent index is ignored and unchanged`

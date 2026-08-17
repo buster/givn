@@ -203,7 +203,7 @@ Feature: Audit duplicate and related permanent scenarios
     And the audit uses current permanent files and transient embeddings
     And the persistent retrieval index remains absent
 
-  @givn.added @wip
+  @givn.added
   Scenario: A malformed persistent index is ignored and unchanged
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     And the persistent retrieval index contains the bytes "not-json"

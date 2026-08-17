@@ -147,6 +147,7 @@ const ARCHIVE_AUDIT_FILES: [(&str, &str); 3] = [
     ),
 ];
 const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
+const MALFORMED_INDEX_BYTES: &[u8] = b"not-json";
 const MALFORMED_PERMANENT_FEATURE: &str =
     "this is not a Gherkin feature document\nwithout a structural keyword\n";
 const UNREADABLE_PERMANENT_FEATURE: &str = r#"Feature: private
@@ -1106,6 +1107,23 @@ fn no_persistent_retrieval_index(world: &mut GivnWorld) {
     );
 }
 
+#[given("the persistent retrieval index contains the bytes \"not-json\"")]
+fn malformed_persistent_retrieval_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let index = env.path(PERSISTENT_INDEX_PATH);
+    fs::write(&index, MALFORMED_INDEX_BYTES).expect("write malformed persistent retrieval index");
+    let snapshot = fs::read(&index).expect("read malformed persistent retrieval index snapshot");
+    assert_eq!(
+        snapshot.as_slice(),
+        MALFORMED_INDEX_BYTES,
+        "malformed persistent retrieval index fixture changed before audit"
+    );
+    world.malformed_index_snapshot = Some(snapshot);
+}
+
 #[then("the audit uses current permanent files and transient embeddings")]
 fn audit_uses_current_permanent_files_and_transient_embeddings(world: &mut GivnWorld) {
     let out = super::output(world);
@@ -1157,6 +1175,40 @@ fn audit_uses_current_permanent_files_and_transient_embeddings(world: &mut GivnW
             );
         }
     }
+}
+
+#[then("the audit report is valid JSON with the permanent candidates")]
+fn malformed_index_audit_report(world: &mut GivnWorld) {
+    audit_uses_current_permanent_files_and_transient_embeddings(world);
+}
+
+#[then("the persistent retrieval index still contains the bytes \"not-json\"")]
+fn malformed_persistent_retrieval_index_is_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .malformed_index_snapshot
+        .as_ref()
+        .expect("malformed persistent retrieval index was not snapshotted");
+    assert_eq!(
+        before.as_slice(),
+        MALFORMED_INDEX_BYTES,
+        "malformed persistent retrieval index snapshot is not the required byte sequence"
+    );
+    let after = fs::read(env.path(PERSISTENT_INDEX_PATH))
+        .expect("read malformed persistent retrieval index after audit");
+    assert_eq!(
+        after.as_slice(),
+        before.as_slice(),
+        "duplicate audit changed the malformed persistent retrieval index"
+    );
+    assert_eq!(
+        after.as_slice(),
+        MALFORMED_INDEX_BYTES,
+        "persistent retrieval index was not left as the malformed byte sequence"
+    );
 }
 
 #[when("the user runs `givn spec duplicates` through a build without spec retrieval")]
