@@ -72,6 +72,20 @@ const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
     When the client connects without a login
     Then the session service refuses access with message "credentials required"
 "#;
+const INCLUSIVE_THRESHOLD_LEFT_FEATURE: &str = r#"Feature: threshold left
+
+  Scenario: Left semantic boundary
+    Given a boundary client
+    When the client submits a credentialless request
+    Then the server returns an unauthorized response
+"#;
+const INCLUSIVE_THRESHOLD_RIGHT_FEATURE: &str = r#"Feature: threshold right
+
+  Scenario: Right semantic boundary
+    Given a boundary gateway
+    When the gateway receives a credentialless request
+    Then the gateway returns an access denied response
+"#;
 const NO_CANDIDATE_FEATURE: &str = r#"Feature: unrelated operations
 
   Scenario: Glacier replication completes
@@ -507,19 +521,64 @@ fn semantic_candidate_fixture(
     );
 }
 
+#[given("permanent scenarios have no exact or structural relationship")]
+fn inclusive_threshold_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/threshold/left.feature",
+                INCLUSIVE_THRESHOLD_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/threshold/right.feature",
+                INCLUSIVE_THRESHOLD_RIGHT_FEATURE,
+            ),
+        ],
+    );
+}
+
+#[given("the test score for their normalized endpoint pair is `0.9500`")]
+fn inclusive_threshold_score(world: &mut GivnWorld) {
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/threshold/left.feature|Left semantic boundary::givn/specs/threshold/right.feature|Right semantic boundary=0.9500".to_string(),
+    );
+}
+
 #[then("candidate rank 1 is classified as `semantic_candidate`")]
 fn semantic_candidate_kind(world: &mut GivnWorld) {
-    assert!(candidate_line(world).contains("kind=semantic_candidate"));
+    if stdout(world).trim_start().starts_with('{') {
+        let candidate = &json_candidates(world)[0];
+        assert_eq!(candidate["rank"], serde_json::json!(1));
+        assert_eq!(candidate["kind"], serde_json::json!("semantic_candidate"));
+    } else {
+        assert!(candidate_line(world).contains("kind=semantic_candidate"));
+    }
 }
 
 #[then("candidate rank 1 has relation `semantic_similarity`")]
 fn semantic_candidate_relation(world: &mut GivnWorld) {
-    assert!(candidate_line(world).contains("relation=semantic_similarity"));
+    if stdout(world).trim_start().starts_with('{') {
+        assert_eq!(
+            json_candidates(world)[0]["evidence"]["relation"],
+            serde_json::json!("semantic_similarity")
+        );
+    } else {
+        assert!(candidate_line(world).contains("relation=semantic_similarity"));
+    }
 }
 
 #[then("candidate rank 1 has score `0.9600`")]
 fn semantic_candidate_score(world: &mut GivnWorld) {
     assert!(candidate_line(world).ends_with("score=0.9600"));
+}
+
+#[then("candidate rank 1 has score `0.9500`")]
+fn inclusive_threshold_score_output(world: &mut GivnWorld) {
+    assert_eq!(
+        json_candidates(world)[0]["evidence"]["score"],
+        serde_json::json!("0.9500")
+    );
 }
 
 #[then("candidate rank 1 has null assertion shape and null fingerprint facts")]

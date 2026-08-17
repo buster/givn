@@ -212,7 +212,7 @@ Feature: Audit duplicate and related permanent scenarios
     And the audit report is valid JSON with the permanent candidates
     And the persistent retrieval index still contains the bytes "not-json"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A semantic candidate at the inclusive threshold is reported
     Given permanent scenarios have no exact or structural relationship
     And the test score for their normalized endpoint pair is `0.9500`

@@ -2353,11 +2353,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed persistent index is ignored and unchanged`
-    - Commit hash: ``
+    - Commit hash: `65dcc06a81fad6369f292ab81042732fd9c02ae7`
 
 ## Scenario 22: `A semantic candidate at the inclusive threshold is reported`
 
-- [ ] Scenario: `A semantic candidate at the inclusive threshold is reported`
+- [x] Scenario: `A semantic candidate at the inclusive threshold is reported`
   - RED:
     - Remove `@wip` only from this scenario and leave all other tags intact.
     - Add regular bindings with explicit `unimplemented!()` bodies in
@@ -2366,30 +2366,102 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A semantic candidate at the inclusive threshold is reported$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.43s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A semantic candidate at the inclusive threshold is reported
+   ✘  Given permanent scenarios have no exact or structural relationship
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:217:5
+      Matched: tests/steps/spec_duplicates_steps.rs:510:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3222838) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Set `GIVN_SPEC_DUPLICATES_TEST_SCORES` for the normalized endpoint pair to
       exactly `0.9500`, use the stub embedder only, and assert the semantic
       candidate is admitted with `semantic_similarity` and serialized score
       `0.9500`.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Production files modified in GREEN: none. The existing duplicate-audit
+      path in `src/spec/retrieval.rs` already uses the normalized unordered-pair
+      seam only with `GIVN_SPEC_EMBEDDER=stub`, compares the raw score
+      inclusively, and formats admitted scores only during JSON rendering.
+    - Test file modified: `tests/steps/spec_duplicates_steps.rs`.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+    - Compile output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.80s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A semantic candidate at the inclusive threshold is reported
+   ✔  Given permanent scenarios have no exact or structural relationship
+   ✔  And the test score for their normalized endpoint pair is `0.9500`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And candidate rank 1 is classified as `semantic_candidate`
+   ✔  And candidate rank 1 has relation `semantic_similarity`
+   ✔  And candidate rank 1 has score `0.9500`
+[Summary]
+1 feature
+1 scenario (1 passed)
+7 steps (7 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured. The production path was already
+      implemented and was not modified in this scenario.
   - REFACTOR:
     - Confirm thresholding uses the raw score before four-decimal
       serialization, remains inclusive at `0.9500`, and the score seam is not
       available to production local-E5 execution. Run `cargo fmt --check` and
       rerun the targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan output:
+      ```text
+No files found
+      ```
+    - Empty-function-body scan output:
+      ```text
+No files found
+      ```
+    - The non-stub boundary probe exited non-zero with:
+      ```text
+error: retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER
+      ```
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.72s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A semantic candidate at the inclusive threshold is reported
+   ✔  Given permanent scenarios have no exact or structural relationship
+   ✔  And the test score for their normalized endpoint pair is `0.9500`
+   ✔  When the user runs `givn spec duplicates --format json`
+   ✔  Then the command exits 0
+   ✔  And candidate rank 1 is classified as `semantic_candidate`
+   ✔  And candidate rank 1 has relation `semantic_similarity`
+   ✔  And candidate rank 1 has score `0.9500`
+[Summary]
+1 feature
+1 scenario (1 passed)
+7 steps (7 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 22 tag only), `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 21 hash update). No `design.md`, later `@wip` tag, or production source file changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A semantic candidate at the inclusive threshold is reported`
