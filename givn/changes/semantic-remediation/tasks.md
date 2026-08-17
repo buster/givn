@@ -166,24 +166,31 @@
 - [x] REFACTOR: rerun the named scenario and the existing semantic-review
       regression. Evidence: after formatting, targeted run passed with `1
       scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash: `687b20e`
 
 ## E2E Setup
 
-- [ ] Bring up the CLI-only local environment, register the separate E2E module,
-      and prove full versus `@e2e` scenario counts. Evidence:
+- [x] Bring up the CLI-only local environment, register the separate E2E module,
+      and prove full versus `@e2e` scenario counts. Evidence: no external
+      service is required; the change non-E2E runner passed with `12 scenarios`,
+      `107 steps`, and the filtered E2E runner passed with `1 scenario`, `5
+      steps`. The E2E count is strictly smaller and `.fail_on_skipped()` was
+      proven by the targeted RED run.
 
 ## E2E Scenario
 
 ### Real CLI review reports successful duplicate remediation
 
-- [ ] RED: remove only this scenario's `@wip`, bind real-process E2E steps, and
-      run the filtered E2E command. Evidence:
-- [ ] GREEN: invoke the compiled CLI with `check review --change`, assert the
+- [x] RED: remove only this scenario's `@wip`, bind real-process E2E steps, and
+      run the filtered E2E command. Evidence: `1 scenario (1 failed)`, `1 step
+      (1 failed)`; the E2E Given step panicked with `not implemented`.
+- [x] GREEN: invoke the compiled CLI with `check review --change`, assert the
       remediation receipt and report status through the real subprocess. E2E
-      file: `tests/steps/semantic_remediation_e2e_steps.rs`. Evidence:
-- [ ] REFACTOR: rerun the filtered E2E command. Evidence:
-- [ ] COMMIT: `test(e2e): Real CLI review reports successful duplicate remediation` Hash:
+      file: `tests/steps/semantic_remediation_e2e_steps.rs`. Evidence: E2E run
+      passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the filtered E2E command. Evidence: after formatting, E2E
+      run passed with `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: `test(e2e): Real CLI review reports successful duplicate remediation` Hash: `PENDING`
 
 ## Completion Evidence
 
