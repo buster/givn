@@ -1,7 +1,7 @@
 //! Regular black-box steps for the permanent scenario duplicate audit.
 
 use std::fs;
-use std::process::Output;
+use std::process::{Command, Output, Stdio};
 
 use cucumber::{given, then, when};
 
@@ -651,6 +651,35 @@ fn repeated_audit_fixture(world: &mut GivnWorld) {
     world.retrieval_duplicate_scores = Some(
         "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600".to_string(),
     );
+}
+
+#[when("the user runs `givn spec duplicates` through a build without spec retrieval")]
+fn duplicates_without_retrieval_feature(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let manifest_path = format!("{}/Cargo.toml", env!("CARGO_MANIFEST_DIR"));
+    let target_dir = env.path(".cargo-target-no-spec-retrieval");
+    let output = Command::new("cargo")
+        .current_dir(env.root())
+        .args([
+            "run",
+            "--quiet",
+            "--manifest-path",
+            manifest_path.as_str(),
+            "--no-default-features",
+            "--bin",
+            "givn",
+            "--",
+            "spec",
+            "duplicates",
+        ])
+        .env("CARGO_TARGET_DIR", target_dir)
+        .stdin(Stdio::null())
+        .output()
+        .expect("run no-feature givn process");
+    world.last_output = Some(output);
 }
 
 #[given("the persistent retrieval index is built and snapshotted")]
