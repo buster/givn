@@ -115,14 +115,18 @@
       targeted run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
       run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score below the boundary without distinction remains blocked` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score below the boundary without distinction remains blocked` Hash: `043968d`
 
 ### A VALID-BOUNDARY score exactly at the boundary remains blocked
 
-- [ ] RED: target the named exact-boundary scenario with strict stubs. Evidence:
-- [ ] GREEN: enforce a strict `< 0.9500` remediation result. Production files:
-      `src/spec/retrieval.rs`, step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario. Evidence:
+- [x] RED: target the named exact-boundary scenario with strict stubs. Evidence:
+      strict setup proof was non-zero with `1 scenario (1 failed)`, `1 step (1
+      failed)`.
+- [x] GREEN: enforce a strict `< 0.9500` remediation result. Production files:
+      `src/spec/retrieval.rs`, step files. Evidence: targeted run passed with `1
+      scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario. Evidence: after formatting, targeted
+      run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): A VALID-BOUNDARY score exactly at the boundary remains blocked` Hash:
 
 ### Changing a classified endpoint before remediation makes the decision stale
