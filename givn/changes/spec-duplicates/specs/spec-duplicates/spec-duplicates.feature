@@ -39,7 +39,7 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate rank 1 has relation `identical_behavior`
     And candidate rank 1 has score `null`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Structurally overlapping scenarios retain their distinguishing facts
     Given permanent scenarios share the same masked assertion shape but have different fingerprint facts
     When the user runs `givn spec duplicates`
