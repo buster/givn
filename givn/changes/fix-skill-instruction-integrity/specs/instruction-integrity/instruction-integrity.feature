@@ -32,7 +32,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the guidance requires local infrastructure and framework decisions
     And the guidance requires the interaction coverage matrix
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An author requests the technical E2E design guidance
     Given a Givn project with an active change
     When the author requests the design instructions through the Givn CLI
