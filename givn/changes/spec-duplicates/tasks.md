@@ -755,11 +755,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports candidates beyond the interactive top five`
-    - Commit hash: ``
+    - Commit hash: `1a741b9ae025d37e93e94300b1f2eddddfaa1678`
 
 ## Scenario 7: `Repeating an unchanged audit produces the same report`
 
-- [ ] Scenario: `Repeating an unchanged audit produces the same report`
+- [x] Scenario: `Repeating an unchanged audit produces the same report`
   - RED:
     - Remove `@wip` only from this scenario. Do not remove @wip elsewhere.
     - Add non-empty regular step stubs using `unimplemented!()` in
@@ -768,28 +768,93 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Repeating an unchanged audit produces the same report$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.33s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Repeating an unchanged audit produces the same report
+   ✘  Given a permanent scenario corpus with duplicate and related-scenario candidates
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:90:5
+      Matched: tests/steps/spec_duplicates_steps.rs:435:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3163491) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Implement deterministic collection, classification, sorting, rank
       assignment, and text/JSON serialization so two unchanged invocations are
       byte-for-byte identical with identical counts and evidence.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Production files modified in GREEN: none; `src/spec/retrieval.rs` already
+      sorts permanent paths and endpoint identities, uses total floating-point
+      ordering with endpoint tie-breaks, and renders stable text evidence.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+      Exact output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on package cache
+    Blocking waiting for file lock on build directory
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.06s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Repeating an unchanged audit produces the same report
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates` twice without changing the corpus
+   ✔  Then both audit reports are byte-for-byte identical
+   ✔  And both reports have the same scanned scenario count, candidate count, ranks, and evidence
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Review all ordering keys, total floating-point ordering, endpoint tie
       breaks, LF endings, and final newline. Run `cargo fmt --check` and rerun
       the same command.
+    - The assertions explicitly validate exact-before-structural-before-semantic
+      ordering, equal-score endpoint ordering (`account` before `auth`), null
+      serialization for deterministic candidates, four-decimal `0.9600` semantic
+      serialization, LF-only output, and exactly one final newline.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no
+      `unimplemented!()`, `todo!()`, or empty step bodies.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Repeating an unchanged audit produces the same report
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates` twice without changing the corpus
+   ✔  Then both audit reports are byte-for-byte identical
+   ✔  And both reports have the same scanned scenario count, candidate count, ranks, and evidence
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 7 tag only), `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 6
+      post-commit hash). No production source file was modified because the
+      existing duplicate collection, sorting, and renderer already satisfy the
+      determinism contract.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Repeating an unchanged audit produces the same report`
