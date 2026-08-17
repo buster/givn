@@ -92,7 +92,7 @@ Feature: Audit duplicate and related permanent scenarios
     Then both audit reports are byte-for-byte identical
     And both reports have the same scanned scenario count, candidate count, ranks, and evidence
 
-  @givn.added @wip
+  @givn.added
   Scenario: JSON output identifies every audit candidate
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     When the user runs `givn spec duplicates --format json`

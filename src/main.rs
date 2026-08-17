@@ -198,8 +198,12 @@ enum SpecCommands {
         #[arg(long)]
         change: String,
     },
-    /// Report exact duplicate permanent scenarios.
-    Duplicates,
+    /// Report duplicate and related permanent scenarios.
+    Duplicates {
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -268,7 +272,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 matches!(format, SpecFormat::Json),
             ),
             SpecCommands::Review { change } => cli::spec::run_review(&change),
-            SpecCommands::Duplicates => cli::spec::run_duplicates(),
+            SpecCommands::Duplicates { format } => {
+                cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
+            }
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
