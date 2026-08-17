@@ -29,7 +29,7 @@ Feature: Verify semantic remediation
     And the semantic review report status is "PASS"
     And the permanent specifications are unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: A VARIANTE classification without consolidation remains blocked
     Given a project prepared for semantic remediation with a "VARIANTE" candidate
     When the user runs `givn check review --change running-change`
