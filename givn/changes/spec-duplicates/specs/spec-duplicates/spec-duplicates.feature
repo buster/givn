@@ -161,7 +161,7 @@ Feature: Audit duplicate and related permanent scenarios
     And stderr contains the project-relative path "givn/specs/broken/broken.feature"
     And stdout is empty
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreadable permanent feature reports its path
     Given an unreadable permanent feature at "givn/specs/private/private.feature"
     When the user runs `givn spec duplicates`
