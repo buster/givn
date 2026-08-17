@@ -981,7 +981,7 @@ Feature: Audit duplicate and related permanent scenarios
 
 ## Scenario 9: `Auditing leaves permanent specifications unchanged`
 
-- [ ] Scenario: `Auditing leaves permanent specifications unchanged`
+- [x] Scenario: `Auditing leaves permanent specifications unchanged`
   - RED:
     - Remove `@wip` only from this scenario and leave all other @wip tags.
     - Add regular snapshot/assertion bindings with `unimplemented!()` bodies in
@@ -1075,11 +1075,11 @@ Feature: Audit duplicate and related permanent scenarios
       - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 9 tag only)
       - `tests/steps/spec_duplicates_steps.rs`
       - `givn/changes/spec-duplicates/tasks.md`
-    - Commit hash: ``
+    - Commit hash: `c465d8a7d76d61b3ad10167694ecf6d619123fa9`
 
 ## Scenario 10: `Auditing leaves the persistent retrieval index unchanged`
 
-- [ ] Scenario: `Auditing leaves the persistent retrieval index unchanged`
+- [x] Scenario: `Auditing leaves the persistent retrieval index unchanged`
   - RED:
     - Remove `@wip` only from this scenario. Leave every other tag untouched.
     - Add non-empty regular step definitions with `unimplemented!()` in
@@ -1088,26 +1088,93 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Auditing leaves the persistent retrieval index unchanged$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.44s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves the persistent retrieval index unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✘  And the persistent retrieval index is built and snapshotted
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:120:5
+      Matched: tests/steps/spec_duplicates_steps.rs:493:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
 
+thread 'main' (3176663) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
-    - Build and snapshot the persistent retrieval index, run the audit without
-      `refresh_index`, and assert the index bytes are unchanged.
-    - Production files expected in GREEN: `src/spec/retrieval.rs`.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Build the existing persistent retrieval index through the compiled
+      subprocess with `GIVN_SPEC_EMBEDDER=stub`, assert setup success, and reuse
+      `GivnWorld.permanent_index_snapshot` for the `.spec-index.json` bytes.
+      The duplicate audit reports from current permanent files with transient
+      embeddings; `duplicates_enabled` does not call `refresh_index` or read
+      persistent index entries as evidence.
+    - Production files modified in GREEN: none; the existing read-only audit
+      path in `src/spec/retrieval.rs` already enforces this boundary.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
+    - Compile first: `cargo check --features spec-retrieval` exited 0.
+      Exact output:
+      ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.46s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves the persistent retrieval index unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the persistent retrieval index is built and snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the persistent retrieval index is unchanged byte-for-byte
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Confirm the audit never opens the persistent index as evidence and does
-      not refresh it. Run `cargo fmt --check` and rerun the targeted command.
+    - Keep setup and snapshot helpers explicit and scope index reads to
+      `givn/.spec-index.json`. The CLI status and parsed audit report are
+      asserted before the filesystem snapshot comparison. Source inspection
+      confirms the duplicate path has no `refresh_index` or persistent-index
+      read; persistent entries are not evidence.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no `unimplemented!()`
+      or `todo!()` bodies (`No files found`).
+    - The empty-function-body grep found no matches (`No files found`).
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.59s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves the persistent retrieval index unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the persistent retrieval index is built and snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the persistent retrieval index is unchanged byte-for-byte
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 10 tag only), `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 9
+      hash update). No production source file was modified because the existing
+      `src/spec/retrieval.rs` duplicate path already uses current permanent
+      records and transient embeddings without refreshing or reading the index.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves the persistent retrieval index unchanged`
