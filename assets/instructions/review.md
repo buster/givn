@@ -211,6 +211,24 @@ different behavior, sharpen the overloaded domain terms and observable
 invariants, then rerun the report. Do not use a score or an unexplained label
 to dismiss the candidate.
 
+## Semantic remediation verification
+
+Classification is a worklist, not proof that the required specification change
+was applied. For every resolved candidate, record the projected-tree result and
+the class-specific remediation evidence:
+
+| Classification | Required projected result |
+|---|---|
+| `DUPLIKAT` | The redundant endpoint is absent and the retained endpoint remains. |
+| `VARIANTE` | One parameterized `Scenario Outline` with a non-empty `Examples` table covers the variant, and the recomputed score is strictly `< 0.9500`. |
+| `VALID-BOUNDARY` | Both endpoints remain, an observable fact or condition/outcome invariant differs, and the recomputed score is strictly `< 0.9500`. |
+
+The review evidence names the prior candidate, projected endpoint state, score,
+and success or failure result. Missing, stale, unmatched, or score-only
+remediation remains blocking. The blocking verifier emits `semantic
+remediation verified` only after every prior resolved classification satisfies
+its contract. Givn does not select classifications or edit feature files.
+
 ## Sign-off checklist
 
 - Fabrication audit: clean (or all findings remediated).

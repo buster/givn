@@ -38,7 +38,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When the author requests the design instructions through the Givn CLI
     Then the CLI output contains every required E2E design decision
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance verifies semantic remediation
     Given a semantic review contains classified candidates
     When the reviewer completes the review artifact
