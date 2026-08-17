@@ -319,7 +319,7 @@ Feature: Audit duplicate and related permanent scenarios
 
 ## Scenario 3: `Structurally overlapping scenarios retain their distinguishing facts`
 
-- [ ] Scenario: `Structurally overlapping scenarios retain their distinguishing facts`
+- [x] Scenario: `Structurally overlapping scenarios retain their distinguishing facts`
   - RED:
     - Remove `@wip` only from this scenario and leave all other tags unchanged.
     - Add regular bindings in `tests/steps/spec_duplicates_steps.rs` with
@@ -328,7 +328,25 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Structurally overlapping scenarios retain their distinguishing facts$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.01s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Structurally overlapping scenarios retain their distinguishing facts
+   ✘  Given permanent scenarios share the same masked assertion shape but have different fingerprint facts
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:44:5
+      Matched: tests/steps/spec_duplicates_steps.rs:14:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3140554) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
     - Implement masked assertion-shape matching with the existing `Fingerprint`
@@ -339,26 +357,75 @@ Feature: Audit duplicate and related permanent scenarios
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
     - Rerun the targeted command. Required result: exit 0 and the exact facts,
       arrays, relation, and `fact_contradiction` assertion pass.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.63s
+      ```
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.53s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Structurally overlapping scenarios retain their distinguishing facts
+   ✔  Given permanent scenarios share the same masked assertion shape but have different fingerprint facts
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then candidate rank 1 is classified as `structural_overlap`
+   ✔  And candidate rank 1 has relation `same_assertion_shape`
+   ✔  And candidate rank 1 has left fingerprint facts `{"exit_code":"0","contains_polarity":{"0":"positive"},"tables":{"provider":"aws"},"done":false,"tty":false}`
+   ✔  And candidate rank 1 has right fingerprint facts `{"exit_code":"2","contains_polarity":{"0":"negative"},"tables":{"provider":"gcp"},"done":true,"tty":true}`
+   ✔  And candidate rank 1 has distinguishing facts `[{"field":"exit_code","left":"0","right":"2"},{"field":"contains_polarity[0]","left":"positive","right":"negative"},{"field":"tables[provider]","left":"aws","right":"gcp"},{"field":"done","left":false,"right":true},{"field":"tty","left":false,"right":true}]`
+   ✔  And candidate rank 1 has fact contradiction `true`
+   ✔  And candidate rank 1 has no Given/When action-structure evidence
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Keep the structural evidence limited to `Fingerprint.assertions` and
       `Fingerprint.facts`; simplify fixture construction only. Run
       `cargo fmt --check`, confirm no stubs remain, and rerun the same command.
     - Required result: exit 0; paste exact REFACTOR output:
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
       ```text
 
+      ```
+      ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.98s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Structurally overlapping scenarios retain their distinguishing facts
+   ✔  Given permanent scenarios share the same masked assertion shape but have different fingerprint facts
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then candidate rank 1 is classified as `structural_overlap`
+   ✔  And candidate rank 1 has relation `same_assertion_shape`
+   ✔  And candidate rank 1 has left fingerprint facts `{"exit_code":"0","contains_polarity":{"0":"positive"},"tables":{"provider":"aws"},"done":false,"tty":false}`
+   ✔  And candidate rank 1 has right fingerprint facts `{"exit_code":"2","contains_polarity":{"0":"negative"},"tables":{"provider":"gcp"},"done":true,"tty":true}`
+   ✔  And candidate rank 1 has distinguishing facts `[{"field":"exit_code","left":"0","right":"2"},{"field":"contains_polarity[0]","left":"positive","right":"negative"},{"field":"tables[provider]","left":"aws","right":"gcp"},{"field":"done","left":false,"right":true},{"field":"tty","left":false,"right":true}]`
+   ✔  And candidate rank 1 has fact contradiction `true`
+   ✔  And candidate rank 1 has no Given/When action-structure evidence
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
       ```
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit with a title-verbatim message.
     - Required commit message: `feat(spec-duplicates): Structurally overlapping scenarios retain their distinguishing facts`
-    - Commit hash: ``
+    - Files touched:
+      - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      - `src/spec/retrieval.rs`
+      - `tests/steps/spec_duplicates_steps.rs`
+      - `givn/changes/spec-duplicates/tasks.md` (the pending Scenario 2 task hash line was preserved)
+    - Commit hash: `8b9e11dca472c5c2b0b70ef5758ba0ff1712196d`
 
 ## Scenario 4: `A structural subset is reported as an overlap`
 
-- [ ] Scenario: `A structural subset is reported as an overlap`
+- [x] Scenario: `A structural subset is reported as an overlap`
   - RED:
     - Remove `@wip` only from this scenario; do not touch any other scenario's
       tags.
@@ -368,7 +435,25 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A structural subset is reported as an overlap$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.05s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A structural subset is reported as an overlap
+   ✘  Given the permanent scenario "Short provider assertion" at "givn/specs/a/a.feature" has the assertion sequence of "Long provider assertion" at "givn/specs/b/b.feature"
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:56:5
+      Matched: tests/steps/spec_duplicates_steps.rs:31:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3147398) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun pass `--test features_runner`
       ```
   - GREEN:
     - Implement strict assertion-subsequence detection with the direction
@@ -377,22 +462,67 @@ Feature: Audit duplicate and related permanent scenarios
     - Production files expected in GREEN: `src/spec/retrieval.rs`.
     - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.94s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 1.87s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A structural subset is reported as an overlap
+   ✔  Given the permanent scenario "Short provider assertion" at "givn/specs/a/a.feature" has the assertion sequence of "Long provider assertion" at "givn/specs/b/b.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then candidate rank 1 is classified as `structural_overlap`
+   ✔  And candidate rank 1 has left identity ("givn/specs/a/a.feature", "Short provider assertion")
+   ✔  And candidate rank 1 has right identity ("givn/specs/b/b.feature", "Long provider assertion")
+   ✔  And candidate rank 1 has relation `left_assertions_subset_of_right`
+   ✔  And candidate rank 1 has assertion shapes `{"left":["the command exits *"],"right":["the command exits *","the output contains *"]}`
+   ✔  And candidate rank 1 has score `null`
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary; production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Check both subset directions and precedence without changing the
       direction-specific relation. Run `cargo fmt --check`, inspect the diff
       for unchanged observable behavior, and rerun the targeted command.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.24s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A structural subset is reported as an overlap
+   ✔  Given the permanent scenario "Short provider assertion" at "givn/specs/a/a.feature" has the assertion sequence of "Long provider assertion" at "givn/specs/b/b.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then candidate rank 1 is classified as `structural_overlap`
+   ✔  And candidate rank 1 has left identity ("givn/specs/a/a.feature", "Short provider assertion")
+   ✔  And candidate rank 1 has right identity ("givn/specs/b/b.feature", "Long provider assertion")
+   ✔  And candidate rank 1 has relation `left_assertions_subset_of_right`
+   ✔  And candidate rank 1 has assertion shapes `{"left":["the command exits *"],"right":["the command exits *","the output contains *"]}`
+   ✔  And candidate rank 1 has score `null`
+[Summary]
+1 feature
+1 scenario (1 passed)
+8 steps (8 passed)
       ```
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no `unimplemented!()`, `todo!()`, or empty step bodies.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A structural subset is reported as an overlap`
+    - Files touched:
+      - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 4 tag only)
+      - `src/spec/retrieval.rs`
+      - `tests/steps/spec_duplicates_steps.rs`
+      - `givn/changes/spec-duplicates/tasks.md` (includes the prior Scenario 3 post-commit evidence and hash)
     - Commit hash: ``
 
 ## Scenario 5: `Semantically related scenarios are reported as candidates`

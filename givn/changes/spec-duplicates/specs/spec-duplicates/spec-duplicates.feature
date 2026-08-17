@@ -51,7 +51,7 @@ Feature: Audit duplicate and related permanent scenarios
     And candidate rank 1 has fact contradiction `true`
     And candidate rank 1 has no Given/When action-structure evidence
 
-  @givn.added @wip
+  @givn.added
   Scenario: A structural subset is reported as an overlap
     Given the permanent scenario "Short provider assertion" at "givn/specs/a/a.feature" has the assertion sequence of "Long provider assertion" at "givn/specs/b/b.feature"
     When the user runs `givn spec duplicates`
