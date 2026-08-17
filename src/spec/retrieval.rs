@@ -1952,11 +1952,7 @@ fn duplicate_endpoint_key(endpoint: &DuplicateEndpoint) -> (&str, &str) {
 fn duplicate_pair_key(left: &DuplicateEndpoint, right: &DuplicateEndpoint) -> DuplicatePairKey {
     let left = (left.file.clone(), left.title.clone());
     let right = (right.file.clone(), right.title.clone());
-    if left <= right {
-        (left, right)
-    } else {
-        (right, left)
-    }
+    (left, right)
 }
 
 #[cfg(feature = "spec-retrieval")]
