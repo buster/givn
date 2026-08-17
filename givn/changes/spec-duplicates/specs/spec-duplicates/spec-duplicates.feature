@@ -114,7 +114,7 @@ Feature: Audit duplicate and related permanent scenarios
     When the user runs `givn spec duplicates`
     Then the permanent specifications are unchanged byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: Auditing leaves the persistent retrieval index unchanged
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     And the persistent retrieval index is built and snapshotted

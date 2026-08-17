@@ -71,6 +71,7 @@ const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
     When the client connects without a login
     Then the session service refuses access with message "credentials required"
 "#;
+const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
 const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
     (
         "givn/specs/alpha/alpha.feature",
@@ -488,6 +489,53 @@ fn repeated_audit_fixture(world: &mut GivnWorld) {
     world.retrieval_duplicate_scores = Some(
         "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600".to_string(),
     );
+}
+
+#[given("the persistent retrieval index is built and snapshotted")]
+fn build_and_snapshot_persistent_retrieval_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let output =
+        common::run_givn_with_envs(env, &["spec", "index"], &[("GIVN_SPEC_EMBEDDER", "stub")]);
+    assert!(
+        output.status.success(),
+        "persistent retrieval index build failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.permanent_index_snapshot = Some(persistent_index_bytes(env));
+}
+
+#[then("the persistent retrieval index is unchanged byte-for-byte")]
+fn persistent_retrieval_index_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let output = super::output(world);
+    assert!(
+        output.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report = duplicate_audit_report(output);
+    assert_eq!(report.scanned_scenarios, 8);
+    assert_eq!(report.candidate_count, 4);
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .permanent_index_snapshot
+        .as_ref()
+        .expect("persistent retrieval index was not snapshotted");
+    let after = persistent_index_bytes(env);
+    assert_eq!(
+        &after, before,
+        "duplicate audit changed the persistent index"
+    );
+}
+
+fn persistent_index_bytes(env: &common::TestEnv) -> Vec<u8> {
+    fs::read(env.path(PERSISTENT_INDEX_PATH)).expect("read persistent retrieval index")
 }
 
 #[then("the permanent specifications are unchanged byte-for-byte")]
