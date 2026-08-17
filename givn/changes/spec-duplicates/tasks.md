@@ -1624,11 +1624,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports an unavailable retrieval model`
-    - Commit hash: ``
+    - Commit hash: `4a35cc10e58dc59826ff471f043f10e14a92d803`
 
 ## Scenario 15: `A malformed permanent feature reports its path`
 
-- [ ] Scenario: `A malformed permanent feature reports its path`
+- [x] Scenario: `A malformed permanent feature reports its path`
   - RED:
     - Remove `@wip` only from this scenario. Leave all other @wip tags intact.
     - Add regular bindings with explicit `unimplemented!()` in
@@ -1637,7 +1637,25 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^A malformed permanent feature reports its path$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.42s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A malformed permanent feature reports its path
+   ✘  Given a malformed permanent feature at "givn/specs/broken/broken.feature"
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:158:5
+      Matched: tests/steps/spec_duplicates_steps.rs:99:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
+thread 'main' (3200447) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Abort on malformed permanent Gherkin, include the project-relative path
@@ -1646,19 +1664,59 @@ Feature: Audit duplicate and related permanent scenarios
     - Production files expected in GREEN: `src/spec/retrieval.rs`.
     - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.10s
+      ```
     - Rerun the targeted command. Required result: exit 0 for the scenario's
       assertions while the inner `givn` command exits non-zero.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 3.77s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A malformed permanent feature reports its path
+   ✔  Given a malformed permanent feature at "givn/specs/broken/broken.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains the project-relative path "givn/specs/broken/broken.feature"
+   ✔  And stdout is empty
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Check path context survives all parse-error branches and stdout remains
-      empty. Run `cargo fmt --check` and rerun the targeted command.
+    - Centralize permanent-feature parsing through explicit project-relative
+      path normalization before attaching parse-error context. This keeps all
+      permanent parse-error branches deterministic and leaves stdout untouched
+      until collection succeeds.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Stub scan of `tests/steps/spec_duplicates_steps.rs` for
+      `unimplemented!()`/`todo!()`: `No files found`.
+    - Empty-function-body scan of `tests/steps/spec_duplicates_steps.rs`:
+      `No files found`.
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: A malformed permanent feature reports its path
+   ✔  Given a malformed permanent feature at "givn/specs/broken/broken.feature"
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains the project-relative path "givn/specs/broken/broken.feature"
+   ✔  And stdout is empty
+[Summary]
+1 feature
+1 scenario (1 passed)
+5 steps (5 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 15 tag only), `src/spec/retrieval.rs`, `tests/steps/spec_duplicates_steps.rs`, and `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 14 hash update). No design artifact or later `@wip` tag was changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): A malformed permanent feature reports its path`
