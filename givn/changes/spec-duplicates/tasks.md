@@ -977,7 +977,7 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): JSON output identifies every audit candidate`
-    - Commit hash: ``
+    - Commit hash: `a98eed298acece8cf2375e3560251accc6ae22b3`
 
 ## Scenario 9: `Auditing leaves permanent specifications unchanged`
 
@@ -990,7 +990,27 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Auditing leaves permanent specifications unchanged$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.44s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves permanent specifications unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the permanent specifications are snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✘  Then the permanent specifications are unchanged byte-for-byte
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:115:5
+      Matched: tests/steps/spec_duplicates_steps.rs:493:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+4 steps (3 passed, 1 failed)
 
+thread 'main' (3174002) panicked at $HOME/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
     - Read permanent feature bytes for the fixture, run the real subprocess,
@@ -999,22 +1019,62 @@ Feature: Audit duplicate and related permanent scenarios
     - Production files expected in GREEN: `src/spec/retrieval.rs`.
     - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+    - Compile output:
+      ```text
+    Checking givn v0.2.0 ($HOME/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.11s
+      ```
     - Rerun the targeted command. Required result: exit 0.
     - Runner output evidence, paste exact GREEN output:
       ```text
-
+   Compiling givn v0.2.0 ($HOME/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.60s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves permanent specifications unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the permanent specifications are snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the permanent specifications are unchanged byte-for-byte
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
     - Keep the read-only boundary explicit and keep filesystem snapshots as
       secondary evidence to the CLI result. Run `cargo fmt --check` and rerun
       the targeted command.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Grep of `tests/steps/spec_duplicates_steps.rs` found no
+      `unimplemented!()` or `todo!()` bodies (`No files found`).
+    - The empty-function-body grep found no matches (`No files found`).
     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Auditing leaves permanent specifications unchanged
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  And the permanent specifications are snapshotted
+   ✔  When the user runs `givn spec duplicates`
+   ✔  Then the permanent specifications are unchanged byte-for-byte
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Auditing leaves permanent specifications unchanged`
+    - Actual production files modified: none; the existing read-only audit path
+      in `src/spec/retrieval.rs` already avoids permanent-spec and index writes.
+    - Test and feature files modified:
+      - `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 9 tag only)
+      - `tests/steps/spec_duplicates_steps.rs`
+      - `givn/changes/spec-duplicates/tasks.md`
     - Commit hash: ``
 
 ## Scenario 10: `Auditing leaves the persistent retrieval index unchanged`

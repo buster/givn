@@ -107,7 +107,7 @@ Feature: Audit duplicate and related permanent scenarios
     And JSON ranks are contiguous from 1 through candidate_count
     And JSON scanned_scenarios equals the number of eligible non-removed permanent scenarios
 
-  @givn.added @wip
+  @givn.added
   Scenario: Auditing leaves permanent specifications unchanged
     Given a permanent scenario corpus with duplicate and related-scenario candidates
     And the permanent specifications are snapshotted
