@@ -30,15 +30,20 @@
 - [x] REFACTOR: rerun the named scenario after formatting. Evidence: after
       `cargo fmt --all` and `cargo check --features spec-retrieval`, targeted run
       passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: `feat(semantic-remediation): A DUPLIKAT classification without removal remains blocked` Hash:
+- [x] COMMIT: `feat(semantic-remediation): A DUPLIKAT classification without removal remains blocked` Hash: `7d44849`
 
 ### Removing a DUPLIKAT candidate verifies the projected remediation
 
-- [ ] RED: target the named scenario with strict stubs. Evidence:
-- [ ] GREEN: verify redundant-endpoint removal against the projected tree and
+- [x] RED: target the named scenario with strict stubs. Evidence: strict setup
+      proof was non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`;
+      the new remediation Given binding started as `unimplemented!()`.
+- [x] GREEN: verify redundant-endpoint removal against the projected tree and
       emit the deterministic receipt. Production files: `src/spec/retrieval.rs`,
-      step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario and non-mutation assertions. Evidence:
+      step files. Evidence: targeted run passed with `1 scenario (1 passed)`,
+      `11 steps (11 passed)`.
+- [x] REFACTOR: rerun the named scenario and non-mutation assertions. Evidence:
+      after `cargo fmt --all` and `cargo check --features spec-retrieval`,
+      targeted run passed with `1 scenario (1 passed)`, `11 steps (11 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): Removing a DUPLIKAT candidate verifies the projected remediation` Hash:
 
 ### A VARIANTE classification without consolidation remains blocked
@@ -116,6 +121,16 @@
       files: `src/spec/retrieval.rs`, step files. Evidence:
 - [ ] REFACTOR: rerun the named scenario. Evidence:
 - [ ] COMMIT: `feat(semantic-remediation): Failed remediation verification does not mutate project evidence` Hash:
+
+### A complete classification allows change review and survives regeneration
+
+- [ ] RED: target the modified PR 3 contract with strict stubs. Evidence:
+- [ ] GREEN: update the permanent semantic-review contract so a classification
+      is accepted only after projected remediation. Production files:
+      `src/spec/retrieval.rs`, feature and step files. Evidence:
+- [ ] REFACTOR: rerun the named scenario and the existing semantic-review
+      regression. Evidence:
+- [ ] COMMIT: `feat(semantic-remediation): A complete classification allows change review and survives regeneration` Hash:
 
 ## E2E Setup
 
