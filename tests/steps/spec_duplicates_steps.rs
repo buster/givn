@@ -104,6 +104,48 @@ const ARCHIVE_MATCHING_FEATURE: &str = r#"Feature: old
     When the user selects an unknown provider
     Then the command rejects the request
 "#;
+const ACTIVE_AUDIT_ROOT: &str = "givn/changes/audit-boundary";
+const ARCHIVE_AUDIT_ROOT: &str = "givn/archive/audit-boundary";
+const ACTIVE_AUDIT_FILES: [(&str, &str); 3] = [
+    (
+        "givn/changes/audit-boundary/specs/active/active.feature",
+        r#"Feature: active audit boundary
+
+  Scenario: Active provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#,
+    ),
+    (
+        "givn/changes/audit-boundary/proposal.md",
+        "# Active audit fixture\nThis file must remain unchanged.\n",
+    ),
+    (
+        "givn/changes/audit-boundary/notes.txt",
+        "active fixture bytes\n",
+    ),
+];
+const ARCHIVE_AUDIT_FILES: [(&str, &str); 3] = [
+    (
+        "givn/archive/audit-boundary/specs/archived/archived.feature",
+        r#"Feature: archived audit boundary
+
+  Scenario: Archived provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#,
+    ),
+    (
+        "givn/archive/audit-boundary/README.md",
+        "# Archive audit fixture\nThis file must remain unchanged.\n",
+    ),
+    (
+        "givn/archive/audit-boundary/record.txt",
+        "archive fixture bytes\n",
+    ),
+];
 const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
 const MALFORMED_PERMANENT_FEATURE: &str =
     "this is not a Gherkin feature document\nwithout a structural keyword\n";
@@ -509,6 +551,59 @@ fn no_candidate_fixture(world: &mut GivnWorld) {
     );
 }
 
+#[given("active change files and archive contents are snapshotted")]
+fn snapshot_active_change_and_archive(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    write_fixture_files(env, &ACTIVE_AUDIT_FILES);
+    write_fixture_files(env, &ARCHIVE_AUDIT_FILES);
+    world.active_change_snapshot = Some(snapshot_fixture_tree(env, ACTIVE_AUDIT_ROOT));
+    world.archive_snapshot = Some(snapshot_fixture_tree(env, ARCHIVE_AUDIT_ROOT));
+}
+
+#[then("active change files are unchanged byte-for-byte")]
+fn active_change_files_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let out = output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        stdout(world).starts_with("Givn spec duplicates\n"),
+        "duplicate audit did not produce its report header: {}",
+        stdout(world)
+    );
+    let report = duplicate_audit_report(out);
+    assert_eq!(report.scanned_scenarios, 8);
+    assert_eq!(report.candidate_count, 4);
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .active_change_snapshot
+        .as_ref()
+        .expect("active change files were not snapshotted");
+    assert_fixture_tree_unchanged(env, ACTIVE_AUDIT_ROOT, before);
+}
+
+#[then("archive contents are unchanged byte-for-byte")]
+fn archive_contents_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .archive_snapshot
+        .as_ref()
+        .expect("archive contents were not snapshotted");
+    assert_fixture_tree_unchanged(env, ARCHIVE_AUDIT_ROOT, before);
+}
+
 #[then(r#"the text report is exactly `Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n`"#)]
 fn empty_duplicate_text_report(world: &mut GivnWorld) {
     let output = super::output(world);
@@ -658,6 +753,69 @@ fn permanent_project(world: &mut GivnWorld, features: &[(&str, &str)]) {
     }
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
+}
+
+fn write_fixture_files(env: &common::TestEnv, files: &[(&str, &str)]) {
+    for (relative, content) in files {
+        let path = env.path(relative);
+        fs::create_dir_all(path.parent().expect("fixture file parent"))
+            .expect("create fixture file directory");
+        fs::write(path, content).expect("write fixture file");
+    }
+}
+
+fn snapshot_fixture_tree(env: &common::TestEnv, relative_root: &str) -> Vec<(String, Vec<u8>)> {
+    let root = env.path(relative_root);
+    let project_root = env.root();
+    let mut snapshot = Vec::new();
+    collect_fixture_files(&root, &project_root, &mut snapshot);
+    snapshot.sort_by(|left, right| left.0.cmp(&right.0));
+    snapshot
+}
+
+fn collect_fixture_files(
+    directory: &Path,
+    project_root: &Path,
+    snapshot: &mut Vec<(String, Vec<u8>)>,
+) {
+    let entries = match fs::read_dir(directory) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
+        Err(error) => panic!("read fixture tree {}: {error}", directory.display()),
+    };
+    let mut paths = entries
+        .map(|entry| entry.expect("read fixture tree entry").path())
+        .collect::<Vec<_>>();
+    paths.sort();
+
+    for path in paths {
+        if path.is_dir() {
+            collect_fixture_files(&path, project_root, snapshot);
+            continue;
+        }
+        let relative = path
+            .strip_prefix(project_root)
+            .expect("fixture path under project root")
+            .to_string_lossy()
+            .replace('\\', "/");
+        let bytes = fs::read(&path)
+            .unwrap_or_else(|error| panic!("read fixture file {}: {error}", path.display()));
+        snapshot.push((relative, bytes));
+    }
+}
+
+fn assert_fixture_tree_unchanged(
+    env: &common::TestEnv,
+    relative_root: &str,
+    before: &[(String, Vec<u8>)],
+) {
+    let after = snapshot_fixture_tree(env, relative_root);
+    assert_eq!(
+        &after,
+        before,
+        "duplicate audit changed fixture tree rooted at {}",
+        env.path(relative_root).display()
+    );
 }
 
 #[given("a permanent scenario corpus with one related scenario")]
@@ -925,6 +1083,11 @@ fn repeated_audit_fixture(world: &mut GivnWorld) {
     world.retrieval_duplicate_scores = Some(
         "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600".to_string(),
     );
+}
+
+#[given("a permanent corpus with duplicate and related-scenario candidates")]
+fn audited_boundary_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
 }
 
 #[when("the user runs `givn spec duplicates` through a build without spec retrieval")]
