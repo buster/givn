@@ -82,6 +82,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_reranker: Option<String>,
     /// Optional deterministic semantic-report score overrides for fixtures.
     pub(crate) retrieval_stub_scores: Option<String>,
+    /// Optional deterministic duplicate-audit score overrides for fixtures.
+    pub(crate) retrieval_duplicate_scores: Option<String>,
     /// Snapshot of permanent feature files for non-mutation assertions.
     pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
     /// Snapshot of the generated permanent retrieval index for non-mutation
@@ -283,6 +285,9 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_stub_scores.as_deref() {
         environments.push(("GIVN_SPEC_STUB_PAIR_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_duplicate_scores.as_deref() {
+        environments.push(("GIVN_SPEC_DUPLICATES_TEST_SCORES", value));
     }
     let out = common::run_givn_with_envs(env, &argv, &environments);
     if let Some(id) = change_id_from_args(&args) {
