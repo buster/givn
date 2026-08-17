@@ -81,6 +81,26 @@ interaction inventory, one-E2E-per-action scope, real-interface assertions,
 and flag-variant classification. Design-specific infrastructure and matrix
 details belong here; the policy itself is not restated here.
 
+## E2E smoke test infrastructure
+
+Every capability with `@e2e` scenarios MUST document:
+
+- **E2E runner command**: the exact `verify.e2e_command` value, filtered to
+  `@e2e` and distinct from `verify.command`.
+- **E2E step definition location**: separate from unit/integration steps, one
+  file per capability.
+- **Local test infrastructure**: browser driver, CLI invocation, server
+  startup/stop, port, test database/seed data, containers, and fake services
+  required for local execution.
+- **E2E framework choice and justification**: name the framework and why it
+  matches the named real interface.
+- **E2E strict-mode proof**: the exact configuration and independent proof
+  that undefined or pending E2E steps fail.
+
+These are design decisions, not a second interaction policy. Apply the
+resolved specs instruction for the user-facing inventory and real-interface
+fidelity.
+
 ## Black-Box-First policy
 
 Prefer the real interface for every behavior. If an internal test is retained,
@@ -120,10 +140,9 @@ not a reason to test something weaker instead.
   session cookies not persisting across Playwright navigation steps,
   redirects losing auth state, a websocket handshake that is hard to
   automate), the fix belongs here: name the concrete technical approach
-  (e.g. "reuse one browser context across all steps in a scenario," "the
-  e2e harness drives the same routes as the browser via a cookie-jar-aware
-  HTTP client configured identically to the browser's session," "run the
-  browser headed with a persistent user-data-dir in CI"). Do not defer this
+  (e.g. "reuse one browser context across all steps in a scenario," "run the
+  browser headed with a persistent user-data-dir in CI," or, for an API-only
+  capability, "use a cookie-jar-aware HTTP client against the public API"). Do not defer this
   decision to tasks.md or to the implementer discovering it mid-scenario —
   a scenario blocked on an undesigned interface problem is a design gap.
 

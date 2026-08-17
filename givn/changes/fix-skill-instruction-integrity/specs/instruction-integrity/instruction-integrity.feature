@@ -23,7 +23,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the CLI output contains the complete interaction and E2E policy
     And the CLI output distinguishes available and unavailable retrieval behavior
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance requires the complete E2E setup record
     Given the design instructions are requested
     When an author prepares the technical design
