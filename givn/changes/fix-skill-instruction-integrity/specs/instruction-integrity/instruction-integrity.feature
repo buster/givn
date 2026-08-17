@@ -61,10 +61,10 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And the response contains the resolved instruction text
 
   @givn.added
-  Scenario: Artifact instructions reject an unknown change context
+  Scenario: Artifact instructions reject an unsafe change context
     Given the effective specs artifact metadata is available
-    When an agent requests the specs instructions for an unknown change context
-    Then the Givn CLI rejects the request with a clear change-not-found error
+    When an agent requests the specs instructions for an unsafe change context
+    Then the Givn CLI rejects the request with a clear kebab-case error
 
   @givn.added
   Scenario: Project instruction overrides survive skill synchronization
