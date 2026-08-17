@@ -362,7 +362,7 @@ error: test failed, to rerun pass `--test features_runner`
     Checking givn v0.2.0 (/home/buster/projects/givn)
     Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.63s
       ```
-    - Runner output evidence, paste exact GREEN output:
+     - Runner output evidence, paste exact GREEN output:
       ```text
    Compiling givn v0.2.0 (/home/buster/projects/givn)
     Finished `test` profile [unoptimized + debuginfo] target(s) in 5.53s
@@ -1386,11 +1386,11 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): An audit with no candidates reports an empty result`
-    - Commit hash: ``
+    - Commit hash: `5afcf5da58f71cb2c2bbc5e9b1a83cdab65c1f51`
 
 ## Scenario 13: `The audit reports retrieval unavailable without the retrieval feature`
 
-- [ ] Scenario: `The audit reports retrieval unavailable without the retrieval feature`
+- [x] Scenario: `The audit reports retrieval unavailable without the retrieval feature`
   - RED:
     - Remove `@wip` only from this scenario. Do not edit any other scenario's
       tags.
@@ -1402,34 +1402,100 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name '^The audit reports retrieval unavailable without the retrieval feature$'`
     - Required result: non-zero exit. Paste exact runner output:
       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.46s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports retrieval unavailable without the retrieval feature
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✘  When the user runs `givn spec duplicates` through a build without spec retrieval
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:144:5
+      Matched: tests/steps/spec_duplicates_steps.rs:656:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+2 steps (1 passed, 1 failed)
 
+thread 'main' (3188710) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
       ```
   - GREEN:
-    - Make the no-`spec-retrieval` production build expose the existing explicit
-      retrieval-unavailable error and non-zero exit, with stderr containing
-      `spec retrieval is unavailable`.
-    - Production files expected in GREEN: `src/main.rs` and `src/cli/spec.rs`
-      for feature-gated dispatch/error behavior; do not add retrieval-only
-      dependencies to the default build.
-    - Test file expected: `tests/steps/spec_duplicates_steps.rs`.
+    - Reuse the existing permanent duplicate/related fixture and invoke the real
+      no-feature Cargo subprocess from the temporary project root with an
+      isolated `CARGO_TARGET_DIR`. The existing feature-gated production path
+      returns the explicit retrieval-unavailable error and the scenario asserts
+      a non-zero exit plus stderr containing `spec retrieval is unavailable`.
+    - Production files modified in GREEN: none. The existing dispatch in
+      `src/main.rs`, delegation in `src/cli/spec.rs`, and feature-gated error in
+      `src/spec/retrieval.rs` already satisfy this contract; feature gating was
+      not changed.
+    - Test file modified in GREEN: `tests/steps/spec_duplicates_steps.rs`.
     - Compile first, both must exit 0:
       `cargo check --no-default-features --locked`
       and `cargo check --features spec-retrieval`.
+    - `cargo check --no-default-features --locked` output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.61s
+      ```
+    - `cargo check --features spec-retrieval` output:
+      ```text
+    Checking givn v0.2.0 (/home/buster/projects/givn)
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 1.11s
+      ```
     - Rerun the targeted command. Required result: exit 0 for the feature-runner
       scenario while the scenario's inner no-feature subprocess exits non-zero
       with the required message.
     - Runner output evidence, paste exact GREEN output:
-      ```text
-
+       ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.51s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports retrieval unavailable without the retrieval feature
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates` through a build without spec retrieval
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains "spec retrieval is unavailable"
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Coverage: the targeted runner output contained no coverage summary;
+      production coverage is unmeasured for this scenario.
   - REFACTOR:
-    - Confirm the no-feature error remains explicit and is not silently masked
-      by the feature-enabled test runner. Run `cargo fmt --check`, rerun the
-      targeted command, and verify no stub remains.
-    - Required result: exit 0; paste exact REFACTOR output:
+    - Reuse the existing no-feature subprocess pattern: `cargo run --quiet`
+      with the repository manifest, `--no-default-features`, temporary-project
+      `current_dir`, isolated `CARGO_TARGET_DIR`, and null stdin. Keep the
+      stderr assertion as the primary error-contract assertion.
+    - `cargo fmt -- --check` exited 0 with empty stdout and stderr.
+    - Step-file scan for `unimplemented!()` or `todo!()`: `No files found`.
+    - Empty-function-body scan: `No files found`.
+    - Bare-return-body scan: `No files found`.
+     - Required result: exit 0; paste exact REFACTOR output:
       ```text
-
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: The audit reports retrieval unavailable without the retrieval feature
+   ✔  Given a permanent scenario corpus with duplicate and related-scenario candidates
+   ✔  When the user runs `givn spec duplicates` through a build without spec retrieval
+   ✔  Then the command exits non-zero
+   ✔  And stderr contains "spec retrieval is unavailable"
+[Summary]
+1 feature
+1 scenario (1 passed)
+4 steps (4 passed)
       ```
+    - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature`
+      (Scenario 13 tag only), `tests/steps/spec_duplicates_steps.rs`, and
+      `givn/changes/spec-duplicates/tasks.md` (including the pending Scenario 12
+      hash update). No design artifact or later `@wip` tag was changed.
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): The audit reports retrieval unavailable without the retrieval feature`
