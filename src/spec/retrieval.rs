@@ -463,14 +463,22 @@ fn duplicates_enabled(root: &Path, json: bool) -> Result<()> {
     if json {
         println!("{}", render_duplicate_json(scenarios.len(), &candidates)?);
     } else {
-        println!("Givn spec duplicates");
-        println!("Scanned scenarios: {}", scenarios.len());
-        println!("Candidate count: {}", candidates.len());
-        for (rank, candidate) in candidates.iter().enumerate() {
-            println!("{}", render_duplicate_candidate(rank + 1, candidate));
-        }
+        print!("{}", render_duplicate_text(scenarios.len(), &candidates));
     }
     Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn render_duplicate_text(scanned_scenarios: usize, candidates: &[DuplicateCandidate]) -> String {
+    let mut report = format!(
+        "Givn spec duplicates\nScanned scenarios: {scanned_scenarios}\nCandidate count: {}\n",
+        candidates.len()
+    );
+    for (rank, candidate) in candidates.iter().enumerate() {
+        report.push_str(&render_duplicate_candidate(rank + 1, candidate));
+        report.push('\n');
+    }
+    report
 }
 
 #[cfg(feature = "spec-retrieval")]

@@ -71,6 +71,18 @@ const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
     When the client connects without a login
     Then the session service refuses access with message "credentials required"
 "#;
+const NO_CANDIDATE_FEATURE: &str = r#"Feature: unrelated operations
+
+  Scenario: Glacier replication completes
+    Given a glacier archive is configured
+    When replication checkpoints are flushed
+    Then the archive reports completion
+
+  Scenario: Orchard irrigation starts
+    Given an orchard schedule is loaded
+    When irrigation valves are opened
+    Then the orchard reports watering
+"#;
 const PERMANENT_RELATED_FEATURE_PATH: &str = "givn/specs/provider/provider.feature";
 const ACTIVE_CHANGE_FEATURE_PATH: &str =
     "givn/changes/active-provider/specs/provider/provider.feature";
@@ -340,6 +352,56 @@ fn semantic_candidate_advisory(world: &mut GivnWorld) {
     assert!(!output.contains("kind=exact_duplicate"));
     assert!(!output.contains("kind=structural_overlap"));
     assert!(!output.contains("automatic duplicate"));
+}
+
+#[given("a permanent scenario corpus with no duplicate or related behaviour")]
+fn no_candidate_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/unrelated/unrelated.feature",
+            NO_CANDIDATE_FEATURE,
+        )],
+    );
+}
+
+#[then(r#"the text report is exactly `Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n`"#)]
+fn empty_duplicate_text_report(world: &mut GivnWorld) {
+    let output = super::output(world);
+    assert_eq!(
+        output.stdout,
+        b"Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n"
+    );
+    assert_eq!(
+        duplicate_audit_report(output),
+        DuplicateAuditReport {
+            scanned_scenarios: 2,
+            candidate_count: 0,
+            candidates: Vec::new(),
+        }
+    );
+}
+
+#[then("the JSON report has scanned_scenarios 2, candidate_count 0, and an empty candidates array")]
+fn empty_duplicate_json_report(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("no-candidate fixture is required");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    );
+    assert!(
+        output.status.success(),
+        "empty duplicate JSON audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document = duplicate_json_document(&output);
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(2));
+    assert_eq!(document["candidate_count"], serde_json::json!(0));
+    assert_eq!(document["candidates"], serde_json::json!([]));
 }
 
 #[given("a permanent feature contains two scenarios with identical behaviour")]
@@ -1078,7 +1140,11 @@ fn json_scanned_scenarios(world: &mut GivnWorld) {
 }
 
 fn json_document(world: &GivnWorld) -> serde_json::Value {
-    serde_json::from_str(&stdout(world)).expect("duplicate audit stdout must be valid JSON")
+    duplicate_json_document(super::output(world))
+}
+
+fn duplicate_json_document(output: &Output) -> serde_json::Value {
+    serde_json::from_slice(&output.stdout).expect("duplicate audit stdout must be valid JSON")
 }
 
 fn json_candidates(world: &GivnWorld) -> Vec<serde_json::Value> {
