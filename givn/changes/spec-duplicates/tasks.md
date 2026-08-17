@@ -2767,36 +2767,62 @@ Feature: Audit duplicate and related permanent scenarios
   - COMMIT:
     - One atomic RED+GREEN+REFACTOR commit.
     - Required commit message: `feat(spec-duplicates): Candidate classes take precedence and equal semantic scores use endpoint order`
-    - Commit hash: ``
+    - Commit hash: `2913653068ba966c7e60b3d4c00606039d57ade6`
 
 ## E2E setup task
 
-- [ ] E2E setup: prepare and prove the real CLI smoke-test path before the E2E scenario.
+- [x] E2E setup: prepare and prove the real CLI smoke-test path before the E2E scenario.
   - Read `givn instructions specs --change spec-duplicates` and apply its
     normalized CLI action scope and terminal-output primary assertion policy.
   - This capability is CLI-only. Confirm that no server, database, queue,
     browser, external service, or digital twin is required; use a temporary
     initialized project and the deterministic stub embedder. Confirm the
     compiled subprocess can run a smoke invocation.
-  - Use the distinct E2E command required by `design.md`:
-    `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
-  - Prove it is a strict subset rather than a second full-suite invocation.
-    Run both commands and paste exact output:
+   - Use the distinct E2E command required by `design.md`:
+     `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
+   - Direct compiled-subprocess smoke invocation:
+     `GIVN_SPEC_EMBEDDER=stub cargo run --quiet --features spec-retrieval --bin givn -- spec duplicates --format json >/dev/null`
+     exited 0. This CLI capability requires no server, database, queue, browser,
+     external service, or digital twin.
+   - Prove it is a strict subset rather than a second full-suite invocation.
+     Run both commands and paste exact output:
     - Full active-change command:
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh`
     - E2E command:
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
-    - Full scenario count: `____`; exit `____`.
-    - E2E scenario count: `____`; exit `____`.
+   - Full scenario count: `25`; exit `1` while the intentionally unimplemented
+     E2E step remains tagged `@e2e @wip`.
+   - E2E scenario count: `1`; exit `1` for the same intentional undefined E2E
+     step. The filtered count is strictly smaller than the full count.
     - Required relation: E2E count is strictly less than full count. Expected
       final counts are 25 total and 1 E2E scenario.
-    ```text
+   ```text
+Full scoped command:
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✘ Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+      Step doesn't match any function
+[Summary]
+1 feature
+25 scenarios (24 passed, 1 failed)
+154 steps (153 passed, 1 failed)
+error: test failed, to rerun `cargo test --test features_runner`
 
-    ```
+E2E filtered command:
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✘ Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+      Step doesn't match any function
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
+error: test failed, to rerun `cargo test --test features_runner`
+   ```
 
 ## Scenario 25: `Maintainer inspects the complete permanent scenario audit` (@e2e, last)
 
-- [ ] Scenario: `Maintainer inspects the complete permanent scenario audit`
+- [x] Scenario: `Maintainer inspects the complete permanent scenario audit`
   - E2E setup before RED:
     - All 24 non-@e2e scenario boxes must already be complete with their
       targeted RED, GREEN, REFACTOR, and commit evidence. Do not remove the
@@ -2807,6 +2833,12 @@ Feature: Audit duplicate and related permanent scenarios
     - Confirm `tests/steps/spec_duplicates_e2e_steps.rs` is separate from
       `tests/steps/spec_duplicates_steps.rs`, is registered in
       `tests/steps/mod.rs`, and has non-empty Rust step bodies.
+    - The checked E2E setup task records the CLI-only infrastructure decision,
+      compiled-subprocess smoke proof, and strict-subset count evidence: full
+      scoped suite `25` scenarios and filtered E2E suite `1` scenario, both
+      failing only at the pre-implementation E2E step, with `1 < 25`.
+    - The preceding Scenario 24 commit hash was recorded in this task-file
+      commit as `2913653068ba966c7e60b3d4c00606039d57ade6`.
     - Run the exact standalone E2E command required by the design for the
       strict-subset proof:
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
@@ -2827,11 +2859,29 @@ Feature: Audit duplicate and related permanent scenarios
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Maintainer inspects the complete permanent scenario audit$'`
       The full E2E gate remains exactly
       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`.
-    - Required result: non-zero exit from the targeted E2E scenario because of
-      the explicit stub. Paste exact runner output:
-      ```text
+      - Required result: non-zero exit from the targeted E2E scenario because of
+        the explicit stub. Paste exact runner output:
+        ```text
+   Compiling givn v0.2.0 (/home/buster/projects/givn)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 2.60s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✘  Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+      Step failed:
+      Defined: givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature:10:5
+      Matched: tests/steps/spec_duplicates_e2e_steps.rs:7:1
+      Step panicked. Captured output: not implemented
+[Summary]
+1 feature
+1 scenario (1 failed)
+1 step (1 failed)
 
-      ```
+thread 'main' (3240196) panicked at /home/buster/.cargo/registry/src/index.crates.io-1949cf8c6b5b557f/cucumber-0.23.0/src/cucumber.rs:1243:13:
+1 step failed
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+error: test failed, to rerun `cargo test --test features_runner`
+        ```
   - GREEN:
     - Read the canonical E2E policy and use the reviewed design's CLI interface
       boundary. Assert primarily on the real subprocess exit status and stdout:
@@ -2842,36 +2892,133 @@ Feature: Audit duplicate and related permanent scenarios
       this scenario must exercise the already implemented `src/main.rs`,
       `src/cli/spec.rs`, and `src/spec/retrieval.rs` through the compiled
       subprocess. Investigate any E2E-only production workaround.
-    - Test file expected in GREEN:
-      `tests/steps/spec_duplicates_e2e_steps.rs`; do not move these bindings
-      into the regular module.
-    - Compile first: `cargo check --features spec-retrieval` must exit 0.
-    - Run the exact configured E2E command for the scoped feature set:
-      `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
-      If a single-scenario run is needed for isolation, use the targeted
-      underlying command from RED and record that it selects only this title.
-    - Required result: the E2E scenario passes with exit 0, and the full E2E
-      command remains a strict subset of the full scoped command.
-    - Runner output evidence, paste the exact GREEN output:
-      ```text
-
-      ```
+     - Test file expected in GREEN:
+       `tests/steps/spec_duplicates_e2e_steps.rs`; do not move these bindings
+       into the regular module.
+     - Compile first: `cargo check --features spec-retrieval` must exit 0.
+     - Compile output:
+       ```text
+    Finished `dev` profile [unoptimized + debuginfo] target(s) in 0.13s
+       ```
+     - Run the exact configured E2E command for the scoped feature set:
+       `GIVN_FEATURES=givn/changes/spec-duplicates/specs ./run-tests.sh --e2e`
+       If a single-scenario run is needed for isolation, use the targeted
+       underlying command from RED and record that it selects only this title.
+     - Required result: the E2E scenario passes with exit 0, and the full E2E
+       command remains a strict subset of the full scoped command.
+     - The fixture contains exactly six eligible permanent scenarios and the
+       subprocess reports exactly three candidates: rank 1 exact duplicate in
+       canonical auth/provider file order, rank 2 structural provider overlap,
+       and rank 3 semantic auth/token candidate at score `0.9600`. The text
+       assertions are primary; fixture filesystem writes only establish the
+       temporary CLI project.
+     - Targeted GREEN command:
+       `GIVN_FEATURES=givn/changes/spec-duplicates/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=stub cargo test --features spec-retrieval --test features_runner -- --name '^Maintainer inspects the complete permanent scenario audit$'`
+     - Targeted runner output:
+       ```text
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✔  Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+   ✔  When the end-to-end user runs `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And stdout starts with the exact duplicate-audit header and counts
+   ✔  And stdout uses candidate fields in the exact order `rank,kind,left,right,relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score`
+   ✔  And stdout identifies rank 1 as the exact duplicate between `givn/specs/auth/auth.feature` scenario "Unknown provider is rejected" and `givn/specs/provider/provider.feature` scenario "Provider is rejected"
+   ✔  And stdout identifies rank 2 as the structural overlap between `givn/specs/provider/provider.feature` scenario "Provider exits successfully" and `givn/specs/provider/provider.feature` scenario "Provider exits with a warning"
+   ✔  And stdout identifies rank 3 as the semantic candidate between `givn/specs/auth/auth.feature` scenario "Token is required" and `givn/specs/token/token.feature` scenario "Authentication needs a token"
+   ✔  And every text candidate rank is contiguous from 1 through the reported candidate count
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+       ```
+     - Exact configured E2E command output:
+       ```text
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✔  Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+   ✔  When the end-to-end user runs `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And stdout starts with the exact duplicate-audit header and counts
+   ✔  And stdout uses candidate fields in the exact order `rank,kind,left,right,relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score`
+   ✔  And stdout identifies rank 1 as the exact duplicate between `givn/specs/auth/auth.feature` scenario "Unknown provider is rejected" and `givn/specs/provider/provider.feature` scenario "Provider is rejected"
+   ✔  And stdout identifies rank 2 as the structural overlap between `givn/specs/provider/provider.feature` scenario "Provider exits successfully" and `givn/specs/provider/provider.feature` scenario "Provider exits with a warning"
+   ✔  And stdout identifies rank 3 as the semantic candidate between `givn/specs/auth/auth.feature` scenario "Token is required" and `givn/specs/token/token.feature` scenario "Authentication needs a token"
+   ✔  And every text candidate rank is contiguous from 1 through the reported candidate count
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+       ```
+     - Production files modified in GREEN: none. The existing `src/main.rs`,
+       `src/cli/spec.rs`, and `src/spec/retrieval.rs` paths are exercised by the
+       compiled subprocess. Test file modified: `tests/steps/spec_duplicates_e2e_steps.rs`.
+     - Coverage: targeted and configured E2E runner output contained no coverage
+       summary; production coverage is unmeasured.
   - REFACTOR:
-    - Keep the primary assertions on terminal stdout and exit status, retain the
-      real compiled-subprocess driver, and keep filesystem assertions secondary.
-      Confirm `@e2e` is immutable, no E2E step body is empty or stubbed, run
-      `cargo fmt --check`, and rerun the exact E2E command.
-    - Required result: exit 0 with the same one-scenario E2E result.
-    - Runner output evidence, paste the exact REFACTOR output:
-      ```text
-
-      ```
+     - Keep the primary assertions on terminal stdout and exit status, retain the
+       real compiled-subprocess driver, and keep filesystem assertions secondary.
+       Confirm `@e2e` is immutable, no E2E step body is empty or stubbed, run
+       `cargo fmt --check`, and rerun the exact E2E command.
+     - Required result: exit 0 with the same one-scenario E2E result.
+     - `cargo fmt -- --check` exited 0 with no stdout or stderr.
+     - Scan command:
+       `rg -n -U 'unimplemented!\(\)|todo!\(\)|return\s*;|fn\s+[^\{]+\{\s*\}' tests/steps/spec_duplicates_steps.rs tests/steps/spec_duplicates_e2e_steps.rs || test $? -eq 1`
+       exited 0 after producing no output; neither step file contains a stub,
+       todo, empty function body, or bare return.
+     - Targeted REFACTOR command output:
+       ```text
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.13s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✔  Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+   ✔  When the end-to-end user runs `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And stdout starts with the exact duplicate-audit header and counts
+   ✔  And stdout uses candidate fields in the exact order `rank,kind,left,right,relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score`
+   ✔  And stdout identifies rank 1 as the exact duplicate between `givn/specs/auth/auth.feature` scenario "Unknown provider is rejected" and `givn/specs/provider/provider.feature` scenario "Provider is rejected"
+   ✔  And stdout identifies rank 2 as the structural overlap between `givn/specs/provider/provider.feature` scenario "Provider exits successfully" and `givn/specs/provider/provider.feature` scenario "Provider exits with a warning"
+   ✔  And stdout identifies rank 3 as the semantic candidate between `givn/specs/auth/auth.feature` scenario "Token is required" and `givn/specs/token/token.feature` scenario "Authentication needs a token"
+   ✔  And every text candidate rank is contiguous from 1 through the reported candidate count
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+       ```
+     - Exact configured E2E REFACTOR command output:
+       ```text
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 0.14s
+     Running tests/features_runner.rs (target/debug/deps/features_runner-c64f1ee623f3f628)
+Feature: Audit duplicate and related permanent scenarios
+  Scenario: Maintainer inspects the complete permanent scenario audit
+   ✔  Given an end-to-end project with permanent scenarios containing duplicate and related behaviour
+   ✔  When the end-to-end user runs `givn spec duplicates`
+   ✔  Then the command exits 0
+   ✔  And stdout starts with the exact duplicate-audit header and counts
+   ✔  And stdout uses candidate fields in the exact order `rank,kind,left,right,relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score`
+   ✔  And stdout identifies rank 1 as the exact duplicate between `givn/specs/auth/auth.feature` scenario "Unknown provider is rejected" and `givn/specs/provider/provider.feature` scenario "Provider is rejected"
+   ✔  And stdout identifies rank 2 as the structural overlap between `givn/specs/provider/provider.feature` scenario "Provider exits successfully" and `givn/specs/provider/provider.feature` scenario "Provider exits with a warning"
+   ✔  And stdout identifies rank 3 as the semantic candidate between `givn/specs/auth/auth.feature` scenario "Token is required" and `givn/specs/token/token.feature` scenario "Authentication needs a token"
+   ✔  And every text candidate rank is contiguous from 1 through the reported candidate count
+[Summary]
+1 feature
+1 scenario (1 passed)
+9 steps (9 passed)
+       ```
+     - Files touched: `givn/changes/spec-duplicates/specs/spec-duplicates/spec-duplicates.feature` (Scenario 25 tag only), `tests/steps/spec_duplicates_e2e_steps.rs`, and this `tasks.md` entry. No regular step file, `design.md`, module-registration file, or production source file changed.
+     - Coverage remains unmeasured because the targeted and E2E runner outputs
+       contain no coverage summary.
   - COMMIT:
     - Create one atomic E2E RED+GREEN+REFACTOR commit after all non-E2E
       commits. It must contain real E2E step glue and/or production integration
       work, not only a tag or stub change.
     - Required commit message: `test(e2e): Maintainer inspects the complete permanent scenario audit`
-    - Commit hash: ``
+    - Commit hash: `recorded by the atomic commit containing this task entry`
 
 ## Full-suite and review handoff
 
