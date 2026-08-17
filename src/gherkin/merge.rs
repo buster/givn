@@ -265,9 +265,11 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
             let tags: Vec<String> = clean_tags.iter().map(|tag| format!("@{tag}")).collect();
             out.push_str(&format!("    {}\n", tags.join(" ")));
         }
-        out.push_str("    Examples:");
+        out.push_str("    Examples");
         if let Some(name) = examples.name.as_deref().filter(|name| !name.is_empty()) {
             out.push_str(&format!(": {name}"));
+        } else {
+            out.push(':');
         }
         out.push('\n');
         if let Some(description) = examples.description.as_deref() {
