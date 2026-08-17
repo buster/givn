@@ -181,6 +181,30 @@ from this output (if the runner is coverage-instrumented).
 
 **Coverage measured:** YES / NO (YES = verify.command is coverage-instrumented and output contained coverage data)
 
+## Semantic Review and Remediation
+
+When `semantic-review.md` exists, record every candidate classification and its
+rationale:
+
+| Candidate | Classification | Rationale | Projected remediation | Score after remediation | Verified? |
+|---|---|---|---|---|---|
+| | `DUPLIKAT` / `VARIANTE` / `VALID-BOUNDARY` / `UNCERTAIN` | | | | |
+
+For each resolved classification, record the projected-tree evidence:
+
+- `DUPLIKAT`: redundant endpoint absent, retained endpoint present.
+- `VARIANTE`: one parameterized `Scenario Outline`, non-empty `Examples`, and
+  recomputed score `< 0.9500`.
+- `VALID-BOUNDARY`: both endpoints present, changed observable fact or
+  condition/outcome invariant, and recomputed score `< 0.9500`.
+
+Missing, stale, unmatched, or score-only remediation is blocking. Record the
+verifier receipt only after all rows pass:
+
+```text
+semantic remediation verified: <!-- count -->
+```
+
 ---
 
 ## Sign-off
