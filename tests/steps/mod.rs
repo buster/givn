@@ -33,6 +33,8 @@ pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
 pub mod semantic_review_e2e_steps;
 pub mod semantic_review_steps;
+pub mod semantic_remediation_e2e_steps;
+pub mod semantic_remediation_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_explore_change_e2e_steps;
 pub mod spec_explore_change_steps;
