@@ -869,9 +869,9 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
                 current_left_hash.take(),
                 current_right_hash.take(),
             ) {
-                if !prior.contains_key(&id) {
-                    prior.insert(id, (classification, rationale, left, right));
-                }
+                prior
+                    .entry(id)
+                    .or_insert((classification, rationale, left, right));
             }
             current_id = Some(value.trim().to_string());
         } else if let Some(value) = line.strip_prefix("- classification: ") {
@@ -894,9 +894,9 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
         current_left_hash,
         current_right_hash,
     ) {
-        if !prior.contains_key(&id) {
-            prior.insert(id, (classification, rationale, left, right));
-        }
+        prior
+            .entry(id)
+            .or_insert((classification, rationale, left, right));
     }
     let mut carried = 0;
     for candidate in candidates {
@@ -1119,10 +1119,14 @@ fn recompute_prior_pair_score(
         .iter()
         .find(|entry| entry.file == right.file && entry.title == right.title)
         .with_context(|| format!("permanent endpoint missing from index: {}", right.title))?;
-    let left_vector = embed_texts(root, &[left.scenario.text.clone()], EmbeddingRole::Passage)?
-        .into_iter()
-        .next()
-        .context("retrieval embedder returned no remediation vector")?;
+    let left_vector = embed_texts(
+        root,
+        std::slice::from_ref(&left.scenario.text),
+        EmbeddingRole::Passage,
+    )?
+    .into_iter()
+    .next()
+    .context("retrieval embedder returned no remediation vector")?;
     let raw = cosine_similarity(&left_vector, &right_entry.embedding);
     semantic_score(&semantic_delta_endpoint(left), right, raw)
 }
@@ -2352,11 +2356,11 @@ fn json_encoded<T: serde::Serialize>(value: &T) -> String {
 #[cfg(feature = "spec-retrieval")]
 fn scenario_text(scenario: &gherkin::Scenario, file: &str) -> ScenarioText {
     let mut text = scenario.name.clone();
-    if let Some(description) = scenario.description.as_deref() {
-        if !description.trim().is_empty() {
-            text.push('\n');
-            text.push_str(description.trim());
-        }
+    if let Some(description) = scenario.description.as_deref()
+        && !description.trim().is_empty()
+    {
+        text.push('\n');
+        text.push_str(description.trim());
     }
     for step in &scenario.steps {
         if is_semantic_driver_step(step.value.trim()) {
