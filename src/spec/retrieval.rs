@@ -2355,7 +2355,16 @@ fn json_encoded<T: serde::Serialize>(value: &T) -> String {
 #[cfg(feature = "spec-retrieval")]
 fn scenario_text(scenario: &gherkin::Scenario, file: &str) -> ScenarioText {
     let mut text = scenario.name.clone();
+    if let Some(description) = scenario.description.as_deref() {
+        if !description.trim().is_empty() {
+            text.push('\n');
+            text.push_str(description.trim());
+        }
+    }
     for step in &scenario.steps {
+        if is_semantic_driver_step(step.value.trim()) {
+            continue;
+        }
         text.push('\n');
         text.push_str(step.value.trim());
         if let Some(docstring) = &step.docstring {
@@ -2370,6 +2379,25 @@ fn scenario_text(scenario: &gherkin::Scenario, file: &str) -> ScenarioText {
         content_hash: content_hash(&normalized),
         text: normalized,
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn is_semantic_driver_step(value: &str) -> bool {
+    [
+        "the user runs ",
+        "the end-to-end user runs ",
+        "the one-file audit ",
+        "the two-file audit ",
+        "the one-file result ",
+        "the two-file result ",
+        "candidate rank ",
+        "same-feature candidate rank ",
+        "cross-feature candidate rank ",
+        "intra-file candidate rank ",
+        "inter-file candidate rank ",
+    ]
+    .iter()
+    .any(|prefix| value.starts_with(prefix))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -3402,5 +3430,67 @@ mod tests {
         });
 
         assert_eq!(nli_label_indices(&config).unwrap(), [1, 2, 0]);
+    }
+
+    #[test]
+    fn duplicate_boundary_passage_scores_are_below_the_similarity_threshold() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let delta_root = root.join("givn/changes/spec-duplicates/specs/spec-duplicates");
+        let delta = collect_delta_scenarios(root, &delta_root).expect("load duplicate delta");
+        let active: Vec<&DeltaScenario> = delta
+            .iter()
+            .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
+            .collect();
+        let vectors: Vec<Vec<f32>> = active
+            .iter()
+            .map(|item| stub_embedding(&item.scenario.text, EmbeddingRole::Passage))
+            .collect();
+        let pairs = [
+            (
+                "A malformed permanent feature reports its path",
+                "An unreadable permanent feature reports its path",
+            ),
+            (
+                "A malformed persistent index is ignored and unchanged",
+                "An absent persistent index is ignored and remains absent",
+            ),
+            (
+                "A semantic candidate at the inclusive threshold is reported",
+                "A semantic pair below the threshold is not reported",
+            ),
+            (
+                "Auditing leaves active changes and archive contents unchanged",
+                "Auditing leaves permanent specifications unchanged",
+            ),
+            (
+                "Auditing leaves permanent specifications unchanged",
+                "Auditing leaves the persistent retrieval index unchanged",
+            ),
+            (
+                "Exact duplicates across features are reported together",
+                "Exact duplicates in one feature are reported together",
+            ),
+            (
+                "The audit reports an unavailable retrieval model",
+                "The audit reports retrieval unavailable without the retrieval feature",
+            ),
+        ];
+
+        for (left_title, right_title) in pairs {
+            let left = active
+                .iter()
+                .position(|item| item.scenario.title == left_title)
+                .expect("left boundary scenario");
+            let right = active
+                .iter()
+                .position(|item| item.scenario.title == right_title)
+                .expect("right boundary scenario");
+            let score = cosine_similarity(&vectors[left], &vectors[right]);
+            println!("{left_title} <> {right_title}: {score:.4}");
+            assert!(
+                score < SEMANTIC_SIMILARITY_THRESHOLD,
+                "boundary pair remained above threshold: {left_title} <> {right_title} = {score:.4}"
+            );
+        }
     }
 }
