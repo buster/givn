@@ -105,3 +105,36 @@ fn cli_contains_remediation_checks(world: &mut GivnWorld) {
     assert!(output.contains("semantic"));
     assert!(output.contains("remediation verified"));
 }
+
+#[when("the agent requests the specs instructions as JSON through the Givn CLI")]
+fn agent_requests_specs_json(world: &mut GivnWorld) {
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(
+            env,
+            &[
+                "instructions",
+                "specs",
+                "--change",
+                "instruction-integrity",
+                "--json",
+            ],
+        )
+    };
+    world.last_output = Some(output);
+}
+
+#[then("the response is valid JSON with artifact paths prerequisites and instructions")]
+fn response_is_valid_instruction_json(world: &mut GivnWorld) {
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("JSON instruction command was not run");
+    assert!(output.status.success());
+    let value: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("instruction output is not JSON");
+    assert_eq!(value["id"], "specs");
+    assert!(value["generates"].is_array());
+    assert!(value["requires"].is_array());
+    assert!(value["instruction"].is_string());
+}

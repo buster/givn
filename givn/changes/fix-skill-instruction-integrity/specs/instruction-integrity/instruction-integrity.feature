@@ -66,7 +66,7 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When an agent requests the specs instructions for an unknown change context
     Then the Givn CLI rejects the request with a clear change-not-found error
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An agent requests machine-readable artifact guidance
     Given a Givn project with an active change
     When the agent requests the specs instructions as JSON through the Givn CLI
