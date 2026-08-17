@@ -31,10 +31,10 @@ pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
-pub mod semantic_review_e2e_steps;
-pub mod semantic_review_steps;
 pub mod semantic_remediation_e2e_steps;
 pub mod semantic_remediation_steps;
+pub mod semantic_review_e2e_steps;
+pub mod semantic_review_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_explore_change_e2e_steps;
 pub mod spec_explore_change_steps;
@@ -91,6 +91,8 @@ pub struct GivnWorld {
     pub(crate) semantic_review_snapshot: Option<Vec<u8>>,
     /// Bytes written before a malformed permanent index is rebuilt.
     pub(crate) malformed_index_snapshot: Option<Vec<u8>>,
+    /// Classification mode for the semantic-remediation fixture.
+    pub(crate) semantic_remediation_mode: Option<String>,
 }
 
 // --- helpers ---------------------------------------------------------------

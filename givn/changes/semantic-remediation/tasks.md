@@ -15,17 +15,21 @@
       and `run-tests.sh` retain the exact `--tags @e2e` filter; the change E2E
       path is separate from the non-E2E path and will be count-checked before
       the E2E scenario.
-- [ ] Commit setup changes with implementation evidence. Hash:
+- [x] Commit setup changes with implementation evidence. Hash: `b1233fd`
 
 ## Non-E2E Scenarios
 
 ### A DUPLIKAT classification without removal remains blocked
 
-- [ ] RED: remove only this scenario's `@wip`; stub new steps and run the named
-      scenario. Evidence:
-- [ ] GREEN: block an unchanged DUPLIKAT classification with the exact removal
+- [x] RED: remove only this scenario's `@wip`; stub new steps and run the named
+      scenario. Evidence: `1 scenario (1 failed)`, `1 step (1 failed)`; the
+      Given step panicked with `not implemented`.
+- [x] GREEN: block an unchanged DUPLIKAT classification with the exact removal
       finding. Production files: `src/spec/retrieval.rs`, step files. Evidence:
-- [ ] REFACTOR: rerun the named scenario after formatting. Evidence:
+      targeted run passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the named scenario after formatting. Evidence: after
+      `cargo fmt --all` and `cargo check --features spec-retrieval`, targeted run
+      passed with `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: `feat(semantic-remediation): A DUPLIKAT classification without removal remains blocked` Hash:
 
 ### Removing a DUPLIKAT candidate verifies the projected remediation
