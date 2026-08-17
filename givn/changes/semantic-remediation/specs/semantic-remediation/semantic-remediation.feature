@@ -147,10 +147,10 @@ Feature: Verify semantic remediation
     And stdout contains "semantic remediation verified"
     And the semantic review report status is "PASS"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI review reports successful duplicate remediation
     Given an end-to-end project prepared for a duplicate remediation
-    When the end-to-end user runs change review for "running-change"
+    When the remediation E2E user runs change review for "running-change"
     Then the command exits 0
     And stdout contains "semantic remediation verified"
     And the semantic review report status is "PASS"
