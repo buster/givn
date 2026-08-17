@@ -89,6 +89,10 @@ pub struct GivnWorld {
     pub(crate) unreadable_feature: Option<spec_duplicates_steps::UnreadableFeatureGuard>,
     /// Snapshot of permanent feature files for non-mutation assertions.
     pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the active-change fixture tree for read-only audit checks.
+    pub(crate) active_change_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the archive fixture tree for read-only audit checks.
+    pub(crate) archive_snapshot: Option<Vec<(String, Vec<u8>)>>,
     /// Snapshot of the generated permanent retrieval index for non-mutation
     /// assertions.
     pub(crate) permanent_index_snapshot: Option<Vec<u8>>,
