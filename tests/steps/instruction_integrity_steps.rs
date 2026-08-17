@@ -212,24 +212,24 @@ fn response_contains_instruction_text(world: &mut GivnWorld) {
     assert!(instruction_json(world)["instruction"].is_string());
 }
 
-#[when("an agent requests the specs instructions for an unknown change context")]
-fn agent_requests_unknown_change(world: &mut GivnWorld) {
+#[when("an agent requests the specs instructions for an unsafe change context")]
+fn agent_requests_unsafe_change(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("instruction fixture is missing");
     world.last_output = Some(crate::common::run_givn(
         env,
-        &["instructions", "specs", "--change", "missing-change"],
+        &["instructions", "specs", "--change", "../unsafe"],
     ));
 }
 
-#[then("the Givn CLI rejects the request with a clear change-not-found error")]
-fn unknown_change_is_rejected(world: &mut GivnWorld) {
+#[then("the Givn CLI rejects the request with a clear kebab-case error")]
+fn unsafe_change_is_rejected(world: &mut GivnWorld) {
     let output = world
         .last_output
         .as_ref()
-        .expect("unknown-change command was not run");
+        .expect("unsafe-change command was not run");
     assert!(!output.status.success());
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("change 'missing-change' not found"), "{stderr}");
+    assert!(stderr.contains("kebab-case"), "{stderr}");
 }
 
 const OVERRIDE_SENTINEL: &str = "PROJECT SPECS OVERRIDE SENTINEL";
@@ -293,12 +293,12 @@ fn retrieval_guidance(world: &GivnWorld) -> &str {
 
 #[given("retrieval workflow guidance is available")]
 fn retrieval_workflow_guidance_available(world: &mut GivnWorld) {
-    let specs = std::fs::read_to_string("assets/instructions/specs.md")
-        .expect("read specs instruction");
-    let command = std::fs::read_to_string("assets/commands/givn-spec.md")
-        .expect("read specs command");
-    let skill = std::fs::read_to_string("assets/skills/givn-spec/SKILL.md.tmpl")
-        .expect("read specs skill");
+    let specs =
+        std::fs::read_to_string("assets/instructions/specs.md").expect("read specs instruction");
+    let command =
+        std::fs::read_to_string("assets/commands/givn-spec.md").expect("read specs command");
+    let skill =
+        std::fs::read_to_string("assets/skills/givn-spec/SKILL.md.tmpl").expect("read specs skill");
     world.additional_output = Some(format!("{specs}\n{command}\n{skill}"));
 }
 

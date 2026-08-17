@@ -33,10 +33,7 @@ fn run_artifact(
     // Resolve change: use explicit --change, or auto-select single active.
     let _change = match change {
         Some(id) => {
-            let change_dir = crate::state::resolve_change_dir(project_root, id)?;
-            if !change_dir.exists() {
-                bail!("change '{}' not found", id);
-            }
+            crate::state::resolve_change_dir(project_root, id)?;
             id.to_string()
         }
         None => {
