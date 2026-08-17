@@ -1899,11 +1899,22 @@ fn duplicate_candidate_order(
     duplicate_kind_order(left.kind)
         .cmp(&duplicate_kind_order(right.kind))
         .then_with(|| {
-            duplicate_relation_order(left.relation).cmp(&duplicate_relation_order(right.relation))
+            if left.kind == "structural_overlap" && right.kind == "structural_overlap" {
+                duplicate_relation_order(left.relation)
+                    .cmp(&duplicate_relation_order(right.relation))
+            } else {
+                std::cmp::Ordering::Equal
+            }
         })
-        .then_with(|| match (left.score, right.score) {
-            (Some(left), Some(right)) => right.total_cmp(&left),
-            _ => std::cmp::Ordering::Equal,
+        .then_with(|| {
+            if left.kind == "semantic_candidate" && right.kind == "semantic_candidate" {
+                match (left.score, right.score) {
+                    (Some(left), Some(right)) => right.total_cmp(&left),
+                    _ => std::cmp::Ordering::Equal,
+                }
+            } else {
+                std::cmp::Ordering::Equal
+            }
         })
         .then_with(|| duplicate_endpoint_key(&left.left).cmp(&duplicate_endpoint_key(&right.left)))
         .then_with(|| {

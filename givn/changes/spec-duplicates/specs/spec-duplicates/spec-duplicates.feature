@@ -231,7 +231,7 @@ Feature: Audit duplicate and related permanent scenarios
     And the JSON report has candidate_count 0
     And no candidate has score `0.9499`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Candidate classes take precedence and equal semantic scores use endpoint order
     Given the corpus contains one exact duplicate, one structural overlap, and two semantic candidates
     And the two semantic candidates have equal test score `0.9600`
