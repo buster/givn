@@ -693,8 +693,7 @@ fn permanent_semantic_endpoints(
 ) -> Result<BTreeMap<(String, String), SemanticEndpoint>> {
     let mut endpoints = BTreeMap::new();
     for path in crate::gherkin::parse::collect_feature_files(&permanent_specs_path(root)) {
-        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
-            .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
+        let feature = parse_permanent_feature(root, &path)?;
         let file = normalize_project_file_identity(root, &path);
         for scenario in &feature.scenarios {
             let endpoint = semantic_endpoint_from_scenario(
@@ -1674,11 +1673,17 @@ fn permanent_specs_path(root: &Path) -> std::path::PathBuf {
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn parse_permanent_feature(root: &Path, path: &Path) -> Result<gherkin::Feature> {
+    let file = normalize_project_file_identity(root, path);
+    gherkin::Feature::parse_path(path, gherkin::GherkinEnv::default())
+        .with_context(|| format!("failed to parse permanent spec {file}"))
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn collect_duplicate_scenarios(root: &Path) -> Result<Vec<DuplicateScenario>> {
     let mut scenarios = Vec::new();
     for path in crate::gherkin::parse::collect_feature_files(&permanent_specs_path(root)) {
-        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
-            .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
+        let feature = parse_permanent_feature(root, &path)?;
         let file = normalize_project_file_identity(root, &path);
         for scenario in &feature.scenarios {
             collect_duplicate_scenario(&feature, None, scenario, &file, &mut scenarios);
@@ -2125,8 +2130,7 @@ fn json_encoded_value<T: serde::Serialize>(value: &T) -> serde_json::Value {
 fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<ScenarioText>> {
     let mut scenarios = Vec::new();
     for path in crate::gherkin::parse::collect_feature_files(specs_root) {
-        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
-            .with_context(|| format!("failed to parse permanent spec {}", path.display()))?;
+        let feature = parse_permanent_feature(root, &path)?;
         let file = normalize_project_file_identity(root, &path);
         collect_feature_scenarios(&feature.scenarios, &file, &mut scenarios);
         for rule in &feature.rules {
