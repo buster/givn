@@ -252,11 +252,13 @@ pre-existing index/search/explore/review functionality. Only the changed audit
 regions from `git diff b07bbce..HEAD -- src/main.rs src/cli/spec.rs
 src/spec/retrieval.rs` were considered here. The duplicate-audit region is
 `src/spec/retrieval.rs:1687-2110`; the merged XML has no zero-hit lines in that
-region. Existing retrieval code outside the changed audit path is not
-relabeled as a change gap.
+region. The final behavior-preserving clippy cleanup also touched existing
+semantic-remediation helpers outside the audit path; their rare zero-hit lines
+are classified concretely below rather than being relabeled as audit gaps.
 
 Every originally reported changed-code gap is mapped to its resolving scenario
-or deletion below. No changed region is assigned to legitimately hard to test.
+or deletion below. The only hard-to-test classification is the concrete
+environment-limited cleanup row below.
 
 | Changed region with zero-hit lines in merged XML | Classification | Concrete evidence and required resolution |
 |---|---|---|
@@ -274,17 +276,19 @@ or deletion below. No changed region is assigned to legitimately hard to test.
 | `src/spec/retrieval.rs:1934` | Dead code | **Deleted in Scenario 29**; candidate kinds are generated from exactly three known values and the order helper no longer has `_ => 3`. |
 | `src/spec/retrieval.rs:1944` | Dead code | **Deleted in Scenario 29**; structural relations are generated from exactly three known values and the order helper no longer has a wildcard fallback. |
 | `src/spec/retrieval.rs:1962` | Dead code | **Deleted in Scenario 32**; CLI scenario records are sorted before `duplicate_pair_key`, so its reverse branch was removed while parser input normalization remains covered. |
+| `src/spec/retrieval.rs:869-876,894-899,1119-1126` | Legitimately hard to test | These are behavior-preserving clippy cleanups in pre-existing semantic-remediation helpers, not duplicate-audit behavior. `apply_prior_classifications` requires a prior fully classified semantic report, and `recompute_prior_pair_score` requires a local E5 model/vector; the configured environment has no E5 cache, so the unparameterized model-backed gate is intentionally not used. The stub-backed semantic-review gate, feature/no-feature checks, and clippy all pass; no new branch behavior was introduced. |
 
 The CLI additions at `src/main.rs:201-206,275-277` and
 `src/cli/spec.rs:36-38`, plus the audit entry/renderer at
 `src/spec/retrieval.rs:432-532`, have non-zero merged hits. The changed audit
 region has no zero-hit lines, every listed missing-test/dead-code finding is
-resolved, and no gap is classified as hard-to-test.
+resolved, and the only hard-to-test classification is the concrete
+pre-existing semantic-remediation cleanup described above.
 
 ## Deterministic gate dispositions
 
 The active-tree overlap scan was run through `target/debug/givn lint --json`
-`givn/changes/spec-duplicates/specs`. It found **63** rows. It found **0**
+`givn/changes/spec-duplicates/specs`. It found **65** rows. It found **0**
 delta `long_scenario` findings (threshold is more than 14 steps), **0**
 `@givn.removed` or `@givn.modified` scenarios, and therefore no removed+added
 pairs.
