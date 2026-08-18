@@ -301,24 +301,36 @@ under `givn/`; `givn spec search` reads that index and prints ranked candidates
 for an interactive query. Search remains an authoring aid.
 
 When the `spec-retrieval` feature is compiled, `givn spec review --change <id>`
-provides the local index, search, and existing advisory review path. The strict
-similarity gate is enabled only by `spec-similarity-gate`, which includes
-`spec-retrieval`: it embeds added and modified delta scenarios with the same
-`passage:` role as the permanent index, compares them with the pre-change
-permanent tree, projects the permanent tree after the delta's tagged
-add/modify/remove operations, and compares every distinct projected scenario
-pair. The embedding index retrieves top-K cross-feature candidates; same-file
-structural variants remain owned by the deterministic overlap gate. Each strict
-candidate is then scored in both directions by the local multilingual pair
-reranker and the raw logits are averaged.
+provides the local index, search, and advisory review path. The strict E5
+similarity gate is enabled only by the independent `spec-similarity-gate`
+feature. The opt-in `cross-encoder-reranker` feature instead runs the shared
+bounded top-five E5 union through local BGE in both directions. Its symmetric
+raw-logit operating point is `3.0`: `BGE_RECOMMENDED` enters the agent's
+classification worklist and `BGE_FILTERED` is retained as non-blocking evidence.
+Neither status is `MERGE`, `KEEP-AS-BOUNDARY`, or another Givn classification.
 
-The binary-fixed reranker raw-logit boundary is `3.0`. A pair at or above the
-boundary is a hard failure. The output tells the agent to classify the case as
-`MERGE` (delete the true duplicate) or `KEEP-AS-BOUNDARY` (rewrite the retained
-title and steps until the reranker score is below the boundary). Neither note
-nor disposition table suppresses a candidate. A missing embedding or reranker
-model/cache is an explicit setup failure for the `spec-similarity-gate` strict
-review path, never a false clean result.
+Deterministic exclusions happen before BGE, same-file identities remain eligible
+unless the exact endpoint is excluded, and no invocation scores more than 512
+unique undirected pairs. A missing or failed admission approval keeps the
+E5-only contract with no BGE evidence object. A missing model or pool overflow
+emits explicit `BGE_UNAVAILABLE` evidence and preserves the E5-only blocking semantics. The
+model identity, directional scores, symmetric score, admission status, and
+elapsed runtime are rendered without allowing BGE to edit specs or verify
+remediation.
+
+Local production BGE is loaded with FastEmbed's user-defined offline API only
+after validating the ONNX, tokenizer, config, special-token, and external-data
+files. The benchmark harness records `python-reference-v1` and cannot approve
+the Rust product until a parity export supplies `rust-production-v1`. Runtime
+has no hidden wall-clock cutoff; the bounded pair count and explicit artifact
+preflight are the refusal controls.
+
+When the bounded union covers only part of the E5 raw worklist, uncovered pairs
+are marked `BGE_UNSCORED` inside the normal blocking candidate grammar. They
+remain blocking because BGE did not score them; only `BGE_FILTERED` is
+non-blocking. This partial state is valid only when the selected bounded union
+is at or below 512 pairs; an overflow refuses the complete BGE invocation and
+uses `BGE_UNAVAILABLE` with all raw pairs unscored.
 
 The default binary remains independent of ONNX Runtime. Without the retrieval
 feature, ordinary check and archive behavior is unchanged and direct retrieval
@@ -328,12 +340,13 @@ tree; a refresh error is warned after archive completion and retried at the next
 review.
 
 The blocking semantic report is an additional, dedicated `givn check review
---change <id>` gate, not a replacement for this retrieval contract. Its
-candidate boundary is the existing binary-fixed E5 cosine `0.9500`; its
-evidence is limited to E5 and deterministic Fingerprint facts. The advisory
-`givn spec review --change <id>` command continues to use its existing path and
-does not create `semantic-review.md`. BGE and NLI evidence remain outside this
-slice.
+--change <id>` gate. Its E5 raw candidate boundary remains the binary-fixed
+cosine `0.9500`; BGE may narrow only the recommended, non-blocking admission
+worklist. `BGE_FILTERED` blocks carry no classification and cannot change
+PASS/BLOCKED status. The advisory `givn spec review --change <id>` command uses
+the same bounded evidence path and does not create `semantic-review.md`. NLI
+remains outside this slice and is reserved for an independent
+`nli-evidence` feature.
 
 ### 8.5b Permanent scenario exploration
 
@@ -353,8 +366,10 @@ entry with the same normalized file and title; stdin has no identity to remove.
 
 The no-change result is advisory. It reports at most five deterministic
 embedding-score candidates and index/model metadata, or the same data as stable
-JSON. It does not invoke BGE/NLI, calculate coverage, classify a pair, block a
-workflow, or write a `.feature` file.
+JSON. In a `cross-encoder-reranker` build it additionally scores that bounded
+set in both directions and reports recommended/filtered evidence; it never
+classifies a pair, blocks a workflow, or writes a `.feature` file. NLI is not
+selected by this path.
 
 ### 8.5c Current-change scenario exploration
 
@@ -376,6 +391,13 @@ One project-relative forward-slash normalization helper is used for every
 permanent index, delta source, projected target, and query file identity. It
 accepts relative and absolute paths, preventing the same scenario from being
 shown merely because callers used different path forms.
+
+With `cross-encoder-reranker`, the permanent-plus-active query union is the
+bounded BGE input. The query's exact source identity and a modified scenario's
+exact projected target are excluded, but another eligible scenario in the same
+file remains. The E5 raw result set remains visible; BGE-recommended results
+form the recommended view and BGE-filtered results remain explicit non-blocking
+evidence.
 
 The result remains advisory and deterministic. Human lines identify `scope`,
 source, and owning change where applicable. JSON keeps all PR 1 fields and

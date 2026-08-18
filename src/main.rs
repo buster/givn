@@ -204,6 +204,9 @@ enum SpecCommands {
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
     },
+    /// Emit the Rust production candidate-pipeline attestation for benchmark approval.
+    #[command(name = "bge-parity", hide = true)]
+    BgeParity,
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -275,6 +278,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             SpecCommands::Duplicates { format } => {
                 cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
             }
+            SpecCommands::BgeParity => cli::spec::run_bge_parity(),
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),

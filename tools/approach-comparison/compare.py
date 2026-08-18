@@ -47,9 +47,10 @@ DEFAULT_NLI_BATCH = 32
 DEFAULT_BGE_BATCH = 32
 STRICT_THRESHOLD = 0.95
 RERANK_THRESHOLD = 3.0
+BGE_MAX_PAIRS = 512
 
 SCENARIO_RE = re.compile(r"^\s*Scenario(?: Outline)?\s*:\s*(.*)$")
-STEP_RE = re.compile(r"^\s*(?:Given|When|Then|And|But|\*)\s+(.*)$")
+STEP_RE = re.compile(r"^\s*(Given|When|Then|And|But|\*)\s+(.*)$")
 
 
 @dataclass(frozen=True)
@@ -59,6 +60,11 @@ class Scenario:
     title: str
     line: int
     text: str
+    character_count: int
+    step_count: int
+    assertion_count: int
+    behavior: str
+    assertion_shape: tuple[str, ...]
 
     @property
     def identity(self) -> tuple[str, str, str]:
@@ -76,17 +82,38 @@ def parse_feature(path: Path, root: Path, source: str) -> list[Scenario]:
     title: str | None = None
     title_line = 0
     body: list[str] = []
+    step_count = 0
+    assertion_count = 0
+    last_keyword: str | None = None
+    assertion_shape: list[str] = []
     in_docstring = False
 
     def finish() -> None:
-        nonlocal title, title_line, body
+        nonlocal title, title_line, body, step_count, assertion_count, last_keyword, assertion_shape
         if title is not None:
             text = " ".join([title, *body])
             normalized = " ".join(text.split())
-            scenarios.append(Scenario(source, relative, title, title_line, normalized))
+            scenarios.append(
+                Scenario(
+                    source,
+                    relative,
+                    title,
+                    title_line,
+                    normalized,
+                    len(normalized),
+                    step_count,
+                    assertion_count,
+                    " ".join(body),
+                    tuple(assertion_shape),
+                )
+            )
         title = None
         title_line = 0
         body = []
+        step_count = 0
+        assertion_count = 0
+        last_keyword = None
+        assertion_shape = []
 
     for number, raw in enumerate(lines, start=1):
         stripped = raw.strip()
@@ -120,7 +147,16 @@ def parse_feature(path: Path, root: Path, source: str) -> list[Scenario]:
 
         step = STEP_RE.match(raw)
         if step:
-            body.append(step.group(1).strip())
+            keyword, value = step.groups()
+            body.append(value.strip())
+            step_count += 1
+            if keyword == "Then" or (
+                keyword in {"And", "But", "*"}
+                and last_keyword in {"Then", "And", "But", "*"}
+            ):
+                assertion_count += 1
+                assertion_shape.append(value.strip())
+            last_keyword = keyword
 
     finish()
     return scenarios
@@ -198,20 +234,56 @@ def pair_scope(left: Scenario, right: Scenario) -> str:
     return f"within-{left.source}"
 
 
+def deterministic_pairs(scenarios: list[Scenario]) -> set[tuple[int, int]]:
+    classified: set[tuple[int, int]] = set()
+    for left in range(len(scenarios)):
+        for right in range(left + 1, len(scenarios)):
+            left_scenario = scenarios[left]
+            right_scenario = scenarios[right]
+            same_shape = (
+                left_scenario.assertion_shape
+                and left_scenario.assertion_shape == right_scenario.assertion_shape
+            )
+            left_subset = (
+                left_scenario.assertion_shape
+                and len(left_scenario.assertion_shape) < len(right_scenario.assertion_shape)
+                and all(value in right_scenario.assertion_shape for value in left_scenario.assertion_shape)
+            )
+            right_subset = (
+                right_scenario.assertion_shape
+                and len(right_scenario.assertion_shape) < len(left_scenario.assertion_shape)
+                and all(value in left_scenario.assertion_shape for value in right_scenario.assertion_shape)
+            )
+            if left_scenario.behavior == right_scenario.behavior or same_shape or left_subset or right_subset:
+                classified.add((left, right))
+    return classified
+
+
 def candidate_pairs(
     scenarios: list[Scenario], vectors: np.ndarray, top_k: int, scope: str
-) -> tuple[set[tuple[int, int]], np.ndarray, dict[str, int]]:
+) -> tuple[set[tuple[int, int]], np.ndarray, dict[str, object]]:
     normalized = normalized_vectors(vectors)
     similarity = normalized @ normalized.T
+    deterministic = deterministic_pairs(scenarios)
     topk_pairs: set[tuple[int, int]] = set()
     topk_count = 0
     for left in range(len(scenarios)):
-        order = np.argsort(-similarity[left])
+        order = sorted(
+            range(len(scenarios)),
+            key=lambda right: (
+                -float(similarity[left, right]),
+                scenarios[right].file,
+                scenarios[right].title,
+                right,
+            ),
+        )
         taken = 0
         for right in order:
             if right == left:
                 continue
             pair = (min(left, int(right)), max(left, int(right)))
+            if pair in deterministic:
+                continue
             if pair not in topk_pairs:
                 topk_pairs.add(pair)
                 topk_count += 1
@@ -220,25 +292,44 @@ def candidate_pairs(
                 break
 
     strict_pairs_array = np.argwhere(np.triu(similarity >= STRICT_THRESHOLD, k=1))
-    strict_pairs = {(int(left), int(right)) for left, right in strict_pairs_array}
+    strict_pairs = {
+        (int(left), int(right))
+        for left, right in strict_pairs_array
+        if (int(left), int(right)) not in deterministic
+    }
     if scope == "strict":
         pair_set = strict_pairs
+        raw_scope_count = len(strict_pairs)
     elif scope == "topk":
         pair_set = topk_pairs
+        raw_scope_count = len(topk_pairs)
+    elif scope == "bounded":
+        pair_set = topk_pairs & strict_pairs
+        raw_scope_count = len(strict_pairs)
     elif scope == "union":
         pair_set = topk_pairs | strict_pairs
+        raw_scope_count = len(pair_set)
     elif scope == "cross-source":
         pair_set = {
             pair
             for pair in topk_pairs
             if scenarios[pair[0]].source != scenarios[pair[1]].source
         }
+        raw_scope_count = len(pair_set)
     else:
         raise ValueError(f"unknown candidate scope: {scope}")
+    overflow = len(pair_set) > BGE_MAX_PAIRS
     return pair_set, similarity, {
         "top_k_union": topk_count,
         "strict_pairs": len(strict_pairs),
         "candidate_pairs": len(pair_set),
+        "bge_max_pairs": BGE_MAX_PAIRS,
+        "bge_overflow": int(overflow),
+        "bge_raw_scope_pairs": raw_scope_count,
+        "top_k_pairs": [list(pair) for pair in sorted(topk_pairs)],
+        "strict_pair_ids": [list(pair) for pair in sorted(strict_pairs)],
+        "deterministic_pair_ids": [list(pair) for pair in sorted(deterministic)],
+        "bounded_pair_ids": [list(pair) for pair in sorted(pair_set)],
     }
 
 
@@ -258,6 +349,36 @@ def resolve_model_path(path: Path) -> Path:
     if not path.exists():
         raise FileNotFoundError(f"model artifact does not exist: {path}")
     return path
+
+
+def artifact_metadata(model_path: Path) -> dict[str, object]:
+    names = [
+        "model.onnx",
+        "model.onnx.data",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ]
+    artifacts = {}
+    for name in names:
+        path = model_path.with_name(name)
+        if not path.exists():
+            if name == "model.onnx.data":
+                continue
+            raise FileNotFoundError(f"model artifact is missing: {path}")
+        digest = hashlib.sha256(path.read_bytes()).hexdigest()
+        artifacts[name] = {"bytes": path.stat().st_size, "sha256": digest}
+    model_bytes = (model_path).read_bytes()
+    external_data = model_path.with_name("model.onnx.data")
+    if b"model.onnx.data" in model_bytes and not external_data.exists():
+        raise FileNotFoundError(f"model artifact is missing: {external_data}")
+    json.loads(model_path.with_name("config.json").read_text(encoding="utf-8"))
+    json.loads(model_path.with_name("tokenizer_config.json").read_text(encoding="utf-8"))
+    json.loads(model_path.with_name("tokenizer.json").read_text(encoding="utf-8"))
+    if model_path.stat().st_size == 0:
+        raise ValueError(f"model artifact is empty: {model_path}")
+    return artifacts
 
 
 class OnnxPairModel:
@@ -307,6 +428,11 @@ class OnnxPairModel:
 def score_bge(
     candidates: list[tuple[int, int]], scenarios: list[Scenario], model_path: Path
 ) -> dict[str, list[float]]:
+    if len(candidates) > BGE_MAX_PAIRS:
+        raise ValueError(
+            f"BGE candidate pool contains {len(candidates)} unique pairs; "
+            f"maximum is {BGE_MAX_PAIRS}"
+        )
     print(f"scoring BGE: {len(candidates)} pairs in both directions", flush=True)
     model = OnnxPairModel(model_path)
     pairs: list[tuple[str, str]] = []
@@ -374,7 +500,7 @@ def print_summary(
     scenarios: list[Scenario],
     candidates: list[tuple[int, int]],
     similarity: np.ndarray,
-    stats: dict[str, int],
+    stats: dict[str, object],
     bge: dict[str, list[float]],
     nli: dict[str, dict[str, list[float]]],
     report_limit: int,
@@ -396,7 +522,18 @@ def print_summary(
     print(f"common candidate pairs: {stats['candidate_pairs']}")
     print(f"candidate scopes: {json.dumps(scope_counts, sort_keys=True)}")
     print(f"BGE pairs >= {RERANK_THRESHOLD:.1f}: {bge_hits}")
-    print(f"NLI label distribution: {json.dumps(nli_counts, sort_keys=True)}")
+    print(
+        "BGE accounting: "
+        f"scored={stats['bge_scored_pairs']} "
+        f"recommended={stats['bge_recommended_pairs']} "
+        f"filtered={stats['bge_filtered_pairs']} "
+        f"unscored={stats['bge_unscored_pairs']}"
+    )
+    print(
+        f"NLI label distribution: {json.dumps(nli_counts, sort_keys=True)}"
+        if nli
+        else "NLI scoring: disabled"
+    )
     print("top common candidates by embedding score:")
     ordered = sorted(
         candidates,
@@ -405,11 +542,12 @@ def print_summary(
     )
     for left, right in ordered[:report_limit]:
         key = f"{left}:{right}"
-        nli_value = nli[key]["symmetric"]
-        bge_value = bge[key][2]
+        nli_value = nli.get(key, {}).get("symmetric")
+        bge_value = bge.get(key, [None, None, None])[2]
         print(
-            f"  {similarity[left, right]:.4f}  bge={bge_value:.4f}  "
-            f"nli={nli_value[0]:.3f}/{nli_value[1]:.3f}/{nli_value[2]:.3f}  "
+            f"  {similarity[left, right]:.4f}  "
+            f"bge={(f'{bge_value:.4f}' if bge_value is not None else 'unavailable')}  "
+            f"nli={('/'.join(f'{value:.3f}' for value in nli_value) if nli_value else 'disabled')}  "
             f"{scenarios[left].source}/{scenarios[left].title}  <->  "
             f"{scenarios[right].source}/{scenarios[right].title}"
         )
@@ -426,26 +564,93 @@ def run(args: argparse.Namespace) -> None:
         scenarios, vectors, args.top_k, args.candidate_scope
     )
     candidates = sorted(pair_set)
-    bge_model = (
-        resolve_model_path(Path(args.bge_model).resolve())
-        if args.bge_model
-        else find_model_snapshot(Path(args.bge_cache), "rozgo/bge-reranker-v2-m3")
-    )
-    nli_model = resolve_model_path(Path(args.nli_model).resolve())
+    bge_model = None
+    bge_artifacts: dict[str, object] = {}
+    bge_error = None
+    if stats["bge_overflow"]:
+        bge_error = (
+            f"BGE candidate pool contains {len(candidates)} unique pairs; "
+            f"maximum is {BGE_MAX_PAIRS}"
+        )
+    else:
+        try:
+            bge_model = (
+                resolve_model_path(Path(args.bge_model).resolve())
+                if args.bge_model
+                else find_model_snapshot(Path(args.bge_cache), "rozgo/bge-reranker-v2-m3")
+            )
+            bge_artifacts = artifact_metadata(bge_model)
+        except Exception as error:
+            bge_error = str(error)
     bge_started = time.perf_counter()
-    bge = score_bge(candidates, scenarios, bge_model)
+    if stats["bge_overflow"]:
+        bge = {}
+        bge_status = "BGE_UNAVAILABLE"
+    elif bge_model is None:
+        bge = {}
+        bge_status = "BGE_UNAVAILABLE"
+    else:
+        try:
+            bge = score_bge(candidates, scenarios, bge_model)
+            bge_status = "BGE_ENABLED"
+        except Exception as error:
+            bge_error = str(error)
+            print(f"BGE unavailable: {error}", file=sys.stderr)
+            bge = {}
+            bge_status = "BGE_UNAVAILABLE"
     bge_seconds = time.perf_counter() - bge_started
-    nli_started = time.perf_counter()
-    nli = score_nli(candidates, scenarios, nli_model)
-    nli_seconds = time.perf_counter() - nli_started
+    if args.skip_nli:
+        nli = {}
+        nli_seconds = 0.0
+    else:
+        nli_model = resolve_model_path(Path(args.nli_model).resolve())
+        nli_started = time.perf_counter()
+        nli = score_nli(candidates, scenarios, nli_model)
+        nli_seconds = time.perf_counter() - nli_started
+
+    bge_scored_pairs = len(bge)
+    bge_recommended_pairs = sum(
+        values[2] >= RERANK_THRESHOLD for values in bge.values()
+    )
+    bge_filtered_pairs = bge_scored_pairs - bge_recommended_pairs
+    strict_pair_count = (
+        stats["strict_pairs"] if isinstance(stats["strict_pairs"], int) else 0
+    )
+    raw_scope_count = (
+        stats["bge_raw_scope_pairs"]
+        if isinstance(stats["bge_raw_scope_pairs"], int)
+        else 0
+    )
+    stats.update(
+        {
+            "bge_scored_pairs": bge_scored_pairs,
+            "bge_recommended_pairs": bge_recommended_pairs,
+            "bge_filtered_pairs": bge_filtered_pairs,
+            "bge_bounded_pairs": len(candidates),
+            "bge_unscored_pairs": raw_scope_count - bge_scored_pairs,
+            "e5_raw_pairs": strict_pair_count,
+        }
+    )
 
     report = {
+        "candidate_pipeline": "python-reference-v1",
         "corpus": str(corpus_root),
         "embedding_model": EMBED_MODEL,
         "bge_model": BGE_MODEL_ID,
         "nli_model": NLI_MODEL_ID,
         "strict_threshold": STRICT_THRESHOLD,
         "bge_threshold": RERANK_THRESHOLD,
+        "bge_status": bge_status,
+        "bge_error": bge_error,
+        "bge_artifacts": bge_artifacts,
+        "bge_runtime_config": {
+            "max_length_tokens": MAX_LENGTH,
+            "intra_op_threads": 4,
+            "inter_op_threads": 1,
+            "batch_size": DEFAULT_BGE_BATCH,
+            "max_unique_pairs": BGE_MAX_PAIRS,
+        },
+        "command_line": sys.argv,
         "top_k": args.top_k,
         "candidate_scope": args.candidate_scope,
         "timing_seconds": {
@@ -461,8 +666,17 @@ def run(args: argparse.Namespace) -> None:
                 "right": right,
                 "scope": pair_scope(scenarios[left], scenarios[right]),
                 "embedding": float(similarity[left, right]),
-                "bge": bge[f"{left}:{right}"],
-                "nli": nli[f"{left}:{right}"],
+                "bge": bge.get(f"{left}:{right}"),
+                "bge_evidence": (
+                    {
+                        "forward_raw": bge[f"{left}:{right}"][0],
+                        "reverse_raw": bge[f"{left}:{right}"][1],
+                        "symmetric_raw": bge[f"{left}:{right}"][2],
+                    }
+                    if f"{left}:{right}" in bge
+                    else None
+                ),
+                "nli": nli.get(f"{left}:{right}"),
             }
             for left, right in candidates
         ],
@@ -485,12 +699,13 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument("--bge-cache", default=str(DEFAULT_BGE_CACHE))
     parser.add_argument("--bge-model")
     parser.add_argument("--nli-model", default=str(DEFAULT_NLI_MODEL))
+    parser.add_argument("--skip-nli", action="store_true")
     parser.add_argument("--top-k", type=int, default=DEFAULT_TOP_K)
     parser.add_argument(
         "--candidate-scope",
-        choices=["strict", "topk", "union", "cross-source"],
-        default="strict",
-        help="common pair set to score; strict is tractable and directly compares gate conflicts",
+        choices=["strict", "topk", "bounded", "union", "cross-source"],
+        default="bounded",
+        help="common pair set to score; bounded is the production top-K/E5 intersection",
     )
     parser.add_argument("--report-name")
     parser.add_argument("--report-limit", type=int, default=20)

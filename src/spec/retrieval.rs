@@ -33,6 +33,10 @@ const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
 const SIMILARITY_THRESHOLD: f32 = 0.95;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+const BGE_PIPELINE_VERSION: &str = "rust-production-v1";
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+const BGE_MAX_PAIRS: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_TOP_K: usize = 5;
 #[cfg(feature = "spec-retrieval")]
@@ -440,6 +444,34 @@ pub fn duplicates(root: &Path, json: bool) -> Result<()> {
         let _ = (root, json);
         bail!(
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+        );
+    }
+}
+
+pub fn bge_parity(root: &Path) -> Result<()> {
+    #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+    {
+        let _ = root;
+        let descriptor = bge_pipeline_descriptor();
+        let document = serde_json::json!({
+            "schema_version": 1,
+            "source": "givn spec bge-parity",
+            "candidate_pipeline": BGE_PIPELINE_VERSION,
+            "pipeline_fingerprint": format!("{:016x}", stable_hash(descriptor.as_bytes())),
+            "descriptor": descriptor,
+            "top_k": RERANKER_TOP_K,
+            "threshold": RERANKER_LOGIT_THRESHOLD,
+            "max_unique_pairs": BGE_MAX_PAIRS,
+        });
+        println!("{}", serde_json::to_string_pretty(&document)?);
+        return Ok(());
+    }
+
+    #[cfg(not(all(feature = "spec-retrieval", feature = "cross-encoder-reranker")))]
+    {
+        let _ = root;
+        bail!(
+            "BGE parity attestation is unavailable in this build; rebuild with --features spec-retrieval,cross-encoder-reranker"
         );
     }
 }
@@ -3377,6 +3409,13 @@ fn stable_hash(bytes: &[u8]) -> u64 {
         hash = hash.wrapping_mul(0x100000001b3);
     }
     hash
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_pipeline_descriptor() -> String {
+    format!(
+        "model={RERANKER_MODEL_ID};top_k={RERANKER_TOP_K};threshold={RERANKER_LOGIT_THRESHOLD:.4};max_pairs={BGE_MAX_PAIRS};exclusions=identity,deterministic;ordering=e5-desc,file,title;pair=canonical-undirected;directions=forward,reverse;score=symmetric-average"
+    )
 }
 
 #[cfg(feature = "spec-retrieval")]

@@ -61,7 +61,7 @@ flowchart TD
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries for existing retrieval commands, rank interactive and complete-scenario queries, audit every permanent pair in memory, render the fixed duplicate-audit text/JSON contract, collect request-local active deltas, apply lifecycle identity filters, keep the existing advisory review entrypoint separate, generate the change-local E5 semantic report, and verify projected remediation for prior classifications. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
+| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries for existing retrieval commands, rank interactive and complete-scenario queries, construct shared deterministic E5 top-K unions, score optional bidirectional BGE evidence within the pair cap, render raw/recommended/filtered output, audit permanent pairs, collect request-local active deltas, apply lifecycle identity filters, generate the change-local semantic report, and verify projected remediation for admitted classifications. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -86,7 +86,7 @@ environment seam.
 | `anyhow` | Application error context | 1.0 |
 | `thiserror` | Library error types | 2.0 |
 | `serde_json` | `--json` output | 1 |
-| `fastembed` | Optional local E5 embeddings for `spec::retrieval`; default features disabled, with Rustls Hub download and ONNX Runtime support. Transitive native/runtime dependencies are feature-gated with retrieval. | 5.17.2 |
+| `fastembed` | Optional local E5 embeddings and user-defined local BGE reranking for `spec::retrieval`; default features disabled, with Rustls Hub download and ONNX Runtime support. Production BGE uses offline preflight plus `try_new_from_user_defined`; transitive native/runtime dependencies are feature-gated with retrieval. | 5.17.2 |
 
 Versions are pinned in `Cargo.lock`. The dep-age policy (`scripts/check-dep-age.sh`) enforces that every locked dependency is ≥ 30 days old (TC-13).
 
@@ -168,3 +168,21 @@ path. The repository-owned acceptance layer adds one regular step module and
 one separate CLI E2E module, both invoking the compiled binary through a
 temporary project. The test-only score seam is keyed by normalized endpoint
 identity and is available only with the stub embedder.
+
+### 5.3f BGE evidence additions
+
+The BGE layer is compiled only by `cross-encoder-reranker`, independently of
+`spec-similarity-gate`. A shared pool builder performs deterministic identity
+exclusions, stable E5 tie ordering, top-five selection, canonical pair union,
+and the 512-unique-pair refusal before loading the local BGE model. A pair is
+scored in both directions and receives a symmetric raw-logit evidence record.
+The renderer records E5 raw candidates, `BGE_RECOMMENDED` candidates, and
+`BGE_FILTERED` evidence. Pairs outside the successful bounded subset receive
+`BGE_UNSCORED` status and remain blocking E5 candidates; filtered evidence is
+non-blocking and never becomes a Givn classification. Unavailable or overflow
+states retain the E5 blocking worklist without claiming BGE participation.
+
+The benchmark label artifact and comparison report are repository-owned
+evidence. Their metrics cover top-K recall, admission precision/recall,
+false-positive/false-negative rates, runtime, and scenario verbosity. Test
+steps use local stubs and invoke the compiled CLI as a subprocess.

@@ -1,7 +1,9 @@
 # 9. Architecture Decisions
 
-Every decision below was settled during the design Q&A. Status of all: **Accepted**.
-These are the binding decisions — do not silently change them during implementation.
+Every decision below was settled during the design Q&A. Decisions marked
+`accepted` are binding; decisions marked `superseded by ADR-NNN` remain
+historical context and are not the current contract. Do not silently change a
+binding decision during implementation.
 
 ---
 
@@ -1438,9 +1440,13 @@ Related chapters: 1, 2, 3, 4, 5, 6, 7, 8, 10, 11, and 12.
 ## ADR-042: Retrieve with embeddings, decide with a local multilingual reranker
 
 ---
-status: accepted for experiment
+status: superseded by ADR-052
 date: 2026-08-16
 decision-makers: givn maintainers
+consulted: exploration feature maintainers
+informed: authors and agents using permanent scenario exploration
+consulted: cross-encoder benchmark maintainers
+informed: maintainers using the opt-in BGE product evidence
 ---
 
 ### Context and Problem Statement
@@ -1471,11 +1477,13 @@ from a different output contract or command boundary more accurately.
 Choose option 4 for the comparison branch. Use FastEmbed-rs `TextRerank` with
 the multilingual `BGERerankerV2M3` model, retrieve the top five embedding
 neighbours, score each candidate in both directions, and average the raw
-logits. The experiment uses the private binary boundary `3.0` and no project
-override. Same-file structural overlap remains with the deterministic gate;
-the reranker focuses on cross-feature semantic candidates.
+logits. The historical experiment used the private binary boundary `3.0` and
+focused on cross-feature candidates. For the product decision, ADR-052
+supersedes the experiment's same-file limitation: same-file endpoints remain
+eligible unless their exact identity or deterministic pair is excluded.
 
-This is an experiment rather than a final quality claim. It is accepted only if
+The original branch was an experiment rather than a final quality claim. Its
+product admission is governed by ADR-052 and is accepted only if
 the real-model benchmark preserves known duplicate recall, materially reduces
 manually labeled false positives, and remains practical on CPU.
 
@@ -1502,6 +1510,16 @@ The branch's executable scenarios use a deterministic reranker stub for true
 duplicates, valid boundaries, projected removal, and model setup failure. The
 real benchmark uses the local `BGERerankerV2M3` model, records top-K candidate
 counts, raw-logit distributions, latency, and manually labeled outcomes.
+
+### Pros and Cons of the Options
+
+- **Embedding-only hard gate:** simple and fast, but leaves related-text false
+  positives and authoring pressure unresolved.
+- **String or frequency heuristics:** local and cheap, but brittle across
+  languages and executable boundaries.
+- **Retrieve and locally rerank:** jointly observes both texts and can reduce
+  the recommended worklist, but adds model/cache/runtime cost and cannot classify
+  Givn semantics without labeled evidence.
 
 ### More Information
 
@@ -1598,8 +1616,8 @@ evidence without turning exploration into review or changing the specification.
 - Refresh the permanent index incrementally and preserve existing vectors.
 - Include all permanent candidates, including same-file candidates.
 - Keep the result deterministic, machine-readable, and advisory.
-- Keep the default build free of retrieval dependencies and keep BGE/NLI out of
-  this slice.
+- Keep the default build free of retrieval dependencies; BGE is a later opt-in
+  evidence slice and NLI remains a separate future capability.
 
 ### Considered Options
 
@@ -1614,9 +1632,11 @@ Choose option 3. `givn spec explore` accepts exactly one complete Gherkin
 scenario through `--file` or `--stdin`, refreshes the permanent content-hash
 index, ranks all permanent entries with the existing embedding score, and
 returns at most five candidates in text or stable JSON. It excludes only the
-exact `(file, title)` identity for a file query. It never reads the active
-change and never invokes a reranker, NLI model, coverage function, or review
-decision.
+exact `(file, title)` identity for a file query. The historical E5-only contract
+does not invoke a reranker; the later opt-in ADR-052 BGE layer may attach
+bounded evidence to the same permanent query without changing its raw E5 order.
+It never reads the active change, invokes NLI without `nli-evidence`, calculates
+coverage, or makes a review decision.
 
 This decision remains the no-change contract. ADR-044 extends the same command
 with an optional request-local current-change corpus; it does not alter the
@@ -1903,8 +1923,8 @@ not compiled.
 - Keep the candidate corpus bounded to active delta scenarios and the two
   agreed comparison scopes.
 - Keep the candidate boundary at the existing E5 cosine `0.9500`; do not pull
-  BGE/NLI, remediation, automatic edits, or permanent-permanent auditing into
-  this slice.
+  automatic edits or permanent-permanent remediation into this report slice.
+  Optional BGE evidence is attached by PR 7 without classification authority.
 - Make report regeneration and candidate identity deterministic.
 - Define an exact report wire grammar so generated bytes, field order, escaping,
   absent values, score/hash formats, and final newline are unambiguous.
@@ -1921,7 +1941,8 @@ not compiled.
   when the feature is absent.
 - Retain the generated report as historical evidence when the existing archive
   move relocates the change directory.
-- Keep the evidence local and deterministic without BGE or NLI.
+- Keep the evidence local and deterministic; BGE is optional and NLI remains an
+  independent future capability.
 - Keep classification and feature-file remediation with the agent.
 
 ### Considered Options
@@ -2016,8 +2037,10 @@ is asserted structurally: it contains only permanent entries and vectors, never
 `spec-retrieval`, the dedicated gate returns the existing
 `spec retrieval is unavailable in this build; rebuild with --features
 spec-retrieval` error, exits non-zero, and creates no report. The report gate
-does not invoke BGE or NLI and does not change the existing advisory `givn spec
-review --change <id>` behavior.
+invokes optional BGE evidence only when `cross-encoder-reranker` participates;
+it never invokes NLI unless the future independent `nli-evidence` capability is
+enabled. BGE does not change the advisory `givn spec review --change <id>`
+interface or assign classifications.
 
 ### Consequences
 
@@ -2387,3 +2410,395 @@ binary with the stub embedder and the standalone scoped command.
 Related decisions: ADR-037 (deterministic overlap fingerprint), ADR-039 (local
 retrieval), ADR-041 (strict semantic uniqueness gate), and ADR-044 (request-local
 current-change exploration). Related risks: R-50 and R-51.
+
+---
+
+## ADR-052: BGE is advisory admission evidence, not a Givn classifier
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: semantic plan, BGE benchmark evidence, and maintainers
+informed: agents, CI users, and maintainers of semantic review output
+---
+
+### Context and Problem Statement
+
+E5 top-K retrieval produces related-text false positives that can pressure an
+author or LLM to rename or inflate valid scenarios. BGE can reduce that worklist,
+but a relevance logit cannot decide whether two executable scenarios are a
+duplicate, variant, or valid boundary.
+
+### Considered Options
+
+1. Keep every E5 candidate blocking and use BGE only as explanatory metadata.
+2. Hide low BGE scores without recording them and let the gate infer a clean
+   result.
+3. Record raw E5 candidates, emit explicit recommended/filtered evidence, and
+   make only the recommended subset blocking while retaining filtered evidence.
+
+### Decision Drivers
+
+- Reduce false-positive authoring pressure without pretending relevance is a
+  Givn classification.
+- Preserve E5 provenance and agent-owned remediation.
+- Keep the default E5-only behavior available for comparison and fallback.
+
+### Decision Outcome
+
+Use the symmetric BGE raw-logit operating point `3.0` only to emit
+`BGE_RECOMMENDED` or `BGE_FILTERED` evidence. The E5 raw candidate set remains
+visible. `BGE_FILTERED` is recorded, is non-blocking, and does not receive a Givn
+classification or rationale. `BGE_RECOMMENDED` candidates enter the existing
+agent-owned classification/remediation worklist. BGE never edits specs or
+verifies remediation.
+
+`cross-encoder-reranker` is independent of `spec-similarity-gate`; the latter
+remains the existing E5 hard-gate capability. BGE evidence is available in
+permanent and change-aware exploration, advisory review, blocking review, and
+permanent duplicate audit.
+
+### Consequences
+
+- Good, because low-relevance E5 false positives do not force unnecessary
+  authoring changes or blocking classifications.
+- Good, because raw E5 provenance and filtered evidence remain inspectable.
+- Bad, because a BGE false negative can remove a candidate from the blocking
+  worklist; labeled top-K recall is therefore a release criterion.
+- Bad, because a BGE false positive can still be recommended and requires human
+  classification; BGE is not a duplicate classifier.
+
+### Confirmation
+
+Executable scenarios prove E5 raw identity preservation, filtered non-blocking
+review, exact threshold admission, model/score/runtime output, and no automatic
+Givn classification.
+
+### Pros and Cons of the Options
+
+- **E5-only blocking:** preserves recall but keeps false-positive authoring
+  pressure and does not use the second-stage evidence to reduce work.
+- **Silent suppression:** reduces visible noise but loses auditability and can
+  create a false clean result.
+- **Explicit admission evidence:** reduces the worklist while preserving raw
+  provenance and a non-classifying filtered record; it carries measurable
+  false-negative risk that the benchmark must gate.
+
+### More Information
+
+Related decisions: ADR-042, ADR-046, ADR-053, and ADR-054. Related risks: R-26,
+R-27, R-52, R-53, and R-57.
+
+---
+
+## ADR-053: Bound BGE with deterministic endpoint unions and refusal
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: semantic plan, BGE benchmark evidence, and maintainers
+informed: maintainers running permanent and change-aware semantic audits
+---
+
+### Context and Problem Statement
+
+An all-pairs BGE pass is quadratic and was measured at hundreds of seconds or
+more on the local CPU. A fixed top-K per query/endpoint provides a deterministic
+candidate union, but large corpora still need an operational guard.
+
+### Considered Options
+
+1. Score every permanent pair.
+2. Use an endpoint/query top-K union without an absolute refusal.
+3. Use the top-K union with a fixed unique-pair cap and refuse before model
+   inference when the cap is exceeded.
+
+### Decision Drivers
+
+- Prevent all-pairs CPU inference.
+- Make candidate selection deterministic and measurable.
+- Preserve an explicit E5-only fallback when BGE cannot run.
+
+### Decision Outcome
+
+Use `RERANKER_TOP_K = 5` and a maximum of 512 unique undirected BGE pairs per
+invocation. Deterministic identity and exact/structural exclusions happen before
+the union. Both directions are scored, so the directional inference count is at
+most twice the unique-pair count. If the unique pool exceeds 512, refuse model
+inference before model loading and emit explicit `BGE_UNAVAILABLE`/overflow
+evidence while retaining the E5-only path. The 512-pair bound is independent of
+the model's 512-token input limit. When the bounded top-K/E5 intersection is at
+or below 512 but does not cover every E5 raw pair, the uncovered pairs are
+`BGE_UNSCORED` and remain blocking. Overflow is different: it refuses the
+entire invocation and does not partially score the first 512 pairs.
+
+### Consequences
+
+- Good, because the CPU cost is linearly bounded by the selected endpoint/query
+  union and never expands to the full permanent pair space.
+- Good, because overflow is deterministic and cannot silently claim BGE
+  participation.
+- Bad, because a large corpus can receive E5-only fallback until an indexed or
+  batched future design is approved.
+- Bad, because endpoint top-K recall remains a measurable risk.
+
+### Confirmation
+
+Fixtures prove exact 512-pair acceptance, 513-pair refusal before model loading,
+stable tie ordering, unique-pair/directional counts, and same-file identity
+eligibility.
+
+### Pros and Cons of the Options
+
+- **All pairs:** complete but quadratic and not CPU-compatible for local audit.
+- **Uncapped top-K:** bounded per endpoint but still permits an unexpectedly
+  large model workload on a large corpus.
+- **Capped top-K:** deterministic and CPU-safe with explicit E5 fallback, at the
+  cost of unavailable BGE evidence for oversized corpora.
+
+### More Information
+
+Related decisions: ADR-039, ADR-042, ADR-052, and ADR-054. Related risks: R-28,
+R-50, R-55, and R-56.
+
+---
+
+## ADR-054: Version opt-in evidence output and isolate future NLI
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: semantic plan, output contract, and maintainers
+informed: CLI and machine-readable output consumers
+---
+
+### Context and Problem Statement
+
+Existing E5-only text, exploration JSON, duplicate JSON, and semantic-report
+consumers have fixed contracts. Adding BGE fields without a mode/version boundary
+would silently break consumers. The existing NLI experiment also shares the
+`GIVN_SPEC_RERANKER` selector and cannot become an implicit BGE dependency.
+
+### Considered Options
+
+1. Change all existing E5-only wire formats in place.
+2. Emit unversioned optional BGE fields and keep the shared NLI selector.
+3. Preserve E5-only formats, version opt-in BGE structures, and isolate NLI
+   behind the independent `nli-evidence` feature while deferring NLI scoring.
+
+### Decision Drivers
+
+- Avoid silently breaking existing E5-only JSON/report consumers.
+- Make BGE participation and unavailable state machine-readable.
+- Keep the four future E5/BGE/NLI configurations independently testable.
+
+### Decision Outcome
+
+Preserve E5-only output schemas byte-for-byte where currently specified. Add
+versioned opt-in BGE run summaries and per-pair directional evidence only when
+BGE participates. Distinguish raw, recommended, filtered, unscored, and
+unavailable counts. PR 7 introduces the independent `nli-evidence` feature
+boundary and prevents the existing experiment selector from being reached by a
+BGE build, but adds no NLI scoring. PR 8 adds NLI evidence and reuses the same
+bounded candidate pool.
+
+### Consequences
+
+- Good, because existing E5-only consumers have a stable fallback contract.
+- Good, because model identity, score direction, runtime, and unavailable state
+  are machine-readable when the opt-in layer participates.
+- Bad, because consumers opting into BGE must handle a new schema/version and
+  non-blocking filtered evidence.
+- Bad, because NLI scoring remains deferred and its future evidence must retain
+  the same pool/compatibility contract.
+
+### Confirmation
+
+Executable JSON scenarios assert E5-only compatibility, BGE schema additions,
+raw/recommended/filtered accounting, and no implicit NLI output. The benchmark
+records model artifact and tokenizer metadata separately from product output.
+
+### Pros and Cons of the Options
+
+- **In-place change:** simple implementation but breaks existing consumers.
+- **Unversioned shared output:** small diff but ambiguous unavailable states and
+  implicit NLI coupling.
+- **Versioned opt-in output:** explicit compatibility and future flag matrix at
+  the cost of additional renderer and parser cases.
+
+### More Information
+
+Related decisions: ADR-039, ADR-042, ADR-046, and ADR-055. Related risks: R-29,
+R-35, R-41, R-54, and R-56.
+
+---
+
+## ADR-055: Keep BGE, E5 gate, and future NLI flags independent
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: semantic plan, feature matrix, and maintainers
+informed: agents, CI users, and the PR-8 NLI implementers
+---
+
+### Context and Problem Statement
+
+The existing experiment feature historically implied the E5 similarity gate and
+used one environment selector for BGE and NLI. That coupling makes it
+impossible to compare E5-only, E5+BGE, E5+NLI, and combined runs without
+silently changing behavior.
+
+### Decision Drivers
+
+- Keep `spec-similarity-gate` as the independent E5 hard-gate capability.
+- Make `cross-encoder-reranker` select only BGE evidence.
+- Reserve `nli-evidence` for a later diagnostic NLI implementation.
+- Prevent BGE builds from selecting NLI through an ambiguous selector.
+
+### Considered Options
+
+1. Keep the historical feature implication and shared selector.
+2. Remove all NLI experiment code and defer the entire flag matrix.
+3. Separate feature/selector boundaries now while deferring NLI scoring.
+
+### Decision Outcome
+
+Choose option 3. The feature graph declares independent retrieval, E5-gate,
+BGE, and NLI capability flags. BGE uses a BGE-specific backend selector. NLI
+code is not scored by PR 7 and is unreachable unless `nli-evidence` is
+explicitly enabled.
+
+### Consequences
+
+- Good, because the four later comparison configurations are representable
+  without hidden model participation.
+- Good, because E5-only remains a direct fallback for both product and tests.
+- Bad, because the implementation must preserve multiple cfg/selector paths.
+- Bad, because the existing NLI experiment requires a later PR to regain its
+  diagnostic behavior behind the new feature.
+
+### Confirmation
+
+The feature matrix scenario proves BGE output contains no NLI evidence without
+the independent capability. Cargo feature checks prove that enabling BGE does
+not imply the E5 hard gate.
+
+### Pros and Cons of the Options
+
+- **Historical coupling:** minimal migration work, but feature combinations and
+  model participation remain ambiguous.
+- **Remove NLI entirely:** clean immediate boundary, but discards existing
+  experiment evidence and prevents the planned PR-8 comparison.
+- **Independent boundaries:** preserves the evidence and comparison matrix,
+  but requires separate cfg and environment handling.
+
+### More Information
+
+Related decisions: ADR-042, ADR-052, ADR-053, ADR-054. Related chapters: 2, 4,
+6, 8, 10, 11, and 12.
+
+---
+
+## ADR-056: Require benchmark approval before product BGE admission
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: BGE benchmark and production-risk review
+informed: agents, CI users, and release maintainers
+---
+
+### Context and Problem Statement
+
+BGE can remove a true duplicate or variant from the blocking worklist. A
+benchmark report that is merely generated, or one produced by a candidate
+pipeline that differs from Rust production, is not sufficient evidence for
+shipping that admission behavior.
+
+### Considered Options
+
+1. Enable BGE whenever the feature and model are present.
+2. Require a manual environment override and trust the benchmark report.
+3. Require a versioned approval artifact containing passing metrics, exact
+   constants, the Rust candidate-pipeline fingerprint, and local model hashes.
+
+### Decision Outcome
+
+Choose option 3. `evaluate_bge_admission.py --enforce` may write
+`givn/.spec-bge-admission.json` only for a report carrying the
+`rust-production-v1` pipeline marker and passing every acceptance criterion.
+The runtime accepts that artifact before local/default BGE participation. A
+missing or failed artifact leaves the E5-only contract unchanged. The test-only
+`GIVN_SPEC_BGE=stub` backend bypasses approval because it is not product model
+admission.
+
+### Consequences
+
+- Good, because false-negative risk is fail-closed at the product boundary.
+- Good, because Python benchmark evidence cannot silently stand in for Rust
+  candidate parity.
+- Bad, because maintainers must produce a local artifact and approval report
+  before enabling real BGE.
+- Bad, because a passing benchmark cannot be inferred from a model cache alone.
+
+### Confirmation
+
+Executable scenarios prove failed approval preserves E5-only output, while the
+benchmark evaluator rejects Python-reference reports for enforced approval.
+
+### More Information
+
+Related decisions: ADR-052, ADR-053, ADR-054, and ADR-055. Related risks:
+R-52, R-59, and R-61.
+
+---
+
+## ADR-057: Load BGE from validated user-defined local artifacts
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: FastEmbed-rs 5.17.2 API and offline deployment requirements
+informed: local model maintainers and test authors
+---
+
+### Context and Problem Statement
+
+The normal FastEmbed reranker constructor is download-capable. BGE product
+admission must be deterministic and offline after approval, and an incomplete
+ONNX export must not trigger a hidden download or a model-load attempt.
+
+### Decision Outcome
+
+Validate the model ONNX file, referenced external weights, tokenizer/config/
+special-token files, and tokenizer configuration first. Use FastEmbed-rs
+`TextRerank::try_new_from_user_defined` with a file-backed `OnnxSource`, fixed
+512-token input length, batch size 32, and four intra-op threads. Record hashes
+in the approval artifact; map preflight failures to `BGE_UNAVAILABLE` with zero
+model-load attempts.
+
+### Consequences
+
+- Good, because local inference has an explicit no-download boundary.
+- Good, because corrupt or incomplete exports fail before ONNX construction.
+- Bad, because provisioning requires all tokenizer support files and hash
+  maintenance.
+- Bad, because runtime remains CPU-bound and its elapsed duration is evidence,
+  not a hidden timeout guarantee.
+
+### Confirmation
+
+The valid-artifact smoke scenario uses the user-defined loader; missing and
+corrupt-artifact scenarios assert zero model-load attempts.
+
+### More Information
+
+Related decisions: ADR-039, ADR-053, and ADR-056. Related risks: R-55, R-60,
+and R-61.

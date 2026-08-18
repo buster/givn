@@ -12,6 +12,7 @@ if [ ! -d "$WATN_ROOT/givn/specs" ]; then
     exit 1
 fi
 
+rm -rf "$CORPUS/givn" "$CORPUS/watn"
 mkdir -p "$CORPUS/givn" "$CORPUS/watn"
 cp -a "$ROOT/givn/specs/." "$CORPUS/givn/"
 cp -a "$WATN_ROOT/givn/specs/." "$CORPUS/watn/"

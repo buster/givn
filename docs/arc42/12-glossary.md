@@ -78,6 +78,20 @@
 | **Retrieve-then-rerank** | A two-stage search flow in which embeddings retrieve a bounded candidate set and a pair model performs the final comparison. |
 | **Pair reranker / cross-encoder** | A model that receives two complete texts jointly and returns a relevance logit for their relationship; it cannot precompute one independent vector per document. |
 | **Reranker raw logit** | The uncalibrated scalar returned by the pair model before the diagnostic sigmoid transformation. It is not an embedding cosine score or probability. |
+| **E5 raw candidate** | A deterministic candidate produced by the E5 top-K generator before BGE admission. It remains visible even when BGE filters the recommendation. |
+| **BGE evidence** | Local bidirectional relevance evidence from `rozgo/bge-reranker-v2-m3`, including forward raw logit, reverse raw logit, symmetric average, model identity, and elapsed runtime. It is not a Givn classification. |
+| **BGE_RECOMMENDED** | Non-authoritative admission status for a BGE-scored pair whose symmetric raw logit is at least the fixed `3.0000` operating point. The pair still requires agent classification in blocking review. |
+| **BGE_FILTERED** | Non-blocking evidence status for a BGE-scored pair below the operating point. It is recorded for auditability, receives no Givn classification, and cannot block change review. |
+| **BGE_UNSCORED** | A raw E5 candidate outside the successfully scored bounded BGE subset. It has no BGE score, remains visible, and remains a blocking E5 candidate requiring normal agent classification. |
+| **BGE_UNAVAILABLE** | Explicit state indicating that BGE artifacts are missing or the bounded pair pool overflowed. A build with BGE disabled has no BGE evidence object and is represented by the existing E5-only contract, not by this status. |
+| **Bounded BGE pool** | The deterministic union of at most five E5 neighbors per eligible query/endpoint, after identity/deterministic exclusions and before BGE inference, capped at 512 unique undirected pairs per invocation. |
+| **Recommended review set** | The BGE-recommended subset shown as the agent's prioritized worklist; filtered and unavailable evidence remains separately visible. |
+| **Directional raw score** | The BGE logit for one ordered pair direction. Both directions are scored; their arithmetic mean is the symmetric raw score. |
+| **Admission operating point** | The labeled-benchmark operating value used to emit `BGE_RECOMMENDED` or `BGE_FILTERED`; it is not a Givn classification or remediation threshold. |
+| **BGE admission approval** | A maintainer-generated `givn/.spec-bge-admission.json` artifact proving the five benchmark criteria, exact model/bounds, Rust candidate-pipeline parity, and local artifact hashes. Without it, product BGE remains E5-only. |
+| **Rust production candidate pipeline** | The canonical E5 scoring, deterministic exclusion, top-K union, and pair canonicalization path in the compiled givn binary. Its fingerprint is required before benchmark approval. |
+| **Python reference pipeline** | The offline benchmark parser and scorer used for measurement. It is explicitly not sufficient to approve product BGE admission. |
+| **BGE local artifact set** | The offline `model.onnx`, referenced external weights, tokenizer, config, special-token map, and tokenizer-config files validated before user-defined FastEmbed construction. |
 | **Coverage measurement command** | The project-owned command in `coverage.measure_command` that runs the configured test subsets and writes the non-E2E and E2E source coverage reports. |
 | **Coverage merge command** | The project-owned command in `coverage.merge_command` that combines the two source reports into `coverage.output_path`. Its fresh output is authoritative for README coverage. |
 | **Merged coverage report** | The Cobertura XML emitted by the coverage merge command. givn validates this report and uses its line and branch counters for both README badges and the managed summary. |
