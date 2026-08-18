@@ -321,20 +321,19 @@ The retrieval and similarity-gate flow is:
    role, ranks candidates by cosine similarity, and prints the top results. This
    authoring command remains advisory.
 3. With `spec-retrieval` compiled, `givn spec review --change <id>` refreshes the
-   permanent index, retrieves the top-K added/modified delta neighbours with the
-   `passage:` role, and compares them with the pre-change permanent tree. With
-   retrieval alone this remains the existing advisory path.
-4. Only when `spec-similarity-gate` is compiled (it includes `spec-retrieval`)
-   does the same review project the permanent tree after applying the delta's
-   capability-tagged added, modified, and removed scenarios, retrieve top-K
-   cross-feature pairs, and jointly score each pair in both directions with the
-   local multilingual reranker.
-5. In the `spec-similarity-gate` build, the averaged reranker raw logit is
-   compared with the binary-fixed reranker boundary. A candidate prints its
-   embedding score, raw reranker score, diagnostic sigmoid, and remediation
-   (`MERGE` means delete the duplicate; `KEEP-AS-BOUNDARY` means rewrite the
-   scenario below the reranker boundary), then exits non-zero. A review note
-   cannot suppress the candidate.
+   permanent index, retrieves the E5 top-K union for active queries, and remains
+   advisory. With `cross-encoder-reranker` compiled and an approved local BGE
+   admission artifact (or the deterministic test stub), the same bounded pool is
+   scored in both directions by local BGE and rendered with model, raw score,
+   admission, and elapsed-runtime evidence. A failed approval remains E5-only.
+4. `spec-similarity-gate` is independent. When it is compiled, its existing E5
+   hard-gate behavior runs separately; `cross-encoder-reranker` does not imply
+   that feature and BGE does not replace it.
+5. A symmetric BGE score at or above `3.0000` is `BGE_RECOMMENDED`; a lower
+   score is `BGE_FILTERED`. The latter is visible evidence only and never
+   creates a Givn classification or a blocking failure. A missing artifact or
+   pair-cap overflow emits `BGE_UNAVAILABLE` and preserves the E5-only path;
+   approval failure emits no BGE evidence object.
 6. After a successful archive, the change is moved to `givn/archive/` and the
    permanent index is refreshed. The refresh is best-effort and feature-gated;
    it never runs before a merge gate that could roll the permanent tree back.
@@ -442,20 +441,25 @@ duplicates are classified before structural overlaps; structural overlaps use
 only the existing masked assertion `Fingerprint` shape/subset and fact model,
 not a Given/When action-structure comparison. Semantic candidates are scored
 only after deterministic findings are removed and are advisory threshold hits,
-not automatic duplicate decisions. The result contains all candidates, not the
-interactive top five. Text and JSON share the same fixed header/field grammar,
-rank values, relation enum, structural facts, distinguishing values, score/null
-semantics, and tie-breaking order. The command does not read or call the
-persistent index, so permanent specs, active changes, archive contents, and
-the index remain unchanged after an audit; existing model-cache creation is
-allowed.
+not automatic duplicate decisions. With BGE enabled, the endpoint top-five
+union is intersected with eligible E5 semantic candidates, capped at 512 unique
+undirected pairs, and scored in both directions. The result preserves E5 raw,
+recommended, filtered, and unavailable accounting. Text and JSON share the same
+fixed header/field grammar, rank values, relation enum, structural facts,
+distinguishing values, score/null semantics, and tie-breaking order. The command
+does not read or call the persistent index, so permanent specs, active changes,
+archive contents, and the index remain unchanged after an audit; existing
+model-cache creation is allowed.
 
-The text header is exactly `Givn spec duplicates`, `Scanned scenarios: N`, and
-`Candidate count: N`. JSON has exactly the ordered top-level fields
+The E5-only text header is exactly `Givn spec duplicates`, `Scanned scenarios: N`,
+and `Candidate count: N`. E5-only JSON has exactly the ordered top-level fields
 `schema_version`, `scanned_scenarios`, `candidate_count`, and `candidates`.
-Candidate ranks are contiguous and equal to the candidate array length;
+BGE JSON uses a versioned additive extension with raw/recommended/filtered
+counts, model/runtime metadata, and per-pair directional evidence. Candidate
+ranks are contiguous and equal to the recommended candidate array length;
 semantic scores are four-decimal strings and deterministic candidates use null.
-The raw threshold is inclusive at `0.9500`, so a raw `0.9499` pair is absent.
+The E5 threshold is inclusive at `0.9500`, and the BGE admission threshold is
+inclusive at `3.0000`.
 
 ### 6.8e Blocking semantic review report
 
@@ -467,7 +471,11 @@ contains active `Added` and `Modified` scenarios from the requested change,
 including scenarios nested under `Rule:`. Each active delta is compared with
 permanent scenarios (`delta-to-permanent`) and with other active deltas in the
 same change (`delta-to-delta`) only when the existing E5 score is at least
-`0.9500`. Removed scenarios and permanent-permanent pairs are never reported.
+`0.9500`. When BGE participates, the shared top-five union is scored in both
+directions. `BGE_RECOMMENDED` pairs enter the agent-classified worklist;
+`BGE_FILTERED` pairs are rendered as non-blocking evidence blocks without a
+Givn classification. Removed scenarios and permanent-permanent pairs are never
+reported.
 
 For a Modified scenario in a delta-to-permanent comparison, only the own
 projected `(target file, title)` endpoint is excluded. Other scenarios in that
@@ -481,8 +489,14 @@ characters; timestamps and environment fields are forbidden.
 
 The report wire grammar is fixed. It is UTF-8 with LF endings, no BOM, exactly
 one final newline, and no trailing blank line. Its first lines are exactly
-`# Semantic Review`, `Report schema version: 1`, `Change: <json-string>`,
+`# Semantic Review`, the current report schema version, `Change: <json-string>`,
 `Status: PASS|BLOCKED`, and `Candidate count: <canonical-unsigned-integer>`.
+The BGE-enabled form adds a fixed run summary with raw, recommended, filtered,
+unscored, model, runtime, and availability fields. `BGE_FILTERED` blocks never
+contain a classification or rationale and do not affect PASS/BLOCKED status.
+`BGE_UNSCORED` is rendered inside the same contiguous `## Candidate <ordinal>`
+grammar with null directional scores and remains blocking with the normal
+classification/rationale fields.
 For non-empty reports, candidate blocks are separated by one blank line and
 use contiguous `## Candidate <ordinal>` headers. Each block contains exactly
 the allowed fields in the design-defined order, with no unknown or omitted

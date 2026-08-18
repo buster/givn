@@ -77,14 +77,45 @@ When `spec-retrieval` is available:
   results; they do not block a change.
 - `givn check review --change <id>` generates the change-local
   `semantic-review.md` worklist after the structural gates and blocks until
-  every candidate is classified and remediated.
+  every admitted candidate is classified and remediated.
 
-Classify every candidate as `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY`, with a
-written rationale; `UNCERTAIN` blocks the review. There is no `UNRELATED`
-escape classification. If two scenarios appear unrelated but remain above the
-active similarity boundary, sharpen the domain vocabulary and observable
-invariants, then regenerate the report. `givn spec review --change <id>` remains
-advisory and does not create the blocking worklist. A build with
+When the opt-in `cross-encoder-reranker` capability is active, E5 remains the
+raw candidate generator and the local BGE second stage produces explicit
+`BGE_RECOMMENDED` and `BGE_FILTERED` evidence. `BGE_FILTERED` is a
+non-blocking evidence status: it is recorded for auditability, does not receive
+one of the Givn classifications, and does not force an author to rename or
+inflate a scenario. A `BGE_RECOMMENDED` candidate still requires the normal
+agent-authored classification and remediation. Missing model artifacts and a
+bounded-pool refusal are the canonical `BGE_UNAVAILABLE` state: BGE fields are
+explicitly unavailable, `reason` is `missing-artifact` or `pair-cap`, model and
+runtime are `null`, unique/directional/load-attempt counts are zero, filtered
+count is zero, unscored count covers the E5 raw candidates, and the normal
+E5/review exit status is preserved. A
+feature-free binary is different and fails with the existing `spec retrieval is
+unavailable` diagnostic.
+
+When only part of the E5 raw set enters the bounded BGE pool, the remainder is
+recorded as `BGE_UNSCORED`. It remains a blocking E5 candidate and must receive
+the normal Givn classification; it is not `BGE_FILTERED`. Across reports and
+JSON, unscored entries use the same E5-rank/endpoint ordering and count; the
+semantic report uses normal candidate blocks and the duplicate report uses its
+`unscored_candidates` collection. A one-query Explore has no partial unscored
+state: it either scores its complete bounded pool or reports
+`BGE_UNAVAILABLE`.
+
+Do not make scenarios longer, repeat setup, overload steps, or add irrelevant
+qualifiers to lower an E5 score. Sharpen the executable invariant and the
+observable boundary facts instead. Model scores are evidence for a review
+worklist, not a reason to distort authoring.
+
+Classify every admitted candidate as `DUPLIKAT`, `VARIANTE`, or
+`VALID-BOUNDARY`, with a written rationale; `UNCERTAIN` blocks the review. A
+`BGE_FILTERED` evidence entry is not an admitted candidate and is not a Givn
+classification. There is no `UNRELATED` escape classification for admitted
+candidates. If two scenarios appear unrelated but remain above the active
+similarity boundary and are admitted, sharpen the domain vocabulary and
+observable invariants, then regenerate the report. `givn spec review --change
+<id>` remains advisory and does not create the blocking worklist. A build with
 `spec-similarity-gate` additionally enforces the strict similarity gate.
 
 Without `spec-retrieval`, the blocking semantic gate must report the explicit

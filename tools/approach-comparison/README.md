@@ -40,21 +40,24 @@ tools/approach-comparison/selected_pairs.py
 tools/approach-comparison/mixed_pairs.py
 ```
 
-The wrapper defaults to `CANDIDATE_SCOPE=strict`, which scores the same pairs
-that violate the `0.95` embedding gate. This is the recommended comparison
-because it avoids conflating candidate recall with pair-model quality. The
-larger pools can be requested explicitly:
+The wrapper defaults to `CANDIDATE_SCOPE=bounded`, the product set formed by
+the top-K union intersected with strict E5 candidates. The historical strict
+comparison is requested explicitly with `CANDIDATE_SCOPE=strict`; this avoids
+conflating candidate recall with pair-model quality. The larger pools can be
+requested explicitly:
 
 ```sh
 CANDIDATE_SCOPE=topk tools/approach-comparison/run_comparison.sh
+CANDIDATE_SCOPE=bounded tools/approach-comparison/run_comparison.sh
 CANDIDATE_SCOPE=union tools/approach-comparison/run_comparison.sh
 CANDIDATE_SCOPE=cross-source tools/approach-comparison/run_comparison.sh \
   --report-name test-corpus/indexes/combined-approach-report-cross-source.json
 ```
 
-`strict` uses the 199 combined pairs at or above `0.95` in the current copied
-corpus. `topk` uses the union of five neighbours per scenario, and `union`
-adds strict-threshold pairs to that set. The script prints model-stage progress
+`strict` uses the combined pairs at or above `0.95`. `topk` uses the union of
+five neighbours per scenario. `bounded` is the product BGE set: top-K union
+intersected with strict E5 pairs. `union` adds strict-threshold pairs to the
+top-K set. The script prints model-stage progress
 so long CPU runs do not appear stalled and stores BGE/NLI stage durations in the
 JSON report. `cross-source` scores only top-K pairs whose endpoints come from
 different source projects; it isolates interaction between the Givn and Watn

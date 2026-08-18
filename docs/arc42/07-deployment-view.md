@@ -8,10 +8,15 @@ runtime dependency and no companion files required.
 
 Spec retrieval is an opt-in authoring build (`--features spec-retrieval`). It
 adds fastembed's native ONNX Runtime and uses a project-local model cache under
-`givn/`; the first production index may download the configured model. This
-feature build is not claimed as a portable musl release artifact until its
-native link mode is proven. The distributed/default binary remains independent
-of the model cache and preserves the single-binary contract.
+`givn/`; ordinary E5 indexing may download the configured model, while BGE
+admission requires a pre-approved offline artifact and never downloads during
+inference. A local BGE set contains `model.onnx`, optional referenced
+`model.onnx.data`, `tokenizer.json`, `config.json`, `special_tokens_map.json`,
+and `tokenizer_config.json`, with approval hashes recorded in
+`givn/.spec-bge-admission.json`. This feature build is not claimed as a
+portable musl release artifact until its native link mode is proven. The
+distributed/default binary remains independent of the model cache and
+preserves the single-binary contract.
 
 ## 7.2 Target environments
 
@@ -66,9 +71,15 @@ Permanent exploration uses the same feature-enabled local authoring build as
 `spec index` and `spec search`; it adds no service, port, or deployment artifact.
 When retrieval is enabled, `givn/.spec-index.json`, the embedding model cache,
 and the separate `givn/.spec-reranker-cache/` are project-local and generated.
-Interactive search remains advisory; review additionally runs the local
-multilingual pair reranker over top-K candidates. These artifacts are not
-present in the default installation without the opt-in feature.
+The `cross-encoder-reranker` build loads BGE only after deterministic top-K
+selection and refuses before model loading when the 512-unique-pair bound is
+exceeded. Tests use `stub` or explicit missing-artifact modes and never download
+weights. A missing or failed approval artifact falls back to E5-only, distinct
+from a runtime `BGE_UNAVAILABLE` artifact result. Interactive search and review
+remain advisory; only admitted BGE
+evidence enters the recommended worklist, while filtered/unavailable states are
+visible and non-blocking. These artifacts are not present in the default
+installation without the opt-in feature.
 
 ## 7.6 Upgrading an installed project
 
