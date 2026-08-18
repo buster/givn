@@ -13,6 +13,44 @@ fn bge_project(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("disabled".to_string());
 }
 
+#[given("a project with one E5 candidate and a complete local BGE artifact set")]
+fn complete_local_bge_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write local BGE permanent fixture");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("local BGE delta parent"))
+        .expect("create local BGE delta");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Active provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write local BGE delta fixture");
+
+    let cache = env.path("givn/.spec-reranker-cache");
+    fs::create_dir_all(&cache).expect("create complete local BGE cache");
+    fs::write(cache.join("model.onnx"), b"local test model").expect("write local BGE model");
+    fs::write(cache.join("tokenizer.json"), b"{}").expect("write local BGE tokenizer");
+    for name in [
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ] {
+        fs::write(cache.join(name), b"{}").expect("write local BGE metadata");
+    }
+
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("local".to_string());
+    world.retrieval_bge_local_stub = true;
+}
+
 #[given("the local second-stage evidence is disabled")]
 fn bge_disabled(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("disabled".to_string());
@@ -62,7 +100,7 @@ fn corrupt_bge_cache_project(world: &mut GivnWorld) {
 #[given("local second-stage artifact mode is selected")]
 fn local_bge_artifact_mode(world: &mut GivnWorld) {
     if world.retrieval_reranker.is_none() {
-        world.retrieval_reranker = Some("corrupt".to_string());
+        world.retrieval_reranker = Some("local".to_string());
     }
 }
 
@@ -497,10 +535,10 @@ fn malformed_directional_project(world: &mut GivnWorld) {
 #[when("the user runs advisory change review with second-stage evidence enabled")]
 fn run_advisory_bge_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("advisory BGE project");
-    let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
-        "missing"
-    } else {
-        "stub"
+    let bge_mode = match world.retrieval_reranker.as_deref() {
+        Some("missing") => "missing",
+        Some("local") | Some("corrupt") => "local",
+        _ => "stub",
     };
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if world.retrieval_reranker.as_deref() == Some("unapproved") {
@@ -508,6 +546,9 @@ fn run_advisory_bge_review(world: &mut GivnWorld) {
     }
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    if world.retrieval_bge_local_stub {
+        environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));
     }
     world.last_output = Some(common::run_givn_with_envs(
         env,
@@ -1280,6 +1321,27 @@ fn stdout_has_no_nli_evidence(world: &mut GivnWorld) {
 #[then("stdout identifies BGE as the participating second-stage model")]
 fn stdout_identifies_bge_model(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
+}
+
+#[then("stdout identifies the local BGE model as participating")]
+fn stdout_identifies_local_bge_model(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE: model rozgo/bge-reranker-v2-m3"));
+}
+
+#[then("stdout reports two directional calls for one unique pair")]
+fn local_bge_reports_pair_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("unique pairs 1"), "stdout: {output}");
+    assert!(output.contains("directional calls 2"), "stdout: {output}");
+}
+
+#[then("stdout reports no model download")]
+fn local_bge_reports_no_download(world: &mut GivnWorld) {
+    assert!(
+        !super::stdout(world)
+            .to_ascii_lowercase()
+            .contains("download")
+    );
 }
 
 #[then("stdout contains diagnostic NLI evidence")]

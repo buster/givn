@@ -90,6 +90,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_bge_scores: Option<String>,
     /// Deterministic bounded-pool fixture selector for BGE scenarios.
     pub(crate) retrieval_bge_test_pool: Option<String>,
+    /// Use the deterministic stub behind the validated local-artifact seam.
+    pub(crate) retrieval_bge_local_stub: bool,
     /// Guard that restores the unreadable-feature fixture after its subprocess
     /// invocation, including when a scenario assertion panics.
     pub(crate) unreadable_feature: Option<spec_duplicates_steps::UnreadableFeatureGuard>,
@@ -307,6 +309,9 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_bge_test_pool.as_deref() {
         environments.push(("GIVN_SPEC_BGE_TEST_POOL", value));
+    }
+    if world.retrieval_bge_local_stub {
+        environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));
     }
     let out = common::run_givn_with_envs(env, &argv, &environments);
     if let Some(id) = change_id_from_args(&args) {
