@@ -88,10 +88,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined BGE JSON invocation.
 - [x] GREEN: added additive Explore JSON evidence, raw-order preservation, and count/model/runtime assertions; targeted run passed 7/7 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): BGE JSON preserves raw ordering and names every admission count`
+- [x] COMMIT: `f7c1c05` — `feat(bge-reranking-evidence): BGE JSON preserves raw ordering and names every admission count`
 
 ### E5 candidates outside the bounded BGE set remain explicitly unscored and blocking
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined raw-513/top-K-512 fixture.
+- [x] GREEN: added successful partial-pool seams and semantic-report `BGE_UNSCORED` blocking rendering with null directionals; targeted run passed 11/11 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 11 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): E5 candidates outside the bounded BGE set remain explicitly unscored and blocking`
 
 ### Duplicate JSON exposes partial unscored candidates
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
