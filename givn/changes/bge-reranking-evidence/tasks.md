@@ -154,10 +154,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined unresolved-blocking fixture.
 - [x] GREEN: added unavailable semantic-report rendering, normal E5 fallback blocks, zero-load accounting, and non-zero unresolved assertions; targeted run passed 9/9 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 9 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Unavailable BGE blocking review keeps E5 candidates blocking`
+- [x] COMMIT: `f898cb2` — `feat(bge-reranking-evidence): Unavailable BGE blocking review keeps E5 candidates blocking`
 
 ### Pair-cap unavailable blocking review retains E5 candidates
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined 513-pair blocking fixture.
+- [x] GREEN: added pair-cap semantic-report fallback and unresolved E5 block assertions; targeted run passed 7/7 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Pair-cap unavailable blocking review retains E5 candidates`
 
 ### Unavailable BGE change exploration retains the E5 raw fallback
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
