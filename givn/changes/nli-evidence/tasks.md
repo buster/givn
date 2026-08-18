@@ -56,11 +56,14 @@ evidence and its atomic commit hash.
 
 ### NLI refuses an overflowing bounded pair pool before model loading
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement NLI pair-cap refusal and zero-load accounting.
-  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted NLI duplicate runner was initially blocked by the
+  unimplemented NLI step skeleton.
+- [x] GREEN: implemented the NLI duplicate-audit run, synthetic pool seam,
+  `NLI_UNAVAILABLE` pair-cap output, zero-load accounting, and E5 unscored
+  fallback in `src/spec/retrieval.rs` and tests. Targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 6 steps
+  passed.
+- [x] COMMIT: `3f7bf6e` — `feat(nli-evidence): refuse overflowing NLI candidate pools`.
 
 ### NLI keeps candidates outside a partial bounded pool blocking
 
