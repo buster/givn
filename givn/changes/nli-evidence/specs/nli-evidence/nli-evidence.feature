@@ -69,7 +69,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the audit reports reduced recommended and filtered NLI candidate counts
     And deterministic exact and structural overlaps have no NLI evidence
 
-  @givn.added @nli @nli-combined @wip
+  @givn.added @nli @nli-combined
   Scenario: BGE and NLI jointly reduce the recommended candidate set
     Given a project with semantic candidates and independent BGE and NLI evidence
     When the user runs combined second-stage advisory review
