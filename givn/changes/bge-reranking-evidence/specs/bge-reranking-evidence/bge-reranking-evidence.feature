@@ -211,7 +211,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And no unscored candidate is labeled `BGE_FILTERED`
     And no unscored candidate is present in the filtered evidence collection
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Duplicate JSON exposes partial unscored candidates
     Given a permanent corpus with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs
     And the local second-stage evidence is enabled

@@ -94,10 +94,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined raw-513/top-K-512 fixture.
 - [x] GREEN: added successful partial-pool seams and semantic-report `BGE_UNSCORED` blocking rendering with null directionals; targeted run passed 11/11 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 11 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): E5 candidates outside the bounded BGE set remain explicitly unscored and blocking`
+- [x] COMMIT: `6e4e6c4` — `feat(bge-reranking-evidence): E5 candidates outside the bounded BGE set remain explicitly unscored and blocking`
 
 ### Duplicate JSON exposes partial unscored candidates
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined partial duplicate JSON invocation.
+- [x] GREEN: added schema-v2 unscored collections, endpoint/E5/null-BGE fields, deterministic ordering, and partial-pool JSON assertions; targeted run passed 9/9 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 9 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Duplicate JSON exposes partial unscored candidates`
 
 ### The independent E5 gate remains separate from BGE evidence
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
