@@ -22,11 +22,11 @@ run_bge_disabled() {
 }
 
 run_nli_change() {
-    env GIVN_FEATURES=givn/changes/nli-evidence/specs -u GIVN_SPEC_BGE GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+    env -u GIVN_SPEC_BGE GIVN_FEATURES=givn/changes/nli-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
 }
 
 run_nli_disabled_change() {
-    env GIVN_FEATURES=givn/changes/nli-evidence/specs -u GIVN_SPEC_BGE GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+    env -u GIVN_SPEC_BGE GIVN_FEATURES=givn/changes/nli-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
 }
 
 run_nli_combined_change() {
