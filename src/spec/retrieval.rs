@@ -3701,6 +3701,14 @@ fn print_explore_text(
         );
         if let Some(evidence) = results.iter().find_map(|result| result.nli.as_ref()) {
             println!(
+                "NLI forward probabilities: entailment {:.4}, neutral {:.4}, contradiction {:.4}",
+                evidence.forward[0], evidence.forward[1], evidence.forward[2]
+            );
+            println!(
+                "NLI reverse probabilities: entailment {:.4}, neutral {:.4}, contradiction {:.4}",
+                evidence.reverse[0], evidence.reverse[1], evidence.reverse[2]
+            );
+            println!(
                 "NLI symmetric probability summary: entailment {:.4}, neutral {:.4}, contradiction {:.4}",
                 evidence.symmetric[0], evidence.symmetric[1], evidence.symmetric[2]
             );
