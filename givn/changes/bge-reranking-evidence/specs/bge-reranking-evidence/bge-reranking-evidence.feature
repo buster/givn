@@ -259,6 +259,8 @@ Feature: BGE reranking evidence for bounded semantic search
     Given a project with a permanent semantic candidate for second-stage evidence
     And the local second-stage model artifacts are unavailable
     And a complete draft scenario is available for permanent exploration
+    And a complete draft scenario is available for permanent exploration
+    And a complete draft scenario is available for permanent exploration
     When the user explores the draft with second-stage evidence enabled
     Then the command exits 0
     And stdout contains "BGE_UNAVAILABLE"
@@ -277,10 +279,11 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports reason "missing-artifact"
     And stdout reports zero model load attempts
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Unavailable BGE JSON preserves raw candidates and names unscored pairs
     Given a project with a permanent semantic candidate for second-stage evidence
     And the local second-stage model artifacts are unavailable
+    And a complete draft scenario is available for permanent exploration
     When the user explores the draft with JSON output and second-stage evidence enabled
     Then the command exits 0
     And the JSON reports BGE status "BGE_UNAVAILABLE"

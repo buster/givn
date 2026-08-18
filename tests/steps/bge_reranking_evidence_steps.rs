@@ -129,10 +129,15 @@ fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
 #[when("the user explores the draft with JSON output and second-stage evidence enabled")]
 fn explore_json_with_bge(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
+    let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
+        "missing"
+    } else {
+        "stub"
+    };
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "explore", "--file", "draft.feature", "--format", "json"],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)],
     ));
 }
 
@@ -930,4 +935,38 @@ fn bge_json_reports_model_runtime(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
     assert_eq!(document["evidence"]["bge_model"], serde_json::json!("rozgo/bge-reranker-v2-m3"));
     assert!(document["evidence"]["bge_runtime_ms"].is_number());
+}
+
+#[then("the JSON reports BGE status \"BGE_UNAVAILABLE\"")]
+fn unavailable_json_status(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert_eq!(document["evidence"]["status"], serde_json::json!("BGE_UNAVAILABLE"));
+}
+
+#[then("the JSON reports reason \"missing-artifact\"")]
+fn unavailable_json_reason(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert_eq!(document["evidence"]["reason"], serde_json::json!("missing-artifact"));
+}
+
+#[then("the JSON reports zero scored, recommended, and filtered pairs")]
+fn unavailable_json_zero_counts(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    let evidence = &document["evidence"];
+    assert_eq!(evidence["bge_pairs"], serde_json::json!(0));
+    assert_eq!(evidence["recommended_candidates"], serde_json::json!(0));
+    assert_eq!(evidence["bge_filtered_candidates"], serde_json::json!(0));
+}
+
+#[then("the JSON retains the E5 raw result identities")]
+fn unavailable_json_retains_results(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert!(!document["results"].as_array().unwrap().is_empty());
+}
+
+#[then("the JSON counts the raw candidates as unscored rather than filtered")]
+fn unavailable_json_counts_unscored(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert!(document["evidence"]["bge_unscored_candidates"].as_u64().unwrap() > 0);
+    assert_eq!(document["evidence"]["bge_filtered_candidates"], serde_json::json!(0));
 }
