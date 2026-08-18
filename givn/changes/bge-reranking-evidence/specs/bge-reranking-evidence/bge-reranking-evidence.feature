@@ -223,7 +223,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And each unscored candidate remains outside the filtered collection
     And the JSON contains no unscored candidate with BGE directional scores
 
-  @givn.added @bge @gate-combination @wip
+  @givn.added @bge @gate-combination
   Scenario: The independent E5 gate remains separate from BGE evidence
     Given an end-to-end project with an active semantic review candidate
     And the local second-stage evidence is enabled
