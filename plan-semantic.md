@@ -298,6 +298,9 @@ givn spec duplicates
 - Remain read-only and advisory.
 - Do not write a change, modify permanent specs, or block an ordinary change.
 - Point maintainers to a new change as the remediation location.
+- Keep E5 as the candidate generator. BGE and NLI are not part of this PR's
+  implementation, but the later BGE/NLI layers MUST integrate with this
+  permanent-permanent search surface rather than only with change review.
 
 **Completion evidence:** The command scans the full permanent corpus, reports
 all candidates beyond the interactive top-five view, and leaves the project
@@ -342,6 +345,18 @@ relevance model.
 - Include model identity, score, and runtime in explore/review output.
 - Use it to prioritize agent review, not to perform automatic merge/delete.
 - Keep the current E5 candidate generator and deterministic facts available.
+- Include BGE in every E5-backed search surface: permanent duplicate audit,
+  permanent exploration, change-aware exploration, advisory change review, and
+  blocking semantic review.
+- Keep BGE behind the existing `cross-encoder-reranker` feature flag. The
+  default E5-only path must remain available for comparison and fallback.
+- Run BGE only on a deterministic filtered top-K subset produced by E5 and
+  deterministic exclusions. For permanent-permanent audit, use the union of
+  each endpoint's top-K neighbours; for change searches, use the union of the
+  top-K permanent and active-change neighbours for each query. Never run BGE
+  over the complete pairwise corpus.
+- Record top-K recall, candidate counts, BGE CPU time, and the effect of the
+  flag combination on precision and false-positive rate.
 - Record a benchmark against the combined Givn/Watn corpus.
 
 **Out of scope:** treating the BGE raw logit as a Givn class probability,
@@ -363,10 +378,73 @@ contradiction evidence in addition to similarity and relevance.
 - Report directional probabilities and the symmetric summary.
 - Preserve the distinction between NLI labels and Givn classifications.
 - Keep NLI diagnostic and non-authoritative.
+- Include NLI in every E5-backed search surface covered by PR 7: duplicate
+  audit and all permanent/current-change search and review paths.
+- Put NLI behind an independent `nli-evidence` feature flag so E5-only,
+  E5+BGE, E5+NLI, and E5+BGE+NLI runs can be compared independently.
+- Reuse the same filtered E5 top-K union as BGE. NLI must not expand the
+  candidate set or run over the full corpus; it is a second-stage signal on the
+  bounded subset only.
+- Record NLI CPU time, directional/symmetric outputs, top-K recall, and
+  precision/false-positive changes for each flag combination.
 - Record model artifact, tokenizer, hashes, runtime, and benchmark results.
 
 **Out of scope:** training a Gherkin-specific classifier, mapping NLI labels
 directly to `DUPLIKAT`/`VARIANTE`/`VALID-BOUNDARY`, and automatic gates.
+
+### Cross-Cutting Integration Requirement: BGE and NLI
+
+PR 7 and PR 8 are not complete when the models work only in one review path.
+Both layers must be available in every semantic search that starts from E5
+embeddings:
+
+| Search surface | Candidate generator | BGE/NLI scope |
+|---|---|---|
+| `givn spec explore` permanent search | E5 top-K per query | Filtered top-K union only |
+| `givn spec explore --change` | E5 top-K per query across permanent and active candidates | Filtered top-K union only |
+| `givn spec review --change` / blocking change review | E5 top-K for delta-to-permanent and delta-to-delta pairs | Filtered top-K union only |
+| `givn spec duplicates` | E5 top-K per permanent endpoint | Filtered permanent-permanent top-K union only |
+
+The two feature flags are independent and must expose the four measurable
+configurations E5-only, E5+BGE, E5+NLI, and E5+BGE+NLI. Disabled models must
+not change the E5 candidate set. Missing model artifacts must produce an
+explicit unavailable-model result, not silently fall back while claiming that
+the model participated. The top-K value and filtering rules must be fixed or
+explicitly reviewed; an unbounded all-pairs BGE/NLI pass is not acceptable on
+CPU.
+
+### Risk Hypothesis: False Positives and Verbosity Gaming
+
+The current E5-only behavior has a specific product risk: false positives may
+be frequent enough that an LLM learns to write scenario text that is unusually
+long and overly specific merely to push the similarity score below `0.9500`.
+Conversely, a candidate above `0.9500` may describe a real duplicate or variant
+even when there is no safe way to reduce the score without distorting the
+scenario. A low score is therefore not evidence that the scenario is well
+designed, and a high score is not by itself proof that it should be deleted.
+
+This hypothesis must be measured rather than handled by lowering the boundary:
+
+- Label a representative candidate sample as duplicate, variant, valid
+  boundary, or unrelated and compare E5-only, E5+BGE, E5+NLI, and combined
+  precision, recall, false-positive, and false-negative rates.
+- Measure scenario character count, step count, assertion count, and semantic
+  scores before and after authoring guidance changes. Look specifically for a
+  correlation between verbosity and score reduction.
+- Evaluate candidate selection quality with top-K recall before BGE/NLI and
+  after each second-stage layer. A reranker that improves precision but drops
+  true candidates out of the E5 subset is not an improvement.
+- Add an authoring constraint or LLM evaluation that penalizes unnecessary
+  length, duplicated setup, overloaded steps, and irrelevant qualifiers. The
+  agent must sharpen the invariant and boundary, not add prose as a scoring
+  workaround.
+- Preserve the candidate above `0.9500` as review evidence until the labeled
+  models and deterministic facts provide a better explanation; do not let the
+  LLM evade review by making scenarios artificially verbose.
+
+The exit criterion for this risk is a documented model comparison with a
+bounded CPU runtime and an authoring evaluation showing that concise scenarios
+are not systematically penalized relative to verbose score-avoidance text.
 
 ## Full Audit In Normal Review
 
@@ -391,6 +469,9 @@ not only pairs involving the current delta.
 - Run a fresh complete baseline over Givn's own permanent corpus before the
   gate is considered green.
 - Do not grandfather existing candidates through hidden dispositions.
+- Require the integrated, independently feature-flagged BGE/NLI layers from
+  PR 7/8 on the same bounded E5 top-K candidate subset for every search surface
+  before declaring the normal-review baseline clean.
 
 **Dogfood prerequisite:** The current permanent baseline must be measured and
 resolved before this gate can pass. Existing candidates cannot be silently
