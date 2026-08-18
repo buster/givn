@@ -190,10 +190,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the missing change-aware approval path.
 - [x] GREEN: preserved change-aware E5-only output after failed approval and asserted both source scopes remain visible; targeted run passed 7/7 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Failed benchmark approval keeps change-aware exploration on E5-only evidence`
+- [x] COMMIT: `350ca8c` — `feat(bge-reranking-evidence): Failed benchmark approval keeps change-aware exploration on E5-only evidence`
 
 ### Failed benchmark approval keeps blocking review on E5-only evidence
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed before approval-failure dispatch was wired.
+- [x] GREEN: kept semantic blocking/report schema v1 with no BGE fields when approval fails; targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Failed benchmark approval keeps blocking review on E5-only evidence`
 
 ### Failed benchmark approval keeps duplicate JSON on E5-only evidence
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
