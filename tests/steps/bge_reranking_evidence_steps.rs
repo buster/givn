@@ -244,18 +244,20 @@ fn run_partial_duplicate_json(world: &mut GivnWorld) {
     } else {
         "stub"
     };
+    let approval_failed = world.retrieval_reranker.as_deref() == Some("unapproved");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
+    if approval_failed {
+        environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+    }
+    environments.push((
+        "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+        "givn/specs/pair.feature|Alpha request::givn/specs/pair.feature|Beta request=0.9600",
+    ));
+    environments.push(("GIVN_SPEC_BGE_TEST_POOL", "partial-raw-513"));
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "duplicates", "--format", "json"],
-        &[
-            ("GIVN_SPEC_EMBEDDER", "stub"),
-            ("GIVN_SPEC_BGE", bge_mode),
-            (
-                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
-                "givn/specs/pair.feature|Alpha request::givn/specs/pair.feature|Beta request=0.9600",
-            ),
-            ("GIVN_SPEC_BGE_TEST_POOL", "partial-raw-513"),
-        ],
+        &environments,
     ));
 }
 
@@ -519,6 +521,11 @@ fn partial_unscored_duplicate_project(world: &mut GivnWorld) {
 fn unavailable_duplicate_project(world: &mut GivnWorld) {
     directional_bge_project(world);
     world.retrieval_reranker = Some("missing".to_string());
+}
+
+#[given("a permanent corpus with semantic candidates")]
+fn semantic_duplicate_project_alias(world: &mut GivnWorld) {
+    directional_bge_project(world);
 }
 
 #[given("an end-to-end project with an unresolved blocking semantic candidate")]
@@ -1204,4 +1211,18 @@ fn unavailable_duplicate_counts_unscored(world: &mut GivnWorld) {
 fn unavailable_duplicate_retains_candidates(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
     assert!(!document["candidates"].as_array().unwrap().is_empty());
+}
+
+#[then("the JSON schema version is exactly 1")]
+fn e5_only_duplicate_schema(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert_eq!(document["schema_version"], serde_json::json!(1));
+}
+
+#[then("the JSON contains no BGE run, filtered, or unscored collections")]
+fn e5_only_duplicate_no_bge_fields(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert!(document.get("bge_run").is_none());
+    assert!(document.get("filtered_candidates").is_none());
+    assert!(document.get("unscored_candidates").is_none());
 }

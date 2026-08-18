@@ -383,7 +383,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the report contains no BGE status, model, score, or admission fields
     And the unresolved E5 candidate remains blocking
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: Failed benchmark approval keeps duplicate JSON on E5-only evidence
     Given a permanent corpus with semantic candidates
     And the BGE admission benchmark has failed
