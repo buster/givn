@@ -426,7 +426,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports two directional calls for one unique pair
     And stdout reports no model download
 
-  @givn.added @bge-approval @wip
+  @givn.added @bge-approval
   Scenario: Approval writer requires enforced Rust parity and complete artifacts
     Given a benchmark report with the Python reference candidate pipeline
     And a Rust production parity attestation emitted by `givn spec bge-parity`

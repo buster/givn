@@ -1,16 +1,275 @@
 //! Regular black-box steps for bounded BGE evidence.
 
 use std::fs;
+use std::process::Command;
 
 use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use crate::common;
 
+const APPROVAL_REPORT: &str = "bge-approval-report.json";
+const APPROVAL_LABELS: &str = "bge-approval-labels.json";
+const APPROVAL_PARITY: &str = "bge-rust-parity.json";
+const APPROVAL_OUTPUT: &str = "givn/.spec-bge-admission.json";
+const APPROVAL_MODEL: &str = "bge-approval-model";
+
+fn approval_artifacts(env: &common::TestEnv) -> serde_json::Value {
+    let cache = env.path(APPROVAL_MODEL);
+    fs::create_dir_all(&cache).expect("create approval BGE model directory");
+    fs::write(cache.join("model.onnx"), b"local model").expect("write approval model");
+    for name in [
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ] {
+        fs::write(cache.join(name), b"{}").expect("write approval tokenizer artifact");
+    }
+    serde_json::json!({
+        "config.json": {
+            "bytes": 2,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        "model.onnx": {
+            "bytes": 11,
+            "sha256": "ffa838f6509a5a99bd5d39d5b9bd4243a9c586f359a2830c93603c1908d13a6e"
+        },
+        "special_tokens_map.json": {
+            "bytes": 2,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        "tokenizer.json": {
+            "bytes": 2,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        },
+        "tokenizer_config.json": {
+            "bytes": 2,
+            "sha256": "44136fa355b3678a1146ad16f7e8649e94fb4fc21fe77e8310c060f61caaff8a"
+        }
+    })
+}
+
+fn write_approval_benchmark(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let artifacts = approval_artifacts(&env);
+    let report = serde_json::json!({
+        "schema_version": 1,
+        "candidate_scope": "bounded",
+        "candidate_pipeline": "python-reference-v1",
+        "top_k": 5,
+        "bge_model": "rozgo/bge-reranker-v2-m3",
+        "bge_threshold": 3.0,
+        "bge_runtime_config": {
+            "max_length_tokens": 512,
+            "intra_op_threads": 4,
+            "inter_op_threads": 1,
+            "batch_size": 32,
+            "max_unique_pairs": 512
+        },
+        "bge_artifacts": artifacts,
+        "scenarios": [
+            {"source": "givn", "file": "left.feature", "title": "Positive pair", "character_count": 10, "step_count": 3, "assertion_count": 1},
+            {"source": "givn", "file": "left.feature", "title": "Positive twin", "character_count": 10, "step_count": 3, "assertion_count": 1},
+            {"source": "givn", "file": "right.feature", "title": "Boundary pair", "character_count": 10, "step_count": 3, "assertion_count": 1},
+            {"source": "givn", "file": "right.feature", "title": "Boundary twin", "character_count": 10, "step_count": 3, "assertion_count": 1}
+        ],
+        "stats": {
+            "strict_pair_ids": [[0, 1], [2, 3]],
+            "top_k_pairs": [[0, 1], [2, 3]],
+            "bounded_pair_ids": [[0, 1], [2, 3]],
+            "deterministic_pair_ids": []
+        },
+        "pairs": [
+            {"left": 0, "right": 1, "embedding": 0.99, "bge_evidence": {"forward_raw": 4.0, "reverse_raw": 4.0, "symmetric_raw": 4.0}},
+            {"left": 2, "right": 3, "embedding": 0.99, "bge_evidence": {"forward_raw": 1.0, "reverse_raw": 1.0, "symmetric_raw": 1.0}}
+        ],
+        "timing_seconds": {"bge": 0.001}
+    });
+    let labels = serde_json::json!({
+        "schema_version": 1,
+        "pairs": [
+            {
+                "left_source": "givn", "left_file": "left.feature", "left_title": "Positive pair",
+                "right_source": "givn", "right_file": "left.feature", "right_title": "Positive twin",
+                "label": "DUPLIKAT", "split": "holdout", "deterministic": false
+            },
+            {
+                "left_source": "givn", "left_file": "right.feature", "left_title": "Boundary pair",
+                "right_source": "givn", "right_file": "right.feature", "right_title": "Boundary twin",
+                "label": "UNRELATED", "split": "holdout", "deterministic": false
+            }
+        ]
+    });
+    fs::write(
+        env.path(APPROVAL_REPORT),
+        serde_json::to_vec_pretty(&report).unwrap(),
+    )
+    .expect("write approval benchmark report");
+    fs::write(
+        env.path(APPROVAL_LABELS),
+        serde_json::to_vec_pretty(&labels).unwrap(),
+    )
+    .expect("write approval benchmark labels");
+    world.env = Some(env);
+}
+
+fn approval_env(world: &GivnWorld) -> &common::TestEnv {
+    world.env.as_ref().expect("approval fixture")
+}
+
+fn write_rust_parity(world: &mut GivnWorld) {
+    let env = approval_env(world);
+    let output = common::run_givn(env, &["spec", "bge-parity"]);
+    assert!(
+        output.status.success(),
+        "bge parity failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    fs::write(env.path(APPROVAL_PARITY), output.stdout).expect("write Rust parity attestation");
+}
+
+fn run_approval_writer(world: &mut GivnWorld, enforce: bool) {
+    let env = approval_env(world);
+    let script = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("tools/approach-comparison/evaluate_bge_admission.py");
+    let mut command = Command::new("python3");
+    command
+        .arg(script)
+        .args(["--report", APPROVAL_REPORT, "--labels", APPROVAL_LABELS]);
+    if enforce {
+        command.args([
+            "--enforce",
+            "--rust-parity",
+            APPROVAL_PARITY,
+            "--givn-binary",
+            env!("CARGO_BIN_EXE_givn"),
+            "--bge-model",
+            APPROVAL_MODEL,
+            "--approval-file",
+            APPROVAL_OUTPUT,
+        ]);
+    } else {
+        command.args(["--approval-file", APPROVAL_OUTPUT]);
+    }
+    world.last_output = Some(
+        command
+            .current_dir(env.root())
+            .output()
+            .expect("run BGE approval writer"),
+    );
+}
+
 #[given("a project with a permanent semantic candidate for second-stage evidence")]
 fn bge_project(world: &mut GivnWorld) {
     super::spec_explore_permanent_steps::prepare_exploration_project(world);
     world.retrieval_reranker = Some("disabled".to_string());
+}
+
+#[given("a benchmark report with the Python reference candidate pipeline")]
+fn python_reference_benchmark_report(world: &mut GivnWorld) {
+    write_approval_benchmark(world);
+}
+
+#[given("a Rust production parity attestation emitted by `givn spec bge-parity`")]
+fn rust_production_parity_attestation(world: &mut GivnWorld) {
+    write_rust_parity(world);
+}
+
+#[given("a complete local BGE artifact set with matching hashes")]
+fn complete_approval_artifact_set(world: &mut GivnWorld) {
+    let env = approval_env(world);
+    let model = env.path(APPROVAL_MODEL);
+    for name in [
+        "model.onnx",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ] {
+        assert!(
+            model.join(name).is_file(),
+            "missing approval artifact {name}"
+        );
+    }
+    let report: serde_json::Value =
+        serde_json::from_slice(&fs::read(env.path(APPROVAL_REPORT)).unwrap()).unwrap();
+    assert_eq!(report["bge_artifacts"].as_object().unwrap().len(), 5);
+}
+
+#[when("the maintainer writes the BGE approval artifact with enforcement enabled")]
+fn maintainer_writes_enforced_approval(world: &mut GivnWorld) {
+    run_approval_writer(world, true);
+}
+
+#[then("the approval artifact has exactly the documented top-level fields")]
+fn approval_has_documented_fields(world: &mut GivnWorld) {
+    let env = approval_env(world);
+    let document: serde_json::Value =
+        serde_json::from_slice(&fs::read(env.path(APPROVAL_OUTPUT)).unwrap()).unwrap();
+    let mut fields = document
+        .as_object()
+        .unwrap()
+        .keys()
+        .map(String::as_str)
+        .collect::<Vec<_>>();
+    fields.sort_unstable();
+    assert_eq!(
+        fields,
+        vec![
+            "acceptance",
+            "artifact_hashes",
+            "candidate_pipeline",
+            "max_unique_pairs",
+            "model",
+            "pipeline_fingerprint",
+            "rust_attestation",
+            "schema_version",
+            "threshold",
+            "top_k",
+        ]
+    );
+}
+
+#[then("the approval artifact records the Rust pipeline fingerprint and all artifact hashes")]
+fn approval_records_parity_and_hashes(world: &mut GivnWorld) {
+    let env = approval_env(world);
+    let approval: serde_json::Value =
+        serde_json::from_slice(&fs::read(env.path(APPROVAL_OUTPUT)).unwrap()).unwrap();
+    let parity: serde_json::Value =
+        serde_json::from_slice(&fs::read(env.path(APPROVAL_PARITY)).unwrap()).unwrap();
+    assert_eq!(
+        approval["pipeline_fingerprint"],
+        parity["pipeline_fingerprint"]
+    );
+    let hashes = approval["artifact_hashes"].as_object().unwrap();
+    assert_eq!(hashes.len(), 5);
+    for metadata in hashes.values() {
+        assert!(metadata["bytes"].as_u64().unwrap() > 0);
+        assert_eq!(metadata["sha256"].as_str().unwrap().len(), 64);
+    }
+}
+
+#[then("the approval artifact records every benchmark acceptance boolean")]
+fn approval_records_acceptance_booleans(world: &mut GivnWorld) {
+    let env = approval_env(world);
+    let approval: serde_json::Value =
+        serde_json::from_slice(&fs::read(env.path(APPROVAL_OUTPUT)).unwrap()).unwrap();
+    let acceptance = &approval["acceptance"];
+    for name in [
+        "holdout_recall_pass",
+        "false_positive_reduction_pass",
+        "precision_pass",
+        "false_negative_delta_pass",
+        "unscored_positive_pass",
+        "candidate_pipeline_pass",
+        "pass",
+    ] {
+        assert!(
+            acceptance[name].is_boolean(),
+            "missing acceptance boolean {name}"
+        );
+    }
 }
 
 #[given("a project with one E5 candidate and a complete local BGE artifact set")]
