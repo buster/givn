@@ -73,10 +73,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined exact-512 fixture.
 - [x] GREEN: added the exact-512 deterministic pool, synthetic bounded scoring, and 512/1024/no-overflow assertions; targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The exact bounded pair limit accepts 512 unique pairs`
+- [x] COMMIT: `4ea55c1` — `feat(bge-reranking-evidence): The exact bounded pair limit accepts 512 unique pairs`
 
 ### BGE does not select NLI without the independent NLI capability
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined NLI-isolation setup step.
+- [x] GREEN: added explicit BGE/NLI selector fixtures and assertions proving BGE output without NLI evidence; targeted run passed 8/8 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 8 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): BGE does not select NLI without the independent NLI capability`
 
 ### The independent NLI capability owns the legacy diagnostic selector
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario; run only in the explicit NLI-capable feature matrix.
