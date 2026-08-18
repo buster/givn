@@ -182,6 +182,20 @@ fn rust_production_parity_attestation(world: &mut GivnWorld) {
     write_rust_parity(world);
 }
 
+#[given("a forged Rust production parity attestation")]
+fn forged_rust_production_parity_attestation(world: &mut GivnWorld) {
+    write_rust_parity(world);
+    let env = approval_env(world);
+    let mut parity: serde_json::Value =
+        serde_json::from_slice(&fs::read(env.path(APPROVAL_PARITY)).unwrap()).unwrap();
+    parity["pipeline_fingerprint"] = serde_json::json!("0000000000000000");
+    fs::write(
+        env.path(APPROVAL_PARITY),
+        serde_json::to_vec_pretty(&parity).unwrap(),
+    )
+    .expect("write forged Rust parity attestation");
+}
+
 #[given("a local BGE artifact set missing `special_tokens_map.json`")]
 fn incomplete_approval_artifact_set(world: &mut GivnWorld) {
     let env = approval_env(world);
@@ -233,6 +247,15 @@ fn approval_requires_rust_parity(world: &mut GivnWorld) {
 fn approval_identifies_missing_artifact(world: &mut GivnWorld) {
     assert!(
         super::stderr(world).contains("special_tokens_map.json"),
+        "stderr: {}",
+        super::stderr(world)
+    );
+}
+
+#[then("stderr says that the parity file does not match the compiled binary")]
+fn approval_identifies_forged_parity(world: &mut GivnWorld) {
+    assert!(
+        super::stderr(world).contains("parity file does not match the compiled binary"),
         "stderr: {}",
         super::stderr(world)
     );

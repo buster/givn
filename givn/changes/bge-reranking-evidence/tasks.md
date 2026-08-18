@@ -292,10 +292,22 @@ targeted runner command is the design command with `--name <scenario title>`.
   7 steps (7 passed)
   ```
 - [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Approval writer rejects an incomplete local BGE artifact set`
+- [x] COMMIT: `3178f51` — `feat(bge-reranking-evidence): Approval writer rejects an incomplete local BGE artifact set`
 
 ### Approval writer rejects a forged parity document
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted approval run failed on the undefined forged-parity fixture (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Approval writer rejects a forged parity document"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added a compiled-parity mutation fixture and exact mismatch/no-artifact assertions; targeted run passed 7/7 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  ```
+- [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Approval writer rejects a forged parity document`
 
 ### Approval writer requires enforcement for any approval output
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.

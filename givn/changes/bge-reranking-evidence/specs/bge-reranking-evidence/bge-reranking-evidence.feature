@@ -454,7 +454,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stderr identifies the missing `special_tokens_map.json` artifact
     And no BGE approval artifact is written
 
-  @givn.added @bge-approval @wip
+  @givn.added @bge-approval
   Scenario: Approval writer rejects a forged parity document
     Given a benchmark report with the Python reference candidate pipeline
     And a forged Rust production parity attestation
