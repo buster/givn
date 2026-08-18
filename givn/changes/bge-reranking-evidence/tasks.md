@@ -22,10 +22,10 @@ The following sections use the exact scenario title as the task identity. The
 targeted runner command is the design command with `--name <scenario title>`.
 
 ### E5-only exploration remains the default when second-stage evidence is disabled
-- [ ] RED: remove only this scenario's `@wip`, run the targeted scenario, and paste non-zero output.
-- [ ] GREEN: implement assertions and minimum production changes; list files and paste a zero-exit targeted run.
-- [ ] REFACTOR: clean up without behavior change; paste the zero-exit rerun.
-- [ ] COMMIT: `<hash>` — `feat(bge-reranking-evidence): E5-only exploration remains the default when second-stage evidence is disabled`
+- [x] RED: removed only this scenario's `@wip`; the targeted run failed in the registered `unimplemented!()` setup step (non-zero).
+- [x] GREEN: implemented the temporary CLI fixture, disabled-BGE environment, E5 result assertion, and E5-only/no-BGE output assertions in `tests/steps/bge_reranking_evidence_steps.rs`; targeted run passed 8/8 steps.
+- [x] REFACTOR: reran the targeted command unchanged; 1 scenario and 8 steps passed.
+- [x] COMMIT: `8ad8db7` — `feat(bge-reranking-evidence): E5-only exploration remains the default when second-stage evidence is disabled`
 
 ### E5-only JSON omits opt-in BGE evidence fields
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
