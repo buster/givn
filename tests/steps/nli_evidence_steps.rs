@@ -406,3 +406,92 @@ fn nli_json_unscored_not_filtered(world: &mut GivnWorld) {
             .is_empty()
     );
 }
+
+#[given("a project with two E5 semantic candidates and NLI evidence")]
+fn nli_explore_json_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove NLI Explore specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create NLI Explore specs");
+    fs::write(
+        env.path("givn/specs/provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n\n  Scenario: Provider warning is reported\n    Given a configured provider catalog\n    When the user selects a known provider with a warning\n    Then the command reports the warning\n",
+    )
+    .expect("write NLI Explore candidates");
+    fs::write(
+        env.path("draft.feature"),
+        "Feature: draft\n\n  Scenario: Draft provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write NLI Explore draft");
+    world.env = Some(env);
+}
+
+#[when("the user explores the draft with JSON output and NLI evidence enabled")]
+fn run_nli_explore_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI Explore project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--file",
+            "draft.feature",
+            "--format",
+            "json",
+        ],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+        ],
+    ));
+}
+
+#[then("the JSON uses schema version 3 for NLI evidence")]
+fn nli_explore_json_schema(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid NLI Explore JSON");
+    assert_eq!(document["schema_version"], serde_json::json!(3));
+}
+
+#[then("the JSON preserves raw E5 result order and legacy result fields")]
+fn nli_explore_json_raw_contract(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid NLI Explore JSON");
+    let results = document["results"].as_array().expect("results array");
+    for (index, result) in results.iter().enumerate() {
+        assert_eq!(result["rank"], serde_json::json!(index + 1));
+        for field in ["title", "file", "score", "scope", "change"] {
+            assert!(result.get(field).is_some(), "missing legacy field {field}");
+        }
+    }
+}
+
+#[then(
+    "the JSON reports NLI model, probabilities, raw, recommended, filtered, unscored, pair, and runtime fields"
+)]
+fn nli_explore_json_fields(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid NLI Explore JSON");
+    let evidence = &document["nli_evidence"];
+    for field in [
+        "status",
+        "candidate_generator",
+        "top_k",
+        "e5_candidates",
+        "recommended_candidates",
+        "nli_filtered_candidates",
+        "nli_unscored_candidates",
+        "nli_pairs",
+        "nli_directional_calls",
+        "nli_model",
+        "nli_model_load_attempts",
+        "nli_runtime_ms",
+    ] {
+        assert!(evidence.get(field).is_some(), "missing NLI field {field}");
+    }
+    assert_eq!(
+        evidence["nli_model"],
+        serde_json::json!("MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7")
+    );
+    assert!(document["results"][0]["nli"].is_object());
+}
