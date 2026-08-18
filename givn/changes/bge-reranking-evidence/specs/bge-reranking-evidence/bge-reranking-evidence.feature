@@ -315,7 +315,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the semantic review report contains a normal E5 candidate block
     And the report contains no `BGE_FILTERED` candidate block
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Pair-cap unavailable blocking review retains E5 candidates
     Given an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool
     And the local second-stage evidence is enabled

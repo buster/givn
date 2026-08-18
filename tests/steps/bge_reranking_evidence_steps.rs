@@ -486,13 +486,23 @@ fn unavailable_blocking_project(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("missing".to_string());
 }
 
+#[given("an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool")]
+fn pair_cap_blocking_project(world: &mut GivnWorld) {
+    filtered_blocking_project(world);
+    world.retrieval_bge_test_pool = Some("overflow-513".to_string());
+}
+
 #[when("the end-to-end user runs blocking change review for \"running-change\" through the givn CLI")]
 fn run_unavailable_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("unavailable blocking project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")];
+    if let Some(pool) = world.retrieval_bge_test_pool.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TEST_POOL", pool));
+    }
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["check", "review", "--change", "running-change"],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")],
+        &environments,
     ));
 }
 
@@ -517,6 +527,11 @@ fn unavailable_report_reason(world: &mut GivnWorld) {
     assert!(semantic_report_text(world).contains("BGE reason: missing-artifact"));
 }
 
+#[then("the semantic review report has BGE reason \"pair-cap\"")]
+fn pair_cap_report_reason(world: &mut GivnWorld) {
+    assert!(semantic_report_text(world).contains("BGE reason: pair-cap"));
+}
+
 #[then("the semantic report has zero BGE unique pairs, directional calls, filtered pairs, and model load attempts")]
 fn unavailable_report_zero_counts(world: &mut GivnWorld) {
     let report = semantic_report_text(world);
@@ -534,6 +549,13 @@ fn unavailable_report_normal_candidate(world: &mut GivnWorld) {
 #[then("the report contains no `BGE_FILTERED` candidate block")]
 fn unavailable_report_no_filtered(world: &mut GivnWorld) {
     assert!(!semantic_report_text(world).contains("## BGE Filtered Candidate"));
+}
+
+#[then("the semantic report retains the E5 candidate block without `BGE_FILTERED`")]
+fn pair_cap_retains_e5_block(world: &mut GivnWorld) {
+    let report = semantic_report_text(world);
+    assert!(report.contains("## Candidate"));
+    assert!(!report.contains("## BGE Filtered Candidate"));
 }
 
 #[when("the user runs blocking change review with second-stage evidence enabled")]
