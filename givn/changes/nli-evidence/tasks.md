@@ -67,11 +67,14 @@ evidence and its atomic commit hash.
 
 ### NLI keeps candidates outside a partial bounded pool blocking
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement partial-pool `NLI_UNSCORED` JSON/report evidence.
-  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted partial-pool runner was initially blocked by the
+  unimplemented NLI step skeleton.
+- [x] GREEN: implemented `NLI_UNSCORED` duplicate JSON collections, null
+  probability evidence, and filtered/unscored separation. Targeted run passed
+  5/5 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
+  passed.
+- [x] COMMIT: `77fceea` — `feat(nli-evidence): preserve partial NLI candidates as unscored`.
 
 ### NLI JSON preserves the raw E5 contract and uses the NLI schema extension
 
