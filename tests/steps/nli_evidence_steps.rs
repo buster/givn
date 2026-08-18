@@ -501,6 +501,53 @@ fn nli_explore_json_fields(world: &mut GivnWorld) {
     assert!(document["results"][0]["nli"].is_object());
 }
 
+#[given("a project with an active semantic candidate that NLI recommends")]
+fn nli_blocking_recommended_project(world: &mut GivnWorld) {
+    combined_unavailable_project(world);
+}
+
+#[when("the user runs blocking NLI review")]
+fn run_blocking_nli_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI blocking project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            (
+                "GIVN_SPEC_STUB_PAIR_SCORES",
+                "Active provider request|Provider request is accepted=0.9900",
+            ),
+        ],
+    ));
+}
+
+#[then("the command exits non-zero because the NLI candidate is unresolved")]
+fn nli_blocking_recommended_exits_nonzero(world: &mut GivnWorld) {
+    assert!(
+        !super::output(world).status.success(),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("the semantic report contains an NLI-recommended candidate block")]
+fn nli_report_contains_recommended_candidate(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read NLI blocking report");
+    assert!(
+        report.contains("NLI status: NLI_ENABLED"),
+        "report: {report}"
+    );
+    assert!(
+        report.contains("nli_admission: NLI_RECOMMENDED"),
+        "report: {report}"
+    );
+}
+
 #[given("a project with a permanent semantic candidate and the NLI capability compiled")]
 fn nli_disabled_project(world: &mut GivnWorld) {
     nli_explore_json_project(world);

@@ -2488,6 +2488,69 @@ fn render_semantic_report(
         },
         blocking.len()
     );
+    #[cfg(feature = "nli-evidence")]
+    if bge_run.is_none() {
+        if let Some(run) = nli_run {
+            let recommended = candidates
+                .iter()
+                .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+                .count();
+            let filtered = candidates
+                .iter()
+                .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
+                .count();
+            report.push_str(&format!(
+                "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
+                run.status,
+                run.reason.map(NliUnavailableReason::as_str).unwrap_or("null"),
+                if run.status == "NLI_ENABLED" { NLI_MODEL_ID } else { "null" },
+                RERANKER_TOP_K,
+                run.e5_candidates,
+                recommended,
+                filtered,
+                run.unscored,
+                run.evidence.len(),
+                run.evidence.len() * 2,
+                run.model_load_attempts,
+                run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
+            ));
+            let mut index = 0;
+            for candidate in candidates {
+                if candidate.nli_admission == Some("NLI_FILTERED") {
+                    report.push_str(&render_nli_filtered_candidate(candidate));
+                    continue;
+                }
+                index += 1;
+                report.push_str(&format!(
+                    "\n## Candidate {index}\n- candidate_id: {}\n- classification: {}\n- rationale: {}\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
+                    candidate.candidate_id,
+                    candidate.classification,
+                    candidate.rationale.as_deref().map(|value| format!("\"{}\"", value.replace('"', "\\\""))).unwrap_or_else(|| "null".to_string()),
+                    candidate.scope,
+                    candidate.left.scope,
+                    candidate.left.file,
+                    candidate.left.title,
+                    candidate.left.operation,
+                    json_encoded(&candidate.left.projected_target),
+                    candidate.left.evidence_json,
+                    candidate.left.content_hash,
+                    candidate.left.evidence_hash,
+                    candidate.right.scope,
+                    candidate.right.file,
+                    candidate.right.title,
+                    candidate.right.operation,
+                    json_encoded(&candidate.right.projected_target),
+                    candidate.right.evidence_json,
+                    candidate.right.content_hash,
+                    candidate.right.evidence_hash,
+                    candidate.score,
+                    candidate.left.facts.facts.contradicts(&candidate.right.facts.facts),
+                ));
+                append_nli_candidate_fields(&mut report, candidate);
+            }
+            return report;
+        }
+    }
     if let Some(run) = bge_run {
         let recommended = candidates
             .iter()
