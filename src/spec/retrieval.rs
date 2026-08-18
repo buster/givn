@@ -3702,9 +3702,7 @@ fn similarity_candidate_pool(
             .entries
             .iter()
             .filter(|entry| {
-                entry.file.as_str() != delta.target_file.as_str()
-                    && !(delta.operation == crate::gherkin::delta::DeltaOp::Modified
-                        && (entry.file.as_str(), entry.title.as_str()) == own_target)
+                !((entry.file.as_str(), entry.title.as_str()) == own_target)
             })
             .map(|entry| (cosine_similarity(vector, &entry.embedding), entry))
             .collect();

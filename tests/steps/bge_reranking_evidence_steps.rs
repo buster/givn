@@ -646,6 +646,61 @@ fn gate_only_has_no_bge(world: &mut GivnWorld) {
     assert!(!output.contains("bge"));
 }
 
+#[given("a modified active scenario shares its projected target file with another permanent scenario")]
+fn same_file_identity_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs/shared");
+    fs::create_dir_all(&specs).expect("create shared specs");
+    fs::write(
+        specs.join("shared.feature"),
+        "Feature: shared\n\n  Scenario: Modified scenario\n    Given a shared context\n    When the shared action runs\n    Then the shared result is ready\n\n  Scenario: Same-file neighbor\n    Given a shared context\n    When the neighbor action runs\n    Then the shared result is ready\n",
+    )
+    .expect("write same-file permanent fixture");
+    let delta = env.path("givn/changes/running-change/specs/change.feature");
+    fs::create_dir_all(delta.parent().unwrap()).expect("create same-file delta");
+    fs::write(
+        &delta,
+        "@givn.delta @shared @running-change\nFeature: shared change\n\n  @givn.modified\n  Scenario: Modified scenario\n    Given a shared context\n    When the shared action runs differently\n    Then the shared result is ready\n",
+    )
+    .expect("write same-file delta");
+    fs::write(
+        env.path("draft.feature"),
+        "Feature: draft\n\n  Scenario: Modified scenario\n    Given a shared context\n    When the shared action runs differently\n    Then the shared result is ready\n",
+    )
+    .expect("write same-file draft");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
+#[when("the user runs change-aware exploration against that change")]
+fn run_same_file_change_exploration(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("same-file project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--change",
+            "running-change",
+            "--file",
+            "givn/changes/running-change/specs/change.feature",
+        ],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")],
+    ));
+}
+
+#[then("the other same-file scenario remains in the E5 raw candidates")]
+fn same_file_neighbor_remains(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("Same-file neighbor"));
+}
+
+#[then("only the exact source and projected-target identities are excluded")]
+fn same_file_exact_only(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(!output.lines().filter(|line| line.starts_with("rank ")).any(|line| line.contains("Modified scenario")));
+    assert!(output.contains("Same-file neighbor"));
+}
+
 #[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]
 fn overflow_pool_project(world: &mut GivnWorld) {
     directional_bge_project(world);
