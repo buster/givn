@@ -94,7 +94,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the audit reports zero NLI pairs, directional calls, recommendations, filters, and model loads
     And all E5 semantic candidates are recorded as NLI unscored
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: NLI keeps candidates outside a partial bounded pool blocking
     Given a permanent corpus with 513 E5 semantic candidates and a successful bounded NLI pool of 512 pairs
     When the user runs the permanent NLI duplicate audit with JSON output
