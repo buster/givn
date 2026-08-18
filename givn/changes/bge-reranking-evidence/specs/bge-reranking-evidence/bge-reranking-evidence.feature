@@ -247,7 +247,7 @@ Feature: BGE reranking evidence for bounded semantic search
     Then the other same-file scenario remains in the E5 raw candidates
     And only the exact source and projected-target identities are excluded
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: The admission operating point includes a symmetric score of `3.0000`
     Given a project with one E5 candidate whose symmetric second-stage score is exactly `3.0000`
     When the user runs advisory change review with second-stage evidence enabled

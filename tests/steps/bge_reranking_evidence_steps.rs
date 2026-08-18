@@ -361,6 +361,14 @@ fn advisory_bge_scores(world: &mut GivnWorld) {
     );
 }
 
+#[given("a project with one E5 candidate whose symmetric second-stage score is exactly `3.0000`")]
+fn exact_threshold_advisory_project(world: &mut GivnWorld) {
+    advisory_bge_project(world);
+    world.retrieval_bge_scores = Some(
+        "givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider request is accepted=3.0000;givn/specs/provider.feature|Provider request is accepted->givn/specs/running-change/running-change.feature|Active provider request=3.0000;givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider warning is reported=1.0000;givn/specs/provider.feature|Provider warning is reported->givn/specs/running-change/running-change.feature|Active provider request=1.0000".to_string(),
+    );
+}
+
 #[when("the user runs advisory change review with second-stage evidence enabled")]
 fn run_advisory_bge_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("advisory BGE project");
@@ -574,6 +582,18 @@ fn partial_json_unscored_no_directionals(world: &mut GivnWorld) {
     for candidate in document["unscored_candidates"].as_array().unwrap() {
         assert!(candidate["evidence"]["bge"].is_null());
     }
+}
+
+#[then("the candidate is recommended rather than filtered")]
+fn exact_threshold_is_recommended(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE_RECOMMENDED"));
+    assert!(output.contains("symmetric 3.0000"));
+}
+
+#[then("the candidate still requires an explicit Givn classification")]
+fn exact_threshold_still_advisory(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("no Givn classification is assigned"));
 }
 
 #[given("an end-to-end project with an active semantic review candidate")]
