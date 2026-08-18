@@ -18,6 +18,11 @@ fn bge_disabled(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("disabled".to_string());
 }
 
+#[given("second-stage evidence is disabled")]
+fn bge_disabled_alias(world: &mut GivnWorld) {
+    bge_disabled(world);
+}
+
 #[given("the local second-stage evidence is enabled")]
 fn bge_enabled(world: &mut GivnWorld) {
     world.retrieval_reranker = None;
@@ -705,6 +710,16 @@ fn run_filtered_blocking_review(world: &mut GivnWorld) {
         env,
         &["check", "review", "--change", "running-change"],
         &environments,
+    ));
+}
+
+#[when("the user runs blocking change review with second-stage evidence disabled")]
+fn run_e5_only_blocking_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E5-only blocking project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
     ));
 }
 
