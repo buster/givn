@@ -112,10 +112,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted gate-only run failed on the undefined blocking-review invocation.
 - [x] GREEN: added the gate-only CLI fixture and assertions proving the E5 gate remains visible without BGE; targeted run passed 4/4 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 4 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The E5 similarity gate remains available without BGE`
+- [x] COMMIT: `e799f31` — `feat(bge-reranking-evidence): The E5 similarity gate remains available without BGE`
 
 ### A same-file candidate remains eligible after identity exclusions
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined same-file fixture.
+- [x] GREEN: changed active exploration exclusion from file-level to exact `(file,title)` identity and added projected/source fixture assertions; targeted run passed 5/5 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A same-file candidate remains eligible after identity exclusions`
 
 ### The admission operating point includes a symmetric score of `3.0000`
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
