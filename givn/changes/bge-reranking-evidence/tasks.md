@@ -148,10 +148,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined unavailable duplicate fixture.
 - [x] GREEN: added duplicate schema-v2 unavailable status/reason/count handling and E5 fallback assertions; targeted run passed 8/8 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 8 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Unavailable BGE duplicate JSON preserves the E5 fallback accounting`
+- [x] COMMIT: `afde262` — `feat(bge-reranking-evidence): Unavailable BGE duplicate JSON preserves the E5 fallback accounting`
 
 ### Unavailable BGE blocking review keeps E5 candidates blocking
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined unresolved-blocking fixture.
+- [x] GREEN: added unavailable semantic-report rendering, normal E5 fallback blocks, zero-load accounting, and non-zero unresolved assertions; targeted run passed 9/9 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 9 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Unavailable BGE blocking review keeps E5 candidates blocking`
 
 ### Pair-cap unavailable blocking review retains E5 candidates
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.

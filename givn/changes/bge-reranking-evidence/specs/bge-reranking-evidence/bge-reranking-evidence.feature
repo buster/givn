@@ -303,7 +303,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the JSON counts all E5 semantic candidates as unscored
     And the JSON retains the E5 fallback candidates
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Unavailable BGE blocking review keeps E5 candidates blocking
     Given an end-to-end project with an unresolved blocking semantic candidate
     And the local second-stage model artifacts are unavailable

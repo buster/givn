@@ -480,6 +480,62 @@ fn unavailable_duplicate_project(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("missing".to_string());
 }
 
+#[given("an end-to-end project with an unresolved blocking semantic candidate")]
+fn unavailable_blocking_project(world: &mut GivnWorld) {
+    filtered_blocking_project(world);
+    world.retrieval_reranker = Some("missing".to_string());
+}
+
+#[when("the end-to-end user runs blocking change review for \"running-change\" through the givn CLI")]
+fn run_unavailable_blocking_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("unavailable blocking project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")],
+    ));
+}
+
+fn semantic_report_text(world: &GivnWorld) -> String {
+    let env = world.env.as_ref().expect("semantic project");
+    fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic report")
+}
+
+#[then("the command exits non-zero because the E5 candidate is unresolved")]
+fn unavailable_blocking_exits_nonzero(world: &mut GivnWorld) {
+    assert!(!super::output(world).status.success());
+}
+
+#[then("the semantic review report has BGE status \"BGE_UNAVAILABLE\"")]
+fn unavailable_report_status(world: &mut GivnWorld) {
+    assert!(semantic_report_text(world).contains("BGE status: BGE_UNAVAILABLE"));
+}
+
+#[then("the semantic review report has BGE reason \"missing-artifact\"")]
+fn unavailable_report_reason(world: &mut GivnWorld) {
+    assert!(semantic_report_text(world).contains("BGE reason: missing-artifact"));
+}
+
+#[then("the semantic report has zero BGE unique pairs, directional calls, filtered pairs, and model load attempts")]
+fn unavailable_report_zero_counts(world: &mut GivnWorld) {
+    let report = semantic_report_text(world);
+    assert!(report.contains("BGE unique pair count: 0"));
+    assert!(report.contains("BGE directional call count: 0"));
+    assert!(report.contains("BGE filtered count: 0"));
+    assert!(report.contains("BGE model load attempts: 0"));
+}
+
+#[then("the semantic review report contains a normal E5 candidate block")]
+fn unavailable_report_normal_candidate(world: &mut GivnWorld) {
+    assert!(semantic_report_text(world).contains("## Candidate"));
+}
+
+#[then("the report contains no `BGE_FILTERED` candidate block")]
+fn unavailable_report_no_filtered(world: &mut GivnWorld) {
+    assert!(!semantic_report_text(world).contains("## BGE Filtered Candidate"));
+}
+
 #[when("the user runs blocking change review with second-stage evidence enabled")]
 fn run_filtered_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("filtered blocking project");
