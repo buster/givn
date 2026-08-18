@@ -129,7 +129,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the E5 candidates remain visible and blocking when applicable
     And no output claims that NLI participated
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: The NLI admission boundary includes a symmetric entailment probability of 0.5000
     Given a project with one semantic candidate at the NLI admission boundary
     When the user runs advisory NLI review
