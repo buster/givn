@@ -20,12 +20,12 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And stdout reports fewer NLI recommended candidates than E5 candidates
     And stdout keeps the E5 raw candidate identities visible
 
-  @givn.added @nli @e2e @wip
+  @givn.added @nli @e2e
   Scenario: NLI reduces change-aware exploration candidates without changing E5 raw results
     Given an end-to-end project with permanent and active-change semantic candidates for NLI evidence
     And NLI evidence is enabled while BGE evidence is disabled
     And a complete draft scenario is available for NLI change-aware exploration
-    When the end-to-end user explores the draft against change "current-change" through the givn CLI
+    When the end-to-end user explores the draft against change "current-change" with NLI through the givn CLI
     Then the command exits 0
     And stdout contains both a permanent and a current-change NLI candidate
     And stdout reports fewer NLI recommended candidates than E5 candidates
