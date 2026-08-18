@@ -169,11 +169,14 @@ evidence and its atomic commit hash.
 
 ### NLI reduces change-aware exploration candidates without changing E5 raw results
 
-- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement the real `--change` CLI interaction and source/identity
-  assertions. Evidence: pending.
-- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: removed only this scenario's `@wip`; targeted E2E runner exited 101
+  at the unimplemented change-project Given step.
+- [x] GREEN: implemented the real `spec explore --change` subprocess, active
+  scope, NLI reduction, and source/projected identity assertions. Targeted run
+  passed 8/8 steps.
+- [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 8
+  steps passed.
+- [x] COMMIT: `d1dc253` — `test(e2e): NLI reduces change-aware exploration candidates without changing E5 raw results`.
 
 ### NLI reduces advisory review candidates without assigning a Givn class
 
