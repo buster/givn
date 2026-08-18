@@ -425,10 +425,22 @@ targeted runner command is the design command with `--name <scenario title>`.
   9 steps (9 passed)
   ```
 - [x] REFACTOR: reran the same targeted real-CLI command unchanged; 1 scenario and 9 steps passed.
-- [x] COMMIT: `<pending until commit>` — `test(e2e): Blocking change review records second-stage evidence in the semantic report`
+- [x] COMMIT: `5c577de` — `test(e2e): Blocking change review records second-stage evidence in the semantic report`
 
 ### Permanent duplicate audit uses a bounded endpoint-neighbour union
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact `@e2e` scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted real-CLI E2E run failed on the undefined duplicate-corpus fixture (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit uses a bounded endpoint-neighbour union"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added the real duplicate-audit CLI fixture/action and assertions for E5/BGE counts, admission counts, score/runtime, deterministic exclusions, and the endpoint-neighbour bound; targeted E2E run passed 9/9 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  9 steps (9 passed)
+  ```
+- [x] REFACTOR: reran the same targeted real-CLI command unchanged; 1 scenario and 9 steps passed.
+- [x] COMMIT: `<pending until commit>` — `test(e2e): Permanent duplicate audit uses a bounded endpoint-neighbour union`
 
 ### Semantic authoring guidance prevents score-avoidance prose
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact `@e2e` scenario.
