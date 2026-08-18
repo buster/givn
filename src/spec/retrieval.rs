@@ -27,12 +27,14 @@ use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
 const INDEX_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+#[cfg(feature = "spec-retrieval")]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
 #[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
 const SIMILARITY_THRESHOLD: f32 = 0.95;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
+#[cfg(feature = "spec-retrieval")]
+const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_PIPELINE_VERSION: &str = "rust-production-v1";
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
@@ -106,6 +108,10 @@ struct ExploreResponse {
     query: ExploreQueryOutput,
     index: ExploreIndexOutput,
     results: Vec<ExploreResultOutput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    evidence: Option<ExploreEvidenceOutput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    recommended_results: Option<Vec<ExploreResultOutput>>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -126,7 +132,7 @@ struct ExploreIndexOutput {
 }
 
 #[cfg(feature = "spec-retrieval")]
-#[derive(Debug, Serialize)]
+#[derive(Debug, Clone, Serialize)]
 struct ExploreResultOutput {
     rank: usize,
     title: String,
@@ -134,6 +140,35 @@ struct ExploreResultOutput {
     score: f32,
     scope: &'static str,
     change: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bge: Option<ExploreBgeOutput>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct ExploreBgeOutput {
+    status: &'static str,
+    forward_raw: f32,
+    reverse_raw: f32,
+    symmetric_raw: f32,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct ExploreEvidenceOutput {
+    status: &'static str,
+    reason: Option<&'static str>,
+    candidate_generator: &'static str,
+    top_k: usize,
+    e5_candidates: usize,
+    recommended_candidates: usize,
+    bge_filtered_candidates: usize,
+    bge_unscored_candidates: usize,
+    bge_pairs: usize,
+    bge_directional_calls: usize,
+    bge_model: Option<&'static str>,
+    bge_model_load_attempts: usize,
+    bge_runtime_ms: Option<u128>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -197,6 +232,7 @@ struct PriorRemediationEntry {
 struct ExploreCandidate {
     title: String,
     file: String,
+    text: String,
     embedding: Vec<f32>,
     scope: &'static str,
     change: Option<String>,
@@ -344,6 +380,81 @@ type CandidatePool = (
     usize,
     BTreeMap<(String, String), String>,
 );
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BgeBackendKind {
+    Stub,
+    Local,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum BgeUnavailableReason {
+    MissingArtifact,
+    PairCap,
+}
+
+#[cfg(feature = "spec-retrieval")]
+impl BgeUnavailableReason {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingArtifact => "missing-artifact",
+            Self::PairCap => "pair-cap",
+        }
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct BgePairEvidence {
+    forward_raw: f32,
+    reverse_raw: f32,
+    symmetric_raw: f32,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct BgeRun {
+    status: &'static str,
+    reason: Option<BgeUnavailableReason>,
+    evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), BgePairEvidence>,
+    e5_candidates: usize,
+    unscored: usize,
+    model_load_attempts: usize,
+    runtime_ms: Option<u128>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+impl BgeRun {
+    fn enabled(
+        evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), BgePairEvidence>,
+        e5_candidates: usize,
+        runtime_ms: u128,
+    ) -> Self {
+        Self {
+            status: "BGE_ENABLED",
+            reason: None,
+            unscored: e5_candidates.saturating_sub(evidence.len()),
+            evidence,
+            e5_candidates,
+            model_load_attempts: 1,
+            runtime_ms: Some(runtime_ms),
+        }
+    }
+
+    fn unavailable(reason: BgeUnavailableReason, e5_candidates: usize) -> Self {
+        Self {
+            status: "BGE_UNAVAILABLE",
+            reason: Some(reason),
+            evidence: BTreeMap::new(),
+            e5_candidates,
+            unscored: e5_candidates,
+            model_load_attempts: 0,
+            runtime_ms: None,
+        }
+    }
+}
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Copy)]
@@ -1320,6 +1431,10 @@ fn explore_enabled(
         None
     };
     let refresh = refresh_index(root)?;
+    let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
+        .into_iter()
+        .map(|scenario| ((scenario.file, scenario.title), scenario.text))
+        .collect();
     let query_vector = embed_texts(
         root,
         std::slice::from_ref(&query.text),
@@ -1336,6 +1451,10 @@ fn explore_enabled(
         .map(|entry| ExploreCandidate {
             title: entry.title.clone(),
             file: entry.file.clone(),
+            text: permanent_texts
+                .get(&(entry.file.clone(), entry.title.clone()))
+                .cloned()
+                .unwrap_or_else(|| entry.title.clone()),
             embedding: entry.embedding.clone(),
             scope: "permanent",
             change: None,
@@ -1361,6 +1480,7 @@ fn explore_enabled(
             candidates.push(ExploreCandidate {
                 title: item.scenario.title.clone(),
                 file: item.scenario.file.clone(),
+                text: item.scenario.text.clone(),
                 embedding,
                 scope: "current-change",
                 change: Some(change_id.clone()),
@@ -1398,19 +1518,52 @@ fn explore_enabled(
             .then_with(|| left.file.cmp(&right.file))
             .then_with(|| left.title.cmp(&right.title))
     });
-    let results: Vec<ExploreResultOutput> = ranked
-        .into_iter()
-        .take(5)
-        .enumerate()
-        .map(|(index, (candidate, score))| ExploreResultOutput {
+    let ranked: Vec<(ExploreCandidate, f32)> = ranked.into_iter().take(RERANKER_TOP_K).collect();
+    #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+    let bge_run = bge_explore_run(root, &query, &ranked)?;
+    #[cfg(not(all(feature = "spec-retrieval", feature = "cross-encoder-reranker")))]
+    let bge_run: Option<BgeRun> = None;
+
+    let mut results = Vec::with_capacity(ranked.len());
+    for (index, (candidate, score)) in ranked.into_iter().enumerate() {
+        let bge = bge_run.as_ref().and_then(|run| {
+            let query_endpoint = explore_query_endpoint(&query);
+            let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
+            let key = canonical_pair_key(query_endpoint, candidate_endpoint);
+            run.evidence.get(&key).map(|evidence| ExploreBgeOutput {
+                status: if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+                    "BGE_RECOMMENDED"
+                } else {
+                    "BGE_FILTERED"
+                },
+                forward_raw: evidence.forward_raw,
+                reverse_raw: evidence.reverse_raw,
+                symmetric_raw: evidence.symmetric_raw,
+            })
+        });
+        results.push(ExploreResultOutput {
             rank: index + 1,
             title: candidate.title,
             file: candidate.file,
             score,
             scope: candidate.scope,
             change: candidate.change,
-        })
-        .collect();
+            bge,
+        });
+    }
+
+    let recommended_results = bge_run.as_ref().map(|_| {
+        results
+            .iter()
+            .filter(|result| {
+                result
+                    .bge
+                    .as_ref()
+                    .is_some_and(|evidence| evidence.status == "BGE_RECOMMENDED")
+            })
+            .cloned()
+            .collect::<Vec<_>>()
+    });
 
     if json {
         let response = ExploreResponse {
@@ -1425,14 +1578,16 @@ fn explore_enabled(
                 version: refresh.index.version,
                 entries: refresh.index.entries.len(),
             },
-            results,
+            results: results.clone(),
+            evidence: bge_run.as_ref().map(explore_evidence_output),
+            recommended_results,
         };
         println!(
             "{}",
             serde_json::to_string_pretty(&response).context("serialize explore JSON")?
         );
     } else {
-        print_explore_text(&query, &refresh, &results);
+        print_explore_text(&query, &refresh, &results, bge_run.as_ref());
     }
 
     Ok(())
@@ -1529,10 +1684,304 @@ fn delta_identity_matches_query(item: &DeltaScenario, query: &ExploreQuery) -> b
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn explore_query_endpoint(query: &ExploreQuery) -> SimilarityEndpoint {
+    endpoint(query.file.as_deref().unwrap_or("__query__"), &query.title)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn canonical_pair_key(
+    left: SimilarityEndpoint,
+    right: SimilarityEndpoint,
+) -> (SimilarityEndpoint, SimilarityEndpoint) {
+    if left <= right {
+        (left, right)
+    } else {
+        (right, left)
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn explore_evidence_output(run: &BgeRun) -> ExploreEvidenceOutput {
+    let recommended = run
+        .evidence
+        .values()
+        .filter(|evidence| evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD)
+        .count();
+    ExploreEvidenceOutput {
+        status: run.status,
+        reason: run.reason.map(BgeUnavailableReason::as_str),
+        candidate_generator: "E5",
+        top_k: RERANKER_TOP_K,
+        e5_candidates: run.e5_candidates,
+        recommended_candidates: recommended,
+        bge_filtered_candidates: run
+            .evidence
+            .len()
+            .saturating_sub(recommended),
+        bge_unscored_candidates: run.unscored,
+        bge_pairs: run.evidence.len(),
+        bge_directional_calls: run.evidence.len() * 2,
+        bge_model: (run.status == "BGE_ENABLED").then_some(RERANKER_MODEL_ID),
+        bge_model_load_attempts: run.model_load_attempts,
+        bge_runtime_ms: run.runtime_ms,
+    }
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_explore_run(
+    root: &Path,
+    query: &ExploreQuery,
+    ranked: &[(ExploreCandidate, f32)],
+) -> Result<Option<BgeRun>> {
+    let Some(backend) = bge_backend(root)? else {
+        return Ok(None);
+    };
+    let query_endpoint = explore_query_endpoint(query);
+    let mut texts = BTreeMap::new();
+    texts.insert(
+        (query_endpoint.file.clone(), query_endpoint.title.clone()),
+        query.text.clone(),
+    );
+    let mut pairs = Vec::with_capacity(ranked.len());
+    for (candidate, _) in ranked {
+        let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
+        texts.insert(
+            (candidate_endpoint.file.clone(), candidate_endpoint.title.clone()),
+            candidate.text.clone(),
+        );
+        pairs.push((query_endpoint.clone(), candidate_endpoint));
+    }
+    match backend {
+        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind).map(Some),
+        Err(reason) => Ok(Some(BgeRun::unavailable(reason, ranked.len()))),
+    }
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_backend(root: &Path) -> Result<Option<std::result::Result<BgeBackendKind, BgeUnavailableReason>>> {
+    let selected = std::env::var("GIVN_SPEC_BGE");
+    if std::env::var("GIVN_SPEC_BGE_APPROVAL").as_deref() == Ok("failed") {
+        return Ok(None);
+    }
+    match selected.as_deref() {
+        Ok("disabled") => Ok(None),
+        Ok("stub") => Ok(Some(Ok(BgeBackendKind::Stub))),
+        Ok("missing") => Ok(Some(Err(BgeUnavailableReason::MissingArtifact))),
+        Ok("local") => {
+            Ok(Some(match preflight_bge_artifacts(root) {
+                Ok(_) => Ok(BgeBackendKind::Local),
+                Err(_) => Err(BgeUnavailableReason::MissingArtifact),
+            }))
+        }
+        Ok(value) => bail!("unknown GIVN_SPEC_BGE value `{value}`"),
+        Err(std::env::VarError::NotPresent) if !bge_approval_valid(root) => Ok(None),
+        Err(std::env::VarError::NotPresent) => {
+            Ok(Some(match preflight_bge_artifacts(root) {
+                Ok(_) => Ok(BgeBackendKind::Local),
+                Err(_) => Err(BgeUnavailableReason::MissingArtifact),
+            }))
+        }
+        Err(std::env::VarError::NotUnicode(_)) => bail!("GIVN_SPEC_BGE is not valid UTF-8"),
+    }
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_approval_valid(root: &Path) -> bool {
+    let path = std::env::var_os("GIVN_SPEC_BGE_APPROVAL_FILE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| root.join("givn/.spec-bge-admission.json"));
+    let Ok(bytes) = fs::read(path) else {
+        return false;
+    };
+    let Ok(document) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return false;
+    };
+    document["schema_version"] == 1
+        && document["model"] == RERANKER_MODEL_ID
+        && document["threshold"] == serde_json::json!(BGE_ADMISSION_THRESHOLD)
+        && document["top_k"] == serde_json::json!(RERANKER_TOP_K)
+        && document["max_unique_pairs"] == serde_json::json!(BGE_MAX_PAIRS)
+        && document["candidate_pipeline"] == BGE_PIPELINE_VERSION
+        && document["acceptance"]["pass"] == true
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn preflight_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
+    let directory = std::env::var_os("GIVN_SPEC_BGE_MODEL_DIR")
+        .or_else(|| std::env::var_os("GIVN_SPEC_BGE_CACHE"))
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| root.join("givn/.spec-reranker-cache"));
+    let model = directory.join("model.onnx");
+    let model_bytes = fs::read(&model)
+        .with_context(|| format!("read BGE model artifact {}", model.display()))?;
+    for name in [
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ] {
+        let path = directory.join(name);
+        let bytes = fs::read(&path)
+            .with_context(|| format!("read BGE model artifact {}", path.display()))?;
+        if name != "tokenizer.json" {
+            serde_json::from_slice::<serde_json::Value>(&bytes)
+                .with_context(|| format!("parse BGE model artifact {}", path.display()))?;
+        }
+    }
+    if model_bytes.windows(b"model.onnx.data".len()).any(|window| window == b"model.onnx.data")
+        && !directory.join("model.onnx.data").is_file()
+    {
+        bail!("read BGE model artifact {}", directory.join("model.onnx.data").display());
+    }
+    Ok(directory)
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn score_bge_pairs(
+    root: &Path,
+    pairs: &[(SimilarityEndpoint, SimilarityEndpoint)],
+    texts: &BTreeMap<(String, String), String>,
+    backend: BgeBackendKind,
+) -> Result<BgeRun> {
+    let started = std::time::Instant::now();
+    let overrides = bge_directional_overrides()?;
+    let mut evidence = BTreeMap::new();
+    match backend {
+        BgeBackendKind::Stub => {
+            for (left, right) in pairs {
+                let forward = bge_directional_score(left, right, texts, overrides.as_ref())?;
+                let reverse = bge_directional_score(right, left, texts, overrides.as_ref())?;
+                evidence.insert(
+                    canonical_pair_key(left.clone(), right.clone()),
+                    BgePairEvidence {
+                        forward_raw: forward,
+                        reverse_raw: reverse,
+                        symmetric_raw: (forward + reverse) / 2.0,
+                    },
+                );
+            }
+        }
+        BgeBackendKind::Local => {
+            let directory = preflight_bge_artifacts(root)?;
+            let tokenizer_files = fastembed::TokenizerFiles {
+                tokenizer_file: fs::read(directory.join("tokenizer.json"))?,
+                config_file: fs::read(directory.join("config.json"))?,
+                special_tokens_map_file: fs::read(directory.join("special_tokens_map.json"))?,
+                tokenizer_config_file: fs::read(directory.join("tokenizer_config.json"))?,
+            };
+            let model = fastembed::UserDefinedRerankingModel::new(
+                fastembed::OnnxSource::File(directory.join("model.onnx")),
+                tokenizer_files,
+            );
+            let options = fastembed::RerankInitOptionsUserDefined::new()
+                .with_max_length(NLI_MAX_LENGTH)
+                .with_intra_threads(4);
+            let mut model = fastembed::TextRerank::try_new_from_user_defined(model, options)
+                .context("BGE model is unavailable; check the local BGE artifact set")?;
+            for (left, right) in pairs {
+                let left_text = scenario_text_for(texts, left)?;
+                let right_text = scenario_text_for(texts, right)?;
+                let forward = model
+                    .rerank(left_text, [right_text], false, Some(32))?
+                    .into_iter()
+                    .next()
+                    .context("BGE omitted forward pair score")?
+                    .score;
+                let reverse = model
+                    .rerank(right_text, [left_text], false, Some(32))?
+                    .into_iter()
+                    .next()
+                    .context("BGE omitted reverse pair score")?
+                    .score;
+                evidence.insert(
+                    canonical_pair_key(left.clone(), right.clone()),
+                    BgePairEvidence {
+                        forward_raw: forward,
+                        reverse_raw: reverse,
+                        symmetric_raw: (forward + reverse) / 2.0,
+                    },
+                );
+            }
+        }
+    }
+    Ok(BgeRun::enabled(evidence, pairs.len(), started.elapsed().as_millis()))
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_directional_score(
+    left: &SimilarityEndpoint,
+    right: &SimilarityEndpoint,
+    texts: &BTreeMap<(String, String), String>,
+    overrides: Option<&BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32>>,
+) -> Result<f32> {
+    if let Some(score) = overrides.and_then(|items| items.get(&(left.clone(), right.clone()))) {
+        return Ok(*score);
+    }
+    Ok(stub_reranker_score(
+        scenario_text_for(texts, left)?,
+        scenario_text_for(texts, right)?,
+    ))
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_directional_overrides() -> Result<Option<BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32>>>
+{
+    let Some(raw) = std::env::var_os("GIVN_SPEC_BGE_DIRECTIONAL_SCORES") else {
+        return Ok(None);
+    };
+    let raw = raw
+        .to_str()
+        .context("GIVN_SPEC_BGE_DIRECTIONAL_SCORES is not valid UTF-8")?;
+    if raw.trim().is_empty() {
+        bail!("GIVN_SPEC_BGE_DIRECTIONAL_SCORES must not be empty");
+    }
+    let mut overrides = BTreeMap::new();
+    for entry in raw.split(';') {
+        let (pair, score) = entry
+            .split_once('=')
+            .with_context(|| format!("malformed directional evidence entry `{entry}`"))?;
+        let (left, right) = pair
+            .split_once("->")
+            .with_context(|| format!("malformed directional evidence entry `{entry}`"))?;
+        let left = parse_bge_endpoint(left)?;
+        let right = parse_bge_endpoint(right)?;
+        let score = score
+            .parse::<f32>()
+            .with_context(|| format!("malformed directional evidence entry `{entry}`"))?;
+        if !score.is_finite() || overrides.insert((left, right), score).is_some() {
+            bail!("malformed directional evidence entry `{entry}`");
+        }
+    }
+    for (left, right) in overrides.keys() {
+        if !overrides.contains_key(&(right.clone(), left.clone())) {
+            bail!("malformed directional evidence entry: missing reverse direction");
+        }
+    }
+    Ok(Some(overrides))
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn parse_bge_endpoint(value: &str) -> Result<SimilarityEndpoint> {
+    let (file, title) = value
+        .trim()
+        .split_once('|')
+        .with_context(|| format!("malformed directional evidence endpoint `{value}`"))?;
+    if file.trim().is_empty()
+        || title.trim().is_empty()
+        || value.contains('\n')
+        || value.contains('\r')
+    {
+        bail!("malformed directional evidence endpoint `{value}`");
+    }
+    Ok(endpoint(file.trim(), title.trim()))
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn print_explore_text(
     query: &ExploreQuery,
     refresh: &IndexRefresh,
     results: &[ExploreResultOutput],
+    bge_run: Option<&BgeRun>,
 ) {
     println!("query: '{}' (source {})", query.title, query.source);
     println!("model: {}", refresh.index.model);
@@ -1543,6 +1992,55 @@ fn print_explore_text(
     );
     println!("Reused {} scenario vectors", refresh.reused);
     println!("Embedded {} new scenario vectors", refresh.embedded);
+    if let Some(run) = bge_run {
+        println!(
+            "BGE status: {}{}",
+            run.status,
+            run.reason
+                .map(|reason| format!(", reason {}", reason.as_str()))
+                .unwrap_or_default()
+        );
+        let recommended = results
+            .iter()
+            .filter(|result| {
+                result
+                    .bge
+                    .as_ref()
+                    .is_some_and(|evidence| evidence.status == "BGE_RECOMMENDED")
+            })
+            .count();
+        let filtered = results
+            .iter()
+            .filter(|result| {
+                result
+                    .bge
+                    .as_ref()
+                    .is_some_and(|evidence| evidence.status == "BGE_FILTERED")
+            })
+            .count();
+        println!(
+            "BGE candidate generator: E5, top_k {}, raw {}, recommended {}, BGE filtered {}, unscored {}, bounded pool",
+            RERANKER_TOP_K,
+            run.e5_candidates,
+            recommended,
+            filtered,
+            run.unscored,
+        );
+        println!(
+            "BGE model: {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
+            RERANKER_MODEL_ID,
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            run.model_load_attempts,
+            run.runtime_ms.unwrap_or(0),
+        );
+        if let Some(evidence) = results.iter().find_map(|result| result.bge.as_ref()) {
+            println!(
+                "BGE symmetric raw score: {:.4} (forward {:.4}, reverse {:.4})",
+                evidence.symmetric_raw, evidence.forward_raw, evidence.reverse_raw
+            );
+        }
+    }
     for result in results {
         if let Some(change) = &result.change {
             println!(

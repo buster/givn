@@ -48,6 +48,26 @@ fn explore_permanent_draft_json(world: &mut GivnWorld) {
     ));
 }
 
+#[when("the user explores the draft once with second-stage evidence disabled")]
+fn explore_disabled_for_parity(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("BGE project is required");
+    world.previous_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
+    ));
+}
+
+#[when("the user explores the same draft once with second-stage evidence enabled")]
+fn explore_enabled_for_parity(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("BGE project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")],
+    ));
+}
+
 #[then("the result set contains the E5 candidates")]
 fn result_set_contains_e5_candidates(world: &mut GivnWorld) {
     assert!(
@@ -87,4 +107,39 @@ fn json_has_no_bge_evidence(world: &mut GivnWorld) {
         serde_json::from_slice(&super::output(world).stdout).expect("valid explore JSON");
     assert!(document.get("evidence").is_none());
     assert!(!super::stdout(world).to_ascii_lowercase().contains("bge"));
+}
+
+#[then("both runs report the same E5 raw candidate identities in the same order")]
+fn parity_raw_identities(world: &mut GivnWorld) {
+    let before = world
+        .previous_output
+        .as_ref()
+        .expect("disabled exploration output");
+    let before = String::from_utf8_lossy(&before.stdout);
+    let after = super::stdout(world);
+    let ranks = |value: &str| {
+        value
+            .lines()
+            .filter(|line| line.starts_with("rank "))
+            .map(str::to_string)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(ranks(&before), ranks(&after), "E5 raw identities changed");
+}
+
+#[then("the enabled run reports a reduced recommended candidate list when the evidence rejects a candidate")]
+fn enabled_run_reduces_recommendations(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE filtered"), "missing BGE filtered accounting: {output}");
+    assert!(output.contains("recommended 0"), "expected a reduced recommendation list: {output}");
+}
+
+#[then("only the enabled run reports participating second-stage evidence")]
+fn only_enabled_reports_bge(world: &mut GivnWorld) {
+    let before = world
+        .previous_output
+        .as_ref()
+        .expect("disabled exploration output");
+    assert!(!String::from_utf8_lossy(&before.stdout).contains("BGE"));
+    assert!(super::stdout(world).contains("BGE"));
 }

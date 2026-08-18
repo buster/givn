@@ -96,7 +96,7 @@ Feature: BGE reranking evidence for bounded semantic search
     Then the JSON retains the existing E5 query, index, and result contract
     And the JSON contains no BGE evidence object or participating model
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Enabling second-stage evidence preserves the E5 raw candidate identities
     Given a project with a permanent semantic candidate for second-stage evidence
     And a complete draft scenario is available for permanent exploration

@@ -28,10 +28,16 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] COMMIT: `8ad8db7` — `feat(bge-reranking-evidence): E5-only exploration remains the default when second-stage evidence is disabled`
 
 ### E5-only JSON omits opt-in BGE evidence fields
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: after removing only this scenario's `@wip`, the targeted run failed on the undefined JSON exploration step (non-zero).
+- [x] GREEN: added the JSON CLI invocation and assertions for `query`, `index`, `results`, and absent `evidence`/BGE fields; targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
+- [x] COMMIT: `661ad63` — `feat(bge-reranking-evidence): E5-only JSON omits opt-in BGE evidence fields`
 
 ### Enabling second-stage evidence preserves the E5 raw candidate identities
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined disabled-exploration step (non-zero).
+- [x] GREEN: added disabled/enabled CLI parity invocations, raw rank identity comparison, reduced recommendation assertion, and participation isolation; targeted run passed 7/7 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Enabling second-stage evidence preserves the E5 raw candidate identities`
 
 ### Both pair directions form the documented symmetric raw score
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
