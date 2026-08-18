@@ -144,14 +144,28 @@ evidence and its atomic commit hash.
 
 ## E2E Scenarios
 
+### E2E setup
+
+- [x] **Real CLI E2E runner**: implement the separate NLI E2E step module,
+  configure the active-feature NLI E2E matrix in `run-tests.sh`, and prove the
+  `@e2e` filter runs fewer scenarios than the full NLI feature matrix.
+  The runner uses the real compiled CLI subprocess and no external service.
+  The full NLI feature scope contains 16 scenarios; the `@nli and @e2e` scope
+  contains 5 scenarios. `cucumber-rs` strict mode is `.fail_on_skipped()`.
+  Evidence: targeted first E2E RED exited 101 at the unimplemented E2E Given
+  step; the first GREEN run passed 9/9 steps.
+  Setup commit: `6c5fbf0`; E2E implementation continues per scenario.
+
 ### NLI reduces permanent exploration candidates without changing E5 raw results
 
-- [ ] RED: remove only this scenario's `@wip`; `./run-tests.sh --e2e` targeted
-  run fails on the unimplemented E2E step. Evidence: pending.
-- [ ] GREEN: implement the real compiled CLI subprocess assertions in
-  `tests/steps/nli_evidence_e2e_steps.rs`. Evidence: pending.
-- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: removed only this scenario's `@wip`; targeted E2E runner exited 101
+  at the unimplemented E2E Given step.
+- [x] GREEN: implemented the real compiled CLI Explore subprocess, NLI model,
+  directional probability, reduction, and raw-identity assertions. Targeted
+  run passed 9/9 steps.
+- [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 9
+  steps passed.
+- [x] COMMIT: `444ef0e` — `test(e2e): NLI reduces permanent exploration candidates without changing E5 raw results`.
 
 ### NLI reduces change-aware exploration candidates without changing E5 raw results
 
