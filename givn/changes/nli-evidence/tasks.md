@@ -130,7 +130,7 @@ evidence and its atomic commit hash.
   Targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
   passed.
-- [x] COMMIT: `4360171` — `feat(nli-evidence): keep recommended NLI candidates blocking`.
+- [x] COMMIT: `4360171` — `feat(nli-evidence): keep recommended NLI candidates blocking`; follow-up compile fix `a4ee76c` — `feat(nli-evidence): report NLI-only blocking worklists`.
 
 ### The independent NLI capability owns the legacy diagnostic selector
 
