@@ -180,11 +180,14 @@ evidence and its atomic commit hash.
 
 ### NLI reduces advisory review candidates without assigning a Givn class
 
-- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement the real advisory review CLI assertions. Evidence:
-  pending.
-- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: removed only this scenario's `@wip`; targeted E2E runner exited 101
+  at the unimplemented advisory-project Given step.
+- [x] GREEN: implemented the real advisory-review subprocess, NLI model/runtime,
+  reduction, filtered-evidence, and no-classification assertions. Targeted run
+  passed 8/8 steps.
+- [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 8
+  steps passed.
+- [x] COMMIT: `39b18ee` — `test(e2e): NLI reduces advisory review candidates without assigning a Givn class`.
 
 ### NLI filtered evidence does not block the blocking review
 
