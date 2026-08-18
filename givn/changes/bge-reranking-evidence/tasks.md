@@ -118,10 +118,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined same-file fixture.
 - [x] GREEN: changed active exploration exclusion from file-level to exact `(file,title)` identity and added projected/source fixture assertions; targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A same-file candidate remains eligible after identity exclusions`
+- [x] COMMIT: `05aceb0` — `feat(bge-reranking-evidence): A same-file candidate remains eligible after identity exclusions`
 
 ### The admission operating point includes a symmetric score of `3.0000`
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined exact-threshold fixture.
+- [x] GREEN: added inclusive threshold directional overrides and advisory recommendation/classification assertions; targeted run passed 4/4 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 4 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The admission operating point includes a symmetric score of `3.0000``
 
 ### Missing second-stage model artifacts are explicitly unavailable
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
