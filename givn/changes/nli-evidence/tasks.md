@@ -123,12 +123,14 @@ evidence and its atomic commit hash.
 
 ### An NLI-recommended candidate still blocks unresolved semantic review
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement NLI-recommended semantic report candidate blocks and
-  unresolved exit status. Production files: `src/spec/retrieval.rs` and tests.
-  Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted blocking runner initially failed on the unimplemented NLI
+  report step.
+- [x] GREEN: implemented NLI-only semantic report rendering, recommended
+  candidate fields, unresolved blocking exit status, and report evidence.
+  Targeted run passed 5/5 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
+  passed.
+- [x] COMMIT: `4360171` — `feat(nli-evidence): keep recommended NLI candidates blocking`.
 
 ### The independent NLI capability owns the legacy diagnostic selector
 
