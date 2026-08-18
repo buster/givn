@@ -166,11 +166,12 @@ Feature: BGE reranking evidence for bounded semantic search
     And the audit reports 512 unique pairs and 1024 directional calls
     And the audit reports no bounded-pool overflow
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: BGE does not select NLI without the independent NLI capability
     Given a project with a permanent semantic candidate for second-stage evidence
     And the local second-stage evidence is enabled without NLI evidence
     And the legacy NLI selector is set without enabling the independent capability
+    And a complete draft scenario is available for permanent exploration
     When the user explores the draft with second-stage evidence enabled
     Then the command exits 0
     And stdout contains no NLI evidence

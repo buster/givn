@@ -23,6 +23,16 @@ fn bge_enabled(world: &mut GivnWorld) {
     world.retrieval_reranker = None;
 }
 
+#[given("the local second-stage evidence is enabled without NLI evidence")]
+fn bge_enabled_without_nli(world: &mut GivnWorld) {
+    world.retrieval_reranker = None;
+}
+
+#[given("the legacy NLI selector is set without enabling the independent capability")]
+fn legacy_nli_selector_without_capability(world: &mut GivnWorld) {
+    world.retrieval_reranker = Some("nli-stub".to_string());
+}
+
 #[given("a complete draft scenario is available for permanent exploration")]
 fn complete_permanent_draft(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
@@ -70,6 +80,20 @@ fn explore_enabled_for_parity(world: &mut GivnWorld) {
         env,
         &["spec", "explore", "--file", "draft.feature"],
         &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")],
+    ));
+}
+
+#[when("the user explores the draft with second-stage evidence enabled")]
+fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("BGE project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "stub"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+        ],
     ));
 }
 
@@ -503,4 +527,14 @@ fn only_enabled_reports_bge(world: &mut GivnWorld) {
         .expect("disabled exploration output");
     assert!(!String::from_utf8_lossy(&before.stdout).contains("BGE"));
     assert!(super::stdout(world).contains("BGE"));
+}
+
+#[then("stdout contains no NLI evidence")]
+fn stdout_has_no_nli_evidence(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).to_ascii_lowercase().contains("nli"));
+}
+
+#[then("stdout identifies BGE as the participating second-stage model")]
+fn stdout_identifies_bge_model(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
 }
