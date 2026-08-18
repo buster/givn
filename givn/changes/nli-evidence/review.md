@@ -77,8 +77,9 @@ matches the change-level claim in `arc42.md` for all twelve chapters.
 
 ## Deterministic Gates
 
-`givn lint --change nli-evidence` is clean. The review run reported the net
-delta as `15 added, 1 modified, 0 removed` and `overlap dispositions passed`.
+`givn lint --change nli-evidence` is clean across both delta feature files. The
+review run reported the net delta as `15 added, 1 modified, 0 removed` and
+`overlap dispositions passed`.
 No unresolved shape match or long-scenario split-or-keep finding remains. The
 single modified legacy scenario is an intentional replacement of the dormant
 NLI diagnostic scenario; no removed+added pair exists.
@@ -105,6 +106,15 @@ Coverage classification uses only the three allowed buckets:
 | Existing repository paths outside this change with uncovered lines | Missing test coverage | Not introduced by this change; the existing permanent feature matrix remains the owning coverage surface. No NLI behavior is excused by this classification. |
 
 `COVERAGE MEASUREMENT: VALID`
+
+## Blocking Semantic Gate
+
+With deterministic local E5/NLI stubs selected,
+`givn check review --change nli-evidence` exits 0 after the configured verify
+and verify-e2e hooks. It writes `semantic-review.md` with schema version 1,
+`Status: PASS`, and candidate count `0`. The modified legacy scenario is stored
+under the matching `bge-reranking-evidence` capability path, so its projected
+target identity is excluded correctly.
 
 ## Verification
 
