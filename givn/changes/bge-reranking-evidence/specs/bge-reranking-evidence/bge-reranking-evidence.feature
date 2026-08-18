@@ -22,7 +22,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports a symmetric raw score and elapsed runtime
     And stdout reports that the second-stage candidate pool is bounded
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Change-aware exploration narrows the union of permanent and active neighbours
     Given an end-to-end project with permanent and active-change semantic candidates
     And the local second-stage evidence is enabled
