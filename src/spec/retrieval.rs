@@ -49,6 +49,8 @@ const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-
 const NLI_MAX_LENGTH: usize = 512;
 #[cfg(feature = "nli-evidence")]
 const NLI_REPORT_LIMIT: usize = 20;
+#[cfg(feature = "nli-evidence")]
+const NLI_ADMISSION_THRESHOLD: f32 = 0.5;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
@@ -265,6 +267,8 @@ struct SimilarityCandidate {
     bge_admission: Option<&'static str>,
     #[cfg(feature = "nli-evidence")]
     nli: Option<NliEvidence>,
+    #[cfg(feature = "nli-evidence")]
+    nli_admission: Option<&'static str>,
     scopes: Vec<&'static str>,
 }
 
@@ -3911,6 +3915,15 @@ fn nli_similarity_candidates(
 ) -> Result<(Vec<SimilarityCandidate>, usize)> {
     let (mut result, considered, candidate_texts) = similarity_candidate_pool(root, index, delta)?;
     score_nli_candidates(root, &mut result, &candidate_texts, backend)?;
+    for candidate in &mut result {
+        candidate.nli_admission = candidate.nli.map(|evidence| {
+            if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                "NLI_RECOMMENDED"
+            } else {
+                "NLI_FILTERED"
+            }
+        });
+    }
     result.sort_by(|left, right| {
         nli_strength(right)
             .total_cmp(&nli_strength(left))
@@ -3941,6 +3954,18 @@ fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
         "nli: model {}, top_k {}, considered {} candidate pairs; evidence is diagnostic only",
         NLI_MODEL_ID, RERANKER_TOP_K, considered
     );
+    let recommended = candidates
+        .iter()
+        .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+        .count();
+    let filtered = candidates
+        .iter()
+        .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
+        .count();
+    println!(
+        "NLI candidate accounting: raw {}, recommended {}, NLI filtered {}, bounded pool",
+        considered, recommended, filtered
+    );
     println!(
         "nli distribution: entailment {}, neutral {}, contradiction {}",
         label_counts[0], label_counts[1], label_counts[2]
@@ -3967,6 +3992,10 @@ fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
             evidence.symmetric[1],
             evidence.symmetric[2],
             nli_label(&evidence.symmetric),
+        );
+        println!(
+            "NLI admission: {}",
+            candidate.nli_admission.unwrap_or("NLI_UNSCORED")
         );
     }
     println!(
@@ -4370,6 +4399,8 @@ fn add_similarity_candidate(
             bge_admission: None,
             #[cfg(feature = "nli-evidence")]
             nli: None,
+            #[cfg(feature = "nli-evidence")]
+            nli_admission: None,
             scopes: vec![scope],
         },
     );
