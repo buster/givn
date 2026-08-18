@@ -21,15 +21,14 @@ evidence and its atomic commit hash.
 
 ### NLI reports a symmetric probability summary from both directions
 
-- [ ] RED: remove only this scenario's `@wip`; targeted NLI runner fails on the
-  unimplemented step. Evidence: pending.
-- [ ] GREEN: implement directional override parsing, symmetric probability
-  calculation, and order-independent assertions. Production files:
-  `src/spec/retrieval.rs`, `tests/steps/nli_evidence_steps.rs`.
-  Targeted runner passes. Evidence: pending.
-- [ ] REFACTOR: rerun the unchanged targeted command; it passes. Evidence:
-  pending.
-- [ ] COMMIT: pending.
+- [x] RED: removed only this scenario's `@wip`; targeted NLI runner exited 101
+  at the unimplemented Given step.
+- [x] GREEN: added NLI admission output and concrete symmetric-probability
+  assertions in `src/spec/retrieval.rs` and `tests/steps/nli_evidence_steps.rs`.
+  Targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 6 steps
+  passed.
+- [x] COMMIT: `a0cbb6a` — `feat(nli-evidence): NLI reports a symmetric probability summary from both directions`.
 
 ### BGE and NLI jointly reduce the recommended candidate set
 
