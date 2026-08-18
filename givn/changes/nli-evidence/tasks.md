@@ -15,7 +15,7 @@ evidence and its atomic commit hash.
   1 feature, 1 scenario, 1 failed step; process exited 101 because the first
   step was undefined. The runner also panicked after reporting the failed step.
   ```
-  Commit: recorded after the setup commit.
+  Commit: `6c5fbf0` — `chore(nli-evidence): scaffold bounded NLI change`.
 
 ## Non-E2E Scenarios
 
