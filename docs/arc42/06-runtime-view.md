@@ -323,17 +323,21 @@ The retrieval and similarity-gate flow is:
 3. With `spec-retrieval` compiled, `givn spec review --change <id>` refreshes the
    permanent index, retrieves the E5 top-K union for active queries, and remains
    advisory. With `cross-encoder-reranker` compiled and an approved local BGE
-   admission artifact (or the deterministic test stub), the same bounded pool is
-   scored in both directions by local BGE and rendered with model, raw score,
-   admission, and elapsed-runtime evidence. A failed approval remains E5-only.
+   admission artifact (or the deterministic test stub), and/or with the
+   independent `nli-evidence` feature and selector, the same bounded pool is
+   scored in both directions by each selected local model and rendered with
+   model, score/probability, admission, and elapsed-runtime evidence. A failed
+   BGE approval or unavailable NLI model preserves the explicit E5 fallback.
 4. `spec-similarity-gate` is independent. When it is compiled, its existing E5
    hard-gate behavior runs separately; `cross-encoder-reranker` does not imply
    that feature and BGE does not replace it.
 5. A symmetric BGE score at or above `3.0000` is `BGE_RECOMMENDED`; a lower
-   score is `BGE_FILTERED`. The latter is visible evidence only and never
-   creates a Givn classification or a blocking failure. A missing artifact or
-   pair-cap overflow emits `BGE_UNAVAILABLE` and preserves the E5-only path;
-   approval failure emits no BGE evidence object.
+   score is `BGE_FILTERED`. A symmetric NLI entailment probability at or above
+   `0.5000` is `NLI_RECOMMENDED`; a lower probability is `NLI_FILTERED`. Both
+   filtered states are visible evidence only and never create a Givn
+   classification or a blocking failure. Missing artifacts or pair-cap
+   overflow emit the corresponding unavailable state and preserve the E5
+   path; failed BGE approval emits no BGE evidence object.
 6. After a successful archive, the change is moved to `givn/archive/` and the
    permanent index is refreshed. The refresh is best-effort and feature-gated;
    it never runs before a merge gate that could roll the permanent tree back.
@@ -471,11 +475,12 @@ contains active `Added` and `Modified` scenarios from the requested change,
 including scenarios nested under `Rule:`. Each active delta is compared with
 permanent scenarios (`delta-to-permanent`) and with other active deltas in the
 same change (`delta-to-delta`) only when the existing E5 score is at least
-`0.9500`. When BGE participates, the shared top-five union is scored in both
-directions. `BGE_RECOMMENDED` pairs enter the agent-classified worklist;
-`BGE_FILTERED` pairs are rendered as non-blocking evidence blocks without a
-Givn classification. Removed scenarios and permanent-permanent pairs are never
-reported.
+`0.9500`. When BGE and/or NLI participates, the shared top-five union is scored
+in both directions by each selected layer. A pair enters the agent-classified
+worklist only when every participating layer recommends it;
+`BGE_FILTERED` and `NLI_FILTERED` pairs are rendered as non-blocking evidence
+blocks without a Givn classification. Removed scenarios and permanent-permanent
+pairs are never reported.
 
 For a Modified scenario in a delta-to-permanent comparison, only the own
 projected `(target file, title)` endpoint is excluded. Other scenarios in that
@@ -492,11 +497,13 @@ one final newline, and no trailing blank line. Its first lines are exactly
 `# Semantic Review`, the current report schema version, `Change: <json-string>`,
 `Status: PASS|BLOCKED`, and `Candidate count: <canonical-unsigned-integer>`.
 The BGE-enabled form adds a fixed run summary with raw, recommended, filtered,
-unscored, model, runtime, and availability fields. `BGE_FILTERED` blocks never
-contain a classification or rationale and do not affect PASS/BLOCKED status.
-`BGE_UNSCORED` is rendered inside the same contiguous `## Candidate <ordinal>`
-grammar with null directional scores and remains blocking with the normal
-classification/rationale fields.
+unscored, model, runtime, and availability fields. An NLI-enabled form appends
+the corresponding NLI summary and directional probability fields. `BGE_FILTERED`
+and `NLI_FILTERED` blocks never contain a classification or rationale and do not
+affect PASS/BLOCKED status. `BGE_UNSCORED` and `NLI_UNSCORED` are rendered
+inside the same contiguous `## Candidate <ordinal>` grammar with null
+directional values and remain blocking with the normal classification/rationale
+fields.
 For non-empty reports, candidate blocks are separated by one blank line and
 use contiguous `## Candidate <ordinal>` headers. Each block contains exactly
 the allowed fields in the design-defined order, with no unknown or omitted
@@ -556,6 +563,43 @@ with a changed observable fact or invariant and a score strictly below `0.9500`.
 Failure writes a complete BLOCKED report atomically and emits a remediation
 finding; success emits the deterministic `semantic remediation verified`
 receipt.
+
+### 6.8f NLI second-stage evidence
+
+When `nli-evidence` is compiled and `GIVN_SPEC_RERANKER` selects NLI, the
+runtime reuses the already-built E5 top-K union. It validates the bounded pair
+pool, preflights the local NLI artifacts, scores every selected pair in both
+directions, and computes the symmetric probability summary. The selected
+admission status is then combined with BGE, if BGE is active, before rendering
+the final recommended set.
+
+```mermaid
+sequenceDiagram
+    participant User
+    participant CLI as givn spec/review
+    participant E5 as E5 candidate pool
+    participant BGE as optional BGE layer
+    participant NLI as optional NLI layer
+    participant Output as text/JSON/report renderer
+
+    User->>CLI: explore, review, or duplicate audit
+    CLI->>E5: build deterministic top-K union
+    E5-->>CLI: raw candidates and canonical pairs
+    par selected BGE
+        CLI->>BGE: score forward and reverse pairs
+        BGE-->>CLI: BGE evidence and admissions
+    and selected NLI
+        CLI->>NLI: preflight and score forward/reverse pairs
+        NLI-->>CLI: probabilities and NLI admissions
+    end
+    CLI->>CLI: intersect enabled admissions
+    CLI->>Output: raw candidates, filtered evidence, recommended worklist
+    Output-->>User: advisory or blocking result
+```
+
+An unavailable NLI artifact or pair-cap refusal is rendered as
+`NLI_UNAVAILABLE` with the normal E5 candidate set. The NLI layer never
+changes the persisted permanent-only index and never writes feature files.
 
 ## 6.9 Running the test runner on a fresh project (sentinel)
 

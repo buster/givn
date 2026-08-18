@@ -341,12 +341,36 @@ review.
 
 The blocking semantic report is an additional, dedicated `givn check review
 --change <id>` gate. Its E5 raw candidate boundary remains the binary-fixed
-cosine `0.9500`; BGE may narrow only the recommended, non-blocking admission
-worklist. `BGE_FILTERED` blocks carry no classification and cannot change
-PASS/BLOCKED status. The advisory `givn spec review --change <id>` command uses
-the same bounded evidence path and does not create `semantic-review.md`. NLI
-remains outside this slice and is reserved for an independent
-`nli-evidence` feature.
+cosine `0.9500`; BGE and NLI may narrow only the recommended, non-blocking
+admission worklist. `BGE_FILTERED` and `NLI_FILTERED` blocks carry no
+classification and cannot change PASS/BLOCKED status. The advisory
+`givn spec review --change <id>` command uses the same bounded evidence path and
+does not create `semantic-review.md`. NLI is independently selected through the
+`nli-evidence` feature and does not replace BGE or the E5 gate.
+
+### 8.5a.1 NLI evidence and combined admission
+
+The independent `nli-evidence` feature consumes the same deterministic E5
+top-five union as BGE and never expands it. It preflights the local NLI model,
+scores both ordered directions, softmaxes each direction, and softmaxes the
+mean logits for the symmetric summary. Label indices are resolved by the
+configured `entailment`, `neutral`, and `contradiction` names rather than by a
+fixed model output position.
+
+The inclusive symmetric entailment operating point is `0.5000`:
+`NLI_RECOMMENDED` is evidence for the worklist and `NLI_FILTERED` is explicit
+non-blocking evidence. When BGE and NLI are both selected, the recommended
+worklist is the intersection of both statuses. A model that is disabled emits
+no evidence; a model that is unavailable emits `NLI_UNAVAILABLE` with raw E5
+fallback and does not silently filter. A successful partial bounded run marks
+outside pairs `NLI_UNSCORED`, which remain blocking. An overflow refuses before
+model loading.
+
+Explore and duplicate JSON use additive NLI fields and a distinct schema only
+when NLI participates; E5-only and BGE-only consumers retain their existing
+contracts. Semantic reports append NLI run and candidate fields after the
+existing BGE fields. NLI evidence is diagnostic and advisory; none of its
+labels is a Givn classification or a remediation result.
 
 ### 8.5b Permanent scenario exploration
 
@@ -366,10 +390,10 @@ entry with the same normalized file and title; stdin has no identity to remove.
 
 The no-change result is advisory. It reports at most five deterministic
 embedding-score candidates and index/model metadata, or the same data as stable
-JSON. In a `cross-encoder-reranker` build it additionally scores that bounded
-set in both directions and reports recommended/filtered evidence; it never
-classifies a pair, blocks a workflow, or writes a `.feature` file. NLI is not
-selected by this path.
+JSON. In a `cross-encoder-reranker` and/or `nli-evidence` build it additionally
+scores that bounded set in both directions and reports the selected
+recommended/filtered evidence; it never classifies a pair, blocks a workflow,
+or writes a `.feature` file.
 
 ### 8.5c Current-change scenario exploration
 
@@ -392,12 +416,12 @@ permanent index, delta source, projected target, and query file identity. It
 accepts relative and absolute paths, preventing the same scenario from being
 shown merely because callers used different path forms.
 
-With `cross-encoder-reranker`, the permanent-plus-active query union is the
-bounded BGE input. The query's exact source identity and a modified scenario's
-exact projected target are excluded, but another eligible scenario in the same
-file remains. The E5 raw result set remains visible; BGE-recommended results
-form the recommended view and BGE-filtered results remain explicit non-blocking
-evidence.
+With `cross-encoder-reranker` and/or `nli-evidence`, the permanent-plus-active
+query union is the bounded second-stage input. The query's exact source identity
+and a modified scenario's exact projected target are excluded, but another
+eligible scenario in the same file remains. The E5 raw result set remains
+visible; the intersection of enabled recommendations forms the recommended
+view and each filtered result remains explicit non-blocking evidence.
 
 The result remains advisory and deterministic. Human lines identify `scope`,
 source, and owning change where applicable. JSON keeps all PR 1 fields and

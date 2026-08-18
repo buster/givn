@@ -126,6 +126,12 @@ graph TD
 | Q-85 | Local artifact integrity | A maintainer provisions a BGE model without network access. | Offline preflight validates `model.onnx`, referenced external weights, tokenizer/config/special-token files, and hashes before FastEmbed user-defined construction; missing or corrupt files report `BGE_UNAVAILABLE` without a load attempt. |
 | Q-86 | Candidate parity | The Python benchmark and Rust product select bounded pairs. | The benchmark labels its parser as a reference implementation, and approval is rejected unless a Rust-production parity fingerprint is present. |
 | Q-87 | Compatibility | A failed BGE benchmark approval is present. | Explore, advisory review, blocking review, and duplicate audit use the E5-only contract with no `BGE_FILTERED` output; runtime artifact failures remain the separate `BGE_UNAVAILABLE` state. |
+| Q-88 | NLI review integrity | A reviewer enables only `nli-evidence` for an E5 candidate set. | The raw E5 identities remain unchanged; NLI reports both directional probability sets, a symmetric summary, and a smaller recommended set when the fixed entailment rule rejects a candidate. |
+| Q-89 | NLI review integrity | A reviewer enables both BGE and NLI. | The recommended worklist contains only candidates admitted by both layers; each filtered layer remains explicit evidence without a Givn classification. |
+| Q-90 | NLI compatibility | NLI is disabled or its artifacts are unavailable. | Disabled mode emits no NLI evidence; unavailable mode emits `NLI_UNAVAILABLE` with the reason and preserves the E5 fallback without claiming model participation. |
+| Q-91 | NLI directional evidence | A pair is presented in either endpoint order. | Forward and reverse entailment/neutral/contradiction probabilities are reported, and the symmetric summary is identical after reversing endpoint order. |
+| Q-92 | NLI operational bound | The shared E5 top-K union contains a bounded or overflowing pair set. | NLI scores only the bounded union and refuses before model loading on overflow; pair count and elapsed runtime are visible. |
+| Q-93 | NLI boundary integrity | A pair has symmetric entailment probability exactly `0.5000`. | The pair is `NLI_RECOMMENDED` inclusively and still requires an explicit Givn classification. |
 
 ## 10.3 Acceptance signals per phase
 

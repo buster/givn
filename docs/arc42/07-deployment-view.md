@@ -18,6 +18,12 @@ portable musl release artifact until its native link mode is proven. The
 distributed/default binary remains independent of the model cache and
 preserves the single-binary contract.
 
+The same retrieval-enabled build can independently activate the local NLI
+model through `nli-evidence`. NLI artifacts are kept in the project-local
+`givn/.spec-nli-cache/` directory and are preflighted before ONNX session
+construction. NLI adds no service, port, hosted inference dependency, or
+runtime process; tests use deterministic stubs and never download weights.
+
 ## 7.2 Target environments
 
 | Platform | Triple |
@@ -70,7 +76,8 @@ No global config directory is used (NFR-3: all config in the project `givn/`).
 Permanent exploration uses the same feature-enabled local authoring build as
 `spec index` and `spec search`; it adds no service, port, or deployment artifact.
 When retrieval is enabled, `givn/.spec-index.json`, the embedding model cache,
-and the separate `givn/.spec-reranker-cache/` are project-local and generated.
+and the separate `givn/.spec-reranker-cache/` and
+`givn/.spec-nli-cache/` directories are project-local and generated.
 The `cross-encoder-reranker` build loads BGE only after deterministic top-K
 selection and refuses before model loading when the 512-unique-pair bound is
 exceeded. Tests use `stub` or explicit missing-artifact modes and never download
