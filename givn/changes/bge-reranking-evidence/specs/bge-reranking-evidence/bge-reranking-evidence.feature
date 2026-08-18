@@ -266,10 +266,11 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts
     And stdout does not claim that the second-stage model participated
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: A corrupt local BGE cache is rejected before model construction
     Given a project with a corrupt local second-stage model cache
     And local second-stage artifact mode is selected
+    And a complete draft scenario is available for permanent exploration
     When the user explores the draft with second-stage evidence enabled
     Then the command exits 0
     And stdout reports BGE status "BGE_UNAVAILABLE"

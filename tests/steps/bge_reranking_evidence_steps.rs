@@ -33,6 +33,23 @@ fn bge_artifacts_missing(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("missing".to_string());
 }
 
+#[given("a project with a corrupt local second-stage model cache")]
+fn corrupt_bge_cache_project(world: &mut GivnWorld) {
+    bge_project(world);
+    let env = world.env.as_ref().expect("BGE project");
+    let cache = env.path("givn/.spec-reranker-cache");
+    fs::create_dir_all(&cache).expect("create corrupt BGE cache");
+    fs::write(cache.join("model.onnx"), b"not-an-onnx-model").expect("write corrupt model");
+    world.retrieval_reranker = Some("corrupt".to_string());
+}
+
+#[given("local second-stage artifact mode is selected")]
+fn local_bge_artifact_mode(world: &mut GivnWorld) {
+    if world.retrieval_reranker.is_none() {
+        world.retrieval_reranker = Some("corrupt".to_string());
+    }
+}
+
 #[given("the legacy NLI selector is set without enabling the independent capability")]
 fn legacy_nli_selector_without_capability(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("nli-stub".to_string());
@@ -93,6 +110,8 @@ fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
     let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
         "missing"
+    } else if world.retrieval_reranker.as_deref() == Some("corrupt") {
+        "local"
     } else {
         "stub"
     };
@@ -694,6 +713,21 @@ fn missing_bge_reports_zero_counts(world: &mut GivnWorld) {
 #[then("stdout does not claim that the second-stage model participated")]
 fn missing_bge_has_no_model_claim(world: &mut GivnWorld) {
     assert!(!super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
+}
+
+#[then("stdout reports BGE status \"BGE_UNAVAILABLE\"")]
+fn corrupt_bge_reports_status(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE_UNAVAILABLE"));
+}
+
+#[then("stdout reports reason \"missing-artifact\"")]
+fn corrupt_bge_reports_reason(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("reason missing-artifact"));
+}
+
+#[then("stdout reports zero model load attempts")]
+fn corrupt_bge_reports_no_load(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("model load attempts 0"));
 }
 
 #[given("a modified active scenario shares its projected target file with another permanent scenario")]
