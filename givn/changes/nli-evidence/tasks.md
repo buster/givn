@@ -209,14 +209,16 @@ evidence and its atomic commit hash.
   Targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 6
   steps passed.
-- [x] COMMIT: `bcef01a` — `test(e2e): NLI uses the bounded E5 neighbour union for the permanent duplicate audit`.
+- [x] COMMIT: `bcef01a` — `test(e2e): NLI uses the bounded E5 neighbour union for the permanent duplicate audit`; follow-up BGE status compatibility fix `ac144ca`.
 
 ## Full Verification
 
-- [ ] `givn lint --change nli-evidence` exits 0.
-- [ ] `./run-tests.sh` exits 0 across E5-only, BGE-only, NLI-only, and combined
-  matrices.
-- [ ] `./run-tests.sh --e2e` exits 0 and runs fewer scenarios than the full
-  command because it filters to `@e2e`.
-- [ ] `cargo fmt --check`, `cargo check`, and
-  `cargo clippy --workspace --all-targets -- -D warnings` pass.
+- [x] `givn lint --change nli-evidence` exits 0: `1 file(s) checked — clean`.
+- [x] `./run-tests.sh` exits 0 across E5-only, BGE-only, NLI-only, and combined
+  matrices. Evidence: permanent E5 `286/286`, BGE `35/35`, NLI-only `8/8`,
+  combined `2/2`, and disabled-NLI `1/1` scenarios passed.
+- [x] `./run-tests.sh --e2e` exits 0 and runs fewer scenarios than the full
+  command because it filters to `@e2e`. Direct NLI proof: full `@nli` scope
+  `16/16` scenarios and `@nli and @e2e` scope `5/5` scenarios.
+- [x] `cargo fmt --check` and `cargo clippy --workspace --all-targets -- -D warnings` pass. `cargo check --features spec-retrieval,nli-evidence` and the
+  feature-free `cargo check --no-default-features` also pass.
