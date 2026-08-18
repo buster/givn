@@ -239,7 +239,7 @@ Feature: BGE reranking evidence for bounded semantic search
     Then the command reports the E5 gate result
     And the output contains no participating BGE model or score
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: A same-file candidate remains eligible after identity exclusions
     Given a modified active scenario shares its projected target file with another permanent scenario
     And the local second-stage evidence is enabled
