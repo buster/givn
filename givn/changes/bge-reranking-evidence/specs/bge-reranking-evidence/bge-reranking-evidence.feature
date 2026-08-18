@@ -354,7 +354,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout contains no participating second-stage model, score, or runtime
     And stdout contains no `BGE_FILTERED` evidence
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: Failed benchmark approval keeps permanent exploration on E5-only evidence
     Given a project with a permanent semantic candidate for second-stage evidence
     And the BGE admission benchmark has failed
