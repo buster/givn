@@ -322,10 +322,22 @@ targeted runner command is the design command with `--name <scenario title>`.
   5 steps (5 passed)
   ```
 - [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 5 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Approval writer requires enforcement for any approval output`
+- [x] COMMIT: `5f35dde` — `feat(bge-reranking-evidence): Approval writer requires enforcement for any approval output`
 
 ### A binary without retrieval reports the explicit unavailable mode
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted run failed on the undefined no-retrieval subprocess step (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "A binary without retrieval reports the explicit unavailable mode"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added the explicit `--no-default-features` build and real no-retrieval CLI subprocess assertion; targeted run passed 4/4 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  4 steps (4 passed)
+  ```
+- [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 4 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A binary without retrieval reports the explicit unavailable mode`
 
 ### Repeated bounded scoring is deterministic and reports runtime separately
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
