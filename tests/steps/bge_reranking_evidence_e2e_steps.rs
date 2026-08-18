@@ -198,3 +198,61 @@ fn e2e_advisory_has_no_classification(world: &mut GivnWorld) {
         assert!(!output.contains(classification), "stdout: {output}");
     }
 }
+
+#[then("the command exits non-zero because the candidate is unresolved")]
+fn e2e_blocking_review_is_unresolved(world: &mut GivnWorld) {
+    assert!(!super::output(world).status.success());
+}
+
+fn e2e_semantic_report(world: &GivnWorld) -> String {
+    let env = world.env.as_ref().expect("E2E semantic project");
+    fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read E2E semantic report")
+}
+
+#[then("the semantic review report contains the second-stage model identity")]
+fn e2e_report_contains_bge_model(world: &mut GivnWorld) {
+    assert!(e2e_semantic_report(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
+}
+
+#[then("the semantic review report contains the symmetric raw score and elapsed runtime")]
+fn e2e_report_contains_bge_score_and_runtime(world: &mut GivnWorld) {
+    let report = e2e_semantic_report(world);
+    assert!(report.contains("bge_symmetric_raw:"));
+    assert!(report.contains("BGE runtime ms:"));
+}
+
+#[then("the semantic review report records E5 candidates filtered from the recommended worklist")]
+fn e2e_report_records_filtered_candidates(world: &mut GivnWorld) {
+    let report = e2e_semantic_report(world);
+    assert!(report.contains("BGE filtered count:"));
+    assert!(
+        report.contains("## BGE Filtered Candidate"),
+        "report:\n{report}"
+    );
+}
+
+#[then("the semantic review report keeps the candidate classification unresolved")]
+fn e2e_report_keeps_unresolved_classification(world: &mut GivnWorld) {
+    assert!(e2e_semantic_report(world).contains("classification: UNCERTAIN"));
+}
+
+#[then("the active and permanent specifications remain unchanged")]
+fn e2e_specs_remain_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E semantic project");
+    for (path, before) in world
+        .permanent_spec_snapshot
+        .as_ref()
+        .expect("permanent snapshot")
+        .iter()
+        .chain(
+            world
+                .active_change_snapshot
+                .as_ref()
+                .expect("active snapshot")
+                .iter(),
+        )
+    {
+        assert_eq!(&fs::read(env.path(path)).unwrap(), before, "changed {path}");
+    }
+}

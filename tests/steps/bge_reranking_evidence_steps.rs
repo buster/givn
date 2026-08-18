@@ -1066,6 +1066,27 @@ fn semantic_duplicate_project_alias(world: &mut GivnWorld) {
 #[given("an end-to-end project with an unresolved blocking semantic candidate")]
 fn unavailable_blocking_project(world: &mut GivnWorld) {
     filtered_blocking_project(world);
+    let env = world.env.as_ref().expect("blocking project");
+    fs::write(
+        env.path("givn/specs/provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n\n  Scenario: Provider warning is reported\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request with a warning\n",
+    )
+    .expect("write close semantic blocking candidate");
+    world.permanent_spec_snapshot = Some(vec![(
+        "givn/specs/provider.feature".to_string(),
+        fs::read(env.path("givn/specs/provider.feature")).expect("snapshot permanent specs"),
+    )]);
+    world.active_change_snapshot = Some(vec![(
+        "givn/changes/running-change/specs/running.feature".to_string(),
+        fs::read(env.path("givn/changes/running-change/specs/running.feature"))
+            .expect("snapshot active specs"),
+    )]);
+    world.retrieval_bge_scores = Some(
+        "givn/changes/running-change/specs/running.feature|Active provider request->givn/specs/provider.feature|Provider request is accepted=4.0000;givn/specs/provider.feature|Provider request is accepted->givn/changes/running-change/specs/running.feature|Active provider request=4.0000;givn/changes/running-change/specs/running.feature|Active provider request->givn/specs/provider.feature|Provider warning is reported=1.0000;givn/specs/provider.feature|Provider warning is reported->givn/changes/running-change/specs/running.feature|Active provider request=1.0000".to_string(),
+    );
+    world.retrieval_stub_scores = Some(
+        "Active provider request|Provider request is accepted=0.9900;Active provider request|Provider warning is reported=0.9900".to_string(),
+    );
     world.retrieval_reranker = Some("missing".to_string());
 }
 
@@ -1141,9 +1162,20 @@ fn pair_cap_blocking_project(world: &mut GivnWorld) {
 )]
 fn run_unavailable_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("unavailable blocking project");
-    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")];
+    let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
+        "missing"
+    } else {
+        "stub"
+    };
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if let Some(pool) = world.retrieval_bge_test_pool.as_deref() {
         environments.push(("GIVN_SPEC_BGE_TEST_POOL", pool));
+    }
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    if let Some(scores) = world.retrieval_stub_scores.as_deref() {
+        environments.push(("GIVN_SPEC_STUB_PAIR_SCORES", scores));
     }
     world.last_output = Some(common::run_givn_with_envs(
         env,
