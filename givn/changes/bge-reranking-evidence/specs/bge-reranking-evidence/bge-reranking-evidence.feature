@@ -344,7 +344,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports BGE status "BGE_UNAVAILABLE"
     And stdout remains advisory and does not assign a Givn classification
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: Failed benchmark approval keeps advisory review on E5-only evidence
     Given a project with an active semantic review candidate
     And the BGE admission benchmark has failed
