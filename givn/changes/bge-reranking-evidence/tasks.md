@@ -136,10 +136,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined corrupt-cache fixture.
 - [x] GREEN: added local-artifact preflight before FastEmbed construction and corrupt-cache zero-load assertions; targeted run passed 8/8 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 8 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A corrupt local BGE cache is rejected before model construction`
+- [x] COMMIT: `96a201f` — `feat(bge-reranking-evidence): A corrupt local BGE cache is rejected before model construction`
 
 ### Unavailable BGE JSON preserves raw candidates and names unscored pairs
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the missing draft/JSON path.
+- [x] GREEN: added additive unavailable Explore JSON status/reason/count rendering and E5 raw/unscored assertions; targeted run passed 10/10 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 10 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Unavailable BGE JSON preserves raw candidates and names unscored pairs`
 
 ### Unavailable BGE duplicate JSON preserves the E5 fallback accounting
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
