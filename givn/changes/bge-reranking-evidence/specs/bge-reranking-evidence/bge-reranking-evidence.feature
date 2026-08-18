@@ -436,7 +436,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the approval artifact records the Rust pipeline fingerprint and all artifact hashes
     And the approval artifact records every benchmark acceptance boolean
 
-  @givn.added @bge-approval @wip
+  @givn.added @bge-approval
   Scenario: Approval writer rejects a missing Rust parity attestation
     Given a passing benchmark report without a Rust production parity attestation
     When the maintainer writes the BGE approval artifact with enforcement enabled

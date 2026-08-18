@@ -262,10 +262,22 @@ targeted runner command is the design command with `--name <scenario title>`.
   7 steps (7 passed)
   ```
 - [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Approval writer requires enforced Rust parity and complete artifacts`
+- [x] COMMIT: `e81a5bb` — `feat(bge-reranking-evidence): Approval writer requires enforced Rust parity and complete artifacts`
 
 ### Approval writer rejects a missing Rust parity attestation
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted approval run failed on the undefined passing-report fixture (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Approval writer rejects a missing Rust parity attestation"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added the missing-parity report fixture, explicit approval-command exit assertion, and parity-required/no-artifact assertions; targeted run passed 5/5 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  5 steps (5 passed)
+  ```
+- [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 5 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Approval writer rejects a missing Rust parity attestation`
 
 ### Approval writer rejects an incomplete local BGE artifact set
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
