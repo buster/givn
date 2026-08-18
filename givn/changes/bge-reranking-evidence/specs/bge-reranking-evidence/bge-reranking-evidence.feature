@@ -68,7 +68,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And deterministic exact and structural overlaps are absent from second-stage scoring
     And the second-stage pair count is no greater than the documented endpoint-neighbour bound
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Semantic authoring guidance prevents score-avoidance prose
     Given an initialized givn project
     When the end-to-end user requests semantic authoring guidance through the givn CLI
