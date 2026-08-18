@@ -137,10 +137,10 @@ Production changes:
   existing optional retrieval dependencies.
 - `run-tests.sh`: add isolated NLI-only and combined NLI+BGE feature-matrix
   invocations for the active change feature file and its E2E scenarios.
-- `measure-coverage.sh`: detect the active `@nli-evidence` feature and measure
-  it with the combined retrieval feature matrix; measure the permanent BGE
-  feature matrix without the independent NLI capability so the existing BGE
-  isolation contract remains valid during coverage.
+- `measure-coverage.sh`: detect NLI capability tags in the active or merged
+  permanent feature corpus and measure it with the combined retrieval feature
+  matrix; exclude the `@bge-no-nli` compatibility scenario from that combined
+  run while retaining it in the BGE-only regression matrix.
 - `plan-semantic.md`: carry the new stack-tip state and record PR 23 as the
   NLI layer.
 
