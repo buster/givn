@@ -338,6 +338,66 @@ fn recommended_candidate_retains_evidence(world: &mut GivnWorld) {
     assert!(output.contains("symmetric"));
 }
 
+#[given("a project with only E5 candidates that receive filtered second-stage evidence")]
+fn filtered_blocking_project(world: &mut GivnWorld) {
+    advisory_bge_project(world);
+    let env = world.env.as_ref().expect("advisory fixture");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write blocking commands");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n| `Active provider request` | `Provider warning is reported` | related |\n",
+    )
+    .expect("write blocking review disposition");
+    world.retrieval_bge_scores = Some(
+        "givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider request is accepted=1.0000;givn/specs/provider.feature|Provider request is accepted->givn/specs/running-change/running-change.feature|Active provider request=1.0000;givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider warning is reported=1.0000;givn/specs/provider.feature|Provider warning is reported->givn/specs/running-change/running-change.feature|Active provider request=1.0000".to_string(),
+    );
+}
+
+#[when("the user runs blocking change review with second-stage evidence enabled")]
+fn run_filtered_blocking_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("filtered blocking project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
+
+#[then("the semantic review report records the E5 candidates as filtered")]
+fn semantic_report_records_filtered(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("filtered blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic report");
+    assert!(report.contains("BGE_FILTERED"));
+}
+
+#[then("the filtered candidates have no Givn classification")]
+fn filtered_report_has_no_classification(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("filtered blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic report");
+    for block in report.split("## BGE Filtered Candidate").skip(1) {
+        let block = block.split("## ").next().unwrap_or(block);
+        assert!(!block.contains("classification:"));
+    }
+}
+
+#[then("the report status is \"PASS\"")]
+fn semantic_report_status_pass(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("filtered blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic report");
+    assert!(report.contains("Status: PASS"));
+}
+
 #[then("both runs report the same E5 raw candidate identities in the same order")]
 fn parity_raw_identities(world: &mut GivnWorld) {
     let before = world
