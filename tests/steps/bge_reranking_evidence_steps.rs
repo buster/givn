@@ -138,10 +138,11 @@ fn run_approval_writer(world: &mut GivnWorld, enforce: bool) {
         .arg(script)
         .args(["--report", APPROVAL_REPORT, "--labels", APPROVAL_LABELS]);
     if enforce {
+        command.args(["--enforce"]);
+        if env.path(APPROVAL_PARITY).is_file() {
+            command.args(["--rust-parity", APPROVAL_PARITY]);
+        }
         command.args([
-            "--enforce",
-            "--rust-parity",
-            APPROVAL_PARITY,
             "--givn-binary",
             env!("CARGO_BIN_EXE_givn"),
             "--bge-model",
@@ -168,6 +169,11 @@ fn bge_project(world: &mut GivnWorld) {
 
 #[given("a benchmark report with the Python reference candidate pipeline")]
 fn python_reference_benchmark_report(world: &mut GivnWorld) {
+    write_approval_benchmark(world);
+}
+
+#[given("a passing benchmark report without a Rust production parity attestation")]
+fn passing_benchmark_without_parity(world: &mut GivnWorld) {
     write_approval_benchmark(world);
 }
 
@@ -200,6 +206,25 @@ fn complete_approval_artifact_set(world: &mut GivnWorld) {
 #[when("the maintainer writes the BGE approval artifact with enforcement enabled")]
 fn maintainer_writes_enforced_approval(world: &mut GivnWorld) {
     run_approval_writer(world, true);
+}
+
+#[then("the approval command exits non-zero")]
+fn approval_command_exits_non_zero(world: &mut GivnWorld) {
+    assert!(!super::output(world).status.success());
+}
+
+#[then("stderr says that Rust parity is required")]
+fn approval_requires_rust_parity(world: &mut GivnWorld) {
+    assert!(
+        super::stderr(world).contains("Rust parity is required"),
+        "stderr: {}",
+        super::stderr(world)
+    );
+}
+
+#[then("no BGE approval artifact is written")]
+fn no_approval_artifact_written(world: &mut GivnWorld) {
+    assert!(!approval_env(world).path(APPROVAL_OUTPUT).exists());
 }
 
 #[then("the approval artifact has exactly the documented top-level fields")]
