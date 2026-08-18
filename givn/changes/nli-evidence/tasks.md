@@ -44,11 +44,15 @@ evidence and its atomic commit hash.
 
 ### An unavailable NLI layer keeps a combined candidate blocking
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement explicit unavailable fallback and blocking semantics.
-  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted combined blocking runner exited 101 at the unimplemented
+  Given step.
+- [x] GREEN: implemented NLI selection/preflight, semantic-review NLI run
+  accounting, unavailable fallback, null probability fields, and blocking
+  semantics in `src/spec/retrieval.rs` and tests. Targeted run passed 5/5
+  steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
+  passed.
+- [x] COMMIT: `6d4dd95` — `feat(nli-evidence): keep combined candidates blocking when NLI is unavailable`.
 
 ### NLI refuses an overflowing bounded pair pool before model loading
 
