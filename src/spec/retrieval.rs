@@ -53,7 +53,6 @@ const NLI_REPORT_LIMIT: usize = 20;
 const NLI_ADMISSION_THRESHOLD: f32 = 0.5;
 #[cfg(feature = "nli-evidence")]
 const NLI_MAX_PAIRS: usize = 512;
-#[cfg(feature = "nli-evidence")]
 const SEMANTIC_NLI_REPORT_SCHEMA_VERSION: u32 = 3;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
@@ -183,7 +182,6 @@ struct ExploreNliOutput {
     symmetric: [f32; 3],
 }
 
-#[cfg(feature = "nli-evidence")]
 #[derive(Debug, Serialize)]
 struct ExploreNliEvidenceOutput {
     status: &'static str,
@@ -1624,8 +1622,6 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let bge_run: Option<BgeRun> = None;
     #[cfg(feature = "nli-evidence")]
     let nli_run = apply_semantic_nli(root, &delta, &mut candidates)?;
-    #[cfg(not(feature = "nli-evidence"))]
-    let nli_run = None;
     let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
     let remediation =
@@ -2926,8 +2922,6 @@ fn explore_enabled(
     let bge_run: Option<BgeRun> = None;
     #[cfg(feature = "nli-evidence")]
     let nli_run = nli_explore_run(root, &query, &ranked)?;
-    #[cfg(not(feature = "nli-evidence"))]
-    let nli_run = None;
 
     let mut results = Vec::with_capacity(ranked.len());
     for (index, (candidate, score)) in ranked.into_iter().enumerate() {
@@ -4070,8 +4064,16 @@ fn run_second_stage_advisory_review(
     let recommended = candidates
         .iter()
         .filter(|candidate| {
-            (!bge_enabled || candidate.bge_admission == Some("BGE_RECOMMENDED"))
-                && (!nli_enabled || candidate.nli_admission == Some("NLI_RECOMMENDED"))
+            (!bge_enabled || candidate.bge_admission == Some("BGE_RECOMMENDED")) && {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    !nli_enabled || candidate.nli_admission == Some("NLI_RECOMMENDED")
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    true
+                }
+            }
         })
         .count();
     println!(
