@@ -18,6 +18,11 @@ fn bge_disabled(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("disabled".to_string());
 }
 
+#[given("the local second-stage evidence is enabled")]
+fn bge_enabled(world: &mut GivnWorld) {
+    world.retrieval_reranker = None;
+}
+
 #[given("a complete draft scenario is available for permanent exploration")]
 fn complete_permanent_draft(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
@@ -185,6 +190,88 @@ fn reversed_direction_is_symmetric(world: &mut GivnWorld) {
     );
     let document: serde_json::Value = serde_json::from_slice(&output.stdout).expect("valid JSON");
     assert_eq!(document["candidates"][0]["evidence"]["bge"]["symmetric_raw"], serde_json::json!(3.0));
+}
+
+#[given("a permanent corpus containing exact, structural, and semantic relationships")]
+fn deterministic_exclusion_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("exact.feature"),
+        "Feature: exact\n\n  Scenario: Exact left\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Exact right\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write exact fixture");
+    fs::write(
+        specs.join("structural.feature"),
+        "Feature: structural\n\n  Scenario: Structural left\n    Given a configured provider catalog\n    When the provider command is run normally\n    Then the command exits 0 and output contains ready\n\n  @givn.done\n  Scenario: Structural right\n    Given a configured provider catalog\n    When the provider command is run in TTY mode\n    Then the command exits 2 and output does not contain ready\n",
+    )
+    .expect("write structural fixture");
+    fs::write(
+        specs.join("semantic.feature"),
+        "Feature: semantic\n\n  Scenario: Token is required\n    Given a client request\n    When the client sends a request without credentials\n    Then the server responds with unauthorized status\n\n  Scenario: Authentication needs a token\n    Given an identity service\n    When the client authenticates without a token\n    Then access is denied with token required\n",
+    )
+    .expect("write semantic fixture");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/semantic.feature|Token is required::givn/specs/semantic.feature|Authentication needs a token=0.9600".to_string(),
+    );
+    world.retrieval_bge_scores = Some(
+        "givn/specs/semantic.feature|Token is required->givn/specs/semantic.feature|Authentication needs a token=4.0000;givn/specs/semantic.feature|Authentication needs a token->givn/specs/semantic.feature|Token is required=4.0000".to_string(),
+    );
+}
+
+#[when("the user runs the permanent duplicate audit with JSON output")]
+fn run_deterministic_exclusion_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("deterministic exclusion project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "stub"),
+            (
+                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+                "givn/specs/semantic.feature|Token is required::givn/specs/semantic.feature|Authentication needs a token=0.9600",
+            ),
+            (
+                "GIVN_SPEC_BGE_DIRECTIONAL_SCORES",
+                "givn/specs/semantic.feature|Token is required->givn/specs/semantic.feature|Authentication needs a token=4.0000;givn/specs/semantic.feature|Authentication needs a token->givn/specs/semantic.feature|Token is required=4.0000",
+            ),
+        ],
+    ));
+}
+
+#[then("exact and structural relationships retain their deterministic evidence")]
+fn deterministic_candidates_have_no_bge(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    for candidate in document["candidates"].as_array().unwrap() {
+        if candidate["kind"] == "exact_duplicate" || candidate["kind"] == "structural_overlap" {
+            assert!(candidate["evidence"]["bge"].is_null());
+        }
+    }
+}
+
+#[then("only the eligible semantic neighbour union has second-stage evidence")]
+fn only_semantic_candidates_have_bge(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    for collection in ["candidates", "filtered_candidates", "unscored_candidates"] {
+        if let Some(candidates) = document[collection].as_array() {
+            for candidate in candidates {
+                if !candidate["evidence"]["bge"].is_null() {
+                    assert_eq!(candidate["kind"], "semantic_candidate");
+                }
+            }
+        }
+    }
+}
+
+#[then("no deterministic exclusion is counted as a second-stage pair")]
+fn deterministic_pairs_excluded_from_bge(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert_eq!(document["bge_run"]["unique_pairs"], serde_json::json!(1));
 }
 
 #[then("both runs report the same E5 raw candidate identities in the same order")]
