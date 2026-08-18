@@ -32,13 +32,15 @@ evidence and its atomic commit hash.
 
 ### BGE and NLI jointly reduce the recommended candidate set
 
-- [ ] RED: remove only this scenario's `@wip`; targeted runner fails. Evidence:
-  pending.
-- [ ] GREEN: implement independent stage admission intersection and combined
-  advisory output. Production files: `src/spec/retrieval.rs` and tests.
-  Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: removed only this scenario's `@wip`; targeted combined runner exited
+  101 at the unimplemented Given step.
+- [x] GREEN: implemented independent BGE/NLI advisory dispatch, admission
+  intersection, raw candidate preservation, and non-classifying output in
+  `src/spec/retrieval.rs` and `tests/steps/nli_evidence_steps.rs`. Targeted run
+  passed 5/5 steps.
+- [x] REFACTOR: reran the unchanged combined targeted command; 1 scenario and
+  5 steps passed.
+- [x] COMMIT: `e42afc6` — `feat(nli-evidence): BGE and NLI jointly reduce the recommended candidate set`.
 
 ### An unavailable NLI layer keeps a combined candidate blocking
 
