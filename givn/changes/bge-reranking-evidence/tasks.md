@@ -106,10 +106,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted gate-feature run failed before the undefined combination fixture.
 - [x] GREEN: made the E5 gate execute independently before BGE advisory rendering and asserted both outputs; targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the same targeted command with `spec-similarity-gate`; 1 scenario and 6 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The independent E5 gate remains separate from BGE evidence`
+- [x] COMMIT: `babaa8a` — `feat(bge-reranking-evidence): The independent E5 gate remains separate from BGE evidence`
 
 ### The E5 similarity gate remains available without BGE
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted gate-only run failed on the undefined blocking-review invocation.
+- [x] GREEN: added the gate-only CLI fixture and assertions proving the E5 gate remains visible without BGE; targeted run passed 4/4 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 4 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The E5 similarity gate remains available without BGE`
 
 ### A same-file candidate remains eligible after identity exclusions
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.

@@ -232,7 +232,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And a BGE status does not replace the E5 gate result
     And no BGE status is rendered as a Givn classification
 
-  @givn.added @gate-only @wip
+  @givn.added @gate-only
   Scenario: The E5 similarity gate remains available without BGE
     Given an end-to-end project with an active semantic review candidate
     When the user runs blocking change review with the E5 similarity gate and BGE disabled
