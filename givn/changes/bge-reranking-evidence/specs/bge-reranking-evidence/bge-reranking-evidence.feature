@@ -187,7 +187,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout contains no BGE admission status
     And the E5 candidate identities remain unchanged
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: BGE JSON preserves raw ordering and names every admission count
     Given a project with a permanent semantic candidate for second-stage evidence
     And the local second-stage evidence is enabled
