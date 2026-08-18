@@ -410,6 +410,12 @@ fn overflow_pool_project(world: &mut GivnWorld) {
     world.retrieval_bge_test_pool = Some("overflow-513".to_string());
 }
 
+#[given("a project whose deterministic E5 neighbour union contains exactly 512 eligible pairs")]
+fn bounded_pool_project(world: &mut GivnWorld) {
+    directional_bge_project(world);
+    world.retrieval_bge_test_pool = Some("bounded-512".to_string());
+}
+
 #[then("the command reports the bounded-pool overflow and the unavailable BGE status")]
 fn overflow_reports_unavailable(world: &mut GivnWorld) {
     let output = super::stdout(world);
@@ -450,6 +456,18 @@ fn overflow_reports_no_model_load(world: &mut GivnWorld) {
 #[then("no output claims that BGE participated")]
 fn overflow_has_no_participation_claim(world: &mut GivnWorld) {
     assert!(!super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
+}
+
+#[then("the audit reports 512 unique pairs and 1024 directional calls")]
+fn bounded_reports_exact_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE unique pair count: 512"));
+    assert!(output.contains("BGE directional call count: 1024"));
+}
+
+#[then("the audit reports no bounded-pool overflow")]
+fn bounded_reports_no_overflow(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).contains("BGE_UNAVAILABLE"));
 }
 
 #[then("both runs report the same E5 raw candidate identities in the same order")]

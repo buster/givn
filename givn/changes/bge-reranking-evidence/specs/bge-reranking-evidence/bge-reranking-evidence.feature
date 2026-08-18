@@ -157,7 +157,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the output reports zero BGE model load attempts
     And no output claims that BGE participated
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: The exact bounded pair limit accepts 512 unique pairs
     Given a project whose deterministic E5 neighbour union contains exactly 512 eligible pairs
     And the local second-stage evidence is enabled
