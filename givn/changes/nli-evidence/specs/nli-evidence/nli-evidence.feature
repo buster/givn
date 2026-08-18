@@ -77,7 +77,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And a candidate is recommended only when both BGE and NLI recommend it
     And each filtered candidate remains evidence without a Givn classification
 
-  @givn.added @nli @nli-combined @wip
+  @givn.added @nli @nli-combined
   Scenario: An unavailable NLI layer keeps a combined candidate blocking
     Given a project with a semantic candidate that BGE recommends and NLI cannot score
     When the user runs combined second-stage blocking review
