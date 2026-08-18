@@ -38,13 +38,14 @@ fn one_nli_candidate(world: &mut GivnWorld) {
 #[when("the user runs advisory NLI review")]
 fn run_advisory_nli_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("NLI candidate project");
+    let nli_mode = world.retrieval_reranker.as_deref().unwrap_or("nli-stub");
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "review", "--change", "running-change"],
         &[
             ("GIVN_SPEC_EMBEDDER", "stub"),
             ("GIVN_SPEC_BGE", "disabled"),
-            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            ("GIVN_SPEC_RERANKER", nli_mode),
         ],
     ));
 }
@@ -543,4 +544,43 @@ fn disabled_output_is_e5_only(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(output.contains("query:"), "stdout: {output}");
     assert!(!output.contains("evidence"), "stdout: {output}");
+}
+
+#[given("a project with a semantic candidate and unavailable NLI model artifacts")]
+fn nli_missing_artifacts_project(world: &mut GivnWorld) {
+    one_nli_candidate(world);
+    world.retrieval_reranker = Some("nli-missing".to_string());
+}
+
+#[then("the output reports NLI as unavailable")]
+fn nli_missing_reports_unavailable(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("NLI status: NLI_UNAVAILABLE"),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("the output reports the unavailable reason as missing-artifact")]
+fn nli_missing_reports_reason(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("reason missing-artifact"),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("the E5 candidates remain visible and blocking when applicable")]
+fn nli_missing_keeps_e5_candidates(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("E5 candidates"),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("no output claims that NLI participated")]
+fn nli_missing_has_no_participation_claim(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(!output.contains("NLI model: Moritz"), "stdout: {output}");
 }
