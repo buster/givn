@@ -274,23 +274,69 @@ fn e2e_nli_advisory_no_classification(world: &mut GivnWorld) {
 }
 
 #[given("an end-to-end project whose active semantic candidates are all filtered by NLI evidence")]
-fn e2e_nli_blocking_project(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_blocking_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove E2E NLI blocking specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create E2E NLI blocking specs");
+    fs::write(
+        env.path("givn/specs/provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write E2E NLI blocking permanent spec");
+    fs::create_dir_all(env.path("givn/changes/running-change/specs"))
+        .expect("create E2E NLI blocking change");
+    fs::write(
+        env.path("givn/changes/running-change/specs/running.feature"),
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Audit storage quota\n    Given an isolated archive ledger\n    When the ledger reaches capacity\n    Then the retention policy rejects the write\n",
+    )
+    .expect("write E2E NLI blocking delta");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write E2E NLI blocking commands");
+    world.env = Some(env);
 }
 
 #[when("the end-to-end user runs blocking NLI review through the givn CLI")]
-fn e2e_nli_blocking_review(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_blocking_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E NLI blocking project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            (
+                "GIVN_SPEC_STUB_PAIR_SCORES",
+                "Audit storage quota|Provider request is accepted=0.9900",
+            ),
+        ],
+    ));
 }
 
 #[then("the semantic review report has NLI status enabled")]
-fn e2e_nli_report_enabled(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_report_enabled(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E NLI blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read E2E NLI blocking report");
+    assert!(
+        report.contains("NLI status: NLI_ENABLED"),
+        "report: {report}"
+    );
 }
 
 #[then("the semantic review report records the filtered candidates without a Givn classification")]
-fn e2e_nli_report_filtered(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_report_filtered(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E NLI blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read E2E NLI blocking report");
+    assert!(
+        report.contains("## NLI Filtered Candidate"),
+        "report: {report}"
+    );
+    assert!(!report.contains("classification:"), "report: {report}");
 }
 
 #[given("an end-to-end permanent corpus with deterministic overlaps and NLI semantic candidates")]

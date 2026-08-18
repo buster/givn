@@ -51,7 +51,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And stdout records the filtered candidate as NLI evidence
     And stdout assigns no automatic Givn classification
 
-  @givn.added @nli @e2e @wip
+  @givn.added @nli @e2e
   Scenario: NLI filtered evidence does not block the blocking review
     Given an end-to-end project whose active semantic candidates are all filtered by NLI evidence
     When the end-to-end user runs blocking NLI review through the givn CLI
