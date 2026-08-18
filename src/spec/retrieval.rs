@@ -57,6 +57,8 @@ const SEMANTIC_EVIDENCE_SCHEMA_VERSION: u32 = 1;
 const SEMANTIC_SIMILARITY_THRESHOLD: f32 = 0.95;
 #[cfg(feature = "spec-retrieval")]
 const DUPLICATE_REPORT_SCHEMA_VERSION: u32 = 1;
+#[cfg(feature = "spec-retrieval")]
+const DUPLICATE_BGE_REPORT_SCHEMA_VERSION: u32 = 2;
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -324,6 +326,17 @@ struct DuplicateCandidate {
     distinguishing_facts: Vec<DistinguishingFact>,
     fact_contradiction: bool,
     score: Option<f32>,
+    bge: Option<BgePairEvidence>,
+    bge_admission: Option<&'static str>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct DuplicateAudit {
+    candidates: Vec<DuplicateCandidate>,
+    filtered_candidates: Vec<DuplicateCandidate>,
+    unscored_candidates: Vec<DuplicateCandidate>,
+    bge_run: Option<BgeRun>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -335,6 +348,17 @@ struct DuplicateJsonEvidence {
     distinguishing_facts: Vec<DistinguishingFact>,
     fact_contradiction: bool,
     score: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bge: Option<DuplicateJsonBgeEvidence>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateJsonBgeEvidence {
+    status: &'static str,
+    forward_raw: f32,
+    reverse_raw: f32,
+    symmetric_raw: f32,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -354,6 +378,30 @@ struct DuplicateJsonReport {
     scanned_scenarios: usize,
     candidate_count: usize,
     candidates: Vec<DuplicateJsonCandidate>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    e5_candidate_count: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bge_run: Option<DuplicateJsonRun>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    filtered_candidates: Option<Vec<DuplicateJsonCandidate>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    unscored_candidates: Option<Vec<DuplicateJsonCandidate>>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Serialize)]
+struct DuplicateJsonRun {
+    status: &'static str,
+    reason: Option<&'static str>,
+    model: Option<&'static str>,
+    top_k: usize,
+    unique_pairs: usize,
+    directional_calls: usize,
+    recommended_count: usize,
+    filtered_count: usize,
+    unscored_count: usize,
+    model_load_attempts: usize,
+    runtime_ms: Option<u128>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -601,25 +649,221 @@ fn index_enabled(root: &Path) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn duplicates_enabled(root: &Path, json: bool) -> Result<()> {
     let scenarios = collect_duplicate_scenarios(root)?;
-    let candidates = duplicate_candidates(root, &scenarios)?;
+    let audit = duplicate_audit(root, &scenarios)?;
 
     if json {
-        println!("{}", render_duplicate_json(scenarios.len(), &candidates)?);
+        println!("{}", render_duplicate_json(scenarios.len(), &audit)?);
     } else {
-        print!("{}", render_duplicate_text(scenarios.len(), &candidates));
+        print!("{}", render_duplicate_text(scenarios.len(), &audit));
     }
     Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn render_duplicate_text(scanned_scenarios: usize, candidates: &[DuplicateCandidate]) -> String {
+fn duplicate_audit(root: &Path, scenarios: &[DuplicateScenario]) -> Result<DuplicateAudit> {
+    let candidates = duplicate_candidates(root, scenarios)?;
+    #[cfg(feature = "cross-encoder-reranker")]
+    {
+        return apply_duplicate_bge(root, scenarios, candidates);
+    }
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    {
+        Ok(DuplicateAudit {
+            candidates,
+            filtered_candidates: Vec::new(),
+            unscored_candidates: Vec::new(),
+            bge_run: None,
+        })
+    }
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn apply_duplicate_bge(
+    root: &Path,
+    scenarios: &[DuplicateScenario],
+    mut candidates: Vec<DuplicateCandidate>,
+) -> Result<DuplicateAudit> {
+    let semantic: Vec<DuplicateCandidate> = candidates
+        .iter()
+        .filter(|candidate| candidate.kind == "semantic_candidate")
+        .cloned()
+        .collect();
+    if semantic.is_empty() {
+        return Ok(DuplicateAudit {
+            candidates,
+            filtered_candidates: Vec::new(),
+            unscored_candidates: Vec::new(),
+            bge_run: None,
+        });
+    }
+    let Some(backend) = bge_backend(root)? else {
+        return Ok(DuplicateAudit {
+            candidates,
+            filtered_candidates: Vec::new(),
+            unscored_candidates: Vec::new(),
+            bge_run: None,
+        });
+    };
+
+    let mut selected = BTreeSet::new();
+    for scenario in scenarios {
+        let mut neighbours: Vec<&DuplicateCandidate> = semantic
+            .iter()
+            .filter(|candidate| {
+                candidate.left.file == scenario.endpoint.file
+                    && candidate.left.title == scenario.endpoint.title
+                    || candidate.right.file == scenario.endpoint.file
+                        && candidate.right.title == scenario.endpoint.title
+            })
+            .collect();
+        neighbours.sort_by(|left, right| {
+            right
+                .score
+                .unwrap_or_default()
+                .total_cmp(&left.score.unwrap_or_default())
+                .then_with(|| duplicate_candidate_order(left, right))
+        });
+        for candidate in neighbours.into_iter().take(RERANKER_TOP_K) {
+            selected.insert(duplicate_pair_key(&candidate.left, &candidate.right));
+        }
+    }
+
+    if selected.len() > BGE_MAX_PAIRS {
+        let run = BgeRun::unavailable(BgeUnavailableReason::PairCap, semantic.len());
+        for candidate in &mut candidates {
+            if candidate.kind == "semantic_candidate" {
+                candidate.bge_admission = Some("BGE_UNSCORED");
+            }
+        }
+        return Ok(DuplicateAudit {
+            candidates,
+            filtered_candidates: Vec::new(),
+            unscored_candidates: semantic,
+            bge_run: Some(run),
+        });
+    }
+
+    let texts: BTreeMap<(String, String), String> = scenarios
+        .iter()
+        .map(|scenario| {
+            (
+                (scenario.endpoint.file.clone(), scenario.endpoint.title.clone()),
+                scenario.text.clone(),
+            )
+        })
+        .collect();
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected
+        .iter()
+        .map(|((left_file, left_title), (right_file, right_title))| {
+            (endpoint(left_file, left_title), endpoint(right_file, right_title))
+        })
+        .collect();
+    let mut run = match backend {
+        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+        Err(reason) => BgeRun::unavailable(reason, semantic.len()),
+    };
+    run.e5_candidates = semantic.len();
+    run.unscored = semantic
+        .iter()
+        .filter(|candidate| !selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right)))
+        .count();
+
+    if run.status == "BGE_UNAVAILABLE" {
+        for candidate in &mut candidates {
+            if candidate.kind == "semantic_candidate" {
+                candidate.bge_admission = Some("BGE_UNSCORED");
+            }
+        }
+        return Ok(DuplicateAudit {
+            candidates,
+            filtered_candidates: Vec::new(),
+            unscored_candidates: semantic,
+            bge_run: Some(run),
+        });
+    }
+
+    let mut filtered = Vec::new();
+    let mut unscored = Vec::new();
+    candidates.retain_mut(|candidate| {
+        if candidate.kind != "semantic_candidate" {
+            return true;
+        }
+        let key = duplicate_pair_key(&candidate.left, &candidate.right);
+        let Some(evidence) = run
+            .evidence
+            .get(&canonical_pair_key(endpoint(&key.0.0, &key.0.1), endpoint(&key.1.0, &key.1.1)))
+            .cloned()
+        else {
+            candidate.bge_admission = Some("BGE_UNSCORED");
+            unscored.push(candidate.clone());
+            return false;
+        };
+        candidate.bge = Some(evidence.clone());
+        if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+            candidate.bge_admission = Some("BGE_RECOMMENDED");
+            true
+        } else {
+            candidate.bge_admission = Some("BGE_FILTERED");
+            filtered.push(candidate.clone());
+            false
+        }
+    });
+    for candidate in &semantic {
+        if !selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right)) {
+            let mut candidate = candidate.clone();
+            candidate.bge_admission = Some("BGE_UNSCORED");
+            unscored.push(candidate);
+        }
+    }
+    candidates.sort_by(duplicate_candidate_order);
+    filtered.sort_by(duplicate_candidate_order);
+    unscored.sort_by(duplicate_candidate_order);
+    Ok(DuplicateAudit {
+        candidates,
+        filtered_candidates: filtered,
+        unscored_candidates: unscored,
+        bge_run: Some(run),
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> String {
     let mut report = format!(
         "Givn spec duplicates\nScanned scenarios: {scanned_scenarios}\nCandidate count: {}\n",
-        candidates.len()
+        audit.candidates.len()
     );
-    for (rank, candidate) in candidates.iter().enumerate() {
+    if let Some(run) = audit.bge_run.as_ref() {
+        report.push_str(&format!(
+            "BGE status: {}{}\nBGE model: {}\nBGE top_k: {}\nBGE E5 raw count: {}\nBGE recommended count: {}\nBGE filtered count: {}\nBGE unscored count: {}\nBGE unique pair count: {}\nBGE directional call count: {}\nBGE model load attempts: {}\nBGE runtime ms: {}\n",
+            run.status,
+            run.reason
+                .map(|reason| format!(", reason {}", reason.as_str()))
+                .unwrap_or_default(),
+            if run.status == "BGE_ENABLED" { RERANKER_MODEL_ID } else { "null" },
+            RERANKER_TOP_K,
+            run.e5_candidates,
+            audit
+                .candidates
+                .iter()
+                .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
+                .count(),
+            audit.filtered_candidates.len(),
+            audit.unscored_candidates.len(),
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            run.model_load_attempts,
+            run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
+        ));
+    }
+    for (rank, candidate) in audit.candidates.iter().enumerate() {
         report.push_str(&render_duplicate_candidate(rank + 1, candidate));
         report.push('\n');
+    }
+    for candidate in &audit.filtered_candidates {
+        report.push_str(&format!("BGE filtered: {}\n", render_duplicate_candidate(0, candidate)));
+    }
+    for candidate in &audit.unscored_candidates {
+        report.push_str(&format!("BGE unscored: {}\n", render_duplicate_candidate(0, candidate)));
     }
     report
 }
@@ -627,32 +871,100 @@ fn render_duplicate_text(scanned_scenarios: usize, candidates: &[DuplicateCandid
 #[cfg(feature = "spec-retrieval")]
 fn render_duplicate_json(
     scanned_scenarios: usize,
-    candidates: &[DuplicateCandidate],
+    audit: &DuplicateAudit,
 ) -> Result<String> {
     let report = DuplicateJsonReport {
-        schema_version: DUPLICATE_REPORT_SCHEMA_VERSION,
+        schema_version: if audit.bge_run.is_some() {
+            DUPLICATE_BGE_REPORT_SCHEMA_VERSION
+        } else {
+            DUPLICATE_REPORT_SCHEMA_VERSION
+        },
         scanned_scenarios,
-        candidate_count: candidates.len(),
-        candidates: candidates
+        candidate_count: audit.candidates.len(),
+        candidates: audit
+            .candidates
             .iter()
+            .map(duplicate_json_candidate)
             .enumerate()
-            .map(|(index, candidate)| DuplicateJsonCandidate {
-                rank: index + 1,
-                kind: candidate.kind,
-                left: candidate.left.clone(),
-                right: candidate.right.clone(),
-                evidence: DuplicateJsonEvidence {
-                    relation: candidate.relation,
-                    assertion_shape: candidate.assertion_shape.clone(),
-                    facts: candidate.facts.clone(),
-                    distinguishing_facts: candidate.distinguishing_facts.clone(),
-                    fact_contradiction: candidate.fact_contradiction,
-                    score: candidate.score.map(|score| format!("{score:.4}")),
-                },
+            .map(|(index, mut candidate)| {
+                candidate.rank = index + 1;
+                candidate
             })
             .collect(),
+        e5_candidate_count: audit.bge_run.as_ref().map(|run| run.e5_candidates),
+        bge_run: audit.bge_run.as_ref().map(|run| duplicate_json_run(run, audit)),
+        filtered_candidates: audit.bge_run.as_ref().map(|_| {
+            audit
+                .filtered_candidates
+                .iter()
+                .map(duplicate_json_candidate)
+                .enumerate()
+                .map(|(index, mut candidate)| {
+                    candidate.rank = index + 1;
+                    candidate
+                })
+                .collect()
+        }),
+        unscored_candidates: audit.bge_run.as_ref().map(|_| {
+            audit
+                .unscored_candidates
+                .iter()
+                .map(duplicate_json_candidate)
+                .enumerate()
+                .map(|(index, mut candidate)| {
+                    candidate.rank = index + 1;
+                    candidate
+                })
+                .collect()
+        }),
     };
     serde_json::to_string(&report).context("serialize duplicate audit JSON")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_json_candidate(candidate: &DuplicateCandidate) -> DuplicateJsonCandidate {
+    DuplicateJsonCandidate {
+        rank: 0,
+        kind: candidate.kind,
+        left: candidate.left.clone(),
+        right: candidate.right.clone(),
+        evidence: DuplicateJsonEvidence {
+            relation: candidate.relation,
+            assertion_shape: candidate.assertion_shape.clone(),
+            facts: candidate.facts.clone(),
+            distinguishing_facts: candidate.distinguishing_facts.clone(),
+            fact_contradiction: candidate.fact_contradiction,
+            score: candidate.score.map(|score| format!("{score:.4}")),
+            bge: candidate.bge.as_ref().map(|evidence| DuplicateJsonBgeEvidence {
+                status: candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
+                forward_raw: evidence.forward_raw,
+                reverse_raw: evidence.reverse_raw,
+                symmetric_raw: evidence.symmetric_raw,
+            }),
+        },
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_json_run(run: &BgeRun, audit: &DuplicateAudit) -> DuplicateJsonRun {
+    let recommended_count = audit
+        .candidates
+        .iter()
+        .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
+        .count();
+    DuplicateJsonRun {
+        status: run.status,
+        reason: run.reason.map(BgeUnavailableReason::as_str),
+        model: (run.status == "BGE_ENABLED").then_some(RERANKER_MODEL_ID),
+        top_k: RERANKER_TOP_K,
+        unique_pairs: run.evidence.len(),
+        directional_calls: run.evidence.len() * 2,
+        recommended_count,
+        filtered_count: audit.filtered_candidates.len(),
+        unscored_count: audit.unscored_candidates.len(),
+        model_load_attempts: run.model_load_attempts,
+        runtime_ms: run.runtime_ms,
+    }
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -661,8 +973,26 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
         .score
         .map(|score| format!("{score:.4}"))
         .unwrap_or_else(|| "null".to_string());
+    let bge = candidate
+        .bge
+        .as_ref()
+        .map(|evidence| {
+            format!(
+                " bge_status={} bge_forward_raw={:.4} bge_reverse_raw={:.4} bge_symmetric_raw={:.4}",
+                candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
+                evidence.forward_raw,
+                evidence.reverse_raw,
+                evidence.symmetric_raw,
+            )
+        })
+        .unwrap_or_else(|| {
+            candidate
+                .bge_admission
+                .map(|status| format!(" bge_status={status}"))
+                .unwrap_or_default()
+        });
     format!(
-        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score={score}",
+        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score={score}{bge}",
         candidate.kind,
         json_encoded(&candidate.left),
         json_encoded(&candidate.right),
@@ -2327,6 +2657,8 @@ fn duplicate_candidates(
                     distinguishing_facts: Vec::new(),
                     fact_contradiction: false,
                     score: None,
+                    bge: None,
+                    bge_admission: None,
                 });
                 classified.insert((left_index, right_index));
             } else if !left.fingerprint.assertions.is_empty()
@@ -2390,6 +2722,8 @@ fn duplicate_candidates(
                 distinguishing_facts: Vec::new(),
                 fact_contradiction: false,
                 score: Some(score),
+                bge: None,
+                bge_admission: None,
             });
         }
     }
@@ -2422,6 +2756,8 @@ fn structural_candidate(
         ),
         fact_contradiction: left.fingerprint.facts.contradicts(&right.fingerprint.facts),
         score: None,
+        bge: None,
+        bge_admission: None,
     }
 }
 

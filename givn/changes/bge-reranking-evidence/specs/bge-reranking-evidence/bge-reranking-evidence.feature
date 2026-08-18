@@ -106,7 +106,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the enabled run reports a reduced recommended candidate list when the evidence rejects a candidate
     And only the enabled run reports participating second-stage evidence
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Both pair directions form the documented symmetric raw score
     Given a project with one permanent semantic pair and directional local evidence scores
     When the user runs the permanent duplicate audit with second-stage evidence enabled
