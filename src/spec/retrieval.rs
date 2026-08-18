@@ -5,7 +5,7 @@ use anyhow::{Result, bail};
 #[cfg(feature = "spec-retrieval")]
 use anyhow::Context;
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 use ndarray::Array;
 
 #[cfg(feature = "spec-retrieval")]
@@ -20,7 +20,7 @@ use std::io::Read;
 #[cfg(feature = "spec-retrieval")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
 
 #[cfg(feature = "spec-retrieval")]
@@ -39,13 +39,15 @@ const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 const BGE_PIPELINE_VERSION: &str = "rust-production-v1";
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_MAX_PAIRS: usize = 512;
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+const BGE_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_TOP_K: usize = 5;
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7";
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 const NLI_MAX_LENGTH: usize = 512;
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 const NLI_REPORT_LIMIT: usize = 20;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
@@ -261,6 +263,7 @@ struct SimilarityCandidate {
     rerank_score: f32,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
+    #[cfg(feature = "nli-evidence")]
     nli: Option<NliEvidence>,
     scopes: Vec<&'static str>,
 }
@@ -413,14 +416,14 @@ struct DuplicateJsonRun {
 #[cfg(feature = "spec-retrieval")]
 type DuplicatePairKey = ((String, String), (String, String));
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 #[derive(Debug, Clone, Copy)]
 enum NliBackend {
     Stub,
     Local,
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 #[derive(Debug, Clone, Copy)]
 struct NliEvidence {
     forward: [f32; 3],
@@ -2540,7 +2543,7 @@ fn score_bge_pairs(
                     tokenizer_files,
                 );
                 let options = fastembed::RerankInitOptionsUserDefined::new()
-                    .with_max_length(NLI_MAX_LENGTH)
+                    .with_max_length(BGE_MAX_LENGTH)
                     .with_intra_threads(4);
                 let mut model = fastembed::TextRerank::try_new_from_user_defined(model, options)
                     .context("BGE model is unavailable; check the local BGE artifact set")?;
@@ -3884,7 +3887,7 @@ fn similarity_candidates(
     Ok((result, considered))
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_backend_from_env() -> Result<Option<NliBackend>> {
     match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
         Ok("nli") => Ok(Some(NliBackend::Local)),
@@ -3899,7 +3902,7 @@ fn nli_backend_from_env() -> Result<Option<NliBackend>> {
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_similarity_candidates(
     root: &Path,
     index: &SpecIndex,
@@ -3918,7 +3921,7 @@ fn nli_similarity_candidates(
     Ok((result, considered))
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
     let mut label_counts = [0usize; 3];
     for candidate in candidates {
@@ -3972,7 +3975,7 @@ fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
     );
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_report_limit() -> usize {
     std::env::var("GIVN_SPEC_NLI_REPORT_LIMIT")
         .ok()
@@ -3981,7 +3984,7 @@ fn nli_report_limit() -> usize {
         .unwrap_or(NLI_REPORT_LIMIT)
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_strength(candidate: &SimilarityCandidate) -> f32 {
     candidate
         .nli
@@ -3989,7 +3992,7 @@ fn nli_strength(candidate: &SimilarityCandidate) -> f32 {
         .unwrap_or(0.0)
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn score_nli_candidates(
     root: &Path,
     candidates: &mut [SimilarityCandidate],
@@ -4030,7 +4033,7 @@ fn score_nli_candidates(
     Ok(())
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_evidence(forward_logits: [f32; 3], reverse_logits: [f32; 3]) -> NliEvidence {
     let forward = softmax3(forward_logits);
     let reverse = softmax3(reverse_logits);
@@ -4046,7 +4049,7 @@ fn nli_evidence(forward_logits: [f32; 3], reverse_logits: [f32; 3]) -> NliEviden
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn softmax3(logits: [f32; 3]) -> [f32; 3] {
     let maximum = logits.into_iter().fold(f32::NEG_INFINITY, f32::max);
     let exponentials = logits.map(|logit| (logit - maximum).exp());
@@ -4054,7 +4057,7 @@ fn softmax3(logits: [f32; 3]) -> [f32; 3] {
     exponentials.map(|value| value / total)
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_label(probabilities: &[f32; 3]) -> &'static str {
     let (index, _) = probabilities
         .iter()
@@ -4065,7 +4068,7 @@ fn nli_label(probabilities: &[f32; 3]) -> &'static str {
     ["entailment", "neutral", "contradiction"][index]
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn stub_nli_logits(left: &str, right: &str) -> [f32; 3] {
     let left_tokens = reranker_tokens(left);
     let right_tokens = reranker_tokens(right);
@@ -4079,7 +4082,7 @@ fn stub_nli_logits(left: &str, right: &str) -> [f32; 3] {
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 struct NliClassifier {
     tokenizer: Tokenizer,
     session: ort::session::Session,
@@ -4087,7 +4090,7 @@ struct NliClassifier {
     need_token_type_ids: bool,
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 impl NliClassifier {
     fn load(root: &Path) -> Result<Self> {
         let model_dir = std::env::var_os("GIVN_SPEC_NLI_MODEL_DIR")
@@ -4229,7 +4232,7 @@ impl NliClassifier {
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 fn nli_label_indices(config: &serde_json::Value) -> Result<[usize; 3]> {
     let labels = config["id2label"]
         .as_object()
@@ -4365,6 +4368,7 @@ fn add_similarity_candidate(
             rerank_score: f32::NEG_INFINITY,
             bge: None,
             bge_admission: None,
+            #[cfg(feature = "nli-evidence")]
             nli: None,
             scopes: vec![scope],
         },
@@ -4727,6 +4731,7 @@ mod tests {
     use super::*;
 
     #[test]
+    #[cfg(feature = "nli-evidence")]
     fn nli_evidence_averages_directional_logits_before_softmax() {
         let evidence = nli_evidence([4.0, 0.0, 0.0], [0.0, 4.0, 0.0]);
 
@@ -4738,6 +4743,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "nli-evidence")]
     fn nli_labels_are_read_by_name_not_position() {
         let config = serde_json::json!({
             "id2label": {
