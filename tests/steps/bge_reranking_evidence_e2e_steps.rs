@@ -48,6 +48,36 @@ fn bge_e2e_change_project(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("an end-to-end permanent corpus with deterministic overlaps and many semantic candidates")]
+fn bge_e2e_duplicate_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated duplicate specs");
+    fs::create_dir_all(&specs).expect("create duplicate specs");
+    fs::write(
+        specs.join("exact.feature"),
+        "Feature: exact\n\n  Scenario: Exact left\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Exact right\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write E2E exact overlaps");
+    fs::write(
+        specs.join("structural.feature"),
+        "Feature: structural\n\n  Scenario: Structural left\n    Given a configured provider catalog\n    When the provider command is run normally\n    Then the command exits 0 and output contains ready\n\n  Scenario: Structural right\n    Given a configured provider catalog\n    When the provider command is run in TTY mode\n    Then the command exits 2 and output does not contain ready\n",
+    )
+    .expect("write E2E structural overlaps");
+    fs::write(
+        specs.join("semantic.feature"),
+        "Feature: semantic\n\n  Scenario: Token is required\n    Given a client request\n    When the client sends a request without credentials\n    Then the server responds with unauthorized status\n\n  Scenario: Authentication needs a token\n    Given an identity service\n    When the client authenticates without a token\n    Then access is denied with token required\n",
+    )
+    .expect("write E2E semantic candidates");
+    world.env = Some(env);
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/semantic.feature|Token is required::givn/specs/semantic.feature|Authentication needs a token=0.9600".to_string(),
+    );
+    world.retrieval_bge_scores = Some(
+        "givn/specs/semantic.feature|Token is required->givn/specs/semantic.feature|Authentication needs a token=1.0000;givn/specs/semantic.feature|Authentication needs a token->givn/specs/semantic.feature|Token is required=1.0000".to_string(),
+    );
+}
+
 #[when("the end-to-end user explores the draft through the givn CLI")]
 fn e2e_explore_permanent_draft(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("E2E permanent project");
@@ -89,6 +119,23 @@ fn e2e_run_advisory_review(world: &mut GivnWorld) {
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
+
+#[when("the end-to-end user runs the permanent duplicate audit through the givn CLI")]
+fn e2e_run_duplicate_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E duplicate project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    if let Some(scores) = world.retrieval_duplicate_scores.as_deref() {
+        environments.push(("GIVN_SPEC_DUPLICATES_TEST_SCORES", scores));
+    }
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates"],
         &environments,
     ));
 }
@@ -197,6 +244,58 @@ fn e2e_advisory_has_no_classification(world: &mut GivnWorld) {
     for classification in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY", "UNCERTAIN"] {
         assert!(!output.contains(classification), "stdout: {output}");
     }
+}
+
+#[then("the audit reports the E5 candidate count and bounded second-stage pair count")]
+fn e2e_duplicate_reports_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE E5 raw count:"));
+    assert!(output.contains("BGE unique pair count:"));
+}
+
+#[then("the audit reports the reduced recommended candidate count and filtered candidate count")]
+fn e2e_duplicate_reports_admission_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE recommended count:"));
+    assert!(output.contains("BGE filtered count:"));
+}
+
+#[then("the audit reports the second-stage model identity, symmetric score, and elapsed runtime")]
+fn e2e_duplicate_reports_model_score_runtime(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE model: rozgo/bge-reranker-v2-m3"));
+    assert!(output.contains("bge_symmetric_raw="));
+    assert!(output.contains("BGE runtime ms:"));
+}
+
+#[then("deterministic exact and structural overlaps are absent from second-stage scoring")]
+fn e2e_duplicate_excludes_deterministic_bge(world: &mut GivnWorld) {
+    for line in super::stdout(world).lines() {
+        if line.contains("kind=exact_duplicate") || line.contains("kind=structural_overlap") {
+            assert!(!line.contains("bge_status="), "deterministic line: {line}");
+        }
+    }
+}
+
+#[then("the second-stage pair count is no greater than the documented endpoint-neighbour bound")]
+fn e2e_duplicate_respects_endpoint_bound(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let scenarios = output
+        .lines()
+        .find_map(|line| line.strip_prefix("Scanned scenarios: "))
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("scanned scenario count");
+    let top_k = output
+        .lines()
+        .find_map(|line| line.strip_prefix("BGE top_k: "))
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("BGE top-k");
+    let pairs = output
+        .lines()
+        .find_map(|line| line.strip_prefix("BGE unique pair count: "))
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("BGE pair count");
+    assert!(pairs <= scenarios * top_k, "stdout: {output}");
 }
 
 #[then("the command exits non-zero because the candidate is unresolved")]
