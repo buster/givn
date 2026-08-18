@@ -197,7 +197,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the JSON evidence reports raw, recommended, filtered, unscored, unique-pair, and directional-call counts
     And the JSON evidence reports the BGE model and elapsed runtime
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: E5 candidates outside the bounded BGE set remain explicitly unscored and blocking
     Given a project with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs
     And the local second-stage evidence is enabled

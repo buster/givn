@@ -397,12 +397,21 @@ fn filtered_blocking_project(world: &mut GivnWorld) {
     );
 }
 
+#[given("a project with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs")]
+fn partial_unscored_blocking_project(world: &mut GivnWorld) {
+    filtered_blocking_project(world);
+    world.retrieval_bge_test_pool = Some("partial-raw-513".to_string());
+}
+
 #[when("the user runs blocking change review with second-stage evidence enabled")]
 fn run_filtered_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("filtered blocking project");
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    if let Some(pool) = world.retrieval_bge_test_pool.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TEST_POOL", pool));
     }
     world.last_output = Some(common::run_givn_with_envs(
         env,
@@ -436,6 +445,64 @@ fn semantic_report_status_pass(world: &mut GivnWorld) {
     let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
         .expect("read semantic report");
     assert!(report.contains("Status: PASS"));
+}
+
+#[then("the semantic review report records BGE status \"BGE_ENABLED\"")]
+fn partial_report_enabled(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(report.contains("BGE status: BGE_ENABLED"));
+}
+
+#[then("the semantic review report records exactly 512 unique pairs and 1024 directional calls")]
+fn partial_report_counts(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(report.contains("BGE unique pair count: 512"));
+    assert!(report.contains("BGE directional call count: 1024"));
+}
+
+#[then("exactly one E5 candidate outside the bounded set is recorded as `BGE_UNSCORED`")]
+fn partial_report_one_unscored(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(report.contains("BGE unscored count: 1"));
+    assert!(report.contains("bge_admission: BGE_UNSCORED"));
+}
+
+#[then("the semantic review report records the outside candidates as `BGE_UNSCORED`")]
+fn partial_report_records_outside(world: &mut GivnWorld) {
+    partial_report_one_unscored(world);
+}
+
+#[then("those candidates remain blocking E5 candidates")]
+fn partial_candidates_remain_blocking(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(report.contains("Candidate count: 1"));
+}
+
+#[then("each unscored candidate block has null BGE directional scores and the E5 rank/endpoint order")]
+fn partial_unscored_fields_are_null(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(report.contains("bge_forward_raw: null"));
+    assert!(report.contains("bge_reverse_raw: null"));
+    assert!(report.contains("bge_symmetric_raw: null"));
+}
+
+#[then("no unscored candidate is labeled `BGE_FILTERED`")]
+fn partial_unscored_not_filtered(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(!report.contains("BGE_UNSCORED\n") || !report.contains("BGE_FILTERED"));
+}
+
+#[then("no unscored candidate is present in the filtered evidence collection")]
+fn partial_no_filtered_collection(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial blocking project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    assert!(!report.contains("## BGE Filtered Candidate"));
 }
 
 #[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]

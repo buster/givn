@@ -1226,6 +1226,32 @@ fn apply_semantic_bge(
         .collect();
     let mut texts = permanent_texts;
     texts.extend(delta_texts);
+    if let Some((bounded_count, raw_count)) = bge_test_pool()? {
+        if bounded_count > BGE_MAX_PAIRS {
+            for candidate in candidates {
+                candidate.bge_admission = Some("BGE_UNSCORED");
+            }
+            return Ok(Some(BgeRun::unavailable(
+                BgeUnavailableReason::PairCap,
+                raw_count,
+            )));
+        }
+        let (pairs, synthetic_texts) = synthetic_bge_pairs(bounded_count);
+        let mut run = match backend {
+            Ok(kind) => score_bge_pairs(root, &pairs, &synthetic_texts, kind)?,
+            Err(reason) => BgeRun::unavailable(reason, raw_count),
+        };
+        run.e5_candidates = raw_count;
+        run.unscored = raw_count.saturating_sub(bounded_count);
+        for candidate in candidates {
+            candidate.bge_admission = Some(if run.unscored > 0 {
+                "BGE_UNSCORED"
+            } else {
+                "BGE_RECOMMENDED"
+            });
+        }
+        return Ok(Some(run));
+    }
     if candidates.len() > BGE_MAX_PAIRS {
         let count = candidates.len();
         for candidate in candidates {
