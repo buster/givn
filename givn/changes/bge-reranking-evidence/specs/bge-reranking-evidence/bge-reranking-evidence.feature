@@ -56,7 +56,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the semantic review report keeps the candidate classification unresolved
     And the active and permanent specifications remain unchanged
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Permanent duplicate audit uses a bounded endpoint-neighbour union
     Given an end-to-end permanent corpus with deterministic overlaps and many semantic candidates
     And the local second-stage evidence is enabled
