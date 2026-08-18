@@ -7,6 +7,11 @@ use cucumber::{given, then, when};
 use super::GivnWorld;
 use crate::common;
 
+#[given("an initialized givn project")]
+fn e2e_initialized_project(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+}
+
 #[given("an end-to-end project with a permanent semantic candidate for second-stage evidence")]
 fn bge_e2e_permanent_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
@@ -137,6 +142,21 @@ fn e2e_run_duplicate_audit(world: &mut GivnWorld) {
         env,
         &["spec", "duplicates"],
         &environments,
+    ));
+}
+
+#[when("the end-to-end user requests semantic authoring guidance through the givn CLI")]
+fn e2e_request_authoring_guidance(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E guidance project");
+    let created = common::run_givn(env, &["new", "guidance-change"]);
+    assert!(
+        created.status.success(),
+        "create guidance change failed: {}",
+        String::from_utf8_lossy(&created.stderr)
+    );
+    world.last_output = Some(common::run_givn(
+        env,
+        &["instructions", "specs", "--change", "guidance-change"],
     ));
 }
 
@@ -296,6 +316,38 @@ fn e2e_duplicate_respects_endpoint_bound(world: &mut GivnWorld) {
         .and_then(|value| value.parse::<usize>().ok())
         .expect("BGE pair count");
     assert!(pairs <= scenarios * top_k, "stdout: {output}");
+}
+
+#[then("stdout tells the author to sharpen invariants and boundary facts")]
+fn e2e_guidance_sharpens_invariants(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("Sharpen the executable invariant"),
+        "stdout: {output}"
+    );
+    assert!(
+        output.contains("observable boundary facts"),
+        "stdout: {output}"
+    );
+}
+
+#[then(
+    "stdout rejects unnecessary length, duplicated setup, and irrelevant qualifiers as score workarounds"
+)]
+fn e2e_guidance_rejects_score_avoidance(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("Do not make scenarios longer"),
+        "stdout: {output}"
+    );
+    assert!(
+        output.contains("repeat setup"),
+        "missing setup guidance: {output}"
+    );
+    assert!(
+        output.to_ascii_lowercase().contains("qualifier"),
+        "missing qualifier guidance: {output}"
+    );
 }
 
 #[then("the command exits non-zero because the candidate is unresolved")]
