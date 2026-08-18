@@ -5244,7 +5244,7 @@ fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
             continue;
         };
         println!(
-            "nli candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}; forward [entailment {:.4}, neutral {:.4}, contradiction {:.4}], reverse [entailment {:.4}, neutral {:.4}, contradiction {:.4}], symmetric [entailment {:.4}, neutral {:.4}, contradiction {:.4}], strongest {}",
+            "nli candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}; forward [entailment {:.4}, neutral {:.4}, contradiction {:.4}], reverse [entailment {:.4}, neutral {:.4}, contradiction {:.4}], symmetric [entailment {:.4}, neutral {:.4}, contradiction {:.4}], strongest {}; evidence is advisory and no Givn classification is assigned",
             candidate.scopes.join(","),
             candidate.left.title,
             candidate.left.file,
@@ -5303,12 +5303,21 @@ fn score_nli_candidates(
 
     match backend {
         NliBackend::Stub => {
+            let overrides = nli_directional_overrides()?;
             for candidate in candidates {
-                let left = scenario_text_for(texts, &candidate.left)?;
-                let right = scenario_text_for(texts, &candidate.right)?;
                 candidate.nli = Some(nli_evidence(
-                    stub_nli_logits(left, right),
-                    stub_nli_logits(right, left),
+                    nli_directional_logits(
+                        &candidate.left,
+                        &candidate.right,
+                        texts,
+                        overrides.as_ref(),
+                    )?,
+                    nli_directional_logits(
+                        &candidate.right,
+                        &candidate.left,
+                        texts,
+                        overrides.as_ref(),
+                    )?,
                 ));
             }
         }
