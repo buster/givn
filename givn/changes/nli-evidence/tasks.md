@@ -140,7 +140,7 @@ evidence and its atomic commit hash.
   exposing NLI admission counts; targeted run passed 8/8 steps.
 - [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 8 steps
   passed.
-- [x] COMMIT: `b6b7aac` — `feat(nli-evidence): activate legacy NLI selector as admission evidence`.
+- [x] COMMIT: `b6b7aac` — `feat(nli-evidence): activate legacy NLI selector as admission evidence`; follow-up production selector cleanup `2d14cea`.
 
 ## E2E Scenarios
 
