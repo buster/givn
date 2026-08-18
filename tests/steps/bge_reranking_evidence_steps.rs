@@ -416,7 +416,12 @@ fn exact_threshold_advisory_project(world: &mut GivnWorld) {
 #[when("the user runs advisory change review with second-stage evidence enabled")]
 fn run_advisory_bge_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("advisory BGE project");
-    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
+        "missing"
+    } else {
+        "stub"
+    };
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
     }
@@ -425,6 +430,20 @@ fn run_advisory_bge_review(world: &mut GivnWorld) {
         &["spec", "review", "--change", "running-change"],
         &environments,
     ));
+}
+
+#[given("a project with an active semantic review candidate")]
+fn active_advisory_project(world: &mut GivnWorld) {
+    advisory_bge_project(world);
+}
+
+#[then("stdout remains advisory and does not assign a Givn classification")]
+fn unavailable_advisory_is_non_classifying(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("advisory"));
+    assert!(!output.contains("DUPLIKAT"));
+    assert!(!output.contains("VARIANTE"));
+    assert!(!output.contains("VALID-BOUNDARY"));
 }
 
 #[then("the false positive is recorded as filtered from the recommended list")]

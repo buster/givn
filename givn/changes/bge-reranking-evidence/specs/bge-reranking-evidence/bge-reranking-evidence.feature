@@ -335,7 +335,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports BGE status "BGE_UNAVAILABLE"
     And stdout retains the permanent and current-change E5 raw candidates
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Unavailable BGE advisory review remains advisory
     Given a project with an active semantic review candidate
     And the local second-stage model artifacts are unavailable
