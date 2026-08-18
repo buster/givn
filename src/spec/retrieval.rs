@@ -117,6 +117,8 @@ struct ExploreQuery {
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Serialize)]
 struct ExploreResponse {
+    #[serde(skip_serializing_if = "Option::is_none")]
+    schema_version: Option<u32>,
     query: ExploreQueryOutput,
     index: ExploreIndexOutput,
     results: Vec<ExploreResultOutput>,
@@ -124,6 +126,10 @@ struct ExploreResponse {
     evidence: Option<ExploreEvidenceOutput>,
     #[serde(skip_serializing_if = "Option::is_none")]
     recommended_results: Option<Vec<ExploreResultOutput>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli_evidence: Option<ExploreNliEvidenceOutput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli_recommended_results: Option<Vec<ExploreResultOutput>>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -154,6 +160,9 @@ struct ExploreResultOutput {
     change: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     bge: Option<ExploreBgeOutput>,
+    #[cfg(feature = "nli-evidence")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli: Option<ExploreNliOutput>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -163,6 +172,33 @@ struct ExploreBgeOutput {
     forward_raw: f32,
     reverse_raw: f32,
     symmetric_raw: f32,
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Clone, Serialize)]
+struct ExploreNliOutput {
+    status: &'static str,
+    forward: [f32; 3],
+    reverse: [f32; 3],
+    symmetric: [f32; 3],
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Serialize)]
+struct ExploreNliEvidenceOutput {
+    status: &'static str,
+    reason: Option<&'static str>,
+    candidate_generator: &'static str,
+    top_k: usize,
+    e5_candidates: usize,
+    recommended_candidates: usize,
+    nli_filtered_candidates: usize,
+    nli_unscored_candidates: usize,
+    nli_pairs: usize,
+    nli_directional_calls: usize,
+    nli_model: Option<&'static str>,
+    nli_model_load_attempts: usize,
+    nli_runtime_ms: Option<u128>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -2825,6 +2861,10 @@ fn explore_enabled(
     let bge_run = bge_explore_run(root, &query, &ranked)?;
     #[cfg(not(all(feature = "spec-retrieval", feature = "cross-encoder-reranker")))]
     let bge_run: Option<BgeRun> = None;
+    #[cfg(feature = "nli-evidence")]
+    let nli_run = nli_explore_run(root, &query, &ranked)?;
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_run = None;
 
     let mut results = Vec::with_capacity(ranked.len());
     for (index, (candidate, score)) in ranked.into_iter().enumerate() {
@@ -2843,6 +2883,22 @@ fn explore_enabled(
                 symmetric_raw: evidence.symmetric_raw,
             })
         });
+        #[cfg(feature = "nli-evidence")]
+        let nli = nli_run.as_ref().and_then(|run| {
+            let query_endpoint = explore_query_endpoint(&query);
+            let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
+            let key = canonical_pair_key(query_endpoint, candidate_endpoint);
+            run.evidence.get(&key).map(|evidence| ExploreNliOutput {
+                status: if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                    "NLI_RECOMMENDED"
+                } else {
+                    "NLI_FILTERED"
+                },
+                forward: evidence.forward,
+                reverse: evidence.reverse,
+                symmetric: evidence.symmetric,
+            })
+        });
         results.push(ExploreResultOutput {
             rank: index + 1,
             title: candidate.title,
@@ -2851,17 +2907,54 @@ fn explore_enabled(
             scope: candidate.scope,
             change: candidate.change,
             bge,
+            #[cfg(feature = "nli-evidence")]
+            nli,
         });
     }
 
-    let recommended_results = bge_run.as_ref().map(|_| {
+    let bge_participates = bge_run.is_some();
+    #[cfg(feature = "nli-evidence")]
+    let nli_participates = nli_run.is_some();
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_participates = false;
+    let has_second_stage = bge_participates || nli_participates;
+    let recommended_results = has_second_stage.then(|| {
+        results
+            .iter()
+            .filter(|result| {
+                (!bge_participates || {
+                    result
+                        .bge
+                        .as_ref()
+                        .is_some_and(|evidence| evidence.status == "BGE_RECOMMENDED")
+                }) && {
+                    #[cfg(feature = "nli-evidence")]
+                    {
+                        !nli_participates || {
+                            result
+                                .nli
+                                .as_ref()
+                                .is_some_and(|evidence| evidence.status == "NLI_RECOMMENDED")
+                        }
+                    }
+                    #[cfg(not(feature = "nli-evidence"))]
+                    {
+                        true
+                    }
+                }
+            })
+            .cloned()
+            .collect::<Vec<_>>()
+    });
+    #[cfg(feature = "nli-evidence")]
+    let nli_recommended_results = nli_run.as_ref().map(|_| {
         results
             .iter()
             .filter(|result| {
                 result
-                    .bge
+                    .nli
                     .as_ref()
-                    .is_some_and(|evidence| evidence.status == "BGE_RECOMMENDED")
+                    .is_some_and(|evidence| evidence.status == "NLI_RECOMMENDED")
             })
             .cloned()
             .collect::<Vec<_>>()
@@ -2869,6 +2962,16 @@ fn explore_enabled(
 
     if json {
         let response = ExploreResponse {
+            schema_version: {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    nli_run.is_some().then_some(3)
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    None
+                }
+            },
             query: ExploreQueryOutput {
                 title: query.title,
                 source: query.source,
@@ -2883,13 +2986,28 @@ fn explore_enabled(
             results: results.clone(),
             evidence: bge_run.as_ref().map(explore_evidence_output),
             recommended_results,
+            #[cfg(feature = "nli-evidence")]
+            nli_evidence: nli_run.as_ref().map(explore_nli_evidence_output),
+            #[cfg(not(feature = "nli-evidence"))]
+            nli_evidence: None,
+            #[cfg(feature = "nli-evidence")]
+            nli_recommended_results,
+            #[cfg(not(feature = "nli-evidence"))]
+            nli_recommended_results: None,
         };
         println!(
             "{}",
             serde_json::to_string_pretty(&response).context("serialize explore JSON")?
         );
     } else {
-        print_explore_text(&query, &refresh, &results, bge_run.as_ref());
+        print_explore_text(
+            &query,
+            &refresh,
+            &results,
+            bge_run.as_ref(),
+            #[cfg(feature = "nli-evidence")]
+            nli_run.as_ref(),
+        );
     }
 
     Ok(())
@@ -3056,6 +3174,74 @@ fn bge_explore_run(
     match backend {
         Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind).map(Some),
         Err(reason) => Ok(Some(BgeRun::unavailable(reason, ranked.len()))),
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_explore_run(
+    root: &Path,
+    query: &ExploreQuery,
+    ranked: &[(ExploreCandidate, f32)],
+) -> Result<Option<NliRun>> {
+    let Some(selection) = nli_backend_selection(root)? else {
+        return Ok(None);
+    };
+    let query_endpoint = explore_query_endpoint(query);
+    let mut texts = BTreeMap::new();
+    texts.insert(
+        (query_endpoint.file.clone(), query_endpoint.title.clone()),
+        query.text.clone(),
+    );
+    let mut pairs = Vec::with_capacity(ranked.len());
+    for (candidate, _) in ranked {
+        let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
+        texts.insert(
+            (
+                candidate_endpoint.file.clone(),
+                candidate_endpoint.title.clone(),
+            ),
+            candidate.text.clone(),
+        );
+        pairs.push((query_endpoint.clone(), candidate_endpoint));
+    }
+    if pairs.len() > NLI_MAX_PAIRS {
+        return Ok(Some(NliRun::unavailable(
+            NliUnavailableReason::PairCap,
+            pairs.len(),
+        )));
+    }
+    match selection {
+        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend).map(Some),
+        Err(reason) => Ok(Some(NliRun::unavailable(reason, ranked.len()))),
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn explore_nli_evidence_output(run: &NliRun) -> ExploreNliEvidenceOutput {
+    let recommended = run
+        .evidence
+        .values()
+        .filter(|evidence| evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD)
+        .count();
+    let filtered = run
+        .evidence
+        .values()
+        .filter(|evidence| evidence.symmetric[0] < NLI_ADMISSION_THRESHOLD)
+        .count();
+    ExploreNliEvidenceOutput {
+        status: run.status,
+        reason: run.reason.map(NliUnavailableReason::as_str),
+        candidate_generator: "E5",
+        top_k: RERANKER_TOP_K,
+        e5_candidates: run.e5_candidates,
+        recommended_candidates: recommended,
+        nli_filtered_candidates: filtered,
+        nli_unscored_candidates: run.unscored,
+        nli_pairs: run.evidence.len(),
+        nli_directional_calls: run.evidence.len() * 2,
+        nli_model: (run.status == "NLI_ENABLED").then_some(NLI_MODEL_ID),
+        nli_model_load_attempts: run.model_load_attempts,
+        nli_runtime_ms: run.runtime_ms,
     }
 }
 
@@ -3353,6 +3539,7 @@ fn print_explore_text(
     refresh: &IndexRefresh,
     results: &[ExploreResultOutput],
     bge_run: Option<&BgeRun>,
+    #[cfg(feature = "nli-evidence")] nli_run: Option<&NliRun>,
 ) {
     println!("query: '{}' (source {})", query.title, query.source);
     println!("model: {}", refresh.index.model);
@@ -3409,6 +3596,56 @@ fn print_explore_text(
             println!(
                 "BGE symmetric raw score: {:.4} (forward {:.4}, reverse {:.4})",
                 evidence.symmetric_raw, evidence.forward_raw, evidence.reverse_raw
+            );
+        }
+    }
+    #[cfg(feature = "nli-evidence")]
+    if let Some(run) = nli_run {
+        let recommended = results
+            .iter()
+            .filter(|result| {
+                result
+                    .nli
+                    .as_ref()
+                    .is_some_and(|evidence| evidence.status == "NLI_RECOMMENDED")
+            })
+            .count();
+        let filtered = results
+            .iter()
+            .filter(|result| {
+                result
+                    .nli
+                    .as_ref()
+                    .is_some_and(|evidence| evidence.status == "NLI_FILTERED")
+            })
+            .count();
+        println!(
+            "NLI status: {}{}",
+            run.status,
+            run.reason
+                .map(|reason| format!(", reason {}", reason.as_str()))
+                .unwrap_or_default()
+        );
+        println!(
+            "NLI candidate generator: E5, top_k {}, raw {}, recommended {}, NLI filtered {}, unscored {}, bounded pool",
+            RERANKER_TOP_K, run.e5_candidates, recommended, filtered, run.unscored
+        );
+        println!(
+            "NLI model: {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
+            if run.status == "NLI_ENABLED" {
+                NLI_MODEL_ID
+            } else {
+                "null"
+            },
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            run.model_load_attempts,
+            run.runtime_ms.unwrap_or(0),
+        );
+        if let Some(evidence) = results.iter().find_map(|result| result.nli.as_ref()) {
+            println!(
+                "NLI symmetric probability summary: entailment {:.4}, neutral {:.4}, contradiction {:.4}",
+                evidence.symmetric[0], evidence.symmetric[1], evidence.symmetric[2]
             );
         }
     }
