@@ -544,6 +544,15 @@ fn unavailable_change_explore_project(world: &mut GivnWorld) {
 #[when("the user explores the draft against change \"current-change\" with second-stage evidence enabled")]
 fn run_unavailable_change_exploration(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("change exploration project");
+    let bge_mode = if world.retrieval_reranker.as_deref() == Some("unapproved") {
+        "stub"
+    } else {
+        "missing"
+    };
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
+    if world.retrieval_reranker.as_deref() == Some("unapproved") {
+        environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+    }
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &[
@@ -554,8 +563,13 @@ fn run_unavailable_change_exploration(world: &mut GivnWorld) {
             "--file",
             "draft.feature",
         ],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")],
+        &environments,
     ));
+}
+
+#[when("the user explores the draft against change \"current-change\" through the givn CLI")]
+fn run_unapproved_change_exploration(world: &mut GivnWorld) {
+    run_unavailable_change_exploration(world);
 }
 
 #[then("stdout reports BGE status \"BGE_UNAVAILABLE\"")]
