@@ -134,13 +134,13 @@ evidence and its atomic commit hash.
 
 ### The independent NLI capability owns the legacy diagnostic selector
 
-- [ ] RED: targeted runner fails on the unimplemented modified scenario.
-  Evidence: pending.
-- [ ] GREEN: update the legacy scenario binding/output to the NLI admission
-  path while retaining diagnostic evidence. Production files:
-  `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted modified-scenario runner initially failed on its
+  unimplemented NLI admission assertion.
+- [x] GREEN: updated the legacy selector behavior to retain diagnostics while
+  exposing NLI admission counts; targeted run passed 8/8 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 8 steps
+  passed.
+- [x] COMMIT: `b6b7aac` — `feat(nli-evidence): activate legacy NLI selector as admission evidence`.
 
 ## E2E Scenarios
 
