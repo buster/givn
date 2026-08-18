@@ -136,13 +136,13 @@ Feature: NLI evidence for bounded semantic candidate reduction
     Then the candidate is NLI recommended rather than NLI filtered
     And the candidate still requires an explicit Givn classification
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: An NLI-recommended candidate still blocks unresolved semantic review
     Given a project with an active semantic candidate that NLI recommends
     When the user runs blocking NLI review
     Then the command exits non-zero because the candidate is unresolved
     And the semantic report contains an NLI-recommended candidate block
-    And the candidate still requires an explicit Givn classification
+    And the semantic review report keeps the candidate classification unresolved
 
   @givn.modified @nli @wip
   Scenario: The independent NLI capability owns the legacy diagnostic selector
