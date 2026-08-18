@@ -92,6 +92,10 @@ pub struct GivnWorld {
     pub(crate) retrieval_bge_scores: Option<String>,
     /// Deterministic bounded-pool fixture selector for BGE scenarios.
     pub(crate) retrieval_bge_test_pool: Option<String>,
+    /// Deterministic bounded-pool fixture selector for NLI scenarios.
+    pub(crate) retrieval_nli_test_pool: Option<String>,
+    /// Deterministic directional NLI logits for fixtures.
+    pub(crate) retrieval_nli_scores: Option<String>,
     /// Use the deterministic stub behind the validated local-artifact seam.
     pub(crate) retrieval_bge_local_stub: bool,
     /// Guard that restores the unreadable-feature fixture after its subprocess
@@ -311,6 +315,12 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_bge_test_pool.as_deref() {
         environments.push(("GIVN_SPEC_BGE_TEST_POOL", value));
+    }
+    if let Some(value) = world.retrieval_nli_test_pool.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_TEST_POOL", value));
+    }
+    if let Some(value) = world.retrieval_nli_scores.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_DIRECTIONAL_SCORES", value));
     }
     if world.retrieval_bge_local_stub {
         environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));
