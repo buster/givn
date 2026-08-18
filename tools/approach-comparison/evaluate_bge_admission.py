@@ -129,7 +129,10 @@ def validate_rust_parity(parity_path: Path, binary: Path | None) -> dict:
         except (OSError, subprocess.CalledProcessError, json.JSONDecodeError) as error:
             raise ValueError(f"could not verify Rust production attestation: {error}") from error
         if generated != parity:
-            raise ValueError("Rust parity file does not match `givn spec bge-parity` output")
+            raise ValueError(
+                "Rust parity file does not match the compiled binary output from "
+                "`givn spec bge-parity`"
+            )
     required = {
         "schema_version",
         "source",
