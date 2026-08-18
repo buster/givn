@@ -196,10 +196,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed before approval-failure dispatch was wired.
 - [x] GREEN: kept semantic blocking/report schema v1 with no BGE fields when approval fails; targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Failed benchmark approval keeps blocking review on E5-only evidence`
+- [x] COMMIT: `980b5e1` — `feat(bge-reranking-evidence): Failed benchmark approval keeps blocking review on E5-only evidence`
 
 ### Failed benchmark approval keeps duplicate JSON on E5-only evidence
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined semantic duplicate fixture.
+- [x] GREEN: kept duplicate JSON schema v1 and omitted all BGE collections after approval failure; targeted run passed 5/5 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Failed benchmark approval keeps duplicate JSON on E5-only evidence`
 
 ### E5-only blocking review preserves the semantic report contract
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
