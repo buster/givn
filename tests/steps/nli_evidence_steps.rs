@@ -39,14 +39,18 @@ fn one_nli_candidate(world: &mut GivnWorld) {
 fn run_advisory_nli_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("NLI candidate project");
     let nli_mode = world.retrieval_reranker.as_deref().unwrap_or("nli-stub");
+    let mut environments = vec![
+        ("GIVN_SPEC_EMBEDDER", "stub"),
+        ("GIVN_SPEC_BGE", "disabled"),
+        ("GIVN_SPEC_RERANKER", nli_mode),
+    ];
+    if let Some(scores) = world.retrieval_nli_scores.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_DIRECTIONAL_SCORES", scores));
+    }
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "review", "--change", "running-change"],
-        &[
-            ("GIVN_SPEC_EMBEDDER", "stub"),
-            ("GIVN_SPEC_BGE", "disabled"),
-            ("GIVN_SPEC_RERANKER", nli_mode),
-        ],
+        &environments,
     ));
 }
 
@@ -583,4 +587,25 @@ fn nli_missing_keeps_e5_candidates(world: &mut GivnWorld) {
 fn nli_missing_has_no_participation_claim(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(!output.contains("NLI model: Moritz"), "stdout: {output}");
+}
+
+#[given("a project with one semantic candidate at the NLI admission boundary")]
+fn nli_boundary_project(world: &mut GivnWorld) {
+    one_nli_candidate(world);
+    world.retrieval_nli_scores = Some(
+        "givn/specs/provider.feature|Provider request is accepted->givn/specs/running-change/running-change.feature|Active provider request=0.69314718,0,0;givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider request is accepted=0.69314718,0,0".to_string(),
+    );
+}
+
+#[then("the candidate is NLI recommended rather than NLI filtered")]
+fn nli_boundary_recommended(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("NLI admission: NLI_RECOMMENDED"),
+        "stdout: {output}"
+    );
+    assert!(
+        !output.contains("NLI admission: NLI_FILTERED"),
+        "stdout: {output}"
+    );
 }
