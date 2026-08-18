@@ -61,7 +61,7 @@
 | `evaluate_bge_admission.py` | Added exact approval writer gating, Rust binary attestation verification, artifact/hash revalidation, and runtime-constant checks. |
 | `compare.py` | Marked the Python reference pipeline and validated the complete FastEmbed artifact set. |
 | `src/main.rs`, `src/cli/spec.rs`, `src/spec/retrieval.rs` | Added the Rust-generated hidden `givn spec bge-parity` attestation producer and fixed pipeline constants. |
-| `docs/arc42/*.md`, `docs/bge-reranking-benchmark.md`, `assets/instructions/specs.md`, `run-tests.sh` | Aligned durable architecture, benchmark commands, guidance, and runner scope with the hardened contract. |
+| `docs/arc42/*.md`, `docs/bge-reranking-benchmark.md`, `assets/instructions/specs.md`, `run-tests.sh` | Aligned durable architecture, benchmark commands, guidance, and runner scope with the hardened contract; `@bge-approval` scenarios are routed through the BGE feature matrix rather than the E5-only matrix. |
 
 ## Sign-off
 
@@ -69,7 +69,7 @@
 - [x] All questions are resolved.
 - [x] `design.md` reflects decisions reached during grilling.
 - [x] `specs/**/*.feature` was updated for identified gaps.
-- [x] `givn lint --change bge-reranking-evidence` parses successfully and exits 2 only for `@wip` scenarios.
+- [x] `givn lint --change bge-reranking-evidence` parses successfully with no remaining `@wip` scenarios.
 - [x] Architecture documentation audit completed.
 
 **DESIGN-REVIEW: PASS**
