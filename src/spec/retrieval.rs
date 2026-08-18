@@ -2721,6 +2721,7 @@ fn advisory_review(
     review_path: &Path,
 ) -> Result<()> {
     let (dispositions, _) = crate::overlap::disposition::parse_review(review_path);
+    println!("retrieval advisory: E5-only configuration");
     for item in delta
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)

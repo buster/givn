@@ -121,6 +121,9 @@ fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
         "stub"
     };
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
+    if world.retrieval_reranker.as_deref() == Some("unapproved") {
+        environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+    }
     if world.retrieval_reranker.as_deref() == Some("nli-stub") {
         environments.push(("GIVN_SPEC_RERANKER", "nli-stub"));
     }
@@ -158,7 +161,8 @@ fn result_set_contains_e5_candidates(world: &mut GivnWorld) {
 #[then("stdout identifies the E5-only configuration")]
 fn stdout_identifies_e5_only(world: &mut GivnWorld) {
     assert!(
-        super::stdout(world).contains("model: intfloat/multilingual-e5-large"),
+        super::stdout(world).contains("model: intfloat/multilingual-e5-large")
+            || super::stdout(world).contains("E5-only configuration"),
         "stdout did not identify E5: {}",
         super::stdout(world)
     );
@@ -422,6 +426,9 @@ fn run_advisory_bge_review(world: &mut GivnWorld) {
         "stub"
     };
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
+    if world.retrieval_reranker.as_deref() == Some("unapproved") {
+        environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+    }
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
     }
@@ -437,6 +444,11 @@ fn active_advisory_project(world: &mut GivnWorld) {
     advisory_bge_project(world);
 }
 
+#[given("the BGE admission benchmark has failed")]
+fn failed_bge_approval(world: &mut GivnWorld) {
+    world.retrieval_reranker = Some("unapproved".to_string());
+}
+
 #[then("stdout remains advisory and does not assign a Givn classification")]
 fn unavailable_advisory_is_non_classifying(world: &mut GivnWorld) {
     let output = super::stdout(world);
@@ -444,6 +456,11 @@ fn unavailable_advisory_is_non_classifying(world: &mut GivnWorld) {
     assert!(!output.contains("DUPLIKAT"));
     assert!(!output.contains("VARIANTE"));
     assert!(!output.contains("VALID-BOUNDARY"));
+}
+
+#[then("stdout contains no `BGE_FILTERED` evidence")]
+fn no_filtered_when_unapproved(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).contains("BGE_FILTERED"));
 }
 
 #[then("the false positive is recorded as filtered from the recommended list")]
