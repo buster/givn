@@ -61,10 +61,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run initially failed at the unresolved review-disposition fixture.
 - [x] GREEN: added the blocking review fixture, BGE semantic-report admission fields, non-blocking filtered blocks, and PASS accounting; targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Filtered evidence does not block the blocking change review`
+- [x] COMMIT: `2ba3c6f` — `feat(bge-reranking-evidence): Filtered evidence does not block the blocking change review`
 
 ### The exact bounded pair limit refuses inference before model loading
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined exact-pool fixture.
+- [x] GREEN: added the deterministic overflow pool seam, full pre-load refusal, unavailable text accounting, and E5 fallback assertions; targeted run passed 12/12 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 12 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The exact bounded pair limit refuses inference before model loading`
 
 ### The exact bounded pair limit accepts 512 unique pairs
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.

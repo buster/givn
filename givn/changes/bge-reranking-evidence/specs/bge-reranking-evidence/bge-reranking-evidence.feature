@@ -142,7 +142,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the filtered candidates have no Givn classification
     And the report status is "PASS"
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: The exact bounded pair limit refuses inference before model loading
     Given a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs
     And the local second-stage evidence is enabled

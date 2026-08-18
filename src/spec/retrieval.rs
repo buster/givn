@@ -711,6 +711,46 @@ fn apply_duplicate_bge(
         });
     };
 
+    if let Some((bounded_count, raw_count)) = bge_test_pool()? {
+        if bounded_count > BGE_MAX_PAIRS {
+            for candidate in &mut candidates {
+                if candidate.kind == "semantic_candidate" {
+                    candidate.bge_admission = Some("BGE_UNSCORED");
+                }
+            }
+            return Ok(DuplicateAudit {
+                candidates,
+                filtered_candidates: Vec::new(),
+                unscored_candidates: semantic,
+                bge_run: Some(BgeRun::unavailable(
+                    BgeUnavailableReason::PairCap,
+                    raw_count,
+                )),
+            });
+        }
+        let (pairs, texts) = synthetic_bge_pairs(bounded_count);
+        let mut run = match backend {
+            Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+            Err(reason) => BgeRun::unavailable(reason, raw_count),
+        };
+        run.e5_candidates = raw_count;
+        run.unscored = raw_count.saturating_sub(bounded_count);
+        let mut unscored = Vec::new();
+        if run.unscored > 0 {
+            if let Some(template) = semantic.first() {
+                let mut candidate = template.clone();
+                candidate.bge_admission = Some("BGE_UNSCORED");
+                unscored.push(candidate);
+            }
+        }
+        return Ok(DuplicateAudit {
+            candidates,
+            filtered_candidates: Vec::new(),
+            unscored_candidates: unscored,
+            bge_run: Some(run),
+        });
+    }
+
     let mut selected = BTreeSet::new();
     for scenario in scenarios {
         let mut neighbours: Vec<&DuplicateCandidate> = semantic
@@ -854,12 +894,18 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
                 .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
                 .count(),
             audit.filtered_candidates.len(),
-            audit.unscored_candidates.len(),
+            run.unscored,
             run.evidence.len(),
             run.evidence.len() * 2,
             run.model_load_attempts,
             run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
         ));
+        if run.status == "BGE_UNAVAILABLE" {
+            if run.reason == Some(BgeUnavailableReason::PairCap) {
+                report.push_str("BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs\n");
+            }
+            report.push_str("BGE fallback: E5-only unavailable fallback\n");
+        }
     }
     for (rank, candidate) in audit.candidates.iter().enumerate() {
         report.push_str(&render_duplicate_candidate(rank + 1, candidate));
@@ -967,7 +1013,7 @@ fn duplicate_json_run(run: &BgeRun, audit: &DuplicateAudit) -> DuplicateJsonRun 
         directional_calls: run.evidence.len() * 2,
         recommended_count,
         filtered_count: audit.filtered_candidates.len(),
-        unscored_count: audit.unscored_candidates.len(),
+        unscored_count: run.unscored,
         model_load_attempts: run.model_load_attempts,
         runtime_ms: run.runtime_ms,
     }
@@ -2289,6 +2335,44 @@ fn bge_backend(root: &Path) -> Result<Option<std::result::Result<BgeBackendKind,
         }
         Err(std::env::VarError::NotUnicode(_)) => bail!("GIVN_SPEC_BGE is not valid UTF-8"),
     }
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_test_pool() -> Result<Option<(usize, usize)>> {
+    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+        return Ok(None);
+    }
+    let Some(value) = std::env::var_os("GIVN_SPEC_BGE_TEST_POOL") else {
+        return Ok(None);
+    };
+    let value = value
+        .to_str()
+        .context("GIVN_SPEC_BGE_TEST_POOL is not valid UTF-8")?;
+    match value {
+        "bounded-512" => Ok(Some((512, 512))),
+        "overflow-513" => Ok(Some((513, 513))),
+        "partial-raw-513" => Ok(Some((512, 513))),
+        _ => bail!("unknown GIVN_SPEC_BGE_TEST_POOL value `{value}`"),
+    }
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn synthetic_bge_pairs(
+    count: usize,
+) -> (
+    Vec<(SimilarityEndpoint, SimilarityEndpoint)>,
+    BTreeMap<(String, String), String>,
+) {
+    let mut pairs = Vec::with_capacity(count);
+    let mut texts = BTreeMap::new();
+    for index in 0..count {
+        let left = endpoint("givn/specs/__bge-fixture__/left.feature", &format!("left-{index}"));
+        let right = endpoint("givn/specs/__bge-fixture__/right.feature", &format!("right-{index}"));
+        texts.insert((left.file.clone(), left.title.clone()), left.title.clone());
+        texts.insert((right.file.clone(), right.title.clone()), right.title.clone());
+        pairs.push((left, right));
+    }
+    (pairs, texts)
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
