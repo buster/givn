@@ -119,7 +119,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And stdout contains no NLI model, probability, runtime, or admission status
     And the output uses the E5-only contract
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: Missing NLI artifacts preserve the explicit E5 fallback
     Given a project with a semantic candidate and unavailable NLI model artifacts
     When the user runs advisory NLI review

@@ -3680,7 +3680,7 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
         }
         #[cfg(feature = "nli-evidence")]
         {
-            selected |= nli_backend_from_env()?.is_some();
+            selected |= nli_backend_selection(root)?.is_some();
         }
         selected
     };
@@ -3921,19 +3921,42 @@ fn run_second_stage_advisory_review(
 
     let mut nli_enabled = false;
     #[cfg(feature = "nli-evidence")]
-    if let Some(backend) = nli_backend_from_env()? {
+    let mut nli_run: Option<NliRun> = None;
+    #[cfg(feature = "nli-evidence")]
+    if let Some(selection) = nli_backend_selection(root)? {
         nli_enabled = true;
-        score_nli_candidates(root, &mut candidates, &texts, backend)?;
-        for candidate in &mut candidates {
-            candidate.nli_admission = candidate.nli.map(|evidence| {
-                if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
-                    "NLI_RECOMMENDED"
-                } else {
-                    "NLI_FILTERED"
+        match selection {
+            Ok(backend) => {
+                score_nli_candidates(root, &mut candidates, &texts, backend)?;
+                for candidate in &mut candidates {
+                    candidate.nli_admission = candidate.nli.map(|evidence| {
+                        if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                            "NLI_RECOMMENDED"
+                        } else {
+                            "NLI_FILTERED"
+                        }
+                    });
                 }
-            });
+                print_nli_results(&candidates, considered);
+            }
+            Err(reason) => {
+                for candidate in &mut candidates {
+                    candidate.nli_admission = Some("NLI_UNSCORED");
+                }
+                nli_run = Some(NliRun::unavailable(reason, considered));
+            }
         }
-        print_nli_results(&candidates, considered);
+    }
+    #[cfg(feature = "nli-evidence")]
+    if let Some(run) = nli_run.as_ref() {
+        println!(
+            "NLI status: {}{}, model null, unique pairs 0, directional calls 0, recommended 0, filtered 0, unscored {}, model load attempts 0, runtime ms null",
+            run.status,
+            run.reason
+                .map(|reason| format!(", reason {}", reason.as_str()))
+                .unwrap_or_default(),
+            run.unscored,
+        );
     }
 
     if let Some(run) = bge_run.as_ref() {
