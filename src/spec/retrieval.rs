@@ -2742,8 +2742,19 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let index = read_index(&spec_index_path(root))?;
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
-    #[cfg(feature = "cross-encoder-reranker")]
-    if bge_backend(root)?.is_some() {
+    let second_stage_selected = {
+        let mut selected = false;
+        #[cfg(feature = "cross-encoder-reranker")]
+        {
+            selected |= bge_backend(root)?.is_some();
+        }
+        #[cfg(feature = "nli-evidence")]
+        {
+            selected |= nli_backend_from_env()?.is_some();
+        }
+        selected
+    };
+    if second_stage_selected {
         let gate_result = {
             #[cfg(feature = "spec-similarity-gate")]
             {
@@ -2754,19 +2765,13 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
                 Ok(())
             }
         };
-        let bge_result = run_bge_advisory_review(root, &index, &delta);
-        return match (gate_result, bge_result) {
-            (Err(gate), Err(bge)) => bail!("{gate}; {bge}"),
+        let second_stage_result = run_second_stage_advisory_review(root, &index, &delta);
+        return match (gate_result, second_stage_result) {
+            (Err(gate), Err(second_stage)) => bail!("{gate}; {second_stage}"),
             (Err(gate), Ok(())) => Err(gate),
-            (Ok(()), Err(bge)) => Err(bge),
+            (Ok(()), Err(second_stage)) => Err(second_stage),
             (Ok(()), Ok(())) => Ok(()),
         };
-    }
-    #[cfg(feature = "nli-evidence")]
-    if let Some(backend) = nli_backend_from_env()? {
-        let (candidates, considered) = nli_similarity_candidates(root, &index, &delta, backend)?;
-        print_nli_results(&candidates, considered);
-        return Ok(());
     }
     if cfg!(feature = "spec-similarity-gate") {
         #[cfg(feature = "spec-similarity-gate")]
@@ -2930,6 +2935,132 @@ fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenari
     println!(
         "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, bounded pool <= {}",
         recommended, filtered, run.unscored, BGE_MAX_PAIRS
+    );
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn run_second_stage_advisory_review(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+) -> Result<()> {
+    let (mut candidates, considered, texts) = similarity_candidate_pool(root, index, delta)?;
+    let mut bge_enabled = false;
+    let mut bge_run: Option<BgeRun> = None;
+
+    #[cfg(feature = "cross-encoder-reranker")]
+    if let Some(backend) = bge_backend(root)? {
+        bge_enabled = true;
+        let mut run = if candidates.len() > BGE_MAX_PAIRS {
+            BgeRun::unavailable(BgeUnavailableReason::PairCap, candidates.len())
+        } else {
+            let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+                .iter()
+                .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
+                .collect();
+            match backend {
+                Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)
+                    .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
+                Err(reason) => BgeRun::unavailable(reason, candidates.len()),
+            }
+        };
+        run.e5_candidates = considered;
+        if run.status == "BGE_UNAVAILABLE" {
+            for candidate in &mut candidates {
+                candidate.bge_admission = Some("BGE_UNSCORED");
+            }
+        } else {
+            for candidate in &mut candidates {
+                let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
+                if let Some(evidence) = run.evidence.get(&key).cloned() {
+                    candidate.bge_admission =
+                        Some(if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+                            "BGE_RECOMMENDED"
+                        } else {
+                            "BGE_FILTERED"
+                        });
+                    candidate.bge = Some(evidence);
+                } else {
+                    candidate.bge_admission = Some("BGE_UNSCORED");
+                }
+            }
+        }
+        bge_run = Some(run);
+    }
+
+    let mut nli_enabled = false;
+    #[cfg(feature = "nli-evidence")]
+    if let Some(backend) = nli_backend_from_env()? {
+        nli_enabled = true;
+        score_nli_candidates(root, &mut candidates, &texts, backend)?;
+        for candidate in &mut candidates {
+            candidate.nli_admission = candidate.nli.map(|evidence| {
+                if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                    "NLI_RECOMMENDED"
+                } else {
+                    "NLI_FILTERED"
+                }
+            });
+        }
+        print_nli_results(&candidates, considered);
+    }
+
+    if let Some(run) = bge_run.as_ref() {
+        let recommended = candidates
+            .iter()
+            .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
+            .count();
+        let filtered = candidates
+            .iter()
+            .filter(|candidate| candidate.bge_admission == Some("BGE_FILTERED"))
+            .count();
+        println!(
+            "BGE: model {}, top_k {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
+            if run.status == "BGE_ENABLED" {
+                RERANKER_MODEL_ID
+            } else {
+                "null"
+            },
+            RERANKER_TOP_K,
+            considered,
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            run.runtime_ms.unwrap_or(0),
+        );
+        println!(
+            "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, bounded pool <= {}",
+            recommended, filtered, run.unscored, BGE_MAX_PAIRS
+        );
+        for candidate in &candidates {
+            let Some(evidence) = candidate.bge.as_ref() else {
+                continue;
+            };
+            println!(
+                "{}: '{}' ({}) resembles '{}' ({}) E5 {:.4}, forward {:.4}, reverse {:.4}, symmetric {:.4}; evidence is advisory and no Givn classification is assigned",
+                candidate.bge_admission.unwrap_or("BGE_UNSCORED"),
+                candidate.left.title,
+                candidate.left.file,
+                candidate.right.title,
+                candidate.right.file,
+                candidate.embedding_score,
+                evidence.forward_raw,
+                evidence.reverse_raw,
+                evidence.symmetric_raw,
+            );
+        }
+    }
+
+    let recommended = candidates
+        .iter()
+        .filter(|candidate| {
+            (!bge_enabled || candidate.bge_admission == Some("BGE_RECOMMENDED"))
+                && (!nli_enabled || candidate.nli_admission == Some("NLI_RECOMMENDED"))
+        })
+        .count();
+    println!(
+        "combined recommended {} of {} E5 candidates; evidence is advisory and no Givn classification is assigned",
+        recommended, considered
     );
     Ok(())
 }
