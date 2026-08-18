@@ -12,17 +12,21 @@ documents focused and reviewable.
 The semantic retrieval surface includes advisory exploration through
 `givn spec explore`, an optional request-local current-change corpus, and the
 blocking E5 `0.9500` semantic review worklist generated only by `givn check
-review --change <id>`. Remediation verification is part of that blocking layer;
-the change-local generated report is retained under the archive by the existing
-move, its classification is owned by the agent, and it does not edit feature
-files. A build without retrieval fails this blocking layer rather than passing.
+review --change <id>`. The opt-in `cross-encoder-reranker` layer adds bounded,
+bidirectional BGE evidence to the five complete-scenario/audit E5 surfaces in
+PR 7; free-text `givn spec search` remains E5-only. It keeps E5 raw
+candidates visible, emits `BGE_RECOMMENDED` and non-blocking `BGE_FILTERED`
+evidence, and never assigns a Givn classification or edits feature files.
+Remediation verification remains agent-owned for admitted candidates. A build
+without retrieval fails this blocking layer rather than passing.
 
 The same retrieval surface also provides `givn spec duplicates`, a complete
 read-only permanent-corpus audit. It reports exact and existing-Fingerprint
 structural relationships plus advisory E5 candidates in one fixed text/JSON
-contract, without reading, refreshing, or writing the persistent index and
-without blocking ordinary change work. It excludes active changes and archive
-contents; only the existing local model cache may be created.
+contract, with optional bounded BGE raw/recommended/filtered extensions,
+without reading, refreshing, or writing the persistent index and without
+blocking ordinary change work. It excludes active changes and archive contents;
+only the existing local model cache may be created.
 
 When the `arc42` addon is enabled, completion review also cross-checks durable
 Arc42 facts against the change's design, mapped tasks, and completed

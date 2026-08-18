@@ -64,7 +64,8 @@ The tool supports four scopes:
 
 | Scope | Meaning |
 |---|---|
-| `strict` | All combined pairs with E5 cosine `>= 0.95`. Recommended direct comparison. |
+| `bounded` | The production top-K union intersected with strict E5 pairs; this is the default admission scope. |
+| `strict` | All combined pairs with E5 cosine `>= 0.95`. Historical direct comparison; request explicitly. |
 | `topk` | The union of five E5 neighbours per scenario. |
 | `union` | `topk` plus every strict-threshold pair. |
 | `cross-source` | Only top-K pairs with one Givn and one Watn endpoint. |
@@ -81,12 +82,12 @@ Command:
 
 ```sh
 tools/approach-comparison/prepare_corpus.sh
-tools/approach-comparison/run_comparison.sh \
+CANDIDATE_SCOPE=strict tools/approach-comparison/run_comparison.sh \
   --report-limit 30 \
   --report-name test-corpus/indexes/combined-approach-report-strict.json
 ```
 
-The command uses `CANDIDATE_SCOPE=strict` by default.
+The command explicitly uses `CANDIDATE_SCOPE=strict` for this historical report.
 
 Measured result:
 

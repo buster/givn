@@ -19,12 +19,12 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
-| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates; the semantic report admits only scores `>= 0.9500`, while permanent-scenario exploration and the existing advisory `givn spec review` contract remain unchanged. The strict similarity gate itself is enabled by `spec-similarity-gate`, not by `spec-retrieval` alone. |
+| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates. The optional `cross-encoder-reranker` feature scores a deterministic top-K/E5 intersection in both directions only after benchmark approval (or through the deterministic test stub) and emits BGE-recommended or BGE-filtered evidence; the independent `spec-similarity-gate` remains the E5 hard gate. |
 | Permanent duplicate audit | `givn spec duplicates` scans every permanent pair, resolves exact and existing-Fingerprint structural relationships before advisory E5 candidates, emits all ranked results through one fixed text/JSON contract, and computes the report in memory without reading, refreshing, or writing the persisted index. |
 | Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
-| Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved classifications without editing feature files. It does not replace or suppress the existing strict gate: a `spec-similarity-gate` build runs that gate afterward. |
+| Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved BGE-recommended classifications without editing feature files. `BGE_FILTERED` evidence is non-blocking; unavailable/overflow states preserve the E5 blocking worklist. |
 | Semantic remediation gate | Before returning PASS, verify every prior resolved classification against a read-only projected tree. Recompute prior pairs even below `0.9500`; require duplicate removal, a parameterized variant contract, or changed observable facts for a boundary below the threshold. |
-| Retrieval compatibility | A binary without `spec-retrieval` returns the existing unavailable error from blocking check review and creates no semantic report; `spec-retrieval` alone does not enable the strict similarity gate, which requires `spec-similarity-gate`; the advisory `givn spec review` behavior remains separate. |
+| Retrieval compatibility | A binary without `spec-retrieval` returns the existing unavailable error from blocking check review and creates no semantic report; `spec-retrieval` alone is E5-only; `cross-encoder-reranker` adds advisory BGE evidence only for an approved artifact or test stub without implying `spec-similarity-gate`; failed approval remains E5-only and the advisory `givn spec review` behavior remains separate. |
 | Historical evidence | The generated report remains in the change directory and is retained by the existing archive move under `givn/archive/<id>/`; archive implementation is not changed by this slice. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 
@@ -67,9 +67,11 @@ deterministic gate implementation and its regression evidence in one place.
 
 The semantic authoring and review slices deliberately reuse the existing E5
 embedding representation, binary-fixed `0.9500` boundary, and content-hash
-refresh. The blocking report adds no BGE or NLI evidence and does not introduce
-automatic semantic decisions. The advisory exploratory path remains non-blocking
-and the existing `givn spec review --change <id>` behavior remains unchanged.
+refresh. The opt-in BGE layer adds a second directional evidence and admission
+stage across explore, advisory review, blocking review, and duplicate audit.
+`BGE_FILTERED` is retained as visible non-blocking evidence; only
+`BGE_RECOMMENDED` candidates enter the agent-classified blocking worklist. No
+BGE status is a Givn classification, and the advisory path never edits specs.
 
 The permanent duplicate audit is a separate advisory surface over the complete
 permanent corpus. It reuses the existing Gherkin parser, deterministic
@@ -91,10 +93,12 @@ serialization, so `0.9500` is admitted and `0.9499` is not. A semantic
 candidate has null structural evidence.
 
 Each eligible scenario is embedded once and remaining pairwise cosines are
-computed in memory. The current baseline is approximately 288 scenarios and
-41,328 pairs; a bounded/indexed approach is required before 500 scenarios or
-approximately 124,750 pairs. Labeled fixtures record precision and recall at
-the threshold, while the command remains advisory.
+computed in memory. BGE never scores all permanent pairs: it consumes the
+endpoint/query top-five union after deterministic identity exclusions and caps
+each invocation at 512 unique undirected pairs, refusing before model loading
+with an explicit unavailable/overflow status. Labeled fixtures record top-K
+recall, admission precision/recall, false-positive/false-negative rates, and
+runtime; the BGE status remains evidence rather than a Givn classification.
 
 The current-change slice extends that same advisory path without broadening the
 persisted catalogue. Permanent entries are refreshed as before; active delta

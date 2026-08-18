@@ -11,6 +11,8 @@ use cucumber::{World, gherkin::Step, given, then, when};
 use crate::common;
 
 pub mod arc42_review_alignment_steps;
+pub mod bge_reranking_evidence_e2e_steps;
+pub mod bge_reranking_evidence_steps;
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
 pub mod choose_project_license_steps;

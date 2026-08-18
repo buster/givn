@@ -15,7 +15,8 @@ path = "src/lib.rs"
 default = []
 spec-retrieval = ["dep:fastembed", "dep:ndarray", "dep:ort", "dep:tokenizers"]
 spec-similarity-gate = ["spec-retrieval"]
-cross-encoder-reranker = ["spec-similarity-gate"]
+cross-encoder-reranker = ["spec-retrieval"]
+nli-evidence = ["spec-retrieval"]
 
 [dependencies]
 clap = { version = "4.6", features = ["derive"] }

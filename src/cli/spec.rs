@@ -36,3 +36,7 @@ pub fn run_review(change_id: &str) -> Result<()> {
 pub fn run_duplicates(json: bool) -> Result<()> {
     crate::spec::retrieval::duplicates(&std::env::current_dir()?, json)
 }
+
+pub fn run_bge_parity() -> Result<()> {
+    crate::spec::retrieval::bge_parity(&std::env::current_dir()?)
+}

@@ -49,14 +49,15 @@ flowchart LR
 | FR-22 | Expose one canonical authoring policy for interaction inventories and E2E evidence; generated guidance references it rather than restating it. |
 | FR-23 | Provide local retrieval over permanent scenarios and enforce the fixed semantic-similarity gate during review and archive preparation. |
 | FR-24 | Keep interactive `givn spec search` advisory while requiring every permanent or current-delta scenario pair at or above the fixed `0.95` threshold to be rewritten or removed before review passes. |
-| FR-25 | Use local retrieve-then-rerank scoring to distinguish true duplicate scenarios from valid boundary candidates during semantic review. |
+| FR-25 | Use local retrieve-then-rerank scoring as advisory evidence to reduce the recommended semantic worklist without assigning a Givn classification. |
 | FR-26 | Let an author explore exactly one complete draft scenario against all permanent scenarios from a file or stdin, with human-readable or stable JSON results, before creation. |
 | FR-27 | Let an author optionally explore that complete draft against active scenarios in a named current change, from a file or stdin, with source-labeled results and no persistence of delta candidates. |
-| FR-28 | During blocking `givn check review --change <id>`, generate a complete change-local semantic review worklist for active added/modified delta candidates at the fixed E5 `0.9500` boundary, require an agent classification for every candidate, emit a deterministic report with exact headers/field order and complete source-ordered endpoint evidence, leave feature files untouched, and retain the generated report as archive evidence. |
+| FR-28 | During blocking `givn check review --change <id>`, generate a complete change-local semantic review worklist for active added/modified delta candidates at the fixed E5 `0.9500` boundary, require an agent classification for every admitted candidate, record non-blocking BGE-filtered evidence separately when enabled, emit a deterministic report with exact headers/field order and complete source-ordered endpoint evidence, leave feature files untouched, and retain the generated report as archive evidence. |
 | FR-29 | During blocking change review, verify that each resolved semantic classification has produced the required projected remediation: remove duplicates, consolidate variants, or make valid boundaries explicit below the active boundary. |
 | FR-30 | Provide one complete, interface-consistent authoring policy for interaction inventories and E2E evidence, including the distinction between public interfaces and secondary repository evidence. |
 | FR-31 | Emit the documented machine-readable instruction contract with the effective artifact id, generated paths, prerequisites, and resolved instruction text. |
 | FR-32 | Provide a read-only `givn spec duplicates` audit over the complete permanent scenario corpus, reporting deterministic exact and Fingerprint-based structural candidates plus advisory E5 candidates in a fixed text/JSON contract without blocking ordinary change work. |
+| FR-33 | Make opt-in BGE evidence available to permanent exploration, change-aware exploration, advisory review, blocking review, and permanent duplicate audit through a deterministic bounded E5 top-K union. Record E5 raw candidates, BGE-recommended candidates, BGE-filtered evidence, model identity, symmetric raw scores, and runtime without automatic Givn decisions. |
 
 ### Non-functional requirements (top)
 
@@ -81,12 +82,13 @@ Top three quality goals, in priority order (see chapter 10 for scenarios):
 Secondary goals: correctness of the Gherkin merge (data integrity of the spec),
 AI-agent ergonomics (standards-aligned skill/rule generation), consistency of
 that guidance across instructions, skills, commands, and project overrides, and
-semantic-review integrity (a complete deterministic worklist whose full endpoint
-evidence invalidates stale decisions without allowing the gate to edit feature
-files, while the permanent index remains structurally permanent-only), complete
-permanent-corpus visibility through a deterministic, non-mutating duplicate
-audit, and measured semantic recall/precision without automatic model
-decisions.
+semantic-review integrity (a deterministic admitted worklist whose full
+endpoint evidence invalidates stale decisions without allowing the gate to edit
+feature files, while the permanent index remains structurally permanent-only),
+complete permanent-corpus visibility through a deterministic, non-mutating
+duplicate audit, and measured semantic recall/precision without automatic model
+classification. BGE-filtered evidence must reduce false-positive authoring
+pressure without hiding its E5 provenance.
 
 Scenario exploration adds a secondary agent-ergonomics goal: a draft comparison
 must be deterministic, advisory, and non-mutating so an author can inspect
