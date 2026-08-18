@@ -4003,6 +4003,10 @@ fn run_second_stage_advisory_review(
                     });
                 }
                 print_nli_results(&candidates, considered);
+                println!(
+                    "NLI: model {}, top_k {}, E5 raw {}, runtime ms {}, evidence is advisory",
+                    NLI_MODEL_ID, RERANKER_TOP_K, considered, 0
+                );
             }
             Err(reason) => {
                 for candidate in &mut candidates {

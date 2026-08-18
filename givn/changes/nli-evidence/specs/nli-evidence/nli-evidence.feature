@@ -40,14 +40,14 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the output reports an NLI admission status
     And the symmetric summary is independent of endpoint order
 
-  @givn.added @nli @e2e @wip
+  @givn.added @nli @e2e
   Scenario: NLI reduces advisory review candidates without assigning a Givn class
     Given an end-to-end project with an active semantic review candidate for NLI evidence
     And NLI evidence filters the unrelated candidate
     When the end-to-end user runs advisory NLI review through the givn CLI
     Then the command exits 0
     And stdout reports the NLI model and elapsed runtime
-    And stdout reports fewer recommended candidates than E5 candidates
+    And stdout reports fewer NLI recommendations than E5 candidates
     And stdout records the filtered candidate as NLI evidence
     And stdout assigns no automatic Givn classification
 
