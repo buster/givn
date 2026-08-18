@@ -31,12 +31,13 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And stdout reports fewer NLI recommended candidates than E5 candidates
     And stdout excludes the query's own delta and projected target identities
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: NLI reports a symmetric probability summary from both directions
     Given a project with one semantic candidate and directional NLI evidence scores
     When the user runs advisory NLI review
     Then the output reports entailment, neutral, and contradiction probabilities in both directions
     And the output reports the symmetric NLI probability summary
+    And the output reports an NLI admission status
     And the symmetric summary is independent of endpoint order
 
   @givn.added @nli @e2e @wip
