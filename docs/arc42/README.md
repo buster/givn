@@ -20,10 +20,17 @@ evidence, and never assigns a Givn classification or edits feature files.
 Remediation verification remains agent-owned for admitted candidates. A build
 without retrieval fails this blocking layer rather than passing.
 
+The independent `nli-evidence` layer reuses the same bounded E5 top-K union on
+the same five surfaces. It reports bidirectional entailment, neutral, and
+contradiction probabilities, emits `NLI_RECOMMENDED` or non-blocking
+`NLI_FILTERED` evidence at the inclusive symmetric entailment point `0.5000`,
+and intersects its recommendations with BGE when both layers are active. E5
+raw candidates remain visible and NLI never assigns a Givn classification.
+
 The same retrieval surface also provides `givn spec duplicates`, a complete
 read-only permanent-corpus audit. It reports exact and existing-Fingerprint
 structural relationships plus advisory E5 candidates in one fixed text/JSON
-contract, with optional bounded BGE raw/recommended/filtered extensions,
+contract, with optional bounded BGE/NLI raw/recommended/filtered extensions,
 without reading, refreshing, or writing the persistent index and without
 blocking ordinary change work. It excludes active changes and archive contents;
 only the existing local model cache may be created.

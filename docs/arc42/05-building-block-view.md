@@ -61,7 +61,7 @@ flowchart TD
 | `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
 | `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
 | `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries for existing retrieval commands, rank interactive and complete-scenario queries, construct shared deterministic E5 top-K unions, score optional bidirectional BGE evidence within the pair cap, render raw/recommended/filtered output, audit permanent pairs, collect request-local active deltas, apply lifecycle identity filters, generate the change-local semantic report, and verify projected remediation for admitted classifications. | `fastembed`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
+| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries for existing retrieval commands, rank interactive and complete-scenario queries, construct shared deterministic E5 top-K unions, score optional bidirectional BGE and independent NLI evidence within the pair cap, render raw/recommended/filtered output, audit permanent pairs, collect request-local active deltas, apply lifecycle identity filters, generate the change-local semantic report, and verify projected remediation for admitted classifications. | `fastembed`, `ort`, `tokenizers`, `ndarray`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
 | `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
 | `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
 | `error` | Typed errors; map to process exit codes. | `thiserror` |
@@ -186,3 +186,20 @@ The benchmark label artifact and comparison report are repository-owned
 evidence. Their metrics cover top-K recall, admission precision/recall,
 false-positive/false-negative rates, runtime, and scenario verbosity. Test
 steps use local stubs and invoke the compiled CLI as a subprocess.
+
+### 5.3g NLI evidence additions
+
+The independent `nli-evidence` capability reuses the BGE candidate pool and
+adds `NliEvidence`/`NliRun` records to `spec::retrieval`. The local ONNX NLI
+classifier resolves labels by name, scores both ordered pair directions, and
+stores directional plus symmetric probabilities. A fixed symmetric
+entailment probability of `0.5000` admits `NLI_RECOMMENDED`; lower values are
+`NLI_FILTERED` evidence only. Combined BGE/NLI admission is an intersection,
+while E5 raw candidates remain available for audit and fallback.
+
+NLI is applied to permanent exploration, current-change exploration, advisory
+review, blocking semantic review, and the permanent duplicate audit. A local
+artifact preflight or pair-cap refusal produces `NLI_UNAVAILABLE`, keeps raw
+E5 candidates blocking, and records zero model-load attempts. Regular and E2E
+acceptance bindings live in separate capability modules and invoke the
+compiled CLI through temporary project roots.

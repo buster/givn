@@ -92,6 +92,13 @@
 | **Rust production candidate pipeline** | The canonical E5 scoring, deterministic exclusion, top-K union, and pair canonicalization path in the compiled givn binary. Its fingerprint is required before benchmark approval. |
 | **Python reference pipeline** | The offline benchmark parser and scorer used for measurement. It is explicitly not sufficient to approve product BGE admission. |
 | **BGE local artifact set** | The offline `model.onnx`, referenced external weights, tokenizer, config, special-token map, and tokenizer-config files validated before user-defined FastEmbed construction. |
+| **NLI evidence** | Local bidirectional evidence from the multilingual NLI model, containing entailment, neutral, and contradiction probabilities for both directions, a symmetric summary, model identity, and elapsed runtime. It is not a Givn classification. |
+| **NLI_RECOMMENDED** | Non-authoritative admission status for an NLI-scored pair whose symmetric entailment probability is at least the fixed inclusive `0.5000` operating point. The pair still requires agent classification in blocking review. |
+| **NLI_FILTERED** | Non-blocking evidence status for an NLI-scored pair below the symmetric entailment operating point. It remains visible and receives no Givn classification. |
+| **NLI_UNSCORED** | A raw E5 candidate outside the successfully scored bounded NLI subset. It has no NLI probabilities, remains visible, and remains a blocking E5 candidate. |
+| **NLI_UNAVAILABLE** | Explicit state indicating that NLI artifacts are missing or the bounded pair pool overflowed. It preserves the E5 fallback and does not claim NLI participation. |
+| **Bounded second-stage pool** | The shared deterministic union of at most five E5 neighbors per eligible query/endpoint, after identity/deterministic exclusions and before BGE/NLI inference, capped at 512 unique undirected pairs per invocation. |
+| **Symmetric NLI probability** | The softmax probability vector produced from the arithmetic mean of the forward and reverse NLI logits; its entailment component drives NLI admission only. |
 | **Coverage measurement command** | The project-owned command in `coverage.measure_command` that runs the configured test subsets and writes the non-E2E and E2E source coverage reports. |
 | **Coverage merge command** | The project-owned command in `coverage.merge_command` that combines the two source reports into `coverage.output_path`. Its fresh output is authoritative for README coverage. |
 | **Merged coverage report** | The Cobertura XML emitted by the coverage merge command. givn validates this report and uses its line and branch counters for both README badges and the managed summary. |

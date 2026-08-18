@@ -2802,3 +2802,67 @@ corrupt-artifact scenarios assert zero model-load attempts.
 
 Related decisions: ADR-039, ADR-053, and ADR-056. Related risks: R-55, R-60,
 and R-61.
+
+---
+
+## ADR-058: Add independent NLI admission evidence on the shared bounded pool
+
+---
+status: accepted
+date: 2026-08-18
+decision-makers: givn maintainers
+consulted: semantic-plan NLI slice and local model evidence review
+informed: agents, CI users, and release maintainers
+---
+
+### Context and Problem Statement
+
+BGE reduces the recommended semantic worklist, but a second model family is
+needed to expose a different relationship signal. The existing NLI experiment
+reports diagnostics only in one early-return review path. Letting NLI generate
+its own corpus or replace E5 would make recall and runtime incomparable and
+could turn an uncalibrated label into an implicit Givn decision.
+
+### Considered Options
+
+1. Keep NLI diagnostic-only and leave the BGE worklist unchanged.
+2. Let NLI replace E5 or generate an independent all-pairs candidate set.
+3. Add an independent NLI layer over the shared bounded E5 top-K union and
+   intersect its advisory admissions with BGE when both are enabled.
+
+### Decision Outcome
+
+Choose option 3. The `nli-evidence` feature scores each selected pair in both
+directions with the local multilingual NLI model, emits directional and
+symmetrically aggregated probabilities, and uses the fixed inclusive symmetric
+entailment point `0.5000` only for `NLI_RECOMMENDED` versus `NLI_FILTERED`
+evidence. The E5 raw set remains visible. NLI is independently selectable,
+bounded to the existing top-K/512-pair pipeline, and unavailable or unscored
+pairs retain the normal E5 blocking semantics. BGE and NLI admissions are
+combined by intersection; neither status is a Givn classification.
+
+### Consequences
+
+- Good, because NLI can reduce false-positive worklists without changing E5
+  candidate recall or the existing BGE contract.
+- Good, because both directional probabilities and the symmetric summary make
+  model behavior auditable and endpoint-order independent.
+- Good, because the independent feature matrix permits E5-only, E5+BGE,
+  E5+NLI, and combined comparisons.
+- Bad, because a fixed NLI admission point still requires labeled measurement
+  before it can be treated as evidence of quality rather than a heuristic.
+- Bad, because the retrieval-enabled binary grows another local model cache and
+  CPU scoring path.
+
+### Confirmation
+
+Executable scenarios cover NLI-only reduction, bidirectional/symmetric output,
+advisory and blocking filtering, duplicate-audit bounds, combined admission,
+unavailable fallback, and the inclusive boundary. The existing BGE isolation
+scenario confirms that NLI remains absent unless its independent capability is
+compiled.
+
+### More Information
+
+Related decisions: ADR-039, ADR-042, ADR-052, ADR-053, ADR-054, ADR-055, and
+ADR-057. Related risks: R-27, R-28, R-51, R-52, and R-62.
