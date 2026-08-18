@@ -7,11 +7,6 @@ use cucumber::{given, then, when};
 use super::GivnWorld;
 use crate::common;
 
-#[given("the NLI strict-mode setup step")]
-fn nli_strict_mode_setup(_world: &mut GivnWorld) {
-    unimplemented!("NLI step skeleton is implemented scenario by scenario");
-}
-
 #[given("a project with one semantic candidate and directional NLI evidence scores")]
 fn one_nli_candidate(world: &mut GivnWorld) {
     let env = common::make_init_root();
