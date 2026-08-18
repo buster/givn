@@ -495,3 +495,52 @@ fn nli_explore_json_fields(world: &mut GivnWorld) {
     );
     assert!(document["results"][0]["nli"].is_object());
 }
+
+#[given("a project with a permanent semantic candidate and the NLI capability compiled")]
+fn nli_disabled_project(world: &mut GivnWorld) {
+    nli_explore_json_project(world);
+}
+
+#[given("NLI evidence is disabled")]
+fn disable_nli_evidence(world: &mut GivnWorld) {
+    world.retrieval_reranker = Some("disabled".to_string());
+}
+
+#[when("the user explores the draft through the NLI-capable CLI")]
+fn explore_with_nli_disabled(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI disabled project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "disabled"),
+        ],
+    ));
+}
+
+#[then("the result contains the E5 candidates")]
+fn disabled_result_contains_e5(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("rank 1:"),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("stdout contains no NLI model, probability, runtime, or admission status")]
+fn disabled_stdout_has_no_nli(world: &mut GivnWorld) {
+    assert!(
+        !super::stdout(world).contains("NLI"),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("the output uses the E5-only contract")]
+fn disabled_output_is_e5_only(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("query:"), "stdout: {output}");
+    assert!(!output.contains("evidence"), "stdout: {output}");
+}
