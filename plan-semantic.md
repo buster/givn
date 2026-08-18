@@ -10,8 +10,8 @@ latest plan snapshot is carried by the current stack tip so downstream PRs
 inherit it. It reaches `main` when the stack is merged in order; do not update
 intermediate base branches separately.
 
-The current stack has fifteen open PRs. PR 20 is the fifteenth and has
-fourteen stack predecessors. Superseded closed PRs are not counted.
+The current stack has seventeen open PRs. PR 22 is the seventeenth and has
+sixteen stack predecessors. Superseded closed PRs are not counted.
 
 | Stack order | PR | Head branch | Base branch |
 |---:|---:|---|---|
@@ -30,19 +30,22 @@ fourteen stack predecessors. Superseded closed PRs are not counted.
 | 13 | #18 | `semantic/03-semantic-review` | `semantic/02-spec-explore-change` |
 | 14 | #19 | `semantic/04-semantic-remediation` | `semantic/03-semantic-review` |
 | 15 | #20 | `semantic/05-instruction-integrity` | `semantic/04-semantic-remediation` |
+| 16 | #21 | `semantic/06-spec-duplicates` | `semantic/05-instruction-integrity` |
+| 17 | #22 | `semantic/07-bge-evidence` | `semantic/06-spec-duplicates` |
 
 ### Current Delivery State
 
-The GitHub Stacks CLI stack is stack #6 and contains the fifteen open PRs listed
-above. Every PR is still a Draft and GitHub reports every PR as mergeable. PR
-#20 is the current stack tip on `semantic/05-instruction-integrity` at commit
-`4bada8b`; the branch is synchronized with its remote. Its local full-suite,
-E2E, archive, formatting, check, and lint verification is green. GitHub
-currently reports no status checks for this branch, so that verification remains
-manual.
+The GitHub Stacks CLI stack is stack #6 and contains the seventeen open PRs
+listed above. Every PR is still a Draft and GitHub reports every PR as
+mergeable. PR #21 is the spec-duplicates stack link on
+`semantic/06-spec-duplicates`; PR #22 is the BGE stack tip on
+`semantic/07-bge-evidence`. The BGE change is archived locally, its full suite,
+E2E suite, review, coverage, and archive gates are green, and the branch is
+ready for the PR update. GitHub currently reports no status checks for this
+branch, so that verification remains manual.
 
-The GitHub stack metadata was synchronized with `gh stack link` after PR #20
-was added. The plan snapshot on the PR #20 tip is current. `main` and the
+The GitHub stack metadata was synchronized with `gh stack link` after PR #22
+was added. This plan snapshot is carried on the PR #22 tip. `main` and the
 intermediate base branches intentionally retain earlier snapshots until the
 stack is merged in order.
 
@@ -308,19 +311,14 @@ byte-for-byte unchanged.
 
 ### Next Steps
 
-1. Review PR #20 and confirm that its existing local verification is sufficient
-   to serve as the next stack base.
-2. Create one Givn change for the read-only permanent duplicate audit and follow
-   the normal proposal, spec, design, design-review, tasks, implementation,
-   review, and archive workflow.
-3. Branch `semantic/06-spec-duplicates` from
-   `semantic/05-instruction-integrity`. Implement only `givn spec duplicates`
-   and open the next stacked GitHub PR on PR #20. This is semantic plan PR 6
-   and will be GitHub PR #21.
-4. Run the full required checks, then synchronize GitHub stack #6 so PR #21 is
-   linked as the sixteenth stack entry.
-5. Continue with `semantic/07-bge-evidence` only after the duplicate-audit PR
-   is green enough to serve as its base.
+1. Keep PR #21, `semantic/06-spec-duplicates`, as the independent read-only
+   permanent duplicate-audit stack link on PR #20.
+2. Branch `semantic/07-bge-evidence` directly from PR #21 and keep all BGE
+   implementation, approval, NLI-isolation, coverage, E2E, review, and archive
+   commits on this separate PR.
+3. Synchronize GitHub stack #6 so PR #22 is linked immediately above PR #21.
+4. Continue with `semantic/07-nli-evidence` only after the BGE PR is green
+   enough to serve as its base.
 
 ## Model Evidence Layers
 
