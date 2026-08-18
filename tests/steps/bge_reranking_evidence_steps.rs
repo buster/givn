@@ -424,6 +424,12 @@ fn exact_threshold_advisory_project(world: &mut GivnWorld) {
     );
 }
 
+#[given("a project with one E5 candidate and malformed directional local evidence scores")]
+fn malformed_directional_project(world: &mut GivnWorld) {
+    advisory_bge_project(world);
+    world.retrieval_bge_scores = Some("malformed-entry".to_string());
+}
+
 #[when("the user runs advisory change review with second-stage evidence enabled")]
 fn run_advisory_bge_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("advisory BGE project");
@@ -468,6 +474,16 @@ fn unavailable_advisory_is_non_classifying(world: &mut GivnWorld) {
 #[then("stdout contains no `BGE_FILTERED` evidence")]
 fn no_filtered_when_unapproved(world: &mut GivnWorld) {
     assert!(!super::stdout(world).contains("BGE_FILTERED"));
+}
+
+#[then("stderr identifies the malformed directional evidence entry")]
+fn malformed_directional_error(world: &mut GivnWorld) {
+    assert!(super::stderr(world).contains("malformed directional evidence entry"));
+}
+
+#[then("stderr reports zero BGE model load attempts")]
+fn malformed_directional_no_load(world: &mut GivnWorld) {
+    assert!(super::stderr(world).contains("BGE model load attempts: 0"));
 }
 
 #[then("the false positive is recorded as filtered from the recommended list")]
