@@ -97,6 +97,16 @@ fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
     ));
 }
 
+#[when("the user explores the draft with JSON output and second-stage evidence enabled")]
+fn explore_json_with_bge(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("BGE project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature", "--format", "json"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")],
+    ));
+}
+
 #[then("the result set contains the E5 candidates")]
 fn result_set_contains_e5_candidates(world: &mut GivnWorld) {
     assert!(
@@ -537,4 +547,40 @@ fn stdout_has_no_nli_evidence(world: &mut GivnWorld) {
 #[then("stdout identifies BGE as the participating second-stage model")]
 fn stdout_identifies_bge_model(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
+}
+
+#[then("the JSON retains the E5 raw result order and legacy result fields")]
+fn bge_json_retains_raw_order(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    let results = document["results"].as_array().expect("results array");
+    for (index, result) in results.iter().enumerate() {
+        assert_eq!(result["rank"], serde_json::json!(index + 1));
+        for field in ["title", "file", "score", "scope", "change"] {
+            assert!(result.get(field).is_some(), "missing legacy result field {field}");
+        }
+        assert!(!result["bge"].is_null());
+    }
+}
+
+#[then("the JSON evidence reports raw, recommended, filtered, unscored, unique-pair, and directional-call counts")]
+fn bge_json_reports_counts(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    let evidence = &document["evidence"];
+    for field in [
+        "e5_candidates",
+        "recommended_candidates",
+        "bge_filtered_candidates",
+        "bge_unscored_candidates",
+        "bge_pairs",
+        "bge_directional_calls",
+    ] {
+        assert!(evidence[field].is_number(), "missing evidence count {field}");
+    }
+}
+
+#[then("the JSON evidence reports the BGE model and elapsed runtime")]
+fn bge_json_reports_model_runtime(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert_eq!(document["evidence"]["bge_model"], serde_json::json!("rozgo/bge-reranker-v2-m3"));
+    assert!(document["evidence"]["bge_runtime_ms"].is_number());
 }

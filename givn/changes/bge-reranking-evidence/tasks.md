@@ -79,13 +79,16 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined NLI-isolation setup step.
 - [x] GREEN: added explicit BGE/NLI selector fixtures and assertions proving BGE output without NLI evidence; targeted run passed 8/8 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 8 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): BGE does not select NLI without the independent NLI capability`
+- [x] COMMIT: `c18ec32` — `feat(bge-reranking-evidence): BGE does not select NLI without the independent NLI capability`
 
 ### The independent NLI capability owns the legacy diagnostic selector
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario; run only in the explicit NLI-capable feature matrix.
 
 ### BGE JSON preserves raw ordering and names every admission count
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined BGE JSON invocation.
+- [x] GREEN: added additive Explore JSON evidence, raw-order preservation, and count/model/runtime assertions; targeted run passed 7/7 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): BGE JSON preserves raw ordering and names every admission count`
 
 ### E5 candidates outside the bounded BGE set remain explicitly unscored and blocking
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
