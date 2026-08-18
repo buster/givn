@@ -27,6 +27,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-18 | The complete permanent duplicate audit is advisory and read-only: it reads current permanent specs, excludes active changes and archive contents, never uses or writes `.spec-index.json`, and computes transient embeddings in memory. Existing local model-cache creation is allowed. | Preserve ordinary authoring and review state while giving maintainers a complete corpus view. |
 | TC-19 | `cross-encoder-reranker` and `spec-similarity-gate` are independent feature capabilities. BGE uses only deterministic E5 top-K unions, at most 512 unique undirected pairs per invocation, and reports an explicit unavailable/overflow state before inference. | Prevent the old BGE hard-gate behavior and unbounded CPU inference. |
 | TC-20 | `BGE_FILTERED` is a non-blocking evidence status in the semantic report. It is not a Givn classification and does not require a rationale; BGE-recommended candidates retain the normal agent-owned classification/remediation contract. | Reduce false-positive authoring pressure without automatic model decisions. |
+| TC-21 | The opt-in `nli-evidence` layer uses the same local bounded E5 top-K union as BGE, scores both directions, and admits only a symmetric entailment probability of at least `0.5000`; NLI-filtered evidence is non-blocking and never a Givn classification. | Add an independent candidate-reduction signal without expanding CPU inference or allowing a model label to make a domain decision. |
 
 ## 2.2 Distribution Constraints
 

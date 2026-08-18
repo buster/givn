@@ -58,6 +58,7 @@ flowchart LR
 | FR-31 | Emit the documented machine-readable instruction contract with the effective artifact id, generated paths, prerequisites, and resolved instruction text. |
 | FR-32 | Provide a read-only `givn spec duplicates` audit over the complete permanent scenario corpus, reporting deterministic exact and Fingerprint-based structural candidates plus advisory E5 candidates in a fixed text/JSON contract without blocking ordinary change work. |
 | FR-33 | Make opt-in BGE evidence available to permanent exploration, change-aware exploration, advisory review, blocking review, and permanent duplicate audit through a deterministic bounded E5 top-K union. Record E5 raw candidates, BGE-recommended candidates, BGE-filtered evidence, model identity, symmetric raw scores, and runtime without automatic Givn decisions. |
+| FR-34 | Make independently opt-in NLI evidence available on the same five E5-backed surfaces. Record bidirectional entailment/neutral/contradiction probabilities, a symmetric summary, NLI-recommended and NLI-filtered candidates, model identity, pair counts, runtime, and explicit unavailable states; reduce the recommended worklist without automatic Givn decisions. |
 
 ### Non-functional requirements (top)
 
@@ -94,6 +95,11 @@ Scenario exploration adds a secondary agent-ergonomics goal: a draft comparison
 must be deterministic, advisory, and non-mutating so an author can inspect
 evidence against the permanent baseline and the active current change without
 changing the permanent specification.
+
+NLI evidence adds a secondary semantic-review integrity goal: the recommended
+worklist may be narrowed by an independent local entailment signal, while the
+complete E5 raw set and all directional model evidence remain available for
+human review and no model status becomes a Givn classification.
 
 ## 1.4 Stakeholders
 

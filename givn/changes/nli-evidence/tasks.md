@@ -1,0 +1,171 @@
+# Tasks: nli-evidence
+
+RED -> GREEN -> REFACTOR -> COMMIT per scenario. Non-E2E scenarios run before
+the five CLI E2E smoke scenarios. Each completed checkbox contains runner
+evidence and its atomic commit hash.
+
+## Setup
+
+- [x] **Strict runner and step skeletons**: register the regular and E2E NLI
+  step modules, extend `run-tests.sh` with E5+BGE/NLI feature-matrix commands,
+  and prove `.fail_on_skipped()` rejects an `unimplemented!()` step with a
+  non-zero result.
+  ```text
+  GIVN_FEATURES=givn/changes/nli-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,nli-evidence --test features_runner -- --name "NLI reduces permanent exploration candidates without changing E5 raw results"
+  1 feature, 1 scenario, 1 failed step; process exited 101 because the first
+  step was undefined. The runner also panicked after reporting the failed step.
+  ```
+  Commit: recorded after the setup commit.
+
+## Non-E2E Scenarios
+
+### NLI reports a symmetric probability summary from both directions
+
+- [ ] RED: remove only this scenario's `@wip`; targeted NLI runner fails on the
+  unimplemented step. Evidence: pending.
+- [ ] GREEN: implement directional override parsing, symmetric probability
+  calculation, and order-independent assertions. Production files:
+  `src/spec/retrieval.rs`, `tests/steps/nli_evidence_steps.rs`.
+  Targeted runner passes. Evidence: pending.
+- [ ] REFACTOR: rerun the unchanged targeted command; it passes. Evidence:
+  pending.
+- [ ] COMMIT: pending.
+
+### BGE and NLI jointly reduce the recommended candidate set
+
+- [ ] RED: remove only this scenario's `@wip`; targeted runner fails. Evidence:
+  pending.
+- [ ] GREEN: implement independent stage admission intersection and combined
+  advisory output. Production files: `src/spec/retrieval.rs` and tests.
+  Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### An unavailable NLI layer keeps a combined candidate blocking
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement explicit unavailable fallback and blocking semantics.
+  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI refuses an overflowing bounded pair pool before model loading
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement NLI pair-cap refusal and zero-load accounting.
+  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI keeps candidates outside a partial bounded pool blocking
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement partial-pool `NLI_UNSCORED` JSON/report evidence.
+  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI JSON preserves the raw E5 contract and uses the NLI schema extension
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement additive Explore JSON NLI fields and schema version 3.
+  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### Disabling NLI preserves the E5-only contract in an NLI-capable build
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement explicit disabled dispatch and E5-only output
+  preservation. Production files: `src/spec/retrieval.rs` and tests. Evidence:
+  pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### Missing NLI artifacts preserve the explicit E5 fallback
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement NLI artifact preflight and `NLI_UNAVAILABLE` output.
+  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### The NLI admission boundary includes a symmetric entailment probability of 0.5000
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement inclusive NLI admission comparison. Production files:
+  `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### An NLI-recommended candidate still blocks unresolved semantic review
+
+- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement NLI-recommended semantic report candidate blocks and
+  unresolved exit status. Production files: `src/spec/retrieval.rs` and tests.
+  Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### The independent NLI capability owns the legacy diagnostic selector
+
+- [ ] RED: targeted runner fails on the unimplemented modified scenario.
+  Evidence: pending.
+- [ ] GREEN: update the legacy scenario binding/output to the NLI admission
+  path while retaining diagnostic evidence. Production files:
+  `src/spec/retrieval.rs` and tests. Evidence: pending.
+- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+## E2E Scenarios
+
+### NLI reduces permanent exploration candidates without changing E5 raw results
+
+- [ ] RED: remove only this scenario's `@wip`; `./run-tests.sh --e2e` targeted
+  run fails on the unimplemented E2E step. Evidence: pending.
+- [ ] GREEN: implement the real compiled CLI subprocess assertions in
+  `tests/steps/nli_evidence_e2e_steps.rs`. Evidence: pending.
+- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI reduces change-aware exploration candidates without changing E5 raw results
+
+- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement the real `--change` CLI interaction and source/identity
+  assertions. Evidence: pending.
+- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI reduces advisory review candidates without assigning a Givn class
+
+- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement the real advisory review CLI assertions. Evidence:
+  pending.
+- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI filtered evidence does not block the blocking review
+
+- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement the real blocking review CLI/report assertions.
+  Evidence: pending.
+- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+### NLI uses the bounded E5 neighbour union for the permanent duplicate audit
+
+- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
+- [ ] GREEN: implement the real duplicate-audit CLI assertions. Evidence:
+  pending.
+- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
+- [ ] COMMIT: pending.
+
+## Full Verification
+
+- [ ] `givn lint --change nli-evidence` exits 0.
+- [ ] `./run-tests.sh` exits 0 across E5-only, BGE-only, NLI-only, and combined
+  matrices.
+- [ ] `./run-tests.sh --e2e` exits 0 and runs fewer scenarios than the full
+  command because it filters to `@e2e`.
+- [ ] `cargo fmt --check`, `cargo check`, and
+  `cargo clippy --workspace --all-targets -- -D warnings` pass.
