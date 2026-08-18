@@ -86,6 +86,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_stub_scores: Option<String>,
     /// Optional deterministic duplicate-audit score overrides for fixtures.
     pub(crate) retrieval_duplicate_scores: Option<String>,
+    /// Optional deterministic directional BGE score overrides for fixtures.
+    pub(crate) retrieval_bge_scores: Option<String>,
     /// Guard that restores the unreadable-feature fixture after its subprocess
     /// invocation, including when a scenario assertion panics.
     pub(crate) unreadable_feature: Option<spec_duplicates_steps::UnreadableFeatureGuard>,
@@ -297,6 +299,9 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_duplicate_scores.as_deref() {
         environments.push(("GIVN_SPEC_DUPLICATES_TEST_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", value));
     }
     let out = common::run_givn_with_envs(env, &argv, &environments);
     if let Some(id) = change_id_from_args(&args) {
