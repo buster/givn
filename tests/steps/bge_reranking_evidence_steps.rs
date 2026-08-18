@@ -161,6 +161,44 @@ fn run_approval_writer(world: &mut GivnWorld, enforce: bool) {
     );
 }
 
+#[when("the user runs exploration through a binary without the retrieval capability")]
+fn run_no_retrieval_exploration(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("retrieval compatibility fixture");
+    fs::write(
+        env.path("draft.feature"),
+        "Feature: draft\n\n  Scenario: Draft request\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write no-retrieval draft");
+
+    let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let target_dir = repository.join("target/bge-no-retrieval");
+    let build = Command::new("cargo")
+        .args([
+            "build",
+            "--no-default-features",
+            "--bin",
+            "givn",
+            "--target-dir",
+        ])
+        .arg(&target_dir)
+        .current_dir(repository)
+        .output()
+        .expect("build no-retrieval binary");
+    assert!(
+        build.status.success(),
+        "no-retrieval build failed: {}",
+        String::from_utf8_lossy(&build.stderr)
+    );
+
+    world.last_output = Some(
+        Command::new(target_dir.join("debug/givn"))
+            .args(["spec", "explore", "--file", "draft.feature"])
+            .current_dir(env.root())
+            .output()
+            .expect("run no-retrieval exploration"),
+    );
+}
+
 #[given("a project with a permanent semantic candidate for second-stage evidence")]
 fn bge_project(world: &mut GivnWorld) {
     super::spec_explore_permanent_steps::prepare_exploration_project(world);

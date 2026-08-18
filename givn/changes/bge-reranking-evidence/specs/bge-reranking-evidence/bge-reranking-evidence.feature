@@ -472,7 +472,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stderr says that `--approval-file` requires `--enforce`
     And no BGE approval artifact is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: A binary without retrieval reports the explicit unavailable mode
     Given a project with a permanent semantic candidate for second-stage evidence
     When the user runs exploration through a binary without the retrieval capability
