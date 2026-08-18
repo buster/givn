@@ -37,10 +37,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined disabled-exploration step (non-zero).
 - [x] GREEN: added disabled/enabled CLI parity invocations, raw rank identity comparison, reduced recommendation assertion, and participation isolation; targeted run passed 7/7 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Enabling second-stage evidence preserves the E5 raw candidate identities`
+- [x] COMMIT: `3e21ade` — `feat(bge-reranking-evidence): Enabling second-stage evidence preserves the E5 raw candidate identities`
 
 ### Both pair directions form the documented symmetric raw score
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed because duplicate JSON had no BGE directional evidence.
+- [x] GREEN: added the deterministic semantic-pair fixture, directional override validation, duplicate BGE scoring, and symmetric JSON assertions; targeted run passed 5/5 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Both pair directions form the documented symmetric raw score`
 
 ### Deterministic exclusions happen before second-stage scoring
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.

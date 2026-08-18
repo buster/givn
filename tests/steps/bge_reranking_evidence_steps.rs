@@ -109,6 +109,84 @@ fn json_has_no_bge_evidence(world: &mut GivnWorld) {
     assert!(!super::stdout(world).to_ascii_lowercase().contains("bge"));
 }
 
+#[given("a project with one permanent semantic pair and directional local evidence scores")]
+fn directional_bge_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("pair.feature"),
+        "Feature: pair\n\n  Scenario: Alpha request\n    Given an alpha context\n    When alpha runs\n    Then alpha succeeds\n\n  Scenario: Beta request\n    Given a beta context\n    When beta runs\n    Then beta succeeds\n",
+    )
+    .expect("write directional BGE fixture");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/pair.feature|Alpha request::givn/specs/pair.feature|Beta request=0.9600"
+            .to_string(),
+    );
+    world.retrieval_bge_scores = Some(
+        "givn/specs/pair.feature|Alpha request->givn/specs/pair.feature|Beta request=2.0000;givn/specs/pair.feature|Beta request->givn/specs/pair.feature|Alpha request=4.0000".to_string(),
+    );
+}
+
+#[when("the user runs the permanent duplicate audit with second-stage evidence enabled")]
+fn run_directional_duplicate_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("directional BGE project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    if let Some(scores) = world.retrieval_duplicate_scores.as_deref() {
+        environments.push(("GIVN_SPEC_DUPLICATES_TEST_SCORES", scores));
+    }
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &environments,
+    ));
+}
+
+#[then("the audit reports both directional scores")]
+fn audit_reports_directional_scores(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid duplicate JSON");
+    let candidate = &document["candidates"][0];
+    assert_eq!(candidate["evidence"]["bge"]["forward_raw"], serde_json::json!(2.0));
+    assert_eq!(candidate["evidence"]["bge"]["reverse_raw"], serde_json::json!(4.0));
+}
+
+#[then("the reported raw score is their documented symmetric average")]
+fn audit_reports_symmetric_score(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid duplicate JSON");
+    assert_eq!(document["candidates"][0]["evidence"]["bge"]["symmetric_raw"], serde_json::json!(3.0));
+}
+
+#[then("reversing endpoint order does not change the reported raw score")]
+fn reversed_direction_is_symmetric(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("directional BGE project");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "stub"),
+            (
+                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+                "givn/specs/pair.feature|Alpha request::givn/specs/pair.feature|Beta request=0.9600",
+            ),
+            (
+                "GIVN_SPEC_BGE_DIRECTIONAL_SCORES",
+                "givn/specs/pair.feature|Beta request->givn/specs/pair.feature|Alpha request=4.0000;givn/specs/pair.feature|Alpha request->givn/specs/pair.feature|Beta request=2.0000",
+            ),
+        ],
+    );
+    let document: serde_json::Value = serde_json::from_slice(&output.stdout).expect("valid JSON");
+    assert_eq!(document["candidates"][0]["evidence"]["bge"]["symmetric_raw"], serde_json::json!(3.0));
+}
+
 #[then("both runs report the same E5 raw candidate identities in the same order")]
 fn parity_raw_identities(world: &mut GivnWorld) {
     let before = world
