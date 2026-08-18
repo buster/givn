@@ -8,12 +8,12 @@
 @givn.delta @nli-evidence
 Feature: NLI evidence for bounded semantic candidate reduction
 
-  @givn.added @nli @e2e @wip
+  @givn.added @nli @e2e
   Scenario: NLI reduces permanent exploration candidates without changing E5 raw results
     Given an end-to-end project with two permanent semantic candidates for NLI evidence
     And NLI evidence is enabled while BGE evidence is disabled
     And a complete draft scenario is available for NLI exploration
-    When the end-to-end user explores the draft through the givn CLI
+    When the end-to-end user explores the draft with NLI through the givn CLI
     Then the command exits 0
     And stdout identifies E5 as the raw candidate generator
     And stdout identifies the NLI model and both directional probability sets
