@@ -476,6 +476,8 @@ def main() -> None:
             )
         except ValueError as error:
             raise SystemExit(str(error)) from error
+    if args.approval_file and args.enforce and parity is None:
+        raise SystemExit("Rust parity is required for an enforced approval artifact")
     if args.enforce and (parity is None or args.givn_binary is None or args.bge_model is None):
         raise SystemExit("--enforce requires --rust-parity, --givn-binary, and --bge-model")
     if report.get("candidate_scope") != "bounded":
