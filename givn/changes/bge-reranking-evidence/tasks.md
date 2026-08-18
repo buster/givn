@@ -94,7 +94,7 @@ targeted runner command is the design command with `--name <scenario title>`.
   7 steps (7 passed)
   ```
 - [x] REFACTOR: isolated all NLI production types/functions and tokenizer use behind `nli-evidence`, gave BGE its own max-length constant, and reran both the explicit NLI and BGE isolation matrix commands; each targeted run passed (7/7 and 8/8 steps).
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
+- [x] COMMIT: `3a508ec` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
 
 ### BGE JSON preserves raw ordering and names every admission count
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined BGE JSON invocation.
@@ -362,9 +362,9 @@ targeted runner command is the design command with `--name <scenario title>`.
   GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent exploration exposes bounded second-stage evidence"
   1 scenario, 1 failed step; the registered E2E setup stub panicked with `not implemented: BGE E2E setup step is implemented scenario by scenario`; process exited non-zero.
 
-  Full runner: `./run-tests.sh` -> 31 features, 327 scenarios, 2015 steps passed.
-  E2E runner: `./run-tests.sh --e2e` -> 24 features, 42 scenarios, 246 steps passed.
-  E2E scenario count 42 is strictly less than full runner count 327.
+  Full change runner: `GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs ./run-tests.sh` -> 47 scenarios, 328 steps passed across the five feature matrices.
+  E2E change runner: `GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs ./run-tests.sh --e2e` -> 6 scenarios, 48 steps passed; the E5 subset reported 0 scenarios and the BGE subset reported all 6 E2E scenarios.
+  E2E scenario count 6 is strictly less than full change runner count 47. The BGE approval scenarios are explicitly excluded from the E5 matrix and included in the cross-encoder BGE matrix.
   ```
 
 ### Permanent exploration exposes bounded second-stage evidence
