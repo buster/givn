@@ -199,6 +199,25 @@ fn run_no_retrieval_exploration(world: &mut GivnWorld) {
     );
 }
 
+#[when("the user explores the same draft twice through the givn CLI")]
+fn explore_same_draft_twice(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("repeated BGE exploration fixture");
+    let environments = [("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    world.previous_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &environments,
+    ));
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &environments,
+    ));
+}
+
 #[given("a project with a permanent semantic candidate for second-stage evidence")]
 fn bge_project(world: &mut GivnWorld) {
     super::spec_explore_permanent_steps::prepare_exploration_project(world);
@@ -1692,6 +1711,62 @@ fn only_enabled_reports_bge(world: &mut GivnWorld) {
         .expect("disabled exploration output");
     assert!(!String::from_utf8_lossy(&before.stdout).contains("BGE"));
     assert!(super::stdout(world).contains("BGE"));
+}
+
+fn stable_bge_lines(output: &std::process::Output) -> Vec<String> {
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .filter(|line| line.starts_with("rank ") || line.starts_with("BGE symmetric raw score"))
+        .map(str::to_string)
+        .collect()
+}
+
+fn reported_bge_runtime(output: &std::process::Output) -> u128 {
+    String::from_utf8_lossy(&output.stdout)
+        .lines()
+        .find_map(|line| {
+            line.split_once("elapsed runtime ms ")
+                .and_then(|(_, value)| value.split_whitespace().next())
+                .and_then(|value| value.parse::<u128>().ok())
+        })
+        .expect("BGE runtime report")
+}
+
+#[then("the E5 candidate identities and second-stage scores are byte-for-byte stable")]
+fn repeated_bge_scores_are_stable(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first repeated exploration output");
+    let second = super::output(world);
+    assert_eq!(stable_bge_lines(first), stable_bge_lines(second));
+}
+
+#[then("each run reports a non-negative second-stage elapsed runtime")]
+fn repeated_bge_runtime_is_non_negative(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first repeated exploration output");
+    assert!(reported_bge_runtime(first) <= u128::MAX);
+    assert!(reported_bge_runtime(super::output(world)) <= u128::MAX);
+}
+
+#[then("the runtime does not affect candidate ordering")]
+fn repeated_bge_runtime_does_not_order_candidates(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first repeated exploration output");
+    let first_ranks = stable_bge_lines(first)
+        .into_iter()
+        .filter(|line| line.starts_with("rank "))
+        .collect::<Vec<_>>();
+    let second_ranks = stable_bge_lines(super::output(world))
+        .into_iter()
+        .filter(|line| line.starts_with("rank "))
+        .collect::<Vec<_>>();
+    assert_eq!(first_ranks, second_ranks);
 }
 
 #[then("stdout contains no NLI evidence")]
