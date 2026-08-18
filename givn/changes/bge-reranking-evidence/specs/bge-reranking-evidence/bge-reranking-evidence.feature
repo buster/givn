@@ -292,7 +292,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the JSON retains the E5 raw result identities
     And the JSON counts the raw candidates as unscored rather than filtered
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Unavailable BGE duplicate JSON preserves the E5 fallback accounting
     Given a permanent corpus with semantic candidates and unavailable second-stage artifacts
     When the user runs the permanent duplicate audit with JSON output and second-stage evidence enabled
