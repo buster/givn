@@ -374,7 +374,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout identifies the E5-only configuration
     And stdout contains no participating second-stage model, score, or runtime
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: Failed benchmark approval keeps blocking review on E5-only evidence
     Given a project with an unresolved blocking semantic candidate
     And the BGE admission benchmark has failed

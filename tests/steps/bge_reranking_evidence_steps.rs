@@ -656,10 +656,38 @@ fn pair_cap_retains_e5_block(world: &mut GivnWorld) {
     assert!(!report.contains("## BGE Filtered Candidate"));
 }
 
+#[then("the semantic review report uses schema version 1")]
+fn e5_only_report_schema(world: &mut GivnWorld) {
+    assert!(semantic_report_text(world).contains("Report schema version: 1"));
+}
+
+#[then("the report contains no BGE status, model, score, or admission fields")]
+fn e5_only_report_has_no_bge_fields(world: &mut GivnWorld) {
+    let report = semantic_report_text(world);
+    assert!(!report.contains("BGE status:"));
+    assert!(!report.contains("bge_"));
+}
+
+#[then("the unresolved E5 candidate remains blocking")]
+fn e5_only_report_remains_blocking(world: &mut GivnWorld) {
+    assert!(semantic_report_text(world).contains("classification: UNCERTAIN"));
+}
+
+#[given("a project with an unresolved blocking semantic candidate")]
+fn blocking_project_alias(world: &mut GivnWorld) {
+    unavailable_blocking_project(world);
+}
+
 #[when("the user runs blocking change review with second-stage evidence enabled")]
 fn run_filtered_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("filtered blocking project");
-    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    let mut environments = vec![
+        ("GIVN_SPEC_EMBEDDER", "stub"),
+        ("GIVN_SPEC_BGE", "stub"),
+    ];
+    if world.retrieval_reranker.as_deref() == Some("unapproved") {
+        environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+    }
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
     }
