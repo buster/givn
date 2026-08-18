@@ -352,19 +352,35 @@ targeted runner command is the design command with `--name <scenario title>`.
   7 steps (7 passed)
   ```
 - [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Repeated bounded scoring is deterministic and reports runtime separately`
+- [x] COMMIT: `d7c29b5` — `feat(bge-reranking-evidence): Repeated bounded scoring is deterministic and reports runtime separately`
 
 ## E2E Smoke Tests
 
-- [ ] Read `givn instructions specs --change bge-reranking-evidence`; configure
-  `verify.e2e_command` as the strict `@e2e` subset and prove its scenario count
-  is lower than the full change runner count.
+- [x] Read `givn instructions specs --change bge-reranking-evidence`; the design requires no local service or dependency startup, and the existing separate real-subprocess E2E step module is registered. `verify.command` remains `./run-tests.sh`; strict `verify.e2e_command` is `./run-tests.sh --e2e`, a strict subset rather than the same command.
   ```text
-  <!-- commands and counts -->
+  Strict E2E proof:
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent exploration exposes bounded second-stage evidence"
+  1 scenario, 1 failed step; the registered E2E setup stub panicked with `not implemented: BGE E2E setup step is implemented scenario by scenario`; process exited non-zero.
+
+  Full runner: `./run-tests.sh` -> 31 features, 327 scenarios, 2015 steps passed.
+  E2E runner: `./run-tests.sh --e2e` -> 24 features, 42 scenarios, 246 steps passed.
+  E2E scenario count 42 is strictly less than full runner count 327.
   ```
 
 ### Permanent exploration exposes bounded second-stage evidence
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact `@e2e` scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted real-CLI E2E run failed in the separate registered E2E setup stub (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent exploration exposes bounded second-stage evidence"
+  1 scenario (1 failed step); the E2E setup step panicked with `not implemented: BGE E2E setup step is implemented scenario by scenario`.
+  ```
+- [x] GREEN: implemented the separate real compiled-CLI fixture, exploration action, and stdout assertions for E5, BGE model, score, runtime, and bounded pool; targeted E2E run passed 9/9 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  9 steps (9 passed)
+  ```
+- [x] REFACTOR: reran the same targeted real-CLI command unchanged; 1 scenario and 9 steps passed.
+- [x] COMMIT: `<pending until commit>` — `test(e2e): Permanent exploration exposes bounded second-stage evidence`
 
 ### Change-aware exploration narrows the union of permanent and active neighbours
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact `@e2e` scenario.

@@ -10,7 +10,7 @@
 
 Feature: BGE reranking evidence for bounded semantic search
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Permanent exploration exposes bounded second-stage evidence
     Given an end-to-end project with a permanent semantic candidate for second-stage evidence
     And the local second-stage evidence is enabled
