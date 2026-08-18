@@ -191,11 +191,14 @@ evidence and its atomic commit hash.
 
 ### NLI filtered evidence does not block the blocking review
 
-- [ ] RED: targeted E2E run fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement the real blocking review CLI/report assertions.
-  Evidence: pending.
-- [ ] REFACTOR: targeted E2E command passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: removed only this scenario's `@wip`; targeted E2E runner exited 101
+  at the unimplemented filtered-blocking Given step.
+- [x] GREEN: implemented the real blocking-review subprocess, NLI filtered
+  report block, non-classifying evidence, and PASS assertions. Targeted run
+  passed 6/6 steps.
+- [x] REFACTOR: reran the unchanged targeted E2E command; 1 scenario and 6
+  steps passed.
+- [x] COMMIT: `002887d` — `test(e2e): NLI filtered evidence does not block the blocking review`.
 
 ### NLI uses the bounded E5 neighbour union for the permanent duplicate audit
 
