@@ -337,10 +337,22 @@ targeted runner command is the design command with `--name <scenario title>`.
   4 steps (4 passed)
   ```
 - [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 4 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A binary without retrieval reports the explicit unavailable mode`
+- [x] COMMIT: `d032851` — `feat(bge-reranking-evidence): A binary without retrieval reports the explicit unavailable mode`
 
 ### Repeated bounded scoring is deterministic and reports runtime separately
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted run failed on the undefined repeated-exploration step (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Repeated bounded scoring is deterministic and reports runtime separately"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added two real CLI invocations and assertions for stable rank/score lines, parsed non-negative runtime values, and unchanged ordering; targeted run passed 7/7 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  ```
+- [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Repeated bounded scoring is deterministic and reports runtime separately`
 
 ## E2E Smoke Tests
 

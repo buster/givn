@@ -479,7 +479,7 @@ Feature: BGE reranking evidence for bounded semantic search
     Then the command exits non-zero
     And stderr contains "spec retrieval is unavailable"
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Repeated bounded scoring is deterministic and reports runtime separately
     Given a project with a permanent semantic candidate for second-stage evidence
     And the local second-stage evidence is enabled
