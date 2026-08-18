@@ -33,6 +33,17 @@ fn bge_enabled_without_nli(world: &mut GivnWorld) {
     world.retrieval_reranker = None;
 }
 
+#[given("the independent NLI evidence capability is enabled")]
+fn nli_capability_enabled(world: &mut GivnWorld) {
+    advisory_bge_project(world);
+    world.retrieval_reranker = Some("nli-stub".to_string());
+}
+
+#[given("the legacy NLI selector is explicitly selected")]
+fn legacy_nli_selector_selected(world: &mut GivnWorld) {
+    world.retrieval_reranker = Some("nli-stub".to_string());
+}
+
 #[given("the local second-stage model artifacts are unavailable")]
 fn bge_artifacts_missing(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("missing".to_string());
@@ -81,7 +92,10 @@ fn explore_permanent_draft(world: &mut GivnWorld) {
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "explore", "--file", "draft.feature"],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+        ],
     ));
 }
 
@@ -90,8 +104,18 @@ fn explore_permanent_draft_json(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
     world.last_output = Some(common::run_givn_with_envs(
         env,
-        &["spec", "explore", "--file", "draft.feature", "--format", "json"],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
+        &[
+            "spec",
+            "explore",
+            "--file",
+            "draft.feature",
+            "--format",
+            "json",
+        ],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+        ],
     ));
 }
 
@@ -101,7 +125,10 @@ fn explore_disabled_for_parity(world: &mut GivnWorld) {
     world.previous_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "explore", "--file", "draft.feature"],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+        ],
     ));
 }
 
@@ -139,6 +166,19 @@ fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
     ));
 }
 
+#[when("the user runs advisory change review through the NLI-capable CLI")]
+fn run_nli_advisory_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+        ],
+    ));
+}
+
 #[when("the user explores the draft with JSON output and second-stage evidence enabled")]
 fn explore_json_with_bge(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
@@ -149,7 +189,14 @@ fn explore_json_with_bge(world: &mut GivnWorld) {
     };
     world.last_output = Some(common::run_givn_with_envs(
         env,
-        &["spec", "explore", "--file", "draft.feature", "--format", "json"],
+        &[
+            "spec",
+            "explore",
+            "--file",
+            "draft.feature",
+            "--format",
+            "json",
+        ],
         &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)],
     ));
 }
@@ -176,7 +223,10 @@ fn stdout_identifies_e5_only(world: &mut GivnWorld) {
 #[then("stdout contains no participating second-stage model, score, or runtime")]
 fn stdout_has_no_bge_participation(world: &mut GivnWorld) {
     let output = super::stdout(world).to_ascii_lowercase();
-    assert!(!output.contains("bge"), "stdout unexpectedly contains BGE evidence: {output}");
+    assert!(
+        !output.contains("bge"),
+        "stdout unexpectedly contains BGE evidence: {output}"
+    );
 }
 
 #[then("the JSON retains the existing E5 query, index, and result contract")]
@@ -241,7 +291,9 @@ fn run_directional_duplicate_audit(world: &mut GivnWorld) {
     world.last_output = Some(common::run_givn_with_envs(env, &args, &environments));
 }
 
-#[when("the user runs the permanent duplicate audit with JSON output and second-stage evidence enabled")]
+#[when(
+    "the user runs the permanent duplicate audit with JSON output and second-stage evidence enabled"
+)]
 fn run_partial_duplicate_json(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial duplicate project");
     let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
@@ -271,15 +323,24 @@ fn audit_reports_directional_scores(world: &mut GivnWorld) {
     let document: serde_json::Value =
         serde_json::from_slice(&super::output(world).stdout).expect("valid duplicate JSON");
     let candidate = &document["candidates"][0];
-    assert_eq!(candidate["evidence"]["bge"]["forward_raw"], serde_json::json!(2.0));
-    assert_eq!(candidate["evidence"]["bge"]["reverse_raw"], serde_json::json!(4.0));
+    assert_eq!(
+        candidate["evidence"]["bge"]["forward_raw"],
+        serde_json::json!(2.0)
+    );
+    assert_eq!(
+        candidate["evidence"]["bge"]["reverse_raw"],
+        serde_json::json!(4.0)
+    );
 }
 
 #[then("the reported raw score is their documented symmetric average")]
 fn audit_reports_symmetric_score(world: &mut GivnWorld) {
     let document: serde_json::Value =
         serde_json::from_slice(&super::output(world).stdout).expect("valid duplicate JSON");
-    assert_eq!(document["candidates"][0]["evidence"]["bge"]["symmetric_raw"], serde_json::json!(3.0));
+    assert_eq!(
+        document["candidates"][0]["evidence"]["bge"]["symmetric_raw"],
+        serde_json::json!(3.0)
+    );
 }
 
 #[then("reversing endpoint order does not change the reported raw score")]
@@ -302,7 +363,10 @@ fn reversed_direction_is_symmetric(world: &mut GivnWorld) {
         ],
     );
     let document: serde_json::Value = serde_json::from_slice(&output.stdout).expect("valid JSON");
-    assert_eq!(document["candidates"][0]["evidence"]["bge"]["symmetric_raw"], serde_json::json!(3.0));
+    assert_eq!(
+        document["candidates"][0]["evidence"]["bge"]["symmetric_raw"],
+        serde_json::json!(3.0)
+    );
 }
 
 #[given("a permanent corpus containing exact, structural, and semantic relationships")]
@@ -491,11 +555,16 @@ fn false_positive_is_filtered(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("BGE_FILTERED"));
 }
 
-#[then("the false positive is not classified as `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN`")]
+#[then(
+    "the false positive is not classified as `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN`"
+)]
 fn filtered_candidate_has_no_classification(world: &mut GivnWorld) {
     let output = super::stdout(world);
     for classification in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY", "UNCERTAIN"] {
-        assert!(!output.contains(classification), "filtered output contains {classification}");
+        assert!(
+            !output.contains(classification),
+            "filtered output contains {classification}"
+        );
     }
 }
 
@@ -526,13 +595,17 @@ fn filtered_blocking_project(world: &mut GivnWorld) {
     );
 }
 
-#[given("a project with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs")]
+#[given(
+    "a project with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs"
+)]
 fn partial_unscored_blocking_project(world: &mut GivnWorld) {
     filtered_blocking_project(world);
     world.retrieval_bge_test_pool = Some("partial-raw-513".to_string());
 }
 
-#[given("a permanent corpus with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs")]
+#[given(
+    "a permanent corpus with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs"
+)]
 fn partial_unscored_duplicate_project(world: &mut GivnWorld) {
     directional_bge_project(world);
     world.retrieval_bge_test_pool = Some("partial-raw-513".to_string());
@@ -569,7 +642,9 @@ fn unavailable_change_explore_project(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("missing".to_string());
 }
 
-#[when("the user explores the draft against change \"current-change\" with second-stage evidence enabled")]
+#[when(
+    "the user explores the draft against change \"current-change\" with second-stage evidence enabled"
+)]
 fn run_unavailable_change_exploration(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("change exploration project");
     let bge_mode = if world.retrieval_reranker.as_deref() == Some("unapproved") {
@@ -612,13 +687,17 @@ fn unavailable_change_retains_candidates(world: &mut GivnWorld) {
     assert!(output.contains("scope current-change"));
 }
 
-#[given("an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool")]
+#[given(
+    "an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool"
+)]
 fn pair_cap_blocking_project(world: &mut GivnWorld) {
     filtered_blocking_project(world);
     world.retrieval_bge_test_pool = Some("overflow-513".to_string());
 }
 
-#[when("the end-to-end user runs blocking change review for \"running-change\" through the givn CLI")]
+#[when(
+    "the end-to-end user runs blocking change review for \"running-change\" through the givn CLI"
+)]
 fn run_unavailable_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("unavailable blocking project");
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")];
@@ -658,7 +737,9 @@ fn pair_cap_report_reason(world: &mut GivnWorld) {
     assert!(semantic_report_text(world).contains("BGE reason: pair-cap"));
 }
 
-#[then("the semantic report has zero BGE unique pairs, directional calls, filtered pairs, and model load attempts")]
+#[then(
+    "the semantic report has zero BGE unique pairs, directional calls, filtered pairs, and model load attempts"
+)]
 fn unavailable_report_zero_counts(world: &mut GivnWorld) {
     let report = semantic_report_text(world);
     assert!(report.contains("BGE unique pair count: 0"));
@@ -709,10 +790,7 @@ fn blocking_project_alias(world: &mut GivnWorld) {
 #[when("the user runs blocking change review with second-stage evidence enabled")]
 fn run_filtered_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("filtered blocking project");
-    let mut environments = vec![
-        ("GIVN_SPEC_EMBEDDER", "stub"),
-        ("GIVN_SPEC_BGE", "stub"),
-    ];
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
     if world.retrieval_reranker.as_deref() == Some("unapproved") {
         environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
     }
@@ -735,7 +813,10 @@ fn run_e5_only_blocking_review(world: &mut GivnWorld) {
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["check", "review", "--change", "running-change"],
-        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+        ],
     ));
 }
 
@@ -769,14 +850,16 @@ fn semantic_report_status_pass(world: &mut GivnWorld) {
 #[then("the semantic review report records BGE status \"BGE_ENABLED\"")]
 fn partial_report_enabled(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(report.contains("BGE status: BGE_ENABLED"));
 }
 
 #[then("the semantic review report records exactly 512 unique pairs and 1024 directional calls")]
 fn partial_report_counts(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(report.contains("BGE unique pair count: 512"));
     assert!(report.contains("BGE directional call count: 1024"));
 }
@@ -784,7 +867,8 @@ fn partial_report_counts(world: &mut GivnWorld) {
 #[then("exactly one E5 candidate outside the bounded set is recorded as `BGE_UNSCORED`")]
 fn partial_report_one_unscored(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(report.contains("BGE unscored count: 1"));
     assert!(report.contains("bge_admission: BGE_UNSCORED"));
 }
@@ -797,14 +881,18 @@ fn partial_report_records_outside(world: &mut GivnWorld) {
 #[then("those candidates remain blocking E5 candidates")]
 fn partial_candidates_remain_blocking(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(report.contains("Candidate count: 1"));
 }
 
-#[then("each unscored candidate block has null BGE directional scores and the E5 rank/endpoint order")]
+#[then(
+    "each unscored candidate block has null BGE directional scores and the E5 rank/endpoint order"
+)]
 fn partial_unscored_fields_are_null(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(report.contains("bge_forward_raw: null"));
     assert!(report.contains("bge_reverse_raw: null"));
     assert!(report.contains("bge_symmetric_raw: null"));
@@ -813,28 +901,43 @@ fn partial_unscored_fields_are_null(world: &mut GivnWorld) {
 #[then("no unscored candidate is labeled `BGE_FILTERED`")]
 fn partial_unscored_not_filtered(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(!report.contains("BGE_UNSCORED\n") || !report.contains("BGE_FILTERED"));
 }
 
 #[then("no unscored candidate is present in the filtered evidence collection")]
 fn partial_no_filtered_collection(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
+    let report =
+        fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(!report.contains("## BGE Filtered Candidate"));
 }
 
-#[then("the JSON reports BGE status \"BGE_ENABLED\" with 512 unique pairs and 1024 directional calls")]
+#[then(
+    "the JSON reports BGE status \"BGE_ENABLED\" with 512 unique pairs and 1024 directional calls"
+)]
 fn partial_json_counts(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    assert_eq!(document["bge_run"]["status"], serde_json::json!("BGE_ENABLED"));
+    assert_eq!(
+        document["bge_run"]["status"],
+        serde_json::json!("BGE_ENABLED")
+    );
     assert_eq!(document["bge_run"]["unique_pairs"], serde_json::json!(512));
-    assert_eq!(document["bge_run"]["directional_calls"], serde_json::json!(1024));
+    assert_eq!(
+        document["bge_run"]["directional_calls"],
+        serde_json::json!(1024)
+    );
 }
 
 #[then("the JSON contains an `unscored_candidates` collection")]
 fn partial_json_has_unscored_collection(world: &mut GivnWorld) {
-    assert!(super::output(world).stdout.windows(b"unscored_candidates".len()).any(|window| window == b"unscored_candidates"));
+    assert!(
+        super::output(world)
+            .stdout
+            .windows(b"unscored_candidates".len())
+            .any(|window| window == b"unscored_candidates")
+    );
 }
 
 #[then("each unscored JSON candidate has an endpoint, E5 score, and status `BGE_UNSCORED`")]
@@ -860,7 +963,12 @@ fn partial_json_unscored_order(world: &mut GivnWorld) {
 #[then("each unscored candidate remains outside the filtered collection")]
 fn partial_json_unscored_outside_filtered(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    assert!(document["filtered_candidates"].as_array().unwrap().is_empty());
+    assert!(
+        document["filtered_candidates"]
+            .as_array()
+            .unwrap()
+            .is_empty()
+    );
 }
 
 #[then("the JSON contains no unscored candidate with BGE directional scores")]
@@ -892,7 +1000,9 @@ fn gate_combination_project(world: &mut GivnWorld) {
     );
 }
 
-#[when("the user runs blocking change review with the E5 similarity gate and second-stage evidence enabled")]
+#[when(
+    "the user runs blocking change review with the E5 similarity gate and second-stage evidence enabled"
+)]
 fn run_gate_combination_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("gate combination project");
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
@@ -909,7 +1019,11 @@ fn run_gate_combination_review(world: &mut GivnWorld) {
 #[then("the command reports the E5 gate result separately from BGE admission")]
 fn gate_combination_reports_both(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    assert!(output.contains("similarity gate"), "stdout: {output}\nstderr: {}", super::stderr(world));
+    assert!(
+        output.contains("similarity gate"),
+        "stdout: {output}\nstderr: {}",
+        super::stderr(world)
+    );
     assert!(output.contains("BGE"), "stdout: {output}");
 }
 
@@ -958,7 +1072,9 @@ fn missing_bge_reports_reason(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("reason missing-artifact"));
 }
 
-#[then("stdout reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts")]
+#[then(
+    "stdout reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts"
+)]
 fn missing_bge_reports_zero_counts(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(output.contains("unique pairs 0"));
@@ -983,7 +1099,9 @@ fn corrupt_bge_reports_no_load(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("model load attempts 0"));
 }
 
-#[given("a modified active scenario shares its projected target file with another permanent scenario")]
+#[given(
+    "a modified active scenario shares its projected target file with another permanent scenario"
+)]
 fn same_file_identity_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
     let specs = env.path("givn/specs/shared");
@@ -1034,7 +1152,12 @@ fn same_file_neighbor_remains(world: &mut GivnWorld) {
 #[then("only the exact source and projected-target identities are excluded")]
 fn same_file_exact_only(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    assert!(!output.lines().filter(|line| line.starts_with("rank ")).any(|line| line.contains("Modified scenario")));
+    assert!(
+        !output
+            .lines()
+            .filter(|line| line.starts_with("rank "))
+            .any(|line| line.contains("Modified scenario"))
+    );
     assert!(output.contains("Same-file neighbor"));
 }
 
@@ -1062,7 +1185,9 @@ fn overflow_reports_pair_cap(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("reason pair-cap"));
 }
 
-#[then("the output reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts")]
+#[then(
+    "the output reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts"
+)]
 fn overflow_reports_zero_counts(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(output.contains("BGE unique pair count: 0"));
@@ -1122,11 +1247,19 @@ fn parity_raw_identities(world: &mut GivnWorld) {
     assert_eq!(ranks(&before), ranks(&after), "E5 raw identities changed");
 }
 
-#[then("the enabled run reports a reduced recommended candidate list when the evidence rejects a candidate")]
+#[then(
+    "the enabled run reports a reduced recommended candidate list when the evidence rejects a candidate"
+)]
 fn enabled_run_reduces_recommendations(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    assert!(output.contains("BGE filtered"), "missing BGE filtered accounting: {output}");
-    assert!(output.contains("recommended 0"), "expected a reduced recommendation list: {output}");
+    assert!(
+        output.contains("BGE filtered"),
+        "missing BGE filtered accounting: {output}"
+    );
+    assert!(
+        output.contains("recommended 0"),
+        "expected a reduced recommendation list: {output}"
+    );
 }
 
 #[then("only the enabled run reports participating second-stage evidence")]
@@ -1149,6 +1282,34 @@ fn stdout_identifies_bge_model(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
 }
 
+#[then("stdout contains diagnostic NLI evidence")]
+fn stdout_contains_nli_evidence(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("nli: model"), "stdout: {output}");
+    assert!(output.contains("nli diagnostic:"), "stdout: {output}");
+}
+
+#[then("stdout contains no BGE admission status")]
+fn stdout_contains_no_bge_admission(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(!output.contains("BGE_RECOMMENDED"), "stdout: {output}");
+    assert!(!output.contains("BGE_FILTERED"), "stdout: {output}");
+    assert!(!output.contains("BGE status"), "stdout: {output}");
+}
+
+#[then("the E5 candidate identities remain unchanged")]
+fn nli_preserves_e5_candidate_identities(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("Provider request is accepted"),
+        "stdout: {output}"
+    );
+    assert!(
+        output.contains("Provider warning is reported"),
+        "stdout: {output}"
+    );
+}
+
 #[then("the JSON retains the E5 raw result order and legacy result fields")]
 fn bge_json_retains_raw_order(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
@@ -1156,13 +1317,18 @@ fn bge_json_retains_raw_order(world: &mut GivnWorld) {
     for (index, result) in results.iter().enumerate() {
         assert_eq!(result["rank"], serde_json::json!(index + 1));
         for field in ["title", "file", "score", "scope", "change"] {
-            assert!(result.get(field).is_some(), "missing legacy result field {field}");
+            assert!(
+                result.get(field).is_some(),
+                "missing legacy result field {field}"
+            );
         }
         assert!(!result["bge"].is_null());
     }
 }
 
-#[then("the JSON evidence reports raw, recommended, filtered, unscored, unique-pair, and directional-call counts")]
+#[then(
+    "the JSON evidence reports raw, recommended, filtered, unscored, unique-pair, and directional-call counts"
+)]
 fn bge_json_reports_counts(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
     let evidence = &document["evidence"];
@@ -1174,14 +1340,20 @@ fn bge_json_reports_counts(world: &mut GivnWorld) {
         "bge_pairs",
         "bge_directional_calls",
     ] {
-        assert!(evidence[field].is_number(), "missing evidence count {field}");
+        assert!(
+            evidence[field].is_number(),
+            "missing evidence count {field}"
+        );
     }
 }
 
 #[then("the JSON evidence reports the BGE model and elapsed runtime")]
 fn bge_json_reports_model_runtime(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    assert_eq!(document["evidence"]["bge_model"], serde_json::json!("rozgo/bge-reranker-v2-m3"));
+    assert_eq!(
+        document["evidence"]["bge_model"],
+        serde_json::json!("rozgo/bge-reranker-v2-m3")
+    );
     assert!(document["evidence"]["bge_runtime_ms"].is_number());
 }
 
@@ -1228,8 +1400,16 @@ fn unavailable_json_retains_results(world: &mut GivnWorld) {
 #[then("the JSON counts the raw candidates as unscored rather than filtered")]
 fn unavailable_json_counts_unscored(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    assert!(document["evidence"]["bge_unscored_candidates"].as_u64().unwrap() > 0);
-    assert_eq!(document["evidence"]["bge_filtered_candidates"], serde_json::json!(0));
+    assert!(
+        document["evidence"]["bge_unscored_candidates"]
+            .as_u64()
+            .unwrap()
+            > 0
+    );
+    assert_eq!(
+        document["evidence"]["bge_filtered_candidates"],
+        serde_json::json!(0)
+    );
 }
 
 #[then("the JSON counts all E5 semantic candidates as unscored")]

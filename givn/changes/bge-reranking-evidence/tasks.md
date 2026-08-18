@@ -82,7 +82,19 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] COMMIT: `c18ec32` — `feat(bge-reranking-evidence): BGE does not select NLI without the independent NLI capability`
 
 ### The independent NLI capability owns the legacy diagnostic selector
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario; run only in the explicit NLI-capable feature matrix.
+- [x] RED: removed only this scenario's `@wip`; the NLI-capable targeted run failed on the undefined capability step (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,nli-evidence --test features_runner -- --name "The independent NLI capability owns the legacy diagnostic selector"
+  1 scenario (1 failed, 1 passed step, 1 undefined step); process exited non-zero.
+  ```
+- [x] GREEN: added the NLI-capable CLI fixture and assertions for diagnostic-only output, absent BGE admission, and unchanged E5 identities; the explicit NLI matrix passed 7/7 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  ```
+- [x] REFACTOR: reran the same explicit NLI matrix command unchanged; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
 
 ### BGE JSON preserves raw ordering and names every admission count
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined BGE JSON invocation.
@@ -220,7 +232,7 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined malformed-seam fixture.
 - [x] GREEN: added strict directional override parsing and zero-load error accounting; targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A malformed directional evidence seam is rejected before scoring`
+- [x] COMMIT: `2a2547b` — `feat(bge-reranking-evidence): A malformed directional evidence seam is rejected before scoring`
 
 ### A complete local BGE artifact loads without a downloader
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
