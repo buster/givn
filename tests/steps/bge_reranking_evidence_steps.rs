@@ -177,6 +177,12 @@ fn passing_benchmark_without_parity(world: &mut GivnWorld) {
     write_approval_benchmark(world);
 }
 
+#[given("a passing benchmark report with a Rust production parity attestation")]
+fn passing_benchmark_with_parity(world: &mut GivnWorld) {
+    write_approval_benchmark(world);
+    write_rust_parity(world);
+}
+
 #[given("a Rust production parity attestation emitted by `givn spec bge-parity`")]
 fn rust_production_parity_attestation(world: &mut GivnWorld) {
     write_rust_parity(world);
@@ -229,6 +235,11 @@ fn maintainer_writes_enforced_approval(world: &mut GivnWorld) {
     run_approval_writer(world, true);
 }
 
+#[when("the maintainer writes the BGE approval artifact without enforcement")]
+fn maintainer_writes_unenforced_approval(world: &mut GivnWorld) {
+    run_approval_writer(world, false);
+}
+
 #[then("the approval command exits non-zero")]
 fn approval_command_exits_non_zero(world: &mut GivnWorld) {
     assert!(!super::output(world).status.success());
@@ -238,6 +249,15 @@ fn approval_command_exits_non_zero(world: &mut GivnWorld) {
 fn approval_requires_rust_parity(world: &mut GivnWorld) {
     assert!(
         super::stderr(world).contains("Rust parity is required"),
+        "stderr: {}",
+        super::stderr(world)
+    );
+}
+
+#[then("stderr says that `--approval-file` requires `--enforce`")]
+fn approval_requires_enforcement(world: &mut GivnWorld) {
+    assert!(
+        super::stderr(world).contains("--approval-file requires --enforce"),
         "stderr: {}",
         super::stderr(world)
     );

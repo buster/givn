@@ -464,7 +464,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stderr says that the parity file does not match the compiled binary
     And no BGE approval artifact is written
 
-  @givn.added @bge-approval @wip
+  @givn.added @bge-approval
   Scenario: Approval writer requires enforcement for any approval output
     Given a passing benchmark report with a Rust production parity attestation
     When the maintainer writes the BGE approval artifact without enforcement
