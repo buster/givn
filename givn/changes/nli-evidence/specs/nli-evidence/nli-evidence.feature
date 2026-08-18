@@ -144,7 +144,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the semantic report contains an NLI-recommended candidate block
     And the semantic review report keeps the candidate classification unresolved
 
-  @givn.modified @nli @wip
+  @givn.modified @nli
   Scenario: The independent NLI capability owns the legacy diagnostic selector
     Given a project with a permanent semantic candidate for second-stage evidence
     And the independent NLI evidence capability is enabled

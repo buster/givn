@@ -548,6 +548,17 @@ fn nli_report_contains_recommended_candidate(world: &mut GivnWorld) {
     );
 }
 
+#[then("stdout reports NLI recommended and filtered candidate counts")]
+fn nli_legacy_reports_admission_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("NLI candidate accounting:"),
+        "stdout: {output}"
+    );
+    assert!(output.contains("recommended"), "stdout: {output}");
+    assert!(output.contains("NLI filtered"), "stdout: {output}");
+}
+
 #[given("a project with a permanent semantic candidate and the NLI capability compiled")]
 fn nli_disabled_project(world: &mut GivnWorld) {
     nli_explore_json_project(world);
