@@ -43,10 +43,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed because duplicate JSON had no BGE directional evidence.
 - [x] GREEN: added the deterministic semantic-pair fixture, directional override validation, duplicate BGE scoring, and symmetric JSON assertions; targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Both pair directions form the documented symmetric raw score`
+- [x] COMMIT: `0bda9d8` — `feat(bge-reranking-evidence): Both pair directions form the documented symmetric raw score`
 
 ### Deterministic exclusions happen before second-stage scoring
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run first failed on the undefined enabled-evidence setup step.
+- [x] GREEN: added exact/structural/semantic fixtures, deterministic exclusion assertions, and duplicate BGE accounting; targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Deterministic exclusions happen before second-stage scoring`
 
 ### A low-relevance E5 false positive is filtered without receiving a Givn classification
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
