@@ -68,6 +68,17 @@ unavailable/unscored candidates blocking, and expose directional NLI evidence.
 The bounded deterministic pool and later labeled quality measurement are the
 mitigation; NLI statuses remain non-authoritative evidence.
 
+## Post-Review Clarification
+
+The coverage workflow was rechecked after implementation exposed a matrix
+detail: `measure-coverage.sh` now detects the active `@nli-evidence` feature
+and uses the combined retrieval feature set, while permanent BGE coverage uses
+the BGE-only feature set so the existing NLI-isolation scenario remains valid.
+This is an explicit test-infrastructure clarification only; the CLI product
+boundary, five interaction rows, strict runner, and Arc42 assessment are
+unchanged. The active NLI coverage run produced fresh non-E2E and E2E reports,
+and both feature matrices passed.
+
 ## Status
 
 DESIGN-REVIEW: PASS
