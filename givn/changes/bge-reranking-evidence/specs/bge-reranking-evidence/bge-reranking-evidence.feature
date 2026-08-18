@@ -177,7 +177,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout contains no NLI evidence
     And stdout identifies BGE as the participating second-stage model
 
-  @givn.added @nli-future @wip
+  @givn.added @nli-future
   Scenario: The independent NLI capability owns the legacy diagnostic selector
     Given a project with a permanent semantic candidate for second-stage evidence
     And the independent NLI evidence capability is enabled
@@ -416,7 +416,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stderr identifies the malformed directional evidence entry
     And stderr reports zero BGE model load attempts
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: A complete local BGE artifact loads without a downloader
     Given a project with one E5 candidate and a complete local BGE artifact set
     And local second-stage artifact mode is selected
