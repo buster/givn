@@ -5249,49 +5249,6 @@ fn parse_nli_endpoint(value: &str) -> Result<SimilarityEndpoint> {
 }
 
 #[cfg(feature = "nli-evidence")]
-fn nli_backend_from_env() -> Result<Option<NliBackend>> {
-    match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
-        Ok("nli") => Ok(Some(NliBackend::Local)),
-        Ok("nli-stub") => Ok(Some(NliBackend::Stub)),
-        Ok("nli-missing") => {
-            bail!("NLI model is unavailable; configure a local NLI model directory")
-        }
-        Ok(_) | Err(std::env::VarError::NotPresent) => Ok(None),
-        Err(std::env::VarError::NotUnicode(_)) => {
-            bail!("GIVN_SPEC_RERANKER is not valid UTF-8")
-        }
-    }
-}
-
-#[cfg(feature = "nli-evidence")]
-fn nli_similarity_candidates(
-    root: &Path,
-    index: &SpecIndex,
-    delta: &[DeltaScenario],
-    backend: NliBackend,
-) -> Result<(Vec<SimilarityCandidate>, usize)> {
-    let (mut result, considered, candidate_texts) = similarity_candidate_pool(root, index, delta)?;
-    score_nli_candidates(root, &mut result, &candidate_texts, backend)?;
-    for candidate in &mut result {
-        candidate.nli_admission = candidate.nli.map(|evidence| {
-            if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
-                "NLI_RECOMMENDED"
-            } else {
-                "NLI_FILTERED"
-            }
-        });
-    }
-    result.sort_by(|left, right| {
-        nli_strength(right)
-            .total_cmp(&nli_strength(left))
-            .then_with(|| right.embedding_score.total_cmp(&left.embedding_score))
-            .then_with(|| left.left.cmp(&right.left))
-            .then_with(|| left.right.cmp(&right.right))
-    });
-    Ok((result, considered))
-}
-
-#[cfg(feature = "nli-evidence")]
 fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
     let mut label_counts = [0usize; 3];
     for candidate in candidates {
@@ -5368,14 +5325,6 @@ fn nli_report_limit() -> usize {
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|value| *value > 0)
         .unwrap_or(NLI_REPORT_LIMIT)
-}
-
-#[cfg(feature = "nli-evidence")]
-fn nli_strength(candidate: &SimilarityCandidate) -> f32 {
-    candidate
-        .nli
-        .map(|evidence| evidence.symmetric[0].max(evidence.symmetric[2]))
-        .unwrap_or(0.0)
 }
 
 #[cfg(feature = "nli-evidence")]

@@ -10,8 +10,8 @@ latest plan snapshot is carried by the current stack tip so downstream PRs
 inherit it. It reaches `main` when the stack is merged in order; do not update
 intermediate base branches separately.
 
-The current stack has seventeen open PRs. PR 22 is the seventeenth and has
-sixteen stack predecessors. Superseded closed PRs are not counted.
+The current stack has eighteen open PRs. PR 23 is the eighteenth and has
+seventeen stack predecessors. Superseded closed PRs are not counted.
 
 | Stack order | PR | Head branch | Base branch |
 |---:|---:|---|---|
@@ -32,20 +32,22 @@ sixteen stack predecessors. Superseded closed PRs are not counted.
 | 15 | #20 | `semantic/05-instruction-integrity` | `semantic/04-semantic-remediation` |
 | 16 | #21 | `semantic/06-spec-duplicates` | `semantic/05-instruction-integrity` |
 | 17 | #22 | `semantic/07-bge-evidence` | `semantic/06-spec-duplicates` |
+| 18 | #23 | `semantic/07-nli-evidence` | `semantic/07-bge-evidence` |
 
 ### Current Delivery State
 
-The GitHub Stacks CLI stack is stack #6 and contains the seventeen open PRs
+The GitHub Stacks CLI stack is stack #6 and contains the eighteen open PRs
 listed above. Every PR is still a Draft and GitHub reports every PR as
 mergeable. PR #21 is the spec-duplicates stack link on
-`semantic/06-spec-duplicates`; PR #22 is the BGE stack tip on
-`semantic/07-bge-evidence`. The BGE change is archived locally, its full suite,
-E2E suite, review, coverage, and archive gates are green, and the branch is
-ready for the PR update. GitHub currently reports no status checks for this
-branch, so that verification remains manual.
+`semantic/06-spec-duplicates`; PR #22 is the BGE link on
+`semantic/07-bge-evidence`; PR #23 is the NLI stack tip on
+`semantic/07-nli-evidence`. The NLI change is implemented and its full suite,
+E2E suite, review, coverage, and archive gates are the final delivery checks
+for this branch. GitHub currently reports no status checks for this branch, so
+that verification remains manual.
 
-The GitHub stack metadata was synchronized with `gh stack link` after PR #22
-was added. This plan snapshot is carried on the PR #22 tip. `main` and the
+The GitHub stack metadata was synchronized with `gh stack link` after PR #23
+was added. This plan snapshot is carried on the PR #23 tip. `main` and the
 intermediate base branches intentionally retain earlier snapshots until the
 stack is merged in order.
 
@@ -58,7 +60,7 @@ experiments/cross-encoder-reranker
 ```
 
 The semantic implementation PRs and the instruction-integrity maintenance PR
-are the final five links currently in this stack. They continue on top of
+are the final six links currently in this stack. They continue on top of
 `experiments/watn-corpus-comparison`, which is itself inherited from the
 fourteen earlier stack links. Each PR is one independent capability slice. No
 later PR may silently pull an unfinished future slice into an earlier one.
@@ -317,8 +319,12 @@ byte-for-byte unchanged.
    implementation, approval, NLI-isolation, coverage, E2E, review, and archive
    commits on this separate PR.
 3. Synchronize GitHub stack #6 so PR #22 is linked immediately above PR #21.
-4. Continue with `semantic/07-nli-evidence` only after the BGE PR is green
-   enough to serve as its base.
+4. Branch `semantic/07-nli-evidence` directly from PR #22 and keep the
+   independent NLI implementation, bounded candidate reduction, coverage, E2E,
+   review, and archive commits on this separate PR.
+5. Synchronize GitHub stack #6 so PR #23 is linked immediately above PR #22.
+6. Continue with `semantic/08-permanent-audit-review` only after the NLI PR is
+   green enough to serve as its base.
 
 ## Model Evidence Layers
 
