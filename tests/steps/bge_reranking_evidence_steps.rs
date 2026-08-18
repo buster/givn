@@ -274,6 +274,70 @@ fn deterministic_pairs_excluded_from_bge(world: &mut GivnWorld) {
     assert_eq!(document["bge_run"]["unique_pairs"], serde_json::json!(1));
 }
 
+#[given("a project with two E5 candidates and one labeled false positive")]
+fn advisory_bge_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n\n  Scenario: Provider warning is reported\n    Given a configured provider catalog\n    When the user selects a known provider with a warning\n    Then the command reports the warning\n",
+    )
+    .expect("write advisory permanent fixture");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().unwrap()).expect("create advisory delta");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Active provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write advisory delta");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
+#[given("the local second-stage evidence gives the false positive a low relevance score")]
+fn advisory_bge_scores(world: &mut GivnWorld) {
+    world.retrieval_bge_scores = Some(
+        "givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider request is accepted=4.0000;givn/specs/provider.feature|Provider request is accepted->givn/specs/running-change/running-change.feature|Active provider request=4.0000;givn/specs/running-change/running-change.feature|Active provider request->givn/specs/provider.feature|Provider warning is reported=1.0000;givn/specs/provider.feature|Provider warning is reported->givn/specs/running-change/running-change.feature|Active provider request=1.0000".to_string(),
+    );
+}
+
+#[when("the user runs advisory change review with second-stage evidence enabled")]
+fn run_advisory_bge_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("advisory BGE project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
+
+#[then("the false positive is recorded as filtered from the recommended list")]
+fn false_positive_is_filtered(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE_FILTERED"));
+}
+
+#[then("the false positive is not classified as `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN`")]
+fn filtered_candidate_has_no_classification(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    for classification in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY", "UNCERTAIN"] {
+        assert!(!output.contains(classification), "filtered output contains {classification}");
+    }
+}
+
+#[then("the remaining recommended candidate retains its E5 and second-stage evidence")]
+fn recommended_candidate_retains_evidence(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE_RECOMMENDED"));
+    assert!(output.contains("E5 "));
+    assert!(output.contains("symmetric"));
+}
+
 #[then("both runs report the same E5 raw candidate identities in the same order")]
 fn parity_raw_identities(world: &mut GivnWorld) {
     let before = world

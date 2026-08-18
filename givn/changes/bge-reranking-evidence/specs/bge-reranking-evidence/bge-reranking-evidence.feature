@@ -123,7 +123,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And only the eligible semantic neighbour union has second-stage evidence
     And no deterministic exclusion is counted as a second-stage pair
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: A low-relevance E5 false positive is filtered without receiving a Givn classification
     Given a project with two E5 candidates and one labeled false positive
     And the local second-stage evidence gives the false positive a low relevance score

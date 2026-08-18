@@ -255,6 +255,8 @@ struct SimilarityCandidate {
     right: SimilarityEndpoint,
     embedding_score: f32,
     rerank_score: f32,
+    bge: Option<BgePairEvidence>,
+    bge_admission: Option<&'static str>,
     nli: Option<NliEvidence>,
     scopes: Vec<&'static str>,
 }
@@ -2394,20 +2396,21 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let index = read_index(&spec_index_path(root))?;
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
-    if !cfg!(feature = "spec-similarity-gate") {
-        return advisory_review(root, &index, &delta, &change_dir.join("review.md"));
+    #[cfg(feature = "cross-encoder-reranker")]
+    if bge_backend(root)?.is_some() {
+        return run_bge_advisory_review(root, &index, &delta);
     }
+    #[cfg(feature = "nli-evidence")]
     if let Some(backend) = nli_backend_from_env()? {
         let (candidates, considered) = nli_similarity_candidates(root, &index, &delta, backend)?;
         print_nli_results(&candidates, considered);
         return Ok(());
     }
-
-    #[cfg(feature = "cross-encoder-reranker")]
-    return run_reranker_review(root, &index, &delta);
-
-    #[cfg(not(feature = "cross-encoder-reranker"))]
-    return run_embedding_review(root, &index, &delta);
+    if cfg!(feature = "spec-similarity-gate") {
+        #[cfg(feature = "spec-similarity-gate")]
+        return run_embedding_review(root, &index, &delta);
+    }
+    advisory_review(root, &index, &delta, &change_dir.join("review.md"))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -2479,6 +2482,88 @@ fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario])
     println!(
         "similarity gate: no scenario pair at or above fixed threshold {:.4}",
         SIMILARITY_THRESHOLD
+    );
+    Ok(())
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn run_bge_advisory_review(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+) -> Result<()> {
+    let (mut candidates, considered, texts) = similarity_candidate_pool(root, index, delta)?;
+    let backend = bge_backend(root)?.context("BGE backend was not selected")?;
+    if candidates.len() > BGE_MAX_PAIRS {
+        println!(
+            "BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs (reason pair-cap, raw {}, unique pairs 0, directional calls 0, model load attempts 0)",
+            considered
+        );
+        println!("BGE status: BGE_UNAVAILABLE");
+        println!("retrieval advisory: E5-only fallback remains advisory");
+        return Ok(());
+    }
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+        .iter()
+        .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
+        .collect();
+    let run = match backend {
+        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+        Err(reason) => BgeRun::unavailable(reason, considered),
+    };
+    if run.status == "BGE_UNAVAILABLE" {
+        println!(
+            "BGE_UNAVAILABLE: reason {}, recommended 0, filtered 0, unscored {}",
+            run.reason
+                .map(BgeUnavailableReason::as_str)
+                .unwrap_or("missing-artifact"),
+            considered
+        );
+        println!("retrieval advisory: E5-only fallback remains advisory");
+        return Ok(());
+    }
+    println!(
+        "BGE: model {}, top_k {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
+        RERANKER_MODEL_ID,
+        RERANKER_TOP_K,
+        considered,
+        run.evidence.len(),
+        run.evidence.len() * 2,
+        run.runtime_ms.unwrap_or(0),
+    );
+    let mut recommended = 0;
+    let mut filtered = 0;
+    for candidate in &mut candidates {
+        let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
+        let Some(evidence) = run.evidence.get(&key).cloned() else {
+            continue;
+        };
+        let status = if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+            recommended += 1;
+            "BGE_RECOMMENDED"
+        } else {
+            filtered += 1;
+            "BGE_FILTERED"
+        };
+        candidate.rerank_score = evidence.symmetric_raw;
+        candidate.bge = Some(evidence.clone());
+        candidate.bge_admission = Some(status);
+        println!(
+            "{}: '{}' ({}) resembles '{}' ({}) E5 {:.4}, forward {:.4}, reverse {:.4}, symmetric {:.4}; evidence is advisory and no Givn classification is assigned",
+            status,
+            candidate.left.title,
+            candidate.left.file,
+            candidate.right.title,
+            candidate.right.file,
+            candidate.embedding_score,
+            evidence.forward_raw,
+            evidence.reverse_raw,
+            evidence.symmetric_raw,
+        );
+    }
+    println!(
+        "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, bounded pool <= {}",
+        recommended, filtered, run.unscored, BGE_MAX_PAIRS
     );
     Ok(())
 }
@@ -3923,6 +4008,8 @@ fn add_similarity_candidate(
             right,
             embedding_score: score,
             rerank_score: f32::NEG_INFINITY,
+            bge: None,
+            bge_admission: None,
             nli: None,
             scopes: vec![scope],
         },
