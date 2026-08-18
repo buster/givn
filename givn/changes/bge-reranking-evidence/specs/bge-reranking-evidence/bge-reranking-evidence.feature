@@ -133,7 +133,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the false positive is not classified as `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN`
     And the remaining recommended candidate retains its E5 and second-stage evidence
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Filtered evidence does not block the blocking change review
     Given a project with only E5 candidates that receive filtered second-stage evidence
     When the user runs blocking change review with second-stage evidence enabled
