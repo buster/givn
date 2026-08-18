@@ -2817,6 +2817,7 @@ fn run_bge_advisory_review(
         Err(reason) => BgeRun::unavailable(reason, considered),
     };
     if run.status == "BGE_UNAVAILABLE" {
+        println!("BGE status: BGE_UNAVAILABLE");
         println!(
             "BGE_UNAVAILABLE: reason {}, recommended 0, filtered 0, unscored {}",
             run.reason
