@@ -93,8 +93,8 @@ targeted runner command is the design command with `--name <scenario title>`.
   1 scenario (1 passed)
   7 steps (7 passed)
   ```
-- [x] REFACTOR: reran the same explicit NLI matrix command unchanged; 1 scenario and 7 steps passed.
-- [x] COMMIT: `57592dd` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
+- [x] REFACTOR: isolated all NLI production types/functions and tokenizer use behind `nli-evidence`, gave BGE its own max-length constant, and reran both the explicit NLI and BGE isolation matrix commands; each targeted run passed (7/7 and 8/8 steps).
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
 
 ### BGE JSON preserves raw ordering and names every admission count
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined BGE JSON invocation.
@@ -455,7 +455,7 @@ targeted runner command is the design command with `--name <scenario title>`.
   5 steps (5 passed)
   ```
 - [x] REFACTOR: reran the same targeted real-CLI command unchanged; 1 scenario and 5 steps passed.
-- [x] COMMIT: `<pending until commit>` — `test(e2e): Semantic authoring guidance prevents score-avoidance prose`
+- [x] COMMIT: `7a0d23d` — `test(e2e): Semantic authoring guidance prevents score-avoidance prose`
 
 ---
 
