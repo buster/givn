@@ -340,26 +340,79 @@ fn e2e_nli_report_filtered(world: &mut GivnWorld) {
 }
 
 #[given("an end-to-end permanent corpus with deterministic overlaps and NLI semantic candidates")]
-fn e2e_nli_duplicate_project(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_duplicate_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove E2E NLI duplicate specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create E2E NLI duplicate specs");
+    fs::write(
+        env.path("givn/specs/exact.feature"),
+        "Feature: exact\n\n  Scenario: Exact left\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Exact right\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write E2E NLI exact overlap");
+    fs::write(
+        env.path("givn/specs/structural.feature"),
+        "Feature: structural\n\n  Scenario: Structural left\n    Given a configured provider catalog\n    When the provider command is run normally\n    Then the command exits 0 and output contains ready\n\n  Scenario: Structural right\n    Given another configured provider catalog\n    When the provider command is run in TTY mode\n    Then the command exits 2 and output does not contain ready\n",
+    )
+    .expect("write E2E NLI structural overlap");
+    fs::write(
+        env.path("givn/specs/semantic.feature"),
+        "Feature: semantic\n\n  Scenario: Token is required\n    Given a client request\n    When the client sends a request without credentials\n    Then the server responds with unauthorized status\n\n  Scenario: Authentication needs a token\n    Given an identity service\n    When the client authenticates without a token\n    Then access is denied with token required\n",
+    )
+    .expect("write E2E NLI semantic candidates");
+    world.env = Some(env);
 }
 
 #[when("the end-to-end user runs the permanent NLI duplicate audit through the givn CLI")]
-fn e2e_nli_duplicate_audit(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_duplicate_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E NLI duplicate project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            (
+                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+                "givn/specs/semantic.feature|Token is required::givn/specs/semantic.feature|Authentication needs a token=0.9600",
+            ),
+        ],
+    ));
 }
 
 #[then("the audit reports the E5 candidate count and bounded NLI pair count")]
-fn e2e_nli_duplicate_counts(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_duplicate_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("NLI E5 raw count: 1"), "stdout: {output}");
+    assert!(
+        output.contains("NLI unique pair count: 1"),
+        "stdout: {output}"
+    );
+    assert!(
+        output.contains("NLI directional call count: 2"),
+        "stdout: {output}"
+    );
 }
 
 #[then("the audit reports reduced recommended and filtered NLI candidate counts")]
-fn e2e_nli_duplicate_reduced(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_duplicate_reduced(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("NLI recommended count: 0"),
+        "stdout: {output}"
+    );
+    assert!(output.contains("NLI filtered count: 1"), "stdout: {output}");
 }
 
 #[then("deterministic exact and structural overlaps have no NLI evidence")]
-fn e2e_nli_duplicate_deterministic(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_duplicate_deterministic(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    for line in output.lines().filter(|line| {
+        line.contains("kind=exact_duplicate") || line.contains("kind=structural_overlap")
+    }) {
+        assert!(
+            !line.contains("nli_"),
+            "deterministic line has NLI evidence: {line}"
+        );
+    }
 }
