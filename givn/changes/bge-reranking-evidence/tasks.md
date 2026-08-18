@@ -49,10 +49,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run first failed on the undefined enabled-evidence setup step.
 - [x] GREEN: added exact/structural/semantic fixtures, deterministic exclusion assertions, and duplicate BGE accounting; targeted run passed 6/6 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Deterministic exclusions happen before second-stage scoring`
+- [x] COMMIT: `a5e0877` — `feat(bge-reranking-evidence): Deterministic exclusions happen before second-stage scoring`
 
 ### A low-relevance E5 false positive is filtered without receiving a Givn classification
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined two-candidate fixture step.
+- [x] GREEN: added the active-change advisory fixture and BGE advisory renderer with filtered/recommended non-classifying evidence; targeted run passed 7/7 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A low-relevance E5 false positive is filtered without receiving a Givn classification`
 
 ### Filtered evidence does not block the blocking change review
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
