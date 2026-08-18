@@ -33,7 +33,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout reports one bounded second-stage pool and a reduced recommended list for the query
     And stdout excludes the query's own delta and projected target identities
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Advisory change review presents second-stage evidence without classifying candidates
     Given an end-to-end project with an active semantic review candidate
     And the local second-stage evidence is enabled
