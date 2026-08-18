@@ -144,9 +144,13 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
     let mut scenarios = Vec::new();
     let mut current_title: Option<String> = None;
     let mut current_lines: Vec<String> = Vec::new();
+    let mut pending_tags: Vec<String> = Vec::new();
 
     for line in text.lines() {
         let trimmed = line.trim();
+        if trimmed.starts_with("Feature:") {
+            pending_tags.clear();
+        }
         if trimmed.starts_with("Scenario:") || trimmed.starts_with("Scenario Outline:") {
             // Save previous scenario.
             if let Some(title) = current_title.take() {
@@ -164,9 +168,12 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
                 .trim()
                 .to_string();
             current_title = Some(title);
+            current_lines = std::mem::take(&mut pending_tags);
         }
         if current_title.is_some() {
             current_lines.push(line.to_string());
+        } else if trimmed.starts_with('@') {
+            pending_tags.push(line.to_string());
         }
     }
     // Flush the last scenario.

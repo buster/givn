@@ -2,7 +2,7 @@
 set -eu
 
 run_e5() {
-    GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+    env -u GIVN_SPEC_BGE GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
 }
 
 run_bge() {
