@@ -408,7 +408,7 @@ Feature: BGE reranking evidence for bounded semantic search
     Then the JSON schema version is exactly 1
     And the JSON contains no BGE run, filtered, or unscored collections
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: A malformed directional evidence seam is rejected before scoring
     Given a project with one E5 candidate and malformed directional local evidence scores
     When the user runs advisory change review with second-stage evidence enabled

@@ -214,10 +214,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted E5-only duplicate run initially had undefined change-specific assertions.
 - [x] GREEN: asserted schema-v1 field absence against the real duplicate CLI; targeted run passed 5/5 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): E5-only duplicate JSON preserves schema version 1`
+- [x] COMMIT: `8705cb7` — `feat(bge-reranking-evidence): E5-only duplicate JSON preserves schema version 1`
 
 ### A malformed directional evidence seam is rejected before scoring
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined malformed-seam fixture.
+- [x] GREEN: added strict directional override parsing and zero-load error accounting; targeted run passed 5/5 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 5 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A malformed directional evidence seam is rejected before scoring`
 
 ### A complete local BGE artifact loads without a downloader
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.

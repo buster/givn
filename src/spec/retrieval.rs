@@ -2814,7 +2814,8 @@ fn run_bge_advisory_review(
         .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
         .collect();
     let run = match backend {
-        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)
+            .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
         Err(reason) => BgeRun::unavailable(reason, considered),
     };
     if run.status == "BGE_UNAVAILABLE" {
