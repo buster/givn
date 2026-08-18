@@ -395,10 +395,22 @@ targeted runner command is the design command with `--name <scenario title>`.
   8 steps (8 passed)
   ```
 - [x] REFACTOR: reran the same targeted real-CLI command unchanged; 1 scenario and 8 steps passed.
-- [x] COMMIT: `<pending until commit>` — `test(e2e): Change-aware exploration narrows the union of permanent and active neighbours`
+- [x] COMMIT: `afeb2f3` — `test(e2e): Change-aware exploration narrows the union of permanent and active neighbours`
 
 ### Advisory change review presents second-stage evidence without classifying candidates
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact `@e2e` scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted real-CLI E2E run failed on the undefined advisory-review action (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Advisory change review presents second-stage evidence without classifying candidates"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added the separate advisory real-CLI action and assertions for model/score/runtime, reduced recommendations, advisory wording, and absent classifications; targeted E2E run passed 8/8 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  8 steps (8 passed)
+  ```
+- [x] REFACTOR: reran the same targeted real-CLI command unchanged; 1 scenario and 8 steps passed.
+- [x] COMMIT: `<pending until commit>` — `test(e2e): Advisory change review presents second-stage evidence without classifying candidates`
 
 ### Blocking change review records second-stage evidence in the semantic report
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact `@e2e` scenario.
