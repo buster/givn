@@ -618,6 +618,34 @@ fn gate_combination_no_bge_classification(world: &mut GivnWorld) {
     assert!(!super::stdout(world).contains("classification: BGE_"));
 }
 
+#[when("the user runs blocking change review with the E5 similarity gate and BGE disabled")]
+fn run_gate_only_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("gate-only project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            (
+                "GIVN_SPEC_STUB_PAIR_SCORES",
+                "Unknown provider is rejected|Provider name is unknown=0.0000;Unknown provider selection is rejected|Provider name is unknown=0.0000;Unknown provider is rejected|Unknown provider selection is rejected=0.0000",
+            ),
+        ],
+    ));
+}
+
+#[then("the command reports the E5 gate result")]
+fn gate_only_reports_e5(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("similarity gate"));
+}
+
+#[then("the output contains no participating BGE model or score")]
+fn gate_only_has_no_bge(world: &mut GivnWorld) {
+    let output = super::stdout(world).to_ascii_lowercase();
+    assert!(!output.contains("bge"));
+}
+
 #[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]
 fn overflow_pool_project(world: &mut GivnWorld) {
     directional_bge_project(world);
