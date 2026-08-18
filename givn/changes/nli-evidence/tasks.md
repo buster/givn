@@ -112,11 +112,14 @@ evidence and its atomic commit hash.
 
 ### The NLI admission boundary includes a symmetric entailment probability of 0.5000
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement inclusive NLI admission comparison. Production files:
-  `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted boundary runner initially failed on the unimplemented
+  boundary step.
+- [x] GREEN: implemented endpoint-keyed NLI logits, symmetric entailment
+  threshold handling, and inclusive `0.5000` admission assertions. Targeted
+  run passed 4/4 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 4 steps
+  passed.
+- [x] COMMIT: `71ecbfb` — `feat(nli-evidence): include the symmetric NLI admission boundary`.
 
 ### An NLI-recommended candidate still blocks unresolved semantic review
 
