@@ -444,7 +444,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stderr says that Rust parity is required
     And no BGE approval artifact is written
 
-  @givn.added @bge-approval @wip
+  @givn.added @bge-approval
   Scenario: Approval writer rejects an incomplete local BGE artifact set
     Given a benchmark report with the Python reference candidate pipeline
     And a Rust production parity attestation emitted by `givn spec bge-parity`
