@@ -400,7 +400,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the report contains no BGE status, model, score, or admission fields
     And the unresolved E5 candidate remains blocking
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: E5-only duplicate JSON preserves schema version 1
     Given a permanent corpus with semantic candidates
     And second-stage evidence is disabled
