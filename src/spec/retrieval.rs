@@ -793,7 +793,10 @@ fn apply_duplicate_bge(
         .iter()
         .map(|scenario| {
             (
-                (scenario.endpoint.file.clone(), scenario.endpoint.title.clone()),
+                (
+                    scenario.endpoint.file.clone(),
+                    scenario.endpoint.title.clone(),
+                ),
                 scenario.text.clone(),
             )
         })
@@ -801,7 +804,10 @@ fn apply_duplicate_bge(
     let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected
         .iter()
         .map(|((left_file, left_title), (right_file, right_title))| {
-            (endpoint(left_file, left_title), endpoint(right_file, right_title))
+            (
+                endpoint(left_file, left_title),
+                endpoint(right_file, right_title),
+            )
         })
         .collect();
     let mut run = match backend {
@@ -811,7 +817,9 @@ fn apply_duplicate_bge(
     run.e5_candidates = semantic.len();
     run.unscored = semantic
         .iter()
-        .filter(|candidate| !selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right)))
+        .filter(|candidate| {
+            !selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right))
+        })
         .count();
 
     if run.status == "BGE_UNAVAILABLE" {
@@ -837,7 +845,10 @@ fn apply_duplicate_bge(
         let key = duplicate_pair_key(&candidate.left, &candidate.right);
         let Some(evidence) = run
             .evidence
-            .get(&canonical_pair_key(endpoint(&key.0.0, &key.0.1), endpoint(&key.1.0, &key.1.1)))
+            .get(&canonical_pair_key(
+                endpoint(&key.0.0, &key.0.1),
+                endpoint(&key.1.0, &key.1.1),
+            ))
             .cloned()
         else {
             candidate.bge_admission = Some("BGE_UNSCORED");
@@ -912,19 +923,22 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
         report.push('\n');
     }
     for candidate in &audit.filtered_candidates {
-        report.push_str(&format!("BGE filtered: {}\n", render_duplicate_candidate(0, candidate)));
+        report.push_str(&format!(
+            "BGE filtered: {}\n",
+            render_duplicate_candidate(0, candidate)
+        ));
     }
     for candidate in &audit.unscored_candidates {
-        report.push_str(&format!("BGE unscored: {}\n", render_duplicate_candidate(0, candidate)));
+        report.push_str(&format!(
+            "BGE unscored: {}\n",
+            render_duplicate_candidate(0, candidate)
+        ));
     }
     report
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn render_duplicate_json(
-    scanned_scenarios: usize,
-    audit: &DuplicateAudit,
-) -> Result<String> {
+fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Result<String> {
     let report = DuplicateJsonReport {
         schema_version: if audit.bge_run.is_some() {
             DUPLICATE_BGE_REPORT_SCHEMA_VERSION
@@ -944,7 +958,10 @@ fn render_duplicate_json(
             })
             .collect(),
         e5_candidate_count: audit.bge_run.as_ref().map(|run| run.e5_candidates),
-        bge_run: audit.bge_run.as_ref().map(|run| duplicate_json_run(run, audit)),
+        bge_run: audit
+            .bge_run
+            .as_ref()
+            .map(|run| duplicate_json_run(run, audit)),
         filtered_candidates: audit.bge_run.as_ref().map(|_| {
             audit
                 .filtered_candidates
@@ -987,12 +1004,15 @@ fn duplicate_json_candidate(candidate: &DuplicateCandidate) -> DuplicateJsonCand
             distinguishing_facts: candidate.distinguishing_facts.clone(),
             fact_contradiction: candidate.fact_contradiction,
             score: candidate.score.map(|score| format!("{score:.4}")),
-            bge: candidate.bge.as_ref().map(|evidence| DuplicateJsonBgeEvidence {
-                status: candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
-                forward_raw: evidence.forward_raw,
-                reverse_raw: evidence.reverse_raw,
-                symmetric_raw: evidence.symmetric_raw,
-            }),
+            bge: candidate
+                .bge
+                .as_ref()
+                .map(|evidence| DuplicateJsonBgeEvidence {
+                    status: candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
+                    forward_raw: evidence.forward_raw,
+                    reverse_raw: evidence.reverse_raw,
+                    symmetric_raw: evidence.symmetric_raw,
+                }),
         },
     }
 }
@@ -1798,7 +1818,11 @@ fn render_semantic_report(
     };
     let mut report = format!(
         "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
-        if bge_run.is_some() { SEMANTIC_BGE_REPORT_SCHEMA_VERSION } else { SEMANTIC_REPORT_SCHEMA_VERSION },
+        if bge_run.is_some() {
+            SEMANTIC_BGE_REPORT_SCHEMA_VERSION
+        } else {
+            SEMANTIC_REPORT_SCHEMA_VERSION
+        },
         blocking.len()
     );
     if let Some(run) = bge_run {
@@ -2292,10 +2316,7 @@ fn explore_evidence_output(run: &BgeRun) -> ExploreEvidenceOutput {
         top_k: RERANKER_TOP_K,
         e5_candidates: run.e5_candidates,
         recommended_candidates: recommended,
-        bge_filtered_candidates: run
-            .evidence
-            .len()
-            .saturating_sub(recommended),
+        bge_filtered_candidates: run.evidence.len().saturating_sub(recommended),
         bge_unscored_candidates: run.unscored,
         bge_pairs: run.evidence.len(),
         bge_directional_calls: run.evidence.len() * 2,
@@ -2324,7 +2345,10 @@ fn bge_explore_run(
     for (candidate, _) in ranked {
         let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
         texts.insert(
-            (candidate_endpoint.file.clone(), candidate_endpoint.title.clone()),
+            (
+                candidate_endpoint.file.clone(),
+                candidate_endpoint.title.clone(),
+            ),
             candidate.text.clone(),
         );
         pairs.push((query_endpoint.clone(), candidate_endpoint));
@@ -2336,7 +2360,9 @@ fn bge_explore_run(
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn bge_backend(root: &Path) -> Result<Option<std::result::Result<BgeBackendKind, BgeUnavailableReason>>> {
+fn bge_backend(
+    root: &Path,
+) -> Result<Option<std::result::Result<BgeBackendKind, BgeUnavailableReason>>> {
     let selected = std::env::var("GIVN_SPEC_BGE");
     if std::env::var("GIVN_SPEC_BGE_APPROVAL").as_deref() == Ok("failed") {
         return Ok(None);
@@ -2345,20 +2371,16 @@ fn bge_backend(root: &Path) -> Result<Option<std::result::Result<BgeBackendKind,
         Ok("disabled") => Ok(None),
         Ok("stub") => Ok(Some(Ok(BgeBackendKind::Stub))),
         Ok("missing") => Ok(Some(Err(BgeUnavailableReason::MissingArtifact))),
-        Ok("local") => {
-            Ok(Some(match preflight_bge_artifacts(root) {
-                Ok(_) => Ok(BgeBackendKind::Local),
-                Err(_) => Err(BgeUnavailableReason::MissingArtifact),
-            }))
-        }
+        Ok("local") => Ok(Some(match preflight_bge_artifacts(root) {
+            Ok(_) => Ok(BgeBackendKind::Local),
+            Err(_) => Err(BgeUnavailableReason::MissingArtifact),
+        })),
         Ok(value) => bail!("unknown GIVN_SPEC_BGE value `{value}`"),
         Err(std::env::VarError::NotPresent) if !bge_approval_valid(root) => Ok(None),
-        Err(std::env::VarError::NotPresent) => {
-            Ok(Some(match preflight_bge_artifacts(root) {
-                Ok(_) => Ok(BgeBackendKind::Local),
-                Err(_) => Err(BgeUnavailableReason::MissingArtifact),
-            }))
-        }
+        Err(std::env::VarError::NotPresent) => Ok(Some(match preflight_bge_artifacts(root) {
+            Ok(_) => Ok(BgeBackendKind::Local),
+            Err(_) => Err(BgeUnavailableReason::MissingArtifact),
+        })),
         Err(std::env::VarError::NotUnicode(_)) => bail!("GIVN_SPEC_BGE is not valid UTF-8"),
     }
 }
@@ -2392,10 +2414,19 @@ fn synthetic_bge_pairs(
     let mut pairs = Vec::with_capacity(count);
     let mut texts = BTreeMap::new();
     for index in 0..count {
-        let left = endpoint("givn/specs/__bge-fixture__/left.feature", &format!("left-{index}"));
-        let right = endpoint("givn/specs/__bge-fixture__/right.feature", &format!("right-{index}"));
+        let left = endpoint(
+            "givn/specs/__bge-fixture__/left.feature",
+            &format!("left-{index}"),
+        );
+        let right = endpoint(
+            "givn/specs/__bge-fixture__/right.feature",
+            &format!("right-{index}"),
+        );
         texts.insert((left.file.clone(), left.title.clone()), left.title.clone());
-        texts.insert((right.file.clone(), right.title.clone()), right.title.clone());
+        texts.insert(
+            (right.file.clone(), right.title.clone()),
+            right.title.clone(),
+        );
         pairs.push((left, right));
     }
     (pairs, texts)
@@ -2428,8 +2459,8 @@ fn preflight_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
         .map(std::path::PathBuf::from)
         .unwrap_or_else(|| root.join("givn/.spec-reranker-cache"));
     let model = directory.join("model.onnx");
-    let model_bytes = fs::read(&model)
-        .with_context(|| format!("read BGE model artifact {}", model.display()))?;
+    let model_bytes =
+        fs::read(&model).with_context(|| format!("read BGE model artifact {}", model.display()))?;
     for name in [
         "tokenizer.json",
         "config.json",
@@ -2444,10 +2475,15 @@ fn preflight_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
                 .with_context(|| format!("parse BGE model artifact {}", path.display()))?;
         }
     }
-    if model_bytes.windows(b"model.onnx.data".len()).any(|window| window == b"model.onnx.data")
+    if model_bytes
+        .windows(b"model.onnx.data".len())
+        .any(|window| window == b"model.onnx.data")
         && !directory.join("model.onnx.data").is_file()
     {
-        bail!("read BGE model artifact {}", directory.join("model.onnx.data").display());
+        bail!(
+            "read BGE model artifact {}",
+            directory.join("model.onnx.data").display()
+        );
     }
     Ok(directory)
 }
@@ -2479,48 +2515,67 @@ fn score_bge_pairs(
         }
         BgeBackendKind::Local => {
             let directory = preflight_bge_artifacts(root)?;
-            let tokenizer_files = fastembed::TokenizerFiles {
-                tokenizer_file: fs::read(directory.join("tokenizer.json"))?,
-                config_file: fs::read(directory.join("config.json"))?,
-                special_tokens_map_file: fs::read(directory.join("special_tokens_map.json"))?,
-                tokenizer_config_file: fs::read(directory.join("tokenizer_config.json"))?,
-            };
-            let model = fastembed::UserDefinedRerankingModel::new(
-                fastembed::OnnxSource::File(directory.join("model.onnx")),
-                tokenizer_files,
-            );
-            let options = fastembed::RerankInitOptionsUserDefined::new()
-                .with_max_length(NLI_MAX_LENGTH)
-                .with_intra_threads(4);
-            let mut model = fastembed::TextRerank::try_new_from_user_defined(model, options)
-                .context("BGE model is unavailable; check the local BGE artifact set")?;
-            for (left, right) in pairs {
-                let left_text = scenario_text_for(texts, left)?;
-                let right_text = scenario_text_for(texts, right)?;
-                let forward = model
-                    .rerank(left_text, [right_text], false, Some(32))?
-                    .into_iter()
-                    .next()
-                    .context("BGE omitted forward pair score")?
-                    .score;
-                let reverse = model
-                    .rerank(right_text, [left_text], false, Some(32))?
-                    .into_iter()
-                    .next()
-                    .context("BGE omitted reverse pair score")?
-                    .score;
-                evidence.insert(
-                    canonical_pair_key(left.clone(), right.clone()),
-                    BgePairEvidence {
-                        forward_raw: forward,
-                        reverse_raw: reverse,
-                        symmetric_raw: (forward + reverse) / 2.0,
-                    },
+            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() == Ok("1") {
+                for (left, right) in pairs {
+                    let forward = bge_directional_score(left, right, texts, overrides.as_ref())?;
+                    let reverse = bge_directional_score(right, left, texts, overrides.as_ref())?;
+                    evidence.insert(
+                        canonical_pair_key(left.clone(), right.clone()),
+                        BgePairEvidence {
+                            forward_raw: forward,
+                            reverse_raw: reverse,
+                            symmetric_raw: (forward + reverse) / 2.0,
+                        },
+                    );
+                }
+            } else {
+                let tokenizer_files = fastembed::TokenizerFiles {
+                    tokenizer_file: fs::read(directory.join("tokenizer.json"))?,
+                    config_file: fs::read(directory.join("config.json"))?,
+                    special_tokens_map_file: fs::read(directory.join("special_tokens_map.json"))?,
+                    tokenizer_config_file: fs::read(directory.join("tokenizer_config.json"))?,
+                };
+                let model = fastembed::UserDefinedRerankingModel::new(
+                    fastembed::OnnxSource::File(directory.join("model.onnx")),
+                    tokenizer_files,
                 );
+                let options = fastembed::RerankInitOptionsUserDefined::new()
+                    .with_max_length(NLI_MAX_LENGTH)
+                    .with_intra_threads(4);
+                let mut model = fastembed::TextRerank::try_new_from_user_defined(model, options)
+                    .context("BGE model is unavailable; check the local BGE artifact set")?;
+                for (left, right) in pairs {
+                    let left_text = scenario_text_for(texts, left)?;
+                    let right_text = scenario_text_for(texts, right)?;
+                    let forward = model
+                        .rerank(left_text, [right_text], false, Some(32))?
+                        .into_iter()
+                        .next()
+                        .context("BGE omitted forward pair score")?
+                        .score;
+                    let reverse = model
+                        .rerank(right_text, [left_text], false, Some(32))?
+                        .into_iter()
+                        .next()
+                        .context("BGE omitted reverse pair score")?
+                        .score;
+                    evidence.insert(
+                        canonical_pair_key(left.clone(), right.clone()),
+                        BgePairEvidence {
+                            forward_raw: forward,
+                            reverse_raw: reverse,
+                            symmetric_raw: (forward + reverse) / 2.0,
+                        },
+                    );
+                }
             }
         }
     }
-    Ok(BgeRun::enabled(evidence, pairs.len(), started.elapsed().as_millis()))
+    Ok(BgeRun::enabled(
+        evidence,
+        pairs.len(),
+        started.elapsed().as_millis(),
+    ))
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
@@ -2540,8 +2595,8 @@ fn bge_directional_score(
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn bge_directional_overrides() -> Result<Option<BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32>>>
-{
+fn bge_directional_overrides()
+-> Result<Option<BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32>>> {
     let Some(raw) = std::env::var_os("GIVN_SPEC_BGE_DIRECTIONAL_SCORES") else {
         return Ok(None);
     };
@@ -2636,15 +2691,15 @@ fn print_explore_text(
             .count();
         println!(
             "BGE candidate generator: E5, top_k {}, raw {}, recommended {}, BGE filtered {}, unscored {}, bounded pool",
-            RERANKER_TOP_K,
-            run.e5_candidates,
-            recommended,
-            filtered,
-            run.unscored,
+            RERANKER_TOP_K, run.e5_candidates, recommended, filtered, run.unscored,
         );
         println!(
             "BGE model: {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
-            if run.status == "BGE_ENABLED" { RERANKER_MODEL_ID } else { "null" },
+            if run.status == "BGE_ENABLED" {
+                RERANKER_MODEL_ID
+            } else {
+                "null"
+            },
             run.evidence.len(),
             run.evidence.len() * 2,
             run.model_load_attempts,
@@ -2793,11 +2848,7 @@ fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario])
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn run_bge_advisory_review(
-    root: &Path,
-    index: &SpecIndex,
-    delta: &[DeltaScenario],
-) -> Result<()> {
+fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
     let (mut candidates, considered, texts) = similarity_candidate_pool(root, index, delta)?;
     let backend = bge_backend(root)?.context("BGE backend was not selected")?;
     if candidates.len() > BGE_MAX_PAIRS {
@@ -3704,9 +3755,7 @@ fn similarity_candidate_pool(
         let mut neighbours: Vec<(f32, &IndexEntry)> = index
             .entries
             .iter()
-            .filter(|entry| {
-                !((entry.file.as_str(), entry.title.as_str()) == own_target)
-            })
+            .filter(|entry| !((entry.file.as_str(), entry.title.as_str()) == own_target))
             .map(|entry| (cosine_similarity(vector, &entry.embedding), entry))
             .collect();
         neighbours.sort_by(|left, right| right.0.total_cmp(&left.0));
