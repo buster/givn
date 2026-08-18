@@ -193,6 +193,24 @@ fn run_directional_duplicate_audit(world: &mut GivnWorld) {
     world.last_output = Some(common::run_givn_with_envs(env, &args, &environments));
 }
 
+#[when("the user runs the permanent duplicate audit with JSON output and second-stage evidence enabled")]
+fn run_partial_duplicate_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("partial duplicate project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "stub"),
+            (
+                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+                "givn/specs/pair.feature|Alpha request::givn/specs/pair.feature|Beta request=0.9600",
+            ),
+            ("GIVN_SPEC_BGE_TEST_POOL", "partial-raw-513"),
+        ],
+    ));
+}
+
 #[then("the audit reports both directional scores")]
 fn audit_reports_directional_scores(world: &mut GivnWorld) {
     let document: serde_json::Value =
@@ -403,6 +421,12 @@ fn partial_unscored_blocking_project(world: &mut GivnWorld) {
     world.retrieval_bge_test_pool = Some("partial-raw-513".to_string());
 }
 
+#[given("a permanent corpus with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs")]
+fn partial_unscored_duplicate_project(world: &mut GivnWorld) {
+    directional_bge_project(world);
+    world.retrieval_bge_test_pool = Some("partial-raw-513".to_string());
+}
+
 #[when("the user runs blocking change review with second-stage evidence enabled")]
 fn run_filtered_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("filtered blocking project");
@@ -503,6 +527,53 @@ fn partial_no_filtered_collection(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial blocking project");
     let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md")).unwrap();
     assert!(!report.contains("## BGE Filtered Candidate"));
+}
+
+#[then("the JSON reports BGE status \"BGE_ENABLED\" with 512 unique pairs and 1024 directional calls")]
+fn partial_json_counts(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert_eq!(document["bge_run"]["status"], serde_json::json!("BGE_ENABLED"));
+    assert_eq!(document["bge_run"]["unique_pairs"], serde_json::json!(512));
+    assert_eq!(document["bge_run"]["directional_calls"], serde_json::json!(1024));
+}
+
+#[then("the JSON contains an `unscored_candidates` collection")]
+fn partial_json_has_unscored_collection(world: &mut GivnWorld) {
+    assert!(super::output(world).stdout.windows(b"unscored_candidates".len()).any(|window| window == b"unscored_candidates"));
+}
+
+#[then("each unscored JSON candidate has an endpoint, E5 score, and status `BGE_UNSCORED`")]
+fn partial_json_unscored_fields(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    let candidate = &document["unscored_candidates"][0];
+    assert!(!candidate["left"].is_null());
+    assert!(!candidate["evidence"]["score"].is_null());
+    assert_eq!(candidate["evidence"]["bge"], serde_json::Value::Null);
+}
+
+#[then("unscored JSON candidates use descending E5 score and endpoint tuple order")]
+fn partial_json_unscored_order(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    let candidates = document["unscored_candidates"].as_array().unwrap();
+    let scores = candidates
+        .iter()
+        .map(|candidate| candidate["evidence"]["score"].as_str().unwrap())
+        .collect::<Vec<_>>();
+    assert!(scores.windows(2).all(|window| window[0] >= window[1]));
+}
+
+#[then("each unscored candidate remains outside the filtered collection")]
+fn partial_json_unscored_outside_filtered(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert!(document["filtered_candidates"].as_array().unwrap().is_empty());
+}
+
+#[then("the JSON contains no unscored candidate with BGE directional scores")]
+fn partial_json_unscored_no_directionals(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    for candidate in document["unscored_candidates"].as_array().unwrap() {
+        assert!(candidate["evidence"]["bge"].is_null());
+    }
 }
 
 #[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]
