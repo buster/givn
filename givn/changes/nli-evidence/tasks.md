@@ -100,11 +100,15 @@ evidence and its atomic commit hash.
 
 ### Missing NLI artifacts preserve the explicit E5 fallback
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement NLI artifact preflight and `NLI_UNAVAILABLE` output.
-  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted advisory runner initially failed on the unimplemented NLI
+  step, then exposed the old non-zero `nli-missing` behavior as the production
+  gap.
+- [x] GREEN: implemented `nli-missing` as an explicit unavailable result with
+  E5 fallback, missing-artifact reason, zero participation claims, and visible
+  raw candidates. Targeted run passed 7/7 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 7 steps
+  passed.
+- [x] COMMIT: `2760564` — `feat(nli-evidence): expose explicit unavailable NLI fallback`.
 
 ### The NLI admission boundary includes a symmetric entailment probability of 0.5000
 
