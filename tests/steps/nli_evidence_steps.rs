@@ -174,3 +174,101 @@ fn filtered_combined_candidates_are_non_classifying(world: &mut GivnWorld) {
     assert!(!output.contains("DUPLIKAT"), "stdout: {output}");
     assert!(!output.contains("VARIANTE"), "stdout: {output}");
 }
+
+#[given("a project with a semantic candidate that BGE recommends and NLI cannot score")]
+fn combined_unavailable_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove unavailable specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create unavailable specs");
+    fs::write(
+        env.path("givn/specs/provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write unavailable permanent candidate");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("unavailable delta parent"))
+        .expect("create unavailable delta");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Active provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write unavailable active candidate");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write unavailable commands");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n",
+    )
+    .expect("write unavailable review disposition");
+    world.env = Some(env);
+}
+
+#[when("the user runs combined second-stage blocking review")]
+fn run_combined_blocking_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("unavailable combined project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "stub"),
+            ("GIVN_SPEC_RERANKER", "nli-missing"),
+            (
+                "GIVN_SPEC_STUB_PAIR_SCORES",
+                "Active provider request|Provider request is accepted=0.9900",
+            ),
+            (
+                "GIVN_SPEC_BGE_DIRECTIONAL_SCORES",
+                "givn/changes/running-change/specs/running.feature|Active provider request->givn/specs/provider.feature|Provider request is accepted=4.0;givn/specs/provider.feature|Provider request is accepted->givn/changes/running-change/specs/running.feature|Active provider request=4.0",
+            ),
+        ],
+    ));
+}
+
+#[then("the command exits non-zero because the E5 candidate remains unresolved")]
+fn combined_unavailable_exits_nonzero(world: &mut GivnWorld) {
+    assert!(
+        !super::output(world).status.success(),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then("the report records NLI as unavailable without NLI filtered evidence")]
+fn report_records_nli_unavailable(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("unavailable combined project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read unavailable NLI report");
+    assert!(
+        report.contains("NLI status: NLI_UNAVAILABLE"),
+        "report: {report}"
+    );
+    assert!(
+        report.contains("NLI reason: missing-artifact"),
+        "report: {report}"
+    );
+    assert!(!report.contains("NLI_FILTERED"), "report: {report}");
+}
+
+#[then("the candidate remains a normal blocking candidate with no NLI probabilities")]
+fn unavailable_candidate_remains_blocking(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("unavailable combined project");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read unavailable NLI report");
+    assert!(report.contains("## Candidate"), "report: {report}");
+    assert!(
+        report.contains("classification: UNCERTAIN"),
+        "report: {report}"
+    );
+    assert!(
+        report.contains("nli_admission: NLI_UNSCORED"),
+        "report: {report}"
+    );
+    assert!(
+        report.contains("nli_forward_entailment: null"),
+        "report: {report}"
+    );
+}

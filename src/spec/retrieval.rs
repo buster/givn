@@ -51,6 +51,10 @@ const NLI_MAX_LENGTH: usize = 512;
 const NLI_REPORT_LIMIT: usize = 20;
 #[cfg(feature = "nli-evidence")]
 const NLI_ADMISSION_THRESHOLD: f32 = 0.5;
+#[cfg(feature = "nli-evidence")]
+const NLI_MAX_PAIRS: usize = 512;
+#[cfg(feature = "nli-evidence")]
+const SEMANTIC_NLI_REPORT_SCHEMA_VERSION: u32 = 3;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
@@ -217,6 +221,10 @@ struct SemanticCandidate {
     rationale: Option<String>,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
+    #[cfg(feature = "nli-evidence")]
+    nli: Option<NliEvidence>,
+    #[cfg(feature = "nli-evidence")]
+    nli_admission: Option<&'static str>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -433,6 +441,66 @@ struct NliEvidence {
     forward: [f32; 3],
     reverse: [f32; 3],
     symmetric: [f32; 3],
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum NliUnavailableReason {
+    MissingArtifact,
+    PairCap,
+}
+
+#[cfg(feature = "nli-evidence")]
+impl NliUnavailableReason {
+    fn as_str(self) -> &'static str {
+        match self {
+            Self::MissingArtifact => "missing-artifact",
+            Self::PairCap => "pair-cap",
+        }
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Clone)]
+struct NliRun {
+    status: &'static str,
+    reason: Option<NliUnavailableReason>,
+    evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), NliEvidence>,
+    e5_candidates: usize,
+    unscored: usize,
+    model_load_attempts: usize,
+    runtime_ms: Option<u128>,
+}
+
+#[cfg(feature = "nli-evidence")]
+impl NliRun {
+    fn enabled(
+        evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), NliEvidence>,
+        e5_candidates: usize,
+        runtime_ms: u128,
+    ) -> Self {
+        Self {
+            status: "NLI_ENABLED",
+            reason: None,
+            unscored: e5_candidates.saturating_sub(evidence.len()),
+            evidence,
+            e5_candidates,
+            model_load_attempts: 1,
+            runtime_ms: Some(runtime_ms),
+        }
+    }
+
+    fn unavailable(reason: NliUnavailableReason, e5_candidates: usize) -> Self {
+        Self {
+            status: "NLI_UNAVAILABLE",
+            reason: Some(reason),
+            evidence: BTreeMap::new(),
+            e5_candidates,
+            unscored: e5_candidates,
+            model_load_attempts: 0,
+            runtime_ms: None,
+        }
+    }
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1095,6 +1163,10 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let bge_run = apply_semantic_bge(root, &delta, &mut candidates)?;
     #[cfg(not(feature = "cross-encoder-reranker"))]
     let bge_run: Option<BgeRun> = None;
+    #[cfg(feature = "nli-evidence")]
+    let nli_run = apply_semantic_nli(root, &delta, &mut candidates)?;
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_run = None;
     let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
     let remediation =
@@ -1104,6 +1176,8 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
         &candidates,
         remediation.is_err(),
         bge_run.as_ref(),
+        #[cfg(feature = "nli-evidence")]
+        nli_run.as_ref(),
     );
     write_semantic_report(&report_path, &report)?;
     let verified_remediations = match remediation {
@@ -1120,6 +1194,16 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
         .iter()
         .filter(|candidate| {
             candidate.bge_admission != Some("BGE_FILTERED")
+                && {
+                    #[cfg(feature = "nli-evidence")]
+                    {
+                        candidate.nli_admission != Some("NLI_FILTERED")
+                    }
+                    #[cfg(not(feature = "nli-evidence"))]
+                    {
+                        true
+                    }
+                }
                 && (candidate.classification == "UNCERTAIN" || candidate.rationale.is_none())
         })
         .count();
@@ -1328,6 +1412,81 @@ fn apply_semantic_bge(
     Ok(Some(run))
 }
 
+#[cfg(feature = "nli-evidence")]
+fn apply_semantic_nli(
+    root: &Path,
+    delta: &[DeltaScenario],
+    candidates: &mut [SemanticCandidate],
+) -> Result<Option<NliRun>> {
+    if candidates.is_empty() {
+        return Ok(None);
+    }
+    let Some(selection) = nli_backend_selection(root)? else {
+        return Ok(None);
+    };
+    let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
+        .into_iter()
+        .map(|scenario| ((scenario.file, scenario.title), scenario.text))
+        .collect();
+    let delta_texts: BTreeMap<(String, String), String> = delta
+        .iter()
+        .map(|item| {
+            (
+                (item.scenario.file.clone(), item.scenario.title.clone()),
+                item.scenario.text.clone(),
+            )
+        })
+        .collect();
+    let mut texts = permanent_texts;
+    texts.extend(delta_texts);
+    if candidates.len() > NLI_MAX_PAIRS {
+        for candidate in &mut *candidates {
+            candidate.nli_admission = Some("NLI_UNSCORED");
+        }
+        return Ok(Some(NliRun::unavailable(
+            NliUnavailableReason::PairCap,
+            candidates.len(),
+        )));
+    }
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+        .iter()
+        .map(|candidate| {
+            (
+                endpoint(&candidate.left.file, &candidate.left.title),
+                endpoint(&candidate.right.file, &candidate.right.title),
+            )
+        })
+        .collect();
+    let mut run = match selection {
+        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend)?,
+        Err(reason) => NliRun::unavailable(reason, candidates.len()),
+    };
+    run.e5_candidates = candidates.len();
+    if run.status == "NLI_UNAVAILABLE" {
+        for candidate in candidates {
+            candidate.nli_admission = Some("NLI_UNSCORED");
+        }
+        return Ok(Some(run));
+    }
+    for candidate in candidates {
+        let key = canonical_pair_key(
+            endpoint(&candidate.left.file, &candidate.left.title),
+            endpoint(&candidate.right.file, &candidate.right.title),
+        );
+        if let Some(evidence) = run.evidence.get(&key).copied() {
+            candidate.nli = Some(evidence);
+            candidate.nli_admission = Some(if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                "NLI_RECOMMENDED"
+            } else {
+                "NLI_FILTERED"
+            });
+        } else {
+            candidate.nli_admission = Some("NLI_UNSCORED");
+        }
+    }
+    Ok(Some(run))
+}
+
 #[cfg(feature = "spec-retrieval")]
 fn semantic_score(left: &SemanticEndpoint, right: &SemanticEndpoint, raw: f32) -> Result<f32> {
     if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
@@ -1504,6 +1663,10 @@ fn semantic_candidate(
         rationale: None,
         bge: None,
         bge_admission: None,
+        #[cfg(feature = "nli-evidence")]
+        nli: None,
+        #[cfg(feature = "nli-evidence")]
+        nli_admission: None,
     }
 }
 
@@ -1808,14 +1971,37 @@ fn render_semantic_report(
     candidates: &[SemanticCandidate],
     remediation_blocked: bool,
     bge_run: Option<&BgeRun>,
+    #[cfg(feature = "nli-evidence")] nli_run: Option<&NliRun>,
 ) -> String {
     let blocking = candidates
         .iter()
-        .filter(|candidate| candidate.bge_admission != Some("BGE_FILTERED"))
+        .filter(|candidate| {
+            candidate.bge_admission != Some("BGE_FILTERED") && {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    candidate.nli_admission != Some("NLI_FILTERED")
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    true
+                }
+            }
+        })
         .collect::<Vec<_>>();
     let status = if candidates
         .iter()
-        .filter(|candidate| candidate.bge_admission != Some("BGE_FILTERED"))
+        .filter(|candidate| {
+            candidate.bge_admission != Some("BGE_FILTERED") && {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    candidate.nli_admission != Some("NLI_FILTERED")
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    true
+                }
+            }
+        })
         .all(|candidate| candidate.classification != "UNCERTAIN" && candidate.rationale.is_some())
         && !remediation_blocked
     {
@@ -1825,7 +2011,18 @@ fn render_semantic_report(
     };
     let mut report = format!(
         "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
-        if bge_run.is_some() {
+        if {
+            #[cfg(feature = "nli-evidence")]
+            {
+                nli_run.is_some()
+            }
+            #[cfg(not(feature = "nli-evidence"))]
+            {
+                false
+            }
+        } {
+            SEMANTIC_NLI_REPORT_SCHEMA_VERSION
+        } else if bge_run.is_some() {
             SEMANTIC_BGE_REPORT_SCHEMA_VERSION
         } else {
             SEMANTIC_REPORT_SCHEMA_VERSION
@@ -1856,6 +2053,32 @@ fn render_semantic_report(
             run.model_load_attempts,
             run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
         ));
+        #[cfg(feature = "nli-evidence")]
+        if let Some(run) = nli_run {
+            let recommended = candidates
+                .iter()
+                .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+                .count();
+            let filtered = candidates
+                .iter()
+                .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
+                .count();
+            report.push_str(&format!(
+                "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
+                run.status,
+                run.reason.map(NliUnavailableReason::as_str).unwrap_or("null"),
+                if run.status == "NLI_ENABLED" { NLI_MODEL_ID } else { "null" },
+                RERANKER_TOP_K,
+                run.e5_candidates,
+                recommended,
+                filtered,
+                run.unscored,
+                run.evidence.len(),
+                run.evidence.len() * 2,
+                run.model_load_attempts,
+                run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
+            ));
+        }
         let mut index = 0;
         for candidate in candidates {
             if candidate.bge_admission == Some("BGE_FILTERED") {
@@ -1871,6 +2094,11 @@ fn render_semantic_report(
                     candidate.bge.as_ref().map(|e| format!("{:.4}", e.reverse_raw)).unwrap_or_else(|| "null".to_string()),
                     candidate.bge.as_ref().map(|e| format!("{:.4}", e.symmetric_raw)).unwrap_or_else(|| "null".to_string()),
                 ));
+                continue;
+            }
+            #[cfg(feature = "nli-evidence")]
+            if candidate.nli_admission == Some("NLI_FILTERED") {
+                report.push_str(&render_nli_filtered_candidate(candidate));
                 continue;
             }
             index += 1;
@@ -1904,6 +2132,8 @@ fn render_semantic_report(
                 candidate.bge.as_ref().map(|e| format!("{:.4}", e.symmetric_raw)).unwrap_or_else(|| "null".to_string()),
                 candidate.bge_admission.unwrap_or("BGE_UNSCORED"),
             ));
+            #[cfg(feature = "nli-evidence")]
+            append_nli_candidate_fields(&mut report, candidate);
         }
         return report;
     }
@@ -1939,6 +2169,46 @@ fn render_semantic_report(
             candidate.left.facts.facts.contradicts(&candidate.right.facts.facts)
         ));
     }
+    report
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_probability_text(value: Option<f32>) -> String {
+    value
+        .map(|value| format!("{value:.4}"))
+        .unwrap_or_else(|| "null".to_string())
+}
+
+#[cfg(feature = "nli-evidence")]
+fn append_nli_candidate_fields(report: &mut String, candidate: &SemanticCandidate) {
+    let evidence = candidate.nli;
+    report.push_str(&format!(
+        "- nli_forward_entailment: {}\n- nli_forward_neutral: {}\n- nli_forward_contradiction: {}\n- nli_reverse_entailment: {}\n- nli_reverse_neutral: {}\n- nli_reverse_contradiction: {}\n- nli_symmetric_entailment: {}\n- nli_symmetric_neutral: {}\n- nli_symmetric_contradiction: {}\n- nli_admission: {}\n",
+        nli_probability_text(evidence.map(|value| value.forward[0])),
+        nli_probability_text(evidence.map(|value| value.forward[1])),
+        nli_probability_text(evidence.map(|value| value.forward[2])),
+        nli_probability_text(evidence.map(|value| value.reverse[0])),
+        nli_probability_text(evidence.map(|value| value.reverse[1])),
+        nli_probability_text(evidence.map(|value| value.reverse[2])),
+        nli_probability_text(evidence.map(|value| value.symmetric[0])),
+        nli_probability_text(evidence.map(|value| value.symmetric[1])),
+        nli_probability_text(evidence.map(|value| value.symmetric[2])),
+        candidate.nli_admission.unwrap_or("NLI_UNSCORED"),
+    ));
+}
+
+#[cfg(feature = "nli-evidence")]
+fn render_nli_filtered_candidate(candidate: &SemanticCandidate) -> String {
+    let mut report = format!(
+        "\n## NLI Filtered Candidate\n- candidate_id: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- right_file: \"{}\"\n- right_title: \"{}\"\n- embedding_score: {:.4}\n",
+        candidate.candidate_id,
+        candidate.left.file,
+        candidate.left.title,
+        candidate.right.file,
+        candidate.right.title,
+        candidate.score,
+    );
+    append_nli_candidate_fields(&mut report, candidate);
     report
 }
 
@@ -4020,6 +4290,179 @@ fn similarity_candidates(
             .then_with(|| left.right.cmp(&right.right))
     });
     Ok((result, considered))
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_backend_selection(
+    root: &Path,
+) -> Result<Option<std::result::Result<NliBackend, NliUnavailableReason>>> {
+    match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
+        Ok("nli") => Ok(Some(match preflight_nli_artifacts(root) {
+            Ok(_) => Ok(NliBackend::Local),
+            Err(_) => Err(NliUnavailableReason::MissingArtifact),
+        })),
+        Ok("nli-stub") => Ok(Some(Ok(NliBackend::Stub))),
+        Ok("nli-missing") => Ok(Some(Err(NliUnavailableReason::MissingArtifact))),
+        Ok("disabled") | Ok("stub") | Ok("missing") => Ok(None),
+        Ok(value) => bail!("unknown GIVN_SPEC_RERANKER value `{value}`"),
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(std::env::VarError::NotUnicode(_)) => {
+            bail!("GIVN_SPEC_RERANKER is not valid UTF-8")
+        }
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn preflight_nli_artifacts(root: &Path) -> Result<std::path::PathBuf> {
+    let directory = std::env::var_os("GIVN_SPEC_NLI_MODEL_DIR")
+        .map(std::path::PathBuf::from)
+        .unwrap_or_else(|| root.join("givn/.spec-nli-cache"));
+    let model_path = directory.join("model.onnx");
+    anyhow::ensure!(
+        fs::metadata(&model_path)
+            .with_context(|| format!("read NLI model artifact {}", model_path.display()))?
+            .len()
+            > 0,
+        "NLI model artifact is empty"
+    );
+    for name in ["config.json", "tokenizer.json", "tokenizer_config.json"] {
+        let path = directory.join(name);
+        let bytes = fs::read(&path)
+            .with_context(|| format!("read NLI model artifact {}", path.display()))?;
+        if name != "tokenizer.json" {
+            serde_json::from_slice::<serde_json::Value>(&bytes)
+                .with_context(|| format!("parse NLI model artifact {}", path.display()))?;
+        }
+    }
+    Ok(directory)
+}
+
+#[cfg(feature = "nli-evidence")]
+fn score_nli_pairs(
+    root: &Path,
+    pairs: &[(SimilarityEndpoint, SimilarityEndpoint)],
+    texts: &BTreeMap<(String, String), String>,
+    backend: NliBackend,
+) -> Result<NliRun> {
+    let started = std::time::Instant::now();
+    let overrides = nli_directional_overrides()?;
+    let mut evidence = BTreeMap::new();
+    match backend {
+        NliBackend::Stub => {
+            for (left, right) in pairs {
+                let forward = nli_directional_logits(left, right, texts, overrides.as_ref())?;
+                let reverse = nli_directional_logits(right, left, texts, overrides.as_ref())?;
+                evidence.insert(
+                    canonical_pair_key(left.clone(), right.clone()),
+                    nli_evidence(forward, reverse),
+                );
+            }
+        }
+        NliBackend::Local => {
+            let mut classifier = NliClassifier::load(root)
+                .context("NLI model is unavailable; check GIVN_SPEC_NLI_MODEL_DIR")?;
+            let mut input_pairs = Vec::with_capacity(pairs.len() * 2);
+            for (left, right) in pairs {
+                let left_text = scenario_text_for(texts, left)?;
+                let right_text = scenario_text_for(texts, right)?;
+                input_pairs.push((left_text.to_string(), right_text.to_string()));
+                input_pairs.push((right_text.to_string(), left_text.to_string()));
+            }
+            let logits = classifier.score_pairs(&input_pairs)?;
+            for ((left, right), pair_logits) in pairs.iter().zip(logits.chunks_exact(2)) {
+                evidence.insert(
+                    canonical_pair_key(left.clone(), right.clone()),
+                    nli_evidence(pair_logits[0], pair_logits[1]),
+                );
+            }
+        }
+    }
+    Ok(NliRun::enabled(
+        evidence,
+        pairs.len(),
+        started.elapsed().as_millis(),
+    ))
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_directional_logits(
+    left: &SimilarityEndpoint,
+    right: &SimilarityEndpoint,
+    texts: &BTreeMap<(String, String), String>,
+    overrides: Option<&BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), [f32; 3]>>,
+) -> Result<[f32; 3]> {
+    if let Some(logits) = overrides.and_then(|items| items.get(&(left.clone(), right.clone()))) {
+        return Ok(*logits);
+    }
+    Ok(stub_nli_logits(
+        scenario_text_for(texts, left)?,
+        scenario_text_for(texts, right)?,
+    ))
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_directional_overrides()
+-> Result<Option<BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), [f32; 3]>>> {
+    let Some(raw) = std::env::var_os("GIVN_SPEC_NLI_DIRECTIONAL_SCORES") else {
+        return Ok(None);
+    };
+    let raw = raw
+        .to_str()
+        .context("GIVN_SPEC_NLI_DIRECTIONAL_SCORES is not valid UTF-8")?;
+    if raw.trim().is_empty() {
+        bail!("GIVN_SPEC_NLI_DIRECTIONAL_SCORES must not be empty");
+    }
+    let mut overrides = BTreeMap::new();
+    for entry in raw.split(';') {
+        let (pair, values) = entry
+            .split_once('=')
+            .with_context(|| format!("malformed NLI directional evidence entry `{entry}`"))?;
+        let (left, right) = pair
+            .split_once("->")
+            .with_context(|| format!("malformed NLI directional evidence entry `{entry}`"))?;
+        let left = parse_nli_endpoint(left)?;
+        let right = parse_nli_endpoint(right)?;
+        let values = values
+            .split(',')
+            .map(|value| {
+                value
+                    .parse::<f32>()
+                    .with_context(|| format!("malformed NLI directional evidence entry `{entry}`"))
+            })
+            .collect::<Result<Vec<_>>>()?;
+        anyhow::ensure!(
+            values.len() == 3 && values.iter().all(|value| value.is_finite()),
+            "malformed NLI directional evidence entry `{entry}`"
+        );
+        if overrides
+            .insert((left, right), [values[0], values[1], values[2]])
+            .is_some()
+        {
+            bail!("malformed NLI directional evidence entry `{entry}`");
+        }
+    }
+    for (left, right) in overrides.keys() {
+        if !overrides.contains_key(&(right.clone(), left.clone())) {
+            bail!("malformed NLI directional evidence entry: missing reverse direction");
+        }
+    }
+    Ok(Some(overrides))
+}
+
+#[cfg(feature = "nli-evidence")]
+fn parse_nli_endpoint(value: &str) -> Result<SimilarityEndpoint> {
+    let (file, title) = value
+        .trim()
+        .split_once('|')
+        .with_context(|| format!("malformed NLI directional evidence endpoint `{value}`"))?;
+    if file.trim().is_empty()
+        || title.trim().is_empty()
+        || value.contains('\n')
+        || value.contains('\r')
+    {
+        bail!("malformed NLI directional evidence endpoint `{value}`");
+    }
+    Ok(endpoint(file.trim(), title.trim()))
 }
 
 #[cfg(feature = "nli-evidence")]
