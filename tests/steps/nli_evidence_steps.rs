@@ -272,3 +272,71 @@ fn unavailable_candidate_remains_blocking(world: &mut GivnWorld) {
         "report: {report}"
     );
 }
+
+#[given("a permanent corpus whose bounded NLI pool contains exactly 513 eligible pairs")]
+fn nli_overflow_duplicate_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove NLI duplicate specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create NLI duplicate specs");
+    fs::write(
+        env.path("givn/specs/semantic.feature"),
+        "Feature: semantic\n\n  Scenario: Token is required\n    Given a client request\n    When the client sends a request without credentials\n    Then the server responds with unauthorized status\n\n  Scenario: Authentication needs a token\n    Given an identity service\n    When the client authenticates without a token\n    Then access is denied with token required\n",
+    )
+    .expect("write NLI duplicate candidates");
+    world.env = Some(env);
+}
+
+#[when("the user runs the permanent NLI duplicate audit")]
+fn run_nli_duplicate_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI duplicate project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            ("GIVN_SPEC_NLI_TEST_POOL", "overflow-513"),
+            (
+                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+                "givn/specs/semantic.feature|Token is required::givn/specs/semantic.feature|Authentication needs a token=0.9600",
+            ),
+        ],
+    ));
+}
+
+#[then("the audit reports NLI as unavailable for reason \"pair-cap\"")]
+fn nli_duplicate_reports_pair_cap(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("NLI status: NLI_UNAVAILABLE, reason pair-cap"),
+        "stdout: {}",
+        super::stdout(world)
+    );
+}
+
+#[then(
+    "the audit reports zero NLI pairs, directional calls, recommendations, filters, and model loads"
+)]
+fn nli_duplicate_reports_zero_pair_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    for line in [
+        "NLI unique pair count: 0",
+        "NLI directional call count: 0",
+        "NLI recommended count: 0",
+        "NLI filtered count: 0",
+        "NLI model load attempts: 0",
+    ] {
+        assert!(output.contains(line), "missing {line}: {output}");
+    }
+}
+
+#[then("all E5 semantic candidates are recorded as NLI unscored")]
+fn nli_duplicate_reports_unscored(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("NLI_UNAVAILABLE: bounded candidate pool exceeds 512 pairs"));
+    assert!(output.contains("NLI unscored:"), "stdout: {output}");
+    assert!(
+        output.contains("nli_status=NLI_UNSCORED"),
+        "stdout: {output}"
+    );
+}

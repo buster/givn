@@ -85,7 +85,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the report records NLI as unavailable without NLI filtered evidence
     And the candidate remains a normal blocking candidate with no NLI probabilities
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: NLI refuses an overflowing bounded pair pool before model loading
     Given a permanent corpus whose bounded NLI pool contains exactly 513 eligible pairs
     When the user runs the permanent NLI duplicate audit

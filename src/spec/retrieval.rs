@@ -37,7 +37,7 @@ const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_PIPELINE_VERSION: &str = "rust-production-v1";
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+#[cfg(feature = "spec-retrieval")]
 const BGE_MAX_PAIRS: usize = 512;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_MAX_LENGTH: usize = 512;
@@ -349,6 +349,10 @@ struct DuplicateCandidate {
     score: Option<f32>,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
+    #[cfg(feature = "nli-evidence")]
+    nli: Option<NliEvidence>,
+    #[cfg(feature = "nli-evidence")]
+    nli_admission: Option<&'static str>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -358,6 +362,12 @@ struct DuplicateAudit {
     filtered_candidates: Vec<DuplicateCandidate>,
     unscored_candidates: Vec<DuplicateCandidate>,
     bge_run: Option<BgeRun>,
+    #[cfg(feature = "nli-evidence")]
+    nli_filtered_candidates: Vec<DuplicateCandidate>,
+    #[cfg(feature = "nli-evidence")]
+    nli_unscored_candidates: Vec<DuplicateCandidate>,
+    #[cfg(feature = "nli-evidence")]
+    nli_run: Option<NliRun>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -371,6 +381,9 @@ struct DuplicateJsonEvidence {
     score: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     bge: Option<DuplicateJsonBgeEvidence>,
+    #[cfg(feature = "nli-evidence")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli: Option<DuplicateJsonNliEvidence>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -380,6 +393,15 @@ struct DuplicateJsonBgeEvidence {
     forward_raw: f32,
     reverse_raw: f32,
     symmetric_raw: f32,
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Clone, Serialize)]
+struct DuplicateJsonNliEvidence {
+    status: &'static str,
+    forward: [f32; 3],
+    reverse: [f32; 3],
+    symmetric: [f32; 3],
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -407,11 +429,36 @@ struct DuplicateJsonReport {
     filtered_candidates: Option<Vec<DuplicateJsonCandidate>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     unscored_candidates: Option<Vec<DuplicateJsonCandidate>>,
+    #[cfg(feature = "nli-evidence")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli_run: Option<DuplicateJsonNliRun>,
+    #[cfg(feature = "nli-evidence")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli_filtered_candidates: Option<Vec<DuplicateJsonCandidate>>,
+    #[cfg(feature = "nli-evidence")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli_unscored_candidates: Option<Vec<DuplicateJsonCandidate>>,
 }
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Serialize)]
 struct DuplicateJsonRun {
+    status: &'static str,
+    reason: Option<&'static str>,
+    model: Option<&'static str>,
+    top_k: usize,
+    unique_pairs: usize,
+    directional_calls: usize,
+    recommended_count: usize,
+    filtered_count: usize,
+    unscored_count: usize,
+    model_load_attempts: usize,
+    runtime_ms: Option<u128>,
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Serialize)]
+struct DuplicateJsonNliRun {
     status: &'static str,
     reason: Option<&'static str>,
     model: Option<&'static str>,
@@ -743,18 +790,34 @@ fn duplicates_enabled(root: &Path, json: bool) -> Result<()> {
 #[cfg(feature = "spec-retrieval")]
 fn duplicate_audit(root: &Path, scenarios: &[DuplicateScenario]) -> Result<DuplicateAudit> {
     let candidates = duplicate_candidates(root, scenarios)?;
-    #[cfg(feature = "cross-encoder-reranker")]
+    let audit = {
+        #[cfg(feature = "cross-encoder-reranker")]
+        {
+            apply_duplicate_bge(root, scenarios, candidates)?
+        }
+        #[cfg(not(feature = "cross-encoder-reranker"))]
+        {
+            DuplicateAudit {
+                candidates,
+                filtered_candidates: Vec::new(),
+                unscored_candidates: Vec::new(),
+                bge_run: None,
+                #[cfg(feature = "nli-evidence")]
+                nli_filtered_candidates: Vec::new(),
+                #[cfg(feature = "nli-evidence")]
+                nli_unscored_candidates: Vec::new(),
+                #[cfg(feature = "nli-evidence")]
+                nli_run: None,
+            }
+        }
+    };
+    #[cfg(feature = "nli-evidence")]
     {
-        return apply_duplicate_bge(root, scenarios, candidates);
+        return apply_duplicate_nli(root, scenarios, audit);
     }
-    #[cfg(not(feature = "cross-encoder-reranker"))]
+    #[cfg(not(feature = "nli-evidence"))]
     {
-        Ok(DuplicateAudit {
-            candidates,
-            filtered_candidates: Vec::new(),
-            unscored_candidates: Vec::new(),
-            bge_run: None,
-        })
+        Ok(audit)
     }
 }
 
@@ -775,6 +838,12 @@ fn apply_duplicate_bge(
             filtered_candidates: Vec::new(),
             unscored_candidates: Vec::new(),
             bge_run: None,
+            #[cfg(feature = "nli-evidence")]
+            nli_filtered_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_unscored_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_run: None,
         });
     }
     let Some(backend) = bge_backend(root)? else {
@@ -783,6 +852,12 @@ fn apply_duplicate_bge(
             filtered_candidates: Vec::new(),
             unscored_candidates: Vec::new(),
             bge_run: None,
+            #[cfg(feature = "nli-evidence")]
+            nli_filtered_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_unscored_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_run: None,
         });
     };
 
@@ -801,6 +876,12 @@ fn apply_duplicate_bge(
                     BgeUnavailableReason::PairCap,
                     raw_count,
                 )),
+                #[cfg(feature = "nli-evidence")]
+                nli_filtered_candidates: Vec::new(),
+                #[cfg(feature = "nli-evidence")]
+                nli_unscored_candidates: Vec::new(),
+                #[cfg(feature = "nli-evidence")]
+                nli_run: None,
             });
         }
         let (pairs, texts) = synthetic_bge_pairs(bounded_count);
@@ -823,6 +904,12 @@ fn apply_duplicate_bge(
             filtered_candidates: Vec::new(),
             unscored_candidates: unscored,
             bge_run: Some(run),
+            #[cfg(feature = "nli-evidence")]
+            nli_filtered_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_unscored_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_run: None,
         });
     }
 
@@ -861,6 +948,12 @@ fn apply_duplicate_bge(
             filtered_candidates: Vec::new(),
             unscored_candidates: semantic,
             bge_run: Some(run),
+            #[cfg(feature = "nli-evidence")]
+            nli_filtered_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_unscored_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_run: None,
         });
     }
 
@@ -908,6 +1001,12 @@ fn apply_duplicate_bge(
             filtered_candidates: Vec::new(),
             unscored_candidates: semantic,
             bge_run: Some(run),
+            #[cfg(feature = "nli-evidence")]
+            nli_filtered_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_unscored_candidates: Vec::new(),
+            #[cfg(feature = "nli-evidence")]
+            nli_run: None,
         });
     }
 
@@ -955,7 +1054,180 @@ fn apply_duplicate_bge(
         filtered_candidates: filtered,
         unscored_candidates: unscored,
         bge_run: Some(run),
+        #[cfg(feature = "nli-evidence")]
+        nli_filtered_candidates: Vec::new(),
+        #[cfg(feature = "nli-evidence")]
+        nli_unscored_candidates: Vec::new(),
+        #[cfg(feature = "nli-evidence")]
+        nli_run: None,
     })
+}
+
+#[cfg(feature = "nli-evidence")]
+fn apply_duplicate_nli(
+    root: &Path,
+    scenarios: &[DuplicateScenario],
+    mut audit: DuplicateAudit,
+) -> Result<DuplicateAudit> {
+    let semantic: Vec<DuplicateCandidate> = audit
+        .candidates
+        .iter()
+        .filter(|candidate| candidate.kind == "semantic_candidate")
+        .cloned()
+        .collect();
+    if semantic.is_empty() {
+        return Ok(audit);
+    }
+    let Some(selection) = nli_backend_selection(root)? else {
+        return Ok(audit);
+    };
+    let Some((bounded_count, raw_count)) = nli_test_pool()? else {
+        let texts: BTreeMap<(String, String), String> = scenarios
+            .iter()
+            .map(|scenario| {
+                (
+                    (
+                        scenario.endpoint.file.clone(),
+                        scenario.endpoint.title.clone(),
+                    ),
+                    scenario.text.clone(),
+                )
+            })
+            .collect();
+        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = semantic
+            .iter()
+            .map(|candidate| {
+                (
+                    endpoint(&candidate.left.file, &candidate.left.title),
+                    endpoint(&candidate.right.file, &candidate.right.title),
+                )
+            })
+            .collect();
+        let mut run = match selection {
+            Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend)?,
+            Err(reason) => NliRun::unavailable(reason, semantic.len()),
+        };
+        run.e5_candidates = semantic.len();
+        let mut filtered = Vec::new();
+        let mut unscored = Vec::new();
+        if run.status == "NLI_UNAVAILABLE" {
+            for candidate in &mut audit.candidates {
+                if candidate.kind == "semantic_candidate" {
+                    candidate.nli_admission = Some("NLI_UNSCORED");
+                }
+            }
+            unscored = semantic;
+        } else {
+            audit.candidates.retain_mut(|candidate| {
+                if candidate.kind != "semantic_candidate" {
+                    return true;
+                }
+                let key = canonical_pair_key(
+                    endpoint(&candidate.left.file, &candidate.left.title),
+                    endpoint(&candidate.right.file, &candidate.right.title),
+                );
+                let Some(evidence) = run.evidence.get(&key).copied() else {
+                    candidate.nli_admission = Some("NLI_UNSCORED");
+                    unscored.push(candidate.clone());
+                    return false;
+                };
+                candidate.nli = Some(evidence);
+                if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                    candidate.nli_admission = Some("NLI_RECOMMENDED");
+                    true
+                } else {
+                    candidate.nli_admission = Some("NLI_FILTERED");
+                    filtered.push(candidate.clone());
+                    false
+                }
+            });
+        }
+        audit.candidates.sort_by(duplicate_candidate_order);
+        filtered.sort_by(duplicate_candidate_order);
+        unscored.sort_by(duplicate_candidate_order);
+        audit.nli_filtered_candidates = filtered;
+        audit.nli_unscored_candidates = unscored;
+        audit.nli_run = Some(run);
+        return Ok(audit);
+    };
+    if bounded_count > NLI_MAX_PAIRS {
+        for candidate in &mut audit.candidates {
+            if candidate.kind == "semantic_candidate" {
+                candidate.nli_admission = Some("NLI_UNSCORED");
+            }
+        }
+        audit.nli_unscored_candidates = semantic;
+        audit.nli_run = Some(NliRun::unavailable(
+            NliUnavailableReason::PairCap,
+            raw_count,
+        ));
+        return Ok(audit);
+    }
+    let (pairs, texts) = synthetic_nli_pairs(bounded_count);
+    let mut run = match selection {
+        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend)?,
+        Err(reason) => NliRun::unavailable(reason, raw_count),
+    };
+    run.e5_candidates = raw_count;
+    run.unscored = raw_count.saturating_sub(bounded_count);
+    for candidate in &mut audit.candidates {
+        if candidate.kind == "semantic_candidate" {
+            candidate.nli_admission = Some(if run.unscored > 0 {
+                "NLI_UNSCORED"
+            } else {
+                "NLI_RECOMMENDED"
+            });
+        }
+    }
+    audit.nli_run = Some(run);
+    Ok(audit)
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_test_pool() -> Result<Option<(usize, usize)>> {
+    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+        return Ok(None);
+    }
+    let Some(value) = std::env::var_os("GIVN_SPEC_NLI_TEST_POOL") else {
+        return Ok(None);
+    };
+    let value = value
+        .to_str()
+        .context("GIVN_SPEC_NLI_TEST_POOL is not valid UTF-8")?;
+    match value {
+        "bounded-512" => Ok(Some((512, 512))),
+        "overflow-513" => Ok(Some((513, 513))),
+        "partial-raw-513" => Ok(Some((512, 513))),
+        _ => bail!("unknown GIVN_SPEC_NLI_TEST_POOL value `{value}`"),
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn synthetic_nli_pairs(
+    count: usize,
+) -> (
+    Vec<(SimilarityEndpoint, SimilarityEndpoint)>,
+    BTreeMap<(String, String), String>,
+) {
+    let mut pairs = Vec::with_capacity(count);
+    let mut texts = BTreeMap::new();
+    for index in 0..count {
+        let left = endpoint(
+            "givn/specs/__nli-fixture__/left.feature",
+            &format!("left-{index}"),
+        );
+        let right = endpoint(
+            "givn/specs/__nli-fixture__/right.feature",
+            &format!("right-{index}"),
+        );
+        texts.insert((left.file.clone(), left.title.clone()), left.title.clone());
+        texts.insert(
+            (right.file.clone(), right.title.clone()),
+            right.title.clone(),
+        );
+        pairs.push((left, right));
+    }
+    (pairs, texts)
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -993,6 +1265,43 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
             report.push_str("BGE fallback: E5-only unavailable fallback\n");
         }
     }
+    #[cfg(feature = "nli-evidence")]
+    if let Some(run) = audit.nli_run.as_ref() {
+        let recommended = audit
+            .candidates
+            .iter()
+            .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+            .count();
+        report.push_str(&format!(
+            "NLI status: {}{}\nNLI model: {}\nNLI top_k: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
+            run.status,
+            run.reason
+                .map(|reason| format!(", reason {}", reason.as_str()))
+                .unwrap_or_default(),
+            if run.status == "NLI_ENABLED" { NLI_MODEL_ID } else { "null" },
+            RERANKER_TOP_K,
+            run.e5_candidates,
+            recommended,
+            audit.nli_filtered_candidates.len(),
+            run.unscored,
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            run.model_load_attempts,
+            run.runtime_ms
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "null".to_string()),
+        ));
+        if run.reason == Some(NliUnavailableReason::PairCap) {
+            report.push_str("NLI_UNAVAILABLE: bounded candidate pool exceeds 512 pairs\n");
+        }
+        report.push_str("NLI fallback: E5-only unavailable fallback\n");
+        for candidate in &audit.nli_unscored_candidates {
+            report.push_str(&format!(
+                "NLI unscored: {}\n",
+                render_duplicate_candidate(0, candidate)
+            ));
+        }
+    }
     for (rank, candidate) in audit.candidates.iter().enumerate() {
         report.push_str(&render_duplicate_candidate(rank + 1, candidate));
         report.push('\n');
@@ -1009,17 +1318,44 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
             render_duplicate_candidate(0, candidate)
         ));
     }
+    #[cfg(feature = "nli-evidence")]
+    for candidate in &audit.nli_filtered_candidates {
+        report.push_str(&format!(
+            "NLI filtered: {}\n",
+            render_duplicate_candidate(0, candidate)
+        ));
+    }
     report
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Result<String> {
+    #[cfg(feature = "nli-evidence")]
+    let nli_active = audit.nli_run.is_some();
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_active = false;
+    let schema_version = if nli_active {
+        #[cfg(feature = "nli-evidence")]
+        {
+            3
+        }
+        #[cfg(not(feature = "nli-evidence"))]
+        {
+            unreachable!()
+        }
+    } else if audit.bge_run.is_some() {
+        DUPLICATE_BGE_REPORT_SCHEMA_VERSION
+    } else {
+        DUPLICATE_REPORT_SCHEMA_VERSION
+    };
+    let mut e5_candidate_count = audit.bge_run.as_ref().map(|run| run.e5_candidates);
+    #[cfg(feature = "nli-evidence")]
+    {
+        e5_candidate_count =
+            e5_candidate_count.or_else(|| audit.nli_run.as_ref().map(|run| run.e5_candidates));
+    }
     let report = DuplicateJsonReport {
-        schema_version: if audit.bge_run.is_some() {
-            DUPLICATE_BGE_REPORT_SCHEMA_VERSION
-        } else {
-            DUPLICATE_REPORT_SCHEMA_VERSION
-        },
+        schema_version,
         scanned_scenarios,
         candidate_count: audit.candidates.len(),
         candidates: audit
@@ -1032,7 +1368,7 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
                 candidate
             })
             .collect(),
-        e5_candidate_count: audit.bge_run.as_ref().map(|run| run.e5_candidates),
+        e5_candidate_count,
         bge_run: audit
             .bge_run
             .as_ref()
@@ -1052,6 +1388,37 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
         unscored_candidates: audit.bge_run.as_ref().map(|_| {
             audit
                 .unscored_candidates
+                .iter()
+                .map(duplicate_json_candidate)
+                .enumerate()
+                .map(|(index, mut candidate)| {
+                    candidate.rank = index + 1;
+                    candidate
+                })
+                .collect()
+        }),
+        #[cfg(feature = "nli-evidence")]
+        nli_run: audit
+            .nli_run
+            .as_ref()
+            .map(|run| duplicate_json_nli_run(run, audit)),
+        #[cfg(feature = "nli-evidence")]
+        nli_filtered_candidates: audit.nli_run.as_ref().map(|_| {
+            audit
+                .nli_filtered_candidates
+                .iter()
+                .map(duplicate_json_candidate)
+                .enumerate()
+                .map(|(index, mut candidate)| {
+                    candidate.rank = index + 1;
+                    candidate
+                })
+                .collect()
+        }),
+        #[cfg(feature = "nli-evidence")]
+        nli_unscored_candidates: audit.nli_run.as_ref().map(|_| {
+            audit
+                .nli_unscored_candidates
                 .iter()
                 .map(duplicate_json_candidate)
                 .enumerate()
@@ -1088,6 +1455,13 @@ fn duplicate_json_candidate(candidate: &DuplicateCandidate) -> DuplicateJsonCand
                     reverse_raw: evidence.reverse_raw,
                     symmetric_raw: evidence.symmetric_raw,
                 }),
+            #[cfg(feature = "nli-evidence")]
+            nli: candidate.nli.map(|evidence| DuplicateJsonNliEvidence {
+                status: candidate.nli_admission.unwrap_or("NLI_RECOMMENDED"),
+                forward: evidence.forward,
+                reverse: evidence.reverse,
+                symmetric: evidence.symmetric,
+            }),
         },
     }
 }
@@ -1108,6 +1482,28 @@ fn duplicate_json_run(run: &BgeRun, audit: &DuplicateAudit) -> DuplicateJsonRun 
         directional_calls: run.evidence.len() * 2,
         recommended_count,
         filtered_count: audit.filtered_candidates.len(),
+        unscored_count: run.unscored,
+        model_load_attempts: run.model_load_attempts,
+        runtime_ms: run.runtime_ms,
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn duplicate_json_nli_run(run: &NliRun, audit: &DuplicateAudit) -> DuplicateJsonNliRun {
+    let recommended_count = audit
+        .candidates
+        .iter()
+        .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+        .count();
+    DuplicateJsonNliRun {
+        status: run.status,
+        reason: run.reason.map(NliUnavailableReason::as_str),
+        model: (run.status == "NLI_ENABLED").then_some(NLI_MODEL_ID),
+        top_k: RERANKER_TOP_K,
+        unique_pairs: run.evidence.len(),
+        directional_calls: run.evidence.len() * 2,
+        recommended_count,
+        filtered_count: audit.nli_filtered_candidates.len(),
         unscored_count: run.unscored,
         model_load_attempts: run.model_load_attempts,
         runtime_ms: run.runtime_ms,
@@ -1138,8 +1534,28 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
                 .map(|status| format!(" bge_status={status}"))
                 .unwrap_or_default()
         });
+    #[cfg(feature = "nli-evidence")]
+    let nli = candidate
+        .nli
+        .map(|evidence| {
+            format!(
+                " nli_status={} nli_forward={:?} nli_reverse={:?} nli_symmetric={:?}",
+                candidate.nli_admission.unwrap_or("NLI_RECOMMENDED"),
+                evidence.forward,
+                evidence.reverse,
+                evidence.symmetric,
+            )
+        })
+        .unwrap_or_else(|| {
+            candidate
+                .nli_admission
+                .map(|status| format!(" nli_status={status}"))
+                .unwrap_or_default()
+        });
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli = String::new();
     format!(
-        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score={score}{bge}",
+        "rank {rank}: kind={} left={} right={} relation={} assertion_shape={} facts={} distinguishing_facts={} fact_contradiction={} score={score}{bge}{nli}",
         candidate.kind,
         json_encoded(&candidate.left),
         json_encoded(&candidate.right),
@@ -3511,6 +3927,10 @@ fn duplicate_candidates(
                     score: None,
                     bge: None,
                     bge_admission: None,
+                    #[cfg(feature = "nli-evidence")]
+                    nli: None,
+                    #[cfg(feature = "nli-evidence")]
+                    nli_admission: None,
                 });
                 classified.insert((left_index, right_index));
             } else if !left.fingerprint.assertions.is_empty()
@@ -3576,6 +3996,10 @@ fn duplicate_candidates(
                 score: Some(score),
                 bge: None,
                 bge_admission: None,
+                #[cfg(feature = "nli-evidence")]
+                nli: None,
+                #[cfg(feature = "nli-evidence")]
+                nli_admission: None,
             });
         }
     }
@@ -3610,6 +4034,10 @@ fn structural_candidate(
         score: None,
         bge: None,
         bge_admission: None,
+        #[cfg(feature = "nli-evidence")]
+        nli: None,
+        #[cfg(feature = "nli-evidence")]
+        nli_admission: None,
     }
 }
 
