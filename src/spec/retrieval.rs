@@ -53,6 +53,7 @@ const NLI_REPORT_LIMIT: usize = 20;
 const NLI_ADMISSION_THRESHOLD: f32 = 0.5;
 #[cfg(feature = "nli-evidence")]
 const NLI_MAX_PAIRS: usize = 512;
+#[cfg(feature = "spec-retrieval")]
 const SEMANTIC_NLI_REPORT_SCHEMA_VERSION: u32 = 3;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
@@ -182,6 +183,7 @@ struct ExploreNliOutput {
     symmetric: [f32; 3],
 }
 
+#[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Serialize)]
 struct ExploreNliEvidenceOutput {
     status: &'static str,
@@ -4037,6 +4039,13 @@ fn run_second_stage_advisory_review(
             .iter()
             .filter(|candidate| candidate.bge_admission == Some("BGE_FILTERED"))
             .count();
+        println!(
+            "BGE status: {}{}",
+            run.status,
+            run.reason
+                .map(|reason| format!(", reason {}", reason.as_str()))
+                .unwrap_or_default()
+        );
         println!(
             "BGE: model {}, top_k {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
             if run.status == "BGE_ENABLED" {
