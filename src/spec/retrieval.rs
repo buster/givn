@@ -46,6 +46,8 @@ const RERANKER_TOP_K: usize = 5;
 #[cfg(feature = "nli-evidence")]
 const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7";
 #[cfg(feature = "nli-evidence")]
+const NLI_STUB_SELECTOR: &str = "nli-stub";
+#[cfg(feature = "nli-evidence")]
 const NLI_MAX_LENGTH: usize = 512;
 #[cfg(feature = "nli-evidence")]
 const NLI_REPORT_LIMIT: usize = 20;
@@ -5082,7 +5084,7 @@ fn nli_backend_selection(
             Ok(_) => Ok(NliBackend::Local),
             Err(_) => Err(NliUnavailableReason::MissingArtifact),
         })),
-        Ok("nli-stub") => Ok(Some(Ok(NliBackend::Stub))),
+        Ok(value) if value == NLI_STUB_SELECTOR => Ok(Some(Ok(NliBackend::Stub))),
         Ok("nli-missing") => Ok(Some(Err(NliUnavailableReason::MissingArtifact))),
         Ok("disabled") | Ok("stub") | Ok("missing") => Ok(None),
         Ok(value) => bail!("unknown GIVN_SPEC_RERANKER value `{value}`"),
