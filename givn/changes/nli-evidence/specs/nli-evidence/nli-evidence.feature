@@ -110,7 +110,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the JSON preserves raw E5 result order and legacy result fields
     And the JSON reports NLI model, probabilities, raw, recommended, filtered, unscored, pair, and runtime fields
 
-  @givn.added @nli @nli-disabled @wip
+  @givn.added @nli @nli-disabled
   Scenario: Disabling NLI preserves the E5-only contract in an NLI-capable build
     Given a project with a permanent semantic candidate and the NLI capability compiled
     And NLI evidence is disabled
