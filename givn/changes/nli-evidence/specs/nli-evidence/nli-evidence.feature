@@ -102,7 +102,7 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And the JSON contains NLI unscored candidates with null NLI probabilities
     And the NLI unscored candidates remain outside the NLI filtered collection
 
-  @givn.added @nli @wip
+  @givn.added @nli
   Scenario: NLI JSON preserves the raw E5 contract and uses the NLI schema extension
     Given a project with two E5 semantic candidates and NLI evidence
     When the user explores the draft with JSON output and NLI evidence enabled
