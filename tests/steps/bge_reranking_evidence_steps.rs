@@ -230,12 +230,17 @@ fn run_directional_duplicate_audit(world: &mut GivnWorld) {
 #[when("the user runs the permanent duplicate audit with JSON output and second-stage evidence enabled")]
 fn run_partial_duplicate_json(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("partial duplicate project");
+    let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
+        "missing"
+    } else {
+        "stub"
+    };
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "duplicates", "--format", "json"],
         &[
             ("GIVN_SPEC_EMBEDDER", "stub"),
-            ("GIVN_SPEC_BGE", "stub"),
+            ("GIVN_SPEC_BGE", bge_mode),
             (
                 "GIVN_SPEC_DUPLICATES_TEST_SCORES",
                 "givn/specs/pair.feature|Alpha request::givn/specs/pair.feature|Beta request=0.9600",
@@ -467,6 +472,12 @@ fn partial_unscored_blocking_project(world: &mut GivnWorld) {
 fn partial_unscored_duplicate_project(world: &mut GivnWorld) {
     directional_bge_project(world);
     world.retrieval_bge_test_pool = Some("partial-raw-513".to_string());
+}
+
+#[given("a permanent corpus with semantic candidates and unavailable second-stage artifacts")]
+fn unavailable_duplicate_project(world: &mut GivnWorld) {
+    directional_bge_project(world);
+    world.retrieval_reranker = Some("missing".to_string());
 }
 
 #[when("the user runs blocking change review with second-stage evidence enabled")]
@@ -940,22 +951,35 @@ fn bge_json_reports_model_runtime(world: &mut GivnWorld) {
 #[then("the JSON reports BGE status \"BGE_UNAVAILABLE\"")]
 fn unavailable_json_status(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    assert_eq!(document["evidence"]["status"], serde_json::json!("BGE_UNAVAILABLE"));
+    let status = document["evidence"]["status"]
+        .as_str()
+        .or_else(|| document["bge_run"]["status"].as_str());
+    assert_eq!(status, Some("BGE_UNAVAILABLE"));
 }
 
 #[then("the JSON reports reason \"missing-artifact\"")]
 fn unavailable_json_reason(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    assert_eq!(document["evidence"]["reason"], serde_json::json!("missing-artifact"));
+    let reason = document["evidence"]["reason"]
+        .as_str()
+        .or_else(|| document["bge_run"]["reason"].as_str());
+    assert_eq!(reason, Some("missing-artifact"));
 }
 
 #[then("the JSON reports zero scored, recommended, and filtered pairs")]
 fn unavailable_json_zero_counts(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
-    let evidence = &document["evidence"];
-    assert_eq!(evidence["bge_pairs"], serde_json::json!(0));
-    assert_eq!(evidence["recommended_candidates"], serde_json::json!(0));
-    assert_eq!(evidence["bge_filtered_candidates"], serde_json::json!(0));
+    if document["evidence"].is_object() {
+        let evidence = &document["evidence"];
+        assert_eq!(evidence["bge_pairs"], serde_json::json!(0));
+        assert_eq!(evidence["recommended_candidates"], serde_json::json!(0));
+        assert_eq!(evidence["bge_filtered_candidates"], serde_json::json!(0));
+    } else {
+        let run = &document["bge_run"];
+        assert_eq!(run["unique_pairs"], serde_json::json!(0));
+        assert_eq!(run["recommended_count"], serde_json::json!(0));
+        assert_eq!(run["filtered_count"], serde_json::json!(0));
+    }
 }
 
 #[then("the JSON retains the E5 raw result identities")]
@@ -969,4 +993,16 @@ fn unavailable_json_counts_unscored(world: &mut GivnWorld) {
     let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
     assert!(document["evidence"]["bge_unscored_candidates"].as_u64().unwrap() > 0);
     assert_eq!(document["evidence"]["bge_filtered_candidates"], serde_json::json!(0));
+}
+
+#[then("the JSON counts all E5 semantic candidates as unscored")]
+fn unavailable_duplicate_counts_unscored(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert!(document["bge_run"]["unscored_count"].as_u64().unwrap() > 0);
+}
+
+#[then("the JSON retains the E5 fallback candidates")]
+fn unavailable_duplicate_retains_candidates(world: &mut GivnWorld) {
+    let document: serde_json::Value = serde_json::from_slice(&super::output(world).stdout).unwrap();
+    assert!(!document["candidates"].as_array().unwrap().is_empty());
 }
