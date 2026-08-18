@@ -78,11 +78,14 @@ evidence and its atomic commit hash.
 
 ### NLI JSON preserves the raw E5 contract and uses the NLI schema extension
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement additive Explore JSON NLI fields and schema version 3.
-  Production files: `src/spec/retrieval.rs` and tests. Evidence: pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted Explore JSON runner was initially blocked by the
+  unimplemented NLI step skeleton.
+- [x] GREEN: implemented bounded NLI Explore scoring, additive per-result and
+  summary JSON evidence, schema version 3, and raw/recommended preservation.
+  Targeted run passed 5/5 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 5 steps
+  passed.
+- [x] COMMIT: `b5f1c20` — `feat(nli-evidence): add NLI Explore JSON evidence`.
 
 ### Disabling NLI preserves the E5-only contract in an NLI-capable build
 
