@@ -89,12 +89,14 @@ evidence and its atomic commit hash.
 
 ### Disabling NLI preserves the E5-only contract in an NLI-capable build
 
-- [ ] RED: targeted runner fails on the unimplemented step. Evidence: pending.
-- [ ] GREEN: implement explicit disabled dispatch and E5-only output
-  preservation. Production files: `src/spec/retrieval.rs` and tests. Evidence:
-  pending.
-- [ ] REFACTOR: targeted runner passes unchanged. Evidence: pending.
-- [ ] COMMIT: pending.
+- [x] RED: targeted NLI-capable runner was initially blocked by the
+  unimplemented disabled-path step.
+- [x] GREEN: implemented explicit disabled dispatch and verified that Explore
+  emits the unchanged E5-only text contract with no NLI claims. Targeted run
+  passed 6/6 steps.
+- [x] REFACTOR: reran the unchanged targeted command; 1 scenario and 6 steps
+  passed.
+- [x] COMMIT: `5c2fb58` — `feat(nli-evidence): preserve E5 output when NLI is disabled`.
 
 ### Missing NLI artifacts preserve the explicit E5 fallback
 
