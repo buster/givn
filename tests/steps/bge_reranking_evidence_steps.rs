@@ -576,6 +576,48 @@ fn partial_json_unscored_no_directionals(world: &mut GivnWorld) {
     }
 }
 
+#[given("an end-to-end project with an active semantic review candidate")]
+fn gate_combination_project(world: &mut GivnWorld) {
+    super::semantic_review_steps::two_similar_active_deltas(world);
+    world.retrieval_reranker = None;
+    world.retrieval_bge_scores = Some(
+        "givn/changes/running-change/specs/first.feature|Unknown provider is rejected->givn/specs/retrieval.feature|Provider name is unknown=1.0000;givn/specs/retrieval.feature|Provider name is unknown->givn/changes/running-change/specs/first.feature|Unknown provider is rejected=1.0000;givn/changes/running-change/specs/first.feature|Unknown provider is rejected->givn/specs/retrieval.feature|Authentication token is missing=1.0000;givn/specs/retrieval.feature|Authentication token is missing->givn/changes/running-change/specs/first.feature|Unknown provider is rejected=1.0000;givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected->givn/specs/retrieval.feature|Provider name is unknown=1.0000;givn/specs/retrieval.feature|Provider name is unknown->givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected=1.0000;givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected->givn/specs/retrieval.feature|Authentication token is missing=1.0000;givn/specs/retrieval.feature|Authentication token is missing->givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected=1.0000;givn/changes/running-change/specs/first.feature|Unknown provider is rejected->givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected=1.0000;givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected->givn/changes/running-change/specs/first.feature|Unknown provider is rejected=1.0000".to_string(),
+    );
+}
+
+#[when("the user runs blocking change review with the E5 similarity gate and second-stage evidence enabled")]
+fn run_gate_combination_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("gate combination project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
+
+#[then("the command reports the E5 gate result separately from BGE admission")]
+fn gate_combination_reports_both(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("similarity gate"), "stdout: {output}\nstderr: {}", super::stderr(world));
+    assert!(output.contains("BGE"), "stdout: {output}");
+}
+
+#[then("a BGE status does not replace the E5 gate result")]
+fn gate_combination_keeps_e5_gate(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("similarity gate"));
+    assert!(output.contains("BGE:"));
+}
+
+#[then("no BGE status is rendered as a Givn classification")]
+fn gate_combination_no_bge_classification(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).contains("classification: BGE_"));
+}
+
 #[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]
 fn overflow_pool_project(world: &mut GivnWorld) {
     directional_bge_project(world);

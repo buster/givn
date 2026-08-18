@@ -29,7 +29,7 @@ const INDEX_VERSION: u32 = 1;
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
-#[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
+#[cfg(feature = "spec-retrieval")]
 const SIMILARITY_THRESHOLD: f32 = 0.95;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
@@ -2682,7 +2682,23 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let delta = collect_delta_scenarios(root, &delta_root)?;
     #[cfg(feature = "cross-encoder-reranker")]
     if bge_backend(root)?.is_some() {
-        return run_bge_advisory_review(root, &index, &delta);
+        let gate_result = {
+            #[cfg(feature = "spec-similarity-gate")]
+            {
+                run_embedding_review(root, &index, &delta)
+            }
+            #[cfg(not(feature = "spec-similarity-gate"))]
+            {
+                Ok(())
+            }
+        };
+        let bge_result = run_bge_advisory_review(root, &index, &delta);
+        return match (gate_result, bge_result) {
+            (Err(gate), Err(bge)) => bail!("{gate}; {bge}"),
+            (Err(gate), Ok(())) => Err(gate),
+            (Ok(()), Err(bge)) => Err(bge),
+            (Ok(()), Ok(())) => Ok(()),
+        };
     }
     #[cfg(feature = "nli-evidence")]
     if let Some(backend) = nli_backend_from_env()? {
@@ -2738,7 +2754,7 @@ fn advisory_review(
     Ok(())
 }
 
-#[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
+#[cfg(feature = "spec-retrieval")]
 fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
     let (candidates, considered) = embedding_similarity_candidates(root, index, delta)?;
     for candidate in &candidates {
@@ -2758,6 +2774,11 @@ fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario])
         considered
     );
     if !candidates.is_empty() {
+        println!(
+            "similarity gate failed: {} candidate(s) at or above fixed threshold {:.4}",
+            candidates.len(),
+            SIMILARITY_THRESHOLD
+        );
         bail!(
             "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
             candidates.len()
@@ -3724,7 +3745,7 @@ fn similarity_candidate_pool(
     Ok((result, considered, candidate_texts))
 }
 
-#[cfg(all(feature = "spec-retrieval", not(feature = "cross-encoder-reranker")))]
+#[cfg(feature = "spec-retrieval")]
 fn embedding_similarity_candidates(
     root: &Path,
     index: &SpecIndex,

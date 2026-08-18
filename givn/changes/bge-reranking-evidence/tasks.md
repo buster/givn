@@ -100,10 +100,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined partial duplicate JSON invocation.
 - [x] GREEN: added schema-v2 unscored collections, endpoint/E5/null-BGE fields, deterministic ordering, and partial-pool JSON assertions; targeted run passed 9/9 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 9 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Duplicate JSON exposes partial unscored candidates`
+- [x] COMMIT: `8efa530` — `feat(bge-reranking-evidence): Duplicate JSON exposes partial unscored candidates`
 
 ### The independent E5 gate remains separate from BGE evidence
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted gate-feature run failed before the undefined combination fixture.
+- [x] GREEN: made the E5 gate execute independently before BGE advisory rendering and asserted both outputs; targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the same targeted command with `spec-similarity-gate`; 1 scenario and 6 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The independent E5 gate remains separate from BGE evidence`
 
 ### The E5 similarity gate remains available without BGE
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
