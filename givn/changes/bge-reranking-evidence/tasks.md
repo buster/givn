@@ -130,10 +130,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined missing-artifact setup.
 - [x] GREEN: added missing-artifact BGE mode, zero-load unavailable accounting, and Explore fallback assertions; targeted run passed 9/9 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 9 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Missing second-stage model artifacts are explicitly unavailable`
+- [x] COMMIT: `b101c7e` — `feat(bge-reranking-evidence): Missing second-stage model artifacts are explicitly unavailable`
 
 ### A corrupt local BGE cache is rejected before model construction
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined corrupt-cache fixture.
+- [x] GREEN: added local-artifact preflight before FastEmbed construction and corrupt-cache zero-load assertions; targeted run passed 8/8 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 8 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A corrupt local BGE cache is rejected before model construction`
 
 ### Unavailable BGE JSON preserves raw candidates and names unscored pairs
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
