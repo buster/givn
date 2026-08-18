@@ -97,6 +97,9 @@ for the active NLI feature path. `merge-coverages.sh` produced a fresh
 
 The merged report includes both the non-E2E and E2E Gherkin runner processes;
 the known CLI Explore/review/duplicate paths have non-zero production hits.
+The archive coverage gate runs the combined NLI matrix and excludes only the
+`@bge-no-nli` scenario, whose contract requires the NLI capability to be absent
+at compile time; the regular BGE matrix continues to exercise that scenario.
 Coverage classification uses only the three allowed buckets:
 
 | Gap | Bucket | Resolution |

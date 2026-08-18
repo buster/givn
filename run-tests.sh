@@ -21,22 +21,42 @@ run_bge_disabled() {
     env -u GIVN_SPEC_RERANKER GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled "$@"
 }
 
-run_nli_change() {
-    env -u GIVN_SPEC_BGE GIVN_FEATURES=givn/changes/nli-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+resolve_nli_features_path() {
+    if [ -n "${GIVN_FEATURES:-}" ]; then
+        case "$GIVN_FEATURES" in
+            givn/changes/nli-evidence/specs|givn/specs)
+                printf '%s\n' "$GIVN_FEATURES"
+                return 0
+                ;;
+            *)
+                return 1
+                ;;
+        esac
+    fi
+    if [ -f givn/changes/nli-evidence/specs/nli-evidence/nli-evidence.feature ]; then
+        printf '%s\n' givn/changes/nli-evidence/specs
+    elif [ -f givn/specs/nli-evidence/nli-evidence.feature ]; then
+        printf '%s\n' givn/specs
+    else
+        return 1
+    fi
 }
 
-run_nli_disabled_change() {
-    env -u GIVN_SPEC_BGE GIVN_FEATURES=givn/changes/nli-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+run_nli() {
+    if features_path=$(resolve_nli_features_path); then
+        env -u GIVN_SPEC_BGE GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+    fi
 }
 
-run_nli_combined_change() {
-    env GIVN_FEATURES=givn/changes/nli-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+run_nli_disabled() {
+    if features_path=$(resolve_nli_features_path); then
+        env -u GIVN_SPEC_BGE GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+    fi
 }
 
-run_nli_change_if_present() {
-    if [ -f givn/changes/nli-evidence/specs/nli-evidence/nli-evidence.feature ] \
-        && { [ -z "${GIVN_FEATURES:-}" ] || [ "${GIVN_FEATURES}" = "givn/changes/nli-evidence/specs" ]; }; then
-        "$@"
+run_nli_combined() {
+    if features_path=$(resolve_nli_features_path); then
+        env GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
     fi
 }
 
@@ -44,7 +64,7 @@ case "${1:-}" in
     --e2e)
         run_e5 cargo test --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and @e2e'
         run_bge cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge and not @gate-combination and @e2e'
-        run_nli_change_if_present run_nli_change cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and @e2e'
+        run_nli cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and @e2e'
         ;;
     --non-e2e)
         run_e5 cargo test --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @e2e'
@@ -52,9 +72,9 @@ case "${1:-}" in
         run_bge_gate cargo test --features spec-retrieval,cross-encoder-reranker,spec-similarity-gate --test features_runner -- --tags '@gate-combination'
         run_gate cargo test --features spec-retrieval,spec-similarity-gate --test features_runner -- --tags '@gate-only'
         run_bge_disabled cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge-disabled'
-        run_nli_change_if_present run_nli_change cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and not @nli-disabled and not @e2e'
-        run_nli_change_if_present run_nli_combined_change cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and not @e2e'
-        run_nli_change_if_present run_nli_disabled_change cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli-disabled and not @e2e'
+        run_nli cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and not @nli-disabled and not @e2e'
+        run_nli_combined cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and not @e2e'
+        run_nli_disabled cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli-disabled and not @e2e'
         ;;
     "")
         run_e5 cargo test --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli'
@@ -62,9 +82,9 @@ case "${1:-}" in
         run_bge_gate cargo test --features spec-retrieval,cross-encoder-reranker,spec-similarity-gate --test features_runner -- --tags '@gate-combination'
         run_gate cargo test --features spec-retrieval,spec-similarity-gate --test features_runner -- --tags '@gate-only'
         run_bge_disabled cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge-disabled'
-        run_nli_change_if_present run_nli_change cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and not @nli-disabled and not @e2e'
-        run_nli_change_if_present run_nli_combined_change cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and not @e2e'
-        run_nli_change_if_present run_nli_disabled_change cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli-disabled and not @e2e'
+        run_nli cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and not @nli-disabled and not @e2e'
+        run_nli_combined cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and not @e2e'
+        run_nli_disabled cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli-disabled and not @e2e'
         ;;
     *)
         printf 'usage: %s [--e2e|--non-e2e]\n' "$0" >&2
