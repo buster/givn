@@ -185,28 +185,92 @@ fn e2e_nli_change_has_both_scopes(world: &mut GivnWorld) {
 }
 
 #[given("an end-to-end project with an active semantic review candidate for NLI evidence")]
-fn e2e_nli_advisory_project(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_advisory_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove E2E NLI advisory specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create E2E NLI advisory specs");
+    fs::write(
+        env.path("givn/specs/provider.feature"),
+        "Feature: provider\n\n  Scenario: Provider request is accepted\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n\n  Scenario: Audit storage quota is enforced\n    Given an isolated archive ledger\n    When the ledger reaches capacity\n    Then the retention policy rejects the write\n",
+    )
+    .expect("write E2E NLI advisory candidates");
+    fs::create_dir_all(env.path("givn/changes/running-change/specs"))
+        .expect("create E2E NLI advisory change");
+    fs::write(
+        env.path("givn/changes/running-change/specs/running.feature"),
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Active provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write E2E NLI advisory delta");
+    world.env = Some(env);
+}
+
+#[given("NLI evidence filters the unrelated candidate")]
+fn e2e_nli_advisory_filter(world: &mut GivnWorld) {
+    assert!(world.env.is_some(), "advisory project must exist");
 }
 
 #[when("the end-to-end user runs advisory NLI review through the givn CLI")]
-fn e2e_nli_advisory_review(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_advisory_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E NLI advisory project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+        ],
+    ));
 }
 
 #[then("stdout reports the NLI model and elapsed runtime")]
-fn e2e_nli_advisory_runtime(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_advisory_runtime(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.contains("nli: model MoritzLaurer"),
+        "stdout: {output}"
+    );
+    assert!(output.contains("runtime"), "stdout: {output}");
+}
+
+#[then("stdout reports fewer NLI recommendations than E5 candidates")]
+fn e2e_nli_advisory_reduced(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let line = output
+        .lines()
+        .find(|line| line.contains("NLI candidate accounting:"))
+        .expect("NLI advisory accounting");
+    let raw = line
+        .split("raw ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("NLI raw count");
+    let recommended = line
+        .split("recommended ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("NLI recommended count");
+    assert!(raw > recommended, "expected reduction: {output}");
 }
 
 #[then("stdout records the filtered candidate as NLI evidence")]
-fn e2e_nli_advisory_filtered(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_advisory_filtered(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("NLI_FILTERED"),
+        "stdout: {}",
+        super::stdout(world)
+    );
 }
 
 #[then("stdout assigns no automatic Givn classification")]
-fn e2e_nli_advisory_no_classification(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_advisory_no_classification(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("no Givn classification is assigned"),
+        "stdout: {}",
+        super::stdout(world)
+    );
 }
 
 #[given("an end-to-end project whose active semantic candidates are all filtered by NLI evidence")]
