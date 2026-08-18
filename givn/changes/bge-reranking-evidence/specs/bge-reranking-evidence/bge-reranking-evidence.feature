@@ -114,7 +114,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the reported raw score is their documented symmetric average
     And reversing endpoint order does not change the reported raw score
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Deterministic exclusions happen before second-stage scoring
     Given a permanent corpus containing exact, structural, and semantic relationships
     And the local second-stage evidence is enabled
