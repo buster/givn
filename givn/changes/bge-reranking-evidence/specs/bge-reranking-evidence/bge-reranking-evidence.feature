@@ -391,7 +391,7 @@ Feature: BGE reranking evidence for bounded semantic search
     Then the JSON schema version is exactly 1
     And the JSON contains no BGE run, filtered, or unscored collections
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: E5-only blocking review preserves the semantic report contract
     Given a project with an unresolved blocking semantic candidate
     And second-stage evidence is disabled
