@@ -44,7 +44,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout says that the evidence is advisory
     And stdout contains no automatic Givn classification
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Blocking change review records second-stage evidence in the semantic report
     Given an end-to-end project with an unresolved blocking semantic candidate
     And the local second-stage evidence is enabled
