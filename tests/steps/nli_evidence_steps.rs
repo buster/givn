@@ -340,3 +340,69 @@ fn nli_duplicate_reports_unscored(world: &mut GivnWorld) {
         "stdout: {output}"
     );
 }
+
+#[given(
+    "a permanent corpus with 513 E5 semantic candidates and a successful bounded NLI pool of 512 pairs"
+)]
+fn nli_partial_duplicate_project(world: &mut GivnWorld) {
+    // The deterministic pool seam supplies the 513 raw / 512 scored counts.
+    // The permanent fixture itself only needs one eligible semantic pair.
+    nli_overflow_duplicate_project(world);
+}
+
+#[when("the user runs the permanent NLI duplicate audit with JSON output")]
+fn run_nli_duplicate_audit_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI partial duplicate project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            ("GIVN_SPEC_NLI_TEST_POOL", "partial-raw-513"),
+            (
+                "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+                "givn/specs/semantic.feature|Token is required::givn/specs/semantic.feature|Authentication needs a token=0.9600",
+            ),
+        ],
+    ));
+}
+
+#[then("the JSON reports NLI as enabled with 512 unique pairs and 1024 directional calls")]
+fn nli_json_reports_partial_counts(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid NLI JSON");
+    assert_eq!(
+        document["nli_run"]["status"],
+        serde_json::json!("NLI_ENABLED")
+    );
+    assert_eq!(document["nli_run"]["unique_pairs"], serde_json::json!(512));
+    assert_eq!(
+        document["nli_run"]["directional_calls"],
+        serde_json::json!(1024)
+    );
+}
+
+#[then("the JSON contains NLI unscored candidates with null NLI probabilities")]
+fn nli_json_reports_unscored_probabilities(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid NLI JSON");
+    let unscored = document["nli_unscored_candidates"]
+        .as_array()
+        .expect("NLI unscored collection");
+    assert!(!unscored.is_empty());
+    assert!(unscored[0]["evidence"]["nli"].is_null());
+}
+
+#[then("the NLI unscored candidates remain outside the NLI filtered collection")]
+fn nli_json_unscored_not_filtered(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid NLI JSON");
+    assert!(
+        document["nli_filtered_candidates"]
+            .as_array()
+            .expect("NLI filtered collection")
+            .is_empty()
+    );
+}

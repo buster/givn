@@ -1170,6 +1170,13 @@ fn apply_duplicate_nli(
     };
     run.e5_candidates = raw_count;
     run.unscored = raw_count.saturating_sub(bounded_count);
+    if run.unscored > 0 {
+        if let Some(template) = semantic.first() {
+            let mut candidate = template.clone();
+            candidate.nli_admission = Some("NLI_UNSCORED");
+            audit.nli_unscored_candidates.push(candidate);
+        }
+    }
     for candidate in &mut audit.candidates {
         if candidate.kind == "semantic_candidate" {
             candidate.nli_admission = Some(if run.unscored > 0 {
