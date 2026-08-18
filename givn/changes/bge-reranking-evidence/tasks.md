@@ -178,10 +178,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run initially showed BGE participation because approval failure was not propagated through the advisory fixture.
 - [x] GREEN: enforced failed-approval E5-only dispatch and added no-filtered-output assertions; targeted run passed 7/7 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Failed benchmark approval keeps advisory review on E5-only evidence`
+- [x] COMMIT: `abff45f` — `feat(bge-reranking-evidence): Failed benchmark approval keeps advisory review on E5-only evidence`
 
 ### Failed benchmark approval keeps permanent exploration on E5-only evidence
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run failed on the missing E5-only approval path.
+- [x] GREEN: preserved Explore's E5-only output when approval fails; targeted run passed 7/7 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Failed benchmark approval keeps permanent exploration on E5-only evidence`
 
 ### Failed benchmark approval keeps change-aware exploration on E5-only evidence
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
