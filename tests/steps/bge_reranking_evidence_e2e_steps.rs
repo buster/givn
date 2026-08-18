@@ -77,6 +77,22 @@ fn e2e_explore_change_draft(world: &mut GivnWorld) {
     ));
 }
 
+#[when(
+    "the end-to-end user runs advisory change review for \"running-change\" through the givn CLI"
+)]
+fn e2e_run_advisory_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E advisory project");
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "stub")];
+    if let Some(scores) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
+    }
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
+
 #[then("stdout identifies the E5 candidate generator")]
 fn e2e_stdout_identifies_e5(world: &mut GivnWorld) {
     assert!(super::stdout(world).contains("BGE candidate generator: E5"));
@@ -140,4 +156,45 @@ fn e2e_change_excludes_query_identity(world: &mut GivnWorld) {
             .filter(|line| line.starts_with("rank "))
             .any(|line| line.contains("Current provider request"))
     );
+}
+
+#[then("stdout identifies the second-stage model, score, and elapsed runtime")]
+fn e2e_advisory_reports_bge_evidence(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE: model"), "stdout: {output}");
+    assert!(output.contains("symmetric"), "stdout: {output}");
+    assert!(output.contains("runtime ms"), "stdout: {output}");
+}
+
+#[then("stdout reports fewer recommended candidates than E5 candidates")]
+fn e2e_advisory_reduces_recommendations(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let raw = output
+        .lines()
+        .find(|line| line.starts_with("BGE: model"))
+        .and_then(|line| line.split("E5 raw ").nth(1))
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("E5 raw count");
+    let recommended = output
+        .lines()
+        .find(|line| line.starts_with("BGE candidate accounting"))
+        .and_then(|line| line.split("recommended ").nth(1))
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("recommended count");
+    assert!(raw > recommended, "stdout: {output}");
+}
+
+#[then("stdout says that the evidence is advisory")]
+fn e2e_advisory_is_advisory(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("evidence is advisory"));
+}
+
+#[then("stdout contains no automatic Givn classification")]
+fn e2e_advisory_has_no_classification(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    for classification in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY", "UNCERTAIN"] {
+        assert!(!output.contains(classification), "stdout: {output}");
+    }
 }
