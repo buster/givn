@@ -1780,8 +1780,8 @@ fn repeated_bge_runtime_is_non_negative(world: &mut GivnWorld) {
         .previous_output
         .as_ref()
         .expect("first repeated exploration output");
-    assert!(reported_bge_runtime(first) <= u128::MAX);
-    assert!(reported_bge_runtime(super::output(world)) <= u128::MAX);
+    let _ = reported_bge_runtime(first);
+    let _ = reported_bge_runtime(super::output(world));
 }
 
 #[then("the runtime does not affect candidate ordering")]
