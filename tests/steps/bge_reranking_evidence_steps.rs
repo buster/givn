@@ -182,6 +182,13 @@ fn rust_production_parity_attestation(world: &mut GivnWorld) {
     write_rust_parity(world);
 }
 
+#[given("a local BGE artifact set missing `special_tokens_map.json`")]
+fn incomplete_approval_artifact_set(world: &mut GivnWorld) {
+    let env = approval_env(world);
+    fs::remove_file(env.path(&format!("{APPROVAL_MODEL}/special_tokens_map.json")))
+        .expect("remove incomplete approval artifact");
+}
+
 #[given("a complete local BGE artifact set with matching hashes")]
 fn complete_approval_artifact_set(world: &mut GivnWorld) {
     let env = approval_env(world);
@@ -217,6 +224,15 @@ fn approval_command_exits_non_zero(world: &mut GivnWorld) {
 fn approval_requires_rust_parity(world: &mut GivnWorld) {
     assert!(
         super::stderr(world).contains("Rust parity is required"),
+        "stderr: {}",
+        super::stderr(world)
+    );
+}
+
+#[then("stderr identifies the missing `special_tokens_map.json` artifact")]
+fn approval_identifies_missing_artifact(world: &mut GivnWorld) {
+    assert!(
+        super::stderr(world).contains("special_tokens_map.json"),
         "stderr: {}",
         super::stderr(world)
     );
