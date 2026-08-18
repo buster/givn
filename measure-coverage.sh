@@ -8,10 +8,16 @@ has_bge_specs=false
 if grep -R -q '@bge' "$features_path"; then
     has_bge_specs=true
 fi
+has_nli_change=false
+if grep -R -q '@nli-evidence' "$features_path"; then
+    has_nli_change=true
+fi
 if [ -n "${GIVN_CARGO_FEATURES:-}" ]; then
     cargo_features=$GIVN_CARGO_FEATURES
-elif [ "$has_bge_specs" = true ]; then
+elif [ "$has_nli_change" = true ]; then
     cargo_features=spec-retrieval,cross-encoder-reranker,nli-evidence
+elif [ "$has_bge_specs" = true ]; then
+    cargo_features=spec-retrieval,cross-encoder-reranker
 else
     cargo_features=spec-retrieval
 fi
@@ -19,6 +25,8 @@ if [ -n "${GIVN_COVERAGE_NON_E2E_TAGS:-}" ]; then
     non_e2e_tags=$GIVN_COVERAGE_NON_E2E_TAGS
 elif [ "$has_bge_specs" = true ]; then
     non_e2e_tags='not @e2e and not @gate-combination and not @gate-only'
+elif [ "$has_nli_change" = true ]; then
+    non_e2e_tags='@nli and not @e2e'
 else
     non_e2e_tags='not @e2e'
 fi
