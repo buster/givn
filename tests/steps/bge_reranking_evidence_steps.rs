@@ -28,6 +28,11 @@ fn bge_enabled_without_nli(world: &mut GivnWorld) {
     world.retrieval_reranker = None;
 }
 
+#[given("the local second-stage model artifacts are unavailable")]
+fn bge_artifacts_missing(world: &mut GivnWorld) {
+    world.retrieval_reranker = Some("missing".to_string());
+}
+
 #[given("the legacy NLI selector is set without enabling the independent capability")]
 fn legacy_nli_selector_without_capability(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("nli-stub".to_string());
@@ -86,14 +91,19 @@ fn explore_enabled_for_parity(world: &mut GivnWorld) {
 #[when("the user explores the draft with second-stage evidence enabled")]
 fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
+    let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
+        "missing"
+    } else {
+        "stub"
+    };
+    let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
+    if world.retrieval_reranker.as_deref() == Some("nli-stub") {
+        environments.push(("GIVN_SPEC_RERANKER", "nli-stub"));
+    }
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "explore", "--file", "draft.feature"],
-        &[
-            ("GIVN_SPEC_EMBEDDER", "stub"),
-            ("GIVN_SPEC_BGE", "stub"),
-            ("GIVN_SPEC_RERANKER", "nli-stub"),
-        ],
+        &environments,
     ));
 }
 
@@ -664,6 +674,26 @@ fn gate_only_reports_e5(world: &mut GivnWorld) {
 fn gate_only_has_no_bge(world: &mut GivnWorld) {
     let output = super::stdout(world).to_ascii_lowercase();
     assert!(!output.contains("bge"));
+}
+
+#[then("stdout reports BGE unavailable reason \"missing-artifact\"")]
+fn missing_bge_reports_reason(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("reason missing-artifact"));
+}
+
+#[then("stdout reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts")]
+fn missing_bge_reports_zero_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("unique pairs 0"));
+    assert!(output.contains("directional calls 0"));
+    assert!(output.contains("recommended 0"));
+    assert!(output.contains("filtered 0"));
+    assert!(output.contains("model load attempts 0"));
+}
+
+#[then("stdout does not claim that the second-stage model participated")]
+fn missing_bge_has_no_model_claim(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
 }
 
 #[given("a modified active scenario shares its projected target file with another permanent scenario")]

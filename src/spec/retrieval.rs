@@ -2644,7 +2644,7 @@ fn print_explore_text(
         );
         println!(
             "BGE model: {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
-            RERANKER_MODEL_ID,
+            if run.status == "BGE_ENABLED" { RERANKER_MODEL_ID } else { "null" },
             run.evidence.len(),
             run.evidence.len() * 2,
             run.model_load_attempts,
