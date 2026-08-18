@@ -50,6 +50,8 @@ const NLI_REPORT_LIMIT: usize = 20;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
+const SEMANTIC_BGE_REPORT_SCHEMA_VERSION: u32 = 2;
+#[cfg(feature = "spec-retrieval")]
 const SEMANTIC_FINGERPRINT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_EVIDENCE_SCHEMA_VERSION: u32 = 1;
@@ -209,6 +211,8 @@ struct SemanticCandidate {
     candidate_id: String,
     classification: String,
     rationale: Option<String>,
+    bge: Option<BgePairEvidence>,
+    bge_admission: Option<&'static str>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1014,11 +1018,20 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
     let mut candidates = semantic_candidates(root, &refresh.index, &delta)?;
+    #[cfg(feature = "cross-encoder-reranker")]
+    let bge_run = apply_semantic_bge(root, &delta, &mut candidates)?;
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    let bge_run: Option<BgeRun> = None;
     let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
     let remediation =
         verify_semantic_remediation(root, &refresh.index, &delta, &prior, &candidates);
-    let report = render_semantic_report(change_id, &candidates, remediation.is_err());
+    let report = render_semantic_report(
+        change_id,
+        &candidates,
+        remediation.is_err(),
+        bge_run.as_ref(),
+    );
     write_semantic_report(&report_path, &report)?;
     let verified_remediations = match remediation {
         Ok(count) => count,
@@ -1033,7 +1046,8 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let unresolved = candidates
         .iter()
         .filter(|candidate| {
-            candidate.classification == "UNCERTAIN" || candidate.rationale.is_none()
+            candidate.bge_admission != Some("BGE_FILTERED")
+                && (candidate.classification == "UNCERTAIN" || candidate.rationale.is_none())
         })
         .count();
     if unresolved == 0 {
@@ -1137,6 +1151,82 @@ fn semantic_candidates(
             .then_with(|| left.candidate_id.cmp(&right.candidate_id))
     });
     Ok(result)
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn apply_semantic_bge(
+    root: &Path,
+    delta: &[DeltaScenario],
+    candidates: &mut [SemanticCandidate],
+) -> Result<Option<BgeRun>> {
+    if candidates.is_empty() {
+        return Ok(None);
+    }
+    let Some(backend) = bge_backend(root)? else {
+        return Ok(None);
+    };
+    let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
+        .into_iter()
+        .map(|scenario| ((scenario.file, scenario.title), scenario.text))
+        .collect();
+    let delta_texts: BTreeMap<(String, String), String> = delta
+        .iter()
+        .map(|item| {
+            (
+                (item.scenario.file.clone(), item.scenario.title.clone()),
+                item.scenario.text.clone(),
+            )
+        })
+        .collect();
+    let mut texts = permanent_texts;
+    texts.extend(delta_texts);
+    if candidates.len() > BGE_MAX_PAIRS {
+        let count = candidates.len();
+        for candidate in candidates {
+            candidate.bge_admission = Some("BGE_UNSCORED");
+        }
+        return Ok(Some(BgeRun::unavailable(
+            BgeUnavailableReason::PairCap,
+            count,
+        )));
+    }
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+        .iter()
+        .map(|candidate| {
+            (
+                endpoint(&candidate.left.file, &candidate.left.title),
+                endpoint(&candidate.right.file, &candidate.right.title),
+            )
+        })
+        .collect();
+    let mut run = match backend {
+        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+        Err(reason) => BgeRun::unavailable(reason, candidates.len()),
+    };
+    run.e5_candidates = candidates.len();
+    if run.status == "BGE_UNAVAILABLE" {
+        for candidate in candidates {
+            candidate.bge_admission = Some("BGE_UNSCORED");
+        }
+        return Ok(Some(run));
+    }
+    for candidate in candidates {
+        let key = canonical_pair_key(
+            endpoint(&candidate.left.file, &candidate.left.title),
+            endpoint(&candidate.right.file, &candidate.right.title),
+        );
+        if let Some(evidence) = run.evidence.get(&key).cloned() {
+            candidate.bge_admission = Some(if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+                "BGE_RECOMMENDED"
+            } else {
+                "BGE_FILTERED"
+            });
+            candidate.bge = Some(evidence);
+        } else {
+            candidate.bge_admission = Some("BGE_UNSCORED");
+        }
+    }
+    Ok(Some(run))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1313,6 +1403,8 @@ fn semantic_candidate(
         candidate_id,
         classification: "UNCERTAIN".to_string(),
         rationale: None,
+        bge: None,
+        bge_admission: None,
     }
 }
 
@@ -1616,9 +1708,15 @@ fn render_semantic_report(
     change_id: &str,
     candidates: &[SemanticCandidate],
     remediation_blocked: bool,
+    bge_run: Option<&BgeRun>,
 ) -> String {
+    let blocking = candidates
+        .iter()
+        .filter(|candidate| candidate.bge_admission != Some("BGE_FILTERED"))
+        .collect::<Vec<_>>();
     let status = if candidates
         .iter()
+        .filter(|candidate| candidate.bge_admission != Some("BGE_FILTERED"))
         .all(|candidate| candidate.classification != "UNCERTAIN" && candidate.rationale.is_some())
         && !remediation_blocked
     {
@@ -1627,9 +1725,85 @@ fn render_semantic_report(
         "BLOCKED"
     };
     let mut report = format!(
-        "# Semantic Review\nReport schema version: {SEMANTIC_REPORT_SCHEMA_VERSION}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
-        candidates.len()
+        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
+        if bge_run.is_some() { SEMANTIC_BGE_REPORT_SCHEMA_VERSION } else { SEMANTIC_REPORT_SCHEMA_VERSION },
+        blocking.len()
     );
+    if let Some(run) = bge_run {
+        let recommended = candidates
+            .iter()
+            .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
+            .count();
+        let filtered = candidates
+            .iter()
+            .filter(|candidate| candidate.bge_admission == Some("BGE_FILTERED"))
+            .count();
+        report.push_str(&format!(
+            "BGE status: {}\nBGE reason: {}\nBGE model: {}\nBGE top_k: {}\nBGE E5 raw count: {}\nBGE recommended count: {}\nBGE filtered count: {}\nBGE unscored count: {}\nBGE unique pair count: {}\nBGE directional call count: {}\nBGE model load attempts: {}\nBGE runtime ms: {}\n",
+            run.status,
+            run.reason.map(BgeUnavailableReason::as_str).unwrap_or("null"),
+            if run.status == "BGE_ENABLED" { RERANKER_MODEL_ID } else { "null" },
+            RERANKER_TOP_K,
+            run.e5_candidates,
+            recommended,
+            filtered,
+            run.unscored,
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            run.model_load_attempts,
+            run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
+        ));
+        let mut index = 0;
+        for candidate in candidates {
+            if candidate.bge_admission == Some("BGE_FILTERED") {
+                report.push_str(&format!(
+                    "\n## BGE Filtered Candidate\n- candidate_id: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- right_file: \"{}\"\n- right_title: \"{}\"\n- embedding_score: {:.4}\n- bge_forward_raw: {}\n- bge_reverse_raw: {}\n- bge_symmetric_raw: {}\n- bge_admission: BGE_FILTERED\n",
+                    candidate.candidate_id,
+                    candidate.left.file,
+                    candidate.left.title,
+                    candidate.right.file,
+                    candidate.right.title,
+                    candidate.score,
+                    candidate.bge.as_ref().map(|e| format!("{:.4}", e.forward_raw)).unwrap_or_else(|| "null".to_string()),
+                    candidate.bge.as_ref().map(|e| format!("{:.4}", e.reverse_raw)).unwrap_or_else(|| "null".to_string()),
+                    candidate.bge.as_ref().map(|e| format!("{:.4}", e.symmetric_raw)).unwrap_or_else(|| "null".to_string()),
+                ));
+                continue;
+            }
+            index += 1;
+            report.push_str(&format!(
+                "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: {}\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n- bge_forward_raw: {}\n- bge_reverse_raw: {}\n- bge_symmetric_raw: {}\n- bge_admission: {}\n",
+                index,
+                candidate.candidate_id,
+                candidate.classification,
+                candidate.rationale.as_deref().map(|value| format!("\"{}\"", value.replace('"', "\\\""))).unwrap_or_else(|| "null".to_string()),
+                candidate.scope,
+                candidate.left.scope,
+                candidate.left.file,
+                candidate.left.title,
+                candidate.left.operation,
+                json_encoded(&candidate.left.projected_target),
+                candidate.left.evidence_json,
+                candidate.left.content_hash,
+                candidate.left.evidence_hash,
+                candidate.right.scope,
+                candidate.right.file,
+                candidate.right.title,
+                candidate.right.operation,
+                json_encoded(&candidate.right.projected_target),
+                candidate.right.evidence_json,
+                candidate.right.content_hash,
+                candidate.right.evidence_hash,
+                candidate.score,
+                candidate.left.facts.facts.contradicts(&candidate.right.facts.facts),
+                candidate.bge.as_ref().map(|e| format!("{:.4}", e.forward_raw)).unwrap_or_else(|| "null".to_string()),
+                candidate.bge.as_ref().map(|e| format!("{:.4}", e.reverse_raw)).unwrap_or_else(|| "null".to_string()),
+                candidate.bge.as_ref().map(|e| format!("{:.4}", e.symmetric_raw)).unwrap_or_else(|| "null".to_string()),
+                candidate.bge_admission.unwrap_or("BGE_UNSCORED"),
+            ));
+        }
+        return report;
+    }
     for (index, candidate) in candidates.iter().enumerate() {
         report.push_str(&format!(
             "\n## Candidate {}\n- candidate_id: {}\n- classification: {}\n- rationale: {}\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",

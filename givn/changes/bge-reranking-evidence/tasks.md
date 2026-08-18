@@ -55,10 +55,13 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined two-candidate fixture step.
 - [x] GREEN: added the active-change advisory fixture and BGE advisory renderer with filtered/recommended non-classifying evidence; targeted run passed 7/7 steps.
 - [x] REFACTOR: reran the same targeted command; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A low-relevance E5 false positive is filtered without receiving a Givn classification`
+- [x] COMMIT: `55d16be` — `feat(bge-reranking-evidence): A low-relevance E5 false positive is filtered without receiving a Givn classification`
 
 ### Filtered evidence does not block the blocking change review
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; targeted run initially failed at the unresolved review-disposition fixture.
+- [x] GREEN: added the blocking review fixture, BGE semantic-report admission fields, non-blocking filtered blocks, and PASS accounting; targeted run passed 6/6 steps.
+- [x] REFACTOR: reran the same targeted command; 1 scenario and 6 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): Filtered evidence does not block the blocking change review`
 
 ### The exact bounded pair limit refuses inference before model loading
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
