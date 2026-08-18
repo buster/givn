@@ -325,7 +325,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And the semantic review report has BGE reason "pair-cap"
     And the semantic report retains the E5 candidate block without `BGE_FILTERED`
 
-  @givn.added @bge @wip
+  @givn.added @bge
   Scenario: Unavailable BGE change exploration retains the E5 raw fallback
     Given a project with permanent and active-change semantic candidates
     And the local second-stage model artifacts are unavailable

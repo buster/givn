@@ -65,6 +65,11 @@ fn complete_permanent_draft(world: &mut GivnWorld) {
     .expect("write complete draft scenario");
 }
 
+#[given("a complete draft scenario is available for change-aware exploration")]
+fn complete_change_aware_draft(world: &mut GivnWorld) {
+    complete_permanent_draft(world);
+}
+
 #[when("the user explores the draft through the givn CLI")]
 fn explore_permanent_draft(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("BGE project is required");
@@ -486,6 +491,49 @@ fn unavailable_blocking_project(world: &mut GivnWorld) {
     world.retrieval_reranker = Some("missing".to_string());
 }
 
+#[given("a project with permanent and active-change semantic candidates")]
+fn unavailable_change_explore_project(world: &mut GivnWorld) {
+    advisory_bge_project(world);
+    let env = world.env.as_ref().expect("change exploration project");
+    let current = env.path("givn/changes/current-change/specs/current.feature");
+    fs::create_dir_all(current.parent().unwrap()).expect("create current change");
+    fs::write(
+        &current,
+        "@givn.delta @current-change\nFeature: current\n\n  @givn.added\n  Scenario: Current provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write current-change fixture");
+    world.retrieval_reranker = Some("missing".to_string());
+}
+
+#[when("the user explores the draft against change \"current-change\" with second-stage evidence enabled")]
+fn run_unavailable_change_exploration(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("change exploration project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--change",
+            "current-change",
+            "--file",
+            "draft.feature",
+        ],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "missing")],
+    ));
+}
+
+#[then("stdout reports BGE status \"BGE_UNAVAILABLE\"")]
+fn unavailable_change_reports_status(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE status: BGE_UNAVAILABLE"));
+}
+
+#[then("stdout retains the permanent and current-change E5 raw candidates")]
+fn unavailable_change_retains_candidates(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("scope permanent"));
+    assert!(output.contains("scope current-change"));
+}
+
 #[given("an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool")]
 fn pair_cap_blocking_project(world: &mut GivnWorld) {
     filtered_blocking_project(world);
@@ -807,11 +855,6 @@ fn missing_bge_reports_zero_counts(world: &mut GivnWorld) {
 #[then("stdout does not claim that the second-stage model participated")]
 fn missing_bge_has_no_model_claim(world: &mut GivnWorld) {
     assert!(!super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
-}
-
-#[then("stdout reports BGE status \"BGE_UNAVAILABLE\"")]
-fn corrupt_bge_reports_status(world: &mut GivnWorld) {
-    assert!(super::stdout(world).contains("BGE_UNAVAILABLE"));
 }
 
 #[then("stdout reports reason \"missing-artifact\"")]
