@@ -146,11 +146,17 @@ fn run_directional_duplicate_audit(world: &mut GivnWorld) {
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));
     }
-    world.last_output = Some(common::run_givn_with_envs(
-        env,
-        &["spec", "duplicates", "--format", "json"],
-        &environments,
-    ));
+    if let Some(pool) = world.retrieval_bge_test_pool.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TEST_POOL", pool));
+    }
+    let json = world.retrieval_bge_test_pool.as_deref() != Some("overflow-513")
+        && world.retrieval_bge_test_pool.as_deref() != Some("bounded-512");
+    let args = if json {
+        vec!["spec", "duplicates", "--format", "json"]
+    } else {
+        vec!["spec", "duplicates"]
+    };
+    world.last_output = Some(common::run_givn_with_envs(env, &args, &environments));
 }
 
 #[then("the audit reports both directional scores")]
@@ -396,6 +402,54 @@ fn semantic_report_status_pass(world: &mut GivnWorld) {
     let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
         .expect("read semantic report");
     assert!(report.contains("Status: PASS"));
+}
+
+#[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]
+fn overflow_pool_project(world: &mut GivnWorld) {
+    directional_bge_project(world);
+    world.retrieval_bge_test_pool = Some("overflow-513".to_string());
+}
+
+#[then("the command reports the bounded-pool overflow and the unavailable BGE status")]
+fn overflow_reports_unavailable(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs"));
+    assert!(output.contains("BGE status: BGE_UNAVAILABLE"));
+}
+
+#[then("the output reports BGE unavailable reason \"pair-cap\"")]
+fn overflow_reports_pair_cap(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("reason pair-cap"));
+}
+
+#[then("the output reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts")]
+fn overflow_reports_zero_counts(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("BGE unique pair count: 0"));
+    assert!(output.contains("BGE directional call count: 0"));
+    assert!(output.contains("BGE recommended count: 0"));
+    assert!(output.contains("BGE filtered count: 0"));
+    assert!(output.contains("BGE model load attempts: 0"));
+}
+
+#[then("the output reports all E5 raw pairs as unscored")]
+fn overflow_reports_all_unscored(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE unscored count: 513"));
+}
+
+#[then("the output identifies the E5-only unavailable fallback")]
+fn overflow_reports_e5_fallback(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE fallback: E5-only unavailable fallback"));
+}
+
+#[then("the output reports zero BGE model load attempts")]
+fn overflow_reports_no_model_load(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("BGE model load attempts: 0"));
+}
+
+#[then("no output claims that BGE participated")]
+fn overflow_has_no_participation_claim(world: &mut GivnWorld) {
+    assert!(!super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
 }
 
 #[then("both runs report the same E5 raw candidate identities in the same order")]
