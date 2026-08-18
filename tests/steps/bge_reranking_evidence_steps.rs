@@ -38,6 +38,16 @@ fn explore_permanent_draft(world: &mut GivnWorld) {
     ));
 }
 
+#[when("the user explores the draft with JSON output")]
+fn explore_permanent_draft_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("BGE project is required");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature", "--format", "json"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", "disabled")],
+    ));
+}
+
 #[then("the result set contains the E5 candidates")]
 fn result_set_contains_e5_candidates(world: &mut GivnWorld) {
     assert!(
@@ -60,4 +70,21 @@ fn stdout_identifies_e5_only(world: &mut GivnWorld) {
 fn stdout_has_no_bge_participation(world: &mut GivnWorld) {
     let output = super::stdout(world).to_ascii_lowercase();
     assert!(!output.contains("bge"), "stdout unexpectedly contains BGE evidence: {output}");
+}
+
+#[then("the JSON retains the existing E5 query, index, and result contract")]
+fn json_retains_e5_contract(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid explore JSON");
+    assert!(document.get("query").is_some());
+    assert!(document.get("index").is_some());
+    assert!(document.get("results").is_some());
+}
+
+#[then("the JSON contains no BGE evidence object or participating model")]
+fn json_has_no_bge_evidence(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid explore JSON");
+    assert!(document.get("evidence").is_none());
+    assert!(!super::stdout(world).to_ascii_lowercase().contains("bge"));
 }

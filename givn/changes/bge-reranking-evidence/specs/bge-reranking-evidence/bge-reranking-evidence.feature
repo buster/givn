@@ -87,7 +87,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And stdout identifies the E5-only configuration
     And stdout contains no participating second-stage model, score, or runtime
 
-  @givn.added @bge-disabled @wip
+  @givn.added @bge-disabled
   Scenario: E5-only JSON omits opt-in BGE evidence fields
     Given a project with a permanent semantic candidate for second-stage evidence
     And the local second-stage evidence is disabled
