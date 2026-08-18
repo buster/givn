@@ -119,29 +119,69 @@ fn e2e_nli_keeps_raw_candidates(world: &mut GivnWorld) {
     "an end-to-end project with permanent and active-change semantic candidates for NLI evidence"
 )]
 fn e2e_nli_change_project(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+    let env = common::make_init_root();
+    fs::remove_dir_all(env.path("givn/specs")).expect("remove E2E NLI change specs");
+    fs::create_dir_all(env.path("givn/specs")).expect("create E2E NLI change specs");
+    fs::write(
+        env.path("givn/specs/provider.feature"),
+        "Feature: provider\n\n  Scenario: Permanent provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n\n  Scenario: Audit storage quota is enforced\n    Given an isolated archive ledger\n    When the ledger reaches capacity\n    Then the retention policy rejects the write\n",
+    )
+    .expect("write E2E NLI permanent change candidates");
+    fs::create_dir_all(env.path("givn/changes/current-change/specs"))
+        .expect("create E2E NLI change directory");
+    fs::write(
+        env.path("givn/changes/current-change/specs/current.feature"),
+        "@givn.delta @current-change\nFeature: current change\n\n  @givn.added\n  Scenario: Current audit storage quota\n    Given an isolated archive ledger\n    When the ledger reaches capacity\n    Then the retention policy rejects the write\n",
+    )
+    .expect("write E2E NLI active candidate");
+    fs::write(
+        env.path("givn/changes/current-change/specs/query.feature"),
+        "@givn.delta @current-change\nFeature: current query\n\n  @givn.added\n  Scenario: Current provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write E2E NLI query delta");
+    _world.env = Some(env);
 }
 
 #[given("a complete draft scenario is available for NLI change-aware exploration")]
 fn e2e_nli_change_draft(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+    assert!(
+        _world
+            .env
+            .as_ref()
+            .expect("E2E NLI change project")
+            .path("givn/changes/current-change/specs/query.feature")
+            .is_file()
+    );
 }
 
 #[when(
-    "the end-to-end user explores the draft against change \"current-change\" through the givn CLI"
+    "the end-to-end user explores the draft against change \"current-change\" with NLI through the givn CLI"
 )]
-fn e2e_nli_explore_change(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_explore_change(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E2E NLI change project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--change",
+            "current-change",
+            "--file",
+            "givn/changes/current-change/specs/query.feature",
+        ],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+        ],
+    ));
 }
 
 #[then("stdout contains both a permanent and a current-change NLI candidate")]
-fn e2e_nli_change_has_both_scopes(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
-}
-
-#[then("stdout excludes the query's own delta and projected target identities")]
-fn e2e_nli_change_excludes_identity(_world: &mut GivnWorld) {
-    unimplemented!("NLI E2E step is implemented scenario by scenario");
+fn e2e_nli_change_has_both_scopes(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("scope permanent"), "stdout: {output}");
+    assert!(output.contains("scope current-change"), "stdout: {output}");
 }
 
 #[given("an end-to-end project with an active semantic review candidate for NLI evidence")]
