@@ -94,7 +94,7 @@ targeted runner command is the design command with `--name <scenario title>`.
   7 steps (7 passed)
   ```
 - [x] REFACTOR: reran the same explicit NLI matrix command unchanged; 1 scenario and 7 steps passed.
-- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
+- [x] COMMIT: `57592dd` — `feat(bge-reranking-evidence): The independent NLI capability owns the legacy diagnostic selector`
 
 ### BGE JSON preserves raw ordering and names every admission count
 - [x] RED: removed only this scenario's `@wip`; targeted run failed on the undefined BGE JSON invocation.
@@ -235,7 +235,19 @@ targeted runner command is the design command with `--name <scenario title>`.
 - [x] COMMIT: `2a2547b` — `feat(bge-reranking-evidence): A malformed directional evidence seam is rejected before scoring`
 
 ### A complete local BGE artifact loads without a downloader
-- [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
+- [x] RED: removed only this scenario's `@wip`; the targeted BGE run failed on the undefined complete-artifact fixture (non-zero).
+  ```text
+  GIVN_FEATURES=givn/changes/bge-reranking-evidence/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "A complete local BGE artifact loads without a downloader"
+  1 scenario (1 failed step); process exited non-zero.
+  ```
+- [x] GREEN: added a complete local artifact fixture, mandatory offline preflight, and a validated local-artifact test stub that never constructs the downloader-backed model; targeted run passed 7/7 steps.
+  ```text
+  1 feature
+  1 scenario (1 passed)
+  7 steps (7 passed)
+  ```
+- [x] REFACTOR: reran the same targeted command unchanged; 1 scenario and 7 steps passed.
+- [x] COMMIT: `<pending until commit>` — `feat(bge-reranking-evidence): A complete local BGE artifact loads without a downloader`
 
 ### Approval writer requires enforced Rust parity and complete artifacts
 - [ ] RED / GREEN / REFACTOR / COMMIT evidence and hash for this exact scenario.
