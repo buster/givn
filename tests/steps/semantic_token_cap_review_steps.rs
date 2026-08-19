@@ -32,7 +32,7 @@ const FOUR_SCENARIO_CORPUS: &str = r#"Feature: token budget corpus
 
 const FOUR_SCENARIO_SCORE_OVERRIDES: &str = "givn/specs/token-budget/token-budget.feature|Aster semantic candidate::givn/specs/token-budget/token-budget.feature|Beryl semantic candidate=0.9600;givn/specs/token-budget/token-budget.feature|Cobalt semantic candidate::givn/specs/token-budget/token-budget.feature|Dune semantic candidate=0.9600;givn/specs/token-budget/token-budget.feature|Aster semantic candidate::givn/specs/token-budget/token-budget.feature|Cobalt semantic candidate=0.0000;givn/specs/token-budget/token-budget.feature|Aster semantic candidate::givn/specs/token-budget/token-budget.feature|Dune semantic candidate=0.0000;givn/specs/token-budget/token-budget.feature|Beryl semantic candidate::givn/specs/token-budget/token-budget.feature|Cobalt semantic candidate=0.0000;givn/specs/token-budget/token-budget.feature|Beryl semantic candidate::givn/specs/token-budget/token-budget.feature|Dune semantic candidate=0.0000";
 
-fn four_scenario_project(world: &mut GivnWorld) {
+pub(crate) fn four_scenario_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
     let specs = env.path("givn/specs");
     fs::remove_dir_all(&specs).expect("remove generated permanent specs");
