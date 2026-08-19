@@ -1417,13 +1417,18 @@ fn preflight_pair_budgets(
             continue;
         };
         let key = canonical_pair_key(left.clone(), right.clone());
-        if budget.pair_tokens <= budget.limit {
+        if token_budget_fits(budget) {
             partition.fitting.push((left.clone(), right.clone()));
         } else {
             partition.capped.insert(key, budget);
         }
     }
     Ok(partition)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn token_budget_fits(budget: PairTokenBudget) -> bool {
+    budget.pair_tokens <= budget.limit
 }
 
 #[cfg(feature = "spec-retrieval")]
