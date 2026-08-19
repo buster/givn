@@ -55,32 +55,32 @@
 - [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Exactly 512 tokens keeps normal second-stage behavior"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [ ] COMMIT: record the atomic scenario commit.
-  - Commit:
+- [x] COMMIT: record the atomic scenario commit.
+  - Commit: `87baf9f`
 
 ## E2E Setup
 
-- [ ] Configure and prove the strict E2E runner for `@e2e` scenarios; full
+- [x] Configure and prove the strict E2E runner for `@e2e` scenarios; full
       runner count must be greater than the E2E-only count.
-  - Full command/output:
-  - E2E command/output:
-  - Commit:
+  - Full command/output: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --concurrency 1` produced `1 feature`, `4 scenarios (2 passed, 2 failed)`, `23 steps (21 passed, 2 failed)` while the two E2E step files were intentionally still RED stubs.
+  - E2E command/output: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@e2e' --concurrency 1` selected exactly `2 scenarios`, both failed on `unimplemented!()` with a non-zero exit. The E2E command is the strict subset `./run-tests.sh --e2e`, whose combined matrix now includes `@nli-combined and @e2e`; full active count 4 is strictly greater than E2E-only count 2.
+  - Commit: `a783bc3`
 
 ## Scenario: Permanent duplicate audit keeps partial BGE token-cap evidence per candidate
 
-- [ ] RED: remove `@wip`, implement the E2E steps with `unimplemented!()`, and
+- [x] RED: remove `@wip`, implement the E2E steps with `unimplemented!()`, and
       run only this E2E scenario through `./run-tests.sh --e2e`.
-  - Command:
-  - Output:
-- [ ] GREEN: drive the compiled CLI subprocess and assert the duplicate JSON
+  - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit keeps partial BGE token-cap evidence per candidate"`
+  - Output: Non-zero (`cargo test` exit 101): the first E2E step matched `semantic_token_cap_review_e2e_steps.rs:7` and panicked with `not implemented`; the strict runner reported `1 scenario (1 failed)`. The direct command is the scenario-targeted equivalent of the configured `./run-tests.sh --e2e` BGE matrix.
+- [x] GREEN: drive the compiled CLI subprocess and assert the duplicate JSON
       and refactoring guidance through the real interface.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: simplify the E2E steps without changing behavior; rerun only
+  - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit keeps partial BGE token-cap evidence per candidate"`
+  - Output: Zero exit; `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)`. The compiled `givn spec duplicates --format json` subprocess exposed the 513-token candidate in `candidates`, emitted `BGE_TOKEN_CAP` with `257/255/513/512`, kept `BGE_ENABLED`, omitted it from BGE filtered candidates, and emitted refactoring guidance.
+  - Production files: `src/spec/retrieval.rs`; E2E fixture/real-CLI steps in `tests/steps/semantic_token_cap_review_e2e_steps.rs` and shared fixture in `tests/steps/semantic_token_cap_review_steps.rs`.
+- [x] REFACTOR: simplify the E2E steps without changing behavior; rerun only
       this scenario.
-  - Command:
-  - Output:
+  - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit keeps partial BGE token-cap evidence per candidate"`
+  - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)`.
 - [ ] COMMIT: record the atomic E2E scenario commit.
   - Commit:
 

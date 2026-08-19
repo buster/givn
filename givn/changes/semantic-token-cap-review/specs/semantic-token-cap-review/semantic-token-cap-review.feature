@@ -5,7 +5,7 @@
 @givn.delta @semantic-token-cap-review
 Feature: Token-cap evidence keeps complete semantic pairs reviewable
 
-  @givn.added @bge @e2e @wip
+  @givn.added @bge @e2e
   Scenario: Permanent duplicate audit keeps partial BGE token-cap evidence per candidate
     Given an end-to-end permanent corpus with two E5 semantic candidates
     And one complete serialized pair encodes to exactly 512 BGE tokens
