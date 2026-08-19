@@ -65,6 +65,7 @@ case "${1:-}" in
         run_e5 cargo test --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and @e2e'
         run_bge cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge and not @gate-combination and @e2e'
         run_nli cargo test --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and @e2e'
+        run_nli_combined cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and @e2e'
         ;;
     --non-e2e)
         run_e5 cargo test --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @e2e'
