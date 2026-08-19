@@ -164,9 +164,14 @@ struct ExploreResultOutput {
     change: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     bge: Option<ExploreBgeOutput>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    bge_token_cap: Option<ExploreTokenCapOutput>,
     #[cfg(feature = "nli-evidence")]
     #[serde(skip_serializing_if = "Option::is_none")]
     nli: Option<ExploreNliOutput>,
+    #[cfg(feature = "nli-evidence")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    nli_token_cap: Option<ExploreTokenCapOutput>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -188,6 +193,17 @@ struct ExploreNliOutput {
 }
 
 #[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize)]
+struct ExploreTokenCapOutput {
+    status: &'static str,
+    left_tokens: usize,
+    right_tokens: usize,
+    pair_tokens: usize,
+    limit: usize,
+    refactoring_required: bool,
+}
+
+#[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Serialize)]
 struct ExploreNliEvidenceOutput {
     status: &'static str,
@@ -198,6 +214,8 @@ struct ExploreNliEvidenceOutput {
     recommended_candidates: usize,
     nli_filtered_candidates: usize,
     nli_unscored_candidates: usize,
+    nli_token_cap_candidates: usize,
+    refactoring_required: bool,
     nli_pairs: usize,
     nli_directional_calls: usize,
     nli_model: Option<&'static str>,
@@ -216,6 +234,8 @@ struct ExploreEvidenceOutput {
     recommended_candidates: usize,
     bge_filtered_candidates: usize,
     bge_unscored_candidates: usize,
+    bge_token_cap_candidates: usize,
+    refactoring_required: bool,
     bge_pairs: usize,
     bge_directional_calls: usize,
     bge_model: Option<&'static str>,
@@ -316,10 +336,13 @@ struct SimilarityCandidate {
     rerank_score: f32,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
+    bge_token_cap: Option<PairTokenBudget>,
     #[cfg(feature = "nli-evidence")]
     nli: Option<NliEvidence>,
     #[cfg(feature = "nli-evidence")]
     nli_admission: Option<&'static str>,
+    #[cfg(feature = "nli-evidence")]
+    nli_token_cap: Option<PairTokenBudget>,
     scopes: Vec<&'static str>,
 }
 
@@ -589,6 +612,7 @@ struct NliRun {
     status: &'static str,
     reason: Option<NliUnavailableReason>,
     evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), NliEvidence>,
+    token_caps: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), PairTokenBudget>,
     e5_candidates: usize,
     unscored: usize,
     model_load_attempts: usize,
@@ -607,6 +631,7 @@ impl NliRun {
             reason: None,
             unscored: e5_candidates.saturating_sub(evidence.len()),
             evidence,
+            token_caps: BTreeMap::new(),
             e5_candidates,
             model_load_attempts: 1,
             runtime_ms: Some(runtime_ms),
@@ -618,6 +643,7 @@ impl NliRun {
             status: "NLI_UNAVAILABLE",
             reason: Some(reason),
             evidence: BTreeMap::new(),
+            token_caps: BTreeMap::new(),
             e5_candidates,
             unscored: e5_candidates,
             model_load_attempts: 0,
@@ -696,6 +722,7 @@ struct BgeRun {
     status: &'static str,
     reason: Option<BgeUnavailableReason>,
     evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), BgePairEvidence>,
+    token_caps: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), PairTokenBudget>,
     e5_candidates: usize,
     unscored: usize,
     model_load_attempts: usize,
@@ -714,6 +741,7 @@ impl BgeRun {
             reason: None,
             unscored: e5_candidates.saturating_sub(evidence.len()),
             evidence,
+            token_caps: BTreeMap::new(),
             e5_candidates,
             model_load_attempts: 1,
             runtime_ms: Some(runtime_ms),
@@ -725,6 +753,7 @@ impl BgeRun {
             status: "BGE_UNAVAILABLE",
             reason: Some(reason),
             evidence: BTreeMap::new(),
+            token_caps: BTreeMap::new(),
             e5_candidates,
             unscored: e5_candidates,
             model_load_attempts: 0,
@@ -1080,9 +1109,13 @@ fn apply_duplicate_bge(
         })
         .collect();
     let tokenizer = match backend {
-        Ok(BgeBackendKind::Local) => Some(load_unbounded_tokenizer(
-            &preflight_bge_artifacts(root)?.join("tokenizer.json"),
-        )?),
+        Ok(BgeBackendKind::Local)
+            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+        {
+            Some(load_unbounded_tokenizer(
+                &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+            )?)
+        }
         _ => None,
     };
     let partition =
@@ -1096,6 +1129,7 @@ fn apply_duplicate_bge(
     };
     run.e5_candidates = semantic.len();
     run.unscored = semantic.len().saturating_sub(run.evidence.len());
+    run.token_caps = partition.capped.clone();
 
     let mut filtered = Vec::new();
     let mut unscored = Vec::new();
@@ -1204,6 +1238,7 @@ fn apply_duplicate_nli(
         };
         run.e5_candidates = semantic.len();
         run.unscored = semantic.len().saturating_sub(run.evidence.len());
+        run.token_caps = partition.capped.clone();
         let mut filtered = Vec::new();
         let mut unscored = Vec::new();
         for candidate in &mut audit.candidates {
@@ -2161,9 +2196,13 @@ fn apply_semantic_bge(
         })
         .collect();
     let tokenizer = match backend {
-        Ok(BgeBackendKind::Local) => Some(load_unbounded_tokenizer(
-            &preflight_bge_artifacts(root)?.join("tokenizer.json"),
-        )?),
+        Ok(BgeBackendKind::Local)
+            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+        {
+            Some(load_unbounded_tokenizer(
+                &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+            )?)
+        }
         _ => None,
     };
     let partition =
@@ -2177,6 +2216,7 @@ fn apply_semantic_bge(
     };
     run.e5_candidates = candidates.len();
     run.unscored = candidates.len().saturating_sub(run.evidence.len());
+    run.token_caps = partition.capped.clone();
     for candidate in candidates {
         let key = canonical_pair_key(
             endpoint(&candidate.left.file, &candidate.left.title),
@@ -2264,6 +2304,7 @@ fn apply_semantic_nli(
     };
     run.e5_candidates = candidates.len();
     run.unscored = candidates.len().saturating_sub(run.evidence.len());
+    run.token_caps = partition.capped.clone();
     for candidate in candidates {
         let key = canonical_pair_key(
             endpoint(&candidate.left.file, &candidate.left.title),
@@ -3322,6 +3363,22 @@ fn explore_enabled(
                 symmetric_raw: evidence.symmetric_raw,
             })
         });
+        let bge_token_cap = bge_run.as_ref().and_then(|run| {
+            let query_endpoint = explore_query_endpoint(&query);
+            let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
+            let key = canonical_pair_key(query_endpoint, candidate_endpoint);
+            run.token_caps
+                .get(&key)
+                .copied()
+                .map(|budget| ExploreTokenCapOutput {
+                    status: "BGE_TOKEN_CAP",
+                    left_tokens: budget.left_tokens,
+                    right_tokens: budget.right_tokens,
+                    pair_tokens: budget.pair_tokens,
+                    limit: budget.limit,
+                    refactoring_required: true,
+                })
+        });
         #[cfg(feature = "nli-evidence")]
         let nli = nli_run.as_ref().and_then(|run| {
             let query_endpoint = explore_query_endpoint(&query);
@@ -3338,6 +3395,23 @@ fn explore_enabled(
                 symmetric: evidence.symmetric,
             })
         });
+        #[cfg(feature = "nli-evidence")]
+        let nli_token_cap = nli_run.as_ref().and_then(|run| {
+            let query_endpoint = explore_query_endpoint(&query);
+            let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
+            let key = canonical_pair_key(query_endpoint, candidate_endpoint);
+            run.token_caps
+                .get(&key)
+                .copied()
+                .map(|budget| ExploreTokenCapOutput {
+                    status: "NLI_TOKEN_CAP",
+                    left_tokens: budget.left_tokens,
+                    right_tokens: budget.right_tokens,
+                    pair_tokens: budget.pair_tokens,
+                    limit: budget.limit,
+                    refactoring_required: true,
+                })
+        });
         results.push(ExploreResultOutput {
             rank: index + 1,
             title: candidate.title,
@@ -3346,8 +3420,11 @@ fn explore_enabled(
             scope: candidate.scope,
             change: candidate.change,
             bge,
+            bge_token_cap,
             #[cfg(feature = "nli-evidence")]
             nli,
+            #[cfg(feature = "nli-evidence")]
+            nli_token_cap,
         });
     }
 
@@ -3579,6 +3656,8 @@ fn explore_evidence_output(run: &BgeRun) -> ExploreEvidenceOutput {
         recommended_candidates: recommended,
         bge_filtered_candidates: run.evidence.len().saturating_sub(recommended),
         bge_unscored_candidates: run.unscored,
+        bge_token_cap_candidates: run.token_caps.len(),
+        refactoring_required: !run.token_caps.is_empty(),
         bge_pairs: run.evidence.len(),
         bge_directional_calls: run.evidence.len() * 2,
         bge_model: (run.status == "BGE_ENABLED").then_some(RERANKER_MODEL_ID),
@@ -3614,10 +3693,29 @@ fn bge_explore_run(
         );
         pairs.push((query_endpoint.clone(), candidate_endpoint));
     }
-    match backend {
-        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind).map(Some),
-        Err(reason) => Ok(Some(BgeRun::unavailable(reason, ranked.len()))),
-    }
+    let tokenizer = match backend {
+        Ok(BgeBackendKind::Local)
+            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+        {
+            Some(load_unbounded_tokenizer(
+                &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+            )?)
+        }
+        _ => None,
+    };
+    let partition =
+        preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
+    let mut run = match backend {
+        Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+            BgeRun::unavailable(BgeUnavailableReason::TokenCap, ranked.len())
+        }
+        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)?,
+        Err(reason) => BgeRun::unavailable(reason, ranked.len()),
+    };
+    run.e5_candidates = ranked.len();
+    run.unscored = ranked.len().saturating_sub(run.evidence.len());
+    run.token_caps = partition.capped;
+    Ok(Some(run))
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -3653,10 +3751,25 @@ fn nli_explore_run(
             pairs.len(),
         )));
     }
-    match selection {
-        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend).map(Some),
-        Err(reason) => Ok(Some(NliRun::unavailable(reason, ranked.len()))),
-    }
+    let tokenizer = match selection {
+        Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
+            &preflight_nli_artifacts(root)?.join("tokenizer.json"),
+        )?),
+        _ => None,
+    };
+    let partition =
+        preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
+    let mut run = match selection {
+        Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+            NliRun::unavailable(NliUnavailableReason::TokenCap, ranked.len())
+        }
+        Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
+        Err(reason) => NliRun::unavailable(reason, ranked.len()),
+    };
+    run.e5_candidates = ranked.len();
+    run.unscored = ranked.len().saturating_sub(run.evidence.len());
+    run.token_caps = partition.capped;
+    Ok(Some(run))
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -3680,6 +3793,8 @@ fn explore_nli_evidence_output(run: &NliRun) -> ExploreNliEvidenceOutput {
         recommended_candidates: recommended,
         nli_filtered_candidates: filtered,
         nli_unscored_candidates: run.unscored,
+        nli_token_cap_candidates: run.token_caps.len(),
+        refactoring_required: !run.token_caps.is_empty(),
         nli_pairs: run.evidence.len(),
         nli_directional_calls: run.evidence.len() * 2,
         nli_model: (run.status == "NLI_ENABLED").then_some(NLI_MODEL_ID),
@@ -4041,6 +4156,20 @@ fn print_explore_text(
                 evidence.symmetric_raw, evidence.forward_raw, evidence.reverse_raw
             );
         }
+        for ((left, right), budget) in &run.token_caps {
+            println!(
+                "token-cap: BGE_TOKEN_CAP complete semantic pair '{}' ({}) and '{}' ({}) requires {} tokens (limit {}); left {}, right {}; refactoring required: {}",
+                left.title,
+                left.file,
+                right.title,
+                right.file,
+                budget.pair_tokens,
+                budget.limit,
+                budget.left_tokens,
+                budget.right_tokens,
+                TOKEN_CAP_GUIDANCE,
+            );
+        }
     }
     #[cfg(feature = "nli-evidence")]
     if let Some(run) = nli_run {
@@ -4097,6 +4226,20 @@ fn print_explore_text(
             println!(
                 "NLI symmetric probability summary: entailment {:.4}, neutral {:.4}, contradiction {:.4}",
                 evidence.symmetric[0], evidence.symmetric[1], evidence.symmetric[2]
+            );
+        }
+        for ((left, right), budget) in &run.token_caps {
+            println!(
+                "token-cap: NLI_TOKEN_CAP complete semantic pair '{}' ({}) and '{}' ({}) requires {} tokens (limit {}); left {}, right {}; refactoring required: {}",
+                left.title,
+                left.file,
+                right.title,
+                right.file,
+                budget.pair_tokens,
+                budget.limit,
+                budget.left_tokens,
+                budget.right_tokens,
+                TOKEN_CAP_GUIDANCE,
             );
         }
     }
@@ -4333,38 +4476,58 @@ fn run_second_stage_advisory_review(
     #[cfg(feature = "cross-encoder-reranker")]
     if let Some(backend) = bge_backend(root)? {
         bge_enabled = true;
+        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+            .iter()
+            .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
+            .collect();
+        let partition = if candidates.len() > BGE_MAX_PAIRS {
+            PairBudgetPartition::default()
+        } else {
+            let tokenizer = match backend {
+                Ok(BgeBackendKind::Local)
+                    if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+                {
+                    Some(load_unbounded_tokenizer(
+                        &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+                    )?)
+                }
+                _ => None,
+            };
+            preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?
+        };
         let mut run = if candidates.len() > BGE_MAX_PAIRS {
             BgeRun::unavailable(BgeUnavailableReason::PairCap, candidates.len())
         } else {
-            let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
-                .iter()
-                .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
-                .collect();
             match backend {
-                Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)
+                Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+                    BgeRun::unavailable(BgeUnavailableReason::TokenCap, candidates.len())
+                }
+                Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)
                     .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
                 Err(reason) => BgeRun::unavailable(reason, candidates.len()),
             }
         };
         run.e5_candidates = considered;
-        if run.status == "BGE_UNAVAILABLE" {
-            for candidate in &mut candidates {
+        run.unscored = considered.saturating_sub(run.evidence.len());
+        run.token_caps = partition.capped;
+        for candidate in &mut candidates {
+            let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
+            if let Some(budget) = run.token_caps.get(&key).copied() {
+                candidate.bge = None;
+                candidate.bge_token_cap = Some(budget);
+                candidate.bge_admission = Some("BGE_TOKEN_CAP");
+            } else if let Some(evidence) = run.evidence.get(&key).cloned() {
+                candidate.bge_token_cap = None;
+                candidate.bge_admission =
+                    Some(if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+                        "BGE_RECOMMENDED"
+                    } else {
+                        "BGE_FILTERED"
+                    });
+                candidate.bge = Some(evidence);
+            } else {
+                candidate.bge_token_cap = None;
                 candidate.bge_admission = Some("BGE_UNSCORED");
-            }
-        } else {
-            for candidate in &mut candidates {
-                let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
-                if let Some(evidence) = run.evidence.get(&key).cloned() {
-                    candidate.bge_admission =
-                        Some(if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
-                            "BGE_RECOMMENDED"
-                        } else {
-                            "BGE_FILTERED"
-                        });
-                    candidate.bge = Some(evidence);
-                } else {
-                    candidate.bge_admission = Some("BGE_UNSCORED");
-                }
             }
         }
         bge_run = Some(run);
@@ -4376,42 +4539,101 @@ fn run_second_stage_advisory_review(
     #[cfg(feature = "nli-evidence")]
     if let Some(selection) = nli_backend_selection(root)? {
         nli_enabled = true;
-        match selection {
-            Ok(backend) => {
-                score_nli_candidates(root, &mut candidates, &texts, backend)?;
-                for candidate in &mut candidates {
-                    candidate.nli_admission = candidate.nli.map(|evidence| {
-                        if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
-                            "NLI_RECOMMENDED"
-                        } else {
-                            "NLI_FILTERED"
-                        }
-                    });
+        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+            .iter()
+            .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
+            .collect();
+        let partition = if candidates.len() > NLI_MAX_PAIRS {
+            PairBudgetPartition::default()
+        } else {
+            let tokenizer = match selection {
+                Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
+                    &preflight_nli_artifacts(root)?.join("tokenizer.json"),
+                )?),
+                _ => None,
+            };
+            preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?
+        };
+        let mut run = if candidates.len() > NLI_MAX_PAIRS {
+            NliRun::unavailable(NliUnavailableReason::PairCap, candidates.len())
+        } else {
+            match selection {
+                Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+                    NliRun::unavailable(NliUnavailableReason::TokenCap, candidates.len())
                 }
-                print_nli_results(&candidates, considered);
-                println!(
-                    "NLI: model {}, top_k {}, E5 raw {}, runtime ms {}, evidence is advisory",
-                    NLI_MODEL_ID, RERANKER_TOP_K, considered, 0
-                );
+                Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
+                Err(reason) => NliRun::unavailable(reason, candidates.len()),
             }
-            Err(reason) => {
-                for candidate in &mut candidates {
-                    candidate.nli_admission = Some("NLI_UNSCORED");
-                }
-                nli_run = Some(NliRun::unavailable(reason, considered));
+        };
+        run.e5_candidates = considered;
+        run.unscored = considered.saturating_sub(run.evidence.len());
+        run.token_caps = partition.capped;
+        for candidate in &mut candidates {
+            let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
+            if let Some(budget) = run.token_caps.get(&key).copied() {
+                candidate.nli = None;
+                candidate.nli_token_cap = Some(budget);
+                candidate.nli_admission = Some("NLI_TOKEN_CAP");
+            } else if let Some(evidence) = run.evidence.get(&key).copied() {
+                candidate.nli_token_cap = None;
+                candidate.nli = Some(evidence);
+                candidate.nli_admission =
+                    Some(if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                        "NLI_RECOMMENDED"
+                    } else {
+                        "NLI_FILTERED"
+                    });
+            } else {
+                candidate.nli_token_cap = None;
+                candidate.nli_admission = Some("NLI_UNSCORED");
             }
         }
+        print_nli_results(&candidates, considered);
+        nli_run = Some(run);
     }
     #[cfg(feature = "nli-evidence")]
     if let Some(run) = nli_run.as_ref() {
         println!(
-            "NLI status: {}{}, model null, unique pairs 0, directional calls 0, recommended 0, filtered 0, unscored {}, model load attempts 0, runtime ms null",
+            "NLI status: {}{}, model {}, unique pairs {}, directional calls {}, recommended {}, filtered {}, unscored {}, model load attempts {}, runtime ms {}",
             run.status,
             run.reason
                 .map(|reason| format!(", reason {}", reason.as_str()))
                 .unwrap_or_default(),
+            if run.status == "NLI_ENABLED" {
+                NLI_MODEL_ID
+            } else {
+                "null"
+            },
+            run.evidence.len(),
+            run.evidence.len() * 2,
+            candidates
+                .iter()
+                .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+                .count(),
+            candidates
+                .iter()
+                .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
+                .count(),
             run.unscored,
+            run.model_load_attempts,
+            run.runtime_ms
+                .map(|value| value.to_string())
+                .unwrap_or_else(|| "null".to_string()),
         );
+        for ((left, right), budget) in &run.token_caps {
+            println!(
+                "token-cap: NLI_TOKEN_CAP complete semantic pair '{}' ({}) and '{}' ({}) requires {} tokens (limit {}); left {}, right {}; refactoring required: {}",
+                left.title,
+                left.file,
+                right.title,
+                right.file,
+                budget.pair_tokens,
+                budget.limit,
+                budget.left_tokens,
+                budget.right_tokens,
+                TOKEN_CAP_GUIDANCE,
+            );
+        }
     }
 
     if let Some(run) = bge_run.as_ref() {
@@ -4462,6 +4684,20 @@ fn run_second_stage_advisory_review(
                 evidence.forward_raw,
                 evidence.reverse_raw,
                 evidence.symmetric_raw,
+            );
+        }
+        for ((left, right), budget) in &run.token_caps {
+            println!(
+                "token-cap: BGE_TOKEN_CAP complete semantic pair '{}' ({}) and '{}' ({}) requires {} tokens (limit {}); left {}, right {}; refactoring required: {}",
+                left.title,
+                left.file,
+                right.title,
+                right.file,
+                budget.pair_tokens,
+                budget.limit,
+                budget.left_tokens,
+                budget.right_tokens,
+                TOKEN_CAP_GUIDANCE,
             );
         }
     }
@@ -5858,56 +6094,6 @@ fn nli_report_limit() -> usize {
 }
 
 #[cfg(feature = "nli-evidence")]
-fn score_nli_candidates(
-    root: &Path,
-    candidates: &mut [SimilarityCandidate],
-    texts: &BTreeMap<(String, String), String>,
-    backend: NliBackend,
-) -> Result<()> {
-    if candidates.is_empty() {
-        return Ok(());
-    }
-
-    match backend {
-        NliBackend::Stub => {
-            let overrides = nli_directional_overrides()?;
-            for candidate in candidates {
-                candidate.nli = Some(nli_evidence(
-                    nli_directional_logits(
-                        &candidate.left,
-                        &candidate.right,
-                        texts,
-                        overrides.as_ref(),
-                    )?,
-                    nli_directional_logits(
-                        &candidate.right,
-                        &candidate.left,
-                        texts,
-                        overrides.as_ref(),
-                    )?,
-                ));
-            }
-        }
-        NliBackend::Local => {
-            let mut classifier = NliClassifier::load(root)
-                .context("NLI model is unavailable; check GIVN_SPEC_NLI_MODEL_DIR")?;
-            let mut pairs = Vec::with_capacity(candidates.len() * 2);
-            for candidate in candidates.iter() {
-                let left = scenario_text_for(texts, &candidate.left)?;
-                let right = scenario_text_for(texts, &candidate.right)?;
-                pairs.push((left.to_string(), right.to_string()));
-                pairs.push((right.to_string(), left.to_string()));
-            }
-            let logits = classifier.score_pairs(&pairs)?;
-            for (candidate, pair_logits) in candidates.iter_mut().zip(logits.chunks_exact(2)) {
-                candidate.nli = Some(nli_evidence(pair_logits[0], pair_logits[1]));
-            }
-        }
-    }
-    Ok(())
-}
-
-#[cfg(feature = "nli-evidence")]
 fn nli_evidence(forward_logits: [f32; 3], reverse_logits: [f32; 3]) -> NliEvidence {
     let forward = softmax3(forward_logits);
     let reverse = softmax3(reverse_logits);
@@ -5949,7 +6135,7 @@ fn stub_nli_logits(left: &str, right: &str) -> [f32; 3] {
     let shared = left_tokens.intersection(&right_tokens).count() as f32;
     let union = left_tokens.union(&right_tokens).count() as f32;
     let overlap = if union == 0.0 { 0.0 } else { shared / union };
-    if overlap >= 0.55 {
+    if overlap >= 0.65 {
         [2.2, -0.2, 0.1]
     } else {
         [-0.4, 1.4, 0.2]
@@ -6203,10 +6389,13 @@ fn add_similarity_candidate(
             rerank_score: f32::NEG_INFINITY,
             bge: None,
             bge_admission: None,
+            bge_token_cap: None,
             #[cfg(feature = "nli-evidence")]
             nli: None,
             #[cfg(feature = "nli-evidence")]
             nli_admission: None,
+            #[cfg(feature = "nli-evidence")]
+            nli_token_cap: None,
             scopes: vec![scope],
         },
     );
@@ -6338,6 +6527,7 @@ fn reranker_tokens(text: &str) -> std::collections::BTreeSet<String> {
     text.split(|character: char| !character.is_alphanumeric())
         .filter(|token| !token.is_empty())
         .map(str::to_lowercase)
+        .filter(|token| !is_stub_structure_token(token))
         .collect()
 }
 
@@ -6557,15 +6747,64 @@ fn stub_embedding(text: &str, role: EmbeddingRole) -> Vec<f32> {
         EmbeddingRole::Query => "query",
     };
     let mut vector = vec![0.0f32; DIMENSIONS];
-    for token in format!("{prefix} {text}")
+    for token in prefix
         .split(|character: char| !character.is_alphanumeric())
         .filter(|token| !token.is_empty())
         .map(str::to_lowercase)
+        .filter(|token| !is_stub_structure_token(token))
     {
         let index = (stable_hash(token.as_bytes()) as usize) % DIMENSIONS;
         vector[index] += 1.0;
     }
+    for line in text.lines() {
+        let weight = if line.starts_with("scenario_description:") {
+            5.0
+        } else if line.starts_with("scenario:") || line.starts_with("step:") {
+            3.0
+        } else {
+            1.0
+        };
+        for token in line
+            .split(|character: char| !character.is_alphanumeric())
+            .filter(|token| !token.is_empty())
+            .map(str::to_lowercase)
+            .filter(|token| !is_stub_structure_token(token))
+        {
+            let index = (stable_hash(token.as_bytes()) as usize) % DIMENSIONS;
+            vector[index] += weight;
+        }
+    }
     normalize(vector)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn is_stub_structure_token(token: &str) -> bool {
+    matches!(
+        token,
+        "passage"
+            | "query"
+            | "feature"
+            | "description"
+            | "background"
+            | "rule"
+            | "scenario"
+            | "outline"
+            | "steps"
+            | "step"
+            | "role"
+            | "text"
+            | "table"
+            | "docstring"
+            | "examples"
+            | "row"
+            | "keyword"
+            | "name"
+            | "given"
+            | "when"
+            | "then"
+            | "and"
+            | "but"
+    )
 }
 
 #[cfg(feature = "spec-retrieval")]
