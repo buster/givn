@@ -26,7 +26,7 @@
 
 ## Scenario: Permanent duplicate audit preserves BGE evidence when NLI reaches the cap
 
-- [ ] RED: remove `@wip`, implement the pending regular steps with
+- [x] RED: remove `@wip`, implement the pending regular steps with
       `unimplemented!()`, and run only this scenario.
   - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Permanent duplicate audit preserves BGE evidence when NLI reaches the cap"`
   - Output: Non-zero (`cargo test` exit 101): the first regular step matched `semantic_token_cap_review_steps.rs:7` and panicked with `not implemented`; the strict runner reported `1 scenario (1 failed)`.
@@ -38,23 +38,23 @@
 - [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Permanent duplicate audit preserves BGE evidence when NLI reaches the cap"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `13 steps (13 passed)`.
-- [ ] COMMIT: record the atomic scenario commit.
-  - Commit:
+- [x] COMMIT: record the atomic scenario commit.
+  - Commit: `b233079`
 
 ## Scenario: Exactly 512 tokens keeps normal second-stage behavior
 
-- [ ] RED: remove `@wip`, implement the pending regular steps with
+- [x] RED: remove `@wip`, implement the pending regular steps with
       `unimplemented!()`, and run only this scenario.
-  - Command:
-  - Output:
-- [ ] GREEN: implement exact-boundary/normal evidence assertions; run only this
+  - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Exactly 512 tokens keeps normal second-stage behavior"`
+  - Output: Zero exit is legitimate immediate GREEN: all steps were real shared definitions from the prior scenario, so there was no new undefined or pending body. The targeted run reported `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] GREEN: implement exact-boundary/normal evidence assertions; run only this
       scenario successfully.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: simplify without changing behavior; rerun only this scenario.
-  - Command:
-  - Output:
+  - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Exactly 512 tokens keeps normal second-stage behavior"`
+  - Output: Zero exit; `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`. The exact fixture produced scored BGE/NLI evidence with no `TOKEN_CAP` or `token-cap` output.
+  - Production files: `src/spec/retrieval.rs` (`token_budget_fits` makes the inclusive `pair_tokens <= limit` boundary explicit); shared regular step fixture/assertions were reused.
+- [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
+  - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Exactly 512 tokens keeps normal second-stage behavior"`
+  - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [ ] COMMIT: record the atomic scenario commit.
   - Commit:
 
