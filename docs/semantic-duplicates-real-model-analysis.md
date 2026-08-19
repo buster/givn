@@ -24,6 +24,9 @@ about rejecting a path-traversal identifier in `status`.
 The 20 highest-impact disagreement and consensus cases are prepared for manual
 classification in `docs/semantic-duplicates-manual-classification-questionnaire.md`.
 
+The token-budget measurement for the planned complete serialization is recorded
+in `docs/semantic-serialization-token-budget-analysis.md`.
+
 ## Reproduction
 
 The index was rebuilt before the comparison:
