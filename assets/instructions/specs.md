@@ -70,6 +70,22 @@ The deterministic gates remain the first line of defence; semantic retrieval
 adds an evidence worklist after those structural checks rather than replacing
 them.
 
+The E5, BGE, and NLI paths consume one complete deterministic serialization of
+the Gherkin context: Feature/Rule context and descriptions, inherited
+Backgrounds, scenario descriptions, resolved Given/When/Then roles, tables,
+docstrings, Scenario Outline templates, and concrete example rows. Paths, tags,
+scores, and classifications remain metadata. Deterministic fingerprints remain
+separate evidence. The permanent E5 index reuses an entry only when its stored
+content hash matches the hash of this complete serialization; there is no
+separate serializer-version escape hatch.
+
+Before model construction or inference, the actual model tokenizer measures the
+complete input without truncation or padding. E5 passages and BGE/NLI pairs use
+the 512-token limit; pair counts include pair special tokens. Exactly 512 is
+ valid and 513 is over. Do not make a scenario longer, repeat setup, or add
+ irrelevant qualifiers to evade a semantic finding. Do not make scenarios longer,
+ repeat setup, or add irrelevant qualifiers as score workarounds.
+
 When `spec-retrieval` is available:
 
 - `givn spec index` builds or refreshes the permanent scenario index.
@@ -85,36 +101,51 @@ raw candidate generator and the local BGE second stage produces explicit
 non-blocking evidence status: it is recorded for auditability, does not receive
 one of the Givn classifications, and does not force an author to rename or
 inflate a scenario. A `BGE_RECOMMENDED` candidate still requires the normal
-agent-authored classification and remediation. Missing model artifacts and a
-bounded-pool refusal are the canonical `BGE_UNAVAILABLE` state: BGE fields are
-explicitly unavailable, `reason` is `missing-artifact` or `pair-cap`, model and
-runtime are `null`, unique/directional/load-attempt counts are zero, filtered
-count is zero, unscored count covers the E5 raw candidates, and the normal
-E5/review exit status is preserved. A
-feature-free binary is different and fails with the existing `spec retrieval is
-unavailable` diagnostic.
+agent-authored classification and remediation. A pair over the BGE tokenizer
+limit receives per-candidate `BGE_TOKEN_CAP` evidence with left, right, pair,
+and limit token counts. It remains visible, unresolved, outside the filtered
+collection, and blocking. A partial token-cap run remains `BGE_ENABLED`; only a
+run in which no BGE pair can be scored is `BGE_UNAVAILABLE`. In the all-over-cap
+case, the run reason is `token-cap` and the candidate-level `BGE_TOKEN_CAP`
+objects remain visible. Missing artifacts and other no-score failures retain
+the existing unavailable fallback rather than being presented as filtered
+evidence. A feature-free binary is different and fails with the existing
+`spec retrieval is unavailable` diagnostic.
 
 When only part of the E5 raw set enters the bounded BGE pool, the remainder is
 recorded as `BGE_UNSCORED`. It remains a blocking E5 candidate and must receive
-the normal Givn classification; it is not `BGE_FILTERED`. Across reports and
-JSON, unscored entries use the same E5-rank/endpoint ordering and count; the
-semantic report uses normal candidate blocks and the duplicate report uses its
-`unscored_candidates` collection. A one-query Explore has no partial unscored
-state: it either scores its complete bounded pool or reports
-`BGE_UNAVAILABLE`.
+the normal Givn classification; it is not `BGE_FILTERED`. A candidate whose
+pair was inspected and exceeded the tokenizer limit is `BGE_TOKEN_CAP`, not
+`BGE_UNSCORED`. Across reports and JSON, these entries use the same E5-rank and
+endpoint ordering. A one-query Explore uses the same guard: it reports a
+candidate-level cap state when a selected pair is over the limit and reports
+`BGE_UNAVAILABLE` only when no selected pair can be scored.
 
-Do not make scenarios longer, repeat setup, overload steps, or add irrelevant
-qualifiers to lower an E5 score. Sharpen the executable invariant and the
-observable boundary facts instead. Model scores are evidence for a review
-worklist, not a reason to distort authoring.
+When the opt-in `nli-evidence` capability is active, NLI independently scores
+the same E5 candidate pool rather than only BGE survivors. A scored candidate is
+`NLI_RECOMMENDED` or `NLI_FILTERED` using the existing NLI rule. An over-cap pair
+is `NLI_TOKEN_CAP`: visible, unresolved, outside `nli_filtered_candidates`, and
+blocking. `NLI_UNAVAILABLE` is a run-level state only when no NLI pair can be
+scored; an all-over-cap run uses reason `token-cap` and still emits per-
+candidate `NLI_TOKEN_CAP` evidence. Combined recommendations intersect the
+independent BGE and NLI recommendations. A token-cap, unscored, or unavailable
+layer never silently disproves a candidate.
+
+For every token-cap finding, tell the agent to shorten or split the scenarios
+and rerun the relevant review. Do not use automatic chunking, automatic
+scenario edits, or verbosity inflation as a workaround.
+
+Sharpen the executable invariant and observable boundary facts rather than
+inflating scenario prose to avoid a semantic finding.
 
 Classify every admitted candidate as `DUPLIKAT`, `VARIANTE`, or
 `VALID-BOUNDARY`, with a written rationale; `UNCERTAIN` blocks the review. A
 `BGE_FILTERED` evidence entry is not an admitted candidate and is not a Givn
 classification. There is no `UNRELATED` escape classification for admitted
 candidates. If two scenarios appear unrelated but remain above the active
-similarity boundary and are admitted, sharpen the domain vocabulary and
-observable invariants, then regenerate the report. `givn spec review --change
+ similarity boundary and are admitted, sharpen the domain vocabulary and
+ observable invariants, sharpen invariants and boundary facts, then regenerate
+ the report. `givn spec review --change
 <id>` remains advisory and does not create the blocking worklist. A build with
 `spec-similarity-gate` additionally enforces the strict similarity gate.
 

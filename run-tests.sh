@@ -23,15 +23,8 @@ run_bge_disabled() {
 
 resolve_nli_features_path() {
     if [ -n "${GIVN_FEATURES:-}" ]; then
-        case "$GIVN_FEATURES" in
-            givn/changes/nli-evidence/specs|givn/specs)
-                printf '%s\n' "$GIVN_FEATURES"
-                return 0
-                ;;
-            *)
-                return 1
-                ;;
-        esac
+        printf '%s\n' "$GIVN_FEATURES"
+        return 0
     fi
     if [ -f givn/changes/nli-evidence/specs/nli-evidence/nli-evidence.feature ]; then
         printf '%s\n' givn/changes/nli-evidence/specs

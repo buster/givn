@@ -38,8 +38,7 @@
 - [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Permanent duplicate audit preserves BGE evidence when NLI reaches the cap"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `13 steps (13 passed)`.
-- [x] COMMIT: record the atomic scenario commit.
-  - Commit: `b233079`
+- [x] COMMIT: `b233079` — record the atomic scenario commit.
 
 ## Scenario: Exactly 512 tokens keeps normal second-stage behavior
 
@@ -55,8 +54,7 @@
 - [x] REFACTOR: simplify without changing behavior; rerun only this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Exactly 512 tokens keeps normal second-stage behavior"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: record the atomic scenario commit.
-  - Commit: `87baf9f`
+- [x] COMMIT: `87baf9f` — record the atomic scenario commit.
 
 ## E2E Setup
 
@@ -81,8 +79,7 @@
       this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit keeps partial BGE token-cap evidence per candidate"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)`.
-- [x] COMMIT: record the atomic E2E scenario commit.
-  - Commit: `e3a48c5`
+- [x] COMMIT: `e3a48c5` — record the atomic E2E scenario commit.
 
 ## Scenario: Blocking change review keeps an all-over-cap candidate unresolved
 
@@ -99,16 +96,22 @@
       this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Blocking change review keeps an all-over-cap candidate unresolved"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [ ] COMMIT: record the atomic E2E scenario commit.
-  - Commit:
+- [x] COMMIT: `44a2c94` — record the atomic E2E scenario commit.
 
 ## Final Verification
 
-- [ ] `givn lint --change semantic-token-cap-review` passes with no unexpected
+- [x] `givn lint --change semantic-token-cap-review` passes with no unexpected
       findings.
-- [ ] `./run-tests.sh` passes all regular matrices.
-- [ ] `./run-tests.sh --e2e` passes the E2E matrix.
-- [ ] `cargo fmt --check` passes.
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` passes.
-- [ ] `givn check review --change semantic-token-cap-review` passes.
-- [ ] Archive gate and review evidence are complete.
+  - Evidence: `givn lint --change semantic-token-cap-review` exited 0 with `1 file(s) checked — clean`.
+- [x] `./run-tests.sh` passes all regular matrices.
+  - Evidence: root `./run-tests.sh` exited 0; the full permanent matrix reported `32 features`, `328 scenarios (328 passed)`, `2019 steps (2019 passed)`, and the BGE/gate/NLI matrices all exited 0. `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs ./run-tests.sh` also exited 0, with the two regular scenarios passing in the combined matrix.
+- [x] `./run-tests.sh --e2e` passes the E2E matrix.
+  - Evidence: root `./run-tests.sh --e2e` exited 0; `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs ./run-tests.sh --e2e` exited 0 with the partial-BGE and all-over-cap blocking scenarios passing in their real CLI matrices.
+- [x] `cargo fmt --check` passes.
+  - Evidence: `cargo fmt --all && cargo fmt --check` exited 0.
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` passes.
+  - Evidence: `cargo clippy --workspace --all-targets -- -D warnings` exited 0.
+- [x] `givn check review --change semantic-token-cap-review` passes.
+  - Evidence: `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-token-cap-review` exited 0 after running the active regular and E2E hooks, integrity, overlap dispositions, semantic review, and advisory review.
+- [x] Archive gate and review evidence are complete.
+  - Evidence: `review.md` records a clean fabrication audit, Arc42 conformance, fresh merged coverage, runner counts, and `REVIEW: PASS`.
