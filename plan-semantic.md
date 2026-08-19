@@ -37,7 +37,7 @@ eighteen stack predecessors. Superseded closed PRs are not counted.
 
 ### Current Delivery State
 
-The GitHub Stacks CLI stack is stack #6 and contains the nineteen open PRs
+The GitHub Stacks CLI stack is stack #25 and contains the nineteen open PRs
 listed above. Every PR is still a Draft and GitHub reports every PR as
 mergeable. PR #21 is the spec-duplicates stack link on
 `semantic/06-spec-duplicates`; PR #22 is the BGE link on
