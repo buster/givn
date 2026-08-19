@@ -21,6 +21,9 @@ The second-stage results are:
 The only candidate recommended by both real second-stage models is the pair
 about rejecting a path-traversal identifier in `status`.
 
+The 20 highest-impact disagreement and consensus cases are prepared for manual
+classification in `docs/semantic-duplicates-manual-classification-questionnaire.md`.
+
 ## Reproduction
 
 The index was rebuilt before the comparison:
