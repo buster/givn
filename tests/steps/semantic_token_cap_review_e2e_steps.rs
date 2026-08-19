@@ -39,7 +39,9 @@ fn e2e_candidate_has_bge_cap_status(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[then("that candidate's JSON BGE evidence reports both scenario token counts, pair token count 513, and limit 512")]
+#[then(
+    "that candidate's JSON BGE evidence reports both scenario token counts, pair token count 513, and limit 512"
+)]
 fn e2e_candidate_reports_bge_pair_budget(_world: &mut GivnWorld) {
     unimplemented!()
 }
@@ -54,7 +56,9 @@ fn e2e_bge_cap_candidate_is_not_filtered(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[then("the JSON response marks refactoring as required and instructs the agent to shorten or split the scenarios and rerun the audit")]
+#[then(
+    "the JSON response marks refactoring as required and instructs the agent to shorten or split the scenarios and rerun the audit"
+)]
 fn e2e_json_has_refactoring_guidance(_world: &mut GivnWorld) {
     unimplemented!()
 }
@@ -69,7 +73,9 @@ fn e2e_bge_nli_over_cap_pair(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[when("the end-to-end user runs blocking change review for \"running-change\" through the givn CLI")]
+#[when(
+    "the end-to-end user runs blocking change review for \"running-change\" through the givn CLI"
+)]
 fn e2e_run_blocking_review(_world: &mut GivnWorld) {
     unimplemented!()
 }
@@ -79,12 +85,16 @@ fn e2e_blocking_review_fails_unresolved(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[then("the semantic review report records BGE status \"BGE_UNAVAILABLE\" with reason \"token-cap\" because no BGE pair was scoreable")]
+#[then(
+    "the semantic review report records BGE status \"BGE_UNAVAILABLE\" with reason \"token-cap\" because no BGE pair was scoreable"
+)]
 fn e2e_report_bge_token_cap_unavailable(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[then("the semantic review report records NLI status \"NLI_UNAVAILABLE\" with reason \"token-cap\" because no NLI pair was scoreable")]
+#[then(
+    "the semantic review report records NLI status \"NLI_UNAVAILABLE\" with reason \"token-cap\" because no NLI pair was scoreable"
+)]
 fn e2e_report_nli_token_cap_unavailable(_world: &mut GivnWorld) {
     unimplemented!()
 }
@@ -94,12 +104,16 @@ fn e2e_report_records_bge_nli_cap_admissions(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[then("the semantic review report records both scenario token counts, each pair count of 513, and each limit of 512")]
+#[then(
+    "the semantic review report records both scenario token counts, each pair count of 513, and each limit of 512"
+)]
 fn e2e_report_records_pair_budgets(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
-#[then("the semantic review report tells the agent to shorten or split the scenarios before rerunning review")]
+#[then(
+    "the semantic review report tells the agent to shorten or split the scenarios before rerunning review"
+)]
 fn e2e_report_has_refactoring_guidance(_world: &mut GivnWorld) {
     unimplemented!()
 }

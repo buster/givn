@@ -41,6 +41,8 @@ pub mod semantic_remediation_e2e_steps;
 pub mod semantic_remediation_steps;
 pub mod semantic_review_e2e_steps;
 pub mod semantic_review_steps;
+pub mod semantic_token_cap_review_e2e_steps;
+pub mod semantic_token_cap_review_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_duplicates_e2e_steps;
 pub mod spec_duplicates_steps;
@@ -50,8 +52,6 @@ pub mod spec_explore_permanent_e2e_steps;
 pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
 pub mod spec_retrieval_steps;
-pub mod semantic_token_cap_review_e2e_steps;
-pub mod semantic_token_cap_review_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
@@ -98,6 +98,10 @@ pub struct GivnWorld {
     pub(crate) retrieval_nli_test_pool: Option<String>,
     /// Deterministic directional NLI logits for fixtures.
     pub(crate) retrieval_nli_scores: Option<String>,
+    /// Deterministic BGE token-budget fixture selector.
+    pub(crate) retrieval_bge_token_budget: Option<String>,
+    /// Deterministic NLI token-budget fixture selector.
+    pub(crate) retrieval_nli_token_budget: Option<String>,
     /// Use the deterministic stub behind the validated local-artifact seam.
     pub(crate) retrieval_bge_local_stub: bool,
     /// Guard that restores the unreadable-feature fixture after its subprocess
@@ -323,6 +327,12 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_nli_scores.as_deref() {
         environments.push(("GIVN_SPEC_NLI_DIRECTIONAL_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_bge_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TOKEN_BUDGET", value));
+    }
+    if let Some(value) = world.retrieval_nli_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_TOKEN_BUDGET", value));
     }
     if world.retrieval_bge_local_stub {
         environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));

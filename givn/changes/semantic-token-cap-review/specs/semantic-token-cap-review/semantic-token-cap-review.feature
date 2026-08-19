@@ -20,7 +20,7 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
     And the candidate is absent from the BGE filtered collection
     And the JSON response marks refactoring as required and instructs the agent to shorten or split the scenarios and rerun the audit
 
-  @givn.added @nli @nli-combined @wip
+  @givn.added @nli @nli-combined
   Scenario: Permanent duplicate audit preserves BGE evidence when NLI reaches the cap
     Given a permanent corpus with two E5 semantic candidates
     And one complete serialized pair fits both BGE and NLI
