@@ -7,6 +7,8 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
 
   @givn.added @bge @e2e
   Scenario: Permanent duplicate audit keeps partial BGE token-cap evidence per candidate
+    The duplicate audit keeps the fitting BGE direction while exposing a
+    candidate-local NLI budget refusal.
     Given an end-to-end permanent corpus with two E5 semantic candidates
     And one complete serialized pair encodes to exactly 512 BGE tokens
     And another complete serialized pair encodes to 513 BGE tokens
@@ -22,6 +24,8 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
 
   @givn.added @nli @nli-combined
   Scenario: Permanent duplicate audit preserves BGE evidence when NLI reaches the cap
+    The duplicate audit compares independent second-stage evidence for a
+    partial NLI budget refusal.
     Given a permanent corpus with two E5 semantic candidates
     And one complete serialized pair fits both BGE and NLI
     And another complete serialized pair fits BGE but encodes to 513 NLI tokens
@@ -38,6 +42,8 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
 
   @givn.added @nli @nli-combined @e2e
   Scenario: Blocking change review keeps an all-over-cap candidate unresolved
+    Blocking review must retain an unresolved candidate when neither model can
+    score the complete pair.
     Given an end-to-end project with one unresolved E5 semantic candidate
     And its complete serialized pair encodes to 513 BGE tokens and 513 NLI tokens
     And local BGE and NLI evidence are enabled with deterministic token-budget fixtures
@@ -52,6 +58,7 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
 
   @givn.added @nli @nli-combined
   Scenario: Exactly 512 tokens keeps normal second-stage behavior
+    The inclusive tokenizer boundary permits ordinary BGE and NLI evidence.
     Given a permanent corpus with one E5 semantic candidate
     And its complete serialized pair encodes to exactly 512 BGE tokens and exactly 512 NLI tokens
     And local BGE and NLI evidence are enabled with deterministic token-budget fixtures
