@@ -1177,6 +1177,13 @@ fn run_unavailable_blocking_review(world: &mut GivnWorld) {
     if let Some(scores) = world.retrieval_stub_scores.as_deref() {
         environments.push(("GIVN_SPEC_STUB_PAIR_SCORES", scores));
     }
+    if let Some(budget) = world.retrieval_bge_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TOKEN_BUDGET", budget));
+    }
+    if let Some(budget) = world.retrieval_nli_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_TOKEN_BUDGET", budget));
+        environments.push(("GIVN_SPEC_RERANKER", "nli-stub"));
+    }
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["check", "review", "--change", "running-change"],
