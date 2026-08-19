@@ -132,9 +132,9 @@ ARC42 CONFORMANCE: CLEAN
 
 | Report | Lines covered | Lines valid | Line rate | Branches |
 |---|---:|---:|---:|---|
-| Non-E2E | 1817 | 8997 | 20.1956% | 0/0 |
-| E2E | 2634 | 8997 | 29.2764% | 0/0 |
-| Merged | 4451 | 17994 | 24.7360% | 0/0 |
+| Non-E2E | 1819 | 8999 | 20.2022% | 0/0 |
+| E2E | 2636 | 8999 | 29.2921% | 0/0 |
+| Merged | 4455 | 17998 | 24.7528% | 0/0 |
 
 The reports are fresh, include the Gherkin runner binary, and are present at
 `coverage/non-e2e-cobertura.xml`, `coverage/e2e-cobertura.xml`, and
