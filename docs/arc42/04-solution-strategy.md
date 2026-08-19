@@ -28,6 +28,29 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Historical evidence | The generated report remains in the change directory and is retained by the existing archive move under `givn/archive/<id>/`; archive implementation is not changed by this slice. |
 | Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
 
+### 4.1a Complete semantic input and second-stage strategy
+
+The semantic model boundary is one complete deterministic Gherkin serialization:
+Feature and Rule context/descriptions, inherited backgrounds, resolved
+`Given`/`When`/`Then` roles, tables, docstrings, outline templates, and concrete
+example rows are retained in stable order. That exact text feeds E5, BGE, and
+NLI. The E5 `content_hash` is computed from the exact passage text; matching
+identity and hash reuse a vector, while a mismatch re-embeds it. There is no
+separate serializer-version field. Paths, tags, scores, and classifications are
+metadata, and deterministic `Fingerprint` findings remain a separate evidence
+source.
+
+The shared guard uses the actual tokenizer for each consuming model before model
+construction or inference. It measures untruncated and unpadded E5 passages and
+BGE/NLI pair encodings, including pair special tokens; 512 is valid and 513 is
+over. Duplicate audit, Explore, advisory review, and blocking review use the
+same guard. BGE and NLI independently receive the same E5 candidate pool, and
+the combined recommendation is the intersection of participating recommended
+sets. A fitting partial run remains enabled; over-cap candidates carry explicit
+`BGE_TOKEN_CAP` or `NLI_TOKEN_CAP` evidence and remain visible, unresolved,
+non-filtered, and blocking. If no pair in a layer fits, that layer is
+run-level unavailable with reason `token-cap`.
+
 ## 4.2 How the strategy meets the top quality goals
 
 ### Configurability without forking (Goal 1)
