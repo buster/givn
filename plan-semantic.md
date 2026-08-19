@@ -10,8 +10,8 @@ latest plan snapshot is carried by the current stack tip so downstream PRs
 inherit it. It reaches `main` when the stack is merged in order; do not update
 intermediate base branches separately.
 
-The current stack has nineteen open PRs. PR 24 is the nineteenth and has
-eighteen stack predecessors. Superseded closed PRs are not counted.
+The current stack has twenty open PRs. PR 26 is the twentieth and has
+nineteen stack predecessors. Superseded closed PRs are not counted.
 
 | Stack order | PR | Head branch | Base branch |
 |---:|---:|---|---|
@@ -34,23 +34,25 @@ eighteen stack predecessors. Superseded closed PRs are not counted.
 | 17 | #22 | `semantic/07-bge-evidence` | `semantic/06-spec-duplicates` |
 | 18 | #23 | `semantic/07-nli-evidence` | `semantic/07-bge-evidence` |
 | 19 | #24 | `semantic/08-permanent-audit-review` | `semantic/07-nli-evidence` |
+| 20 | #26 | `semantic/09-token-cap-review` | `semantic/08-permanent-audit-review` |
 
 ### Current Delivery State
 
-The GitHub Stacks CLI stack is stack #25 and contains the nineteen open PRs
+The GitHub Stacks CLI stack is stack #25 and contains the twenty open PRs
 listed above. Every PR is still a Draft and GitHub reports every PR as
 mergeable. PR #21 is the spec-duplicates stack link on
 `semantic/06-spec-duplicates`; PR #22 is the BGE link on
 `semantic/07-bge-evidence`; PR #23 is the NLI stack tip on
 `semantic/07-nli-evidence`; PR #24 is the real-model duplicate baseline on
-`semantic/08-permanent-audit-review`. The NLI change is implemented and its
-full suite, E2E suite, review, coverage, and archive gates are complete. PR #24
-records the real-model permanent-corpus baseline before the planned normal audit
-implementation. GitHub currently reports no status checks for these branches,
-so that verification remains manual.
+`semantic/08-permanent-audit-review`; PR #26 is the token-cap review evidence on
+`semantic/09-token-cap-review`. The NLI and token-cap changes are implemented;
+their full suites, E2E suites, reviews, coverage, and archive gates are complete.
+PR #24 records the real-model permanent-corpus baseline before the planned
+normal audit implementation. GitHub currently reports no status checks for
+these branches, so that verification remains manual.
 
-The GitHub stack metadata was synchronized with `gh stack link` after PR #24
-was added. This plan snapshot is carried on the PR #24 tip. `main` and the
+The GitHub stack metadata was synchronized with `gh stack link` after PR #26
+was added. This plan snapshot is carried on the PR #26 tip. `main` and the
 intermediate base branches intentionally retain earlier snapshots until the
 stack is merged in order.
 
