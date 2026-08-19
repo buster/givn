@@ -20,13 +20,15 @@ use std::io::Read;
 #[cfg(feature = "spec-retrieval")]
 use serde::{Deserialize, Serialize};
 
-#[cfg(feature = "nli-evidence")]
-use tokenizers::{PaddingParams, PaddingStrategy, Tokenizer, TruncationParams};
+#[cfg(feature = "spec-retrieval")]
+use tokenizers::Tokenizer;
 
 #[cfg(feature = "spec-retrieval")]
 const INDEX_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
+#[cfg(feature = "spec-retrieval")]
+const E5_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
 #[cfg(feature = "spec-retrieval")]
@@ -47,8 +49,6 @@ const RERANKER_TOP_K: usize = 5;
 const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7";
 #[cfg(feature = "nli-evidence")]
 const NLI_STUB_SELECTOR: &str = "nli-stub";
-#[cfg(feature = "nli-evidence")]
-const NLI_MAX_LENGTH: usize = 512;
 #[cfg(feature = "nli-evidence")]
 const NLI_REPORT_LIMIT: usize = 20;
 #[cfg(feature = "nli-evidence")]
@@ -71,6 +71,8 @@ const SEMANTIC_SIMILARITY_THRESHOLD: f32 = 0.95;
 const DUPLICATE_REPORT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const DUPLICATE_BGE_REPORT_SCHEMA_VERSION: u32 = 2;
+#[cfg(feature = "spec-retrieval")]
+const TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenarios, then rerun semantic review";
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -259,10 +261,13 @@ struct SemanticCandidate {
     rationale: Option<String>,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
+    bge_token_cap: Option<PairTokenBudget>,
     #[cfg(feature = "nli-evidence")]
     nli: Option<NliEvidence>,
     #[cfg(feature = "nli-evidence")]
     nli_admission: Option<&'static str>,
+    #[cfg(feature = "nli-evidence")]
+    nli_token_cap: Option<PairTokenBudget>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -387,10 +392,13 @@ struct DuplicateCandidate {
     score: Option<f32>,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
+    bge_token_cap: Option<PairTokenBudget>,
     #[cfg(feature = "nli-evidence")]
     nli: Option<NliEvidence>,
     #[cfg(feature = "nli-evidence")]
     nli_admission: Option<&'static str>,
+    #[cfg(feature = "nli-evidence")]
+    nli_token_cap: Option<PairTokenBudget>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -428,18 +436,38 @@ struct DuplicateJsonEvidence {
 #[derive(Debug, Clone, Serialize)]
 struct DuplicateJsonBgeEvidence {
     status: &'static str,
-    forward_raw: f32,
-    reverse_raw: f32,
-    symmetric_raw: f32,
+    forward_raw: Option<f32>,
+    reverse_raw: Option<f32>,
+    symmetric_raw: Option<f32>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    left_tokens: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    right_tokens: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pair_tokens: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    limit: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    refactoring_required: Option<bool>,
 }
 
 #[cfg(feature = "nli-evidence")]
 #[derive(Debug, Clone, Serialize)]
 struct DuplicateJsonNliEvidence {
     status: &'static str,
-    forward: [f32; 3],
-    reverse: [f32; 3],
-    symmetric: [f32; 3],
+    forward: Option<[f32; 3]>,
+    reverse: Option<[f32; 3]>,
+    symmetric: Option<[f32; 3]>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    left_tokens: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    right_tokens: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pair_tokens: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    limit: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    refactoring_required: Option<bool>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -476,6 +504,12 @@ struct DuplicateJsonReport {
     #[cfg(feature = "nli-evidence")]
     #[serde(skip_serializing_if = "Option::is_none")]
     nli_unscored_candidates: Option<Vec<DuplicateJsonCandidate>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    combined_recommended_candidates: Option<Vec<DuplicateJsonCandidate>>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    refactoring_required: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    guidance: Option<&'static str>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -485,6 +519,7 @@ struct DuplicateJsonRun {
     reason: Option<&'static str>,
     model: Option<&'static str>,
     top_k: usize,
+    e5_candidates: usize,
     unique_pairs: usize,
     directional_calls: usize,
     recommended_count: usize,
@@ -501,6 +536,7 @@ struct DuplicateJsonNliRun {
     reason: Option<&'static str>,
     model: Option<&'static str>,
     top_k: usize,
+    e5_candidates: usize,
     unique_pairs: usize,
     directional_calls: usize,
     recommended_count: usize,
@@ -533,6 +569,7 @@ struct NliEvidence {
 enum NliUnavailableReason {
     MissingArtifact,
     PairCap,
+    TokenCap,
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -541,6 +578,7 @@ impl NliUnavailableReason {
         match self {
             Self::MissingArtifact => "missing-artifact",
             Self::PairCap => "pair-cap",
+            Self::TokenCap => "token-cap",
         }
     }
 }
@@ -607,6 +645,7 @@ enum BgeBackendKind {
 enum BgeUnavailableReason {
     MissingArtifact,
     PairCap,
+    TokenCap,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -615,6 +654,7 @@ impl BgeUnavailableReason {
         match self {
             Self::MissingArtifact => "missing-artifact",
             Self::PairCap => "pair-cap",
+            Self::TokenCap => "token-cap",
         }
     }
 }
@@ -625,6 +665,29 @@ struct BgePairEvidence {
     forward_raw: f32,
     reverse_raw: f32,
     symmetric_raw: f32,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Copy, Serialize)]
+struct PairTokenBudget {
+    left_tokens: usize,
+    right_tokens: usize,
+    pair_tokens: usize,
+    limit: usize,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Copy)]
+enum TokenBudgetModel {
+    Bge,
+    Nli,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Default)]
+struct PairBudgetPartition {
+    fitting: Vec<(SimilarityEndpoint, SimilarityEndpoint)>,
+    capped: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), PairTokenBudget>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1016,72 +1079,55 @@ fn apply_duplicate_bge(
             )
         })
         .collect();
+    let tokenizer = match backend {
+        Ok(BgeBackendKind::Local) => Some(load_unbounded_tokenizer(
+            &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+        )?),
+        _ => None,
+    };
+    let partition =
+        preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
     let mut run = match backend {
-        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+        Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+            BgeRun::unavailable(BgeUnavailableReason::TokenCap, semantic.len())
+        }
+        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)?,
         Err(reason) => BgeRun::unavailable(reason, semantic.len()),
     };
     run.e5_candidates = semantic.len();
-    run.unscored = semantic
-        .iter()
-        .filter(|candidate| {
-            !selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right))
-        })
-        .count();
-
-    if run.status == "BGE_UNAVAILABLE" {
-        for candidate in &mut candidates {
-            if candidate.kind == "semantic_candidate" {
-                candidate.bge_admission = Some("BGE_UNSCORED");
-            }
-        }
-        return Ok(DuplicateAudit {
-            candidates,
-            filtered_candidates: Vec::new(),
-            unscored_candidates: semantic,
-            bge_run: Some(run),
-            #[cfg(feature = "nli-evidence")]
-            nli_filtered_candidates: Vec::new(),
-            #[cfg(feature = "nli-evidence")]
-            nli_unscored_candidates: Vec::new(),
-            #[cfg(feature = "nli-evidence")]
-            nli_run: None,
-        });
-    }
+    run.unscored = semantic.len().saturating_sub(run.evidence.len());
 
     let mut filtered = Vec::new();
     let mut unscored = Vec::new();
-    candidates.retain_mut(|candidate| {
+    for candidate in &mut candidates {
         if candidate.kind != "semantic_candidate" {
-            return true;
+            continue;
         }
-        let key = duplicate_pair_key(&candidate.left, &candidate.right);
-        let Some(evidence) = run
-            .evidence
-            .get(&canonical_pair_key(
-                endpoint(&key.0.0, &key.0.1),
-                endpoint(&key.1.0, &key.1.1),
-            ))
-            .cloned()
-        else {
+        let key = canonical_pair_key(
+            endpoint(&candidate.left.file, &candidate.left.title),
+            endpoint(&candidate.right.file, &candidate.right.title),
+        );
+        if let Some(budget) = partition.capped.get(&key).copied() {
+            candidate.bge = None;
+            candidate.bge_token_cap = Some(budget);
+            candidate.bge_admission = Some("BGE_TOKEN_CAP");
+            unscored.push(candidate.clone());
+            continue;
+        }
+        let Some(evidence) = run.evidence.get(&key).cloned() else {
+            candidate.bge = None;
+            candidate.bge_token_cap = None;
             candidate.bge_admission = Some("BGE_UNSCORED");
             unscored.push(candidate.clone());
-            return false;
+            continue;
         };
+        candidate.bge_token_cap = None;
         candidate.bge = Some(evidence.clone());
         if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
             candidate.bge_admission = Some("BGE_RECOMMENDED");
-            true
         } else {
             candidate.bge_admission = Some("BGE_FILTERED");
             filtered.push(candidate.clone());
-            false
-        }
-    });
-    for candidate in &semantic {
-        if !selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right)) {
-            let mut candidate = candidate.clone();
-            candidate.bge_admission = Some("BGE_UNSCORED");
-            unscored.push(candidate);
         }
     }
     candidates.sort_by(duplicate_candidate_order);
@@ -1141,44 +1187,55 @@ fn apply_duplicate_nli(
                 )
             })
             .collect();
+        let tokenizer = match selection {
+            Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
+                &preflight_nli_artifacts(root)?.join("tokenizer.json"),
+            )?),
+            _ => None,
+        };
+        let partition =
+            preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
         let mut run = match selection {
-            Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend)?,
+            Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+                NliRun::unavailable(NliUnavailableReason::TokenCap, semantic.len())
+            }
+            Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
             Err(reason) => NliRun::unavailable(reason, semantic.len()),
         };
         run.e5_candidates = semantic.len();
+        run.unscored = semantic.len().saturating_sub(run.evidence.len());
         let mut filtered = Vec::new();
         let mut unscored = Vec::new();
-        if run.status == "NLI_UNAVAILABLE" {
-            for candidate in &mut audit.candidates {
-                if candidate.kind == "semantic_candidate" {
-                    candidate.nli_admission = Some("NLI_UNSCORED");
-                }
+        for candidate in &mut audit.candidates {
+            if candidate.kind != "semantic_candidate" {
+                continue;
             }
-            unscored = semantic;
-        } else {
-            audit.candidates.retain_mut(|candidate| {
-                if candidate.kind != "semantic_candidate" {
-                    return true;
-                }
-                let key = canonical_pair_key(
-                    endpoint(&candidate.left.file, &candidate.left.title),
-                    endpoint(&candidate.right.file, &candidate.right.title),
-                );
-                let Some(evidence) = run.evidence.get(&key).copied() else {
-                    candidate.nli_admission = Some("NLI_UNSCORED");
-                    unscored.push(candidate.clone());
-                    return false;
-                };
-                candidate.nli = Some(evidence);
-                if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
-                    candidate.nli_admission = Some("NLI_RECOMMENDED");
-                    true
-                } else {
-                    candidate.nli_admission = Some("NLI_FILTERED");
-                    filtered.push(candidate.clone());
-                    false
-                }
-            });
+            let key = canonical_pair_key(
+                endpoint(&candidate.left.file, &candidate.left.title),
+                endpoint(&candidate.right.file, &candidate.right.title),
+            );
+            if let Some(budget) = partition.capped.get(&key).copied() {
+                candidate.nli = None;
+                candidate.nli_token_cap = Some(budget);
+                candidate.nli_admission = Some("NLI_TOKEN_CAP");
+                unscored.push(candidate.clone());
+                continue;
+            }
+            let Some(evidence) = run.evidence.get(&key).copied() else {
+                candidate.nli = None;
+                candidate.nli_token_cap = None;
+                candidate.nli_admission = Some("NLI_UNSCORED");
+                unscored.push(candidate.clone());
+                continue;
+            };
+            candidate.nli_token_cap = None;
+            candidate.nli = Some(evidence);
+            if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+                candidate.nli_admission = Some("NLI_RECOMMENDED");
+            } else {
+                candidate.nli_admission = Some("NLI_FILTERED");
+                filtered.push(candidate.clone());
+            }
         }
         audit.candidates.sort_by(duplicate_candidate_order);
         filtered.sort_by(duplicate_candidate_order);
@@ -1276,6 +1333,138 @@ fn synthetic_nli_pairs(
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn token_budget_fixture(model: TokenBudgetModel) -> Result<Option<String>> {
+    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+        return Ok(None);
+    }
+    let key = match model {
+        TokenBudgetModel::Bge => "GIVN_SPEC_BGE_TOKEN_BUDGET",
+        TokenBudgetModel::Nli => "GIVN_SPEC_NLI_TOKEN_BUDGET",
+    };
+    let value = std::env::var(key).or_else(|error| match error {
+        std::env::VarError::NotPresent => std::env::var("GIVN_SPEC_TOKEN_BUDGET"),
+        other => Err(other),
+    });
+    match value {
+        Ok(value) if !value.trim().is_empty() => Ok(Some(value)),
+        Ok(_) => bail!("{key} must not be empty"),
+        Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(std::env::VarError::NotUnicode(_)) => bail!("{key} is not valid UTF-8"),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn fixture_pair_budget(fixture: &str, index: usize) -> Result<PairTokenBudget> {
+    let budget = match fixture {
+        "exact-512" | "bounded-512" | "all-512" => PairTokenBudget {
+            left_tokens: 256,
+            right_tokens: 254,
+            pair_tokens: 512,
+            limit: E5_MAX_LENGTH,
+        },
+        "overflow-513" | "all-513" => PairTokenBudget {
+            left_tokens: 257,
+            right_tokens: 255,
+            pair_tokens: 513,
+            limit: E5_MAX_LENGTH,
+        },
+        "partial-512-513" | "partial-raw-513" => {
+            if index == 0 {
+                PairTokenBudget {
+                    left_tokens: 256,
+                    right_tokens: 254,
+                    pair_tokens: 512,
+                    limit: E5_MAX_LENGTH,
+                }
+            } else {
+                PairTokenBudget {
+                    left_tokens: 257,
+                    right_tokens: 255,
+                    pair_tokens: 513,
+                    limit: E5_MAX_LENGTH,
+                }
+            }
+        }
+        _ => bail!(
+            "unknown token budget fixture `{fixture}`; expected exact-512, overflow-513, or partial-512-513"
+        ),
+    };
+    Ok(budget)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn preflight_pair_budgets(
+    pairs: &[(SimilarityEndpoint, SimilarityEndpoint)],
+    texts: &BTreeMap<(String, String), String>,
+    model: TokenBudgetModel,
+    tokenizer: Option<&Tokenizer>,
+) -> Result<PairBudgetPartition> {
+    let fixture = token_budget_fixture(model)?;
+    let limit = E5_MAX_LENGTH;
+    let mut partition = PairBudgetPartition::default();
+    for (index, (left, right)) in pairs.iter().enumerate() {
+        let budget = if let Some(fixture) = fixture.as_deref() {
+            fixture_pair_budget(fixture, index)?
+        } else if let Some(tokenizer) = tokenizer {
+            actual_pair_budget(
+                tokenizer,
+                scenario_text_for(texts, left)?,
+                scenario_text_for(texts, right)?,
+                limit,
+            )?
+        } else {
+            partition.fitting.push((left.clone(), right.clone()));
+            continue;
+        };
+        let key = canonical_pair_key(left.clone(), right.clone());
+        if budget.pair_tokens <= budget.limit {
+            partition.fitting.push((left.clone(), right.clone()));
+        } else {
+            partition.capped.insert(key, budget);
+        }
+    }
+    Ok(partition)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn actual_pair_budget(
+    tokenizer: &Tokenizer,
+    left: &str,
+    right: &str,
+    limit: usize,
+) -> Result<PairTokenBudget> {
+    let left_tokens = tokenizer
+        .encode(left, true)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?
+        .len();
+    let right_tokens = tokenizer
+        .encode(right, true)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?
+        .len();
+    let pair_tokens = tokenizer
+        .encode((left, right), true)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?
+        .len();
+    Ok(PairTokenBudget {
+        left_tokens,
+        right_tokens,
+        pair_tokens,
+        limit,
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn load_unbounded_tokenizer(path: &Path) -> Result<Tokenizer> {
+    let mut tokenizer = Tokenizer::from_file(path)
+        .map_err(|error| anyhow::anyhow!("failed to load tokenizer {}: {error}", path.display()))?;
+    tokenizer.with_padding(None);
+    tokenizer
+        .with_truncation(None)
+        .map_err(|error| anyhow::anyhow!(error.to_string()))?;
+    Ok(tokenizer)
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> String {
     let mut report = format!(
         "Givn spec duplicates\nScanned scenarios: {scanned_scenarios}\nCandidate count: {}\n",
@@ -1306,6 +1495,9 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
         if run.status == "BGE_UNAVAILABLE" {
             if run.reason == Some(BgeUnavailableReason::PairCap) {
                 report.push_str("BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs\n");
+            }
+            if run.reason == Some(BgeUnavailableReason::TokenCap) {
+                report.push_str("BGE_UNAVAILABLE: no complete semantic pair fits 512 tokens\n");
             }
             report.push_str("BGE fallback: E5-only unavailable fallback\n");
         }
@@ -1339,6 +1531,9 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
         if run.reason == Some(NliUnavailableReason::PairCap) {
             report.push_str("NLI_UNAVAILABLE: bounded candidate pool exceeds 512 pairs\n");
         }
+        if run.reason == Some(NliUnavailableReason::TokenCap) {
+            report.push_str("NLI_UNAVAILABLE: no complete semantic pair fits 512 tokens\n");
+        }
         report.push_str("NLI fallback: E5-only unavailable fallback\n");
         for candidate in &audit.nli_unscored_candidates {
             report.push_str(&format!(
@@ -1370,6 +1565,20 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
             render_duplicate_candidate(0, candidate)
         ));
     }
+    if audit.candidates.iter().any(|candidate| {
+        candidate.bge_token_cap.is_some() || {
+            #[cfg(feature = "nli-evidence")]
+            {
+                candidate.nli_token_cap.is_some()
+            }
+            #[cfg(not(feature = "nli-evidence"))]
+            {
+                false
+            }
+        }
+    }) {
+        report.push_str(&format!("refactoring required: {TOKEN_CAP_GUIDANCE}\n"));
+    }
     report
 }
 
@@ -1399,6 +1608,39 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
         e5_candidate_count =
             e5_candidate_count.or_else(|| audit.nli_run.as_ref().map(|run| run.e5_candidates));
     }
+    let refactoring_required = audit.candidates.iter().any(|candidate| {
+        candidate.bge_token_cap.is_some() || {
+            #[cfg(feature = "nli-evidence")]
+            {
+                candidate.nli_token_cap.is_some()
+            }
+            #[cfg(not(feature = "nli-evidence"))]
+            {
+                false
+            }
+        }
+    });
+    #[cfg(feature = "nli-evidence")]
+    let combined_recommended_candidates = (audit.bge_run.is_some() && audit.nli_run.is_some())
+        .then(|| {
+            audit
+                .candidates
+                .iter()
+                .filter(|candidate| {
+                    candidate.kind == "semantic_candidate"
+                        && candidate.bge_admission == Some("BGE_RECOMMENDED")
+                        && candidate.nli_admission == Some("NLI_RECOMMENDED")
+                })
+                .map(duplicate_json_candidate)
+                .enumerate()
+                .map(|(index, mut candidate)| {
+                    candidate.rank = index + 1;
+                    candidate
+                })
+                .collect()
+        });
+    #[cfg(not(feature = "nli-evidence"))]
+    let combined_recommended_candidates = None;
     let report = DuplicateJsonReport {
         schema_version,
         scanned_scenarios,
@@ -1473,6 +1715,9 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
                 })
                 .collect()
         }),
+        combined_recommended_candidates,
+        refactoring_required: refactoring_required.then_some(true),
+        guidance: refactoring_required.then_some(TOKEN_CAP_GUIDANCE),
     };
     serde_json::to_string(&report).context("serialize duplicate audit JSON")
 }
@@ -1491,24 +1736,71 @@ fn duplicate_json_candidate(candidate: &DuplicateCandidate) -> DuplicateJsonCand
             distinguishing_facts: candidate.distinguishing_facts.clone(),
             fact_contradiction: candidate.fact_contradiction,
             score: candidate.score.map(|score| format!("{score:.4}")),
-            bge: candidate
-                .bge
-                .as_ref()
-                .map(|evidence| DuplicateJsonBgeEvidence {
-                    status: candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
-                    forward_raw: evidence.forward_raw,
-                    reverse_raw: evidence.reverse_raw,
-                    symmetric_raw: evidence.symmetric_raw,
-                }),
+            bge: duplicate_json_bge(candidate),
             #[cfg(feature = "nli-evidence")]
-            nli: candidate.nli.map(|evidence| DuplicateJsonNliEvidence {
-                status: candidate.nli_admission.unwrap_or("NLI_RECOMMENDED"),
-                forward: evidence.forward,
-                reverse: evidence.reverse,
-                symmetric: evidence.symmetric,
-            }),
+            nli: duplicate_json_nli(candidate),
         },
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn duplicate_json_bge(candidate: &DuplicateCandidate) -> Option<DuplicateJsonBgeEvidence> {
+    if let Some(evidence) = candidate.bge.as_ref() {
+        return Some(DuplicateJsonBgeEvidence {
+            status: candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
+            forward_raw: Some(evidence.forward_raw),
+            reverse_raw: Some(evidence.reverse_raw),
+            symmetric_raw: Some(evidence.symmetric_raw),
+            left_tokens: None,
+            right_tokens: None,
+            pair_tokens: None,
+            limit: None,
+            refactoring_required: None,
+        });
+    }
+    candidate
+        .bge_token_cap
+        .map(|budget| DuplicateJsonBgeEvidence {
+            status: "BGE_TOKEN_CAP",
+            forward_raw: None,
+            reverse_raw: None,
+            symmetric_raw: None,
+            left_tokens: Some(budget.left_tokens),
+            right_tokens: Some(budget.right_tokens),
+            pair_tokens: Some(budget.pair_tokens),
+            limit: Some(budget.limit),
+            refactoring_required: Some(true),
+        })
+}
+
+#[cfg(feature = "nli-evidence")]
+fn duplicate_json_nli(candidate: &DuplicateCandidate) -> Option<DuplicateJsonNliEvidence> {
+    if let Some(evidence) = candidate.nli {
+        return Some(DuplicateJsonNliEvidence {
+            status: candidate.nli_admission.unwrap_or("NLI_RECOMMENDED"),
+            forward: Some(evidence.forward),
+            reverse: Some(evidence.reverse),
+            symmetric: Some(evidence.symmetric),
+            left_tokens: None,
+            right_tokens: None,
+            pair_tokens: None,
+            limit: None,
+            refactoring_required: None,
+        });
+    }
+    candidate
+        .nli_token_cap
+        .map(|budget| DuplicateJsonNliEvidence {
+            status: "NLI_TOKEN_CAP",
+            forward: None,
+            reverse: None,
+            symmetric: None,
+            left_tokens: Some(budget.left_tokens),
+            right_tokens: Some(budget.right_tokens),
+            pair_tokens: Some(budget.pair_tokens),
+            limit: Some(budget.limit),
+            refactoring_required: Some(true),
+        })
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1523,6 +1815,7 @@ fn duplicate_json_run(run: &BgeRun, audit: &DuplicateAudit) -> DuplicateJsonRun 
         reason: run.reason.map(BgeUnavailableReason::as_str),
         model: (run.status == "BGE_ENABLED").then_some(RERANKER_MODEL_ID),
         top_k: RERANKER_TOP_K,
+        e5_candidates: run.e5_candidates,
         unique_pairs: run.evidence.len(),
         directional_calls: run.evidence.len() * 2,
         recommended_count,
@@ -1545,6 +1838,7 @@ fn duplicate_json_nli_run(run: &NliRun, audit: &DuplicateAudit) -> DuplicateJson
         reason: run.reason.map(NliUnavailableReason::as_str),
         model: (run.status == "NLI_ENABLED").then_some(NLI_MODEL_ID),
         top_k: RERANKER_TOP_K,
+        e5_candidates: run.e5_candidates,
         unique_pairs: run.evidence.len(),
         directional_calls: run.evidence.len() * 2,
         recommended_count,
@@ -1575,8 +1869,18 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
         })
         .unwrap_or_else(|| {
             candidate
-                .bge_admission
-                .map(|status| format!(" bge_status={status}"))
+                .bge_token_cap
+                .map(|budget| {
+                    format!(
+                        " bge_status=BGE_TOKEN_CAP bge_left_tokens={} bge_right_tokens={} bge_pair_tokens={} bge_limit={} refactoring_required=true",
+                        budget.left_tokens, budget.right_tokens, budget.pair_tokens, budget.limit
+                    )
+                })
+                .or_else(|| {
+                    candidate
+                        .bge_admission
+                        .map(|status| format!(" bge_status={status}"))
+                })
                 .unwrap_or_default()
         });
     #[cfg(feature = "nli-evidence")]
@@ -1593,8 +1897,18 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
         })
         .unwrap_or_else(|| {
             candidate
-                .nli_admission
-                .map(|status| format!(" nli_status={status}"))
+                .nli_token_cap
+                .map(|budget| {
+                    format!(
+                        " nli_status=NLI_TOKEN_CAP nli_left_tokens={} nli_right_tokens={} nli_pair_tokens={} nli_limit={} refactoring_required=true",
+                        budget.left_tokens, budget.right_tokens, budget.pair_tokens, budget.limit
+                    )
+                })
+                .or_else(|| {
+                    candidate
+                        .nli_admission
+                        .map(|status| format!(" nli_status={status}"))
+                })
                 .unwrap_or_default()
         });
     #[cfg(not(feature = "nli-evidence"))]
@@ -2036,7 +2350,7 @@ fn semantic_endpoint_from_scenario(
     operation: &str,
     projected_target: Option<(String, String)>,
 ) -> SemanticEndpoint {
-    let text = scenario_text(scenario, file);
+    let text = scenario_text(feature, rule, scenario, file);
     let evidence_json = canonical_evidence_json(feature, rule, scenario);
     let facts = crate::overlap::fingerprint::Fingerprint::of_scenario(
         scenario,
@@ -2122,10 +2436,13 @@ fn semantic_candidate(
         rationale: None,
         bge: None,
         bge_admission: None,
+        bge_token_cap: None,
         #[cfg(feature = "nli-evidence")]
         nli: None,
         #[cfg(feature = "nli-evidence")]
         nli_admission: None,
+        #[cfg(feature = "nli-evidence")]
+        nli_token_cap: None,
     }
 }
 
@@ -3096,9 +3413,13 @@ fn read_explore_query(root: &Path, file: Option<&Path>, stdin: bool) -> Result<E
 
     let feature = gherkin::Feature::parse(&content, gherkin::GherkinEnv::default())
         .map_err(|error| anyhow::anyhow!("explore input is not valid Gherkin: {error}"))?;
-    let mut scenarios = feature.scenarios.iter().collect::<Vec<_>>();
+    let mut scenarios = feature
+        .scenarios
+        .iter()
+        .map(|scenario| (scenario, None))
+        .collect::<Vec<_>>();
     for rule in &feature.rules {
-        scenarios.extend(rule.scenarios.iter());
+        scenarios.extend(rule.scenarios.iter().map(|scenario| (scenario, Some(rule))));
     }
     anyhow::ensure!(
         scenarios.len() == 1,
@@ -3106,9 +3427,9 @@ fn read_explore_query(root: &Path, file: Option<&Path>, stdin: bool) -> Result<E
         scenarios.len()
     );
 
-    let scenario = scenarios[0];
+    let (scenario, rule) = scenarios[0];
     let file_identity = identity_file.as_deref().unwrap_or("");
-    let text = scenario_text(scenario, file_identity);
+    let text = scenario_text(&feature, rule, scenario, file_identity);
     Ok(ExploreQuery {
         title: text.title,
         source,
@@ -4227,7 +4548,7 @@ fn collect_duplicate_scenario(
             rule.and_then(|rule| rule.background.as_ref())
                 .or(feature.background.as_ref()),
         ),
-        text: scenario_text(scenario, file).text,
+        text: scenario_text(feature, rule, scenario, file).text,
     });
 }
 
@@ -4282,10 +4603,13 @@ fn duplicate_candidates(
                     score: None,
                     bge: None,
                     bge_admission: None,
+                    bge_token_cap: None,
                     #[cfg(feature = "nli-evidence")]
                     nli: None,
                     #[cfg(feature = "nli-evidence")]
                     nli_admission: None,
+                    #[cfg(feature = "nli-evidence")]
+                    nli_token_cap: None,
                 });
                 classified.insert((left_index, right_index));
             } else if !left.fingerprint.assertions.is_empty()
@@ -4351,10 +4675,13 @@ fn duplicate_candidates(
                 score: Some(score),
                 bge: None,
                 bge_admission: None,
+                bge_token_cap: None,
                 #[cfg(feature = "nli-evidence")]
                 nli: None,
                 #[cfg(feature = "nli-evidence")]
                 nli_admission: None,
+                #[cfg(feature = "nli-evidence")]
+                nli_token_cap: None,
             });
         }
     }
@@ -4389,10 +4716,13 @@ fn structural_candidate(
         score: None,
         bge: None,
         bge_admission: None,
+        bge_token_cap: None,
         #[cfg(feature = "nli-evidence")]
         nli: None,
         #[cfg(feature = "nli-evidence")]
         nli_admission: None,
+        #[cfg(feature = "nli-evidence")]
+        nli_token_cap: None,
     }
 }
 
@@ -4660,9 +4990,9 @@ fn collect_scenarios_from(root: &Path, specs_root: &Path) -> Result<Vec<Scenario
     for path in crate::gherkin::parse::collect_feature_files(specs_root) {
         let feature = parse_permanent_feature(root, &path)?;
         let file = normalize_project_file_identity(root, &path);
-        collect_feature_scenarios(&feature.scenarios, &file, &mut scenarios);
+        collect_feature_scenarios(&feature, None, &feature.scenarios, &file, &mut scenarios);
         for rule in &feature.rules {
-            collect_feature_scenarios(&rule.scenarios, &file, &mut scenarios);
+            collect_feature_scenarios(&feature, Some(rule), &rule.scenarios, &file, &mut scenarios);
         }
     }
     scenarios.sort_by(|left, right| {
@@ -4747,7 +5077,7 @@ fn collect_delta_feature_scenarios(
     for scenario in source {
         let evidence_json = canonical_evidence_json(feature, rule, scenario);
         output.push(DeltaScenario {
-            scenario: scenario_text(scenario, &file),
+            scenario: scenario_text(feature, rule, scenario, &file),
             target_file: target_file.to_string(),
             operation: crate::gherkin::delta::delta_op(scenario),
             facts: crate::overlap::fingerprint::Fingerprint::of_scenario(
@@ -4764,6 +5094,8 @@ fn collect_delta_feature_scenarios(
 
 #[cfg(feature = "spec-retrieval")]
 fn collect_feature_scenarios(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
     source: &[gherkin::Scenario],
     file: &str,
     output: &mut Vec<ScenarioText>,
@@ -4772,7 +5104,7 @@ fn collect_feature_scenarios(
         if !is_queryable_scenario(scenario) {
             continue;
         }
-        output.push(scenario_text(scenario, file));
+        output.push(scenario_text(feature, rule, scenario, file));
     }
 }
 
@@ -4855,53 +5187,190 @@ fn json_encoded<T: serde::Serialize>(value: &T) -> String {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn scenario_text(scenario: &gherkin::Scenario, file: &str) -> ScenarioText {
-    let duplicate_audit_delta = file.contains("givn/changes/spec-duplicates/");
-    let mut text = scenario.name.clone();
-    if duplicate_audit_delta
-        && let Some(description) = scenario.description.as_deref()
-        && !description.trim().is_empty()
-    {
-        text.push('\n');
-        text.push_str(description.trim());
-    }
-    for step in &scenario.steps {
-        if duplicate_audit_delta && is_semantic_driver_step(step.value.trim()) {
-            continue;
-        }
-        text.push('\n');
-        text.push_str(step.value.trim());
-        if let Some(docstring) = &step.docstring {
-            text.push('\n');
-            text.push_str(docstring.trim());
-        }
-    }
-    let normalized = text.split_whitespace().collect::<Vec<_>>().join(" ");
+fn scenario_text(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
+    scenario: &gherkin::Scenario,
+    file: &str,
+) -> ScenarioText {
+    let text = semantic_serialization(feature, rule, scenario);
     ScenarioText {
         title: scenario.name.clone(),
         file: file.to_string(),
-        content_hash: content_hash(&normalized),
-        text: normalized,
+        content_hash: content_hash(&text),
+        text,
     }
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn is_semantic_driver_step(value: &str) -> bool {
-    [
-        "the user runs ",
-        "the end-to-end user runs ",
-        "the one-file audit ",
-        "the two-file audit ",
-        "the one-file result ",
-        "the two-file result ",
-        "candidate rank ",
-        "same-feature candidate rank ",
-        "cross-feature candidate rank ",
-        "intra-file candidate rank ",
-        "inter-file candidate rank ",
-    ]
-    .iter()
-    .any(|prefix| value.starts_with(prefix))
+fn semantic_serialization(
+    feature: &gherkin::Feature,
+    rule: Option<&gherkin::Rule>,
+    scenario: &gherkin::Scenario,
+) -> String {
+    let mut sections = Vec::new();
+    sections.push(format!(
+        "feature: {} {}",
+        semantic_normalize(&feature.keyword),
+        semantic_normalize(&feature.name)
+    ));
+    sections.push(format!(
+        "feature_description: {}",
+        semantic_optional_text(feature.description.as_deref())
+    ));
+    sections.push(format!(
+        "feature_background: {}",
+        semantic_background(feature.background.as_ref())
+    ));
+    sections.push(match rule {
+        Some(rule) => format!(
+            "rule: {} {}",
+            semantic_normalize(&rule.keyword),
+            semantic_normalize(&rule.name)
+        ),
+        None => "rule: []".to_string(),
+    });
+    sections.push(format!(
+        "rule_description: {}",
+        semantic_optional_text(rule.and_then(|rule| rule.description.as_deref()))
+    ));
+    sections.push(format!(
+        "rule_background: {}",
+        semantic_background(rule.and_then(|rule| rule.background.as_ref()))
+    ));
+    sections.push(format!(
+        "scenario: {} {}",
+        semantic_normalize(&scenario.keyword),
+        semantic_normalize(&scenario.name)
+    ));
+    sections.push(format!(
+        "scenario_description: {}",
+        semantic_optional_text(scenario.description.as_deref())
+    ));
+    sections.push("steps:".to_string());
+    if scenario.steps.is_empty() {
+        sections.push("[]".to_string());
+    } else {
+        sections.extend(scenario.steps.iter().map(semantic_step));
+    }
+    sections.push(format!(
+        "outline_template: {}",
+        if scenario.keyword.trim() == "Scenario Outline" {
+            semantic_normalize(&scenario.name)
+        } else {
+            "[]".to_string()
+        }
+    ));
+    sections.push("examples:".to_string());
+    if scenario.examples.is_empty() {
+        sections.push("[]".to_string());
+    } else {
+        sections.extend(scenario.examples.iter().map(semantic_examples));
+    }
+    sections.join("\n")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_background(background: Option<&gherkin::Background>) -> String {
+    let Some(background) = background else {
+        return "[]".to_string();
+    };
+    let steps = if background.steps.is_empty() {
+        "[]".to_string()
+    } else {
+        format!(
+            "[{}]",
+            background
+                .steps
+                .iter()
+                .map(semantic_step)
+                .map(|step| json_encoded(&step))
+                .collect::<Vec<_>>()
+                .join(",")
+        )
+    };
+    format!(
+        "{{\"keyword\":{},\"name\":{},\"description\":{},\"steps\":{steps}}}",
+        json_encoded(&semantic_normalize(&background.keyword)),
+        json_encoded(&semantic_normalize(&background.name)),
+        semantic_optional_json(background.description.as_deref()),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_step(step: &gherkin::Step) -> String {
+    let table = step
+        .table
+        .as_ref()
+        .map(semantic_table)
+        .unwrap_or_else(|| "[]".to_string());
+    format!(
+        "step: role={:?}; text={}; table={table}; docstring={}",
+        step.ty,
+        semantic_normalize(&step.value),
+        step.docstring
+            .as_deref()
+            .map(semantic_normalize)
+            .map(|value| json_encoded(&value))
+            .unwrap_or_else(|| "[]".to_string()),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_table(table: &gherkin::Table) -> String {
+    json_encoded(
+        &table
+            .rows
+            .iter()
+            .map(|row| {
+                row.iter()
+                    .map(|cell| semantic_normalize(cell))
+                    .collect::<Vec<_>>()
+            })
+            .collect::<Vec<_>>(),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_examples(examples: &gherkin::Examples) -> String {
+    let table = examples
+        .table
+        .as_ref()
+        .map(semantic_table)
+        .unwrap_or_else(|| "[]".to_string());
+    format!(
+        "examples_row: keyword={} name={} description={} table={table}",
+        semantic_normalize(&examples.keyword),
+        examples
+            .name
+            .as_deref()
+            .map(semantic_normalize)
+            .map(|value| json_encoded(&value))
+            .unwrap_or_else(|| "[]".to_string()),
+        semantic_optional_json(examples.description.as_deref()),
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_optional_text(value: Option<&str>) -> String {
+    value
+        .map(semantic_normalize)
+        .filter(|value| !value.is_empty())
+        .map(|value| json_encoded(&value))
+        .unwrap_or_else(|| "[]".to_string())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_optional_json(value: Option<&str>) -> String {
+    value
+        .map(semantic_normalize)
+        .map(|value| json_encoded(&value))
+        .unwrap_or_else(|| "[]".to_string())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_normalize(value: &str) -> String {
+    value.split_whitespace().collect::<Vec<_>>().join(" ")
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -5448,42 +5917,7 @@ impl NliClassifier {
         let label_indices = nli_label_indices(&config)?;
 
         let tokenizer_path = model_dir.join("tokenizer.json");
-        let tokenizer_config_path = model_dir.join("tokenizer_config.json");
-        let tokenizer_config_bytes = fs::read(&tokenizer_config_path).with_context(|| {
-            format!(
-                "read NLI tokenizer config {}",
-                tokenizer_config_path.display()
-            )
-        })?;
-        let tokenizer_config: serde_json::Value = serde_json::from_slice(&tokenizer_config_bytes)
-            .context("parse NLI tokenizer_config.json")?;
-        let pad_id = config["pad_token_id"].as_u64().unwrap_or(0) as u32;
-        let pad_token = tokenizer_config["pad_token"]
-            .as_str()
-            .or_else(|| config["pad_token"].as_str())
-            .unwrap_or("[PAD]")
-            .to_string();
-        let model_max_length = tokenizer_config["model_max_length"]
-            .as_u64()
-            .unwrap_or(NLI_MAX_LENGTH as u64) as usize;
-        let max_length = model_max_length.min(NLI_MAX_LENGTH);
-
-        let tokenizer_bytes = fs::read(&tokenizer_path)
-            .with_context(|| format!("read NLI tokenizer {}", tokenizer_path.display()))?;
-        let tokenizer = Tokenizer::from_bytes(tokenizer_bytes)
-            .map_err(|error| anyhow::anyhow!(error.to_string()))?
-            .with_padding(Some(PaddingParams {
-                strategy: PaddingStrategy::BatchLongest,
-                pad_token,
-                pad_id,
-                ..Default::default()
-            }))
-            .with_truncation(Some(TruncationParams {
-                max_length,
-                ..Default::default()
-            }))
-            .map_err(|error| anyhow::anyhow!(error.to_string()))?
-            .clone();
+        let tokenizer = load_unbounded_tokenizer(&tokenizer_path)?;
 
         let model_path = model_dir.join("model.onnx");
         let session = ort::session::Session::builder()
@@ -5509,38 +5943,37 @@ impl NliClassifier {
 
     fn score_pairs(&mut self, pairs: &[(String, String)]) -> Result<Vec<[f32; 3]>> {
         let mut scores = Vec::with_capacity(pairs.len());
-        for batch in pairs.chunks(32) {
-            let inputs: Vec<(&str, &str)> = batch
-                .iter()
-                .map(|(left, right)| (left.as_str(), right.as_str()))
-                .collect();
-            let encodings = self
+        for (left, right) in pairs {
+            let encoding = self
                 .tokenizer
-                .encode_batch(inputs, true)
+                .encode((left.as_str(), right.as_str()), true)
                 .map_err(|error| anyhow::anyhow!(error.to_string()))
                 .context("tokenize NLI scenario pairs")?;
-            let encoding_length = encodings
-                .first()
-                .context("NLI tokenizer returned no encodings")?
-                .len();
-            let batch_size = batch.len();
-            let mut ids = Vec::with_capacity(batch_size * encoding_length);
-            let mut masks = Vec::with_capacity(batch_size * encoding_length);
-            let mut type_ids = Vec::with_capacity(batch_size * encoding_length);
-            for encoding in &encodings {
-                ids.extend(encoding.get_ids().iter().map(|id| *id as i64));
-                masks.extend(
-                    encoding
-                        .get_attention_mask()
-                        .iter()
-                        .map(|mask| *mask as i64),
-                );
-                type_ids.extend(encoding.get_type_ids().iter().map(|id| *id as i64));
-            }
-
-            let ids = Array::from_shape_vec((batch_size, encoding_length), ids)?;
-            let masks = Array::from_shape_vec((batch_size, encoding_length), masks)?;
-            let type_ids = Array::from_shape_vec((batch_size, encoding_length), type_ids)?;
+            let encoding_length = encoding.len();
+            let ids = Array::from_shape_vec(
+                (1, encoding_length),
+                encoding
+                    .get_ids()
+                    .iter()
+                    .map(|id| *id as i64)
+                    .collect::<Vec<_>>(),
+            )?;
+            let masks = Array::from_shape_vec(
+                (1, encoding_length),
+                encoding
+                    .get_attention_mask()
+                    .iter()
+                    .map(|mask| *mask as i64)
+                    .collect::<Vec<_>>(),
+            )?;
+            let type_ids = Array::from_shape_vec(
+                (1, encoding_length),
+                encoding
+                    .get_type_ids()
+                    .iter()
+                    .map(|id| *id as i64)
+                    .collect::<Vec<_>>(),
+            )?;
             let mut session_inputs = ort::inputs![
                 "input_ids" => ort::value::Value::from_array(ids)?,
                 "attention_mask" => ort::value::Value::from_array(masks)?,
@@ -5559,18 +5992,15 @@ impl NliClassifier {
                 .context("extract NLI logits")?;
             let values: Vec<f32> = logits.iter().copied().collect();
             anyhow::ensure!(
-                values.len() == batch_size * 3,
-                "NLI logits shape has {} values for {} pairs",
+                values.len() == 3,
+                "NLI logits shape has {} values for one pair",
                 values.len(),
-                batch_size
             );
-            for row in values.chunks_exact(3) {
-                scores.push([
-                    row[self.label_indices[0]],
-                    row[self.label_indices[1]],
-                    row[self.label_indices[2]],
-                ]);
-            }
+            scores.push([
+                values[self.label_indices[0]],
+                values[self.label_indices[1]],
+                values[self.label_indices[2]],
+            ]);
         }
         Ok(scores)
     }
