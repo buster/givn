@@ -50,7 +50,7 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
     And the semantic review report tells the agent to shorten or split the scenarios before rerunning review
     And the candidate remains `UNCERTAIN` and has no automatic Givn classification
 
-  @givn.added @nli @nli-combined @wip
+  @givn.added @nli @nli-combined
   Scenario: Exactly 512 tokens keeps normal second-stage behavior
     Given a permanent corpus with one E5 semantic candidate
     And its complete serialized pair encodes to exactly 512 BGE tokens and exactly 512 NLI tokens
