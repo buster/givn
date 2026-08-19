@@ -36,7 +36,7 @@ Feature: Token-cap evidence keeps complete semantic pairs reviewable
     And BGE and NLI evidence identify the same E5 candidate pool and endpoint pair
     And the JSON response instructs the agent to shorten or split the scenarios and rerun the audit
 
-  @givn.added @nli @nli-combined @e2e @wip
+  @givn.added @nli @nli-combined @e2e
   Scenario: Blocking change review keeps an all-over-cap candidate unresolved
     Given an end-to-end project with one unresolved E5 semantic candidate
     And its complete serialized pair encodes to 513 BGE tokens and 513 NLI tokens
