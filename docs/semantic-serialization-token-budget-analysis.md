@@ -117,6 +117,40 @@ Die Strict-Pool-Zahlen sind keine endgültige Produktionszahl. Sie zeigen aber,
 dass die Pair-Grenze im realistischen Kandidatenbereich deutlich häufiger
 erreicht wird als in der All-Pairs-Mittelung.
 
+## Aktueller Givn-E5-Pool
+
+Der echte aktuelle Givn-Lauf erzeugt `100` semantische E5-Candidates. Für genau
+diese Candidates ergibt die vollständige geplante Serialisierung:
+
+| Kategorie | Anzahl |
+|---|---:|
+| Passt vollständig in BGE und NLI | 93 |
+| Überschreitet nur NLI | 3 |
+| Überschreitet BGE und NLI | 4 |
+| Überschreitet nur BGE | 0 |
+| Überschreitet BGE insgesamt | 4 |
+| Überschreitet NLI insgesamt | 7 |
+
+Damit können `93/100` aktuelle E5-Candidates vollständig an beide Pair-Modelle
+übergeben werden. `7/100` würden bei einer vollständigen Serialisierung für
+mindestens ein Modell über das Fenster hinausgehen.
+
+| E5-Score | BGE Tokens | NLI Tokens | Betroffene Methode | Pair |
+|---:|---:|---:|---|---|
+| 0.9878 | 585 | 622 | BGE + NLI | `spec-duplicates`: Exact duplicates across features are reported together ↔ Exact duplicates in one feature are reported together |
+| 0.9625 | 522 | 574 | BGE + NLI | `review-disposition-gates`: Review blocks when a delta scenario shape-matches a permanent scenario without disposition ↔ Review passes when a shape match exists only between permanent scenarios |
+| 0.9578 | 513 | 562 | BGE + NLI | `review-disposition-gates`: Review blocks when a shape match involving the change's delta is undisposed ↔ Review passes when a shape match exists only between permanent scenarios |
+| 0.9562 | 519 | 530 | BGE + NLI | `spec-explore-change`: Change-aware JSON exploration labels candidate sources ↔ Change-aware file exploration finds permanent and active change candidates |
+| 0.9562 | 488 | 532 | NLI only | `review-disposition-gates`: Review blocks when a delta scenario shape-matches a permanent scenario without disposition ↔ Review passes when every shape match is disposed and reports the net-delta receipt |
+| 0.9689 | 479 | 520 | NLI only | `review-disposition-gates`: Review blocks when a shape match involving the change's delta is undisposed ↔ Review passes when every shape match is disposed and reports the net-delta receipt |
+| 0.9614 | 463 | 513 | NLI only | `review-disposition-gates`: Review blocks with a clear message when review.md is missing ↔ Review passes when a shape match exists only between permanent scenarios |
+
+In the current implementation, BGE and NLI tokenizers truncate pair input to
+their configured `512` tokens. These seven Pairs therefore do not fail the
+command; they are currently scored with incomplete right/left context. The
+token-cap handling must make this explicit before complete serialization is
+enabled.
+
 ## Konsequenz
 
 Die vollständige Serialisierung kann für einzelne Szenarien zunächst ohne
