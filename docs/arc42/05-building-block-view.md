@@ -176,11 +176,19 @@ The BGE layer is compiled only by `cross-encoder-reranker`, independently of
 exclusions, stable E5 tie ordering, top-five selection, canonical pair union,
 and the 512-unique-pair refusal before loading the local BGE model. A pair is
 scored in both directions and receives a symmetric raw-logit evidence record.
-The renderer records E5 raw candidates, `BGE_RECOMMENDED` candidates, and
-`BGE_FILTERED` evidence. Pairs outside the successful bounded subset receive
-`BGE_UNSCORED` status and remain blocking E5 candidates; filtered evidence is
-non-blocking and never becomes a Givn classification. Unavailable or overflow
-states retain the E5 blocking worklist without claiming BGE participation.
+Before construction or inference, the actual BGE tokenizer also preflights each
+complete left/right pair without truncation or padding and counts pair special
+tokens. Exactly 512 pair tokens fit; 513 receives `BGE_TOKEN_CAP` evidence with
+left, right, pair, and limit counts and no score. The renderer records E5 raw
+candidates, `BGE_RECOMMENDED`, `BGE_FILTERED`, `BGE_UNSCORED`, and
+`BGE_TOKEN_CAP` evidence. Pairs outside the successful bounded subset receive
+`BGE_UNSCORED`; over-cap pairs inside the subset receive `BGE_TOKEN_CAP`.
+Both remain visible and blocking, while filtered evidence is non-blocking and
+never becomes a Givn classification. If no pair can be scored because all
+selected pairs exceed the token budget, the run is `BGE_UNAVAILABLE` with
+reason `token-cap` and every affected candidate retains its cap evidence.
+Artifact refusal and pair-union overflow retain their existing unavailable
+fallback without claiming BGE participation.
 
 The benchmark label artifact and comparison report are repository-owned
 evidence. Their metrics cover top-K recall, admission precision/recall,
@@ -189,8 +197,8 @@ steps use local stubs and invoke the compiled CLI as a subprocess.
 
 ### 5.3g NLI evidence additions
 
-The independent `nli-evidence` capability reuses the BGE candidate pool and
-adds `NliEvidence`/`NliRun` records to `spec::retrieval`. The local ONNX NLI
+The independent `nli-evidence` capability uses the same E5 candidate pool as
+BGE and adds `NliEvidence`/`NliRun` records to `spec::retrieval`. The local ONNX NLI
 classifier resolves labels by name, scores both ordered pair directions, and
 stores directional plus symmetric probabilities. A fixed symmetric
 entailment probability of `0.5000` admits `NLI_RECOMMENDED`; lower values are
@@ -200,6 +208,41 @@ while E5 raw candidates remain available for audit and fallback.
 NLI is applied to permanent exploration, current-change exploration, advisory
 review, blocking semantic review, and the permanent duplicate audit. A local
 artifact preflight or pair-cap refusal produces `NLI_UNAVAILABLE`, keeps raw
-E5 candidates blocking, and records zero model-load attempts. Regular and E2E
-acceptance bindings live in separate capability modules and invoke the
+E5 candidates blocking, and records zero model-load attempts. Before NLI model
+construction or inference, its actual tokenizer independently preflights the
+same E5 candidate pool using untruncated/unpadded pair encodings with pair
+special tokens. A 513-token pair receives `NLI_TOKEN_CAP`, null probabilities,
+exact counts, and remains visible, unresolved, non-filtered, and blocking. If
+no pair fits, the run is `NLI_UNAVAILABLE` with reason `token-cap`; fitting
+pairs in a partial run are still scored and the run remains enabled. Regular
+and E2E acceptance bindings live in separate capability modules and invoke the
 compiled CLI through temporary project roots.
+
+### 5.3h Complete semantic serialization and token-budget guard
+
+The retrieval building block owns one canonical serializer for the Feature,
+optional Rule, inherited Feature/Rule Backgrounds, and Scenario AST nodes. Its
+stable order is Feature keyword/name/context/description, Feature Background,
+Rule keyword/name/context/description, Rule Background, Scenario
+keyword/title/description, resolved behavior steps, tables, docstrings, the
+Scenario Outline template, and concrete Examples rows. `And` and `But` inherit
+the preceding resolved role. Whitespace normalization is deterministic and
+does not drop table cells, example values, docstring content, or optional-section
+presence.
+
+The serializer's exact text is the E5 passage input and the source of
+`content_hash`; matching endpoint identity and hash reuse an existing vector,
+while a mismatch re-embeds it. No serializer-version field is introduced.
+Paths, tags, scores, classifications, and run statuses are metadata rather
+than model text. The deterministic `Fingerprint` canonical behavior and facts
+remain a separate evidence source, while report endpoint evidence remains a
+separate carry-forward representation.
+
+The budget guard measures E5 passages before E5 model construction and measures
+BGE/NLI pairs before their respective model construction. It uses each actual
+model tokenizer, no truncation, no padding, and pair special tokens for pair
+counts. A limit of 512 is inclusive; 513 is over. It partitions fitting and
+over-cap candidates without automatic chunking, shortening, splitting, or
+feature edits. A deterministic test-only budget provider supplies exact 512
+and 513 fixtures; it is unavailable on the production tokenizer path, and
+regular/E2E tests use no network or multi-gigabyte model artifact.

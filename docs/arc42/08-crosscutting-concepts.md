@@ -331,6 +331,14 @@ remain blocking because BGE did not score them; only `BGE_FILTERED` is
 non-blocking. This partial state is valid only when the selected bounded union
 is at or below 512 pairs; an overflow refuses the complete BGE invocation and
 uses `BGE_UNAVAILABLE` with all raw pairs unscored.
+The actual BGE tokenizer independently preflights each selected complete pair
+without truncation or padding and includes pair special tokens. Exactly 512
+fits and 513 receives `BGE_TOKEN_CAP` with exact left/right/pair/limit counts
+and a null score. A partial token-cap run remains `BGE_ENABLED`; only an
+all-over-cap run is `BGE_UNAVAILABLE` with reason `token-cap`, while every
+affected candidate retains visible, unresolved, non-filtered, blocking cap
+evidence. The 512-pair operational bound and the 512-token model-input limit
+are separate controls.
 
 The default binary remains independent of ONNX Runtime. Without the retrieval
 feature, ordinary check and archive behavior is unchanged and direct retrieval
@@ -365,6 +373,12 @@ no evidence; a model that is unavailable emits `NLI_UNAVAILABLE` with raw E5
 fallback and does not silently filter. A successful partial bounded run marks
 outside pairs `NLI_UNSCORED`, which remain blocking. An overflow refuses before
 model loading.
+The actual NLI tokenizer also preflights every selected complete pair without
+truncation or padding and includes pair special tokens. Exactly 512 fits and
+513 receives `NLI_TOKEN_CAP` with exact left/right/pair/limit counts and null
+probabilities. A partial cap run remains `NLI_ENABLED`; only an all-over-cap
+run is `NLI_UNAVAILABLE` with reason `token-cap`, and cap candidates remain
+visible and blocking.
 
 Explore and duplicate JSON use additive NLI fields and a distinct schema only
 when NLI participates; E5-only and BGE-only consumers retain their existing
@@ -470,9 +484,11 @@ identities, content hashes, full evidence hashes, E5 model/index metadata,
 fingerprint/evidence schema versions, the report schema version, and available
 deterministic `Fingerprint` facts. The canonical endpoint evidence orders
 feature `Background`, applicable `Rule` `Background`, and scenario steps, and
-retains every step docstring and data-table row and cell in source order. The
-existing E5 passage-text input remains separate from this evidence
-serialization. Facts include exit-code evidence, `contains` polarity by
+ retains every step docstring and data-table row and cell in source order. The
+complete semantic serialization is the exact E5 passage and BGE/NLI pair input;
+this report endpoint object remains a separate metadata/evidence representation
+for carry-forward. Paths, tags, scores, and classifications are not model text.
+Facts include exit-code evidence, `contains` polarity by
 position, masked table facts, the `[DONE]` title marker, TTY mention, and fact
 contradiction. Missing facts use `null`; no fact combination assigns a Givn
 classification. The full evidence hash covers every listed component, so a
@@ -591,6 +607,54 @@ array length. Model availability remains an explicit setup boundary for the
 feature-enabled build; tests use the deterministic stub embedder and its
 normalized-endpoint score seam.
 
+### 8.5g Shared complete semantic serialization and token-budget guard
+
+All semantic model paths use one complete deterministic serialization of the
+parsed Gherkin context. The stable sections are Feature keyword/name/context/
+description, inherited Feature Background steps, Rule keyword/name/context/
+description, inherited Rule Background steps, Scenario keyword/title/
+description, behavior steps with resolved `Given`/`When`/`Then` roles, tables,
+docstrings, the Scenario Outline template, and concrete Examples rows in source
+order. `And` and `But` inherit the preceding resolved role. Tables, examples,
+and docstrings are deterministically whitespace-normalized without dropping
+content, and missing optional sections have one stable empty representation.
+
+This exact serialized text is simultaneously the E5 passage input and the
+complete left/right text used by BGE and NLI. The permanent E5 index computes
+`content_hash` from that exact passage. A vector is reused only when endpoint
+identity and stored hash match; any mismatch, including an entry made from the
+old short projection, is re-embedded. Deleted entries are removed. No separate
+serializer-version field is introduced. Paths, tags, scores, classifications,
+and run statuses are metadata, not model text. The deterministic `Fingerprint`
+canonical behavior and facts remain a separate evidence source.
+
+Before model construction or inference, the guard measures every E5 passage
+with the actual E5 tokenizer and every selected BGE/NLI pair with that layer's
+actual tokenizer. Counts are untruncated and unpadded; pair counts are the
+tokenizer's complete pair encoding and include pair special tokens. Exactly 512
+tokens fits and 513 is over. E5 over-cap input is an explicit retrieval input
+failure; BGE/NLI over-cap inputs remain candidate-level evidence rather than
+being truncated, padded, or silently scored.
+
+The guard is shared by permanent duplicate audit, permanent and change-aware
+Explore, advisory review, and blocking review. BGE and NLI independently receive
+the same immutable E5 candidate pool and never form a sequential survivor pool.
+Each layer scores all fitting pairs it can score. An over-cap candidate gets
+`BGE_TOKEN_CAP` or `NLI_TOKEN_CAP` with left, right, pair, and limit counts,
+null score/probability, and no filtered status. It remains visible, unresolved,
+non-filtered, and blocking. A partial run stays enabled; run-level
+`BGE_UNAVAILABLE` or `NLI_UNAVAILABLE` with reason `token-cap` means that no
+pair in that layer was scoreable. Combined recommendations are the
+intersection of participating recommended sets, and a candidate cannot become
+resolved through another layer alone.
+
+Reports instruct the agent to shorten or split the scenarios and rerun review.
+Automatic chunking, shortening, splitting, and feature edits are out of scope.
+The regular and E2E suites replace only the budget provider with a deterministic
+test-only seam for exact 512 and 513 fixtures. Production uses real local
+tokenizers and artifacts; tests use no network, model download, or multi-gigabyte
+inference artifact.
+
 ## 8.6 Filesystem-derived state
 
 There is no state file. Lifecycle state is computed from which files exist:
@@ -685,6 +749,11 @@ Standards-aligned, configurable-target emit (see ADR-013, ADR-036):
   `spec-retrieval`, it returns the existing retrieval-unavailable error, does not
   falsely pass, and does not create the report. Existing overlap, similarity,
   coverage, and advisory review contracts remain separate gates.
+- Token-cap evidence is not a filtered or resolved state. `BGE_TOKEN_CAP` and
+  `NLI_TOKEN_CAP` remain visible and blocking per candidate; a partial layer is
+  enabled for fitting pairs, while `BGE_UNAVAILABLE`/`NLI_UNAVAILABLE` with
+  reason `token-cap` is used only when that layer scores no pair. Reports tell
+  the agent to shorten or split and rerun; Givn does not edit the feature.
 - Destructive operations (archive) validate all preconditions before any write.
 - Change-aware exploration treats an unsafe id, missing change, missing specs
   directory, or malformed delta as a non-zero request error and validates it

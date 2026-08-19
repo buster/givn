@@ -211,6 +211,15 @@ different behavior, sharpen the overloaded domain terms and observable
 invariants, then rerun the report. Do not use a score or an unexplained label
 to dismiss the candidate.
 
+Token-cap evidence is not a classification. `BGE_TOKEN_CAP` and
+`NLI_TOKEN_CAP` are per-candidate states for complete pairs that exceed the
+actual model-tokenizer limit; they remain visible, unresolved, outside filtered
+collections, and blocking. `BGE_UNAVAILABLE` and `NLI_UNAVAILABLE` are
+run-level states only when that layer scores no pair. Do not classify a token-cap
+candidate as resolved from another layer's score. The remediation instruction
+is to shorten or split the scenarios and rerun review. Automatic chunking,
+automatic scenario edits, and verbosity inflation are not valid remediation.
+
 ## Semantic remediation verification
 
 Classification is a worklist, not proof that the required specification change

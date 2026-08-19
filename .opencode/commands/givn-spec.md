@@ -97,6 +97,16 @@ use `givn spec index` to refresh permanent scenarios and `givn spec search` or
 `givn check review --change <id>`. In a feature-free build, preserve the
 explicit `retrieval-unavailable` failure rather than passing silently.
 
+E5, BGE, and NLI use the same complete deterministic Gherkin serialization.
+Actual model tokenizers check complete inputs before model construction or
+inference, without truncation or padding; exactly 512 tokens fits and 513 is
+over. `BGE_TOKEN_CAP` and `NLI_TOKEN_CAP` are per-candidate, visible,
+unresolved, non-filtered evidence. Run-level `BGE_UNAVAILABLE` or
+`NLI_UNAVAILABLE` is used only when that layer can score no pair. BGE and NLI
+score the same E5 pool independently, and combined recommendations intersect
+their recommendations. Tell the author to shorten or split the scenarios and
+rerun review; do not chunk or edit scenarios automatically.
+
 ### 5. Validate syntax
 
 ```sh
