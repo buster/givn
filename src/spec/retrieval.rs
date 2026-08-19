@@ -2160,23 +2160,34 @@ fn apply_semantic_bge(
             )
         })
         .collect();
+    let tokenizer = match backend {
+        Ok(BgeBackendKind::Local) => Some(load_unbounded_tokenizer(
+            &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+        )?),
+        _ => None,
+    };
+    let partition =
+        preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
     let mut run = match backend {
-        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
+        Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+            BgeRun::unavailable(BgeUnavailableReason::TokenCap, candidates.len())
+        }
+        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)?,
         Err(reason) => BgeRun::unavailable(reason, candidates.len()),
     };
     run.e5_candidates = candidates.len();
-    if run.status == "BGE_UNAVAILABLE" {
-        for candidate in candidates {
-            candidate.bge_admission = Some("BGE_UNSCORED");
-        }
-        return Ok(Some(run));
-    }
+    run.unscored = candidates.len().saturating_sub(run.evidence.len());
     for candidate in candidates {
         let key = canonical_pair_key(
             endpoint(&candidate.left.file, &candidate.left.title),
             endpoint(&candidate.right.file, &candidate.right.title),
         );
-        if let Some(evidence) = run.evidence.get(&key).cloned() {
+        if let Some(budget) = partition.capped.get(&key).copied() {
+            candidate.bge = None;
+            candidate.bge_token_cap = Some(budget);
+            candidate.bge_admission = Some("BGE_TOKEN_CAP");
+        } else if let Some(evidence) = run.evidence.get(&key).cloned() {
+            candidate.bge_token_cap = None;
             candidate.bge_admission = Some(if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
                 "BGE_RECOMMENDED"
             } else {
@@ -2184,6 +2195,7 @@ fn apply_semantic_bge(
             });
             candidate.bge = Some(evidence);
         } else {
+            candidate.bge_token_cap = None;
             candidate.bge_admission = Some("BGE_UNSCORED");
         }
     }
@@ -2235,23 +2247,34 @@ fn apply_semantic_nli(
             )
         })
         .collect();
+    let tokenizer = match selection {
+        Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
+            &preflight_nli_artifacts(root)?.join("tokenizer.json"),
+        )?),
+        _ => None,
+    };
+    let partition =
+        preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
     let mut run = match selection {
-        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend)?,
+        Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+            NliRun::unavailable(NliUnavailableReason::TokenCap, candidates.len())
+        }
+        Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
         Err(reason) => NliRun::unavailable(reason, candidates.len()),
     };
     run.e5_candidates = candidates.len();
-    if run.status == "NLI_UNAVAILABLE" {
-        for candidate in candidates {
-            candidate.nli_admission = Some("NLI_UNSCORED");
-        }
-        return Ok(Some(run));
-    }
+    run.unscored = candidates.len().saturating_sub(run.evidence.len());
     for candidate in candidates {
         let key = canonical_pair_key(
             endpoint(&candidate.left.file, &candidate.left.title),
             endpoint(&candidate.right.file, &candidate.right.title),
         );
-        if let Some(evidence) = run.evidence.get(&key).copied() {
+        if let Some(budget) = partition.capped.get(&key).copied() {
+            candidate.nli = None;
+            candidate.nli_token_cap = Some(budget);
+            candidate.nli_admission = Some("NLI_TOKEN_CAP");
+        } else if let Some(evidence) = run.evidence.get(&key).copied() {
+            candidate.nli_token_cap = None;
             candidate.nli = Some(evidence);
             candidate.nli_admission = Some(if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
                 "NLI_RECOMMENDED"
@@ -2259,6 +2282,7 @@ fn apply_semantic_nli(
                 "NLI_FILTERED"
             });
         } else {
+            candidate.nli_token_cap = None;
             candidate.nli_admission = Some("NLI_UNSCORED");
         }
     }
@@ -2810,6 +2834,20 @@ fn render_semantic_report(
         },
         blocking.len()
     );
+    if candidates.iter().any(|candidate| {
+        candidate.bge_token_cap.is_some() || {
+            #[cfg(feature = "nli-evidence")]
+            {
+                candidate.nli_token_cap.is_some()
+            }
+            #[cfg(not(feature = "nli-evidence"))]
+            {
+                false
+            }
+        }
+    }) {
+        report.push_str(&format!("refactoring required: {TOKEN_CAP_GUIDANCE}\n"));
+    }
     #[cfg(feature = "nli-evidence")]
     if bge_run.is_none() {
         if let Some(run) = nli_run {
@@ -2868,6 +2906,7 @@ fn render_semantic_report(
                     candidate.score,
                     candidate.left.facts.facts.contradicts(&candidate.right.facts.facts),
                 ));
+                append_semantic_bge_token_cap_fields(&mut report, candidate);
                 append_nli_candidate_fields(&mut report, candidate);
             }
             return report;
@@ -2976,6 +3015,7 @@ fn render_semantic_report(
                 candidate.bge.as_ref().map(|e| format!("{:.4}", e.symmetric_raw)).unwrap_or_else(|| "null".to_string()),
                 candidate.bge_admission.unwrap_or("BGE_UNSCORED"),
             ));
+            append_semantic_bge_token_cap_fields(&mut report, candidate);
             #[cfg(feature = "nli-evidence")]
             append_nli_candidate_fields(&mut report, candidate);
         }
@@ -3039,6 +3079,22 @@ fn append_nli_candidate_fields(report: &mut String, candidate: &SemanticCandidat
         nli_probability_text(evidence.map(|value| value.symmetric[2])),
         candidate.nli_admission.unwrap_or("NLI_UNSCORED"),
     ));
+    if let Some(budget) = candidate.nli_token_cap {
+        report.push_str(&format!(
+            "- nli_left_tokens: {}\n- nli_right_tokens: {}\n- nli_pair_tokens: {}\n- nli_limit: {}\n- nli_refactoring_required: true\n",
+            budget.left_tokens, budget.right_tokens, budget.pair_tokens, budget.limit
+        ));
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn append_semantic_bge_token_cap_fields(report: &mut String, candidate: &SemanticCandidate) {
+    if let Some(budget) = candidate.bge_token_cap {
+        report.push_str(&format!(
+            "- bge_left_tokens: {}\n- bge_right_tokens: {}\n- bge_pair_tokens: {}\n- bge_limit: {}\n- bge_refactoring_required: true\n",
+            budget.left_tokens, budget.right_tokens, budget.pair_tokens, budget.limit
+        ));
+    }
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -6391,17 +6447,106 @@ fn reusable_entry(index: &SpecIndex, scenario: &ScenarioText) -> Option<IndexEnt
 #[cfg(feature = "spec-retrieval")]
 fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Vec<Vec<f32>>> {
     match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
-        Ok("stub") => Ok(texts
-            .iter()
-            .map(|text| stub_embedding(text, role))
-            .collect()),
+        Ok("stub") => {
+            preflight_e5_stub_texts(texts)?;
+            Ok(texts
+                .iter()
+                .map(|text| stub_embedding(text, role))
+                .collect())
+        }
         Ok("missing") => bail!(
             "retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER"
         ),
         Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),
-        Err(std::env::VarError::NotPresent) => fastembed_texts(root, texts, role),
+        Err(std::env::VarError::NotPresent) => {
+            preflight_e5_texts(root, texts, role)?;
+            fastembed_texts(root, texts, role)
+        }
         Err(std::env::VarError::NotUnicode(_)) => bail!("GIVN_SPEC_EMBEDDER is not valid UTF-8"),
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn preflight_e5_stub_texts(texts: &[String]) -> Result<()> {
+    let Some(fixture) = std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET") else {
+        return Ok(());
+    };
+    let fixture = fixture
+        .to_str()
+        .context("GIVN_SPEC_E5_TOKEN_BUDGET is not valid UTF-8")?;
+    match fixture {
+        "exact-512" | "bounded-512" => Ok(()),
+        "overflow-513" | "all-513" => {
+            bail!("E5 passage token cap: complete semantic passage requires 513 tokens (limit 512)")
+        }
+        _ => {
+            let _ = texts;
+            bail!("unknown E5 token budget fixture `{fixture}`; expected exact-512 or overflow-513")
+        }
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn preflight_e5_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<()> {
+    let tokenizer_path = std::env::var_os("GIVN_SPEC_E5_TOKENIZER")
+        .map(std::path::PathBuf::from)
+        .or_else(|| find_e5_tokenizer(root));
+    let Some(tokenizer_path) = tokenizer_path else {
+        bail!(
+            "retrieval tokenizer is unavailable; provide local E5 artifacts or set GIVN_SPEC_E5_TOKENIZER"
+        );
+    };
+    let tokenizer = load_unbounded_tokenizer(&tokenizer_path)?;
+    let prefix = match role {
+        EmbeddingRole::Passage => "passage: ",
+        EmbeddingRole::Query => "query: ",
+    };
+    for text in texts {
+        let count = tokenizer
+            .encode(format!("{prefix}{text}"), true)
+            .map_err(|error| anyhow::anyhow!(error.to_string()))?
+            .len();
+        if count > E5_MAX_LENGTH {
+            bail!(
+                "E5 passage token cap: complete semantic input requires {count} tokens (limit {E5_MAX_LENGTH})"
+            );
+        }
+    }
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn find_e5_tokenizer(root: &Path) -> Option<std::path::PathBuf> {
+    let mut roots = Vec::new();
+    if let Some(path) = std::env::var_os("GIVN_SPEC_MODEL_CACHE") {
+        roots.push(std::path::PathBuf::from(path));
+    }
+    if let Some(path) = std::env::var_os("HF_HOME") {
+        roots.push(std::path::PathBuf::from(path));
+    }
+    roots.push(root.join("givn/.spec-model-cache"));
+    roots
+        .into_iter()
+        .find_map(|path| find_named_file(&path, "tokenizer.json"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn find_named_file(root: &Path, name: &str) -> Option<std::path::PathBuf> {
+    if root.is_file() {
+        return (root.file_name().and_then(|value| value.to_str()) == Some(name))
+            .then(|| root.to_path_buf());
+    }
+    let mut entries = fs::read_dir(root)
+        .ok()?
+        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
+        .collect::<Vec<_>>();
+    entries.sort();
+    for path in entries {
+        if let Some(found) = find_named_file(&path, name) {
+            return Some(found);
+        }
+    }
+    None
 }
 
 #[cfg(feature = "spec-retrieval")]

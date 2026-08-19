@@ -81,24 +81,24 @@
       this scenario.
   - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub cargo test --features spec-retrieval,cross-encoder-reranker --test features_runner -- --name "Permanent duplicate audit keeps partial BGE token-cap evidence per candidate"`
   - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)`.
-- [ ] COMMIT: record the atomic E2E scenario commit.
-  - Commit:
+- [x] COMMIT: record the atomic E2E scenario commit.
+  - Commit: `e3a48c5`
 
 ## Scenario: Blocking change review keeps an all-over-cap candidate unresolved
 
-- [ ] RED: remove `@wip`, implement the E2E steps with `unimplemented!()`, and
+- [x] RED: remove `@wip`, implement the E2E steps with `unimplemented!()`, and
       run only this E2E scenario through `./run-tests.sh --e2e`.
-  - Command:
-  - Output:
-- [ ] GREEN: drive blocking change review through the compiled CLI subprocess
+  - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Blocking change review keeps an all-over-cap candidate unresolved"`
+  - Output: Non-zero (`cargo test` exit 101): the first E2E step matched `semantic_token_cap_review_e2e_steps.rs:134` and panicked with `not implemented`; the strict runner reported `1 scenario (1 failed)`. The direct command is the scenario-targeted equivalent of the configured combined E2E matrix.
+- [x] GREEN: drive blocking change review through the compiled CLI subprocess
       and assert the unresolved semantic report and refactoring guidance.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: simplify the E2E steps without changing behavior; rerun only
+  - Command: `GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Blocking change review keeps an all-over-cap candidate unresolved"`
+  - Output: Zero exit; `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)`. The compiled `givn check review --change running-change` subprocess returned non-zero for the unresolved candidate and wrote BGE/NLI `token-cap` unavailable runs, both per-candidate cap admissions, exact `257/255/513/512` counts, blocking `UNCERTAIN`, and shorten/split guidance.
+  - Production files: `src/spec/retrieval.rs` (semantic-review BGE/NLI preflight and cap report fields, E5 tokenizer preflight); `tests/steps/semantic_token_cap_review_e2e_steps.rs`; `tests/steps/bge_reranking_evidence_steps.rs` (reused blocking-review action passes the deterministic NLI seam).
+- [x] REFACTOR: simplify the E2E steps without changing behavior; rerun only
       this scenario.
-  - Command:
-  - Output:
+  - Command: `cargo fmt --all && GIVN_FEATURES=givn/changes/semantic-token-cap-review/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "Blocking change review keeps an all-over-cap candidate unresolved"`
+  - Output: Zero exit after formatting; `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)`.
 - [ ] COMMIT: record the atomic E2E scenario commit.
   - Commit:
 
