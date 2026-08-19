@@ -157,6 +157,15 @@ escape classification. A seemingly unrelated pair that remains above the
 active boundary requires sharper domain vocabulary and observable invariants,
 followed by a fresh review run.
 
+Token-cap evidence is not a classification. `BGE_TOKEN_CAP` and
+`NLI_TOKEN_CAP` are per-candidate states for complete pairs that exceed the
+actual model-tokenizer limit; they remain visible, unresolved, outside filtered
+collections, and blocking. `BGE_UNAVAILABLE` and `NLI_UNAVAILABLE` are
+run-level states only when that layer scores no pair. Do not classify a token-cap
+candidate as resolved from another layer's score. Tell the author to shorten or
+split the scenarios and rerun review; automatic chunking, automatic scenario
+edits, and verbosity inflation are not valid remediation.
+
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
 Failures: diagnose infrastructure (fix plumbing only) or coverage gap

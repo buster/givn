@@ -202,6 +202,11 @@ For each resolved classification, record the projected-tree evidence:
 Missing, stale, unmatched, or score-only remediation is blocking. Record the
 verifier receipt only after all rows pass:
 
+Token-cap candidates are not resolved classifications. Record their
+`BGE_TOKEN_CAP`/`NLI_TOKEN_CAP` evidence, exact tokenizer counts, and the
+shorten-or-split instruction; leave them unresolved until the scenarios are
+refactored and the report is regenerated.
+
 ```text
 semantic remediation verified: <!-- count -->
 ```

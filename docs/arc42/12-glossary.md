@@ -47,6 +47,15 @@
 | **Instruction JSON contract** | The single machine-readable object emitted by `givn instructions --json`: `id`, `generates`, `requires`, and `instruction`. |
 | **Derived guidance** | Artifact-specific fields, audit procedures, or choreography that may reference the canonical policy but may not redefine it. |
 | **Embedding** | A numeric vector representation of scenario or query text used for interactive ranking and strict scenario-pair comparison. |
+| **Complete semantic serialization** | The deterministic model text for one parsed Gherkin scenario: Feature/Rule context and descriptions, inherited backgrounds, resolved step roles, tables, docstrings, outline templates, and concrete Examples rows in stable order. It feeds E5, BGE, and NLI; paths, tags, scores, classifications, and deterministic Fingerprints are not part of it. |
+| **Semantic content hash** | The hash of the exact complete serialized E5 passage. An existing vector is reusable only when endpoint identity and this hash match; a mismatch re-embeds, with no separate serializer-version field. |
+| **Actual-tokenizer preflight** | The guard that measures an input with the tokenizer of the model that will consume it, before model construction or inference, without truncation or padding. |
+| **Pair token count** | The actual tokenizer length of a complete left/right BGE or NLI encoding, including pair special tokens; it is not the sum of individual counts. |
+| **Token budget** | The inclusive model input limit of 512 tokens for an E5 passage or a BGE/NLI pair. Exactly 512 fits and 513 is over. |
+| **Shared E5 candidate pool** | The immutable candidate identity and pair set produced by E5 for one invocation and supplied independently to BGE and NLI. NLI never receives only BGE survivors. |
+| **Combined recommendation** | The intersection of the participating BGE and NLI recommended sets. Filtered, capped, unscored, or unavailable evidence remains visible and cannot be resolved by another layer alone. |
+| **Partial token-cap run** | A second-stage run in which at least one pair fits and is scored while other candidates receive per-candidate token-cap evidence; the layer remains enabled. |
+| **All-over-cap run** | A second-stage run in which no pair fits the layer's token budget; the layer is run-level unavailable with reason `token-cap`, while affected candidates retain cap evidence. |
 | **Retrieval index** | The local persisted collection of scenario titles, paths, content hashes, and embeddings used by `givn spec search`. |
 | **Advisory match** | A result from interactive `givn spec search`; it informs an author but does not itself block the workflow. |
 | **Explore query** | One complete Gherkin scenario supplied through `givn spec explore` for comparison with permanent scenarios and, optionally, active scenarios in a named current change. |
@@ -60,7 +69,7 @@
 | **Delta-to-delta scope** | A semantic review comparison between two distinct active current-change endpoints from the same change, emitted once in canonical endpoint order. |
 | **Deterministic facts** | The available `Fingerprint` evidence for a semantic review endpoint: exit code, `contains` polarity, masked table facts, `[DONE]`, TTY mention, and fact contradiction; facts do not classify candidates. |
 | **Endpoint evidence** | The canonical evidence object for one report endpoint: scope, normalized file/title, all normalized steps, background steps, table contents, delta operation, projected target, content hash, E5 model/index metadata, deterministic facts, fingerprint/evidence schema version, and report schema version. |
-| **Complete endpoint evidence** | The source-ordered endpoint representation used for reporting and hashing: feature `Background`, applicable `Rule` `Background`, then scenario steps, with every step docstring and data-table row/cell preserved; its representation is separate from the existing E5 passage-text input. |
+| **Complete endpoint evidence** | The source-ordered report representation used for carry-forward hashing: feature `Background`, applicable `Rule` `Background`, then scenario steps, with every step docstring and data-table row/cell preserved. It records metadata and evidence separately from the complete semantic model text, whose exact serialization feeds E5, BGE, and NLI. |
 | **Evidence hash** | The exactly 16-character lowercase hexadecimal hash of complete endpoint evidence. It is the authoritative carry-forward boundary. |
 | **Report schema version** | The fixed integer identifying the semantic-review Markdown grammar. A mismatch invalidates prior report entries. |
 | **Permanent-only index boundary** | The rule that the persisted retrieval index may refresh permanent entries but contains no active-delta vectors, semantic classifications, or report state. |
@@ -82,8 +91,9 @@
 | **BGE evidence** | Local bidirectional relevance evidence from `rozgo/bge-reranker-v2-m3`, including forward raw logit, reverse raw logit, symmetric average, model identity, and elapsed runtime. It is not a Givn classification. |
 | **BGE_RECOMMENDED** | Non-authoritative admission status for a BGE-scored pair whose symmetric raw logit is at least the fixed `3.0000` operating point. The pair still requires agent classification in blocking review. |
 | **BGE_FILTERED** | Non-blocking evidence status for a BGE-scored pair below the operating point. It is recorded for auditability, receives no Givn classification, and cannot block change review. |
+| **BGE_TOKEN_CAP** | Per-candidate evidence that the complete BGE pair exceeds the actual tokenizer's 512-token budget. It records left/right/pair/limit counts, has no score, remains visible and unresolved outside the filtered collection, and blocks review. |
 | **BGE_UNSCORED** | A raw E5 candidate outside the successfully scored bounded BGE subset. It has no BGE score, remains visible, and remains a blocking E5 candidate requiring normal agent classification. |
-| **BGE_UNAVAILABLE** | Explicit state indicating that BGE artifacts are missing or the bounded pair pool overflowed. A build with BGE disabled has no BGE evidence object and is represented by the existing E5-only contract, not by this status. |
+| **BGE_UNAVAILABLE** | Explicit run-level state indicating that BGE scored no pair, including artifact refusal, bounded pair-pool overflow, or an all-over-cap token run with reason `token-cap`. A build with BGE disabled has no BGE evidence object and is represented by the existing E5-only contract, not by this status. |
 | **Bounded BGE pool** | The deterministic union of at most five E5 neighbors per eligible query/endpoint, after identity/deterministic exclusions and before BGE inference, capped at 512 unique undirected pairs per invocation. |
 | **Recommended review set** | The BGE-recommended subset shown as the agent's prioritized worklist; filtered and unavailable evidence remains separately visible. |
 | **Directional raw score** | The BGE logit for one ordered pair direction. Both directions are scored; their arithmetic mean is the symmetric raw score. |
@@ -95,8 +105,9 @@
 | **NLI evidence** | Local bidirectional evidence from the multilingual NLI model, containing entailment, neutral, and contradiction probabilities for both directions, a symmetric summary, model identity, and elapsed runtime. It is not a Givn classification. |
 | **NLI_RECOMMENDED** | Non-authoritative admission status for an NLI-scored pair whose symmetric entailment probability is at least the fixed inclusive `0.5000` operating point. The pair still requires agent classification in blocking review. |
 | **NLI_FILTERED** | Non-blocking evidence status for an NLI-scored pair below the symmetric entailment operating point. It remains visible and receives no Givn classification. |
+| **NLI_TOKEN_CAP** | Per-candidate evidence that the complete NLI pair exceeds the actual tokenizer's 512-token budget. It records left/right/pair/limit counts, has null probabilities, remains visible and unresolved outside the filtered collection, and blocks review. |
 | **NLI_UNSCORED** | A raw E5 candidate outside the successfully scored bounded NLI subset. It has no NLI probabilities, remains visible, and remains a blocking E5 candidate. |
-| **NLI_UNAVAILABLE** | Explicit state indicating that NLI artifacts are missing or the bounded pair pool overflowed. It preserves the E5 fallback and does not claim NLI participation. |
+| **NLI_UNAVAILABLE** | Explicit run-level state indicating that NLI scored no pair, including artifact refusal, bounded pair-pool overflow, or an all-over-cap token run with reason `token-cap`. It preserves the E5 fallback and does not claim NLI participation. |
 | **Bounded second-stage pool** | The shared deterministic union of at most five E5 neighbors per eligible query/endpoint, after identity/deterministic exclusions and before BGE/NLI inference, capped at 512 unique undirected pairs per invocation. |
 | **Symmetric NLI probability** | The softmax probability vector produced from the arithmetic mean of the forward and reverse NLI logits; its entailment component drives NLI admission only. |
 | **Coverage measurement command** | The project-owned command in `coverage.measure_command` that runs the configured test subsets and writes the non-E2E and E2E source coverage reports. |

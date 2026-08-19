@@ -314,6 +314,26 @@ to drive its loop regardless of how the manifest is configured.
 
 The retrieval and similarity-gate flow is:
 
+Every E5 passage in this flow uses the complete deterministic semantic
+serialization: Feature/Rule context and descriptions, inherited backgrounds,
+resolved step roles, tables, docstrings, outline templates, and concrete
+Examples rows. The exact serialized passage is the E5 `content_hash` boundary;
+matching endpoint identity and hash reuse a vector and mismatches re-embed,
+without a serializer-version field. Paths, tags, scores, and classifications
+are metadata, while deterministic `Fingerprint` evidence is separate.
+
+Before E5 model construction or inference, the actual tokenizer measures each
+untruncated and unpadded passage. For every participating BGE or NLI branch,
+the actual tokenizer also measures complete pair encodings before model
+construction, including pair special tokens. Exactly 512 fits and 513 is over.
+The guard is shared by Explore, advisory review, duplicate audit, and blocking
+review. BGE and NLI independently receive the same E5 candidate pool; combined
+recommendations intersect their participating recommendation sets. Per-
+candidate `BGE_TOKEN_CAP` and `NLI_TOKEN_CAP` evidence remains visible,
+unresolved, non-filtered, and blocking. A partial layer remains enabled for
+fitting pairs; run-level unavailable with reason `token-cap` means that no pair
+in that layer was scoreable.
+
 1. `givn spec index` scans permanent feature files, resolves or creates the
    local model cache, embeds scenario text with the `passage:` role, and stores
    content hashes and vectors.
@@ -358,6 +378,13 @@ flowchart TD
 ```
 
 The command validates and parses the input before changing the generated index.
+The complete input scenario is serialized with the same deterministic semantic
+serializer used for E5 indexing and second-stage pairs. The actual E5 tokenizer
+preflights the untruncated/unpadded passage before model construction; selected
+BGE/NLI branches preflight their own complete pair encodings, including pair
+special tokens, before their models are constructed. A 512-token input fits and
+513 is over. Token-cap candidates retain per-layer cap evidence and remain
+visible and advisory rather than being silently filtered.
 The refresh removes stale entries, reuses unchanged vectors, and embeds only
 new or changed permanent scenarios. The query then uses the existing `query:`
 embedding role. Same-file candidates remain eligible; only an exact file/title
@@ -373,6 +400,12 @@ stripping log lines.
 
 When `--change <id>` is supplied, the command extends the same request with the
 active delta before producing the result:
+
+Permanent and active scenarios use the same complete semantic serialization and
+the same actual-tokenizer guard. The active request-local E5 candidates are one
+pool for BGE and NLI; each layer independently preflights and scores its fitting
+pairs. A cap in one layer is recorded on that candidate, remains visible and
+blocking for that layer, and cannot be resolved by a score from the other layer.
 
 ```mermaid
 sequenceDiagram
@@ -428,12 +461,18 @@ sequenceDiagram
     participant CLI as givn spec duplicates
     participant Specs as permanent feature tree
     participant Fingerprint as deterministic overlap evidence
+    participant Serializer as complete semantic serializer
+    participant Guard as actual model tokenizers
     participant Embedder as local E5 embedder
 
     User->>CLI: run audit with text or JSON format
     CLI->>Specs: parse every permanent feature and Rule scenario
     CLI->>Fingerprint: build canonical behavior and facts
     Fingerprint-->>CLI: exact and structural candidates
+    CLI->>Serializer: serialize complete context and behavior
+    Serializer-->>CLI: deterministic E5 passage and pair text
+    CLI->>Guard: preflight E5 passages and selected BGE/NLI pairs
+    Guard-->>CLI: fitting and over-cap counts
     CLI->>Embedder: embed each eligible scenario once
     CLI->>Embedder: score remaining permanent pairs in memory
     Embedder-->>CLI: semantic candidate evidence
@@ -454,6 +493,17 @@ distinguishing values, score/null semantics, and tie-breaking order. The command
 does not read or call the persistent index, so permanent specs, active changes,
 archive contents, and the index remain unchanged after an audit; existing
 model-cache creation is allowed.
+
+The audit's E5 passages and any BGE/NLI pair inputs come from the same complete
+semantic serializer. BGE and NLI independently receive the same eligible E5
+candidate pool; neither layer receives only the other layer's survivors. Each
+layer applies the actual-tokenizer guard before model construction, counts pair
+special tokens without truncation or padding, and records `BGE_TOKEN_CAP` or
+`NLI_TOKEN_CAP` for a 513-token pair. A partial run scores fitting pairs and
+remains enabled. If no pair in a layer fits, that layer is run-level unavailable
+with reason `token-cap`, while its candidate cap evidence remains visible and
+blocking. Combined recommendations are the intersection of participating
+recommended sets.
 
 The E5-only text header is exactly `Givn spec duplicates`, `Scanned scenarios: N`,
 and `Candidate count: N`. E5-only JSON has exactly the ordered top-level fields
@@ -482,6 +532,16 @@ worklist only when every participating layer recommends it;
 blocks without a Givn classification. Removed scenarios and permanent-permanent
 pairs are never reported.
 
+The shared top-five union is one E5 candidate pool, not a sequential BGE-to-NLI
+pipeline. BGE and NLI independently receive that pool and apply their own
+actual-tokenizer preflight before model construction; NLI never receives only
+BGE survivors. Pair counts are untruncated and unpadded and include pair
+special tokens. A 513-token pair receives `BGE_TOKEN_CAP` or `NLI_TOKEN_CAP`,
+with exact left/right/pair/limit counts, null score/probability, and no
+filtered status. Such candidates remain visible, unresolved, and blocking. A
+partial run stays enabled for fitting pairs; run-level unavailable with reason
+`token-cap` means no pair in that layer was scoreable.
+
 For a Modified scenario in a delta-to-permanent comparison, only the own
 projected `(target file, title)` endpoint is excluded. Other scenarios in that
 target file remain eligible. Delta-to-delta endpoints are canonicalized into one
@@ -504,6 +564,12 @@ affect PASS/BLOCKED status. `BGE_UNSCORED` and `NLI_UNSCORED` are rendered
 inside the same contiguous `## Candidate <ordinal>` grammar with null
 directional values and remain blocking with the normal classification/rationale
 fields.
+The participating run summaries also expose token-cap counts. `BGE_TOKEN_CAP`
+and `NLI_TOKEN_CAP` candidate blocks use the fixed candidate grammar with null
+score/probability fields and remain blocking; `BGE_FILTERED` and `NLI_FILTERED`
+remain the only second-stage filtered evidence. A partial token-cap run keeps
+its layer enabled, while `BGE_UNAVAILABLE` or `NLI_UNAVAILABLE` with reason
+`token-cap` is reserved for a layer that scores no pair.
 For non-empty reports, candidate blocks are separated by one blank line and
 use contiguous `## Candidate <ordinal>` headers. Each block contains exactly
 the allowed fields in the design-defined order, with no unknown or omitted
@@ -521,9 +587,12 @@ fingerprint/evidence schema versions, and report schema version. The canonical
 endpoint representation orders feature `Background`, applicable `Rule`
 `Background`, and scenario steps, retaining every step docstring and data-table
 row and cell in source order. It also records the available deterministic
-`Fingerprint` facts, including fact contradiction. The existing E5 passage-text
-input remains a separate representation and is not replaced by the evidence
-serialization. Facts are evidence only; they do not assign a classification.
+`Fingerprint` facts, including fact contradiction. The complete semantic
+serialization is the exact model input for E5 passages and BGE/NLI pairs. The
+report endpoint evidence object is a separate metadata/evidence representation
+for carry-forward and auditability; paths, tags, scores, and classifications do
+not enter model text. Deterministic `Fingerprint` facts are separate evidence
+only; they do not assign a classification.
 
 The allowed classifications are only `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`,
 and `UNCERTAIN`. A missing or invalid classification is blocking, as is
@@ -567,11 +636,15 @@ receipt.
 ### 6.8f NLI second-stage evidence
 
 When `nli-evidence` is compiled and `GIVN_SPEC_RERANKER` selects NLI, the
-runtime reuses the already-built E5 top-K union. It validates the bounded pair
-pool, preflights the local NLI artifacts, scores every selected pair in both
-directions, and computes the symmetric probability summary. The selected
-admission status is then combined with BGE, if BGE is active, before rendering
-the final recommended set.
+runtime independently receives the same E5 candidate pool used by BGE. It
+validates the bounded pair pool, preflights the local NLI artifacts, and uses
+the actual NLI tokenizer to count each complete untruncated/unpadded pair,
+including pair special tokens, before model construction. Fitting pairs are
+scored in both directions and produce the symmetric probability summary; a
+513-token pair receives `NLI_TOKEN_CAP` with null probabilities and remains
+visible and blocking. The selected admission status is combined with BGE, if
+BGE is active, by intersection only after both independent branches complete.
+NLI never receives only BGE survivors.
 
 ```mermaid
 sequenceDiagram
@@ -580,16 +653,21 @@ sequenceDiagram
     participant E5 as E5 candidate pool
     participant BGE as optional BGE layer
     participant NLI as optional NLI layer
+    participant Guard as actual model tokenizers
     participant Output as text/JSON/report renderer
 
     User->>CLI: explore, review, or duplicate audit
     CLI->>E5: build deterministic top-K union
     E5-->>CLI: raw candidates and canonical pairs
     par selected BGE
-        CLI->>BGE: score forward and reverse pairs
+        CLI->>BGE: preflight same pool, then score fitting pairs
+        BGE->>Guard: count complete pairs with BGE tokenizer
+        Guard-->>BGE: fitting/cap partitions
         BGE-->>CLI: BGE evidence and admissions
     and selected NLI
-        CLI->>NLI: preflight and score forward/reverse pairs
+        CLI->>NLI: preflight same pool, then score fitting pairs
+        NLI->>Guard: count complete pairs with NLI tokenizer
+        Guard-->>NLI: fitting/cap partitions
         NLI-->>CLI: probabilities and NLI admissions
     end
     CLI->>CLI: intersect enabled admissions
@@ -598,8 +676,48 @@ sequenceDiagram
 ```
 
 An unavailable NLI artifact or pair-cap refusal is rendered as
-`NLI_UNAVAILABLE` with the normal E5 candidate set. The NLI layer never
-changes the persisted permanent-only index and never writes feature files.
+`NLI_UNAVAILABLE` with the normal E5 candidate set. A partial token-cap run
+remains `NLI_ENABLED` for fitting pairs; only an all-over-cap layer is
+`NLI_UNAVAILABLE` with reason `token-cap`, and each over-cap candidate retains
+`NLI_TOKEN_CAP` evidence. The NLI layer never changes the persisted
+permanent-only index and never writes feature files.
+
+### 6.8g Shared token-budget guard and cap states
+
+The same guard is called by permanent duplicate audit, permanent and
+change-aware Explore, advisory review, and blocking review. It runs before any
+model construction or inference. E5 first validates each complete serialized
+passage; BGE and NLI then validate complete pairs independently over the same
+E5 candidate pool.
+
+```mermaid
+flowchart TD
+    S[Complete deterministic semantic serialization] --> E{E5 passage <= 512?}
+    E -- no --> EF[Explicit E5 input-cap failure]
+    E -- yes --> P[One immutable E5 candidate pool]
+    P --> B[ BGE actual-tokenizer preflight ]
+    P --> N[ NLI actual-tokenizer preflight ]
+    B --> BX{Any BGE pair fits?}
+    N --> NX{Any NLI pair fits?}
+    BX -- yes --> BS[Score fitting pairs; cap others; BGE_ENABLED]
+    BX -- no --> BU[BGE_UNAVAILABLE reason token-cap; retain BGE_TOKEN_CAP]
+    NX -- yes --> NS[Score fitting pairs; cap others; NLI_ENABLED]
+    NX -- no --> NU[NLI_UNAVAILABLE reason token-cap; retain NLI_TOKEN_CAP]
+    BS --> I[Intersect participating recommendations]
+    NS --> I
+    BU --> I
+    NU --> I
+```
+
+Pair counts use each actual tokenizer without truncation or padding and include
+pair special tokens. Exactly 512 fits; 513 receives the affected layer's
+`BGE_TOKEN_CAP` or `NLI_TOKEN_CAP` evidence with left/right/pair/limit counts,
+null score/probability, and a shorten-or-split instruction. These candidates
+remain visible, unresolved, non-filtered, and blocking. No automatic chunking,
+shortening, splitting, or feature edit is performed. The regular and E2E tests
+replace only the token-budget provider with a deterministic test seam; they do
+not download models, use a network service, or construct multi-gigabyte
+artifacts.
 
 ## 6.9 Running the test runner on a fresh project (sentinel)
 

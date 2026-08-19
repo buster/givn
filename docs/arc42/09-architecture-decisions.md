@@ -1616,8 +1616,8 @@ evidence without turning exploration into review or changing the specification.
 - Refresh the permanent index incrementally and preserve existing vectors.
 - Include all permanent candidates, including same-file candidates.
 - Keep the result deterministic, machine-readable, and advisory.
-- Keep the default build free of retrieval dependencies; BGE is a later opt-in
-  evidence slice and NLI remains a separate future capability.
+- Keep the default build free of retrieval dependencies; BGE and NLI are
+  independent opt-in evidence layers over the complete E5 candidate pool.
 
 ### Considered Options
 
@@ -1633,10 +1633,10 @@ scenario through `--file` or `--stdin`, refreshes the permanent content-hash
 index, ranks all permanent entries with the existing embedding score, and
 returns at most five candidates in text or stable JSON. It excludes only the
 exact `(file, title)` identity for a file query. The historical E5-only contract
-does not invoke a reranker; the later opt-in ADR-052 BGE layer may attach
-bounded evidence to the same permanent query without changing its raw E5 order.
-It never reads the active change, invokes NLI without `nli-evidence`, calculates
-coverage, or makes a review decision.
+remains the no-layer mode; opt-in BGE and NLI layers may attach bounded
+independent evidence to the same permanent query without changing its raw E5
+order. It never reads the active change, invokes NLI unless `nli-evidence` is
+explicitly enabled, calculates coverage, or makes a review decision.
 
 This decision remains the no-change contract. ADR-044 extends the same command
 with an optional request-local current-change corpus; it does not alter the
@@ -1941,8 +1941,8 @@ not compiled.
   when the feature is absent.
 - Retain the generated report as historical evidence when the existing archive
   move relocates the change directory.
-- Keep the evidence local and deterministic; BGE is optional and NLI remains an
-  independent future capability.
+- Keep the evidence local and deterministic; BGE and NLI are independent
+  optional layers over the same E5 candidate pool.
 - Keep classification and feature-file remediation with the agent.
 
 ### Considered Options
@@ -2000,8 +2000,11 @@ Each candidate records:
 
 The complete endpoint evidence hash is the carry-forward boundary. Its canonical
 representation orders feature `Background`, applicable `Rule` `Background`,
-and scenario steps, retaining every docstring and table row/cell in source
-order. The existing E5 passage-text input remains separate. Changing a step,
+ and scenario steps, retaining every docstring and table row/cell in source
+ order. The complete semantic serialization is the exact E5 passage and the
+ BGE/NLI pair input; the report endpoint object remains separate metadata and
+ carry-forward evidence. Paths, tags, scores, and classifications are not model
+ text, and deterministic `Fingerprint` facts remain separate. Changing a step,
 table, background, docstring, operation, projected target, model, index,
 fingerprint/evidence schema, or report schema invalidates the prior
 classification. The candidate id includes the report schema, scope, canonical
@@ -2037,10 +2040,10 @@ is asserted structurally: it contains only permanent entries and vectors, never
 `spec-retrieval`, the dedicated gate returns the existing
 `spec retrieval is unavailable in this build; rebuild with --features
 spec-retrieval` error, exits non-zero, and creates no report. The report gate
-invokes optional BGE evidence only when `cross-encoder-reranker` participates;
-it never invokes NLI unless the future independent `nli-evidence` capability is
-enabled. BGE does not change the advisory `givn spec review --change <id>`
-interface or assign classifications.
+invokes optional BGE evidence when `cross-encoder-reranker` participates and
+optional NLI evidence when independent `nli-evidence` participates. Each layer
+receives the same E5 candidate pool and neither layer assigns classifications or
+changes the advisory `givn spec review --change <id>` interface.
 
 ### Consequences
 
@@ -2866,3 +2869,334 @@ compiled.
 
 Related decisions: ADR-039, ADR-042, ADR-052, ADR-053, ADR-054, ADR-055, and
 ADR-057. Related risks: R-27, R-28, R-51, R-52, and R-62.
+
+---
+
+## ADR-059: One complete semantic serialization and E5 hash boundary
+
+---
+status: accepted
+date: 2026-08-19
+decision-makers: givn maintainers
+consulted: semantic-token-cap proposal, feature, design, and design-review
+informed: retrieval maintainers and agents consuming semantic evidence
+---
+
+### Context and Problem Statement
+
+The former short semantic projection omitted Feature and Rule context,
+inherited backgrounds, resolved step roles, tables, docstrings, outline
+templates, and concrete example rows. Two scenarios that differ in those
+elements could therefore receive the same or misleading model input. Changing
+the projection without changing the E5 index boundary could also reuse vectors
+created from stale text.
+
+### Decision Drivers
+
+- Give E5, BGE, and NLI the same complete semantic meaning.
+- Make equivalent parsed Gherkin deterministic across runs.
+- Invalidate old vectors through content rather than a second version field.
+- Keep paths, tags, scores, classifications, and deterministic Fingerprint facts
+  outside model text.
+
+### Considered Options
+
+1. Keep the short projection and rely on deterministic fingerprints for omitted
+   context.
+2. Add complete context only to report evidence while retaining the short E5
+   passage.
+3. Use one complete deterministic serialization as the E5, BGE, and NLI model
+   input and hash that exact E5 passage.
+
+### Decision Outcome
+
+Choose option 3. The serializer orders Feature keyword/name/context/description,
+Feature Background, Rule keyword/name/context/description, Rule Background,
+Scenario keyword/title/description, resolved behavior steps, tables, docstrings,
+the Scenario Outline template, and concrete Examples rows. `And` and `But`
+inherit the preceding resolved role. Whitespace normalization is deterministic
+without dropping table cells, example values, or docstring content; missing
+optional sections use one stable empty representation.
+
+The exact serialized text is the E5 passage and the complete left/right model
+text for BGE and NLI. `content_hash` is computed from that exact E5 text. An
+existing vector is reused only when endpoint identity and stored hash match;
+any mismatch, including an old short-projection entry, is re-embedded. Deleted
+entries are removed. No separate serializer-version field is introduced. Paths,
+tags, scores, classifications, and run statuses remain metadata, and
+deterministic `Fingerprint` evidence remains separate.
+
+### Consequences
+
+#### Good
+
+- Good, because all model evidence sees the context that can distinguish two
+  Gherkin scenarios.
+- Good, because one text representation aligns E5 candidate generation with
+  BGE/NLI pair evidence.
+- Good, because content-hash matching gives a direct and auditable stale-vector
+  boundary without another version protocol.
+- Good, because deterministic fingerprints retain their existing structural
+  meaning instead of being replaced by semantic text.
+
+#### Bad
+
+- Bad, because complete passages can be longer and may require more embedding
+  and pair-token budget than the short projection.
+- Bad, because a serializer change intentionally re-embeds affected entries and
+  can invalidate prior semantic evidence.
+- Bad, because metadata that is useful for audit identity is deliberately not
+  available to model scoring and must remain in the report evidence object.
+
+### Confirmation
+
+The serializer scenarios cover Feature and Rule descriptions, inherited
+backgrounds, resolved `And`/`But` roles, tables, docstrings, outline templates,
+Examples rows, stable empty sections, metadata exclusion, deterministic output,
+matching hash reuse, changed-hash re-embedding, old-projection invalidation,
+and deletion cleanup.
+
+### Pros and Cons of the Options
+
+#### Keep the short projection
+
+- Good, because it keeps input small and preserves existing token usage.
+- Bad, because meaningful Gherkin context can be omitted from model evidence.
+- Bad, because omitted context cannot invalidate a vector through its content.
+
+#### Complete report evidence only
+
+- Good, because audit output becomes richer without changing E5 costs.
+- Bad, because E5, BGE, and NLI would score a different representation from
+  the evidence an agent reviews.
+- Bad, because the index could still reuse a vector made from incomplete text.
+
+#### One complete model serialization
+
+- Good, because model inputs and semantic meaning share one deterministic
+  boundary.
+- Good, because the exact E5 passage hash handles reuse and invalidation.
+- Bad, because longer complete inputs increase the need for explicit token
+  budgeting.
+
+### More Information
+
+Related decisions: ADR-037 (deterministic Fingerprint evidence), ADR-039 (local
+retrieval), ADR-046 (semantic report), ADR-058 (NLI evidence), and ADR-060.
+Related chapters: 1, 2, 3, 4, 5, 6, 8, 10, 11, and 12.
+
+---
+
+## ADR-060: Preflight actual tokenizer budgets and expose token-cap states
+
+---
+status: accepted
+date: 2026-08-19
+decision-makers: givn maintainers
+consulted: semantic-token-cap proposal, feature, design, and design-review
+informed: agents, CI users, and local model maintainers
+---
+
+### Context and Problem Statement
+
+Model-side truncation or padding can make an overlong semantic pair appear
+scoreable even though the model did not receive the complete pair. Aggregate
+run-level unavailable status also hides whether only one candidate was too long
+or whether a layer could score nothing. Agents need exact evidence and a clear
+remediation signal without automatic scenario mutation.
+
+### Decision Drivers
+
+- Measure the input accepted by the actual model tokenizer, not an estimate.
+- Refuse over-cap inference before model construction or silent truncation.
+- Preserve fitting evidence when only some candidates exceed the limit.
+- Keep cap evidence distinct from filtered, unscored, and artifact-unavailable
+  evidence.
+- Keep regular and E2E acceptance deterministic without model downloads.
+
+### Considered Options
+
+1. Let model truncation or batch padding decide the effective input length.
+2. Estimate pair length by adding individual token counts.
+3. Preflight untruncated/unpadded model encodings, include pair special tokens,
+   and record explicit per-candidate cap states before inference.
+
+### Decision Outcome
+
+Choose option 3. E5 passages use the actual E5 tokenizer before E5 model
+construction or inference. BGE and NLI pairs use their own actual tokenizer
+before their respective model construction, without truncation or padding.
+Pair counts are complete pair encodings and include pair special tokens; they
+are not inferred by adding left and right counts. Exactly 512 tokens fits and
+513 is over.
+
+An over-cap E5 passage is an explicit retrieval input-cap failure. An over-cap
+BGE candidate receives `BGE_TOKEN_CAP`; an over-cap NLI candidate receives
+`NLI_TOKEN_CAP`. Each state includes left, right, pair, and limit counts, has no
+score/probability, remains visible and unresolved, is outside the filtered
+collection, and remains blocking. If at least one pair fits, the layer remains
+enabled and scores fitting pairs. If no pair fits, the layer is run-level
+`BGE_UNAVAILABLE` or `NLI_UNAVAILABLE` with reason `token-cap`, while affected
+candidates retain their cap evidence. The agent is told to shorten or split and
+rerun; no automatic chunking, shortening, splitting, or feature edit occurs.
+
+### Consequences
+
+#### Good
+
+- Good, because no model score is presented for a silently truncated or padded
+  complete pair.
+- Good, because partial runs preserve useful fitting scores and exact cap
+  evidence for the remaining candidates.
+- Good, because all-over-cap runs cannot construct a model or claim second-stage
+  evidence.
+- Good, because the token-cap state gives the agent an actionable shorten/split
+  instruction without granting Givn edit authority.
+
+#### Bad
+
+- Bad, because tokenizer behavior and special-token accounting can make a pair
+  exceed the limit earlier than a simple character or word estimate suggests.
+- Bad, because agents must manually shorten or split a scenario before review
+  can resolve the candidate.
+- Bad, because a test-only budget seam must remain behaviorally separate from
+  the production tokenizer path.
+
+### Confirmation
+
+Regular and E2E scenarios use deterministic named fixtures for exact 512 and
+513 counts, pair special tokens, left/right/pair/limit output, no truncation or
+padding, no model construction on all-over-cap runs, partial BGE/NLI runs,
+visible blocking cap candidates, and shorten/split remediation guidance. The
+tests use no network, downloader, or multi-gigabyte local inference artifact.
+
+### Pros and Cons of the Options
+
+#### Model truncation or padding
+
+- Good, because inference can proceed for every input.
+- Bad, because the model score no longer represents the complete semantic pair.
+- Bad, because an agent cannot tell that evidence was silently clipped.
+
+#### Sum individual token counts
+
+- Good, because it is simple to calculate and inspect.
+- Bad, because it misses pair special tokens and tokenizer pair behavior.
+- Bad, because it can accept a pair that the model tokenizer rejects.
+
+#### Actual-tokenizer preflight
+
+- Good, because the measured boundary matches the consuming model.
+- Good, because per-candidate states distinguish partial and all-over-cap runs.
+- Bad, because model-specific tokenizers and local artifacts remain required.
+
+### More Information
+
+Related decisions: ADR-052 (BGE admission), ADR-053 (pair-count operational
+bound), ADR-057 (offline local artifacts), ADR-058 (NLI evidence), and ADR-061.
+Related chapters: 2, 3, 4, 5, 6, 8, 10, 11, and 12.
+
+---
+
+## ADR-061: Score BGE and NLI independently over one E5 candidate pool
+
+---
+status: accepted
+date: 2026-08-19
+decision-makers: givn maintainers
+consulted: semantic-token-cap proposal, feature, design, and design-review
+informed: agents, CI users, and maintainers consuming combined evidence
+---
+
+### Context and Problem Statement
+
+Passing only BGE survivors to NLI can hide a candidate from the second model and
+make combined evidence depend on evaluation order. A candidate capped or
+unavailable in one layer could also be silently removed by the other layer.
+Both models must be comparable over the same E5 retrieval result without making
+either model a Givn classifier.
+
+### Decision Drivers
+
+- Preserve one immutable E5 candidate identity set for every second-stage layer.
+- Make BGE and NLI evidence independently auditable and order-independent.
+- Intersect recommendations without hiding filtered, capped, unscored, or
+  unavailable candidates.
+- Keep the shared guard and all blocking decisions explicit across all surfaces.
+
+### Considered Options
+
+1. Run NLI only on BGE survivors.
+2. Let BGE and NLI build separate candidate pools and union their results.
+3. Build one E5 pool, score BGE and NLI independently over it, and intersect
+   participating recommendation sets.
+
+### Decision Outcome
+
+Choose option 3. E5 creates one candidate pool with stable endpoint identities.
+BGE and NLI independently receive that pool, apply their own actual-tokenizer
+preflight, and score every pair that fits their own model budget. NLI never
+receives only BGE survivors. A candidate filtered, capped, unscored, or
+unavailable in one layer is not silently filtered by that layer and cannot
+become resolved from the other layer alone. When both layers participate, the
+combined recommended set is the intersection of their recommended sets; a
+disabled layer is absent from the intersection.
+
+### Consequences
+
+#### Good
+
+- Good, because BGE and NLI report evidence for the same candidate identities
+  and endpoint pairs.
+- Good, because layer-specific cap and unavailable states remain visible rather
+  than becoming an accidental clean result.
+- Good, because the combined recommendation is deterministic and independent
+  of whether BGE or NLI runs first.
+- Good, because neither model status assigns a Givn classification or edits a
+  feature.
+
+#### Bad
+
+- Bad, because the intersection can leave a smaller recommended worklist while
+  unresolved candidates remain blocking when a layer did not score them.
+- Bad, because maintaining pool identity parity and two independent preflight
+  partitions adds renderer and test-matrix complexity.
+- Bad, because a missed candidate in the shared E5 pool remains a recall risk for
+  both second-stage layers.
+
+### Confirmation
+
+Regular scenarios assert identical E5 candidate identities and endpoint pairs
+for BGE and NLI, fitting and over-cap partitions per layer, NLI visibility when
+BGE filters a candidate, combined intersection behavior, partial and all-over-
+cap run statuses, and the absence of automatic classifications. Duplicate audit,
+Explore, advisory review, and blocking review use the same shared-guard path;
+the test seam proves no layer receives a survivor-only pool.
+
+### Pros and Cons of the Options
+
+#### NLI on BGE survivors
+
+- Good, because it reduces NLI work.
+- Bad, because BGE can hide candidates before NLI evaluates them.
+- Bad, because combined evidence becomes sequential and order-dependent.
+
+#### Separate pools and union
+
+- Good, because each model can discover candidates independently.
+- Bad, because different pools make precision/recall comparisons and combined
+  identity accounting ambiguous.
+- Bad, because a union can present a recommendation without a common E5 basis.
+
+#### One E5 pool with independent layers and intersection
+
+- Good, because evidence identity, ordering, and recall comparisons are shared.
+- Good, because each layer retains its own tokenizer and state semantics.
+- Bad, because the full candidate pool must remain available until both layers
+  complete.
+
+### More Information
+
+Related decisions: ADR-052 (BGE admission), ADR-054 (versioned evidence output),
+ADR-055 (independent capability flags), and ADR-058 (NLI evidence). Related
+chapters: 3, 4, 5, 6, 8, 10, 11, and 12.
