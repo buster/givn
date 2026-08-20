@@ -51,45 +51,46 @@
   - Reuse the production serializer from the previous scenario; do not add a second serializer.
   - Compile: `cargo check --features spec-retrieval`.
   - Run the targeted command above; expected result is zero.
-  - Production files changed: pending.
-  - Captured output: pending.
-- [ ] REFACTOR
-  - Review optional nested-field omission, whitespace-only values, JSON escaping, and deterministic ordering.
-  - Re-run the targeted command above; expected result is zero.
-  - Captured output: pending.
-- [ ] COMMIT
-  - Commit RED, GREEN, and REFACTOR together with a message referencing `Non-empty optional sections remain complete retrieval content`.
-  - Commit hash: pending.
-
-## E2E Setup
-
-- [ ] Prove the configured E2E runner is a strict subset of the full runner before the E2E scenario.
-  - Local run command: `./run-tests.sh`.
-  - E2E run command: `./run-tests.sh --e2e`.
-  - No external services or digital twins are required; the real interface is the compiled CLI subprocess.
-  - Full-suite scenario count: pending.
-  - E2E-suite scenario count: pending and must be lower than the full-suite count.
-  - Strict E2E proof output: pending.
-
-## Scenario: A maintainer can index scenarios with complete compact passages
-
-- [ ] RED
-  - Remove `@wip` from this scenario only.
-  - Bind the E2E steps in `tests/steps/semantic_compact_serialization_e2e_steps.rs`; unimplemented steps use `unimplemented!()`.
-  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --tags '@e2e' --name "A maintainer can index scenarios with complete compact passages"`.
-  - Expected result: non-zero because the E2E steps are not implemented.
-  - Captured output: pending.
-- [ ] GREEN
-  - Drive the real `givn spec index` subprocess in a temporary project.
-  - Assert exit status and stdout as primary CLI evidence; assert the indexed scenario identity as secondary evidence.
-  - Run `./run-tests.sh --e2e`; expected result is zero for this scenario.
-  - Production files changed: none; the shared serializer and exact rich-content assertions from the previous scenario were reused. Acceptance file changed: `tests/steps/semantic_compact_serialization_steps.rs`.
+  - Production files changed: none; the shared serializer and direct rich-content assertions were already implemented by the previous scenario. Acceptance file changed: `tests/steps/semantic_compact_serialization_steps.rs`.
   - `cargo check --features spec-retrieval` succeeded. Targeted output: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
   - Coverage: the configured runner emits no coverage artifact; coverage is unmeasured for this targeted run.
 - [x] REFACTOR
+  - Review optional nested-field omission, whitespace-only values, JSON escaping, and deterministic ordering.
+  - Re-run the targeted command above; expected result is zero.
+  - Captured output: after `cargo fmt --all`, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
+- [ ] COMMIT
+  - Commit RED, GREEN, and REFACTOR together with a message referencing `Non-empty optional sections remain complete retrieval content`.
+  - Commit hash: `773e445`.
+
+## E2E Setup
+
+- [x] Prove the configured E2E runner is a strict subset of the full runner before the E2E scenario.
+  - Local run command: `./run-tests.sh`.
+  - E2E run command: `./run-tests.sh --e2e`.
+  - No external services or digital twins are required; the real interface is the compiled CLI subprocess.
+  - Full-suite scenario count: `334 scenarios (334 passed)` in the E5 run of `./run-tests.sh`.
+  - E2E-suite scenario count: `47 scenarios (47 passed)` in the E5 E2E run of `./run-tests.sh --e2e`; the filtered count is strictly lower.
+  - Strict E2E proof output: `.fail_on_skipped()` is shared by the runner; the configured E2E command completed all 47 scenarios with zero failures.
+
+## Scenario: A maintainer can index scenarios with complete compact passages
+
+- [x] RED
+  - Remove `@wip` from this scenario only.
+  - Bind the E2E steps in `tests/steps/semantic_compact_serialization_e2e_steps.rs`; unimplemented steps use `unimplemented!()`.
+  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "A maintainer can index scenarios with complete compact passages"`.
+  - Expected result: non-zero because the E2E steps are not implemented.
+  - Captured output: targeted run matched `tests/steps/semantic_compact_serialization_e2e_steps.rs:8:1`, panicked with `not implemented`, and exited non-zero; summary: `1 feature, 1 scenario (1 failed), 1 step (1 failed)`.
+- [x] GREEN
+  - Drive the real `givn spec index` subprocess in a temporary project.
+  - Assert exit status and stdout as primary CLI evidence; assert the indexed scenario identity as secondary evidence.
+  - Run `./run-tests.sh --e2e`; expected result is zero for this scenario.
+  - Production files changed: none; the shared serializer was reused. Acceptance file changed: `tests/steps/semantic_compact_serialization_e2e_steps.rs`.
+  - `cargo check --features spec-retrieval` succeeded. Targeted output: `1 feature, 1 scenario (1 passed), 5 steps (5 passed)`. The active-change E2E command `GIVN_FEATURES=... ./run-tests.sh --e2e` also passed the scenario; BGE/NLI subsets correctly reported zero in-scope scenarios.
+  - Coverage: the configured runner emits no coverage artifact; coverage is unmeasured for this E2E run.
+- [x] REFACTOR
   - Keep E2E setup isolated and avoid duplicating regular serializer assertions.
   - Re-run `./run-tests.sh --e2e`; expected result is zero.
-  - Captured output: after `cargo fmt --all`, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
+  - Captured output: after `cargo fmt --all`, `GIVN_FEATURES=... ./run-tests.sh --e2e` remained green with `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` for the E5 subset and `0 features, 0 scenarios, 0 steps` for the empty BGE/NLI subsets.
 - [ ] COMMIT
   - Commit RED, GREEN, and REFACTOR together with a message referencing `A maintainer can index scenarios with complete compact passages`.
   - Commit hash: pending.
