@@ -170,6 +170,101 @@ fn explore_cap_record_is_complete(world: &mut GivnWorld) {
     assert!(guidance.contains("rerun"));
 }
 
+#[given(
+    "an end-to-end project with one fitting permanent scenario and one active complete E5 passage above 512 tokens"
+)]
+fn e2e_advisory_cap_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated permanent specs");
+    fs::create_dir_all(specs.join("permanent")).expect("create permanent advisory specs");
+    fs::write(
+        env.path("givn/specs/permanent/permanent.feature"),
+        "Feature: fitting permanent\n\n  Scenario: Fitting permanent scenario\n    Given a fitting permanent context\n    When the fitting permanent action runs\n    Then the fitting permanent result is complete\n",
+    )
+    .expect("write fitting permanent scenario");
+    let active = env.path("givn/changes/running-change/specs/running-change");
+    fs::create_dir_all(&active).expect("create active advisory specs");
+    fs::write(
+        active.join("running-change.feature"),
+        "@givn.delta @running-change\nFeature: active E5 cap\n\n  @givn.added\n  Scenario: Active over-cap scenario\n    Given an active over-cap context\n    When the active over-cap action runs\n    Then the active over-cap result is complete\n",
+    )
+    .expect("write active advisory scenario");
+    world.env = Some(env);
+}
+
+#[given(
+    "deterministic E5 token-budget fixtures identify the active scenario as requiring 550 tokens"
+)]
+fn e2e_active_over_cap_fixture(world: &mut GivnWorld) {
+    assert!(world.env.is_some(), "the advisory cap project is missing");
+    world.retrieval_e5_token_budget = Some("active-550".to_string());
+}
+
+#[when(
+    "the end-to-end user runs advisory semantic change review for \"running-change\" through the givn CLI"
+)]
+fn e2e_run_advisory_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("advisory cap project is missing");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            (
+                "GIVN_SPEC_E5_TOKEN_BUDGET",
+                world
+                    .retrieval_e5_token_budget
+                    .as_deref()
+                    .expect("E5 token fixture"),
+            ),
+        ],
+    ));
+}
+
+#[then("stdout remains an advisory retrieval result")]
+fn advisory_stdout_remains_advisory(world: &mut GivnWorld) {
+    assert!(super::stdout(world).contains("retrieval advisory"));
+}
+
+#[then(
+    "stdout exposes an additive `e5_token_cap_candidates` collection with count 1 for the active file and title"
+)]
+fn advisory_stdout_exposes_cap_collection(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    assert!(stdout.contains("e5_token_cap_count: 1"));
+    assert!(stdout.contains("e5_token_cap_candidates:"));
+    assert!(stdout.contains("Active over-cap scenario"));
+    assert!(
+        stdout.contains("givn/changes/running-change/specs/running-change/running-change.feature")
+    );
+}
+
+#[then(
+    "stdout reports the cap record's complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, `refactoring_required` true, and shorten-or-split guidance"
+)]
+fn advisory_stdout_cap_record_is_complete(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    assert!(stdout.contains("token_count\":550"));
+    assert!(stdout.contains("limit\":512"));
+    assert!(stdout.contains("intfloat/multilingual-e5-large"));
+    assert!(stdout.contains("intfloat/multilingual-e5-large/tokenizer.json"));
+    assert!(stdout.contains("refactoring_required\":true"));
+    assert!(stdout.contains("shorten or split"));
+    assert!(stdout.contains("rerun semantic review"));
+}
+
+#[then("stdout does not report the capped endpoint as a normal ranked E5 pair candidate")]
+fn advisory_stdout_excludes_cap_pair(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    assert!(
+        !stdout
+            .lines()
+            .any(|line| line.starts_with("rank ") && line.contains("Active over-cap scenario"))
+    );
+    assert!(!stdout.contains("resembles 'Active over-cap scenario'"));
+}
+
 #[when("the end-to-end user runs `givn spec index` through the givn CLI")]
 fn e2e_run_index(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("E5 cap corpus is missing");

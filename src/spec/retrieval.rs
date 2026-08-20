@@ -4514,21 +4514,24 @@ fn advisory_review(
     review_path: &Path,
 ) -> Result<()> {
     let (dispositions, _) = crate::overlap::disposition::parse_review(review_path);
+    let mut e5_token_caps = index.e5_token_caps.clone();
     println!("retrieval advisory: E5-only configuration");
     for item in delta
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
     {
-        let query_vector = embed_texts(
+        let query_batch = embed_texts(
             root,
             std::slice::from_ref(&item.scenario.text),
             EmbeddingRole::Query,
-        )?
-        .vectors
-        .into_iter()
-        .next()
-        .flatten()
-        .context("retrieval embedder returned no review vector")?;
+        )?;
+        if let Some(budget) = query_batch.token_caps[0] {
+            e5_token_caps.push(e5_token_cap(&item.scenario, budget));
+            continue;
+        }
+        let query_vector = query_batch.vectors[0]
+            .clone()
+            .context("retrieval embedder returned no review vector")?;
         let ranked = rank_entries(&index.entries, &query_vector);
         for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
             if crate::overlap::disposition::disposed(
@@ -4544,6 +4547,20 @@ fn advisory_review(
                 entry.title,
                 rank + 1,
                 score
+            );
+        }
+    }
+    e5_token_caps.sort_by(e5_token_cap_order);
+    if !e5_token_caps.is_empty() {
+        println!("e5_token_cap_count: {}", e5_token_caps.len());
+        println!(
+            "e5_token_cap_candidates: {}",
+            serde_json::to_string(&e5_token_caps).expect("serialize advisory E5 token caps")
+        );
+        for cap in &e5_token_caps {
+            println!(
+                "E5_TOKEN_CAP: '{}' ({}) requires {} tokens (limit {}); model {}, tokenizer {}; refactoring_required: true; guidance: shorten or split the scenario and rerun semantic review",
+                cap.title, cap.file, cap.token_count, cap.limit, cap.model, cap.tokenizer,
             );
         }
     }
@@ -6939,7 +6956,7 @@ fn e5_token_cap_order(left: &E5TokenCap, right: &E5TokenCap) -> std::cmp::Orderi
 #[cfg(feature = "spec-retrieval")]
 fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<EmbeddingBatch> {
     let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
-        Ok("stub") => preflight_e5_stub_texts(texts.len())?,
+        Ok("stub") => preflight_e5_stub_texts(texts)?,
         Ok("missing") => {
             bail!(
                 "retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER"
@@ -6989,14 +7006,27 @@ fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Emb
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn preflight_e5_stub_texts(text_count: usize) -> Result<Vec<Option<E5TokenBudget>>> {
+fn preflight_e5_stub_texts(texts: &[String]) -> Result<Vec<Option<E5TokenBudget>>> {
     let Some(fixture) = std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET") else {
-        return Ok(vec![None; text_count]);
+        return Ok(vec![None; texts.len()]);
     };
     let fixture = fixture
         .to_str()
         .context("GIVN_SPEC_E5_TOKEN_BUDGET is not valid UTF-8")?;
-    fixture_e5_token_budgets(fixture, text_count)
+    if fixture == "active-550" {
+        return Ok(texts
+            .iter()
+            .map(|text| {
+                text.to_ascii_lowercase()
+                    .contains("active")
+                    .then_some(E5TokenBudget {
+                        token_count: 550,
+                        limit: E5_MAX_LENGTH,
+                    })
+            })
+            .collect());
+    }
+    fixture_e5_token_budgets(fixture, texts.len())
 }
 
 #[cfg(feature = "spec-retrieval")]
