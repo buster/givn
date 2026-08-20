@@ -79,22 +79,23 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Advisory review exposes an E5 token-cap finding without blocking"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after `cargo fmt`.
-- [ ] COMMIT: record the scenario commit.
-  - Commit:
+- [x] COMMIT: record the scenario commit.
+   - Commit: `61a726f`
 
 ## Scenario: Blocking review keeps an over-cap active scenario unresolved
 
-- [ ] RED: target this scenario and record the non-zero result.
-  - Command:
-  - Output:
-- [ ] GREEN: write the additive blocked semantic report section with null
+- [x] RED: target this scenario and record the non-zero result.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Blocking review keeps an over-cap active scenario unresolved"`
+   - Output: non-zero; `1 scenario (1 failed)`, the blocking cap-exit assertion step did not match any function.
+- [x] GREEN: write the additive blocked semantic report section with null
       classification/rationale and refactoring guidance.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: rerun the targeted scenario after cleanup.
-  - Command:
-  - Output:
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Blocking review keeps an over-cap active scenario unresolved"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)`.
+   - Production files: `src/spec/retrieval.rs` (blocking cap count/status/report section, null classification/rationale, guidance and unresolved gate); `tests/steps/semantic_e5_token_cap_e2e_steps.rs`; `tests/steps/bge_reranking_evidence_steps.rs` (shared blocking CLI step routes E5 seam); feature/task evidence files.
+   - Coverage: targeted runner output has no coverage instrumentation; production coverage is unmeasured for this phase.
+- [x] REFACTOR: rerun the targeted scenario after cleanup.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Blocking review keeps an over-cap active scenario unresolved"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
 - [ ] COMMIT: record the scenario commit.
   - Commit:
 

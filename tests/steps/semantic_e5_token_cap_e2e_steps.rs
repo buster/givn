@@ -190,6 +190,16 @@ fn e2e_advisory_cap_project(world: &mut GivnWorld) {
         "@givn.delta @running-change\nFeature: active E5 cap\n\n  @givn.added\n  Scenario: Active over-cap scenario\n    Given an active over-cap context\n    When the active over-cap action runs\n    Then the active over-cap result is complete\n",
     )
     .expect("write active advisory scenario");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write blocking review commands");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n",
+    )
+    .expect("write blocking review dispositions");
     world.env = Some(env);
 }
 
@@ -263,6 +273,70 @@ fn advisory_stdout_excludes_cap_pair(world: &mut GivnWorld) {
             .any(|line| line.starts_with("rank ") && line.contains("Active over-cap scenario"))
     );
     assert!(!stdout.contains("resembles 'Active over-cap scenario'"));
+}
+
+fn semantic_e5_report(world: &GivnWorld) -> String {
+    let env = world.env.as_ref().expect("blocking cap project is missing");
+    fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read E5 semantic review report")
+}
+
+#[then("the command exits non-zero because the E5 token-cap finding is unresolved")]
+fn blocking_cap_exits_nonzero(world: &mut GivnWorld) {
+    assert!(!super::output(world).status.success());
+}
+
+#[then(
+    "the semantic review report has normal `Candidate count: 0` and an `e5_token_cap_count` of 1"
+)]
+fn blocking_report_counts_caps_separately(world: &mut GivnWorld) {
+    let report = semantic_e5_report(world);
+    assert!(report.contains("Candidate count: 0"));
+    assert!(report.contains("e5_token_cap_count: 1"));
+}
+
+#[then(
+    "the report's additive `e5_token_cap_candidates` collection contains an `E5_TOKEN_CAP` record with the active file and title"
+)]
+fn blocking_report_contains_active_cap(world: &mut GivnWorld) {
+    let report = semantic_e5_report(world);
+    assert!(report.contains("e5_token_cap_candidates:"));
+    assert!(report.contains("status\":\"E5_TOKEN_CAP"));
+    assert!(
+        report.contains("givn/changes/running-change/specs/running-change/running-change.feature")
+    );
+    assert!(report.contains("Active over-cap scenario"));
+}
+
+#[then(
+    "that cap record has its complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, and `refactoring_required: true`"
+)]
+fn blocking_report_cap_record_is_complete(world: &mut GivnWorld) {
+    let report = semantic_e5_report(world);
+    assert!(report.contains("content_hash:"));
+    assert!(report.contains("token_count: 550"));
+    assert!(report.contains("limit: 512"));
+    assert!(report.contains("model: intfloat/multilingual-e5-large"));
+    assert!(report.contains("tokenizer: intfloat/multilingual-e5-large/tokenizer.json"));
+    assert!(report.contains("refactoring_required: true"));
+}
+
+#[then("the report tells the author to shorten or split the scenario before rerunning review")]
+fn blocking_report_has_review_guidance(world: &mut GivnWorld) {
+    let report = semantic_e5_report(world);
+    assert!(report.contains("shorten or split the scenario, then rerun semantic review"));
+}
+
+#[then(
+    "the cap record has `classification: null` and `rationale: null` and no automatic `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` classification"
+)]
+fn blocking_report_cap_is_unresolved(world: &mut GivnWorld) {
+    let report = semantic_e5_report(world);
+    assert!(report.contains("- classification: null"));
+    assert!(report.contains("- rationale: null"));
+    assert!(!report.contains("DUPLIKAT"));
+    assert!(!report.contains("VARIANTE"));
+    assert!(!report.contains("VALID-BOUNDARY"));
 }
 
 #[when("the end-to-end user runs `givn spec index` through the givn CLI")]

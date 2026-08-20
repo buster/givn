@@ -61,7 +61,7 @@ Feature: E5 token-cap findings preserve usable retrieval
     And stdout reports the cap record's complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, `refactoring_required` true, and shorten-or-split guidance
     And stdout does not report the capped endpoint as a normal ranked E5 pair candidate
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Blocking review keeps an over-cap active scenario unresolved
     Given an end-to-end project with one fitting permanent scenario and one active complete E5 passage above 512 tokens
     And deterministic E5 token-budget fixtures identify the active scenario as requiring 550 tokens
