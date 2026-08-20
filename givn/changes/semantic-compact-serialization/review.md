@@ -101,10 +101,10 @@ the compiled CLI paths with the deterministic stub embedder.
 
 | Report | Lines covered | Lines valid | Line rate | Branches |
 |---|---:|---:|---:|---|
-| Non-E2E | 7130 | 9465 | 75.3302% | 0/0 |
-| E2E | 5874 | 9465 | 62.0602% | 0/0 |
-| Merged | 13004 | 18930 | 68.6952% | 0/0 |
-| Changed `src/spec/retrieval.rs` | 4263 | 5259 | 81.0610% | 0/0 |
+| Non-E2E | 7132 | 9467 | 75.3354% | 0/0 |
+| E2E | 5874 | 9467 | 62.0471% | 0/0 |
+| Merged | 13006 | 18934 | 68.6912% | 0/0 |
+| Changed `src/spec/retrieval.rs` | 4265 | 5261 | 81.0682% | 0/0 |
 
 The `0/0` branch result is the raw tool output: no branch counters were
 instrumented by the configured Cobertura export. All changed serializer
