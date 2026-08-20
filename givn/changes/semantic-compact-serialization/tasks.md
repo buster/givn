@@ -105,4 +105,5 @@
   - Result: `givn lint: 1 file(s) checked -- clean`.
 - [x] Record final status and review evidence before archive.
   - Coverage is measured by the configured project scripts; no unclassified coverage gap was introduced by this change.
+  - Real E5 index result: `393` indexable permanent scenarios, `0` reused vectors, and `2` remaining token-cap endpoints; real duplicate audit: `395` scanned scenarios and `5560` total candidates.
   - The production review gate is intentionally non-zero: the compact index leaves 2 permanent `E5_TOKEN_CAP` findings and the three new test scenarios produce 3 unresolved delta-to-delta candidates. Per the user decision, this change remains unarchived and does not alter those unrelated/remediation-scope scenarios.
