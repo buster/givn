@@ -45,22 +45,23 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)` after `cargo fmt`.
-- [ ] COMMIT: record the scenario commit.
-  - Commit:
+- [x] COMMIT: record the scenario commit.
+   - Commit: `700e1b6`
 
 ## Scenario: Explore keeps an E5 token-cap finding visible while fitting results remain usable
 
-- [ ] RED: target this scenario and record the non-zero result.
-  - Command:
-  - Output:
-- [ ] GREEN: expose additive Explore cap findings while preserving fitting
+- [x] RED: target this scenario and record the non-zero result.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Explore keeps an E5 token-cap finding visible while fitting results remain usable"`
+   - Output: non-zero; `1 scenario (1 failed)`, the first Explore corpus Given step did not match any function.
+- [x] GREEN: expose additive Explore cap findings while preserving fitting
       ranked results.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: rerun the targeted scenario after cleanup.
-  - Command:
-  - Output:
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Explore keeps an E5 token-cap finding visible while fitting results remain usable"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)`.
+   - Production files: `src/spec/retrieval.rs` (Explore query/active/permanent cap aggregation, no-query-vector path, JSON/text collection); `tests/steps/semantic_e5_token_cap_e2e_steps.rs`; feature/task evidence files.
+   - Coverage: targeted runner output has no coverage instrumentation; production coverage is unmeasured for this phase.
+- [x] REFACTOR: rerun the targeted scenario after cleanup.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Explore keeps an E5 token-cap finding visible while fitting results remain usable"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after `cargo fmt`.
 - [ ] COMMIT: record the scenario commit.
   - Commit:
 
