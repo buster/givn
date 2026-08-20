@@ -60,6 +60,7 @@ flowchart LR
 | FR-33 | Make opt-in BGE evidence available to permanent exploration, change-aware exploration, advisory review, blocking review, and permanent duplicate audit through a deterministic bounded E5 top-K union. Record E5 raw candidates, BGE-recommended candidates, BGE-filtered evidence, model identity, symmetric raw scores, and runtime without automatic Givn decisions. |
 | FR-34 | Make independently opt-in NLI evidence available on the same five E5-backed surfaces. Record bidirectional entailment/neutral/contradiction probabilities, a symmetric summary, NLI-recommended and NLI-filtered candidates, model identity, pair counts, runtime, and explicit unavailable states; reduce the recommended worklist without automatic Givn decisions. |
 | FR-35 | Use one complete deterministic Gherkin semantic serialization for E5, BGE, and NLI; preflight actual model-tokenizer budgets; expose per-candidate token-cap evidence; and preserve visible, unresolved blocking semantics across duplicate audit, Explore, advisory review, and blocking review. |
+| FR-36 | Keep fitting E5 passages indexed when another complete passage exceeds 512 tokens, and expose the over-cap passage as a visible, blocking, classification-free `E5_TOKEN_CAP` refactoring finding across duplicate audit, Explore, advisory review, and blocking review. |
 
 ### Non-functional requirements (top)
 

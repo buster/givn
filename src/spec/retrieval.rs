@@ -1310,6 +1310,19 @@ fn apply_duplicate_nli(
                 )
             })
             .collect();
+        if pairs.len() > NLI_MAX_PAIRS {
+            for candidate in &mut audit.candidates {
+                if candidate.kind == "semantic_candidate" {
+                    candidate.nli_admission = Some("NLI_UNSCORED");
+                }
+            }
+            audit.nli_unscored_candidates = semantic;
+            audit.nli_run = Some(NliRun::unavailable(
+                NliUnavailableReason::PairCap,
+                audit.nli_unscored_candidates.len(),
+            ));
+            return Ok(audit);
+        }
         let tokenizer = match selection {
             Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
                 &preflight_nli_artifacts(root)?.join("tokenizer.json"),
@@ -5221,44 +5234,22 @@ fn duplicate_candidates(
     }
 
     let score_overrides = duplicate_score_overrides()?;
-    let batch = if scenarios.is_empty() {
-        EmbeddingBatch {
-            vectors: Vec::new(),
-            token_caps: Vec::new(),
-        }
-    } else {
-        embed_texts(
-            root,
-            &scenarios
-                .iter()
-                .map(|scenario| scenario.text.clone())
-                .collect::<Vec<_>>(),
-            EmbeddingRole::Passage,
-        )?
-    };
-    let mut e5_token_caps = Vec::new();
-    for (scenario, budget) in scenarios.iter().zip(batch.token_caps.iter()) {
-        if let Some(budget) = budget {
-            e5_token_caps.push(e5_token_cap(
-                &ScenarioText {
-                    title: scenario.endpoint.title.clone(),
-                    file: scenario.endpoint.file.clone(),
-                    content_hash: content_hash(&scenario.text),
-                    text: scenario.text.clone(),
-                },
-                *budget,
-            ));
-        }
-    }
-    e5_token_caps.sort_by(e5_token_cap_order);
+    let refresh = refresh_index(root)?;
+    let vectors: BTreeMap<(String, String), Vec<f32>> = refresh
+        .index
+        .entries
+        .into_iter()
+        .map(|entry| ((entry.file, entry.title), entry.embedding))
+        .collect();
+    let e5_token_caps = refresh.index.e5_token_caps;
     for (left_index, left) in scenarios.iter().enumerate() {
         for (right_index, right) in scenarios.iter().enumerate().skip(left_index + 1) {
             if classified.contains(&(left_index, right_index)) {
                 continue;
             }
             let (Some(left_embedding), Some(right_embedding)) = (
-                batch.vectors[left_index].as_ref(),
-                batch.vectors[right_index].as_ref(),
+                vectors.get(&(left.endpoint.file.clone(), left.endpoint.title.clone())),
+                vectors.get(&(right.endpoint.file.clone(), right.endpoint.title.clone())),
             ) else {
                 continue;
             };
