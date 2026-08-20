@@ -5926,7 +5926,9 @@ fn semantic_serialization(
         sections.extend(scenario.steps.iter().map(semantic_step));
     }
     if scenario.keyword.trim() == "Scenario Outline" {
-        push_optional_text_section(&mut sections, "outline_template", Some(&scenario.name));
+        if let Some(template) = semantic_optional_text(Some(&scenario.name)) {
+            sections.push(format!("outline_template: {template}"));
+        }
     }
     if scenario.examples.is_empty() {
         return sections.join("\n");
@@ -5978,7 +5980,7 @@ fn semantic_background(background: Option<&gherkin::Background>) -> Option<Strin
 fn semantic_step(step: &gherkin::Step) -> String {
     let mut fields = vec![
         format!("role={:?}", step.ty),
-        format!("text={}", json_encoded(&semantic_normalize(&step.value))),
+        format!("text={}", semantic_normalize(&step.value)),
     ];
     if let Some(table) = step.table.as_ref().and_then(semantic_table) {
         fields.push(format!("table={table}"));
@@ -6010,11 +6012,10 @@ fn semantic_table(table: &gherkin::Table) -> Option<String> {
 #[cfg(feature = "spec-retrieval")]
 fn semantic_examples(examples: &gherkin::Examples) -> Option<String> {
     let mut fields = Vec::new();
-    push_optional_json_field(
-        &mut fields,
-        "keyword",
-        Some(semantic_normalize(&examples.keyword)),
-    );
+    let keyword = semantic_normalize(&examples.keyword);
+    if !keyword.is_empty() {
+        fields.push(format!("keyword={keyword}"));
+    }
     if let Some(name) = semantic_optional_text(examples.name.as_deref()) {
         fields.push(format!("name={}", json_encoded(&name)));
     }
@@ -7589,7 +7590,7 @@ mod tests {
 
         assert_eq!(
             text,
-            "feature: Feature compact retrieval\nscenario: Scenario Minimal scenario\nsteps:\nstep: role=Given; text=\"minimal context\"\nstep: role=When; text=\"minimal action runs\"\nstep: role=Then; text=\"minimal result appears\""
+            "feature: Feature compact retrieval\nscenario: Scenario Minimal scenario\nsteps:\nstep: role=Given; text=minimal context\nstep: role=When; text=minimal action runs\nstep: role=Then; text=minimal result appears"
         );
         for marker in [
             "[]",
@@ -7627,8 +7628,8 @@ mod tests {
             "rule background is active",
             "table=[[\"header\",\"value\"],[\"input\",\"first\"]]",
             "docstring=\"scenario docstring\"",
-            "outline_template: \"Rich scenario\"",
-            "examples_row: \"keyword\":\"Examples\" name=\"rich example\" table=[[\"variant\"],[\"first\"]]",
+            "outline_template: Rich scenario",
+            "examples_row: keyword=Examples name=\"rich example\" table=[[\"variant\"],[\"first\"]]",
         ] {
             assert!(
                 text.contains(content),
