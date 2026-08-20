@@ -27,6 +27,7 @@ E2E tag was removed.
 | Non-empty optional sections remain complete retrieval content | `773e445` | Reuses the serializer from `125b916`; adds rich-content acceptance assertions and vector evidence |
 | A maintainer can index scenarios with complete compact passages | `facf069` | Reuses production behavior from `125b916`; adds the real CLI E2E driver and stdout assertion |
 | Non-empty text-format preservation refactor | `d91cbe4` | Keeps existing non-empty step text, outline name, and Examples keyword formatting while omitting only empty optional content |
+| Empty context-section edge handling | `5f4202a` | Omits wholly empty Background and Examples sections instead of retaining structural keyword markers |
 | Verification evidence | `22dc727` | Records full, E2E, lint, format, clippy, and coverage results |
 
 The second and E2E scenarios are deliberate production-reuse cases. The shared
