@@ -73,7 +73,7 @@ Feature: E5 token-cap findings preserve usable retrieval
     And the report tells the author to shorten or split the scenario before rerunning review
     And the cap record has `classification: null` and `rationale: null` and no automatic `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` classification
 
-  @givn.added @wip
+  @givn.added
   Scenario: Exactly 512 E5 passage tokens retain normal embedding behaviour
     Given a permanent corpus with fitting semantic scenarios
     And deterministic E5 token-budget fixtures assign exactly 512 tokens to every complete passage
