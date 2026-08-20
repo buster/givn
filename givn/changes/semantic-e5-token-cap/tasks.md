@@ -11,7 +11,7 @@
 - [x] Confirm the full and E2E runner commands and record their scenario counts.
   - Full command/output: `./run-tests.sh` -> 8 Cucumber invocations, 388 scenarios total (328 + 36 + 1 + 1 + 9 + 8 + 4 + 1), all passed.
   - E2E command/output: `./run-tests.sh --e2e` -> 4 Cucumber invocations, 55 scenarios total (42 + 7 + 5 + 1), all passed; strict subset of full.
-  - Commit:
+  - Commit: setup evidence landed with first scenario commit `06d2238`.
 
 ## Scenario: Indexing keeps fitting scenarios when another passage exceeds E5 capacity
 
@@ -112,15 +112,20 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Exactly 512 E5 passage tokens retain normal embedding behaviour"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after `cargo fmt`.
-- [ ] COMMIT: record the scenario commit.
-  - Commit:
+- [x] COMMIT: record the scenario commit.
+   - Commit: `bf2c117`
 
 ## Final Verification
 
-- [ ] `givn lint --change semantic-e5-token-cap` has no unexpected findings.
-- [ ] `./run-tests.sh` passes.
-- [ ] `./run-tests.sh --e2e` passes.
-- [ ] `cargo fmt --check` passes.
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` passes.
+- [x] `givn lint --change semantic-e5-token-cap` has no unexpected findings.
+  - Output: `givn lint: 1 file(s) checked — clean`.
+- [x] `./run-tests.sh` passes.
+  - Output: 8 Cucumber invocations, `328 + 36 + 1 + 1 + 9 + 8 + 4 + 1 = 388 scenarios`, all passed.
+- [x] `./run-tests.sh --e2e` passes.
+  - Output: 4 Cucumber invocations, `42 + 7 + 5 + 1 = 55 scenarios`, all passed.
+- [x] `cargo fmt --check` passes.
+  - Output: `cargo fmt --check` exited 0.
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` passes.
+  - Output: `cargo clippy --workspace --all-targets -- -D warnings` exited 0.
 - [ ] `givn check review --change semantic-e5-token-cap` passes.
 - [ ] Archive gate passes and the change is archived.
