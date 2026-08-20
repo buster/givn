@@ -96,21 +96,22 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Blocking review keeps an over-cap active scenario unresolved"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
-- [ ] COMMIT: record the scenario commit.
-  - Commit:
+- [x] COMMIT: record the scenario commit.
+   - Commit: `26063a3`
 
 ## Scenario: Exactly 512 E5 passage tokens retain normal embedding behaviour
 
-- [ ] RED: target this scenario and record the non-zero result.
-  - Command:
-  - Output:
-- [ ] GREEN: prove the inclusive boundary does not create cap metadata.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: rerun the targeted scenario after cleanup.
-  - Command:
-  - Output:
+- [x] RED: target this scenario and record the non-zero result.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Exactly 512 E5 passage tokens retain normal embedding behaviour"`
+   - Output: non-zero; `1 scenario (1 failed)`, the regular setup stub panicked with `not implemented: E5 token-cap setup step`.
+- [x] GREEN: prove the inclusive boundary does not create cap metadata.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Exactly 512 E5 passage tokens retain normal embedding behaviour"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)`.
+   - Production files: `src/spec/retrieval.rs` (inclusive E5 budget comparison and empty cap output); `tests/steps/semantic_e5_token_cap_steps.rs`; `tests/steps/semantic_token_cap_review_steps.rs` (shared duplicate CLI step routes E5 seam); feature/task evidence files.
+   - Coverage: targeted runner output has no coverage instrumentation; production coverage is unmeasured for this phase.
+- [x] REFACTOR: rerun the targeted scenario after cleanup.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Exactly 512 E5 passage tokens retain normal embedding behaviour"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after `cargo fmt`.
 - [ ] COMMIT: record the scenario commit.
   - Commit:
 

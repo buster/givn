@@ -86,6 +86,22 @@ fn local_bge_nli_token_budget_fixtures(world: &mut GivnWorld) {
 #[when("the user runs `givn spec duplicates --format json` through the givn CLI")]
 fn run_regular_duplicate_json(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("token-budget corpus is missing");
+    if let Some(fixture) = world.retrieval_e5_token_budget.as_deref() {
+        let scores = world
+            .retrieval_duplicate_scores
+            .as_deref()
+            .expect("duplicate score fixture");
+        world.last_output = Some(common::run_givn_with_envs(
+            env,
+            &["spec", "duplicates", "--format", "json"],
+            &[
+                ("GIVN_SPEC_EMBEDDER", "stub"),
+                ("GIVN_SPEC_E5_TOKEN_BUDGET", fixture),
+                ("GIVN_SPEC_DUPLICATES_TEST_SCORES", scores),
+            ],
+        ));
+        return;
+    }
     let scores = world
         .retrieval_duplicate_scores
         .as_deref()
