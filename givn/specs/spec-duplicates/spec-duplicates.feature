@@ -42,8 +42,8 @@ Feature: Audit duplicate and related permanent scenarios
     And  disjoint source paths remain distinct after body normalization
     And  the two-file result has score `null`
 
-  Scenario: Structurally overlapping scenarios retain their distinguishing facts
-    Given  permanent scenarios share the same masked assertion shape but have different fingerprint facts
+   Scenario: Structurally overlapping scenarios retain their distinguishing facts
+     Given  permanent scenarios share an assertion shape but have different facts
     When  the user runs `givn spec duplicates`
     Then  candidate rank 1 is classified as `structural_overlap`
     And  candidate rank 1 has relation `same_assertion_shape`

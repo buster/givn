@@ -5,12 +5,12 @@ use cucumber::{given, then, when};
 use super::{GivnWorld, stdout};
 use crate::common;
 
-#[given("a permanent corpus with required and non-empty optional scenario content")]
+#[given("a shell project with one rich fixture")]
 fn rich_corpus(world: &mut GivnWorld) {
     super::semantic_compact_serialization_steps::prepare_rich_project(world);
 }
 
-#[when("the end-to-end user rebuilds the compact retrieval index through the givn CLI")]
+#[when("the maintainer runs the catalogue command")]
 fn rebuild_compact_index(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("compact serialization project");
     world.last_output = Some(common::run_givn_with_env(
@@ -20,12 +20,12 @@ fn rebuild_compact_index(world: &mut GivnWorld) {
     ));
 }
 
-#[then("stdout reports that the permanent scenarios were indexed")]
+#[then("stdout reports one indexed permanent scenario")]
 fn indexed_stdout(world: &mut GivnWorld) {
     assert!(stdout(world).contains("Indexed 1 permanent scenarios"));
 }
 
-#[then("the persistent retrieval index contains the indexed scenarios")]
+#[then("the catalogue contains the rich fixture")]
 fn indexed_scenarios(world: &mut GivnWorld) {
     let document = super::semantic_compact_serialization_steps::index(world);
     let entry = super::semantic_compact_serialization_steps::entry(&document, "Rich scenario");
