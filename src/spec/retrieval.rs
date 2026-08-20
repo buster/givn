@@ -82,6 +82,11 @@ const DUPLICATE_E5_TOKEN_CAP_GUIDANCE: &str =
     "shorten or split the scenario, then rerun the duplicate audit";
 
 #[cfg(feature = "spec-retrieval")]
+fn expose_e5_cap_contract(caps: &[E5TokenCap]) -> bool {
+    !caps.is_empty() || std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET").is_some()
+}
+
+#[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct SpecIndex {
     version: u32,
@@ -171,8 +176,10 @@ struct ExploreResponse {
     query: ExploreQueryOutput,
     index: ExploreIndexOutput,
     results: Vec<ExploreResultOutput>,
-    e5_token_cap_count: usize,
-    e5_token_cap_candidates: Vec<E5TokenCap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    e5_token_cap_count: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    e5_token_cap_candidates: Option<Vec<E5TokenCap>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     evidence: Option<ExploreEvidenceOutput>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -565,8 +572,10 @@ struct DuplicateJsonReport {
     scanned_scenarios: usize,
     candidate_count: usize,
     candidates: Vec<DuplicateJsonCandidate>,
-    e5_token_cap_count: usize,
-    e5_token_cap_candidates: Vec<E5TokenCap>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    e5_token_cap_count: Option<usize>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    e5_token_cap_candidates: Option<Vec<E5TokenCap>>,
     #[serde(skip_serializing_if = "Option::is_none")]
     e5_candidate_count: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -714,6 +723,7 @@ type CandidatePool = (
     Vec<SimilarityCandidate>,
     usize,
     BTreeMap<(String, String), String>,
+    Vec<E5TokenCap>,
 );
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
@@ -1152,6 +1162,7 @@ fn apply_duplicate_bge(
         }
         return Ok(DuplicateAudit {
             candidates,
+            e5_token_caps: Vec::new(),
             filtered_candidates: Vec::new(),
             unscored_candidates: semantic,
             bge_run: Some(run),
@@ -1763,6 +1774,7 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
         }
     });
     let refactoring_required = pair_refactoring_required || !audit.e5_token_caps.is_empty();
+    let expose_e5_caps = expose_e5_cap_contract(&audit.e5_token_caps);
     let guidance = if !audit.e5_token_caps.is_empty() {
         DUPLICATE_E5_TOKEN_CAP_GUIDANCE
     } else {
@@ -1803,8 +1815,8 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
                 candidate
             })
             .collect(),
-        e5_token_cap_count: audit.e5_token_caps.len(),
-        e5_token_cap_candidates: audit.e5_token_caps.clone(),
+        e5_token_cap_count: expose_e5_caps.then_some(audit.e5_token_caps.len()),
+        e5_token_cap_candidates: expose_e5_caps.then(|| audit.e5_token_caps.clone()),
         e5_candidate_count,
         bge_run: audit
             .bge_run
@@ -2993,7 +3005,7 @@ fn render_semantic_report(
         "BLOCKED"
     };
     let mut report = format!(
-        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\nE5 token-cap count: {}\ne5_token_cap_count: {}\n",
+        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
         if {
             #[cfg(feature = "nli-evidence")]
             {
@@ -3011,36 +3023,40 @@ fn render_semantic_report(
             SEMANTIC_REPORT_SCHEMA_VERSION
         },
         blocking.len(),
-        e5_token_caps.len(),
-        e5_token_caps.len(),
     );
-    report.push_str("e5_token_cap_candidates: [");
-    report.push_str(
-        &e5_token_caps
-            .iter()
-            .map(|cap| serde_json::to_string(cap).expect("serialize semantic E5 token cap"))
-            .collect::<Vec<_>>()
-            .join(","),
-    );
-    report.push_str("]\n");
-    for (index, cap) in e5_token_caps.iter().enumerate() {
+    if expose_e5_cap_contract(e5_token_caps) {
         report.push_str(&format!(
-            "\n## E5 Token Cap Candidate {}\n- status: E5_TOKEN_CAP\n- classification: null\n- rationale: null\n- file: \"{}\"\n- title: \"{}\"\n- content_hash: {}\n- token_count: {}\n- limit: {}\n- model: {}\n- tokenizer: {}\n- refactoring_required: {}\n- guidance: \"shorten or split the scenario, then rerun semantic review\"\n",
-            index + 1,
-            cap.file,
-            cap.title,
-            cap.content_hash,
-            cap.token_count,
-            cap.limit,
-            cap.model,
-            cap.tokenizer,
-            cap.refactoring_required,
+            "E5 token-cap count: {}\ne5_token_cap_count: {}\ne5_token_cap_candidates: [",
+            e5_token_caps.len(),
+            e5_token_caps.len(),
         ));
-    }
-    if !e5_token_caps.is_empty() {
         report.push_str(
-            "refactoring required: shorten or split the scenario, then rerun semantic review\n",
+            &e5_token_caps
+                .iter()
+                .map(|cap| serde_json::to_string(cap).expect("serialize semantic E5 token cap"))
+                .collect::<Vec<_>>()
+                .join(","),
         );
+        report.push_str("]\n");
+        for (index, cap) in e5_token_caps.iter().enumerate() {
+            report.push_str(&format!(
+                "\n## E5 Token Cap Candidate {}\n- status: E5_TOKEN_CAP\n- classification: null\n- rationale: null\n- file: \"{}\"\n- title: \"{}\"\n- content_hash: {}\n- token_count: {}\n- limit: {}\n- model: {}\n- tokenizer: {}\n- refactoring_required: {}\n- guidance: \"shorten or split the scenario, then rerun semantic review\"\n",
+                index + 1,
+                cap.file,
+                cap.title,
+                cap.content_hash,
+                cap.token_count,
+                cap.limit,
+                cap.model,
+                cap.tokenizer,
+                cap.refactoring_required,
+            ));
+        }
+        if !e5_token_caps.is_empty() {
+            report.push_str(
+                "refactoring required: shorten or split the scenario, then rerun semantic review\n",
+            );
+        }
     }
     if candidates.iter().any(|candidate| {
         candidate.bge_token_cap.is_some() || {
@@ -3692,6 +3708,7 @@ fn explore_enabled(
             .collect::<Vec<_>>()
     });
     e5_token_caps.sort_by(e5_token_cap_order);
+    let expose_e5_caps = expose_e5_cap_contract(&e5_token_caps);
 
     if json {
         let response = ExploreResponse {
@@ -3717,8 +3734,8 @@ fn explore_enabled(
                 entries: refresh.index.entries.len(),
             },
             results: results.clone(),
-            e5_token_cap_count: e5_token_caps.len(),
-            e5_token_cap_candidates: e5_token_caps.clone(),
+            e5_token_cap_count: expose_e5_caps.then_some(e5_token_caps.len()),
+            e5_token_cap_candidates: expose_e5_caps.then(|| e5_token_caps.clone()),
             evidence: bge_run.as_ref().map(explore_evidence_output),
             recommended_results,
             #[cfg(feature = "nli-evidence")]
@@ -4603,7 +4620,9 @@ fn advisory_review(
 
 #[cfg(feature = "spec-retrieval")]
 fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
-    let (candidates, considered) = embedding_similarity_candidates(root, index, delta)?;
+    let (candidates, considered, e5_token_caps) =
+        embedding_similarity_candidates(root, index, delta)?;
+    print_advisory_e5_token_caps(&e5_token_caps);
     for candidate in &candidates {
         println!(
             "similarity candidate [{}]: '{}' ({}) resembles '{}' ({}) score {:.4}, threshold {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the threshold)",
@@ -4638,9 +4657,29 @@ fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario])
     Ok(())
 }
 
+#[cfg(feature = "spec-retrieval")]
+fn print_advisory_e5_token_caps(caps: &[E5TokenCap]) {
+    if caps.is_empty() {
+        return;
+    }
+    println!("e5_token_cap_count: {}", caps.len());
+    println!(
+        "e5_token_cap_candidates: {}",
+        serde_json::to_string(caps).expect("serialize advisory E5 token caps")
+    );
+    for cap in caps {
+        println!(
+            "E5_TOKEN_CAP: '{}' ({}) requires {} tokens (limit {}); model {}, tokenizer {}; refactoring_required: true; guidance: shorten or split the scenario and rerun semantic review",
+            cap.title, cap.file, cap.token_count, cap.limit, cap.model, cap.tokenizer,
+        );
+    }
+}
+
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
-    let (mut candidates, considered, texts) = similarity_candidate_pool(root, index, delta)?;
+    let (mut candidates, considered, texts, e5_token_caps) =
+        similarity_candidate_pool(root, index, delta)?;
+    print_advisory_e5_token_caps(&e5_token_caps);
     let backend = bge_backend(root)?.context("BGE backend was not selected")?;
     if candidates.len() > BGE_MAX_PAIRS {
         println!(
@@ -4724,7 +4763,9 @@ fn run_second_stage_advisory_review(
     index: &SpecIndex,
     delta: &[DeltaScenario],
 ) -> Result<()> {
-    let (mut candidates, considered, texts) = similarity_candidate_pool(root, index, delta)?;
+    let (mut candidates, considered, texts, e5_token_caps) =
+        similarity_candidate_pool(root, index, delta)?;
+    print_advisory_e5_token_caps(&e5_token_caps);
     let mut bge_enabled = false;
     let mut bge_run: Option<BgeRun> = None;
 
@@ -5984,6 +6025,14 @@ fn similarity_candidate_pool(
         embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
     };
 
+    let mut e5_token_caps = index.e5_token_caps.clone();
+    for (item, budget) in active_delta.iter().zip(delta_batch.token_caps.iter()) {
+        if let Some(budget) = budget {
+            e5_token_caps.push(e5_token_cap(&item.scenario, *budget));
+        }
+    }
+    e5_token_caps.sort_by(e5_token_cap_order);
+
     let mut candidates = BTreeMap::new();
     for (active_index, delta) in active_delta.iter().enumerate() {
         let Some(vector) = delta_batch.vectors[active_index].as_ref() else {
@@ -6030,7 +6079,7 @@ fn similarity_candidate_pool(
 
     let result: Vec<SimilarityCandidate> = candidates.into_values().collect();
     let considered = result.len();
-    Ok((result, considered, candidate_texts))
+    Ok((result, considered, candidate_texts, e5_token_caps))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -6038,7 +6087,7 @@ fn embedding_similarity_candidates(
     root: &Path,
     index: &SpecIndex,
     delta: &[DeltaScenario],
-) -> Result<(Vec<SimilarityCandidate>, usize)> {
+) -> Result<(Vec<SimilarityCandidate>, usize, Vec<E5TokenCap>)> {
     let active_delta: Vec<&DeltaScenario> = delta
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
@@ -6055,6 +6104,13 @@ fn embedding_similarity_candidates(
     } else {
         embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
     };
+    let mut e5_token_caps = index.e5_token_caps.clone();
+    for (item, budget) in active_delta.iter().zip(delta_batch.token_caps.iter()) {
+        if let Some(budget) = budget {
+            e5_token_caps.push(e5_token_cap(&item.scenario, *budget));
+        }
+    }
+    e5_token_caps.sort_by(e5_token_cap_order);
 
     let mut candidates = BTreeMap::new();
     for (active_index, delta) in active_delta.iter().enumerate() {
@@ -6106,7 +6162,7 @@ fn embedding_similarity_candidates(
             .then_with(|| left.left.cmp(&right.left))
             .then_with(|| left.right.cmp(&right.right))
     });
-    Ok((result, considered))
+    Ok((result, considered, e5_token_caps))
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
@@ -6115,7 +6171,8 @@ fn similarity_candidates(
     index: &SpecIndex,
     delta: &[DeltaScenario],
 ) -> Result<(Vec<SimilarityCandidate>, usize)> {
-    let (mut result, considered, candidate_texts) = similarity_candidate_pool(root, index, delta)?;
+    let (mut result, considered, candidate_texts, _) =
+        similarity_candidate_pool(root, index, delta)?;
     rerank_candidates(root, &mut result, &candidate_texts)?;
     result.retain(|candidate| candidate.rerank_score >= RERANKER_LOGIT_THRESHOLD);
     result.sort_by(|left, right| {
@@ -6858,6 +6915,7 @@ fn read_index(path: &Path) -> Result<SpecIndex> {
 #[cfg(feature = "spec-retrieval")]
 fn validate_index(index: &SpecIndex) -> Result<()> {
     let mut identities = BTreeSet::new();
+    let mut cap_identities = BTreeSet::new();
     let mut dimensions = None;
     for entry in &index.entries {
         if entry.title.trim().is_empty()
@@ -6881,6 +6939,30 @@ fn validate_index(index: &SpecIndex) -> Result<()> {
             }
             None => dimensions = Some(entry.embedding.len()),
             _ => {}
+        }
+    }
+    for cap in &index.e5_token_caps {
+        if cap.status != "E5_TOKEN_CAP"
+            || cap.title.trim().is_empty()
+            || cap.content_hash.trim().is_empty()
+            || !cap.file.starts_with("givn/specs/")
+            || std::path::Path::new(&cap.file)
+                .components()
+                .any(|component| component == std::path::Component::ParentDir)
+            || cap.token_count <= cap.limit
+            || cap.limit != E5_MAX_LENGTH
+            || cap.model != MODEL_ID
+            || cap.tokenizer != E5_TOKENIZER_ID
+            || !cap.refactoring_required
+            || cap.guidance.trim().is_empty()
+        {
+            bail!("spec index contains invalid E5 token-cap metadata; rebuild it");
+        }
+        if !cap_identities.insert((cap.file.as_str(), cap.title.as_str())) {
+            bail!("spec index contains duplicate E5 token-cap identities; rebuild it");
+        }
+        if identities.contains(&(cap.file.as_str(), cap.title.as_str())) {
+            bail!("spec index contains both a vector and E5 token-cap metadata for one scenario");
         }
     }
     Ok(())
