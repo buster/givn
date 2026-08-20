@@ -37,6 +37,8 @@ pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
+pub mod semantic_e5_token_cap_e2e_steps;
+pub mod semantic_e5_token_cap_steps;
 pub mod semantic_remediation_e2e_steps;
 pub mod semantic_remediation_steps;
 pub mod semantic_review_e2e_steps;
@@ -84,6 +86,8 @@ pub struct GivnWorld {
     pub(crate) additional_output: Option<String>,
     /// Optional retrieval backend override for the current subprocess.
     pub(crate) retrieval_embedder: Option<String>,
+    /// Deterministic E5 passage token-budget fixture selector.
+    pub(crate) retrieval_e5_token_budget: Option<String>,
     /// Optional pair-reranker backend override for the current subprocess.
     pub(crate) retrieval_reranker: Option<String>,
     /// Optional deterministic semantic-report score overrides for fixtures.
@@ -306,6 +310,9 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     let mut environments = Vec::new();
     if let Some(value) = world.retrieval_embedder.as_deref() {
         environments.push(("GIVN_SPEC_EMBEDDER", value));
+    }
+    if let Some(value) = world.retrieval_e5_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_E5_TOKEN_BUDGET", value));
     }
     if let Some(value) = world.retrieval_reranker.as_deref() {
         environments.push(("GIVN_SPEC_RERANKER", value));

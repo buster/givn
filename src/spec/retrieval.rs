@@ -28,6 +28,8 @@ const INDEX_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
 #[cfg(feature = "spec-retrieval")]
+const E5_TOKENIZER_ID: &str = "intfloat/multilingual-e5-large/tokenizer.json";
+#[cfg(feature = "spec-retrieval")]
 const E5_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
@@ -73,6 +75,8 @@ const DUPLICATE_REPORT_SCHEMA_VERSION: u32 = 1;
 const DUPLICATE_BGE_REPORT_SCHEMA_VERSION: u32 = 2;
 #[cfg(feature = "spec-retrieval")]
 const TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenarios, then rerun semantic review";
+#[cfg(feature = "spec-retrieval")]
+const E5_TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenario, then rerun retrieval";
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,6 +84,8 @@ struct SpecIndex {
     version: u32,
     model: String,
     entries: Vec<IndexEntry>,
+    #[serde(default)]
+    e5_token_caps: Vec<E5TokenCap>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -88,6 +94,42 @@ struct IndexRefresh {
     index: SpecIndex,
     reused: usize,
     embedded: usize,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct E5TokenCap {
+    status: String,
+    file: String,
+    title: String,
+    content_hash: String,
+    token_count: usize,
+    limit: usize,
+    model: String,
+    tokenizer: String,
+    refactoring_required: bool,
+    guidance: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Copy)]
+struct E5TokenBudget {
+    token_count: usize,
+    limit: usize,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct EmbeddingBatch {
+    vectors: Vec<Option<Vec<f32>>>,
+    token_caps: Vec<Option<E5TokenBudget>>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct SemanticCandidateSet {
+    candidates: Vec<SemanticCandidate>,
+    e5_token_caps: Vec<E5TokenCap>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -428,6 +470,7 @@ struct DuplicateCandidate {
 #[derive(Debug)]
 struct DuplicateAudit {
     candidates: Vec<DuplicateCandidate>,
+    e5_token_caps: Vec<E5TokenCap>,
     filtered_candidates: Vec<DuplicateCandidate>,
     unscored_candidates: Vec<DuplicateCandidate>,
     bge_run: Option<BgeRun>,
@@ -437,6 +480,13 @@ struct DuplicateAudit {
     nli_unscored_candidates: Vec<DuplicateCandidate>,
     #[cfg(feature = "nli-evidence")]
     nli_run: Option<NliRun>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug)]
+struct DuplicateCandidateSet {
+    candidates: Vec<DuplicateCandidate>,
+    e5_token_caps: Vec<E5TokenCap>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -901,6 +951,16 @@ fn index_enabled(root: &Path) -> Result<()> {
         refresh.index.entries.len()
     );
     println!("Reused {} scenario vectors", refresh.reused);
+    println!(
+        "E5 token-cap candidates: {}",
+        refresh.index.e5_token_caps.len()
+    );
+    for cap in &refresh.index.e5_token_caps {
+        println!(
+            "E5_TOKEN_CAP: '{}' ({}) requires {} tokens (limit {}); refactoring required: {}; guidance: {}",
+            cap.title, cap.file, cap.token_count, cap.limit, cap.refactoring_required, cap.guidance,
+        );
+    }
     Ok(())
 }
 
@@ -919,8 +979,12 @@ fn duplicates_enabled(root: &Path, json: bool) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn duplicate_audit(root: &Path, scenarios: &[DuplicateScenario]) -> Result<DuplicateAudit> {
-    let candidates = duplicate_candidates(root, scenarios)?;
-    let audit = {
+    let candidate_set = duplicate_candidates(root, scenarios)?;
+    let DuplicateCandidateSet {
+        candidates,
+        e5_token_caps,
+    } = candidate_set;
+    let mut audit = {
         #[cfg(feature = "cross-encoder-reranker")]
         {
             apply_duplicate_bge(root, scenarios, candidates)?
@@ -929,6 +993,7 @@ fn duplicate_audit(root: &Path, scenarios: &[DuplicateScenario]) -> Result<Dupli
         {
             DuplicateAudit {
                 candidates,
+                e5_token_caps: Vec::new(),
                 filtered_candidates: Vec::new(),
                 unscored_candidates: Vec::new(),
                 bge_run: None,
@@ -941,6 +1006,7 @@ fn duplicate_audit(root: &Path, scenarios: &[DuplicateScenario]) -> Result<Dupli
             }
         }
     };
+    audit.e5_token_caps = e5_token_caps;
     #[cfg(feature = "nli-evidence")]
     {
         return apply_duplicate_nli(root, scenarios, audit);
@@ -965,6 +1031,7 @@ fn apply_duplicate_bge(
     if semantic.is_empty() {
         return Ok(DuplicateAudit {
             candidates,
+            e5_token_caps: Vec::new(),
             filtered_candidates: Vec::new(),
             unscored_candidates: Vec::new(),
             bge_run: None,
@@ -979,6 +1046,7 @@ fn apply_duplicate_bge(
     let Some(backend) = bge_backend(root)? else {
         return Ok(DuplicateAudit {
             candidates,
+            e5_token_caps: Vec::new(),
             filtered_candidates: Vec::new(),
             unscored_candidates: Vec::new(),
             bge_run: None,
@@ -1000,6 +1068,7 @@ fn apply_duplicate_bge(
             }
             return Ok(DuplicateAudit {
                 candidates,
+                e5_token_caps: Vec::new(),
                 filtered_candidates: Vec::new(),
                 unscored_candidates: semantic,
                 bge_run: Some(BgeRun::unavailable(
@@ -1031,6 +1100,7 @@ fn apply_duplicate_bge(
         }
         return Ok(DuplicateAudit {
             candidates,
+            e5_token_caps: Vec::new(),
             filtered_candidates: Vec::new(),
             unscored_candidates: unscored,
             bge_run: Some(run),
@@ -1169,6 +1239,7 @@ fn apply_duplicate_bge(
     unscored.sort_by(duplicate_candidate_order);
     Ok(DuplicateAudit {
         candidates,
+        e5_token_caps: Vec::new(),
         filtered_candidates: filtered,
         unscored_candidates: unscored,
         bge_run: Some(run),
@@ -1973,7 +2044,9 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let refresh = refresh_index(root)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
-    let mut candidates = semantic_candidates(root, &refresh.index, &delta)?;
+    let semantic_set = semantic_candidates(root, &refresh.index, &delta)?;
+    let mut candidates = semantic_set.candidates;
+    let e5_token_caps = semantic_set.e5_token_caps;
     #[cfg(feature = "cross-encoder-reranker")]
     let bge_run = apply_semantic_bge(root, &delta, &mut candidates)?;
     #[cfg(not(feature = "cross-encoder-reranker"))]
@@ -2034,15 +2107,18 @@ fn semantic_candidates(
     root: &Path,
     index: &SpecIndex,
     delta: &[DeltaScenario],
-) -> Result<Vec<SemanticCandidate>> {
+) -> Result<SemanticCandidateSet> {
     let active: Vec<&DeltaScenario> = delta
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
         .collect();
     if active.is_empty() {
-        return Ok(Vec::new());
+        return Ok(SemanticCandidateSet {
+            candidates: Vec::new(),
+            e5_token_caps: index.e5_token_caps.clone(),
+        });
     }
-    let vectors = embed_texts(
+    let batch = embed_texts(
         root,
         &active
             .iter()
@@ -2050,9 +2126,19 @@ fn semantic_candidates(
             .collect::<Vec<_>>(),
         EmbeddingRole::Passage,
     )?;
+    let mut e5_token_caps = index.e5_token_caps.clone();
+    for (item, budget) in active.iter().zip(batch.token_caps.iter()) {
+        if let Some(budget) = budget {
+            e5_token_caps.push(e5_token_cap(&item.scenario, *budget));
+        }
+    }
+    e5_token_caps.sort_by(e5_token_cap_order);
     let permanent = permanent_semantic_endpoints(root)?;
     let mut candidates = BTreeMap::new();
-    for (item, vector) in active.iter().zip(vectors.iter()) {
+    for (active_index, item) in active.iter().enumerate() {
+        let Some(vector) = batch.vectors[active_index].as_ref() else {
+            continue;
+        };
         for entry in &index.entries {
             if item.operation == crate::gherkin::delta::DeltaOp::Modified
                 && entry.file == item.target_file
@@ -2088,6 +2174,12 @@ fn semantic_candidates(
     }
     for left_index in 0..active.len() {
         for right_index in (left_index + 1)..active.len() {
+            let (Some(left_vector), Some(right_vector)) = (
+                batch.vectors[left_index].as_ref(),
+                batch.vectors[right_index].as_ref(),
+            ) else {
+                continue;
+            };
             let left = semantic_delta_endpoint(active[left_index]);
             let right = semantic_delta_endpoint(active[right_index]);
             let (left, right) = if semantic_endpoint_key(&left) <= semantic_endpoint_key(&right) {
@@ -2095,11 +2187,8 @@ fn semantic_candidates(
             } else {
                 (right, left)
             };
-            let score = semantic_score(
-                &left,
-                &right,
-                cosine_similarity(&vectors[left_index], &vectors[right_index]),
-            )?;
+            let score =
+                semantic_score(&left, &right, cosine_similarity(left_vector, right_vector))?;
             if score < SEMANTIC_SIMILARITY_THRESHOLD {
                 continue;
             }
@@ -2120,7 +2209,10 @@ fn semantic_candidates(
             })
             .then_with(|| left.candidate_id.cmp(&right.candidate_id))
     });
-    Ok(result)
+    Ok(SemanticCandidateSet {
+        candidates: result,
+        e5_token_caps,
+    })
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
@@ -2799,8 +2891,10 @@ fn recompute_prior_pair_score(
         std::slice::from_ref(&left.scenario.text),
         EmbeddingRole::Passage,
     )?
+    .vectors
     .into_iter()
     .next()
+    .flatten()
     .context("retrieval embedder returned no remediation vector")?;
     let raw = cosine_similarity(&left_vector, &right_entry.embedding);
     semantic_score(&semantic_delta_endpoint(left), right, raw)
@@ -3161,9 +3255,11 @@ fn refresh_index(root: &Path) -> Result<IndexRefresh> {
         version: INDEX_VERSION,
         model: MODEL_ID.to_string(),
         entries: Vec::new(),
+        e5_token_caps: Vec::new(),
     });
 
     let mut result = Vec::with_capacity(entries.len());
+    let mut token_caps = Vec::new();
     let mut pending = Vec::new();
     let mut reused = 0usize;
 
@@ -3171,22 +3267,31 @@ fn refresh_index(root: &Path) -> Result<IndexRefresh> {
         if let Some(existing) = reusable_entry(&previous, &scenario) {
             result.push(existing.clone());
             reused += 1;
+        } else if let Some(existing) = reusable_e5_token_cap(&previous, &scenario) {
+            token_caps.push(existing);
         } else {
             pending.push(scenario);
         }
     }
 
-    let embedded = pending.len();
+    let mut embedded = 0usize;
     if !pending.is_empty() {
         let texts: Vec<String> = pending.iter().map(|item| item.text.clone()).collect();
-        let vectors = embed_texts(root, &texts, EmbeddingRole::Passage)?;
-        for (scenario, embedding) in pending.into_iter().zip(vectors) {
-            result.push(IndexEntry {
-                title: scenario.title,
-                file: scenario.file,
-                content_hash: scenario.content_hash,
-                embedding,
-            });
+        let batch = embed_texts(root, &texts, EmbeddingRole::Passage)?;
+        for (index, scenario) in pending.into_iter().enumerate() {
+            if let Some(embedding) = batch.vectors[index].clone() {
+                result.push(IndexEntry {
+                    title: scenario.title,
+                    file: scenario.file,
+                    content_hash: scenario.content_hash,
+                    embedding,
+                });
+                embedded += 1;
+            } else {
+                let budget = batch.token_caps[index]
+                    .expect("an input without an embedding must have an E5 token cap");
+                token_caps.push(e5_token_cap(&scenario, budget));
+            }
         }
     }
 
@@ -3195,11 +3300,13 @@ fn refresh_index(root: &Path) -> Result<IndexRefresh> {
             .cmp(&right.file)
             .then_with(|| left.title.cmp(&right.title))
     });
+    token_caps.sort_by(e5_token_cap_order);
 
     let index = SpecIndex {
         version: INDEX_VERSION,
         model: MODEL_ID.to_string(),
         entries: result,
+        e5_token_caps: token_caps,
     };
     write_index(&index_path, &index)?;
 
@@ -3220,8 +3327,10 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
         )
     })?;
     let query_vector = embed_texts(root, &[query.to_string()], EmbeddingRole::Query)?
+        .vectors
         .into_iter()
         .next()
+        .flatten()
         .context("retrieval embedder returned no query vector")?;
 
     let ranked = rank_entries(&index.entries, &query_vector);
@@ -3251,18 +3360,19 @@ fn explore_enabled(
         None
     };
     let refresh = refresh_index(root)?;
+    let mut e5_token_caps = refresh.index.e5_token_caps.clone();
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
         .collect();
-    let query_vector = embed_texts(
+    let query_batch = embed_texts(
         root,
         std::slice::from_ref(&query.text),
         EmbeddingRole::Query,
-    )?
-    .into_iter()
-    .next()
-    .context("retrieval embedder returned no query vector")?;
+    )?;
+    let query_vector = query_batch.vectors[0]
+        .clone()
+        .context("retrieval embedder returned no query vector")?;
 
     let mut candidates: Vec<ExploreCandidate> = refresh
         .index
@@ -3291,12 +3401,22 @@ fn explore_enabled(
             .iter()
             .map(|item| item.scenario.text.clone())
             .collect();
-        let delta_vectors = if delta_texts.is_empty() {
-            Vec::new()
+        let delta_batch = if delta_texts.is_empty() {
+            EmbeddingBatch {
+                vectors: Vec::new(),
+                token_caps: Vec::new(),
+            }
         } else {
             embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
         };
-        for (item, embedding) in active_delta.iter().zip(delta_vectors) {
+        for (index, item) in active_delta.iter().enumerate() {
+            if let Some(budget) = delta_batch.token_caps[index] {
+                e5_token_caps.push(e5_token_cap(&item.scenario, budget));
+                continue;
+            }
+            let embedding = delta_batch.vectors[index]
+                .clone()
+                .context("retrieval embedder returned no fitting change vector")?;
             candidates.push(ExploreCandidate {
                 title: item.scenario.title.clone(),
                 file: item.scenario.file.clone(),
@@ -4322,8 +4442,10 @@ fn advisory_review(
             std::slice::from_ref(&item.scenario.text),
             EmbeddingRole::Query,
         )?
+        .vectors
         .into_iter()
         .next()
+        .flatten()
         .context("retrieval embedder returned no review vector")?;
         let ranked = rank_entries(&index.entries, &query_vector);
         for (rank, (entry, score)) in ranked.into_iter().take(5).enumerate() {
@@ -4882,7 +5004,7 @@ fn duplicate_behavior_body(
 fn duplicate_candidates(
     root: &Path,
     scenarios: &[DuplicateScenario],
-) -> Result<Vec<DuplicateCandidate>> {
+) -> Result<DuplicateCandidateSet> {
     let mut candidates = Vec::new();
     let mut classified = BTreeSet::new();
     for (left_index, left) in scenarios.iter().enumerate() {
@@ -4925,15 +5047,11 @@ fn duplicate_candidates(
     }
 
     let score_overrides = duplicate_score_overrides()?;
-    let needs_semantic_embedding = scenarios.iter().enumerate().any(|(left_index, _)| {
-        scenarios
-            .iter()
-            .enumerate()
-            .skip(left_index + 1)
-            .any(|(right_index, _)| !classified.contains(&(left_index, right_index)))
-    });
-    let embeddings = if !needs_semantic_embedding {
-        Vec::new()
+    let batch = if scenarios.is_empty() {
+        EmbeddingBatch {
+            vectors: Vec::new(),
+            token_caps: Vec::new(),
+        }
     } else {
         embed_texts(
             root,
@@ -4944,12 +5062,33 @@ fn duplicate_candidates(
             EmbeddingRole::Passage,
         )?
     };
+    let mut e5_token_caps = Vec::new();
+    for (scenario, budget) in scenarios.iter().zip(batch.token_caps.iter()) {
+        if let Some(budget) = budget {
+            e5_token_caps.push(e5_token_cap(
+                &ScenarioText {
+                    title: scenario.endpoint.title.clone(),
+                    file: scenario.endpoint.file.clone(),
+                    content_hash: content_hash(&scenario.text),
+                    text: scenario.text.clone(),
+                },
+                *budget,
+            ));
+        }
+    }
+    e5_token_caps.sort_by(e5_token_cap_order);
     for (left_index, left) in scenarios.iter().enumerate() {
         for (right_index, right) in scenarios.iter().enumerate().skip(left_index + 1) {
             if classified.contains(&(left_index, right_index)) {
                 continue;
             }
-            let raw_score = cosine_similarity(&embeddings[left_index], &embeddings[right_index]);
+            let (Some(left_embedding), Some(right_embedding)) = (
+                batch.vectors[left_index].as_ref(),
+                batch.vectors[right_index].as_ref(),
+            ) else {
+                continue;
+            };
+            let raw_score = cosine_similarity(left_embedding, right_embedding);
             let score = score_overrides
                 .as_ref()
                 .and_then(|overrides| {
@@ -4983,7 +5122,10 @@ fn duplicate_candidates(
         }
     }
     candidates.sort_by(duplicate_candidate_order);
-    Ok(candidates)
+    Ok(DuplicateCandidateSet {
+        candidates,
+        e5_token_caps,
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -5700,14 +5842,20 @@ fn similarity_candidate_pool(
         .iter()
         .map(|item| item.scenario.text.clone())
         .collect();
-    let delta_vectors = if delta_texts.is_empty() {
-        Vec::new()
+    let delta_batch = if delta_texts.is_empty() {
+        EmbeddingBatch {
+            vectors: Vec::new(),
+            token_caps: Vec::new(),
+        }
     } else {
         embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
     };
 
     let mut candidates = BTreeMap::new();
-    for (delta, vector) in active_delta.iter().zip(delta_vectors.iter()) {
+    for (active_index, delta) in active_delta.iter().enumerate() {
+        let Some(vector) = delta_batch.vectors[active_index].as_ref() else {
+            continue;
+        };
         let own_target = (delta.target_file.as_str(), delta.scenario.title.as_str());
         let mut neighbours: Vec<(f32, &IndexEntry)> = index
             .entries
@@ -5727,7 +5875,7 @@ fn similarity_candidate_pool(
         }
     }
 
-    let projected = project_records(index, delta, &delta_vectors, &active_delta)?;
+    let projected = project_records(index, delta, &delta_batch.vectors, &active_delta)?;
     for (left, right) in projected.iter().enumerate() {
         let mut neighbours: Vec<(f32, &ScenarioRecord)> = projected
             .iter()
@@ -5766,14 +5914,20 @@ fn embedding_similarity_candidates(
         .iter()
         .map(|item| item.scenario.text.clone())
         .collect();
-    let delta_vectors = if delta_texts.is_empty() {
-        Vec::new()
+    let delta_batch = if delta_texts.is_empty() {
+        EmbeddingBatch {
+            vectors: Vec::new(),
+            token_caps: Vec::new(),
+        }
     } else {
         embed_texts(root, &delta_texts, EmbeddingRole::Passage)?
     };
 
     let mut candidates = BTreeMap::new();
-    for (delta, vector) in active_delta.iter().zip(delta_vectors.iter()) {
+    for (active_index, delta) in active_delta.iter().enumerate() {
+        let Some(vector) = delta_batch.vectors[active_index].as_ref() else {
+            continue;
+        };
         let own_target = (delta.target_file.as_str(), delta.scenario.title.as_str());
         for entry in &index.entries {
             if delta.operation == crate::gherkin::delta::DeltaOp::Modified
@@ -5794,7 +5948,7 @@ fn embedding_similarity_candidates(
         }
     }
 
-    let projected = project_records(index, delta, &delta_vectors, &active_delta)?;
+    let projected = project_records(index, delta, &delta_batch.vectors, &active_delta)?;
     for (left, right) in projected.iter().enumerate() {
         for other in projected.iter().skip(left + 1) {
             let score = cosine_similarity(&right.embedding, &other.embedding);
@@ -6287,7 +6441,7 @@ fn nli_label_indices(config: &serde_json::Value) -> Result<[usize; 3]> {
 fn project_records(
     index: &SpecIndex,
     delta: &[DeltaScenario],
-    delta_vectors: &[Vec<f32>],
+    delta_vectors: &[Option<Vec<f32>>],
     active_delta: &[&DeltaScenario],
 ) -> Result<Vec<ScenarioRecord>> {
     let mut entries: BTreeMap<(String, String), ScenarioRecord> = index
@@ -6317,26 +6471,30 @@ fn project_records(
                     .iter()
                     .position(|active| std::ptr::eq(*active, item))
                     .context("modified delta vector is missing")?;
-                entries.insert(
-                    key,
-                    ScenarioRecord {
-                        endpoint: endpoint(&item.target_file, &item.scenario.title),
-                        embedding: delta_vectors[position].clone(),
-                    },
-                );
+                if let Some(embedding) = delta_vectors[position].clone() {
+                    entries.insert(
+                        key,
+                        ScenarioRecord {
+                            endpoint: endpoint(&item.target_file, &item.scenario.title),
+                            embedding,
+                        },
+                    );
+                }
             }
             crate::gherkin::delta::DeltaOp::Added => {
                 let position = active_delta
                     .iter()
                     .position(|active| std::ptr::eq(*active, item))
                     .context("added delta vector is missing")?;
-                entries.insert(
-                    key,
-                    ScenarioRecord {
-                        endpoint: endpoint(&item.target_file, &item.scenario.title),
-                        embedding: delta_vectors[position].clone(),
-                    },
-                );
+                if let Some(embedding) = delta_vectors[position].clone() {
+                    entries.insert(
+                        key,
+                        ScenarioRecord {
+                            endpoint: endpoint(&item.target_file, &item.scenario.title),
+                            embedding,
+                        },
+                    );
+                }
             }
         }
     }
@@ -6635,49 +6793,154 @@ fn reusable_entry(index: &SpecIndex, scenario: &ScenarioText) -> Option<IndexEnt
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Vec<Vec<f32>>> {
-    match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
-        Ok("stub") => {
-            preflight_e5_stub_texts(texts)?;
-            Ok(texts
-                .iter()
-                .map(|text| stub_embedding(text, role))
-                .collect())
-        }
-        Ok("missing") => bail!(
-            "retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER"
-        ),
-        Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),
-        Err(std::env::VarError::NotPresent) => {
-            preflight_e5_texts(root, texts, role)?;
-            fastembed_texts(root, texts, role)
-        }
-        Err(std::env::VarError::NotUnicode(_)) => bail!("GIVN_SPEC_EMBEDDER is not valid UTF-8"),
+fn reusable_e5_token_cap(index: &SpecIndex, scenario: &ScenarioText) -> Option<E5TokenCap> {
+    index
+        .e5_token_caps
+        .iter()
+        .find(|cap| {
+            cap.file == scenario.file
+                && cap.title == scenario.title
+                && cap.content_hash == scenario.content_hash
+        })
+        .cloned()
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn e5_token_cap(scenario: &ScenarioText, budget: E5TokenBudget) -> E5TokenCap {
+    E5TokenCap {
+        status: "E5_TOKEN_CAP".to_string(),
+        file: scenario.file.clone(),
+        title: scenario.title.clone(),
+        content_hash: scenario.content_hash.clone(),
+        token_count: budget.token_count,
+        limit: budget.limit,
+        model: MODEL_ID.to_string(),
+        tokenizer: E5_TOKENIZER_ID.to_string(),
+        refactoring_required: true,
+        guidance: E5_TOKEN_CAP_GUIDANCE.to_string(),
     }
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn preflight_e5_stub_texts(texts: &[String]) -> Result<()> {
+fn e5_token_cap_order(left: &E5TokenCap, right: &E5TokenCap) -> std::cmp::Ordering {
+    left.file
+        .cmp(&right.file)
+        .then_with(|| left.title.cmp(&right.title))
+        .then_with(|| left.content_hash.cmp(&right.content_hash))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<EmbeddingBatch> {
+    let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
+        Ok("stub") => preflight_e5_stub_texts(texts.len())?,
+        Ok("missing") => {
+            bail!(
+                "retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER"
+            )
+        }
+        Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),
+        Err(std::env::VarError::NotPresent) => preflight_e5_texts(root, texts, role)?,
+        Err(std::env::VarError::NotUnicode(_)) => {
+            bail!("GIVN_SPEC_EMBEDDER is not valid UTF-8")
+        }
+    };
+    let fitting_indices: Vec<usize> = token_caps
+        .iter()
+        .enumerate()
+        .filter_map(|(index, cap)| cap.is_none().then_some(index))
+        .collect();
+    let fitting_texts: Vec<String> = fitting_indices
+        .iter()
+        .map(|index| texts[*index].clone())
+        .collect();
+    let vectors = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
+        Ok("stub") => fitting_texts
+            .iter()
+            .map(|text| stub_embedding(text, role))
+            .collect(),
+        Ok("missing") => unreachable!("missing embedder handled by preflight"),
+        Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),
+        Err(std::env::VarError::NotPresent) => fastembed_texts(root, &fitting_texts, role)?,
+        Err(std::env::VarError::NotUnicode(_)) => {
+            bail!("GIVN_SPEC_EMBEDDER is not valid UTF-8")
+        }
+    };
+    anyhow::ensure!(
+        vectors.len() == fitting_indices.len(),
+        "retrieval embedder returned {} vectors for {} fitting inputs",
+        vectors.len(),
+        fitting_indices.len()
+    );
+    let mut mapped = vec![None; texts.len()];
+    for (index, vector) in fitting_indices.into_iter().zip(vectors) {
+        mapped[index] = Some(vector);
+    }
+    Ok(EmbeddingBatch {
+        vectors: mapped,
+        token_caps,
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn preflight_e5_stub_texts(text_count: usize) -> Result<Vec<Option<E5TokenBudget>>> {
     let Some(fixture) = std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET") else {
-        return Ok(());
+        return Ok(vec![None; text_count]);
     };
     let fixture = fixture
         .to_str()
         .context("GIVN_SPEC_E5_TOKEN_BUDGET is not valid UTF-8")?;
-    match fixture {
-        "exact-512" | "bounded-512" => Ok(()),
-        "overflow-513" | "all-513" => {
-            bail!("E5 passage token cap: complete semantic passage requires 513 tokens (limit 512)")
-        }
-        _ => {
-            let _ = texts;
-            bail!("unknown E5 token budget fixture `{fixture}`; expected exact-512 or overflow-513")
-        }
-    }
+    fixture_e5_token_budgets(fixture, text_count)
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn preflight_e5_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<()> {
+fn fixture_e5_token_budgets(
+    fixture: &str,
+    text_count: usize,
+) -> Result<Vec<Option<E5TokenBudget>>> {
+    let counts = match fixture {
+        "exact-512" | "bounded-512" | "all-512" => vec![E5_MAX_LENGTH; text_count],
+        "overflow-513" | "all-513" => vec![513; text_count],
+        "overflow-550" | "all-550" => vec![550; text_count],
+        value if value.starts_with("partial-") => {
+            let values = value
+                .strip_prefix("partial-")
+                .unwrap_or_default()
+                .split('-')
+                .map(|token| {
+                    token
+                        .parse::<usize>()
+                        .with_context(|| format!("unknown E5 token budget fixture `{fixture}`"))
+                })
+                .collect::<Result<Vec<_>>>()?;
+            anyhow::ensure!(
+                !values.is_empty(),
+                "unknown E5 token budget fixture `{fixture}`"
+            );
+            (0..text_count)
+                .map(|index| values[index.min(values.len() - 1)])
+                .collect()
+        }
+        _ => bail!(
+            "unknown E5 token budget fixture `{fixture}`; expected exact-512, overflow-513, or partial-*"
+        ),
+    };
+    Ok(counts
+        .into_iter()
+        .map(|token_count| {
+            (token_count > E5_MAX_LENGTH).then_some(E5TokenBudget {
+                token_count,
+                limit: E5_MAX_LENGTH,
+            })
+        })
+        .collect())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn preflight_e5_texts(
+    root: &Path,
+    texts: &[String],
+    role: EmbeddingRole,
+) -> Result<Vec<Option<E5TokenBudget>>> {
     let tokenizer_path = std::env::var_os("GIVN_SPEC_E5_TOKENIZER")
         .map(std::path::PathBuf::from)
         .or_else(|| find_e5_tokenizer(root));
@@ -6691,18 +6954,18 @@ fn preflight_e5_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Res
         EmbeddingRole::Passage => "passage: ",
         EmbeddingRole::Query => "query: ",
     };
+    let mut caps = Vec::with_capacity(texts.len());
     for text in texts {
         let count = tokenizer
             .encode(format!("{prefix}{text}"), true)
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
             .len();
-        if count > E5_MAX_LENGTH {
-            bail!(
-                "E5 passage token cap: complete semantic input requires {count} tokens (limit {E5_MAX_LENGTH})"
-            );
-        }
+        caps.push((count > E5_MAX_LENGTH).then_some(E5TokenBudget {
+            token_count: count,
+            limit: E5_MAX_LENGTH,
+        }));
     }
-    Ok(())
+    Ok(caps)
 }
 
 #[cfg(feature = "spec-retrieval")]
