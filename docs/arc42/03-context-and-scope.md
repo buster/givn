@@ -45,7 +45,7 @@ graph TB
 | Exit codes | out | For `givn lint`: 0 clean / 1 parse error / 3 duplicate scenario title / 2 wip (1 > 3 > 2); standard 0/non-0 elsewhere. |
 | `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
 | Embedded assets | in | Compiled-in default manifest, templates, skill templates. |
-| Shared semantic model input | in/out | One complete deterministic Gherkin serialization feeds E5, BGE, and NLI, including Feature/Rule context, inherited backgrounds, resolved step roles, tables, docstrings, outline templates, and concrete example rows. Its exact E5 text supplies `content_hash`; paths, tags, scores, classifications, and deterministic fingerprints remain metadata/evidence. |
+| Shared semantic model input | in/out | One complete compact deterministic Gherkin serialization feeds E5, BGE, and NLI, including Feature/Rule context, inherited backgrounds, resolved step roles, tables, docstrings, outline templates, and concrete example rows. Optional empty sections and fields are omitted. Its exact E5 text supplies `content_hash`; paths, tags, scores, classifications, and deterministic fingerprints remain metadata/evidence. |
 | Shared semantic budget guard | in/out | Actual model tokenizers preflight untruncated/unpadded E5 passages and BGE/NLI pairs, including pair special tokens, before model construction or inference. The guard is shared by duplicate audit, Explore, advisory review, and blocking review; 512 fits, 513 is over, and cap states remain visible and blocking. |
 | Token-cap semantic evidence | out | Participating JSON and Markdown reports expose complete E5 passage token counts, limit, model/tokenizer provenance, and `E5_TOKEN_CAP` refactoring findings, alongside left/right/pair/limit counts and `BGE_TOKEN_CAP`/`NLI_TOKEN_CAP` per-candidate states. Fitting E5 passages remain indexed; capped passages have no vector or pair score and remain visible, unresolved, classification-free, and blocking with shorten/split remediation guidance. A partial BGE/NLI run remains enabled for fitting pairs; an all-over-cap second-stage layer is unavailable with reason `token-cap`. |
 
@@ -80,11 +80,11 @@ graph TB
   raw candidate set remains visible; BGE narrows only the recommended worklist,
   records `BGE_FILTERED` evidence without blocking, and never assigns a Givn
   classification or edits a specification.
-- One complete deterministic Gherkin semantic serialization for E5, BGE, and
+- One complete compact deterministic Gherkin semantic serialization for E5, BGE, and
   NLI, with Feature/Rule context, inherited backgrounds, resolved step roles,
-  tables, docstrings, outline templates, and concrete example rows. Paths,
-  tags, scores, classifications, and deterministic fingerprints remain outside
-  model text.
+  tables, docstrings, outline templates, and concrete example rows. Empty
+  optional sections and fields are omitted. Paths, tags, scores,
+  classifications, and deterministic fingerprints remain outside model text.
 - A shared actual-tokenizer preflight for E5 passages and BGE/NLI pairs on the
   permanent duplicate audit, Explore, advisory review, and blocking review.
   Counts are untruncated and unpadded, pair special tokens are included, 512 is

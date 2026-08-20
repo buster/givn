@@ -59,7 +59,7 @@ flowchart LR
 | FR-32 | Provide a read-only `givn spec duplicates` audit over the complete permanent scenario corpus, reporting deterministic exact and Fingerprint-based structural candidates plus advisory E5 candidates in a fixed text/JSON contract without blocking ordinary change work. |
 | FR-33 | Make opt-in BGE evidence available to permanent exploration, change-aware exploration, advisory review, blocking review, and permanent duplicate audit through a deterministic bounded E5 top-K union. Record E5 raw candidates, BGE-recommended candidates, BGE-filtered evidence, model identity, symmetric raw scores, and runtime without automatic Givn decisions. |
 | FR-34 | Make independently opt-in NLI evidence available on the same five E5-backed surfaces. Record bidirectional entailment/neutral/contradiction probabilities, a symmetric summary, NLI-recommended and NLI-filtered candidates, model identity, pair counts, runtime, and explicit unavailable states; reduce the recommended worklist without automatic Givn decisions. |
-| FR-35 | Use one complete deterministic Gherkin semantic serialization for E5, BGE, and NLI; preflight actual model-tokenizer budgets; expose per-candidate token-cap evidence; and preserve visible, unresolved blocking semantics across duplicate audit, Explore, advisory review, and blocking review. |
+| FR-35 | Use one complete, compact deterministic Gherkin semantic serialization for E5, BGE, and NLI; omit empty optional fields; preflight actual model-tokenizer budgets; expose per-candidate token-cap evidence; and preserve visible, unresolved blocking semantics across duplicate audit, Explore, advisory review, and blocking review. |
 | FR-36 | Keep fitting E5 passages indexed when another complete passage exceeds 512 tokens, and expose the over-cap passage as a visible, blocking, classification-free `E5_TOKEN_CAP` refactoring finding across duplicate audit, Explore, advisory review, and blocking review. |
 
 ### Non-functional requirements (top)
@@ -88,9 +88,10 @@ that guidance across instructions, skills, commands, and project overrides,
 semantic-review integrity (a deterministic admitted worklist whose full
 endpoint evidence invalidates stale decisions without allowing the gate to edit
 feature files, while the permanent index remains structurally permanent-only),
-complete semantic-input fidelity (one full deterministic serialization and an
-exact E5 content-hash boundary), token-budget safety (actual untruncated and
-unpadded tokenizer counts before inference), complete permanent-corpus
+complete semantic-input fidelity (one full compact deterministic serialization
+without empty optional markers and an exact E5 content-hash boundary),
+token-budget safety (actual untruncated and unpadded tokenizer counts before
+inference), complete permanent-corpus
 visibility through a deterministic, non-mutating duplicate audit, and measured
 semantic recall/precision without automatic model classification. BGE- and
 NLI-filtered evidence must reduce false-positive authoring pressure without

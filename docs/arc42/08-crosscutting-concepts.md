@@ -300,7 +300,7 @@ test runner (`verify.command`).
 under `givn/`; `givn spec search` reads that index and prints ranked candidates
 for an interactive query. Search remains an authoring aid.
 
-Complete E5 passages are preflighted with the actual role-prefixed tokenizer
+Complete compact E5 passages are preflighted with the actual role-prefixed tokenizer
 before embedding. A fitting passage is handled by the existing vector path. An
 over-cap passage is kept as additive `E5_TOKEN_CAP` metadata in the permanent
 index and is not truncated, chunked, or represented by a zero/sentinel vector.
@@ -642,7 +642,7 @@ normalized-endpoint score seam.
 
 ### 8.5g Shared complete semantic serialization and token-budget guard
 
-All semantic model paths use one complete deterministic serialization of the
+All semantic model paths use one complete compact deterministic serialization of the
 parsed Gherkin context. The stable sections are Feature keyword/name/context/
 description, inherited Feature Background steps, Rule keyword/name/context/
 description, inherited Rule Background steps, Scenario keyword/title/
@@ -650,7 +650,8 @@ description, behavior steps with resolved `Given`/`When`/`Then` roles, tables,
 docstrings, the Scenario Outline template, and concrete Examples rows in source
 order. `And` and `But` inherit the preceding resolved role. Tables, examples,
 and docstrings are deterministically whitespace-normalized without dropping
-content, and missing optional sections have one stable empty representation.
+non-empty content. Optional sections and fields with no normalized content are
+omitted rather than represented by empty markers.
 
 This exact serialized text is simultaneously the E5 passage input and the
 complete left/right text used by BGE and NLI. The permanent E5 index computes

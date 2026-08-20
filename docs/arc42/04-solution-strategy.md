@@ -19,7 +19,7 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
-| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates. Complete E5 passages are token-preflighted and partitioned: fitting passages enter the vector index, while over-cap passages remain additive `E5_TOKEN_CAP` findings without vectors or fabricated scores. The optional `cross-encoder-reranker` feature scores a deterministic top-K/E5 intersection in both directions only after benchmark approval (or through the deterministic test stub), while the independent `nli-evidence` feature scores the same eligible pairs with bidirectional NLI probabilities. Both emit non-authoritative recommended/filtered evidence; the independent `spec-similarity-gate` remains the E5 hard gate. |
+| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates. Complete compact E5 passages omit empty optional markers, are token-preflighted, and are partitioned: fitting passages enter the vector index, while over-cap passages remain additive `E5_TOKEN_CAP` findings without vectors or fabricated scores. The optional `cross-encoder-reranker` feature scores a deterministic top-K/E5 intersection in both directions only after benchmark approval (or through the deterministic test stub), while the independent `nli-evidence` feature scores the same eligible pairs with bidirectional NLI probabilities. Both emit non-authoritative recommended/filtered evidence; the independent `spec-similarity-gate` remains the E5 hard gate. |
 | Permanent duplicate audit | `givn spec duplicates` scans every permanent pair, resolves exact and existing-Fingerprint structural relationships before advisory E5 candidates, emits all ranked results through one fixed text/JSON contract, and computes the report in memory without reading, refreshing, or writing the persisted index. |
 | Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
 | Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved candidates recommended by every participating evidence layer without editing feature files. E5-token-cap findings are separate classification-free blocking entries with exact passage counts and provenance. BGE/NLI filtered evidence is non-blocking; unavailable/overflow states preserve the E5 blocking worklist. |
@@ -30,11 +30,12 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 
 ### 4.1a Complete semantic input and second-stage strategy
 
-The semantic model boundary is one complete deterministic Gherkin serialization:
+The semantic model boundary is one complete compact deterministic Gherkin serialization:
 Feature and Rule context/descriptions, inherited backgrounds, resolved
 `Given`/`When`/`Then` roles, tables, docstrings, outline templates, and concrete
-example rows are retained in stable order. That exact text feeds E5, BGE, and
-NLI. The E5 `content_hash` is computed from the exact passage text; matching
+example rows are retained in stable order, while optional fields without
+normalized content are omitted. That exact text feeds E5, BGE, and NLI. The E5
+`content_hash` is computed from the exact passage text; matching
 identity and hash reuse a vector, while a mismatch re-embeds it. There is no
 separate serializer-version field. Paths, tags, scores, and classifications are
 metadata, and deterministic `Fingerprint` findings remain a separate evidence
