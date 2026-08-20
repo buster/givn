@@ -107,7 +107,7 @@ stdout sowie den erzeugten persistenten Index.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| rebuild the permanent scenario retrieval index with `givn spec index` | A maintainer can index scenarios with complete compact passages | CLI / terminal | `cucumber-rs` starts the real `givn spec index` subprocess in an isolated temporary project and asserts exit status, stdout, and index file |
+| rebuild the permanent scenario retrieval index with `givn spec index` | CLI reports successful catalogue construction | CLI / terminal | `cucumber-rs` starts the real `givn spec index` subprocess in an isolated temporary project and asserts exit status, stdout, and index file |
 
 ## Decisions
 

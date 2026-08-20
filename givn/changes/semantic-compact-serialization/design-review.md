@@ -97,6 +97,9 @@ consequences. No new deployment or external dependency is introduced.
 - Consolidated the minimal and rich regular scenarios into one fixture scenario
   to remove the three self-similar delta-to-delta candidates; retained the
   separate real CLI E2E smoke test.
+- Sharpened the E2E vocabulary around the terminal acknowledgement so the
+  real-interface smoke test is distinct from the regular serializer-boundary
+  fixture.
 - Kept the existing one-action E2E inventory and real CLI mechanism.
 
 ## Status

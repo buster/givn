@@ -15,7 +15,7 @@ and assert exact hashes/vector content. E2E steps invoke the real CLI and assert
 stdout plus secondary index evidence. Empty step bodies found: 0.
 
 **`@e2e` tag integrity:** The delta retains the planned `@givn.added @e2e`
-tag on `A maintainer can index scenarios with complete compact passages`. No
+tag on `CLI reports successful catalogue construction`. No
 E2E tag was removed.
 
 **Commit cross-check:**
@@ -25,7 +25,9 @@ E2E tag was removed.
 | Setup and strict runner proof | `125b916` | `src/spec/retrieval.rs`, runner registration, and both capability step modules |
 | Empty optional sections do not add retrieval content | `125b916` | Conditional serializer emission, exact empty-marker test, and index hash assertion |
 | Non-empty optional sections remain complete retrieval content | `773e445` | Reuses the serializer from `125b916`; adds rich-content acceptance assertions and vector evidence |
-| A maintainer can index scenarios with complete compact passages | `facf069` | Reuses production behavior from `125b916`; adds the real CLI E2E driver and stdout assertion |
+| Compact boundary fixture consolidation | `286027d` | Consolidates minimal and rich regular fixture assertions into one scenario |
+| CLI reports successful catalogue construction | `facf069` | Reuses production behavior from `125b916`; adds the real CLI E2E driver and stdout assertion |
+| Shorten duplicate score validation fixture | `35e93d1` | Reduces the permanent invalid-score scenario while preserving all 12 diagnostics |
 | Non-empty text-format preservation refactor | `d91cbe4` | Keeps existing non-empty step text, outline name, and Examples keyword formatting while omitting only empty optional content |
 | Empty context-section edge handling | `5f4202a` | Omits wholly empty Background and Examples sections instead of retaining structural keyword markers |
 | Verification evidence | `22dc727` | Records full, E2E, lint, format, clippy, and coverage results |
@@ -47,7 +49,7 @@ consumer-boundary evidence that exercises the already implemented serializer.
 **E2E real-interface audit:** The E2E scenario drives the compiled `givn` CLI
 through `common::run_givn_with_env` and asserts the CLI exit status through the
 reused `the command exits 0` step plus rendered stdout through
-`stdout reports that the permanent scenarios were indexed`. The persistent
+`stdout reports one indexed permanent scenario`. The persistent
 index assertion is secondary evidence. No browser or external service exists;
 no digital twin is required. The scenario is not repository-only or
 downgraded.
@@ -62,11 +64,11 @@ steps`.
 
 | Inventory action | Design matrix row | E2E scenario | Actual driver and primary assertion | Result |
 |---|---|---|---|---|
-| rebuild the permanent scenario retrieval index with `givn spec index` | A maintainer can index scenarios with complete compact passages; CLI / terminal; `cucumber-rs` subprocess | A maintainer can index scenarios with complete compact passages | `cucumber-rs` invokes the compiled `givn spec index` subprocess; exit status and stdout are asserted, index identity is secondary evidence | Match |
+| rebuild the permanent scenario retrieval index with `givn spec index` | CLI reports successful catalogue construction; CLI / terminal; `cucumber-rs` subprocess | CLI reports successful catalogue construction | `cucumber-rs` invokes the compiled `givn spec index` subprocess; exit status and stdout are asserted, catalogue identity is secondary evidence | Match |
 
 The inventory has one normalized CLI action and exactly one matching E2E
-scenario. Regular minimal/rich scenarios are input variants of the same action,
-not additional E2E actions.
+scenario. The regular fixture scenario is an input variant of the same action,
+not an additional E2E action.
 
 **Local runnability:** The local command is `./run-tests.sh`; the project has
 no external services, network dependencies, databases, or digital twins for
@@ -96,11 +98,9 @@ ARC42 CONFORMANCE: CLEAN
 
 ## Real E5 Result
 
-The current Rust build rebuilt the local index over `393` indexable permanent
-scenarios, reused `0` old vectors, and retained only `2` `E5_TOKEN_CAP`
-endpoints. The real duplicate audit scanned `395` scenarios, reported `5560`
-total deterministic/semantic candidates, and exposed the same `2` E5 cap
-records.
+The current Rust build rebuilt the local index over all `395` permanent
+scenarios and retained `0` `E5_TOKEN_CAP` endpoints after the user-approved
+shortening of the permanent validation fixture.
 
 ## Coverage
 
@@ -133,16 +133,10 @@ and no removed-plus-added pairs.
 
 ## Semantic Review
 
-The compact production index reduced the pre-existing permanent token-cap
-findings from `19` to `2`; the remaining cap endpoints are
-`Invalid duplicate score overrides are rejected` (800 tokens) and
-`Structurally overlapping scenarios retain their distinguishing facts`
-(516 tokens). They remain classification-free and blocking by the existing
-token-cap contract. The production review also reports `3` unresolved
-delta-to-delta candidates among the three newly added test scenarios. Those
-scenarios intentionally cover distinct empty-content, rich-content, and
-real-CLI boundaries, but the requested scope does not consolidate or rewrite
-them for semantic remediation. The change therefore remains unarchived.
+The compact production index now has no permanent E5 token-cap findings. The
+regular minimal/rich checks were consolidated into one fixture scenario and
+the E2E vocabulary was sharpened around the terminal/CLI boundary. Production
+review reports `Candidate count: 0` and no token-cap findings.
 
 ## Verification
 
@@ -154,7 +148,7 @@ them for semantic remediation. The change therefore remains unarchived.
 - `./measure-coverage.sh && ./merge-coverages.sh` exited 0; merged report produced.
 - Active-change E2E run with `GIVN_FEATURES` exited 0; the new CLI scenario passed.
 - `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-compact-serialization` passed the configured test, E2E, integrity, and overlap gates after the compact index refresh and produced a PASS report with no candidates under the test seam.
-- `cargo run --quiet --features spec-retrieval -- check review --change semantic-compact-serialization` ran the production E5 path and exited non-zero because `semantic-review.md` retained 2 token-cap findings and 3 unresolved delta-to-delta candidates.
+- `cargo run --quiet --features spec-retrieval -- check review --change semantic-compact-serialization` ran the production E5 path and exited 0; `semantic-review.md` reports `Status: PASS` and `Candidate count: 0`.
 
 ## Sign-off
 
@@ -168,6 +162,6 @@ them for semantic remediation. The change therefore remains unarchived.
 - [x] Arc42 conformance is clean.
 - [x] The deterministic CLI run requires no external service or model download.
 - [x] The canonical interaction inventory maps to exactly one real CLI E2E scenario.
-- [ ] Blocking review gate is clear of pre-existing permanent token-cap findings.
+- [x] Blocking review gate is clear of permanent token-cap findings and delta-to-delta candidates.
 
-REVIEW: FAIL
+REVIEW: PASS
