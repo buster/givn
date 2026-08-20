@@ -11,7 +11,7 @@ The fresh-context review identified these issues:
 | P0 | The original feature assertions could not observe the serialized passage. | The regular scenarios now assert the generated index entry's exact expected `content_hash`; direct source tests assert the exact passage text. The E2E scenario keeps CLI stdout/exit as primary evidence and index state as secondary evidence. |
 | P1 | “Complete” did not define the semantic boundary. | The design now explicitly preserves parsed non-empty fachliche content, normalizes whitespace, excludes comments/tags/paths/scores/classifications/Fingerprint metadata, and does not promise source formatting or docstring delimiter preservation. |
 | P1 | Nested optional fields and whitespace-only values had inconsistent omission behavior. | The design requires one normalized `Option<String>` policy for all optional text and conditional nested field emission. |
-| P1 | The feature did not enumerate non-empty optional content. | A separate regular scenario now covers descriptions, Feature/Rule Backgrounds, tables, docstrings, Scenario Outline content, and Examples through an exact expected hash. |
+| P1 | The feature did not enumerate non-empty optional content. | The regular scenarios were consolidated by user decision into one fixture scenario covering minimal and rich entries through both exact hashes; direct serializer tests retain the complete content matrix. |
 | P1 | The design overstated the scope of the bare `./run-tests.sh` command. | The design now distinguishes explicit `GIVN_FEATURES` targeted runs from the default permanent suite and documents hook-provided active-change scope. |
 | P2 | The Arc42 marker assessed chapter 3 as unaffected while listing it as updated. | Chapter 3 is now marked `Yes`, because the existing retrieval interface's shared model-input boundary changes even though no new command is added. |
 
@@ -94,6 +94,9 @@ consequences. No new deployment or external dependency is introduced.
   boundaries in `design.md`.
 - Clarified targeted versus full runner scope in `design.md`.
 - Corrected chapter 3's Arc42 assessment.
+- Consolidated the minimal and rich regular scenarios into one fixture scenario
+  to remove the three self-similar delta-to-delta candidates; retained the
+  separate real CLI E2E smoke test.
 - Kept the existing one-action E2E inventory and real CLI mechanism.
 
 ## Status

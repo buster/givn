@@ -29,9 +29,7 @@
 - [x] REFACTOR
   - Keep one regular fixture scenario for both empty and rich boundaries while retaining the separate real CLI E2E smoke test.
   - Re-run the targeted command; output remained `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-- [ ] COMMIT
-  - Commit RED, GREEN, and REFACTOR together with a message referencing `Compact serialization preserves empty and non-empty retrieval boundaries`.
-  - Commit hash: pending.
+- [x] COMMIT: `286027d` — commit RED, GREEN, and REFACTOR together with a message referencing `Compact serialization preserves empty and non-empty retrieval boundaries`.
 
 ## E2E Setup
 
