@@ -91,6 +91,18 @@ fn rich_hash(world: &mut GivnWorld) {
     assert_eq!(entry["content_hash"], RICH_HASH, "index entry: {entry}");
 }
 
+#[then("the rich scenario has a non-empty indexed vector")]
+fn rich_vector(world: &mut GivnWorld) {
+    let document = index(world);
+    let entry = entry(&document, RICH_TITLE);
+    assert!(
+        entry["embedding"]
+            .as_array()
+            .is_some_and(|values| !values.is_empty()),
+        "rich scenario has no indexed vector: {entry}"
+    );
+}
+
 pub(crate) fn index(world: &GivnWorld) -> Value {
     let env = world.env.as_ref().expect("compact serialization project");
     serde_json::from_slice(
