@@ -21,7 +21,7 @@ Feature: E5 token-cap findings preserve usable retrieval
     And that cap record has its file, title, complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, `refactoring_required` true, and guidance
     And stdout identifies the over-cap scenario as an E5 token-cap refactoring finding
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate
     Given an end-to-end permanent corpus with an exact duplicate, a structural overlap, and two complete E5 passages above 512 tokens
     And deterministic E5 token-budget fixtures identify the over-cap endpoints as requiring 550 and 551 tokens

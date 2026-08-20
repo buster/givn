@@ -28,22 +28,23 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Indexing keeps fitting scenarios when another passage exceeds E5 capacity"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
-- [ ] COMMIT: record the scenario commit.
-  - Commit:
+- [x] COMMIT: record the scenario commit.
+   - Commit: `06d2238`
 
 ## Scenario: Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate
 
-- [ ] RED: target this scenario and record the non-zero result.
-  - Command:
-  - Output:
-- [ ] GREEN: add the separate `e5_token_cap_candidates` duplicate JSON/text
+- [x] RED: target this scenario and record the non-zero result.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate"`
+   - Output: non-zero; `1 scenario (1 failed)`, the first duplicate-corpus Given step did not match any function.
+- [x] GREEN: add the separate `e5_token_cap_candidates` duplicate JSON/text
       contract and deterministic endpoint assertions.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: rerun the targeted scenario after cleanup.
-  - Command:
-  - Output:
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)`.
+   - Production files: `src/spec/retrieval.rs` (duplicate cap collection, JSON/text rendering, cap exclusion); `tests/steps/semantic_e5_token_cap_e2e_steps.rs`; `tests/steps/semantic_token_cap_review_e2e_steps.rs` (shared duplicate CLI step routes the E5 seam); feature/task evidence files.
+   - Coverage: targeted runner output has no coverage instrumentation; production coverage is unmeasured for this phase.
+- [x] REFACTOR: rerun the targeted scenario after cleanup.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)` after `cargo fmt`.
 - [ ] COMMIT: record the scenario commit.
   - Commit:
 

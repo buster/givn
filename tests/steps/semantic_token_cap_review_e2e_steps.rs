@@ -33,6 +33,17 @@ fn e2e_bge_token_budget_fixtures(world: &mut GivnWorld) {
 #[when("the end-to-end user runs `givn spec duplicates --format json` through the givn CLI")]
 fn e2e_run_duplicate_json(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("E2E duplicate corpus is missing");
+    if let Some(fixture) = world.retrieval_e5_token_budget.as_deref() {
+        world.last_output = Some(common::run_givn_with_envs(
+            env,
+            &["spec", "duplicates", "--format", "json"],
+            &[
+                ("GIVN_SPEC_EMBEDDER", "stub"),
+                ("GIVN_SPEC_E5_TOKEN_BUDGET", fixture),
+            ],
+        ));
+        return;
+    }
     let scores = world
         .retrieval_duplicate_scores
         .as_deref()

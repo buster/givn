@@ -11,6 +11,10 @@ use crate::common;
 const FITTING_TITLE: &str = "Fitting E5 scenario";
 const CAPPED_TITLE: &str = "Over-cap E5 scenario";
 
+fn duplicate_json(world: &GivnWorld) -> Value {
+    serde_json::from_slice(&super::output(world).stdout).expect("valid duplicate JSON")
+}
+
 fn index(world: &GivnWorld) -> Value {
     let env = world.env.as_ref().expect("E5 index project is missing");
     let bytes = fs::read(env.path("givn/.spec-index.json")).expect("read permanent E5 index");
@@ -125,4 +129,188 @@ fn stdout_identifies_e5_cap(world: &mut GivnWorld) {
     assert!(stdout.contains("E5_TOKEN_CAP"));
     assert!(stdout.contains(CAPPED_TITLE));
     assert!(stdout.contains("refactoring required: true"));
+}
+
+#[given(
+    "an end-to-end permanent corpus with an exact duplicate, a structural overlap, and two complete E5 passages above 512 tokens"
+)]
+fn e2e_duplicate_cap_corpus(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated permanent specs");
+    for directory in [
+        "a-over-cap",
+        "b-over-cap",
+        "c-exact",
+        "d-exact",
+        "e-structural",
+        "f-structural",
+    ] {
+        fs::create_dir_all(specs.join(directory)).expect("create duplicate cap directory");
+    }
+    fs::write(
+        env.path("givn/specs/a-over-cap/a-over-cap.feature"),
+        "Feature: Over-cap A\n\n  Scenario: Over-cap A\n    Given alpha context\n    When alpha action runs\n    Then alpha result is complete\n",
+    )
+    .expect("write over-cap A");
+    fs::write(
+        env.path("givn/specs/b-over-cap/b-over-cap.feature"),
+        "Feature: Over-cap B\n\n  Scenario: Over-cap B\n    Given beta context\n    When beta action runs\n    Then beta result is complete\n",
+    )
+    .expect("write over-cap B");
+    for (directory, feature, title) in [
+        ("c-exact", "Exact C", "Exact C"),
+        ("d-exact", "Exact D", "Exact D"),
+    ] {
+        fs::write(
+            env.path(&format!("givn/specs/{directory}/{directory}.feature")),
+            format!(
+                "Feature: {feature}\n\n  Scenario: {title}\n    Given identical context\n    When identical action runs\n    Then identical result is complete\n"
+            ),
+        )
+        .expect("write exact duplicate fixture");
+    }
+    for (directory, feature, title, context) in [
+        ("e-structural", "Structural E", "Structural E", "one"),
+        ("f-structural", "Structural F", "Structural F", "two"),
+    ] {
+        fs::write(
+            env.path(&format!("givn/specs/{directory}/{directory}.feature")),
+            format!(
+                "Feature: {feature}\n\n  Scenario: {title}\n    Given {context} structural context\n    When the structural action runs\n    Then the structural result is complete\n"
+            ),
+        )
+        .expect("write structural overlap fixture");
+    }
+    world.env = Some(env);
+}
+
+#[given(
+    "deterministic E5 token-budget fixtures identify the over-cap endpoints as requiring 550 and 551 tokens"
+)]
+fn e2e_duplicate_cap_fixture(world: &mut GivnWorld) {
+    assert!(world.env.is_some(), "the duplicate cap corpus is missing");
+    world.retrieval_e5_token_budget = Some("partial-550-551-512".to_string());
+}
+
+#[then("the JSON retains the exact duplicate and structural overlap candidates")]
+fn duplicate_json_retains_deterministic_candidates(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let candidates = document["candidates"]
+        .as_array()
+        .expect("normal candidates");
+    assert!(
+        candidates
+            .iter()
+            .any(|candidate| candidate["kind"] == "exact_duplicate")
+    );
+    assert!(
+        candidates
+            .iter()
+            .any(|candidate| candidate["kind"] == "structural_overlap")
+    );
+}
+
+#[then("the normal `candidates` collection contains no E5 token-cap record")]
+fn duplicate_json_normal_candidates_exclude_caps(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let serialized = serde_json::to_string(&document["candidates"]).expect("serialize candidates");
+    assert!(!serialized.contains("E5_TOKEN_CAP"));
+}
+
+#[then(
+    "`candidate_count` equals the normal `candidates` collection length and excludes both cap records"
+)]
+fn duplicate_json_candidate_count_excludes_caps(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    assert_eq!(
+        document["candidate_count"],
+        document["candidates"].as_array().unwrap().len()
+    );
+    assert_ne!(document["candidate_count"], 0);
+}
+
+#[then("`e5_token_cap_count` equals the `e5_token_cap_candidates` collection length of 2")]
+fn duplicate_json_cap_count(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    assert_eq!(document["e5_token_cap_count"], 2);
+    assert_eq!(
+        document["e5_token_cap_candidates"]
+            .as_array()
+            .unwrap()
+            .len(),
+        2
+    );
+}
+
+#[then(
+    "the `e5_token_cap_candidates` collection contains endpoint-level `E5_TOKEN_CAP` records for both over-cap files and titles"
+)]
+fn duplicate_json_cap_endpoints(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let caps = document["e5_token_cap_candidates"]
+        .as_array()
+        .expect("E5 cap candidates");
+    assert_eq!(caps[0]["status"], "E5_TOKEN_CAP");
+    assert_eq!(caps[1]["status"], "E5_TOKEN_CAP");
+    assert_eq!(caps[0]["file"], "givn/specs/a-over-cap/a-over-cap.feature");
+    assert_eq!(caps[1]["file"], "givn/specs/b-over-cap/b-over-cap.feature");
+    assert_eq!(caps[0]["title"], "Over-cap A");
+    assert_eq!(caps[1]["title"], "Over-cap B");
+}
+
+#[then(
+    "each cap record reports its complete content hash, token count, limit 512, E5 model and tokenizer provenance, and `refactoring_required` true"
+)]
+fn duplicate_json_cap_records_are_complete(world: &mut GivnWorld) {
+    for cap in duplicate_json(world)["e5_token_cap_candidates"]
+        .as_array()
+        .expect("E5 cap candidates")
+    {
+        let hash = cap["content_hash"].as_str().expect("cap hash");
+        assert_eq!(hash.len(), 16);
+        assert!(hash.chars().all(|character| character.is_ascii_hexdigit()));
+        assert!(cap["token_count"] == 550 || cap["token_count"] == 551);
+        assert_eq!(cap["limit"], 512);
+        assert_eq!(cap["model"], "intfloat/multilingual-e5-large");
+        assert_eq!(
+            cap["tokenizer"],
+            "intfloat/multilingual-e5-large/tokenizer.json"
+        );
+        assert_eq!(cap["refactoring_required"], true);
+    }
+}
+
+#[then(
+    "the cap records are ordered by normalized file and title and give guidance to shorten or split the scenario and rerun the audit"
+)]
+fn duplicate_json_caps_are_ordered_and_guided(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let caps = document["e5_token_cap_candidates"]
+        .as_array()
+        .expect("E5 cap candidates");
+    assert!(caps[0]["file"].as_str().unwrap() < caps[1]["file"].as_str().unwrap());
+    for cap in caps {
+        let guidance = cap["guidance"].as_str().expect("cap guidance");
+        assert!(guidance.contains("shorten"));
+        assert!(guidance.contains("split"));
+        assert!(guidance.contains("rerun"));
+    }
+    let report_guidance = document["guidance"].as_str().expect("report guidance");
+    assert!(report_guidance.contains("audit"));
+}
+
+#[then("no E5 semantic candidate contains either over-cap endpoint as either endpoint")]
+fn duplicate_json_semantic_candidates_exclude_caps(world: &mut GivnWorld) {
+    for candidate in duplicate_json(world)["candidates"]
+        .as_array()
+        .expect("normal candidates")
+        .iter()
+        .filter(|candidate| candidate["kind"] == "semantic_candidate")
+    {
+        let left = candidate["left"]["file"].as_str().unwrap();
+        let right = candidate["right"]["file"].as_str().unwrap();
+        assert!(!left.contains("a-over-cap") && !left.contains("b-over-cap"));
+        assert!(!right.contains("a-over-cap") && !right.contains("b-over-cap"));
+    }
 }
