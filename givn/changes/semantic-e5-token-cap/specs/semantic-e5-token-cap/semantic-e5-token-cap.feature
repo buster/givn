@@ -50,7 +50,7 @@ Feature: E5 token-cap findings preserve usable retrieval
     And the JSON contains a visible `E5_TOKEN_CAP` refactoring record for the over-cap permanent scenario in `e5_token_cap_candidates`
     And that cap record has its file, title, complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, `refactoring_required` true, and guidance to shorten or split the scenario and rerun exploration
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Advisory review exposes an E5 token-cap finding without blocking
     Given an end-to-end project with one fitting permanent scenario and one active complete E5 passage above 512 tokens
     And deterministic E5 token-budget fixtures identify the active scenario as requiring 550 tokens
