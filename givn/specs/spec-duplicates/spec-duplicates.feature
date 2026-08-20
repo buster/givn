@@ -263,16 +263,16 @@ Feature: Audit duplicate and related permanent scenarios
       | case | raw | expected |
       | empty input |  | must not be empty |
       | invalid UTF-8 | __INVALID_UTF8__ | not valid UTF-8 |
-      | empty entry | givn/specs/score/a.feature__PIPE__A::givn/specs/score/b.feature__PIPE__B=0.9600; | empty entry |
-      | missing equals | givn/specs/score/a.feature__PIPE__A::givn/specs/score/b.feature__PIPE__B | expected <endpoint>::<endpoint>=<score> |
-      | missing pair separator | givn/specs/score/a.feature__PIPE__A=0.9600 | expected two endpoint identities |
-      | equal endpoints | givn/specs/score/a.feature__PIPE__A::givn/specs/score/a.feature__PIPE__A=0.9600 | two distinct endpoints |
-      | duplicate pair | givn/specs/score/a.feature__PIPE__A::givn/specs/score/b.feature__PIPE__B=0.9600;givn/specs/score/b.feature__PIPE__B::givn/specs/score/a.feature__PIPE__A=0.9500 | pair is repeated |
-      | malformed endpoint | givn/specs/score/a.feature__PIPE__A::broken=0.9600 | expected <file>__PIPE__<title> |
-      | empty title | givn/specs/score/a.feature__PIPE__::givn/specs/score/b.feature__PIPE__B=0.9600 | invalid duplicate endpoint identity |
-      | invalid file | project/spec.feature__PIPE__A::givn/specs/score/b.feature__PIPE__B=0.9600 | invalid duplicate endpoint identity |
-      | invalid score shape | givn/specs/score/a.feature__PIPE__A::givn/specs/score/b.feature__PIPE__B=0.960 | expected four decimal places |
-      | out-of-range score | givn/specs/score/a.feature__PIPE__A::givn/specs/score/b.feature__PIPE__B=1.0001 | outside the cosine range |
+      | empty entry | empty-entry | empty entry |
+      | missing equals | missing-equals | expected <endpoint>::<endpoint>=<score> |
+      | missing pair separator | missing-pair | expected two endpoint identities |
+      | equal endpoints | equal-endpoints | two distinct endpoints |
+      | duplicate pair | duplicate-pair | pair is repeated |
+      | malformed endpoint | malformed-endpoint | expected <file>__PIPE__<title> |
+      | empty title | empty-title | invalid duplicate endpoint identity |
+      | invalid file | invalid-file | invalid duplicate endpoint identity |
+      | invalid score shape | invalid-score-shape | expected four decimal places |
+      | out-of-range score | out-of-range-score | outside the cosine range |
     When  the user validates each duplicate score override
     Then  every invalid duplicate score override fails with its expected diagnostic
 
