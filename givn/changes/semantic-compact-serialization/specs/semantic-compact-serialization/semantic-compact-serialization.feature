@@ -18,7 +18,7 @@ Feature: Compact complete semantic retrieval passages
     Then the index contains the rich scenario with the expected complete compact content hash
     And the rich scenario has a non-empty indexed vector
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A maintainer can index scenarios with complete compact passages
     Given a permanent corpus with required and non-empty optional scenario content
     When the end-to-end user rebuilds the compact retrieval index through the givn CLI
