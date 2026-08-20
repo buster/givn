@@ -5949,21 +5949,26 @@ fn semantic_serialization(
 #[cfg(feature = "spec-retrieval")]
 fn semantic_background(background: Option<&gherkin::Background>) -> Option<String> {
     let background = background?;
+    let name = semantic_optional_text(Some(&background.name));
+    let description = semantic_optional_text(background.description.as_deref());
+    let has_steps = !background.steps.is_empty();
+    if name.is_none() && description.is_none() && !has_steps {
+        return None;
+    }
+
     let mut fields = Vec::new();
     push_optional_json_field(
         &mut fields,
         "keyword",
         Some(semantic_normalize(&background.keyword)),
     );
-    push_optional_json_field(
-        &mut fields,
-        "name",
-        Some(semantic_normalize(&background.name)),
-    );
-    if let Some(description) = semantic_optional_text(background.description.as_deref()) {
+    if let Some(name) = name {
+        fields.push(format!("\"name\":{}", json_encoded(&name)));
+    }
+    if let Some(description) = description {
         fields.push(format!("\"description\":{}", json_encoded(&description)));
     }
-    if !background.steps.is_empty() {
+    if has_steps {
         let steps = background
             .steps
             .iter()
@@ -6011,18 +6016,25 @@ fn semantic_table(table: &gherkin::Table) -> Option<String> {
 
 #[cfg(feature = "spec-retrieval")]
 fn semantic_examples(examples: &gherkin::Examples) -> Option<String> {
+    let name = semantic_optional_text(examples.name.as_deref());
+    let description = semantic_optional_text(examples.description.as_deref());
+    let table = examples.table.as_ref().and_then(semantic_table);
+    if name.is_none() && description.is_none() && table.is_none() {
+        return None;
+    }
+
     let mut fields = Vec::new();
     let keyword = semantic_normalize(&examples.keyword);
     if !keyword.is_empty() {
         fields.push(format!("keyword={keyword}"));
     }
-    if let Some(name) = semantic_optional_text(examples.name.as_deref()) {
+    if let Some(name) = name {
         fields.push(format!("name={}", json_encoded(&name)));
     }
-    if let Some(description) = semantic_optional_text(examples.description.as_deref()) {
+    if let Some(description) = description {
         fields.push(format!("description={}", json_encoded(&description)));
     }
-    if let Some(table) = examples.table.as_ref().and_then(semantic_table) {
+    if let Some(table) = table {
         fields.push(format!("table={table}"));
     }
     (!fields.is_empty()).then(|| format!("examples_row: {}", fields.join(" ")))
