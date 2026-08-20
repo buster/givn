@@ -39,6 +39,8 @@ pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
 pub mod semantic_e5_token_cap_e2e_steps;
 pub mod semantic_e5_token_cap_steps;
+pub mod semantic_compact_serialization_e2e_steps;
+pub mod semantic_compact_serialization_steps;
 pub mod semantic_remediation_e2e_steps;
 pub mod semantic_remediation_steps;
 pub mod semantic_review_e2e_steps;

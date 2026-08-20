@@ -226,9 +226,9 @@ stable order is Feature keyword/name/context/description, Feature Background,
 Rule keyword/name/context/description, Rule Background, Scenario
 keyword/title/description, resolved behavior steps, tables, docstrings, the
 Scenario Outline template, and concrete Examples rows. `And` and `But` inherit
-the preceding resolved role. Whitespace normalization is deterministic and
-does not drop table cells, example values, docstring content, or optional-section
-presence.
+the preceding resolved role. Whitespace normalization is deterministic; empty
+optional sections and fields are omitted, while non-empty table cells, example
+values, docstring content, and optional context are retained in full.
 
 The serializer's exact text is the E5 passage input and the source of
 `content_hash`; matching endpoint identity and hash reuse an existing vector,
