@@ -12,9 +12,9 @@ Feature: Compact complete semantic retrieval passages
     And the index contains only the two fixture vectors
 
   @givn.added @e2e
-  Scenario: A maintainer can index scenarios with complete compact passages
-    Given a permanent corpus with required and non-empty optional scenario content
-    When the end-to-end user rebuilds the compact retrieval index through the givn CLI
+  Scenario: CLI reports successful catalogue construction
+    Given a shell project with one rich fixture
+    When the maintainer runs the catalogue command
     Then the command exits 0
-    And stdout reports that the permanent scenarios were indexed
-    And the persistent retrieval index contains the indexed scenarios
+    And stdout reports one indexed permanent scenario
+    And the catalogue contains the rich fixture

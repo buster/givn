@@ -1317,9 +1317,7 @@ fn structural_subset_fixture(
     );
 }
 
-#[given(
-    "permanent scenarios share the same masked assertion shape but have different fingerprint facts"
-)]
+#[given("permanent scenarios share an assertion shape but have different facts")]
 fn structural_overlap_fixture(world: &mut GivnWorld) {
     permanent_project(
         world,

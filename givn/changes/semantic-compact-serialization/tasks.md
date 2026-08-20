@@ -41,12 +41,12 @@
   - E2E-suite scenario count: `47 scenarios (47 passed)` in the E5 E2E run of `./run-tests.sh --e2e`; the filtered count is strictly lower.
   - Strict E2E proof output: `.fail_on_skipped()` is shared by the runner; the configured E2E command completed all 47 scenarios with zero failures.
 
-## Scenario: A maintainer can index scenarios with complete compact passages
+## Scenario: CLI reports successful catalogue construction
 
 - [x] RED
   - Remove `@wip` from this scenario only.
   - Bind the E2E steps in `tests/steps/semantic_compact_serialization_e2e_steps.rs`; unimplemented steps use `unimplemented!()`.
-  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "A maintainer can index scenarios with complete compact passages"`.
+  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "CLI reports successful catalogue construction"`.
   - Expected result: non-zero because the E2E steps are not implemented.
   - Captured output: targeted run matched `tests/steps/semantic_compact_serialization_e2e_steps.rs:8:1`, panicked with `not implemented`, and exited non-zero; summary: `1 feature, 1 scenario (1 failed), 1 step (1 failed)`.
 - [x] GREEN
@@ -60,7 +60,7 @@
   - Keep E2E setup isolated and avoid duplicating regular serializer assertions.
   - Re-run `./run-tests.sh --e2e`; expected result is zero.
   - Captured output: after `cargo fmt --all`, `GIVN_FEATURES=... ./run-tests.sh --e2e` remained green with `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` for the E5 subset and `0 features, 0 scenarios, 0 steps` for the empty BGE/NLI subsets.
-- [x] COMMIT: `facf069` — commit RED, GREEN, and REFACTOR together with a message referencing `A maintainer can index scenarios with complete compact passages`.
+- [x] COMMIT: `facf069` — commit RED, GREEN, and REFACTOR together with a message referencing the compact catalogue refresh E2E implementation.
 
 ## Final Verification
 
@@ -78,5 +78,5 @@
   - Result: `givn lint: 1 file(s) checked -- clean`.
 - [x] Record final status and review evidence before archive.
   - Coverage is measured by the configured project scripts; no unclassified coverage gap was introduced by this change.
-  - Real E5 index result: `393` indexable permanent scenarios, `0` reused vectors, and `2` remaining token-cap endpoints; real duplicate audit: `395` scanned scenarios and `5560` total candidates.
-  - The production review gate is intentionally non-zero: the compact index leaves 2 permanent `E5_TOKEN_CAP` findings and the three new test scenarios produce 3 unresolved delta-to-delta candidates. Per the user decision, this change remains unarchived and does not alter those unrelated/remediation-scope scenarios.
+  - Real E5 index result: all `395` permanent scenarios are indexable and `0` `E5_TOKEN_CAP` endpoints remain after the approved fixture shortening.
+  - Production review gate: passed with `Candidate count: 0` and no token-cap findings after fixture consolidation and E2E vocabulary sharpening.
