@@ -77,6 +77,9 @@ const DUPLICATE_BGE_REPORT_SCHEMA_VERSION: u32 = 2;
 const TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenarios, then rerun semantic review";
 #[cfg(feature = "spec-retrieval")]
 const E5_TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenario, then rerun retrieval";
+#[cfg(feature = "spec-retrieval")]
+const DUPLICATE_E5_TOKEN_CAP_GUIDANCE: &str =
+    "shorten or split the scenario, then rerun the duplicate audit";
 
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -560,6 +563,8 @@ struct DuplicateJsonReport {
     scanned_scenarios: usize,
     candidate_count: usize,
     candidates: Vec<DuplicateJsonCandidate>,
+    e5_token_cap_count: usize,
+    e5_token_cap_candidates: Vec<E5TokenCap>,
     #[serde(skip_serializing_if = "Option::is_none")]
     e5_candidate_count: Option<usize>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -1676,6 +1681,30 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
             render_duplicate_candidate(0, candidate)
         ));
     }
+    if !audit.e5_token_caps.is_empty() {
+        report.push_str(&format!(
+            "E5 token-cap candidate count: {}\n",
+            audit.e5_token_caps.len()
+        ));
+        for cap in &audit.e5_token_caps {
+            report.push_str(&format!(
+                "E5_TOKEN_CAP: file={} title={:?} content_hash={} token_count={} limit={} model={} tokenizer={} refactoring_required={} guidance={:?}\n",
+                cap.file,
+                cap.title,
+                cap.content_hash,
+                cap.token_count,
+                cap.limit,
+                cap.model,
+                cap.tokenizer,
+                cap.refactoring_required,
+                cap.guidance,
+            ));
+        }
+        report.push_str(&format!(
+            "refactoring required: {}\n",
+            DUPLICATE_E5_TOKEN_CAP_GUIDANCE
+        ));
+    }
     if audit.candidates.iter().any(|candidate| {
         candidate.bge_token_cap.is_some() || {
             #[cfg(feature = "nli-evidence")]
@@ -1719,7 +1748,7 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
         e5_candidate_count =
             e5_candidate_count.or_else(|| audit.nli_run.as_ref().map(|run| run.e5_candidates));
     }
-    let refactoring_required = audit.candidates.iter().any(|candidate| {
+    let pair_refactoring_required = audit.candidates.iter().any(|candidate| {
         candidate.bge_token_cap.is_some() || {
             #[cfg(feature = "nli-evidence")]
             {
@@ -1731,6 +1760,12 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
             }
         }
     });
+    let refactoring_required = pair_refactoring_required || !audit.e5_token_caps.is_empty();
+    let guidance = if !audit.e5_token_caps.is_empty() {
+        DUPLICATE_E5_TOKEN_CAP_GUIDANCE
+    } else {
+        TOKEN_CAP_GUIDANCE
+    };
     #[cfg(feature = "nli-evidence")]
     let combined_recommended_candidates = (audit.bge_run.is_some() && audit.nli_run.is_some())
         .then(|| {
@@ -1766,6 +1801,8 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
                 candidate
             })
             .collect(),
+        e5_token_cap_count: audit.e5_token_caps.len(),
+        e5_token_cap_candidates: audit.e5_token_caps.clone(),
         e5_candidate_count,
         bge_run: audit
             .bge_run
@@ -1828,7 +1865,7 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
         }),
         combined_recommended_candidates,
         refactoring_required: refactoring_required.then_some(true),
-        guidance: refactoring_required.then_some(TOKEN_CAP_GUIDANCE),
+        guidance: refactoring_required.then_some(guidance),
     };
     serde_json::to_string(&report).context("serialize duplicate audit JSON")
 }
