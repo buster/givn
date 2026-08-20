@@ -93,6 +93,14 @@ were independently checked against the completed implementation.
 
 ARC42 CONFORMANCE: CLEAN
 
+## Real E5 Result
+
+The current Rust build rebuilt the local index over `393` indexable permanent
+scenarios, reused `0` old vectors, and retained only `2` `E5_TOKEN_CAP`
+endpoints. The real duplicate audit scanned `395` scenarios, reported `5560`
+total deterministic/semantic candidates, and exposed the same `2` E5 cap
+records.
+
 ## Coverage
 
 Coverage was measured with `./measure-coverage.sh` and merged with
