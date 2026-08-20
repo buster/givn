@@ -33,9 +33,7 @@
   - Consolidate conditional emission and normalized optional-value handling without changing output.
   - Re-run the targeted command above; expected result is zero.
   - Captured output: after helper cleanup and exact serializer tests, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`. Direct source tests: `2 passed; 0 failed`.
-- [x] COMMIT
-  - Commit RED, GREEN, and REFACTOR together with a message referencing `Empty optional sections do not add retrieval content`.
-  - Commit hash: `125b916`.
+- [x] COMMIT: `125b916` — commit RED, GREEN, and REFACTOR together with a message referencing `Empty optional sections do not add retrieval content`.
 
 ## Scenario: Non-empty optional sections remain complete retrieval content
 
@@ -58,9 +56,7 @@
   - Review optional nested-field omission, whitespace-only values, JSON escaping, and deterministic ordering.
   - Re-run the targeted command above; expected result is zero.
   - Captured output: after `cargo fmt --all`, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-- [x] COMMIT
-  - Commit RED, GREEN, and REFACTOR together with a message referencing `Non-empty optional sections remain complete retrieval content`.
-  - Commit hash: `773e445`.
+- [x] COMMIT: `773e445` — commit RED, GREEN, and REFACTOR together with a message referencing `Non-empty optional sections remain complete retrieval content`.
 
 ## E2E Setup
 
@@ -91,9 +87,7 @@
   - Keep E2E setup isolated and avoid duplicating regular serializer assertions.
   - Re-run `./run-tests.sh --e2e`; expected result is zero.
   - Captured output: after `cargo fmt --all`, `GIVN_FEATURES=... ./run-tests.sh --e2e` remained green with `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` for the E5 subset and `0 features, 0 scenarios, 0 steps` for the empty BGE/NLI subsets.
-- [x] COMMIT
-  - Commit RED, GREEN, and REFACTOR together with a message referencing `A maintainer can index scenarios with complete compact passages`.
-  - Commit hash: `facf069`.
+- [x] COMMIT: `facf069` — commit RED, GREEN, and REFACTOR together with a message referencing `A maintainer can index scenarios with complete compact passages`.
 
 ## Final Verification
 
@@ -105,7 +99,10 @@
   - Result: passed; E5 suite summary `33 features, 334 scenarios (334 passed), 2075 steps (2075 passed)`. All configured BGE/NLI subsets also passed.
 - [x] Run `./run-tests.sh --e2e`.
   - Result: passed; E5 E2E suite summary `25 features, 47 scenarios (47 passed), 295 steps (295 passed)`. All configured BGE/NLI subsets also passed.
+- [x] Run `./measure-coverage.sh && ./merge-coverages.sh`.
+  - Result: passed; merged report `coverage/cobertura-coverage.xml` records `13004/18930` covered lines (`68.70%`) and `0/0` branches (`n/a`). The changed production file `src/spec/retrieval.rs` records `4263/5259` covered lines (`81.06%`). Non-E2E report: `337` scenarios / `2121` steps; E2E report: `60` scenarios / `403` steps.
 - [x] Run `givn lint --change semantic-compact-serialization`.
   - Result: `givn lint: 1 file(s) checked -- clean`.
 - [x] Record final status and review evidence before archive.
-  - Coverage: no coverage artifact is emitted by the configured runner; targeted and full coverage remain unmeasured.
+  - Coverage is measured by the configured project scripts; no unclassified coverage gap was introduced by this change.
+  - `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-compact-serialization` is intentionally non-zero because the pre-existing permanent corpus contributes 19 `E5_TOKEN_CAP` findings; this change does not remediate those scenarios.
