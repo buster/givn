@@ -171,6 +171,8 @@ struct ExploreResponse {
     query: ExploreQueryOutput,
     index: ExploreIndexOutput,
     results: Vec<ExploreResultOutput>,
+    e5_token_cap_count: usize,
+    e5_token_cap_candidates: Vec<E5TokenCap>,
     #[serde(skip_serializing_if = "Option::is_none")]
     evidence: Option<ExploreEvidenceOutput>,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -3407,27 +3409,32 @@ fn explore_enabled(
         std::slice::from_ref(&query.text),
         EmbeddingRole::Query,
     )?;
-    let query_vector = query_batch.vectors[0]
-        .clone()
-        .context("retrieval embedder returned no query vector")?;
+    let query_vector = query_batch.vectors[0].clone();
+    if let Some(budget) = query_batch.token_caps[0] {
+        e5_token_caps.push(e5_token_cap_for_query(&query, budget));
+    }
 
-    let mut candidates: Vec<ExploreCandidate> = refresh
-        .index
-        .entries
-        .iter()
-        .map(|entry| ExploreCandidate {
-            title: entry.title.clone(),
-            file: entry.file.clone(),
-            text: permanent_texts
-                .get(&(entry.file.clone(), entry.title.clone()))
-                .cloned()
-                .unwrap_or_else(|| entry.title.clone()),
-            embedding: entry.embedding.clone(),
-            scope: "permanent",
-            change: None,
-            projected_file: None,
-        })
-        .collect();
+    let mut candidates: Vec<ExploreCandidate> = if query_vector.is_some() {
+        refresh
+            .index
+            .entries
+            .iter()
+            .map(|entry| ExploreCandidate {
+                title: entry.title.clone(),
+                file: entry.file.clone(),
+                text: permanent_texts
+                    .get(&(entry.file.clone(), entry.title.clone()))
+                    .cloned()
+                    .unwrap_or_else(|| entry.title.clone()),
+                embedding: entry.embedding.clone(),
+                scope: "permanent",
+                change: None,
+                projected_file: None,
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
 
     if let Some((change_id, delta)) = &delta {
         let active_delta: Vec<&DeltaScenario> = delta
@@ -3449,6 +3456,9 @@ fn explore_enabled(
         for (index, item) in active_delta.iter().enumerate() {
             if let Some(budget) = delta_batch.token_caps[index] {
                 e5_token_caps.push(e5_token_cap(&item.scenario, budget));
+                continue;
+            }
+            if query_vector.is_none() {
                 continue;
             }
             let embedding = delta_batch.vectors[index]
@@ -3480,14 +3490,21 @@ fn explore_enabled(
                 .collect::<Vec<_>>()
         })
         .unwrap_or_default();
-    let mut ranked: Vec<(ExploreCandidate, f32)> = candidates
-        .into_iter()
-        .filter(|candidate| !matches_query_identity(candidate, &query, &modified_target_identities))
-        .map(|candidate| {
-            let score = cosine_similarity(&query_vector, &candidate.embedding);
-            (candidate, score)
-        })
-        .collect();
+    let mut ranked: Vec<(ExploreCandidate, f32)> = if let Some(query_vector) = query_vector.as_ref()
+    {
+        candidates
+            .into_iter()
+            .filter(|candidate| {
+                !matches_query_identity(candidate, &query, &modified_target_identities)
+            })
+            .map(|candidate| {
+                let score = cosine_similarity(query_vector, &candidate.embedding);
+                (candidate, score)
+            })
+            .collect()
+    } else {
+        Vec::new()
+    };
     ranked.sort_by(|(left, left_score), (right, right_score)| {
         right_score
             .total_cmp(left_score)
@@ -3497,11 +3514,19 @@ fn explore_enabled(
     });
     let ranked: Vec<(ExploreCandidate, f32)> = ranked.into_iter().take(RERANKER_TOP_K).collect();
     #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-    let bge_run = bge_explore_run(root, &query, &ranked)?;
+    let bge_run = if query_vector.is_some() {
+        bge_explore_run(root, &query, &ranked)?
+    } else {
+        None
+    };
     #[cfg(not(all(feature = "spec-retrieval", feature = "cross-encoder-reranker")))]
     let bge_run: Option<BgeRun> = None;
     #[cfg(feature = "nli-evidence")]
-    let nli_run = nli_explore_run(root, &query, &ranked)?;
+    let nli_run = if query_vector.is_some() {
+        nli_explore_run(root, &query, &ranked)?
+    } else {
+        None
+    };
 
     let mut results = Vec::with_capacity(ranked.len());
     for (index, (candidate, score)) in ranked.into_iter().enumerate() {
@@ -3632,6 +3657,7 @@ fn explore_enabled(
             .cloned()
             .collect::<Vec<_>>()
     });
+    e5_token_caps.sort_by(e5_token_cap_order);
 
     if json {
         let response = ExploreResponse {
@@ -3657,6 +3683,8 @@ fn explore_enabled(
                 entries: refresh.index.entries.len(),
             },
             results: results.clone(),
+            e5_token_cap_count: e5_token_caps.len(),
+            e5_token_cap_candidates: e5_token_caps.clone(),
             evidence: bge_run.as_ref().map(explore_evidence_output),
             recommended_results,
             #[cfg(feature = "nli-evidence")]
@@ -3677,6 +3705,7 @@ fn explore_enabled(
             &query,
             &refresh,
             &results,
+            &e5_token_caps,
             bge_run.as_ref(),
             #[cfg(feature = "nli-evidence")]
             nli_run.as_ref(),
@@ -4253,6 +4282,7 @@ fn print_explore_text(
     query: &ExploreQuery,
     refresh: &IndexRefresh,
     results: &[ExploreResultOutput],
+    e5_token_caps: &[E5TokenCap],
     bge_run: Option<&BgeRun>,
     #[cfg(feature = "nli-evidence")] nli_run: Option<&NliRun>,
 ) {
@@ -4265,6 +4295,21 @@ fn print_explore_text(
     );
     println!("Reused {} scenario vectors", refresh.reused);
     println!("Embedded {} new scenario vectors", refresh.embedded);
+    println!("E5 token-cap candidates: {}", e5_token_caps.len());
+    for cap in e5_token_caps {
+        println!(
+            "E5_TOKEN_CAP: file={} title={:?} content_hash={} token_count={} limit={} model={} tokenizer={} refactoring_required={} guidance={:?}",
+            cap.file,
+            cap.title,
+            cap.content_hash,
+            cap.token_count,
+            cap.limit,
+            cap.model,
+            cap.tokenizer,
+            cap.refactoring_required,
+            cap.guidance,
+        );
+    }
     if let Some(run) = bge_run {
         println!(
             "BGE status: {}{}",
@@ -6844,11 +6889,36 @@ fn reusable_e5_token_cap(index: &SpecIndex, scenario: &ScenarioText) -> Option<E
 
 #[cfg(feature = "spec-retrieval")]
 fn e5_token_cap(scenario: &ScenarioText, budget: E5TokenBudget) -> E5TokenCap {
+    e5_token_cap_for_identity(
+        &scenario.file,
+        &scenario.title,
+        &scenario.content_hash,
+        budget,
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn e5_token_cap_for_query(query: &ExploreQuery, budget: E5TokenBudget) -> E5TokenCap {
+    e5_token_cap_for_identity(
+        query.file.as_deref().unwrap_or("<query>"),
+        &query.title,
+        &query.content_hash,
+        budget,
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn e5_token_cap_for_identity(
+    file: &str,
+    title: &str,
+    content_hash: &str,
+    budget: E5TokenBudget,
+) -> E5TokenCap {
     E5TokenCap {
         status: "E5_TOKEN_CAP".to_string(),
-        file: scenario.file.clone(),
-        title: scenario.title.clone(),
-        content_hash: scenario.content_hash.clone(),
+        file: file.to_string(),
+        title: title.to_string(),
+        content_hash: content_hash.to_string(),
         token_count: budget.token_count,
         limit: budget.limit,
         model: MODEL_ID.to_string(),

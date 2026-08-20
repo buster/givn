@@ -38,11 +38,136 @@ fn e2e_partial_permanent_corpus(world: &mut GivnWorld) {
 }
 
 #[given(
+    "an end-to-end permanent corpus with a fitting scenario and one complete E5 passage above 512 tokens"
+)]
+fn e2e_fitting_permanent_corpus(world: &mut GivnWorld) {
+    e2e_partial_permanent_corpus(world);
+}
+
+#[given(
     "deterministic E5 token-budget fixtures identify the over-cap scenario as requiring 550 tokens"
 )]
 fn e2e_over_cap_fixture(world: &mut GivnWorld) {
     assert!(world.env.is_some(), "the E5 cap corpus is missing");
     world.retrieval_e5_token_budget = Some("partial-512-550".to_string());
+}
+
+#[given(
+    "deterministic E5 token-budget fixtures identify the over-cap permanent scenario as requiring 550 tokens"
+)]
+fn e2e_permanent_over_cap_fixture(world: &mut GivnWorld) {
+    assert!(world.env.is_some(), "the E5 cap corpus is missing");
+    world.retrieval_e5_token_budget = Some("partial-512-550".to_string());
+}
+
+#[given("a complete fitting draft scenario is available for exploration")]
+fn e2e_fitting_draft(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E5 cap corpus is missing");
+    fs::write(
+        env.path("draft.feature"),
+        "Feature: fitting draft\n\n  Scenario: Fitting draft scenario\n    Given a fitting context\n    When the fitting action runs\n    Then the fitting result is complete\n",
+    )
+    .expect("write fitting draft");
+}
+
+#[when("the end-to-end user explores the draft with JSON output through the givn CLI")]
+fn e2e_explore_json(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E5 cap corpus is missing");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &[
+            "spec",
+            "explore",
+            "--file",
+            "draft.feature",
+            "--format",
+            "json",
+        ],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            (
+                "GIVN_SPEC_E5_TOKEN_BUDGET",
+                world
+                    .retrieval_e5_token_budget
+                    .as_deref()
+                    .expect("E5 token fixture"),
+            ),
+        ],
+    ));
+}
+
+#[then("stdout is valid exploration JSON")]
+fn explore_stdout_is_json(world: &mut GivnWorld) {
+    let _: Value = serde_json::from_slice(&super::output(world).stdout)
+        .expect("valid exploration JSON response");
+}
+
+#[then("the fitting permanent result retains its normal E5 rank and score fields")]
+fn explore_fitting_result_is_normal(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let result = document["results"]
+        .as_array()
+        .expect("exploration results")
+        .iter()
+        .find(|result| result["title"] == FITTING_TITLE)
+        .expect("fitting exploration result");
+    assert!(result["rank"].is_u64());
+    assert!(result["score"].is_number());
+    assert!(result["file"].is_string());
+}
+
+#[then("the normal exploration `results` collection contains no over-cap endpoint")]
+fn explore_results_exclude_cap(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let results = document["results"].as_array().expect("exploration results");
+    assert!(!results.iter().any(|result| result["title"] == CAPPED_TITLE));
+}
+
+#[then("`e5_token_cap_count` equals the `e5_token_cap_candidates` collection length of 1")]
+fn explore_cap_count(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    assert_eq!(document["e5_token_cap_count"], 1);
+    assert_eq!(
+        document["e5_token_cap_candidates"]
+            .as_array()
+            .unwrap()
+            .len(),
+        1
+    );
+}
+
+#[then(
+    "the JSON contains a visible `E5_TOKEN_CAP` refactoring record for the over-cap permanent scenario in `e5_token_cap_candidates`"
+)]
+fn explore_cap_record_is_visible(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let cap = &document["e5_token_cap_candidates"][0];
+    assert_eq!(cap["status"], "E5_TOKEN_CAP");
+    assert_eq!(cap["title"], CAPPED_TITLE);
+    assert_eq!(cap["file"], "givn/specs/e5-cap/e5-cap.feature");
+}
+
+#[then(
+    "that cap record has its file, title, complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, `refactoring_required` true, and guidance to shorten or split the scenario and rerun exploration"
+)]
+fn explore_cap_record_is_complete(world: &mut GivnWorld) {
+    let document = duplicate_json(world);
+    let cap = &document["e5_token_cap_candidates"][0];
+    let hash = cap["content_hash"].as_str().expect("cap hash");
+    assert_eq!(hash.len(), 16);
+    assert!(hash.chars().all(|character| character.is_ascii_hexdigit()));
+    assert_eq!(cap["token_count"], 550);
+    assert_eq!(cap["limit"], 512);
+    assert_eq!(cap["model"], "intfloat/multilingual-e5-large");
+    assert_eq!(
+        cap["tokenizer"],
+        "intfloat/multilingual-e5-large/tokenizer.json"
+    );
+    assert_eq!(cap["refactoring_required"], true);
+    let guidance = cap["guidance"].as_str().expect("cap guidance");
+    assert!(guidance.contains("shorten"));
+    assert!(guidance.contains("split"));
+    assert!(guidance.contains("rerun"));
 }
 
 #[when("the end-to-end user runs `givn spec index` through the givn CLI")]

@@ -36,7 +36,7 @@ Feature: E5 token-cap findings preserve usable retrieval
     And the cap records are ordered by normalized file and title and give guidance to shorten or split the scenario and rerun the audit
     And no E5 semantic candidate contains either over-cap endpoint as either endpoint
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Explore keeps an E5 token-cap finding visible while fitting results remain usable
     Given an end-to-end permanent corpus with a fitting scenario and one complete E5 passage above 512 tokens
     And a complete fitting draft scenario is available for exploration
