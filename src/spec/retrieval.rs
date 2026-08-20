@@ -5234,14 +5234,80 @@ fn duplicate_candidates(
     }
 
     let score_overrides = duplicate_score_overrides()?;
-    let refresh = refresh_index(root)?;
-    let vectors: BTreeMap<(String, String), Vec<f32>> = refresh
-        .index
-        .entries
-        .into_iter()
-        .map(|entry| ((entry.file, entry.title), entry.embedding))
-        .collect();
-    let e5_token_caps = refresh.index.e5_token_caps;
+    let (vectors, e5_token_caps) = match read_index(&spec_index_path(root)) {
+        Ok(index)
+            if scenarios.iter().all(|scenario| {
+                index.entries.iter().any(|entry| {
+                    entry.file == scenario.endpoint.file
+                        && entry.title == scenario.endpoint.title
+                        && entry.content_hash == content_hash(&scenario.text)
+                }) || index.e5_token_caps.iter().any(|cap| {
+                    cap.file == scenario.endpoint.file
+                        && cap.title == scenario.endpoint.title
+                        && cap.content_hash == content_hash(&scenario.text)
+                })
+            }) =>
+        {
+            (
+                index
+                    .entries
+                    .into_iter()
+                    .map(|entry| ((entry.file, entry.title), entry.embedding))
+                    .collect(),
+                index.e5_token_caps,
+            )
+        }
+        _ => {
+            let batch = if scenarios.is_empty() {
+                EmbeddingBatch {
+                    vectors: Vec::new(),
+                    token_caps: Vec::new(),
+                }
+            } else {
+                embed_texts(
+                    root,
+                    &scenarios
+                        .iter()
+                        .map(|scenario| scenario.text.clone())
+                        .collect::<Vec<_>>(),
+                    EmbeddingRole::Passage,
+                )?
+            };
+            let vectors: BTreeMap<(String, String), Vec<f32>> = scenarios
+                .iter()
+                .zip(batch.vectors)
+                .filter_map(|(scenario, vector)| {
+                    vector.map(|vector| {
+                        (
+                            (
+                                scenario.endpoint.file.clone(),
+                                scenario.endpoint.title.clone(),
+                            ),
+                            vector,
+                        )
+                    })
+                })
+                .collect();
+            let e5_token_caps = scenarios
+                .iter()
+                .zip(batch.token_caps)
+                .filter_map(|(scenario, budget)| {
+                    budget.map(|budget| {
+                        e5_token_cap(
+                            &ScenarioText {
+                                title: scenario.endpoint.title.clone(),
+                                file: scenario.endpoint.file.clone(),
+                                content_hash: content_hash(&scenario.text),
+                                text: scenario.text.clone(),
+                            },
+                            budget,
+                        )
+                    })
+                })
+                .collect();
+            (vectors, e5_token_caps)
+        }
+    };
     for (left_index, left) in scenarios.iter().enumerate() {
         for (right_index, right) in scenarios.iter().enumerate().skip(left_index + 1) {
             if classified.contains(&(left_index, right_index)) {
