@@ -100,7 +100,7 @@
 - [x] Run `./run-tests.sh --e2e`.
   - Result: passed; E5 E2E suite summary `25 features, 47 scenarios (47 passed), 295 steps (295 passed)`. All configured BGE/NLI subsets also passed.
 - [x] Run `./measure-coverage.sh && ./merge-coverages.sh`.
-  - Result: passed; merged report `coverage/cobertura-coverage.xml` records `13006/18934` covered lines (`68.69%`) and `0/0` branches (`n/a`). The changed production file `src/spec/retrieval.rs` records `4265/5261` covered lines (`81.07%`). Non-E2E report: `337` scenarios / `2121` steps; E2E report: `60` scenarios / `403` steps.
+  - Result: passed; merged report `coverage/cobertura-coverage.xml` records `13014/18956` covered lines (`68.65%`) and `0/0` branches (`n/a`). The changed production file `src/spec/retrieval.rs` records `4273/5272` covered lines (`81.05%`). Non-E2E report: `337` scenarios / `2121` steps; E2E report: `60` scenarios / `403` steps.
 - [x] Run `givn lint --change semantic-compact-serialization`.
   - Result: `givn lint: 1 file(s) checked -- clean`.
 - [x] Record final status and review evidence before archive.
