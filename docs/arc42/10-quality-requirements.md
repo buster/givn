@@ -36,6 +36,7 @@ graph TD
     SEM --> SEM4["Complete semantic model input and E5 hash boundary"]
     SEM --> SEM5["Actual tokenizer preflight and explicit token-cap states"]
     SEM --> SEM6["Independent BGE/NLI pool and intersection semantics"]
+    SEM --> SEM7["Partial E5 indexing and visible classification-free cap findings"]
 ```
 
 ## 10.2 Quality Scenarios
@@ -145,6 +146,10 @@ graph TD
 | Q-101 | Independent second-stage pool | BGE recommends a candidate that NLI would otherwise not see if NLI received only BGE survivors. | BGE and NLI receive the same E5 candidate identity/pair pool independently; combined recommendations are the intersection, and NLI never consumes only BGE survivors. |
 | Q-102 | Shared surface guard | The user runs duplicate audit, permanent or change-aware Explore, advisory review, and blocking review. | Each surface uses the same complete serializer and actual-tokenizer guard; cap evidence and shorten/split remediation are consistent, while blocking review remains non-zero for unresolved cap candidates. |
 | Q-103 | Deterministic acceptance boundary | Token-cap scenarios run in regular and E2E suites. | A deterministic test-only budget seam proves exact 512/513, partial/all-over-cap, and no-load behavior without network access, model downloads, or multi-gigabyte inference artifacts. |
+| Q-104 | E5 indexing resilience | One complete permanent passage exceeds 512 tokens while another fits. | Indexing succeeds, fitting vectors remain available, the capped passage has no truncated or sentinel vector, and the cap finding records its exact count, limit, provenance, and guidance. |
+| Q-105 | E5 pair integrity | A capped endpoint would otherwise be an eligible semantic neighbor. | E5 emits no pair score involving that endpoint; deterministic exact and structural findings remain unchanged. |
+| Q-106 | E5 surface visibility | A user runs duplicate audit or Explore with a capped permanent passage. | Text/JSON output contains the additive `E5_TOKEN_CAP` finding with file/title, count, limit, model/tokenizer provenance, `refactoring_required: true`, and shorten/split-and-rerun guidance while fitting results retain their existing contract. |
+| Q-107 | E5 blocking integrity | Blocking review sees an active capped passage. | The complete report is written, the command exits non-zero, the finding remains unresolved with null classification/rationale, and no automatic Givn classification is assigned. |
 
 ## 10.3 Acceptance signals per phase
 

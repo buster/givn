@@ -3030,8 +3030,21 @@ Pair counts are complete pair encodings and include pair special tokens; they
 are not inferred by adding left and right counts. Exactly 512 tokens fits and
 513 is over.
 
-An over-cap E5 passage is an explicit retrieval input-cap failure. An over-cap
-BGE candidate receives `BGE_TOKEN_CAP`; an over-cap NLI candidate receives
+For E5 passages, the preflight partitions the complete input set before model
+construction. Fitting passages continue through the existing embedder and
+index; an over-cap passage becomes additive `E5_TOKEN_CAP` metadata in the
+permanent index and the duplicate, Explore, advisory-review, and blocking-review
+surfaces. The capped endpoint has no vector, is excluded from every E5 semantic
+pair, and is never represented by truncation, a zero vector, or an invented
+score. Deterministic exact and structural findings are evaluated independently.
+The E5 finding records endpoint file/title, complete count, limit, model/
+tokenizer provenance, `refactoring_required: true`, and shorten/split-and-rerun
+guidance; blocking review renders it with null classification/rationale and
+remains non-zero until the author remediates it.
+
+An over-cap E5 passage is an explicit `E5_TOKEN_CAP` retrieval finding rather
+than a whole-invocation failure. An over-cap BGE candidate receives
+`BGE_TOKEN_CAP`; an over-cap NLI candidate receives
 `NLI_TOKEN_CAP`. Each state includes left, right, pair, and limit counts, has no
 score/probability, remains visible and unresolved, is outside the filtered
 collection, and remains blocking. If at least one pair fits, the layer remains
@@ -3052,6 +3065,8 @@ rerun; no automatic chunking, shortening, splitting, or feature edit occurs.
   evidence.
 - Good, because the token-cap state gives the agent an actionable shorten/split
   instruction without granting Givn edit authority.
+- Good, because one over-cap E5 passage no longer discards fitting permanent
+  vectors or hides deterministic duplicate/structural evidence.
 
 #### Bad
 
@@ -3061,14 +3076,19 @@ rerun; no automatic chunking, shortening, splitting, or feature edit occurs.
   can resolve the candidate.
 - Bad, because a test-only budget seam must remain behaviorally separate from
   the production tokenizer path.
+- Bad, because the persisted index now has vector entries and additive cap
+  metadata that renderers must keep in deterministic endpoint order.
 
 ### Confirmation
 
 Regular and E2E scenarios use deterministic named fixtures for exact 512 and
-513 counts, pair special tokens, left/right/pair/limit output, no truncation or
-padding, no model construction on all-over-cap runs, partial BGE/NLI runs,
-visible blocking cap candidates, and shorten/split remediation guidance. The
-tests use no network, downloader, or multi-gigabyte local inference artifact.
+513 counts, pair special tokens, no truncation or padding, no model
+construction on all-over-cap runs, partial BGE/NLI runs, visible blocking cap
+candidates, and shorten/split remediation guidance. E5 fixtures additionally
+prove that a fitting passage is indexed beside a 550-token passage, that no E5
+pair contains the capped endpoint, that deterministic findings remain, and that
+Explore/review retain the cap finding. The tests use no network, downloader, or
+multi-gigabyte local inference artifact.
 
 ### Pros and Cons of the Options
 

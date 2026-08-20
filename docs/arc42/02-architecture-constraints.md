@@ -32,6 +32,7 @@ relitigation during implementation (see chapter 9 for rationale).
 | TC-23 | Before model construction or inference, the actual model tokenizer counts untruncated and unpadded E5 passages and BGE/NLI pair encodings, including pair special tokens. The limit is 512, exactly 512 fits, and 513 is over. | Prevent tokenizer truncation or padding from hiding over-cap semantic pairs. |
 | TC-24 | BGE and NLI independently score the same E5 candidate pool. Combined recommendations intersect participating recommendations; per-candidate token-cap, unscored, or unavailable evidence is not silently filtered, and run-level unavailable is used only when that layer scores no pair. | Preserve comparable recall and blocking safety across second-stage layers. |
 | TC-25 | Regular and E2E token-budget tests use a deterministic test-only seam; production uses real local tokenizers and artifacts. Tests do not download models, use network services, or require multi-gigabyte inference artifacts. | Keep acceptance deterministic and bounded without changing production model selection. |
+| TC-26 | E5 passage preflight partitions complete inputs before embedding. A passage above 512 is metadata-only, never truncated or represented by a sentinel vector, while fitting passages continue through normal indexing and scoring. Cap findings are additive, visible, blocking, and receive no automatic Givn classification. | Preserve usable retrieval and honest semantic evidence when one complete scenario exceeds the E5 input window. |
 
 ## 2.2 Distribution Constraints
 

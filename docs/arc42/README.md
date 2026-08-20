@@ -36,10 +36,15 @@ no separate serializer-version field. Paths, tags, scores, classifications,
 and deterministic fingerprints remain outside model text. The actual local
 tokenizer preflights untruncated and unpadded E5 passages and BGE/NLI pair
 encodings, including pair special tokens; `512` fits and `513` is over the
-limit. `BGE_TOKEN_CAP` and `NLI_TOKEN_CAP` remain visible, unresolved,
-non-filtered, and blocking per candidate, while run-level unavailable means no
-pair in that layer was scoreable. BGE and NLI independently score the same E5
-pool, and combined recommendations are their intersection.
+limit. Fitting E5 passages remain indexed; an over-cap passage is retained as
+additive `E5_TOKEN_CAP` metadata with no vector or semantic pair score. Its
+file/title, complete token count, limit, model/tokenizer provenance,
+`refactoring_required: true`, and shorten/split-and-rerun guidance remain
+visible and blocking without an automatic Givn classification. `BGE_TOKEN_CAP`
+and `NLI_TOKEN_CAP` remain visible, unresolved, non-filtered, and blocking per
+candidate, while run-level unavailable means no pair in that layer was
+scoreable. BGE and NLI independently score the same eligible E5 pool, and
+combined recommendations are their intersection.
 
 The same retrieval surface also provides `givn spec duplicates`, a complete
 read-only permanent-corpus audit. It reports exact and existing-Fingerprint
