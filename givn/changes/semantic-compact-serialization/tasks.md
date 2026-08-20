@@ -11,7 +11,7 @@
   - Strictness proof command: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Empty optional sections do not add retrieval content"` while the scenario is still `@wip` or has an unimplemented step.
   - Strictness proof output and non-zero exit: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Empty optional sections do not add retrieval content"` exited non-zero. The runner compiled with `.fail_on_skipped()` and failed on the undefined Given step: `Step doesn't match any function`; summary: `1 feature, 1 scenario (1 failed), 1 step (1 failed)`.
   - Setup files: `tests/steps/semantic_compact_serialization_steps.rs`, `tests/steps/semantic_compact_serialization_e2e_steps.rs`, and `tests/steps/mod.rs`.
-  - Setup commit: pending; included in the first implementation commit.
+  - Setup commit: `125b916` (included in the first implementation commit).
 
 ## Scenario: Empty optional sections do not add retrieval content
 
@@ -35,17 +35,17 @@
   - Captured output: after helper cleanup and exact serializer tests, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`. Direct source tests: `2 passed; 0 failed`.
 - [ ] COMMIT
   - Commit RED, GREEN, and REFACTOR together with a message referencing `Empty optional sections do not add retrieval content`.
-  - Commit hash: pending.
+  - Commit hash: `125b916`.
 
 ## Scenario: Non-empty optional sections remain complete retrieval content
 
-- [ ] RED
+- [x] RED
   - Remove `@wip` from this scenario only.
   - Bind its rich-content steps in `tests/steps/semantic_compact_serialization_steps.rs`; unimplemented steps use `unimplemented!()`.
   - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Non-empty optional sections remain complete retrieval content"`.
   - Expected result: non-zero because the exact rich-content contract is not implemented.
-  - Captured output: pending.
-- [ ] GREEN
+  - Captured output: targeted run matched the three implemented setup/hash steps, then matched `tests/steps/semantic_compact_serialization_steps.rs:94:1` and panicked with `not implemented`; summary: `1 feature, 1 scenario (1 failed), 4 steps (3 passed, 1 failed)`.
+- [x] GREEN
   - Add a rich Gherkin fixture covering descriptions, Feature/Rule Backgrounds, resolved roles, tables, docstrings, outline templates, and Examples.
   - Assert the exact complete compact content hash and direct serialized text contract.
   - Reuse the production serializer from the previous scenario; do not add a second serializer.
@@ -83,12 +83,13 @@
   - Drive the real `givn spec index` subprocess in a temporary project.
   - Assert exit status and stdout as primary CLI evidence; assert the indexed scenario identity as secondary evidence.
   - Run `./run-tests.sh --e2e`; expected result is zero for this scenario.
-  - Production files changed: none beyond the shared serializer already changed; test files: pending.
-  - Captured output: pending.
-- [ ] REFACTOR
+  - Production files changed: none; the shared serializer and exact rich-content assertions from the previous scenario were reused. Acceptance file changed: `tests/steps/semantic_compact_serialization_steps.rs`.
+  - `cargo check --features spec-retrieval` succeeded. Targeted output: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
+  - Coverage: the configured runner emits no coverage artifact; coverage is unmeasured for this targeted run.
+- [x] REFACTOR
   - Keep E2E setup isolated and avoid duplicating regular serializer assertions.
   - Re-run `./run-tests.sh --e2e`; expected result is zero.
-  - Captured output: pending.
+  - Captured output: after `cargo fmt --all`, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
 - [ ] COMMIT
   - Commit RED, GREEN, and REFACTOR together with a message referencing `A maintainer can index scenarios with complete compact passages`.
   - Commit hash: pending.
