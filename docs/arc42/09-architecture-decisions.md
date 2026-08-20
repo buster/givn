@@ -2914,9 +2914,9 @@ Choose option 3. The serializer orders Feature keyword/name/context/description,
 Feature Background, Rule keyword/name/context/description, Rule Background,
 Scenario keyword/title/description, resolved behavior steps, tables, docstrings,
 the Scenario Outline template, and concrete Examples rows. `And` and `But`
-inherit the preceding resolved role. Whitespace normalization is deterministic
-without dropping table cells, example values, or docstring content; missing
-optional sections use one stable empty representation.
+inherit the preceding resolved role. Whitespace normalization is deterministic;
+empty optional sections and fields are omitted, while non-empty table cells,
+example values, and docstring content are retained in full.
 
 The exact serialized text is the E5 passage and the complete left/right model
 text for BGE and NLI. `content_hash` is computed from that exact E5 text. An
@@ -2952,7 +2952,7 @@ deterministic `Fingerprint` evidence remains separate.
 
 The serializer scenarios cover Feature and Rule descriptions, inherited
 backgrounds, resolved `And`/`But` roles, tables, docstrings, outline templates,
-Examples rows, stable empty sections, metadata exclusion, deterministic output,
+Examples rows, empty-field omission, metadata exclusion, deterministic output,
 matching hash reuse, changed-hash re-embedding, old-projection invalidation,
 and deletion cleanup.
 
@@ -3220,3 +3220,107 @@ the test seam proves no layer receives a survivor-only pool.
 Related decisions: ADR-052 (BGE admission), ADR-054 (versioned evidence output),
 ADR-055 (independent capability flags), and ADR-058 (NLI evidence). Related
 chapters: 3, 4, 5, 6, 8, 10, 11, and 12.
+
+---
+
+## ADR-062: Omit empty optional fields from complete semantic passages
+
+---
+status: accepted
+date: 2026-08-20
+decision-makers: givn maintainers
+consulted: semantic-compact-serialization proposal, feature, and design
+informed: retrieval maintainers and agents consuming semantic evidence
+---
+
+### Context and Problem Statement
+
+ADR-059 requires one complete deterministic semantic passage, but its initial
+representation used placeholders such as `[]` for absent optional sections,
+tables, docstrings, and examples. Those placeholders carry no domain meaning.
+They repeat across otherwise unrelated scenarios, consume model-token budget,
+and can increase cosine similarity through shared boilerplate.
+
+### Decision Drivers
+
+- Preserve every non-empty semantic value required by ADR-059.
+- Remove repeated empty markers that cannot distinguish scenarios.
+- Keep the representation deterministic and the existing content-hash
+  invalidation boundary intact.
+- Avoid changing thresholds, pair limits, or downstream evidence contracts.
+
+### Considered Options
+
+1. Keep a fixed empty marker for every optional section and field.
+2. Remove optional sections entirely, including their non-empty content.
+3. Keep one complete serialization and emit optional sections and fields only
+   when their normalized content is non-empty.
+
+### Decision Outcome
+
+Choose option 3. Required Feature and Scenario identity and non-empty behavior
+steps remain in stable order. Feature/Rule context, descriptions, Backgrounds,
+tables, docstrings, outline templates, and Examples are emitted only when they
+contain normalized content. Non-empty content is retained in full and in source
+order. Empty optional sections and fields have no line, key, or placeholder in
+the model text.
+
+The exact compact passage remains the E5 input and `content_hash` source for
+E5, BGE, and NLI. A changed passage therefore invalidates the old vector by the
+existing identity/hash rule; no serializer-version field or threshold change is
+introduced.
+
+### Consequences
+
+#### Good
+
+- Good, because unrelated scenarios no longer share synthetic empty tokens.
+- Good, because complete non-empty Gherkin context remains available to every
+  semantic model.
+- Good, because compact passages use less token budget and can reduce noisy
+  candidate generation without changing admission thresholds.
+- Good, because the existing content-hash boundary naturally rebuilds affected
+  index entries.
+
+#### Bad
+
+- Bad, because changing the serializer invalidates existing vectors and requires
+  a normal index refresh.
+- Bad, because the model text no longer has a fixed field layout; consumers must
+  treat absent optional sections as absent rather than as empty values.
+- Bad, because a future serializer change must preserve the omission rule across
+  every retrieval surface.
+
+### Confirmation
+
+The compact-serialization scenarios and serializer tests assert that empty
+optional markers are absent, non-empty descriptions, backgrounds, tables,
+docstrings, outline templates, and Examples remain present, and index rebuild
+continues to report fitting scenarios.
+
+### Pros and Cons of the Options
+
+#### Fixed empty markers
+
+- Good, because the text shape is superficially uniform.
+- Bad, because repeated empty boilerplate contributes no semantic distinction
+  and can inflate similarity.
+
+#### Remove all optional sections
+
+- Good, because passages are short.
+- Bad, because meaningful context and scenario evidence would be lost.
+
+#### Omit only empty optional content
+
+- Good, because it preserves complete meaning while removing synthetic tokens.
+- Good, because the rule is deterministic and local to serialization.
+- Bad, because absent fields must not be mistaken for empty domain content by any
+  future consumer of the model text.
+
+### More Information
+
+Related decisions: ADR-059 (complete semantic serialization and hash boundary),
+ADR-060 (token budgets), and ADR-061 (independent second-stage pool). Related
+risks: R-66, R-72, and the compact-passage similarity risk recorded for this
+change. Related chapters: 1, 2, 3, 4, 5, 6, 8, 10, 11, and 12.

@@ -314,10 +314,11 @@ to drive its loop regardless of how the manifest is configured.
 
 The retrieval and similarity-gate flow is:
 
-Every E5 passage in this flow uses the complete deterministic semantic
+Every E5 passage in this flow uses the complete compact deterministic semantic
 serialization: Feature/Rule context and descriptions, inherited backgrounds,
 resolved step roles, tables, docstrings, outline templates, and concrete
-Examples rows. The exact serialized passage is the E5 `content_hash` boundary;
+Examples rows. Optional sections and fields with no normalized content are
+omitted. The exact serialized passage is the E5 `content_hash` boundary;
 matching endpoint identity and hash reuse a vector and mismatches re-embed,
 without a serializer-version field. Paths, tags, scores, and classifications
 are metadata, while deterministic `Fingerprint` evidence is separate.
@@ -381,7 +382,7 @@ flowchart TD
 ```
 
 The command validates and parses the input before changing the generated index.
-The complete input scenario is serialized with the same deterministic semantic
+The complete input scenario is serialized with the same compact deterministic semantic
 serializer used for E5 indexing and second-stage pairs. The actual E5 tokenizer
 preflights the untruncated/unpadded passage before model construction; selected
 BGE/NLI branches preflight their own complete pair encodings, including pair

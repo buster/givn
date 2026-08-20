@@ -5884,111 +5884,117 @@ fn semantic_serialization(
         semantic_normalize(&feature.keyword),
         semantic_normalize(&feature.name)
     ));
-    sections.push(format!(
-        "feature_description: {}",
-        semantic_optional_text(feature.description.as_deref())
-    ));
-    sections.push(format!(
-        "feature_background: {}",
-        semantic_background(feature.background.as_ref())
-    ));
-    sections.push(match rule {
-        Some(rule) => format!(
+    push_optional_text_section(
+        &mut sections,
+        "feature_description",
+        feature.description.as_deref(),
+    );
+    push_optional_serialized_section(
+        &mut sections,
+        "feature_background",
+        semantic_background(feature.background.as_ref()),
+    );
+    if let Some(rule) = rule {
+        sections.push(format!(
             "rule: {} {}",
             semantic_normalize(&rule.keyword),
             semantic_normalize(&rule.name)
-        ),
-        None => "rule: []".to_string(),
-    });
-    sections.push(format!(
-        "rule_description: {}",
-        semantic_optional_text(rule.and_then(|rule| rule.description.as_deref()))
-    ));
-    sections.push(format!(
-        "rule_background: {}",
-        semantic_background(rule.and_then(|rule| rule.background.as_ref()))
-    ));
+        ));
+        push_optional_text_section(
+            &mut sections,
+            "rule_description",
+            rule.description.as_deref(),
+        );
+        push_optional_serialized_section(
+            &mut sections,
+            "rule_background",
+            semantic_background(rule.background.as_ref()),
+        );
+    }
     sections.push(format!(
         "scenario: {} {}",
         semantic_normalize(&scenario.keyword),
         semantic_normalize(&scenario.name)
     ));
-    sections.push(format!(
-        "scenario_description: {}",
-        semantic_optional_text(scenario.description.as_deref())
-    ));
-    sections.push("steps:".to_string());
-    if scenario.steps.is_empty() {
-        sections.push("[]".to_string());
-    } else {
+    push_optional_text_section(
+        &mut sections,
+        "scenario_description",
+        scenario.description.as_deref(),
+    );
+    if !scenario.steps.is_empty() {
+        sections.push("steps:".to_string());
         sections.extend(scenario.steps.iter().map(semantic_step));
     }
-    sections.push(format!(
-        "outline_template: {}",
-        if scenario.keyword.trim() == "Scenario Outline" {
-            semantic_normalize(&scenario.name)
-        } else {
-            "[]".to_string()
-        }
-    ));
-    sections.push("examples:".to_string());
+    if scenario.keyword.trim() == "Scenario Outline" {
+        push_optional_text_section(&mut sections, "outline_template", Some(&scenario.name));
+    }
     if scenario.examples.is_empty() {
-        sections.push("[]".to_string());
+        return sections.join("\n");
     } else {
-        sections.extend(scenario.examples.iter().map(semantic_examples));
+        let examples = scenario
+            .examples
+            .iter()
+            .filter_map(semantic_examples)
+            .collect::<Vec<_>>();
+        if !examples.is_empty() {
+            sections.push("examples:".to_string());
+            sections.extend(examples);
+        }
     }
     sections.join("\n")
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn semantic_background(background: Option<&gherkin::Background>) -> String {
-    let Some(background) = background else {
-        return "[]".to_string();
-    };
-    let steps = if background.steps.is_empty() {
-        "[]".to_string()
-    } else {
-        format!(
-            "[{}]",
-            background
-                .steps
-                .iter()
-                .map(semantic_step)
-                .map(|step| json_encoded(&step))
-                .collect::<Vec<_>>()
-                .join(",")
-        )
-    };
-    format!(
-        "{{\"keyword\":{},\"name\":{},\"description\":{},\"steps\":{steps}}}",
-        json_encoded(&semantic_normalize(&background.keyword)),
-        json_encoded(&semantic_normalize(&background.name)),
-        semantic_optional_json(background.description.as_deref()),
-    )
+fn semantic_background(background: Option<&gherkin::Background>) -> Option<String> {
+    let background = background?;
+    let mut fields = Vec::new();
+    push_optional_json_field(
+        &mut fields,
+        "keyword",
+        Some(semantic_normalize(&background.keyword)),
+    );
+    push_optional_json_field(
+        &mut fields,
+        "name",
+        Some(semantic_normalize(&background.name)),
+    );
+    if let Some(description) = semantic_optional_text(background.description.as_deref()) {
+        fields.push(format!("\"description\":{}", json_encoded(&description)));
+    }
+    if !background.steps.is_empty() {
+        let steps = background
+            .steps
+            .iter()
+            .map(semantic_step)
+            .map(|step| json_encoded(&step))
+            .collect::<Vec<_>>()
+            .join(",");
+        fields.push(format!("\"steps\":[{steps}]"));
+    }
+    (!fields.is_empty()).then(|| format!("{{{}}}", fields.join(",")))
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn semantic_step(step: &gherkin::Step) -> String {
-    let table = step
-        .table
-        .as_ref()
-        .map(semantic_table)
-        .unwrap_or_else(|| "[]".to_string());
-    format!(
-        "step: role={:?}; text={}; table={table}; docstring={}",
-        step.ty,
-        semantic_normalize(&step.value),
-        step.docstring
-            .as_deref()
-            .map(semantic_normalize)
-            .map(|value| json_encoded(&value))
-            .unwrap_or_else(|| "[]".to_string()),
-    )
+    let mut fields = vec![
+        format!("role={:?}", step.ty),
+        format!("text={}", json_encoded(&semantic_normalize(&step.value))),
+    ];
+    if let Some(table) = step.table.as_ref().and_then(semantic_table) {
+        fields.push(format!("table={table}"));
+    }
+    if let Some(docstring) = semantic_optional_text(step.docstring.as_deref()) {
+        fields.push(format!("docstring={}", json_encoded(&docstring)));
+    }
+    format!("step: {}", fields.join("; "))
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn semantic_table(table: &gherkin::Table) -> String {
-    json_encoded(
+fn semantic_table(table: &gherkin::Table) -> Option<String> {
+    if table.rows.is_empty() {
+        return None;
+    }
+    Some(json_encoded(
         &table
             .rows
             .iter()
@@ -5998,44 +6004,59 @@ fn semantic_table(table: &gherkin::Table) -> String {
                     .collect::<Vec<_>>()
             })
             .collect::<Vec<_>>(),
-    )
+    ))
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn semantic_examples(examples: &gherkin::Examples) -> String {
-    let table = examples
-        .table
-        .as_ref()
-        .map(semantic_table)
-        .unwrap_or_else(|| "[]".to_string());
-    format!(
-        "examples_row: keyword={} name={} description={} table={table}",
-        semantic_normalize(&examples.keyword),
-        examples
-            .name
-            .as_deref()
-            .map(semantic_normalize)
-            .map(|value| json_encoded(&value))
-            .unwrap_or_else(|| "[]".to_string()),
-        semantic_optional_json(examples.description.as_deref()),
-    )
+fn semantic_examples(examples: &gherkin::Examples) -> Option<String> {
+    let mut fields = Vec::new();
+    push_optional_json_field(
+        &mut fields,
+        "keyword",
+        Some(semantic_normalize(&examples.keyword)),
+    );
+    if let Some(name) = semantic_optional_text(examples.name.as_deref()) {
+        fields.push(format!("name={}", json_encoded(&name)));
+    }
+    if let Some(description) = semantic_optional_text(examples.description.as_deref()) {
+        fields.push(format!("description={}", json_encoded(&description)));
+    }
+    if let Some(table) = examples.table.as_ref().and_then(semantic_table) {
+        fields.push(format!("table={table}"));
+    }
+    (!fields.is_empty()).then(|| format!("examples_row: {}", fields.join(" ")))
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn semantic_optional_text(value: Option<&str>) -> String {
+fn semantic_optional_text(value: Option<&str>) -> Option<String> {
     value
         .map(semantic_normalize)
         .filter(|value| !value.is_empty())
-        .map(|value| json_encoded(&value))
-        .unwrap_or_else(|| "[]".to_string())
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn semantic_optional_json(value: Option<&str>) -> String {
-    value
-        .map(semantic_normalize)
-        .map(|value| json_encoded(&value))
-        .unwrap_or_else(|| "[]".to_string())
+fn push_optional_text_section(sections: &mut Vec<String>, label: &str, value: Option<&str>) {
+    if let Some(value) = semantic_optional_text(value) {
+        sections.push(format!("{label}: {}", json_encoded(&value)));
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn push_optional_serialized_section(
+    sections: &mut Vec<String>,
+    label: &str,
+    value: Option<String>,
+) {
+    if let Some(value) = value {
+        sections.push(format!("{label}: {value}"));
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn push_optional_json_field(fields: &mut Vec<String>, label: &str, value: Option<String>) {
+    if let Some(value) = value.filter(|value| !value.is_empty()) {
+        fields.push(format!("\"{label}\":{}", json_encoded(&value)));
+    }
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -7554,5 +7575,64 @@ mod tests {
                 "boundary pair remained above threshold: {left_title} <> {right_title} = {score:.4}"
             );
         }
+    }
+
+    #[test]
+    fn compact_serializer_omits_empty_optional_sections_and_fields() {
+        let feature = gherkin::Feature::parse(
+            "Feature: compact retrieval\n\n  Scenario: Minimal scenario\n    Given minimal context\n    When minimal action runs\n    Then minimal result appears\n",
+            gherkin::GherkinEnv::default(),
+        )
+        .expect("parse minimal compact fixture");
+
+        let text = semantic_serialization(&feature, None, &feature.scenarios[0]);
+
+        assert_eq!(
+            text,
+            "feature: Feature compact retrieval\nscenario: Scenario Minimal scenario\nsteps:\nstep: role=Given; text=\"minimal context\"\nstep: role=When; text=\"minimal action runs\"\nstep: role=Then; text=\"minimal result appears\""
+        );
+        for marker in [
+            "[]",
+            "feature_description:",
+            "feature_background:",
+            "rule:",
+            "rule_description:",
+            "rule_background:",
+            "scenario_description:",
+            "outline_template:",
+            "examples:",
+            "table=",
+            "docstring=",
+        ] {
+            assert!(!text.contains(marker), "unexpected empty marker {marker:?}");
+        }
+    }
+
+    #[test]
+    fn compact_serializer_retains_non_empty_optional_content() {
+        let feature = gherkin::Feature::parse(
+            "Feature: rich retrieval\n  Feature description for semantic retrieval.\n\n  Background: feature setup\n    Given feature background is active\n\n  Rule: provider boundaries\n    Rule description for semantic retrieval.\n\n    Background: rule setup\n      Given rule background is active\n\n    Scenario Outline: Rich scenario\n      Given a scenario context\n        | header | value |\n        | input | first |\n      And the scenario includes documentation\n        \"\"\"\n        scenario docstring\n        \"\"\"\n      When the rich action runs\n      Then the rich result appears\n\n      Examples: rich example\n        | variant |\n        | first |\n",
+            gherkin::GherkinEnv::default(),
+        )
+        .expect("parse rich compact fixture");
+        let rule = &feature.rules[0];
+        let scenario = &rule.scenarios[0];
+        let text = semantic_serialization(&feature, Some(rule), scenario);
+
+        for content in [
+            "feature_description: \"Feature description for semantic retrieval.\"",
+            "feature background is active",
+            "rule: Rule provider boundaries",
+            "rule_description: \"Rule description for semantic retrieval.\"",
+            "rule background is active",
+            "table=[[\"header\",\"value\"],[\"input\",\"first\"]]",
+            "docstring=\"scenario docstring\"",
+            "outline_template: \"Rich scenario\"",
+            "examples_row: \"keyword\":\"Examples\" name=\"rich example\" table=[[\"variant\"],[\"first\"]]",
+        ] {
+            assert!(text.contains(content), "missing retained content {content:?}: {text}");
+        }
+        assert!(!text.contains("[]"));
+        assert_eq!(semantic_optional_text(Some(" \n\t")), None);
     }
 }

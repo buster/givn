@@ -30,10 +30,12 @@ raw candidates remain visible and NLI never assigns a Givn classification.
 All semantic layers now consume one complete, deterministic Gherkin
 serialization containing Feature/Rule context and descriptions, inherited
 backgrounds, resolved step roles, tables, docstrings, outline templates, and
-concrete example rows. The exact serialized E5 passage is the `content_hash`
-boundary: an existing vector is reused only when identity and hash match, with
-no separate serializer-version field. Paths, tags, scores, classifications,
-and deterministic fingerprints remain outside model text. The actual local
+concrete example rows. Optional sections and fields are emitted only when they
+contain normalized content; empty markers are omitted so shared boilerplate
+cannot raise cosine similarity. The exact serialized E5 passage is the
+`content_hash` boundary: an existing vector is reused only when identity and
+hash match, with no separate serializer-version field. Paths, tags, scores,
+classifications, and deterministic fingerprints remain outside model text. The actual local
 tokenizer preflights untruncated and unpadded E5 passages and BGE/NLI pair
 encodings, including pair special tokens; `512` fits and `513` is over the
 limit. Fitting E5 passages remain indexed; an over-cap passage is retained as
