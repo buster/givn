@@ -124,14 +124,16 @@ and no removed-plus-added pairs.
 
 ## Semantic Review
 
-The blocking review generated `semantic-review.md` with no normal semantic
-candidates, but it carried forward `19` pre-existing permanent
-`E5_TOKEN_CAP` findings from other capabilities. These are existing scenarios
-above the actual 512-token E5 limit, not findings introduced by this change.
-They remain classification-free and blocking by the existing token-cap
-contract. The requested scope explicitly does not shorten or split those
-permanent scenarios, so the change remains unarchived until that separate
-corpus remediation is completed.
+The compact production index reduced the pre-existing permanent token-cap
+findings from `19` to `2`; the remaining cap endpoints are
+`Invalid duplicate score overrides are rejected` (800 tokens) and
+`Structurally overlapping scenarios retain their distinguishing facts`
+(516 tokens). They remain classification-free and blocking by the existing
+token-cap contract. The production review also reports `3` unresolved
+delta-to-delta candidates among the three newly added test scenarios. Those
+scenarios intentionally cover distinct empty-content, rich-content, and
+real-CLI boundaries, but the requested scope does not consolidate or rewrite
+them for semantic remediation. The change therefore remains unarchived.
 
 ## Verification
 
@@ -142,7 +144,8 @@ corpus remediation is completed.
 - `./run-tests.sh --e2e` exited 0; E5 summary `47` scenarios passed and all BGE/NLI subsets passed.
 - `./measure-coverage.sh && ./merge-coverages.sh` exited 0; merged report produced.
 - Active-change E2E run with `GIVN_FEATURES` exited 0; the new CLI scenario passed.
-- `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-compact-serialization` ran both configured hooks and the integrity/overlap checks successfully, then exited non-zero because `semantic-review.md` retained 19 pre-existing `E5_TOKEN_CAP` findings.
+- `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-compact-serialization` passed the configured test, E2E, integrity, and overlap gates after the compact index refresh and produced a PASS report with no candidates under the test seam.
+- `cargo run --quiet --features spec-retrieval -- check review --change semantic-compact-serialization` ran the production E5 path and exited non-zero because `semantic-review.md` retained 2 token-cap findings and 3 unresolved delta-to-delta candidates.
 
 ## Sign-off
 
