@@ -300,6 +300,16 @@ test runner (`verify.command`).
 under `givn/`; `givn spec search` reads that index and prints ranked candidates
 for an interactive query. Search remains an authoring aid.
 
+Complete E5 passages are preflighted with the actual role-prefixed tokenizer
+before embedding. A fitting passage is handled by the existing vector path. An
+over-cap passage is kept as additive `E5_TOKEN_CAP` metadata in the permanent
+index and is not truncated, chunked, or represented by a zero/sentinel vector.
+The metadata records endpoint identity, complete token count, 512 limit,
+model/tokenizer provenance, `refactoring_required: true`, and guidance to
+shorten or split the scenario and rerun. Older indexes deserialize with no cap
+metadata, and cap metadata is reused only when the complete content hash still
+matches.
+
 When the `spec-retrieval` feature is compiled, `givn spec review --change <id>`
 provides the local index, search, and advisory review path. The strict E5
 similarity gate is enabled only by the independent `spec-similarity-gate`
@@ -409,6 +419,12 @@ scores that bounded set in both directions and reports the selected
 recommended/filtered evidence; it never classifies a pair, blocks a workflow,
 or writes a `.feature` file.
 
+The result also carries an additive `e5_token_cap_candidates` collection for
+over-cap permanent endpoints, and for an over-cap query it emits the query
+finding without inventing a rank or score. Fitting results retain their existing
+fields and order. A cap is visible advisory evidence, not a second-stage filter;
+the author is told to shorten or split the scenario and rerun.
+
 ### 8.5c Current-change scenario exploration
 
 `givn spec explore --change <id>` adds a request-local active-delta corpus to the
@@ -443,6 +459,12 @@ their order, then appends `scope` and `change` to every result, including
 permanent-only calls. This is additive metadata, not byte-for-byte PR 1 output
 compatibility. `index.entries` remains the permanent count.
 
+An over-cap active or permanent E5 passage is emitted in the additive
+`e5_token_cap_candidates` collection with no vector, rank, or semantic pair
+score. Fitting current-change vectors and permanent results retain the existing
+request-local behavior. A rejected or over-cap query does not cause the fitting
+permanent index refresh to fail.
+
 ### 8.5d Blocking semantic review report
 
 Only the blocking `givn check review --change <id>` path calls the dedicated
@@ -467,6 +489,15 @@ The report's candidate set is deliberately bounded and thresholded:
 - In a delta-to-permanent comparison, a Modified scenario excludes only its own
   projected `(target file, title)` endpoint; other scenarios in that target file
   remain eligible.
+
+Complete E5 passage preflight runs before these comparisons. A passage above
+512 is represented by an additive `E5_TOKEN_CAP` finding with file/title,
+token count, limit, model/tokenizer provenance, `refactoring_required: true`,
+and shorten/split-and-rerun guidance. It has no E5 vector or score and is not
+included in any semantic pair. The report renders `classification: null` and
+`rationale: null`, counts the finding as blocking, and never maps it to a Givn
+classification. Deterministic exact and structural findings remain independent
+of this semantic exclusion.
 
 Candidates are ordered by ascending lexical scope (`delta-to-delta` before
 `delta-to-permanent`), descending score, left endpoint tuple, right endpoint
@@ -591,8 +622,10 @@ The audit classifies pairs in priority order:
    threshold become advisory semantic candidates, not automatic duplicate
    decisions. Semantic evidence is not structural evidence.
 
-Each eligible scenario is embedded once, each pair is canonicalized once, and
-remaining cosine scores are computed in memory. The complete result is sorted
+Each fitting scenario is embedded once, each pair is canonicalized once, and
+remaining cosine scores are computed in memory. An over-cap scenario is emitted
+as `E5_TOKEN_CAP` metadata and is excluded from every semantic pair; no
+truncated or sentinel vector is used. The complete result is sorted
 by class, structural relation or descending semantic score, and endpoint
 identity. Text and JSON renderers use the same rank values and tie-breakers.
 Their stable contract has the fixed text header/candidate grammar and ordered
@@ -632,8 +665,9 @@ Before model construction or inference, the guard measures every E5 passage
 with the actual E5 tokenizer and every selected BGE/NLI pair with that layer's
 actual tokenizer. Counts are untruncated and unpadded; pair counts are the
 tokenizer's complete pair encoding and include pair special tokens. Exactly 512
-tokens fits and 513 is over. E5 over-cap input is an explicit retrieval input
-failure; BGE/NLI over-cap inputs remain candidate-level evidence rather than
+tokens fits and 513 is over. E5 fitting inputs continue to embedding, while an
+over-cap input becomes additive `E5_TOKEN_CAP` metadata with no vector or pair
+score. BGE/NLI over-cap inputs remain candidate-level evidence rather than
 being truncated, padded, or silently scored.
 
 The guard is shared by permanent duplicate audit, permanent and change-aware
@@ -749,11 +783,13 @@ Standards-aligned, configurable-target emit (see ADR-013, ADR-036):
   `spec-retrieval`, it returns the existing retrieval-unavailable error, does not
   falsely pass, and does not create the report. Existing overlap, similarity,
   coverage, and advisory review contracts remain separate gates.
-- Token-cap evidence is not a filtered or resolved state. `BGE_TOKEN_CAP` and
-  `NLI_TOKEN_CAP` remain visible and blocking per candidate; a partial layer is
-  enabled for fitting pairs, while `BGE_UNAVAILABLE`/`NLI_UNAVAILABLE` with
-  reason `token-cap` is used only when that layer scores no pair. Reports tell
-  the agent to shorten or split and rerun; Givn does not edit the feature.
+- Token-cap evidence is not a filtered or resolved state. `E5_TOKEN_CAP`,
+  `BGE_TOKEN_CAP`, and `NLI_TOKEN_CAP` remain visible and blocking per
+  candidate; an E5 cap has no vector or semantic pair score, while a partial
+  second-stage layer is enabled for fitting pairs. `BGE_UNAVAILABLE`/
+  `NLI_UNAVAILABLE` with reason `token-cap` is used only when that layer scores
+  no pair. Reports tell the agent to shorten or split and rerun; Givn does not
+  edit the feature.
 - Destructive operations (archive) validate all preconditions before any write.
 - Change-aware exploration treats an unsafe id, missing change, missing specs
   directory, or malformed delta as a non-zero request error and validates it

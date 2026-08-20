@@ -246,3 +246,22 @@ over-cap candidates without automatic chunking, shortening, splitting, or
 feature edits. A deterministic test-only budget provider supplies exact 512
 and 513 fixtures; it is unavailable on the production tokenizer path, and
 regular/E2E tests use no network or multi-gigabyte model artifact.
+
+### 5.3i E5 passage-cap evidence
+
+The E5 passage guard now returns a positional result for every complete input:
+either a vector for a fitting passage or an `E5_TOKEN_CAP` record for an
+over-cap passage. `refresh_index` persists fitting vectors in the existing
+`entries` collection and stores cap metadata in the additive
+`e5_token_caps` collection. Cap records carry endpoint identity, complete
+token count, limit, E5 model/tokenizer provenance, refactoring-required state,
+and shorten/split guidance. Older index files deserialize with an empty cap
+collection, and atomic replacement remains unchanged.
+
+Duplicate discovery performs deterministic exact and structural analysis before
+semantic embedding. It only forms E5 pairs for endpoints with vectors, so a cap
+cannot receive a fabricated semantic score while deterministic findings remain
+available. Explore and blocking semantic review render cap records separately;
+the semantic report counts them as unresolved blocking findings with no Givn
+classification. The test-only budget seam is applied only with the stub
+embedder, while the production path uses the actual local E5 tokenizer.
