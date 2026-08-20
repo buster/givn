@@ -13,50 +13,25 @@
   - Setup files: `tests/steps/semantic_compact_serialization_steps.rs`, `tests/steps/semantic_compact_serialization_e2e_steps.rs`, and `tests/steps/mod.rs`.
   - Setup commit: `125b916` (included in the first implementation commit).
 
-## Scenario: Empty optional sections do not add retrieval content
+## Scenario: Compact serialization preserves empty and non-empty retrieval boundaries
 
 - [x] RED
   - Remove `@wip` from this scenario only.
-  - Bind its steps in `tests/steps/semantic_compact_serialization_steps.rs`; unimplemented steps use `unimplemented!()`.
-  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Empty optional sections do not add retrieval content"`.
-  - Expected result: non-zero because the scenario is not implemented.
-  - Captured output: command compiled the runner, matched `tests/steps/semantic_compact_serialization_steps.rs:7:1`, panicked with `not implemented`, and exited non-zero; summary: `1 feature, 1 scenario (1 failed), 1 step (1 failed)`.
+  - Bind the consolidated fixture/hash assertion in `tests/steps/semantic_compact_serialization_steps.rs`; the new assertion initially used `unimplemented!()`.
+  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Compact serialization preserves empty and non-empty retrieval boundaries"`.
+  - Captured output: the setup and index steps passed, then the hash step matched and panicked with `not implemented`; summary: `1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)`.
 - [x] GREEN
-  - Replace stubs with a temporary-project fixture and exact index-entry hash assertions.
-  - Implement the minimum production serialization change in `src/spec/retrieval.rs`.
-  - Add the exact empty-field serializer assertions required by this scenario.
+  - Consolidate the minimal and rich fixtures into one regular scenario and assert both exact hashes and non-empty vectors.
+  - Reuse the compact production serializer and direct source tests; no second serializer or production behavior change is added.
   - Compile: `cargo check --features spec-retrieval`.
-  - Run the targeted command above; expected result is zero.
-  - Production files changed: `src/spec/retrieval.rs`; acceptance files: `tests/steps/semantic_compact_serialization_steps.rs`, `tests/steps/mod.rs`, and the change feature. `cargo check --features spec-retrieval` succeeded. Targeted output: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-  - Coverage: the configured runner emits no coverage artifact; coverage is unmeasured for this targeted run.
+  - Targeted output: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
+  - Production files changed: none; acceptance files changed: `semantic-compact-serialization.feature` and `tests/steps/semantic_compact_serialization_steps.rs`.
 - [x] REFACTOR
-  - Consolidate conditional emission and normalized optional-value handling without changing output.
-  - Re-run the targeted command above; expected result is zero.
-  - Captured output: after helper cleanup and exact serializer tests, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`. Direct source tests: `2 passed; 0 failed`.
-- [x] COMMIT: `125b916` — commit RED, GREEN, and REFACTOR together with a message referencing `Empty optional sections do not add retrieval content`.
-
-## Scenario: Non-empty optional sections remain complete retrieval content
-
-- [x] RED
-  - Remove `@wip` from this scenario only.
-  - Bind its rich-content steps in `tests/steps/semantic_compact_serialization_steps.rs`; unimplemented steps use `unimplemented!()`.
-  - Run: `GIVN_FEATURES=givn/changes/semantic-compact-serialization/specs cargo test --features spec-retrieval --test features_runner -- --name "Non-empty optional sections remain complete retrieval content"`.
-  - Expected result: non-zero because the exact rich-content contract is not implemented.
-  - Captured output: targeted run matched the three implemented setup/hash steps, then matched `tests/steps/semantic_compact_serialization_steps.rs:94:1` and panicked with `not implemented`; summary: `1 feature, 1 scenario (1 failed), 4 steps (3 passed, 1 failed)`.
-- [x] GREEN
-  - Add a rich Gherkin fixture covering descriptions, Feature/Rule Backgrounds, resolved roles, tables, docstrings, outline templates, and Examples.
-  - Assert the exact complete compact content hash and direct serialized text contract.
-  - Reuse the production serializer from the previous scenario; do not add a second serializer.
-  - Compile: `cargo check --features spec-retrieval`.
-  - Run the targeted command above; expected result is zero.
-  - Production files changed: none; the shared serializer and direct rich-content assertions were already implemented by the previous scenario. Acceptance file changed: `tests/steps/semantic_compact_serialization_steps.rs`.
-  - `cargo check --features spec-retrieval` succeeded. Targeted output: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-  - Coverage: the configured runner emits no coverage artifact; coverage is unmeasured for this targeted run.
-- [x] REFACTOR
-  - Review optional nested-field omission, whitespace-only values, JSON escaping, and deterministic ordering.
-  - Re-run the targeted command above; expected result is zero.
-  - Captured output: after `cargo fmt --all`, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-- [x] COMMIT: `773e445` — commit RED, GREEN, and REFACTOR together with a message referencing `Non-empty optional sections remain complete retrieval content`.
+  - Keep one regular fixture scenario for both empty and rich boundaries while retaining the separate real CLI E2E smoke test.
+  - Re-run the targeted command; output remained `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
+- [ ] COMMIT
+  - Commit RED, GREEN, and REFACTOR together with a message referencing `Compact serialization preserves empty and non-empty retrieval boundaries`.
+  - Commit hash: pending.
 
 ## E2E Setup
 

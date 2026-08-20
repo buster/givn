@@ -5,18 +5,11 @@
 Feature: Compact complete semantic retrieval passages
 
   @givn.added
-  Scenario: Empty optional sections do not add retrieval content
-    Given a permanent scenario with only required feature, scenario, and step content
+  Scenario: Compact serialization preserves empty and non-empty retrieval boundaries
+    Given a permanent corpus with minimal and rich retrieval fixtures
     When the user rebuilds the permanent scenario retrieval index
-    Then the index contains the minimal scenario with the expected compact content hash
-    And the index contains no additional scenario vector
-
-  @givn.added
-  Scenario: Non-empty optional sections remain complete retrieval content
-    Given a permanent scenario with non-empty descriptions, backgrounds, tables, docstrings, outline, and examples
-    When the user rebuilds the permanent scenario retrieval index
-    Then the index contains the rich scenario with the expected complete compact content hash
-    And the rich scenario has a non-empty indexed vector
+    Then the index contains both fixtures with their expected compact content hashes
+    And the index contains only the two fixture vectors
 
   @givn.added @e2e
   Scenario: A maintainer can index scenarios with complete compact passages
