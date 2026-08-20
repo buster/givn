@@ -96,4 +96,6 @@ consequences. No new deployment or external dependency is introduced.
 - Corrected chapter 3's Arc42 assessment.
 - Kept the existing one-action E2E inventory and real CLI mechanism.
 
+## Status
+
 DESIGN-REVIEW: PASS
