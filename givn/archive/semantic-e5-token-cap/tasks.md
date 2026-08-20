@@ -28,8 +28,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Indexing keeps fitting scenarios when another passage exceeds E5 capacity"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
-- [x] COMMIT: record the scenario commit.
-   - Commit: `06d2238`
+- [x] COMMIT: `06d2238` — record the scenario commit.
 
 ## Scenario: Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate
 
@@ -45,8 +44,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `12 steps (12 passed)` after `cargo fmt`.
-- [x] COMMIT: record the scenario commit.
-   - Commit: `700e1b6`
+- [x] COMMIT: `700e1b6` — record the scenario commit.
 
 ## Scenario: Explore keeps an E5 token-cap finding visible while fitting results remain usable
 
@@ -62,8 +60,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Explore keeps an E5 token-cap finding visible while fitting results remain usable"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after `cargo fmt`.
-- [x] COMMIT: record the scenario commit.
-   - Commit: `de4a25a`
+- [x] COMMIT: `de4a25a` — record the scenario commit.
 
 ## Scenario: Advisory review exposes an E5 token-cap finding without blocking
 
@@ -79,8 +76,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Advisory review exposes an E5 token-cap finding without blocking"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after `cargo fmt`.
-- [x] COMMIT: record the scenario commit.
-   - Commit: `61a726f`
+- [x] COMMIT: `61a726f` — record the scenario commit.
 
 ## Scenario: Blocking review keeps an over-cap active scenario unresolved
 
@@ -96,8 +92,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Blocking review keeps an over-cap active scenario unresolved"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `9 steps (9 passed)` after `cargo fmt`.
-- [x] COMMIT: record the scenario commit.
-   - Commit: `26063a3`
+- [x] COMMIT: `26063a3` — record the scenario commit.
 
 ## Scenario: Exactly 512 E5 passage tokens retain normal embedding behaviour
 
@@ -112,8 +107,7 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Exactly 512 E5 passage tokens retain normal embedding behaviour"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after `cargo fmt`.
-- [x] COMMIT: record the scenario commit.
-   - Commit: `bf2c117`
+- [x] COMMIT: `bf2c117` — record the scenario commit.
 
 ## Final Verification
 
@@ -127,5 +121,7 @@
   - Output: `cargo fmt --check` exited 0.
 - [x] `cargo clippy --workspace --all-targets -- -D warnings` passes.
   - Output: `cargo clippy --workspace --all-targets -- -D warnings` exited 0.
-- [ ] `givn check review --change semantic-e5-token-cap` passes.
-- [ ] Archive gate passes and the change is archived.
+- [x] `givn check review --change semantic-e5-token-cap` passes.
+  - Command/output: `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-e5-token-cap` exited 0; verify, verify-e2e, integrity, overlap, and active semantic review completed.
+- [x] Archive gate passes and the change is archived.
+  - Command/output: `GIVN_SPEC_EMBEDDER=stub givn archive --change semantic-e5-token-cap` exited 0; gate hooks passed, delta merged, and the change moved to `givn/archive/semantic-e5-token-cap`.
