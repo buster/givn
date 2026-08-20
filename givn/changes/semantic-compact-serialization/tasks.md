@@ -33,7 +33,7 @@
   - Consolidate conditional emission and normalized optional-value handling without changing output.
   - Re-run the targeted command above; expected result is zero.
   - Captured output: after helper cleanup and exact serializer tests, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`. Direct source tests: `2 passed; 0 failed`.
-- [ ] COMMIT
+- [x] COMMIT
   - Commit RED, GREEN, and REFACTOR together with a message referencing `Empty optional sections do not add retrieval content`.
   - Commit hash: `125b916`.
 
@@ -58,7 +58,7 @@
   - Review optional nested-field omission, whitespace-only values, JSON escaping, and deterministic ordering.
   - Re-run the targeted command above; expected result is zero.
   - Captured output: after `cargo fmt --all`, the targeted run remained green: `1 feature, 1 scenario (1 passed), 4 steps (4 passed)`.
-- [ ] COMMIT
+- [x] COMMIT
   - Commit RED, GREEN, and REFACTOR together with a message referencing `Non-empty optional sections remain complete retrieval content`.
   - Commit hash: `773e445`.
 
@@ -91,14 +91,21 @@
   - Keep E2E setup isolated and avoid duplicating regular serializer assertions.
   - Re-run `./run-tests.sh --e2e`; expected result is zero.
   - Captured output: after `cargo fmt --all`, `GIVN_FEATURES=... ./run-tests.sh --e2e` remained green with `1 feature, 1 scenario (1 passed), 5 steps (5 passed)` for the E5 subset and `0 features, 0 scenarios, 0 steps` for the empty BGE/NLI subsets.
-- [ ] COMMIT
+- [x] COMMIT
   - Commit RED, GREEN, and REFACTOR together with a message referencing `A maintainer can index scenarios with complete compact passages`.
-  - Commit hash: pending.
+  - Commit hash: `facf069`.
 
 ## Final Verification
 
-- [ ] Run `cargo fmt --all -- --check`.
-- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings`.
-- [ ] Run `./run-tests.sh`.
-- [ ] Run `./run-tests.sh --e2e`.
-- [ ] Record final status and review evidence before archive.
+- [x] Run `cargo fmt --all -- --check`.
+  - Result: passed.
+- [x] Run `cargo clippy --workspace --all-targets -- -D warnings`.
+  - Result: passed.
+- [x] Run `./run-tests.sh`.
+  - Result: passed; E5 suite summary `33 features, 334 scenarios (334 passed), 2075 steps (2075 passed)`. All configured BGE/NLI subsets also passed.
+- [x] Run `./run-tests.sh --e2e`.
+  - Result: passed; E5 E2E suite summary `25 features, 47 scenarios (47 passed), 295 steps (295 passed)`. All configured BGE/NLI subsets also passed.
+- [x] Run `givn lint --change semantic-compact-serialization`.
+  - Result: `givn lint: 1 file(s) checked -- clean`.
+- [x] Record final status and review evidence before archive.
+  - Coverage: no coverage artifact is emitted by the configured runner; targeted and full coverage remain unmeasured.
