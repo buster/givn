@@ -7630,7 +7630,10 @@ mod tests {
             "outline_template: \"Rich scenario\"",
             "examples_row: \"keyword\":\"Examples\" name=\"rich example\" table=[[\"variant\"],[\"first\"]]",
         ] {
-            assert!(text.contains(content), "missing retained content {content:?}: {text}");
+            assert!(
+                text.contains(content),
+                "missing retained content {content:?}: {text}"
+            );
         }
         assert!(!text.contains("[]"));
         assert_eq!(semantic_optional_text(Some(" \n\t")), None);
