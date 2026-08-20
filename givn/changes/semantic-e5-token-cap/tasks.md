@@ -62,22 +62,23 @@
 - [x] REFACTOR: rerun the targeted scenario after cleanup.
    - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Explore keeps an E5 token-cap finding visible while fitting results remain usable"`
    - Output: `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after `cargo fmt`.
-- [ ] COMMIT: record the scenario commit.
-  - Commit:
+- [x] COMMIT: record the scenario commit.
+   - Commit: `de4a25a`
 
 ## Scenario: Advisory review exposes an E5 token-cap finding without blocking
 
-- [ ] RED: target this scenario and record the non-zero result.
-  - Command:
-  - Output:
-- [ ] GREEN: expose cap findings in advisory review without changing its exit
+- [x] RED: target this scenario and record the non-zero result.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Advisory review exposes an E5 token-cap finding without blocking"`
+   - Output: non-zero; `1 scenario (1 failed)`, the advisory project Given step did not match any function.
+- [x] GREEN: expose cap findings in advisory review without changing its exit
       behavior.
-  - Command:
-  - Output:
-  - Production files:
-- [ ] REFACTOR: rerun the targeted scenario after cleanup.
-  - Command:
-  - Output:
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Advisory review exposes an E5 token-cap finding without blocking"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
+   - Production files: `src/spec/retrieval.rs` (advisory active cap collection, guidance, no ranked capped endpoint, active-550 deterministic seam); `tests/steps/semantic_e5_token_cap_e2e_steps.rs`; feature/task evidence files.
+   - Coverage: targeted runner output has no coverage instrumentation; production coverage is unmeasured for this phase.
+- [x] REFACTOR: rerun the targeted scenario after cleanup.
+   - Command: `GIVN_FEATURES=givn/changes/semantic-e5-token-cap/specs GIVN_SPEC_EMBEDDER=stub cargo test --features spec-retrieval --test features_runner -- --name "Advisory review exposes an E5 token-cap finding without blocking"`
+   - Output: `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after `cargo fmt`.
 - [ ] COMMIT: record the scenario commit.
   - Commit:
 
