@@ -1162,6 +1162,18 @@ fn pair_cap_blocking_project(world: &mut GivnWorld) {
 )]
 fn run_unavailable_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("unavailable blocking project");
+    if let Some(fixture) = world.retrieval_e5_token_budget.as_deref() {
+        world.last_output = Some(common::run_givn_with_envs(
+            env,
+            &["check", "review", "--change", "running-change"],
+            &[
+                ("GIVN_SPEC_EMBEDDER", "stub"),
+                ("GIVN_SPEC_E5_TOKEN_BUDGET", fixture),
+                ("GIVN_SPEC_RERANKER", "disabled"),
+            ],
+        ));
+        return;
+    }
     let bge_mode = if world.retrieval_reranker.as_deref() == Some("missing") {
         "missing"
     } else {

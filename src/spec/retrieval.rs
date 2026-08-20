@@ -2099,6 +2099,7 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let report = render_semantic_report(
         change_id,
         &candidates,
+        &e5_token_caps,
         remediation.is_err(),
         bge_run.as_ref(),
         #[cfg(feature = "nli-evidence")]
@@ -2131,7 +2132,8 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
                 }
                 && (candidate.classification == "UNCERTAIN" || candidate.rationale.is_none())
         })
-        .count();
+        .count()
+        + e5_token_caps.len();
     if unresolved == 0 {
         return Ok(());
     }
@@ -2948,6 +2950,7 @@ fn observable_distinction(left: &SemanticEndpoint, right: &SemanticEndpoint) -> 
 fn render_semantic_report(
     change_id: &str,
     candidates: &[SemanticCandidate],
+    e5_token_caps: &[E5TokenCap],
     remediation_blocked: bool,
     bge_run: Option<&BgeRun>,
     #[cfg(feature = "nli-evidence")] nli_run: Option<&NliRun>,
@@ -2982,6 +2985,7 @@ fn render_semantic_report(
             }
         })
         .all(|candidate| candidate.classification != "UNCERTAIN" && candidate.rationale.is_some())
+        && e5_token_caps.is_empty()
         && !remediation_blocked
     {
         "PASS"
@@ -2989,7 +2993,7 @@ fn render_semantic_report(
         "BLOCKED"
     };
     let mut report = format!(
-        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
+        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\nE5 token-cap count: {}\ne5_token_cap_count: {}\n",
         if {
             #[cfg(feature = "nli-evidence")]
             {
@@ -3006,8 +3010,38 @@ fn render_semantic_report(
         } else {
             SEMANTIC_REPORT_SCHEMA_VERSION
         },
-        blocking.len()
+        blocking.len(),
+        e5_token_caps.len(),
+        e5_token_caps.len(),
     );
+    report.push_str("e5_token_cap_candidates: [");
+    report.push_str(
+        &e5_token_caps
+            .iter()
+            .map(|cap| serde_json::to_string(cap).expect("serialize semantic E5 token cap"))
+            .collect::<Vec<_>>()
+            .join(","),
+    );
+    report.push_str("]\n");
+    for (index, cap) in e5_token_caps.iter().enumerate() {
+        report.push_str(&format!(
+            "\n## E5 Token Cap Candidate {}\n- status: E5_TOKEN_CAP\n- classification: null\n- rationale: null\n- file: \"{}\"\n- title: \"{}\"\n- content_hash: {}\n- token_count: {}\n- limit: {}\n- model: {}\n- tokenizer: {}\n- refactoring_required: {}\n- guidance: \"shorten or split the scenario, then rerun semantic review\"\n",
+            index + 1,
+            cap.file,
+            cap.title,
+            cap.content_hash,
+            cap.token_count,
+            cap.limit,
+            cap.model,
+            cap.tokenizer,
+            cap.refactoring_required,
+        ));
+    }
+    if !e5_token_caps.is_empty() {
+        report.push_str(
+            "refactoring required: shorten or split the scenario, then rerun semantic review\n",
+        );
+    }
     if candidates.iter().any(|candidate| {
         candidate.bge_token_cap.is_some() || {
             #[cfg(feature = "nli-evidence")]
