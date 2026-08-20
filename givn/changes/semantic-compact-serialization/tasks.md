@@ -105,4 +105,4 @@
   - Result: `givn lint: 1 file(s) checked -- clean`.
 - [x] Record final status and review evidence before archive.
   - Coverage is measured by the configured project scripts; no unclassified coverage gap was introduced by this change.
-  - `GIVN_SPEC_EMBEDDER=stub givn check review --change semantic-compact-serialization` is intentionally non-zero because the pre-existing permanent corpus contributes 19 `E5_TOKEN_CAP` findings; this change does not remediate those scenarios.
+  - The production review gate is intentionally non-zero: the compact index leaves 2 permanent `E5_TOKEN_CAP` findings and the three new test scenarios produce 3 unresolved delta-to-delta candidates. Per the user decision, this change remains unarchived and does not alter those unrelated/remediation-scope scenarios.
