@@ -512,14 +512,36 @@ fn duplicate_score_validation_entries(world: &mut GivnWorld, step: &Step) {
                 3,
                 "invalid score validation row has three columns"
             );
-            row.into_iter()
+            let mut values = row
+                .into_iter()
                 .map(|value| value.replace("__PIPE__", "|"))
-                .collect::<Vec<_>>()
-                .join("\x1f")
+                .collect::<Vec<_>>();
+            values[1] = duplicate_score_validation_raw(&values[0], &values[1]);
+            values.join("\x1f")
         })
         .collect::<Vec<_>>();
     assert_eq!(entries.len(), 12);
     world.additional_output = Some(entries.join("\n"));
+}
+
+fn duplicate_score_validation_raw(_label: &str, raw: &str) -> String {
+    const LEFT: &str = "givn/specs/a/a.feature|A";
+    const RIGHT: &str = "givn/specs/b/b.feature|B";
+    const PAIR: &str = "givn/specs/a/a.feature|A::givn/specs/b/b.feature|B";
+
+    match raw {
+        "empty-entry" => format!("{PAIR}=0.9600;"),
+        "missing-equals" => PAIR.to_string(),
+        "missing-pair" => format!("{LEFT}=0.9600"),
+        "equal-endpoints" => format!("{LEFT}::{LEFT}=0.9600"),
+        "duplicate-pair" => format!("{PAIR}=0.9600;{RIGHT}::{LEFT}=0.9500"),
+        "malformed-endpoint" => format!("{LEFT}::broken=0.9600"),
+        "empty-title" => format!("givn/specs/a/a.feature|::{RIGHT}=0.9600"),
+        "invalid-file" => format!("project/spec.feature|A::{RIGHT}=0.9600"),
+        "invalid-score-shape" => format!("{PAIR}=0.960"),
+        "out-of-range-score" => format!("{PAIR}=1.0001"),
+        _ => raw.to_string(),
+    }
 }
 
 #[when("the user validates each duplicate score override")]
