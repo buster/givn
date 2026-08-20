@@ -10,8 +10,8 @@ use crate::common;
 
 const MINIMAL_TITLE: &str = "Minimal scenario";
 const RICH_TITLE: &str = "Rich scenario";
-const MINIMAL_HASH: &str = "1d0af5cd5d0b9b37";
-const RICH_HASH: &str = "6e10a7304b5f9b33";
+const MINIMAL_HASH: &str = "95c980800a322345";
+const RICH_HASH: &str = "c630c767c566666c";
 
 const MINIMAL_FEATURE: &str = "Feature: compact retrieval\n\n  Scenario: Minimal scenario\n    Given minimal context\n    When minimal action runs\n    Then minimal result appears\n";
 
