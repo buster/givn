@@ -78,15 +78,6 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And  the candidate remains a normal blocking candidate with no NLI probabilities
 
   @nli
-  Scenario: NLI refuses an overflowing bounded pair pool before model loading
-    Given  a permanent corpus whose bounded NLI pool contains exactly 513 eligible pairs
-    When  the user runs the permanent NLI duplicate audit
-    Then  the command exits 0
-    And  the audit reports NLI as unavailable for reason "pair-cap"
-    And  the audit reports zero NLI pairs, directional calls, recommendations, filters, and model loads
-    And  all E5 semantic candidates are recorded as NLI unscored
-
-  @nli
   Scenario: NLI keeps candidates outside a partial bounded pool blocking
     Given  a permanent corpus with 513 E5 semantic candidates and a successful bounded NLI pool of 512 pairs
     When  the user runs the permanent NLI duplicate audit with JSON output

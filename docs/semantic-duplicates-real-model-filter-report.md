@@ -2,121 +2,91 @@
 
 ## Scope
 
-This report uses the current complete semantic serialization and real local
-model paths. No embedding, BGE, NLI, score override, or test-pool stub was
-used.
+This report records the rerun against the current permanent Givn corpus after
+replacing the fixed second-stage pair refusal with the configurable
+`GIVN_SPEC_MAX_RERANK_PAIRS` setting. No embedding, BGE, NLI, score, or test-pool
+stub was used. The setting was unset, so the production default `2048` applied.
 
-The run scanned `395` permanent scenarios after the E5 token-cap change.
+The current corpus contains `394` permanent scenarios. Deterministic analysis
+produces `4230` structural overlaps. E5 produces `1274` semantic candidates at
+the inclusive cosine boundary `0.9500`. The E5 index was refreshed immediately
+before the model runs and reports `0` E5 token-cap findings.
+
+The runs were:
 
 ```sh
-env -u GIVN_SPEC_EMBEDDER target/debug/givn spec index
+env -u GIVN_SPEC_EMBEDDER target/release/givn spec index
+
 env -u GIVN_SPEC_EMBEDDER -u GIVN_SPEC_BGE -u GIVN_SPEC_RERANKER \
-  target/debug/givn spec duplicates --format json
+  target/release/givn spec duplicates --format json
+
+env -u GIVN_SPEC_EMBEDDER -u GIVN_SPEC_RERANKER GIVN_SPEC_BGE=local \
+  target/release/givn spec duplicates --format json
+
+env -u GIVN_SPEC_EMBEDDER -u GIVN_SPEC_BGE \
+  GIVN_SPEC_RERANKER=nli GIVN_SPEC_NLI_MODEL_DIR=/tmp/opencode/nli-model \
+  target/release/givn spec duplicates --format json
+
+env -u GIVN_SPEC_EMBEDDER GIVN_SPEC_BGE=local \
+  GIVN_SPEC_RERANKER=nli GIVN_SPEC_NLI_MODEL_DIR=/tmp/opencode/nli-model \
+  target/release/givn spec duplicates --format json
 ```
 
-BGE and NLI were then invoked with the local artifacts:
+## Results
 
-```sh
-GIVN_SPEC_BGE=local \
-  target/debug/givn spec duplicates --format json
+| Stage | E5 candidates | Scored pairs | Recommended | Filtered | Token-cap | Unscored | Runtime |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| E5 semantic output | 1274 | - | 1274 visible | - | 0 | - | - |
+| BGE | 1274 | 669 | 1 | 668 | 126 | 605 | 819.8 s model runtime / 821.6 s wall |
+| NLI | 1274 | 1062 | 17 | 1045 | 212 | 212 | 768.1 s model runtime / 770.1 s wall |
+| BGE + NLI | 1274 | 669 / 1062 | 1 / 17 | 668 / 1045 | 126 / 212 | 605 / 212 | 1586.6 s wall |
 
-GIVN_SPEC_RERANKER=nli \
-GIVN_SPEC_NLI_MODEL_DIR=/tmp/opencode/nli-model \
-  target/debug/givn spec duplicates --format json
-```
+The active pair budget was `2048` in every run. It did not truncate this
+corpus. BGE still scores only the existing deterministic top-five endpoint
+union: `795` eligible pairs, consisting of `669` scored pairs and `126`
+selected pairs over the BGE 512-token input limit. The other `479` E5 pairs are
+outside that endpoint union. BGE's reported `unscored_count` is `605`, which
+includes those `479` pairs plus the `126` token-cap pairs.
 
-## Result
+NLI receives its independent E5 pool, not BGE survivors. All `1274` candidates
+fit under the pair-count setting; `1062` receive NLI probabilities and `212`
+receive `NLI_TOKEN_CAP` evidence because their complete pair encoding exceeds
+512 tokens. The combined recommendation is the intersection of the real BGE
+and NLI recommendations and contains `0` pairs in this run.
 
-| Stage | Result | Count |
-|---|---|---:|
-| E5 fitting vectors | Indexed successfully | 376 |
-| E5 token-cap findings | Complete passages over 512 tokens | 19 |
-| Structural findings | Deterministic exact/structural candidates | 4249 |
-| E5 semantic candidates | Fitting semantic pair candidates | 2292 |
-| BGE filtered candidates | None; BGE did not score | 0 |
-| NLI filtered candidates | None; NLI did not score | 0 |
+## Runtime Measurement
 
-### BGE
+The commands were run with the local ONNX artifacts and four intra-op model
+threads. `/usr/bin/time` measured process wall time, CPU time, and maximum RSS.
 
-```json
-{
-  "status": "BGE_UNAVAILABLE",
-  "reason": "pair-cap",
-  "e5_candidates": 2292,
-  "unique_pairs": 0,
-  "directional_calls": 0,
-  "unscored_count": 2292,
-  "model_load_attempts": 0
-}
-```
+| Run | Wall | CPU | Max RSS |
+|---|---:|---:|---:|
+| BGE-only | `821.60 s` | `3073.86 s` | `2.01 GiB` |
+| NLI-only | `770.13 s` | `2450.00 s` | `2.20 GiB` |
+| BGE + NLI | `1586.62 s` | `5531.19 s` | `2.62 GiB` |
 
-BGE did not filter Candidates. It correctly refused to construct or run the
-model because the bounded semantic pool exceeded the maximum of `512` pairs.
-
-### NLI
-
-```json
-{
-  "status": "NLI_UNAVAILABLE",
-  "reason": "pair-cap",
-  "e5_candidates": 2292,
-  "unique_pairs": 0,
-  "directional_calls": 0,
-  "unscored_count": 2292,
-  "model_load_attempts": 0
-}
-```
-
-NLI did not filter Candidates. It also refused inference before model
-construction because the same E5 pool exceeded the `512` pair bound.
-
-### Combined
-
-The combined run reports both layers as `UNAVAILABLE` with reason `pair-cap`.
-There are no valid BGE/NLI model scores in this run. This is an honest
-capacity result, not a quality comparison between the two models.
-
-## E5 Token-Cap Findings
-
-These scenarios were excluded from E5 vector creation and remain visible as
-`E5_TOKEN_CAP` refactoring findings. Each requires shortening or splitting and
-rerunning retrieval.
-
-| File | Scenario | Tokens | Limit |
-|---|---|---:|---:|
-| `givn/specs/prose-consolidation/prose-consolidation.feature` | Generated guidance points to the canonical E2E policy | 550 | 512 |
-| `givn/specs/semantic-e5-token-cap/semantic-e5-token-cap.feature` | Blocking review keeps an over-cap active scenario unresolved | 536 | 512 |
-| `givn/specs/semantic-e5-token-cap/semantic-e5-token-cap.feature` | Duplicate audit preserves deterministic findings and reports an E5 token-cap candidate | 643 | 512 |
-| `givn/specs/semantic-e5-token-cap/semantic-e5-token-cap.feature` | Explore keeps an E5 token-cap finding visible while fitting results remain usable | 575 | 512 |
-| `givn/specs/semantic-review/semantic-review.feature` | Change review generates a complete report for a semantic candidate | 529 | 512 |
-| `givn/specs/semantic-review/semantic-review.feature` | Failed remediation verification does not mutate project evidence | 571 | 512 |
-| `givn/specs/semantic-review/semantic-review.feature` | Invalid prior report entries never carry a classification | 609 | 512 |
-| `givn/specs/semantic-review/semantic-review.feature` | Removing a DUPLIKAT candidate verifies the projected remediation | 515 | 512 |
-| `givn/specs/semantic-token-cap-review/semantic-token-cap-review.feature` | Blocking change review keeps an all-over-cap candidate unresolved | 582 | 512 |
-| `givn/specs/semantic-token-cap-review/semantic-token-cap-review.feature` | Permanent duplicate audit keeps partial BGE token-cap evidence per candidate | 564 | 512 |
-| `givn/specs/semantic-token-cap-review/semantic-token-cap-review.feature` | Permanent duplicate audit preserves BGE evidence when NLI reaches the cap | 594 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | Exact duplicates across features are reported together | 586 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | Exact duplicates in one feature are reported together | 570 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | Invalid duplicate score overrides are rejected | 891 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | JSON output identifies every audit candidate | 565 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | Maintainer inspects the complete permanent scenario audit | 588 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | Semantically related scenarios are reported as candidates | 545 | 512 |
-| `givn/specs/spec-duplicates/spec-duplicates.feature` | Structurally overlapping scenarios retain their distinguishing facts | 667 | 512 |
-| `givn/specs/spec-explore-change/spec-explore-change.feature` | Change-aware file exploration finds permanent and active change candidates | 545 | 512 |
+The combined wall time is approximately `26:27 min`. The independent runs vary
+slightly because model loading and CPU scheduling are measured in each process.
+The combined run confirms that the two layers execute sequentially and retain
+independent evidence.
 
 ## Interpretation
 
-This run cannot answer which model is more accurate. The current complete E5
-serialization produces too many semantic pairs for the configured BGE/NLI
-bounded pool, so both layers correctly produce zero model scores.
+The fixed `512` pair refusal is gone from the production path. A pool larger
+than the configured setting is now processed as an E5-ranked prefix, with the
+tail reported as `BGE_UNSCORED` or `NLI_UNSCORED` rather than as an unavailable
+model run. The separate 512-token model-input guard remains active and produces
+`BGE_TOKEN_CAP`/`NLI_TOKEN_CAP` for selected overlong pairs.
 
-The current blockers are therefore:
+The default `2048` is high enough for the current E5 candidate count. It does
+not remove the BGE top-five eligibility boundary or the model-token boundary.
+The real current result is therefore:
 
-1. Refactor the `19` E5-token-cap scenarios so that their complete passages fit.
-2. Reduce or improve the semantic candidate pool so it is at most `512` pairs
-   before BGE/NLI inference.
-3. Rerun the same four reports after both conditions are satisfied.
+- BGE: `1` recommendation, `668` model-filtered pairs, `126` token-cap pairs,
+  and `479` E5 pairs outside the BGE endpoint union.
+- NLI: `17` recommendations, `1045` model-filtered pairs, and `212` token-cap
+  pairs.
+- Combined: `0` candidates recommended by both models.
 
-The report deliberately does not classify any BGE/NLI Candidate as filtered.
-`BGE_UNAVAILABLE` and `NLI_UNAVAILABLE` with `pair-cap` are capacity states,
-not negative model judgments.
+The machine-readable raw reports used for this analysis are stored under
+`/tmp/opencode/givn-duplicates-*-2048.json`.

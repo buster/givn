@@ -19,10 +19,10 @@ is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
 | Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
 | Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
 | Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
-| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates. Complete compact E5 passages omit empty optional markers, are token-preflighted, and are partitioned: fitting passages enter the vector index, while over-cap passages remain additive `E5_TOKEN_CAP` findings without vectors or fabricated scores. The optional `cross-encoder-reranker` feature scores a deterministic top-K/E5 intersection in both directions only after benchmark approval (or through the deterministic test stub), while the independent `nli-evidence` feature scores the same eligible pairs with bidirectional NLI probabilities. Both emit non-authoritative recommended/filtered evidence; the independent `spec-similarity-gate` remains the E5 hard gate. |
+| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates. Complete compact E5 passages omit empty optional markers, are token-preflighted, and are partitioned: fitting passages enter the vector index, while over-cap passages remain additive `E5_TOKEN_CAP` findings without vectors or fabricated scores. The optional `cross-encoder-reranker` feature scores the highest E5-scoring candidates from its deterministic top-K/E5 intersection up to `GIVN_SPEC_MAX_RERANK_PAIRS` (default 2048) in both directions, while independent `nli-evidence` applies the same ordered budget to its own pool. Both emit non-authoritative recommended/filtered evidence and explicit unscored tails; the independent `spec-similarity-gate` remains the E5 hard gate. |
 | Permanent duplicate audit | `givn spec duplicates` scans every permanent pair, resolves exact and existing-Fingerprint structural relationships before advisory E5 candidates, emits all ranked results through one fixed text/JSON contract, and computes the report in memory without reading, refreshing, or writing the persisted index. |
 | Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
-| Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved candidates recommended by every participating evidence layer without editing feature files. E5-token-cap findings are separate classification-free blocking entries with exact passage counts and provenance. BGE/NLI filtered evidence is non-blocking; unavailable/overflow states preserve the E5 blocking worklist. |
+| Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved candidates recommended by every participating evidence layer without editing feature files. E5-token-cap findings are separate classification-free blocking entries with exact passage counts and provenance. BGE/NLI filtered evidence is non-blocking; budget-omitted candidates are explicit unscored blocking entries, while artifact/token failures preserve the E5 worklist. |
 | Semantic remediation gate | Before returning PASS, verify every prior resolved classification against a read-only projected tree. Recompute prior pairs even below `0.9500`; require duplicate removal, a parameterized variant contract, or changed observable facts for a boundary below the threshold. |
 | Retrieval compatibility | A binary without `spec-retrieval` returns the existing unavailable error from blocking check review and creates no semantic report; `spec-retrieval` alone is E5-only; `cross-encoder-reranker` adds advisory BGE evidence only for an approved artifact or test stub, while `nli-evidence` independently adds local NLI evidence without implying `spec-similarity-gate`; failed/unavailable layers preserve explicit E5 fallback behavior and the advisory `givn spec review` path remains separate. |
 | Historical evidence | The generated report remains in the change directory and is retained by the existing archive move under `givn/archive/<id>/`; archive implementation is not changed by this slice. |
@@ -41,14 +41,15 @@ separate serializer-version field. Paths, tags, scores, and classifications are
 metadata, and deterministic `Fingerprint` findings remain a separate evidence
 source.
 
-The shared guard uses the actual tokenizer for each consuming model before model
-construction or inference. It measures untruncated and unpadded E5 passages and
+The shared guard first selects the E5-ranked prefix using the positive
+`GIVN_SPEC_MAX_RERANK_PAIRS` setting, then uses the actual tokenizer for each
+consuming model before model construction or inference. It measures untruncated and unpadded E5 passages and
 BGE/NLI pair encodings, including pair special tokens; 512 is valid and 513 is
 over. Duplicate audit, Explore, advisory review, and blocking review use the
 same guard. E5 passages are partitioned before inference: fitting passages
 continue normally, while an over-cap passage becomes an `E5_TOKEN_CAP` finding
-with no vector and no E5 pair score. BGE and NLI independently receive the same
-eligible E5 candidate pool, and the combined recommendation is the intersection
+with no vector and no E5 pair score. BGE and NLI independently receive their
+eligible E5 candidate pools, each with the same ordered budget, and the combined recommendation is the intersection
 of participating recommended sets. A fitting partial run remains enabled;
 over-cap pairs carry explicit `BGE_TOKEN_CAP` or `NLI_TOKEN_CAP` evidence and
 remain visible, unresolved, non-filtered, and blocking. If no pair in a layer
@@ -120,9 +121,9 @@ candidate has null structural evidence.
 
 Each eligible scenario is embedded once and remaining pairwise cosines are
 computed in memory. BGE never scores all permanent pairs: it consumes the
-endpoint/query top-five union after deterministic identity exclusions and caps
-each invocation at 512 unique undirected pairs, refusing before model loading
-with an explicit unavailable/overflow status. Labeled fixtures record top-K
+endpoint/query top-five union after deterministic identity exclusions, orders
+that union by E5 score, and selects at most the positive
+`GIVN_SPEC_MAX_RERANK_PAIRS` budget before model loading. Labeled fixtures record top-K
 recall, admission precision/recall, false-positive/false-negative rates, and
 runtime; the BGE status remains evidence rather than a Givn classification.
 

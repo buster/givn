@@ -12,20 +12,23 @@ documents focused and reviewable.
 The semantic retrieval surface includes advisory exploration through
 `givn spec explore`, an optional request-local current-change corpus, and the
 blocking E5 `0.9500` semantic review worklist generated only by `givn check
-review --change <id>`. The opt-in `cross-encoder-reranker` layer adds bounded,
-bidirectional BGE evidence to the five complete-scenario/audit E5 surfaces in
-PR 7; free-text `givn spec search` remains E5-only. It keeps E5 raw
-candidates visible, emits `BGE_RECOMMENDED` and non-blocking `BGE_FILTERED`
-evidence, and never assigns a Givn classification or edits feature files.
+review --change <id>`. The opt-in `cross-encoder-reranker` layer adds
+bidirectional BGE evidence to the five complete-scenario/audit E5 surfaces;
+`GIVN_SPEC_MAX_RERANK_PAIRS` selects the highest E5-scoring eligible pairs,
+defaulting to `2048`. Free-text `givn spec search` remains E5-only. E5 raw
+candidates remain visible, omitted budget tails are `BGE_UNSCORED`, and
+`BGE_RECOMMENDED`/`BGE_FILTERED` remain non-classifying evidence.
 Remediation verification remains agent-owned for admitted candidates. A build
 without retrieval fails this blocking layer rather than passing.
 
-The independent `nli-evidence` layer reuses the same bounded E5 top-K union on
-the same five surfaces. It reports bidirectional entailment, neutral, and
-contradiction probabilities, emits `NLI_RECOMMENDED` or non-blocking
-`NLI_FILTERED` evidence at the inclusive symmetric entailment point `0.5000`,
-and intersects its recommendations with BGE when both layers are active. E5
-raw candidates remain visible and NLI never assigns a Givn classification.
+The independent `nli-evidence` layer uses the same eligible E5 pool and the
+same ordered pair budget on the same five surfaces. It reports bidirectional
+entailment, neutral, and contradiction probabilities, emits
+`NLI_RECOMMENDED` or non-blocking `NLI_FILTERED` evidence at the inclusive
+symmetric entailment point `0.5000`, and records the budget tail as
+`NLI_UNSCORED`. It intersects its recommendations with BGE when both layers
+are active. E5 raw candidates remain visible and NLI never assigns a Givn
+classification.
 
 All semantic layers now consume one complete, deterministic Gherkin
 serialization containing Feature/Rule context and descriptions, inherited
@@ -51,10 +54,11 @@ combined recommendations are their intersection.
 The same retrieval surface also provides `givn spec duplicates`, a complete
 read-only permanent-corpus audit. It reports exact and existing-Fingerprint
 structural relationships plus advisory E5 candidates in one fixed text/JSON
-contract, with optional bounded BGE/NLI raw/recommended/filtered extensions,
-without reading, refreshing, or writing the persistent index and without
-blocking ordinary change work. It excludes active changes and archive contents;
-only the existing local model cache may be created.
+contract, with optional BGE/NLI raw/recommended/filtered/unscored extensions
+selected by the E5-ranked `GIVN_SPEC_MAX_RERANK_PAIRS` budget, without reading,
+refreshing, or writing the persistent index and without blocking ordinary
+change work. It excludes active changes and archive contents; only the existing
+local model cache may be created.
 
 When the `arc42` addon is enabled, completion review also cross-checks durable
 Arc42 facts against the change's design, mapped tasks, and completed

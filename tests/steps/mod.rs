@@ -43,6 +43,8 @@ pub mod semantic_e5_token_cap_e2e_steps;
 pub mod semantic_e5_token_cap_steps;
 pub mod semantic_remediation_e2e_steps;
 pub mod semantic_remediation_steps;
+pub mod semantic_reranker_budget_e2e_steps;
+pub mod semantic_reranker_budget_steps;
 pub mod semantic_review_e2e_steps;
 pub mod semantic_review_steps;
 pub mod semantic_token_cap_review_e2e_steps;
@@ -88,6 +90,10 @@ pub struct GivnWorld {
     pub(crate) additional_output: Option<String>,
     /// Optional retrieval backend override for the current subprocess.
     pub(crate) retrieval_embedder: Option<String>,
+    /// Optional BGE backend override for the current subprocess.
+    pub(crate) retrieval_bge: Option<String>,
+    /// Optional maximum BGE/NLI pair budget for the current subprocess.
+    pub(crate) retrieval_max_rerank_pairs: Option<String>,
     /// Deterministic E5 passage token-budget fixture selector.
     pub(crate) retrieval_e5_token_budget: Option<String>,
     /// Optional pair-reranker backend override for the current subprocess.
@@ -312,6 +318,12 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     let mut environments = Vec::new();
     if let Some(value) = world.retrieval_embedder.as_deref() {
         environments.push(("GIVN_SPEC_EMBEDDER", value));
+    }
+    if let Some(value) = world.retrieval_bge.as_deref() {
+        environments.push(("GIVN_SPEC_BGE", value));
+    }
+    if let Some(value) = world.retrieval_max_rerank_pairs.as_deref() {
+        environments.push(("GIVN_SPEC_MAX_RERANK_PAIRS", value));
     }
     if let Some(value) = world.retrieval_e5_token_budget.as_deref() {
         environments.push(("GIVN_SPEC_E5_TOKEN_BUDGET", value));

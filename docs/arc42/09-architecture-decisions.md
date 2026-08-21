@@ -2498,7 +2498,7 @@ R-27, R-52, R-53, and R-57.
 ## ADR-053: Bound BGE with deterministic endpoint unions and refusal
 
 ---
-status: accepted
+status: superseded by ADR-063
 date: 2026-08-18
 decision-makers: givn maintainers
 consulted: semantic plan, BGE benchmark evidence, and maintainers
@@ -2526,16 +2526,10 @@ candidate union, but large corpora still need an operational guard.
 
 ### Decision Outcome
 
-Use `RERANKER_TOP_K = 5` and a maximum of 512 unique undirected BGE pairs per
-invocation. Deterministic identity and exact/structural exclusions happen before
-the union. Both directions are scored, so the directional inference count is at
-most twice the unique-pair count. If the unique pool exceeds 512, refuse model
-inference before model loading and emit explicit `BGE_UNAVAILABLE`/overflow
-evidence while retaining the E5-only path. The 512-pair bound is independent of
-the model's 512-token input limit. When the bounded top-K/E5 intersection is at
-or below 512 but does not cover every E5 raw pair, the uncovered pairs are
-`BGE_UNSCORED` and remain blocking. Overflow is different: it refuses the
-entire invocation and does not partially score the first 512 pairs.
+This outcome was the original fixed-cap contract. It is superseded by ADR-063:
+the endpoint union and deterministic exclusions remain, but a configurable
+positive budget selects an E5-ranked prefix instead of refusing the entire
+invocation when the union is larger than the budget.
 
 ### Consequences
 
@@ -2551,7 +2545,8 @@ entire invocation and does not partially score the first 512 pairs.
 
 Fixtures prove exact 512-pair acceptance, 513-pair refusal before model loading,
 stable tie ordering, unique-pair/directional counts, and same-file identity
-eligibility.
+eligibility for this superseded decision. ADR-063 replaces refusal with
+configurable E5-ranked prefix selection.
 
 ### Pros and Cons of the Options
 
@@ -2735,7 +2730,8 @@ shipping that admission behavior.
 
 Choose option 3. `evaluate_bge_admission.py --enforce` may write
 `givn/.spec-bge-admission.json` only for a report carrying the
-`rust-production-v1` pipeline marker and passing every acceptance criterion.
+`rust-production-v2` pipeline marker, a `max_unique_pairs` value matching the
+active pair-budget setting, and every acceptance criterion passing.
 The runtime accepts that artifact before local/default BGE participation. A
 missing or failed artifact leaves the E5-only contract unchanged. The test-only
 `GIVN_SPEC_BGE=stub` backend bypasses approval because it is not product model
@@ -2840,8 +2836,8 @@ directions with the local multilingual NLI model, emits directional and
 symmetrically aggregated probabilities, and uses the fixed inclusive symmetric
 entailment point `0.5000` only for `NLI_RECOMMENDED` versus `NLI_FILTERED`
 evidence. The E5 raw set remains visible. NLI is independently selectable,
-bounded to the existing top-K/512-pair pipeline, and unavailable or unscored
-pairs retain the normal E5 blocking semantics. BGE and NLI admissions are
+bounded by the active `GIVN_SPEC_MAX_RERANK_PAIRS` E5-ranked prefix, and
+unavailable or unscored pairs retain the normal E5 blocking semantics. BGE and NLI admissions are
 combined by intersection; neither status is a Givn classification.
 
 ### Consequences
@@ -3324,3 +3320,120 @@ Related decisions: ADR-059 (complete semantic serialization and hash boundary),
 ADR-060 (token budgets), and ADR-061 (independent second-stage pool). Related
 risks: R-66, R-72, and the compact-passage similarity risk recorded for this
 change. Related chapters: 1, 2, 3, 4, 5, 6, 8, 10, 11, and 12.
+
+---
+
+## ADR-063: Use a configurable E5-ranked budget for second-stage inference
+
+---
+status: accepted
+date: 2026-08-21
+decision-makers: givn maintainers
+consulted: semantic-reranker-budget proposal, feature, design, and real-model runtime analysis
+informed: maintainers operating BGE/NLI semantic audits and benchmark tooling
+---
+
+### Context and Problem Statement
+
+The original ADR-053 refusal at more than 512 unique BGE pairs left the current
+permanent corpus with no BGE or NLI evidence at all. The current corpus produces
+1311 E5 semantic candidates, while the BGE endpoint-neighbour union contains
+803 pairs. A capacity guard is still required for local CPU inference, but an
+all-or-nothing refusal wastes the highest-confidence E5 evidence.
+
+### Decision Drivers
+
+- Preserve a bounded and predictable local model workload.
+- Prefer the highest E5-scoring candidates when the workload exceeds the budget.
+- Keep omitted candidates visible and distinguish them from model-filtered pairs.
+- Apply the same operational rule independently to BGE and NLI.
+- Keep the separate 512-token model-input safety boundary unchanged.
+- Make the operating budget auditable and bind BGE approval to it.
+
+### Considered Options
+
+1. Keep a fixed 512-pair refusal for every oversized pool.
+2. Remove the pair-count guard and score every eligible candidate.
+3. Use a configurable positive pair budget and score its deterministic E5-ranked
+   prefix, retaining the remainder as unscored evidence.
+
+### Decision Outcome
+
+Choose option 3. `GIVN_SPEC_MAX_RERANK_PAIRS` is the shared runtime setting. An
+unset value defaults to `2048`; explicit empty, zero, negative, malformed,
+overflowing, or non-UTF-8 values fail before second-stage inference. Each
+surface retains its existing eligibility rules, sorts eligible pairs by E5
+score descending with endpoint tuple tie-breakers, and sends at most the
+configured prefix to BGE and independently to NLI.
+
+Pairs after the prefix are `BGE_UNSCORED` or `NLI_UNSCORED`. They remain visible
+and blocking where the existing review contract requires it, and they are not
+included in filtered collections. Selected pairs still undergo the actual
+consumer-tokenizer preflight: exactly 512 pair tokens fit, 513 receives the
+corresponding token-cap evidence, and an all-over-cap selected set remains a
+run-level `*_UNAVAILABLE` token-cap state.
+
+The BGE production attestation uses `rust-production-v2` and includes the active
+budget in its descriptor fingerprint. A benchmark approval is valid only for
+the same active budget and candidate pipeline; a mismatch cannot silently
+authorize another operating point.
+
+### Consequences
+
+#### Good
+
+- Good, because the highest E5 evidence is processed first instead of losing
+  the entire second stage at an arbitrary pool boundary.
+- Good, because the default of 2048 covers the current 803-pair BGE union and
+  1311-pair NLI pool while remaining an explicit operational setting.
+- Good, because the unscored tail preserves auditability and is not confused
+  with a negative BGE/NLI judgment.
+- Good, because BGE and NLI remain independent and their combined result is
+  still an intersection of independent recommendations.
+
+#### Bad
+
+- Bad, because a corpus larger than the configured budget still has a recall
+  tail that receives no second-stage evidence; the budget is not a recall
+  guarantee.
+- Bad, because increasing the budget increases local CPU time and memory use;
+  the runtime fields and benchmark reports must be inspected before raising it.
+- Bad, because changing the active budget invalidates the BGE parity fingerprint
+  and requires a matching benchmark/approval artifact.
+
+### Confirmation
+
+Executable scenarios verify the 2048 default, E5-descending prefix selection,
+explicit unscored tails, independent BGE/NLI selection, invalid settings, and
+the absence of pair-cap refusal. Real-model duplicate-audit runs record the
+active budget, selected pair counts, directional calls, and elapsed runtime.
+Existing 512/513 tokenizer-cap scenarios remain unchanged.
+
+### Pros and Cons of the Options
+
+#### Fixed refusal
+
+- Good, because the maximum workload is simple to reason about.
+- Bad, because one oversized candidate pool removes all second-stage evidence,
+  including the highest E5 candidates.
+
+#### Uncapped inference
+
+- Good, because no E5 candidate is omitted for operational reasons.
+- Bad, because local CPU cost grows with the corpus and can become quadratic or
+  operationally unusable.
+
+#### Configurable ordered prefix
+
+- Good, because it combines a measurable workload bound with confidence-first
+  evidence selection and an explicit tail.
+- Bad, because omitted lower-ranked candidates need later work or a higher
+  setting, and the setting must be included in approval provenance.
+
+### More Information
+
+Related decisions: ADR-052 (BGE admission), ADR-053 (superseded refusal),
+ADR-058 (independent NLI evidence), ADR-060 (token budgets), ADR-061
+(independent second-stage pool), and ADR-062 (compact serialization). Related
+risks: R-50, R-52, R-55, R-59, R-61, R-62, R-64, R-74, and R-75. Related
+chapters: 1, 2, 3, 4, 5, 6, 8, 10, 11, and 12.

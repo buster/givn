@@ -174,8 +174,9 @@ identity and is available only with the stub embedder.
 The BGE layer is compiled only by `cross-encoder-reranker`, independently of
 `spec-similarity-gate`. A shared pool builder performs deterministic identity
 exclusions, stable E5 tie ordering, top-five selection, canonical pair union,
-and the 512-unique-pair refusal before loading the local BGE model. A pair is
-scored in both directions and receives a symmetric raw-logit evidence record.
+and the positive `GIVN_SPEC_MAX_RERANK_PAIRS` ordered-prefix budget before
+loading the local BGE model. A pair is scored in both directions and receives
+a symmetric raw-logit evidence record.
 Before construction or inference, the actual BGE tokenizer also preflights each
 complete left/right pair without truncation or padding and counts pair special
 tokens. Exactly 512 pair tokens fit; 513 receives `BGE_TOKEN_CAP` evidence with
@@ -184,11 +185,13 @@ candidates, `BGE_RECOMMENDED`, `BGE_FILTERED`, `BGE_UNSCORED`, and
 `BGE_TOKEN_CAP` evidence. Pairs outside the successful bounded subset receive
 `BGE_UNSCORED`; over-cap pairs inside the subset receive `BGE_TOKEN_CAP`.
 Both remain visible and blocking, while filtered evidence is non-blocking and
-never becomes a Givn classification. If no pair can be scored because all
-selected pairs exceed the token budget, the run is `BGE_UNAVAILABLE` with
-reason `token-cap` and every affected candidate retains its cap evidence.
-Artifact refusal and pair-union overflow retain their existing unavailable
-fallback without claiming BGE participation.
+never becomes a Givn classification. Candidates after the configured E5-ranked
+prefix are `BGE_UNSCORED` and remain blocking. If no selected pair can be scored
+because all selected pairs exceed the token budget, the run is
+`BGE_UNAVAILABLE` with reason `token-cap` and every affected candidate retains
+its cap evidence. Artifact refusal retains its existing unavailable fallback
+without claiming BGE participation; pair-count overflow alone is no longer an
+unavailable state.
 
 The benchmark label artifact and comparison report are repository-owned
 evidence. Their metrics cover top-K recall, admission precision/recall,
@@ -206,9 +209,10 @@ entailment probability of `0.5000` admits `NLI_RECOMMENDED`; lower values are
 while E5 raw candidates remain available for audit and fallback.
 
 NLI is applied to permanent exploration, current-change exploration, advisory
-review, blocking semantic review, and the permanent duplicate audit. A local
-artifact preflight or pair-cap refusal produces `NLI_UNAVAILABLE`, keeps raw
-E5 candidates blocking, and records zero model-load attempts. Before NLI model
+review, blocking semantic review, and the permanent duplicate audit. It applies
+the same positive ordered E5 budget independently of BGE. A local artifact
+preflight produces `NLI_UNAVAILABLE`, keeps raw E5 candidates blocking, and
+records zero model-load attempts. Before NLI model
 construction or inference, its actual tokenizer independently preflights the
 same E5 candidate pool using untruncated/unpadded pair encodings with pair
 special tokens. A 513-token pair receives `NLI_TOKEN_CAP`, null probabilities,

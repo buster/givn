@@ -65,7 +65,7 @@ fn write_approval_benchmark(world: &mut GivnWorld) {
             "intra_op_threads": 4,
             "inter_op_threads": 1,
             "batch_size": 32,
-            "max_unique_pairs": 512
+            "max_unique_pairs": 2048
         },
         "bge_artifacts": artifacts,
         "scenarios": [
@@ -719,8 +719,7 @@ fn run_directional_duplicate_audit(world: &mut GivnWorld) {
     if let Some(pool) = world.retrieval_bge_test_pool.as_deref() {
         environments.push(("GIVN_SPEC_BGE_TEST_POOL", pool));
     }
-    let json = world.retrieval_bge_test_pool.as_deref() != Some("overflow-513")
-        && world.retrieval_bge_test_pool.as_deref() != Some("bounded-512");
+    let json = world.retrieval_bge_test_pool.as_deref() != Some("bounded-512");
     let args = if json {
         vec!["spec", "duplicates", "--format", "json"]
     } else {
@@ -1149,14 +1148,6 @@ fn unavailable_change_retains_candidates(world: &mut GivnWorld) {
     assert!(output.contains("scope current-change"));
 }
 
-#[given(
-    "an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool"
-)]
-fn pair_cap_blocking_project(world: &mut GivnWorld) {
-    filtered_blocking_project(world);
-    world.retrieval_bge_test_pool = Some("overflow-513".to_string());
-}
-
 #[when(
     "the end-to-end user runs blocking change review for \"running-change\" through the givn CLI"
 )]
@@ -1222,11 +1213,6 @@ fn unavailable_report_status(world: &mut GivnWorld) {
 #[then("the semantic review report has BGE reason \"missing-artifact\"")]
 fn unavailable_report_reason(world: &mut GivnWorld) {
     assert!(semantic_report_text(world).contains("BGE reason: missing-artifact"));
-}
-
-#[then("the semantic review report has BGE reason \"pair-cap\"")]
-fn pair_cap_report_reason(world: &mut GivnWorld) {
-    assert!(semantic_report_text(world).contains("BGE reason: pair-cap"));
 }
 
 #[then(
@@ -1653,60 +1639,10 @@ fn same_file_exact_only(world: &mut GivnWorld) {
     assert!(output.contains("Same-file neighbor"));
 }
 
-#[given("a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs")]
-fn overflow_pool_project(world: &mut GivnWorld) {
-    directional_bge_project(world);
-    world.retrieval_bge_test_pool = Some("overflow-513".to_string());
-}
-
 #[given("a project whose deterministic E5 neighbour union contains exactly 512 eligible pairs")]
 fn bounded_pool_project(world: &mut GivnWorld) {
     directional_bge_project(world);
     world.retrieval_bge_test_pool = Some("bounded-512".to_string());
-}
-
-#[then("the command reports the bounded-pool overflow and the unavailable BGE status")]
-fn overflow_reports_unavailable(world: &mut GivnWorld) {
-    let output = super::stdout(world);
-    assert!(output.contains("BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs"));
-    assert!(output.contains("BGE status: BGE_UNAVAILABLE"));
-}
-
-#[then("the output reports BGE unavailable reason \"pair-cap\"")]
-fn overflow_reports_pair_cap(world: &mut GivnWorld) {
-    assert!(super::stdout(world).contains("reason pair-cap"));
-}
-
-#[then(
-    "the output reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts"
-)]
-fn overflow_reports_zero_counts(world: &mut GivnWorld) {
-    let output = super::stdout(world);
-    assert!(output.contains("BGE unique pair count: 0"));
-    assert!(output.contains("BGE directional call count: 0"));
-    assert!(output.contains("BGE recommended count: 0"));
-    assert!(output.contains("BGE filtered count: 0"));
-    assert!(output.contains("BGE model load attempts: 0"));
-}
-
-#[then("the output reports all E5 raw pairs as unscored")]
-fn overflow_reports_all_unscored(world: &mut GivnWorld) {
-    assert!(super::stdout(world).contains("BGE unscored count: 513"));
-}
-
-#[then("the output identifies the E5-only unavailable fallback")]
-fn overflow_reports_e5_fallback(world: &mut GivnWorld) {
-    assert!(super::stdout(world).contains("BGE fallback: E5-only unavailable fallback"));
-}
-
-#[then("the output reports zero BGE model load attempts")]
-fn overflow_reports_no_model_load(world: &mut GivnWorld) {
-    assert!(super::stdout(world).contains("BGE model load attempts: 0"));
-}
-
-#[then("no output claims that BGE participated")]
-fn overflow_has_no_participation_claim(world: &mut GivnWorld) {
-    assert!(!super::stdout(world).contains("BGE model: rozgo/bge-reranker-v2-m3"));
 }
 
 #[then("the audit reports 512 unique pairs and 1024 directional calls")]
