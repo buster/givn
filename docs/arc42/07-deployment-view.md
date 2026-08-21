@@ -79,10 +79,10 @@ When retrieval is enabled, `givn/.spec-index.json`, the embedding model cache,
 and the separate `givn/.spec-reranker-cache/` and
 `givn/.spec-nli-cache/` directories are project-local and generated.
 The `cross-encoder-reranker` build loads BGE only after deterministic top-K
-selection and refuses before model loading when the 512-unique-pair bound is
-exceeded. Tests use `stub` or explicit missing-artifact modes and never download
-weights. A missing or failed approval artifact falls back to E5-only, distinct
-from a runtime `BGE_UNAVAILABLE` artifact result. Interactive search and review
+selection and the configured positive `GIVN_SPEC_MAX_RERANK_PAIRS` prefix
+(default 2048). Tests use `stub` or explicit missing-artifact modes and never
+download weights. A missing or failed approval artifact falls back to E5-only,
+distinct from a runtime `BGE_UNAVAILABLE` artifact result. Interactive search and review
 remain advisory; only admitted BGE
 evidence enters the recommended worklist, while filtered/unavailable states are
 visible and non-blocking. These artifacts are not present in the default

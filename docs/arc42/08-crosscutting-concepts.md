@@ -320,35 +320,37 @@ classification worklist and `BGE_FILTERED` is retained as non-blocking evidence.
 Neither status is `MERGE`, `KEEP-AS-BOUNDARY`, or another Givn classification.
 
 Deterministic exclusions happen before BGE, same-file identities remain eligible
-unless the exact endpoint is excluded, and no invocation scores more than 512
-unique undirected pairs. A missing or failed admission approval keeps the
-E5-only contract with no BGE evidence object. A missing model or pool overflow
-emits explicit `BGE_UNAVAILABLE` evidence and preserves the E5-only blocking semantics. The
-model identity, directional scores, symmetric score, admission status, and
+unless the exact endpoint is excluded, and the positive
+`GIVN_SPEC_MAX_RERANK_PAIRS` setting (default `2048`) limits the selected E5
+prefix. Candidates are sorted by E5 score descending with deterministic endpoint
+tie-breakers. A missing or failed admission approval keeps the E5-only contract
+with no BGE evidence object. A missing model emits explicit `BGE_UNAVAILABLE`
+evidence and preserves the E5-only blocking semantics. Candidates after the
+selected prefix are `BGE_UNSCORED`, not filtered. The model identity,
+directional scores, symmetric score, admission status, active budget, and
 elapsed runtime are rendered without allowing BGE to edit specs or verify
 remediation.
 
 Local production BGE is loaded with FastEmbed's user-defined offline API only
 after validating the ONNX, tokenizer, config, special-token, and external-data
 files. The benchmark harness records `python-reference-v1` and cannot approve
-the Rust product until a parity export supplies `rust-production-v1`. Runtime
-has no hidden wall-clock cutoff; the bounded pair count and explicit artifact
-preflight are the refusal controls.
+the Rust product until a parity export supplies `rust-production-v2`. Runtime
+has no hidden wall-clock cutoff; the configured pair budget and explicit
+artifact preflight are the workload controls.
 
-When the bounded union covers only part of the E5 raw worklist, uncovered pairs
-are marked `BGE_UNSCORED` inside the normal blocking candidate grammar. They
-remain blocking because BGE did not score them; only `BGE_FILTERED` is
-non-blocking. This partial state is valid only when the selected bounded union
-is at or below 512 pairs; an overflow refuses the complete BGE invocation and
-uses `BGE_UNAVAILABLE` with all raw pairs unscored.
+When the configured prefix covers only part of the E5 raw worklist, uncovered
+pairs are marked `BGE_UNSCORED` inside the normal blocking candidate grammar.
+They remain blocking because BGE did not score them; only `BGE_FILTERED` is
+non-blocking. A raw pool larger than the configured budget produces a partial
+enabled run rather than a pair-cap refusal.
 The actual BGE tokenizer independently preflights each selected complete pair
 without truncation or padding and includes pair special tokens. Exactly 512
 fits and 513 receives `BGE_TOKEN_CAP` with exact left/right/pair/limit counts
 and a null score. A partial token-cap run remains `BGE_ENABLED`; only an
 all-over-cap run is `BGE_UNAVAILABLE` with reason `token-cap`, while every
 affected candidate retains visible, unresolved, non-filtered, blocking cap
-evidence. The 512-pair operational bound and the 512-token model-input limit
-are separate controls.
+ evidence. The configurable pair budget and the 512-token model-input limit
+ are separate controls.
 
 The default binary remains independent of ONNX Runtime. Without the retrieval
 feature, ordinary check and archive behavior is unchanged and direct retrieval
@@ -369,7 +371,9 @@ does not create `semantic-review.md`. NLI is independently selected through the
 ### 8.5a.1 NLI evidence and combined admission
 
 The independent `nli-evidence` feature consumes the same deterministic E5
-top-five union as BGE and never expands it. It preflights the local NLI model,
+candidate pool as BGE and never consumes only BGE survivors. The positive
+`GIVN_SPEC_MAX_RERANK_PAIRS` setting (default `2048`) selects the highest
+E5-scoring prefix before token preflight. It preflights the local NLI model,
 scores both ordered directions, softmaxes each direction, and softmaxes the
 mean logits for the symmetric summary. Label indices are resolved by the
 configured `entailment`, `neutral`, and `contradiction` names rather than by a
@@ -380,9 +384,10 @@ The inclusive symmetric entailment operating point is `0.5000`:
 non-blocking evidence. When BGE and NLI are both selected, the recommended
 worklist is the intersection of both statuses. A model that is disabled emits
 no evidence; a model that is unavailable emits `NLI_UNAVAILABLE` with raw E5
-fallback and does not silently filter. A successful partial bounded run marks
-outside pairs `NLI_UNSCORED`, which remain blocking. An overflow refuses before
-model loading.
+fallback and does not silently filter. A successful partial run marks
+candidates outside the configured prefix `NLI_UNSCORED`, which remain blocking.
+A raw pool larger than the setting does not refuse before model loading; it only
+limits the selected prefix.
 The actual NLI tokenizer also preflights every selected complete pair without
 truncation or padding and includes pair special tokens. Exactly 512 fits and
 513 receives `NLI_TOKEN_CAP` with exact left/right/pair/limit counts and null

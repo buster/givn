@@ -40,9 +40,11 @@ const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
 const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-const BGE_PIPELINE_VERSION: &str = "rust-production-v1";
+const BGE_PIPELINE_VERSION: &str = "rust-production-v2";
 #[cfg(feature = "spec-retrieval")]
-const BGE_MAX_PAIRS: usize = 512;
+const DEFAULT_MAX_RERANK_PAIRS: usize = 2048;
+#[cfg(feature = "spec-retrieval")]
+const MAX_RERANK_PAIRS_ENV: &str = "GIVN_SPEC_MAX_RERANK_PAIRS";
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
@@ -55,8 +57,6 @@ const NLI_STUB_SELECTOR: &str = "nli-stub";
 const NLI_REPORT_LIMIT: usize = 20;
 #[cfg(feature = "nli-evidence")]
 const NLI_ADMISSION_THRESHOLD: f32 = 0.5;
-#[cfg(feature = "nli-evidence")]
-const NLI_MAX_PAIRS: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_NLI_REPORT_SCHEMA_VERSION: u32 = 3;
 #[cfg(feature = "spec-retrieval")]
@@ -80,6 +80,24 @@ const E5_TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenario, then rerun r
 #[cfg(feature = "spec-retrieval")]
 const DUPLICATE_E5_TOKEN_CAP_GUIDANCE: &str =
     "shorten or split the scenario, then rerun the duplicate audit";
+
+#[cfg(feature = "spec-retrieval")]
+fn max_rerank_pairs() -> Result<usize> {
+    let Some(raw) = std::env::var_os(MAX_RERANK_PAIRS_ENV) else {
+        return Ok(DEFAULT_MAX_RERANK_PAIRS);
+    };
+    let raw = raw
+        .into_string()
+        .map_err(|_| anyhow::anyhow!("{MAX_RERANK_PAIRS_ENV} is not valid UTF-8"))?;
+    let value = raw.parse::<usize>().with_context(|| {
+        format!("{MAX_RERANK_PAIRS_ENV} must be a positive decimal integer, got `{raw}`")
+    })?;
+    anyhow::ensure!(
+        value > 0,
+        "{MAX_RERANK_PAIRS_ENV} must be greater than zero"
+    );
+    Ok(value)
+}
 
 #[cfg(feature = "spec-retrieval")]
 fn expose_e5_cap_contract(caps: &[E5TokenCap]) -> bool {
@@ -264,6 +282,7 @@ struct ExploreNliEvidenceOutput {
     reason: Option<&'static str>,
     candidate_generator: &'static str,
     top_k: usize,
+    max_unique_pairs: usize,
     e5_candidates: usize,
     recommended_candidates: usize,
     nli_filtered_candidates: usize,
@@ -284,6 +303,7 @@ struct ExploreEvidenceOutput {
     reason: Option<&'static str>,
     candidate_generator: &'static str,
     top_k: usize,
+    max_unique_pairs: usize,
     e5_candidates: usize,
     recommended_candidates: usize,
     bge_filtered_candidates: usize,
@@ -608,6 +628,7 @@ struct DuplicateJsonRun {
     reason: Option<&'static str>,
     model: Option<&'static str>,
     top_k: usize,
+    max_unique_pairs: usize,
     e5_candidates: usize,
     unique_pairs: usize,
     directional_calls: usize,
@@ -625,6 +646,7 @@ struct DuplicateJsonNliRun {
     reason: Option<&'static str>,
     model: Option<&'static str>,
     top_k: usize,
+    max_unique_pairs: usize,
     e5_candidates: usize,
     unique_pairs: usize,
     directional_calls: usize,
@@ -657,7 +679,6 @@ struct NliEvidence {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum NliUnavailableReason {
     MissingArtifact,
-    PairCap,
     TokenCap,
 }
 
@@ -666,7 +687,6 @@ impl NliUnavailableReason {
     fn as_str(self) -> &'static str {
         match self {
             Self::MissingArtifact => "missing-artifact",
-            Self::PairCap => "pair-cap",
             Self::TokenCap => "token-cap",
         }
     }
@@ -681,6 +701,7 @@ struct NliRun {
     token_caps: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), PairTokenBudget>,
     e5_candidates: usize,
     unscored: usize,
+    max_unique_pairs: usize,
     model_load_attempts: usize,
     runtime_ms: Option<u128>,
 }
@@ -690,6 +711,7 @@ impl NliRun {
     fn enabled(
         evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), NliEvidence>,
         e5_candidates: usize,
+        max_unique_pairs: usize,
         runtime_ms: u128,
     ) -> Self {
         Self {
@@ -700,11 +722,16 @@ impl NliRun {
             token_caps: BTreeMap::new(),
             e5_candidates,
             model_load_attempts: 1,
+            max_unique_pairs,
             runtime_ms: Some(runtime_ms),
         }
     }
 
-    fn unavailable(reason: NliUnavailableReason, e5_candidates: usize) -> Self {
+    fn unavailable(
+        reason: NliUnavailableReason,
+        e5_candidates: usize,
+        max_unique_pairs: usize,
+    ) -> Self {
         Self {
             status: "NLI_UNAVAILABLE",
             reason: Some(reason),
@@ -712,6 +739,7 @@ impl NliRun {
             token_caps: BTreeMap::new(),
             e5_candidates,
             unscored: e5_candidates,
+            max_unique_pairs,
             model_load_attempts: 0,
             runtime_ms: None,
         }
@@ -737,7 +765,6 @@ enum BgeBackendKind {
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum BgeUnavailableReason {
     MissingArtifact,
-    PairCap,
     TokenCap,
 }
 
@@ -746,7 +773,6 @@ impl BgeUnavailableReason {
     fn as_str(self) -> &'static str {
         match self {
             Self::MissingArtifact => "missing-artifact",
-            Self::PairCap => "pair-cap",
             Self::TokenCap => "token-cap",
         }
     }
@@ -773,6 +799,7 @@ struct PairTokenBudget {
 #[derive(Debug, Clone, Copy)]
 enum TokenBudgetModel {
     Bge,
+    #[cfg(feature = "nli-evidence")]
     Nli,
 }
 
@@ -792,6 +819,7 @@ struct BgeRun {
     token_caps: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), PairTokenBudget>,
     e5_candidates: usize,
     unscored: usize,
+    max_unique_pairs: usize,
     model_load_attempts: usize,
     runtime_ms: Option<u128>,
 }
@@ -801,6 +829,7 @@ impl BgeRun {
     fn enabled(
         evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), BgePairEvidence>,
         e5_candidates: usize,
+        max_unique_pairs: usize,
         runtime_ms: u128,
     ) -> Self {
         Self {
@@ -811,11 +840,16 @@ impl BgeRun {
             token_caps: BTreeMap::new(),
             e5_candidates,
             model_load_attempts: 1,
+            max_unique_pairs,
             runtime_ms: Some(runtime_ms),
         }
     }
 
-    fn unavailable(reason: BgeUnavailableReason, e5_candidates: usize) -> Self {
+    fn unavailable(
+        reason: BgeUnavailableReason,
+        e5_candidates: usize,
+        max_unique_pairs: usize,
+    ) -> Self {
         Self {
             status: "BGE_UNAVAILABLE",
             reason: Some(reason),
@@ -823,6 +857,7 @@ impl BgeRun {
             token_caps: BTreeMap::new(),
             e5_candidates,
             unscored: e5_candidates,
+            max_unique_pairs,
             model_load_attempts: 0,
             runtime_ms: None,
         }
@@ -936,7 +971,8 @@ pub fn bge_parity(root: &Path) -> Result<()> {
     #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
     {
         let _ = root;
-        let descriptor = bge_pipeline_descriptor();
+        let max_unique_pairs = max_rerank_pairs()?;
+        let descriptor = bge_pipeline_descriptor(max_unique_pairs);
         let document = serde_json::json!({
             "schema_version": 1,
             "source": "givn spec bge-parity",
@@ -945,7 +981,7 @@ pub fn bge_parity(root: &Path) -> Result<()> {
             "descriptor": descriptor,
             "top_k": RERANKER_TOP_K,
             "threshold": RERANKER_LOGIT_THRESHOLD,
-            "max_unique_pairs": BGE_MAX_PAIRS,
+            "max_unique_pairs": max_unique_pairs,
         });
         println!("{}", serde_json::to_string_pretty(&document)?);
         return Ok(());
@@ -1040,6 +1076,7 @@ fn apply_duplicate_bge(
     scenarios: &[DuplicateScenario],
     mut candidates: Vec<DuplicateCandidate>,
 ) -> Result<DuplicateAudit> {
+    let max_unique_pairs = max_rerank_pairs()?;
     let semantic: Vec<DuplicateCandidate> = candidates
         .iter()
         .filter(|candidate| candidate.kind == "semantic_candidate")
@@ -1077,36 +1114,13 @@ fn apply_duplicate_bge(
     };
 
     if let Some((bounded_count, raw_count)) = bge_test_pool()? {
-        if bounded_count > BGE_MAX_PAIRS {
-            for candidate in &mut candidates {
-                if candidate.kind == "semantic_candidate" {
-                    candidate.bge_admission = Some("BGE_UNSCORED");
-                }
-            }
-            return Ok(DuplicateAudit {
-                candidates,
-                e5_token_caps: Vec::new(),
-                filtered_candidates: Vec::new(),
-                unscored_candidates: semantic,
-                bge_run: Some(BgeRun::unavailable(
-                    BgeUnavailableReason::PairCap,
-                    raw_count,
-                )),
-                #[cfg(feature = "nli-evidence")]
-                nli_filtered_candidates: Vec::new(),
-                #[cfg(feature = "nli-evidence")]
-                nli_unscored_candidates: Vec::new(),
-                #[cfg(feature = "nli-evidence")]
-                nli_run: None,
-            });
-        }
-        let (pairs, texts) = synthetic_bge_pairs(bounded_count);
+        let (pairs, texts) = synthetic_bge_pairs(bounded_count.min(max_unique_pairs));
         let mut run = match backend {
-            Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)?,
-            Err(reason) => BgeRun::unavailable(reason, raw_count),
+            Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind, max_unique_pairs)?,
+            Err(reason) => BgeRun::unavailable(reason, raw_count, max_unique_pairs),
         };
         run.e5_candidates = raw_count;
-        run.unscored = raw_count.saturating_sub(bounded_count);
+        run.unscored = raw_count.saturating_sub(pairs.len());
         let mut unscored = Vec::new();
         if run.unscored > 0 {
             if let Some(template) = semantic.first() {
@@ -1153,27 +1167,14 @@ fn apply_duplicate_bge(
         }
     }
 
-    if selected.len() > BGE_MAX_PAIRS {
-        let run = BgeRun::unavailable(BgeUnavailableReason::PairCap, semantic.len());
-        for candidate in &mut candidates {
-            if candidate.kind == "semantic_candidate" {
-                candidate.bge_admission = Some("BGE_UNSCORED");
-            }
-        }
-        return Ok(DuplicateAudit {
-            candidates,
-            e5_token_caps: Vec::new(),
-            filtered_candidates: Vec::new(),
-            unscored_candidates: semantic,
-            bge_run: Some(run),
-            #[cfg(feature = "nli-evidence")]
-            nli_filtered_candidates: Vec::new(),
-            #[cfg(feature = "nli-evidence")]
-            nli_unscored_candidates: Vec::new(),
-            #[cfg(feature = "nli-evidence")]
-            nli_run: None,
-        });
-    }
+    let mut selected_candidates: Vec<&DuplicateCandidate> = semantic
+        .iter()
+        .filter(|candidate| {
+            selected.contains(&duplicate_pair_key(&candidate.left, &candidate.right))
+        })
+        .collect();
+    selected_candidates.sort_by(|left, right| duplicate_candidate_order(left, right));
+    selected_candidates.truncate(max_unique_pairs);
 
     let texts: BTreeMap<(String, String), String> = scenarios
         .iter()
@@ -1187,12 +1188,12 @@ fn apply_duplicate_bge(
             )
         })
         .collect();
-    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected_candidates
         .iter()
-        .map(|((left_file, left_title), (right_file, right_title))| {
+        .map(|candidate| {
             (
-                endpoint(left_file, left_title),
-                endpoint(right_file, right_title),
+                endpoint(&candidate.left.file, &candidate.left.title),
+                endpoint(&candidate.right.file, &candidate.right.title),
             )
         })
         .collect();
@@ -1210,10 +1211,14 @@ fn apply_duplicate_bge(
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
     let mut run = match backend {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-            BgeRun::unavailable(BgeUnavailableReason::TokenCap, semantic.len())
+            BgeRun::unavailable(
+                BgeUnavailableReason::TokenCap,
+                semantic.len(),
+                max_unique_pairs,
+            )
         }
-        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)?,
-        Err(reason) => BgeRun::unavailable(reason, semantic.len()),
+        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind, max_unique_pairs)?,
+        Err(reason) => BgeRun::unavailable(reason, semantic.len(), max_unique_pairs),
     };
     run.e5_candidates = semantic.len();
     run.unscored = semantic.len().saturating_sub(run.evidence.len());
@@ -1276,6 +1281,7 @@ fn apply_duplicate_nli(
     scenarios: &[DuplicateScenario],
     mut audit: DuplicateAudit,
 ) -> Result<DuplicateAudit> {
+    let max_unique_pairs = max_rerank_pairs()?;
     let semantic: Vec<DuplicateCandidate> = audit
         .candidates
         .iter()
@@ -1301,7 +1307,10 @@ fn apply_duplicate_nli(
                 )
             })
             .collect();
-        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = semantic
+        let mut selected = semantic.clone();
+        selected.sort_by(duplicate_candidate_order);
+        selected.truncate(max_unique_pairs);
+        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected
             .iter()
             .map(|candidate| {
                 (
@@ -1310,19 +1319,6 @@ fn apply_duplicate_nli(
                 )
             })
             .collect();
-        if pairs.len() > NLI_MAX_PAIRS {
-            for candidate in &mut audit.candidates {
-                if candidate.kind == "semantic_candidate" {
-                    candidate.nli_admission = Some("NLI_UNSCORED");
-                }
-            }
-            audit.nli_unscored_candidates = semantic;
-            audit.nli_run = Some(NliRun::unavailable(
-                NliUnavailableReason::PairCap,
-                audit.nli_unscored_candidates.len(),
-            ));
-            return Ok(audit);
-        }
         let tokenizer = match selection {
             Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
                 &preflight_nli_artifacts(root)?.join("tokenizer.json"),
@@ -1333,10 +1329,16 @@ fn apply_duplicate_nli(
             preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
         let mut run = match selection {
             Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-                NliRun::unavailable(NliUnavailableReason::TokenCap, semantic.len())
+                NliRun::unavailable(
+                    NliUnavailableReason::TokenCap,
+                    semantic.len(),
+                    max_unique_pairs,
+                )
             }
-            Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
-            Err(reason) => NliRun::unavailable(reason, semantic.len()),
+            Ok(backend) => {
+                score_nli_pairs(root, &partition.fitting, &texts, backend, max_unique_pairs)?
+            }
+            Err(reason) => NliRun::unavailable(reason, semantic.len(), max_unique_pairs),
         };
         run.e5_candidates = semantic.len();
         run.unscored = semantic.len().saturating_sub(run.evidence.len());
@@ -1382,26 +1384,13 @@ fn apply_duplicate_nli(
         audit.nli_run = Some(run);
         return Ok(audit);
     };
-    if bounded_count > NLI_MAX_PAIRS {
-        for candidate in &mut audit.candidates {
-            if candidate.kind == "semantic_candidate" {
-                candidate.nli_admission = Some("NLI_UNSCORED");
-            }
-        }
-        audit.nli_unscored_candidates = semantic;
-        audit.nli_run = Some(NliRun::unavailable(
-            NliUnavailableReason::PairCap,
-            raw_count,
-        ));
-        return Ok(audit);
-    }
-    let (pairs, texts) = synthetic_nli_pairs(bounded_count);
+    let (pairs, texts) = synthetic_nli_pairs(bounded_count.min(max_unique_pairs));
     let mut run = match selection {
-        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend)?,
-        Err(reason) => NliRun::unavailable(reason, raw_count),
+        Ok(backend) => score_nli_pairs(root, &pairs, &texts, backend, max_unique_pairs)?,
+        Err(reason) => NliRun::unavailable(reason, raw_count, max_unique_pairs),
     };
     run.e5_candidates = raw_count;
-    run.unscored = raw_count.saturating_sub(bounded_count);
+    run.unscored = raw_count.saturating_sub(pairs.len());
     if run.unscored > 0 {
         if let Some(template) = semantic.first() {
             let mut candidate = template.clone();
@@ -1476,6 +1465,7 @@ fn token_budget_fixture(model: TokenBudgetModel) -> Result<Option<String>> {
     }
     let key = match model {
         TokenBudgetModel::Bge => "GIVN_SPEC_BGE_TOKEN_BUDGET",
+        #[cfg(feature = "nli-evidence")]
         TokenBudgetModel::Nli => "GIVN_SPEC_NLI_TOKEN_BUDGET",
     };
     let value = std::env::var(key).or_else(|error| match error {
@@ -1614,13 +1604,14 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
     );
     if let Some(run) = audit.bge_run.as_ref() {
         report.push_str(&format!(
-            "BGE status: {}{}\nBGE model: {}\nBGE top_k: {}\nBGE E5 raw count: {}\nBGE recommended count: {}\nBGE filtered count: {}\nBGE unscored count: {}\nBGE unique pair count: {}\nBGE directional call count: {}\nBGE model load attempts: {}\nBGE runtime ms: {}\n",
+            "BGE status: {}{}\nBGE model: {}\nBGE top_k: {}\nBGE max unique pairs: {}\nBGE E5 raw count: {}\nBGE recommended count: {}\nBGE filtered count: {}\nBGE unscored count: {}\nBGE unique pair count: {}\nBGE directional call count: {}\nBGE model load attempts: {}\nBGE runtime ms: {}\n",
             run.status,
             run.reason
                 .map(|reason| format!(", reason {}", reason.as_str()))
                 .unwrap_or_default(),
             if run.status == "BGE_ENABLED" { RERANKER_MODEL_ID } else { "null" },
             RERANKER_TOP_K,
+            run.max_unique_pairs,
             run.e5_candidates,
             audit
                 .candidates
@@ -1635,9 +1626,6 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
             run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
         ));
         if run.status == "BGE_UNAVAILABLE" {
-            if run.reason == Some(BgeUnavailableReason::PairCap) {
-                report.push_str("BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs\n");
-            }
             if run.reason == Some(BgeUnavailableReason::TokenCap) {
                 report.push_str("BGE_UNAVAILABLE: no complete semantic pair fits 512 tokens\n");
             }
@@ -1652,13 +1640,14 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
             .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
             .count();
         report.push_str(&format!(
-            "NLI status: {}{}\nNLI model: {}\nNLI top_k: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
+            "NLI status: {}{}\nNLI model: {}\nNLI top_k: {}\nNLI max unique pairs: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
             run.status,
             run.reason
                 .map(|reason| format!(", reason {}", reason.as_str()))
                 .unwrap_or_default(),
             if run.status == "NLI_ENABLED" { NLI_MODEL_ID } else { "null" },
             RERANKER_TOP_K,
+            run.max_unique_pairs,
             run.e5_candidates,
             recommended,
             audit.nli_filtered_candidates.len(),
@@ -1670,9 +1659,6 @@ fn render_duplicate_text(scanned_scenarios: usize, audit: &DuplicateAudit) -> St
                 .map(|value| value.to_string())
                 .unwrap_or_else(|| "null".to_string()),
         ));
-        if run.reason == Some(NliUnavailableReason::PairCap) {
-            report.push_str("NLI_UNAVAILABLE: bounded candidate pool exceeds 512 pairs\n");
-        }
         if run.reason == Some(NliUnavailableReason::TokenCap) {
             report.push_str("NLI_UNAVAILABLE: no complete semantic pair fits 512 tokens\n");
         }
@@ -1768,7 +1754,10 @@ fn render_duplicate_json(scanned_scenarios: usize, audit: &DuplicateAudit) -> Re
     } else {
         DUPLICATE_REPORT_SCHEMA_VERSION
     };
+    #[cfg(feature = "nli-evidence")]
     let mut e5_candidate_count = audit.bge_run.as_ref().map(|run| run.e5_candidates);
+    #[cfg(not(feature = "nli-evidence"))]
+    let e5_candidate_count = audit.bge_run.as_ref().map(|run| run.e5_candidates);
     #[cfg(feature = "nli-evidence")]
     {
         e5_candidate_count =
@@ -1990,6 +1979,7 @@ fn duplicate_json_run(run: &BgeRun, audit: &DuplicateAudit) -> DuplicateJsonRun 
         reason: run.reason.map(BgeUnavailableReason::as_str),
         model: (run.status == "BGE_ENABLED").then_some(RERANKER_MODEL_ID),
         top_k: RERANKER_TOP_K,
+        max_unique_pairs: run.max_unique_pairs,
         e5_candidates: run.e5_candidates,
         unique_pairs: run.evidence.len(),
         directional_calls: run.evidence.len() * 2,
@@ -2013,6 +2003,7 @@ fn duplicate_json_nli_run(run: &NliRun, audit: &DuplicateAudit) -> DuplicateJson
         reason: run.reason.map(NliUnavailableReason::as_str),
         model: (run.status == "NLI_ENABLED").then_some(NLI_MODEL_ID),
         top_k: RERANKER_TOP_K,
+        max_unique_pairs: run.max_unique_pairs,
         e5_candidates: run.e5_candidates,
         unique_pairs: run.evidence.len(),
         directional_calls: run.evidence.len() * 2,
@@ -2293,6 +2284,7 @@ fn apply_semantic_bge(
     let Some(backend) = bge_backend(root)? else {
         return Ok(None);
     };
+    let max_unique_pairs = max_rerank_pairs()?;
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
@@ -2309,22 +2301,13 @@ fn apply_semantic_bge(
     let mut texts = permanent_texts;
     texts.extend(delta_texts);
     if let Some((bounded_count, raw_count)) = bge_test_pool()? {
-        if bounded_count > BGE_MAX_PAIRS {
-            for candidate in candidates {
-                candidate.bge_admission = Some("BGE_UNSCORED");
-            }
-            return Ok(Some(BgeRun::unavailable(
-                BgeUnavailableReason::PairCap,
-                raw_count,
-            )));
-        }
-        let (pairs, synthetic_texts) = synthetic_bge_pairs(bounded_count);
+        let (pairs, synthetic_texts) = synthetic_bge_pairs(bounded_count.min(max_unique_pairs));
         let mut run = match backend {
-            Ok(kind) => score_bge_pairs(root, &pairs, &synthetic_texts, kind)?,
-            Err(reason) => BgeRun::unavailable(reason, raw_count),
+            Ok(kind) => score_bge_pairs(root, &pairs, &synthetic_texts, kind, max_unique_pairs)?,
+            Err(reason) => BgeRun::unavailable(reason, raw_count, max_unique_pairs),
         };
         run.e5_candidates = raw_count;
-        run.unscored = raw_count.saturating_sub(bounded_count);
+        run.unscored = raw_count.saturating_sub(pairs.len());
         for candidate in candidates {
             candidate.bge_admission = Some(if run.unscored > 0 {
                 "BGE_UNSCORED"
@@ -2334,17 +2317,10 @@ fn apply_semantic_bge(
         }
         return Ok(Some(run));
     }
-    if candidates.len() > BGE_MAX_PAIRS {
-        let count = candidates.len();
-        for candidate in candidates {
-            candidate.bge_admission = Some("BGE_UNSCORED");
-        }
-        return Ok(Some(BgeRun::unavailable(
-            BgeUnavailableReason::PairCap,
-            count,
-        )));
-    }
-    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+    let mut selected = candidates.to_vec();
+    selected.sort_by(semantic_candidate_order);
+    selected.truncate(max_unique_pairs);
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected
         .iter()
         .map(|candidate| {
             (
@@ -2367,10 +2343,14 @@ fn apply_semantic_bge(
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
     let mut run = match backend {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-            BgeRun::unavailable(BgeUnavailableReason::TokenCap, candidates.len())
+            BgeRun::unavailable(
+                BgeUnavailableReason::TokenCap,
+                candidates.len(),
+                max_unique_pairs,
+            )
         }
-        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)?,
-        Err(reason) => BgeRun::unavailable(reason, candidates.len()),
+        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind, max_unique_pairs)?,
+        Err(reason) => BgeRun::unavailable(reason, candidates.len(), max_unique_pairs),
     };
     run.e5_candidates = candidates.len();
     run.unscored = candidates.len().saturating_sub(run.evidence.len());
@@ -2412,6 +2392,7 @@ fn apply_semantic_nli(
     let Some(selection) = nli_backend_selection(root)? else {
         return Ok(None);
     };
+    let max_unique_pairs = max_rerank_pairs()?;
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
@@ -2427,16 +2408,10 @@ fn apply_semantic_nli(
         .collect();
     let mut texts = permanent_texts;
     texts.extend(delta_texts);
-    if candidates.len() > NLI_MAX_PAIRS {
-        for candidate in &mut *candidates {
-            candidate.nli_admission = Some("NLI_UNSCORED");
-        }
-        return Ok(Some(NliRun::unavailable(
-            NliUnavailableReason::PairCap,
-            candidates.len(),
-        )));
-    }
-    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+    let mut selected = candidates.to_vec();
+    selected.sort_by(semantic_candidate_order);
+    selected.truncate(max_unique_pairs);
+    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = selected
         .iter()
         .map(|candidate| {
             (
@@ -2455,10 +2430,16 @@ fn apply_semantic_nli(
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
     let mut run = match selection {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-            NliRun::unavailable(NliUnavailableReason::TokenCap, candidates.len())
+            NliRun::unavailable(
+                NliUnavailableReason::TokenCap,
+                candidates.len(),
+                max_unique_pairs,
+            )
         }
-        Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
-        Err(reason) => NliRun::unavailable(reason, candidates.len()),
+        Ok(backend) => {
+            score_nli_pairs(root, &partition.fitting, &texts, backend, max_unique_pairs)?
+        }
+        Err(reason) => NliRun::unavailable(reason, candidates.len(), max_unique_pairs),
     };
     run.e5_candidates = candidates.len();
     run.unscored = candidates.len().saturating_sub(run.evidence.len());
@@ -3097,11 +3078,12 @@ fn render_semantic_report(
                 .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
                 .count();
             report.push_str(&format!(
-                "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
+                "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI max unique pairs: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
                 run.status,
                 run.reason.map(NliUnavailableReason::as_str).unwrap_or("null"),
                 if run.status == "NLI_ENABLED" { NLI_MODEL_ID } else { "null" },
                 RERANKER_TOP_K,
+                run.max_unique_pairs,
                 run.e5_candidates,
                 recommended,
                 filtered,
@@ -3159,11 +3141,12 @@ fn render_semantic_report(
             .filter(|candidate| candidate.bge_admission == Some("BGE_FILTERED"))
             .count();
         report.push_str(&format!(
-            "BGE status: {}\nBGE reason: {}\nBGE model: {}\nBGE top_k: {}\nBGE E5 raw count: {}\nBGE recommended count: {}\nBGE filtered count: {}\nBGE unscored count: {}\nBGE unique pair count: {}\nBGE directional call count: {}\nBGE model load attempts: {}\nBGE runtime ms: {}\n",
+            "BGE status: {}\nBGE reason: {}\nBGE model: {}\nBGE top_k: {}\nBGE max unique pairs: {}\nBGE E5 raw count: {}\nBGE recommended count: {}\nBGE filtered count: {}\nBGE unscored count: {}\nBGE unique pair count: {}\nBGE directional call count: {}\nBGE model load attempts: {}\nBGE runtime ms: {}\n",
             run.status,
             run.reason.map(BgeUnavailableReason::as_str).unwrap_or("null"),
             if run.status == "BGE_ENABLED" { RERANKER_MODEL_ID } else { "null" },
             RERANKER_TOP_K,
+            run.max_unique_pairs,
             run.e5_candidates,
             recommended,
             filtered,
@@ -3184,11 +3167,12 @@ fn render_semantic_report(
                 .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
                 .count();
             report.push_str(&format!(
-                "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
+                "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI max unique pairs: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
                 run.status,
                 run.reason.map(NliUnavailableReason::as_str).unwrap_or("null"),
                 if run.status == "NLI_ENABLED" { NLI_MODEL_ID } else { "null" },
                 RERANKER_TOP_K,
+                run.max_unique_pairs,
                 run.e5_candidates,
                 recommended,
                 filtered,
@@ -3902,6 +3886,7 @@ fn explore_evidence_output(run: &BgeRun) -> ExploreEvidenceOutput {
         reason: run.reason.map(BgeUnavailableReason::as_str),
         candidate_generator: "E5",
         top_k: RERANKER_TOP_K,
+        max_unique_pairs: run.max_unique_pairs,
         e5_candidates: run.e5_candidates,
         recommended_candidates: recommended,
         bge_filtered_candidates: run.evidence.len().saturating_sub(recommended),
@@ -3925,14 +3910,16 @@ fn bge_explore_run(
     let Some(backend) = bge_backend(root)? else {
         return Ok(None);
     };
+    let max_unique_pairs = max_rerank_pairs()?;
     let query_endpoint = explore_query_endpoint(query);
     let mut texts = BTreeMap::new();
     texts.insert(
         (query_endpoint.file.clone(), query_endpoint.title.clone()),
         query.text.clone(),
     );
-    let mut pairs = Vec::with_capacity(ranked.len());
-    for (candidate, _) in ranked {
+    let selected = ranked.iter().take(max_unique_pairs);
+    let mut pairs = Vec::with_capacity(ranked.len().min(max_unique_pairs));
+    for (candidate, _) in selected {
         let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
         texts.insert(
             (
@@ -3957,10 +3944,14 @@ fn bge_explore_run(
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
     let mut run = match backend {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-            BgeRun::unavailable(BgeUnavailableReason::TokenCap, ranked.len())
+            BgeRun::unavailable(
+                BgeUnavailableReason::TokenCap,
+                ranked.len(),
+                max_unique_pairs,
+            )
         }
-        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)?,
-        Err(reason) => BgeRun::unavailable(reason, ranked.len()),
+        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind, max_unique_pairs)?,
+        Err(reason) => BgeRun::unavailable(reason, ranked.len(), max_unique_pairs),
     };
     run.e5_candidates = ranked.len();
     run.unscored = ranked.len().saturating_sub(run.evidence.len());
@@ -3977,14 +3968,16 @@ fn nli_explore_run(
     let Some(selection) = nli_backend_selection(root)? else {
         return Ok(None);
     };
+    let max_unique_pairs = max_rerank_pairs()?;
     let query_endpoint = explore_query_endpoint(query);
     let mut texts = BTreeMap::new();
     texts.insert(
         (query_endpoint.file.clone(), query_endpoint.title.clone()),
         query.text.clone(),
     );
-    let mut pairs = Vec::with_capacity(ranked.len());
-    for (candidate, _) in ranked {
+    let selected = ranked.iter().take(max_unique_pairs);
+    let mut pairs = Vec::with_capacity(ranked.len().min(max_unique_pairs));
+    for (candidate, _) in selected {
         let candidate_endpoint = endpoint(&candidate.file, &candidate.title);
         texts.insert(
             (
@@ -3994,12 +3987,6 @@ fn nli_explore_run(
             candidate.text.clone(),
         );
         pairs.push((query_endpoint.clone(), candidate_endpoint));
-    }
-    if pairs.len() > NLI_MAX_PAIRS {
-        return Ok(Some(NliRun::unavailable(
-            NliUnavailableReason::PairCap,
-            pairs.len(),
-        )));
     }
     let tokenizer = match selection {
         Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
@@ -4011,10 +3998,16 @@ fn nli_explore_run(
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
     let mut run = match selection {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-            NliRun::unavailable(NliUnavailableReason::TokenCap, ranked.len())
+            NliRun::unavailable(
+                NliUnavailableReason::TokenCap,
+                ranked.len(),
+                max_unique_pairs,
+            )
         }
-        Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
-        Err(reason) => NliRun::unavailable(reason, ranked.len()),
+        Ok(backend) => {
+            score_nli_pairs(root, &partition.fitting, &texts, backend, max_unique_pairs)?
+        }
+        Err(reason) => NliRun::unavailable(reason, ranked.len(), max_unique_pairs),
     };
     run.e5_candidates = ranked.len();
     run.unscored = ranked.len().saturating_sub(run.evidence.len());
@@ -4039,6 +4032,7 @@ fn explore_nli_evidence_output(run: &NliRun) -> ExploreNliEvidenceOutput {
         reason: run.reason.map(NliUnavailableReason::as_str),
         candidate_generator: "E5",
         top_k: RERANKER_TOP_K,
+        max_unique_pairs: run.max_unique_pairs,
         e5_candidates: run.e5_candidates,
         recommended_candidates: recommended,
         nli_filtered_candidates: filtered,
@@ -4137,11 +4131,14 @@ fn bge_approval_valid(root: &Path) -> bool {
     let Ok(document) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
         return false;
     };
+    let Ok(max_unique_pairs) = max_rerank_pairs() else {
+        return false;
+    };
     document["schema_version"] == 1
         && document["model"] == RERANKER_MODEL_ID
         && document["threshold"] == serde_json::json!(BGE_ADMISSION_THRESHOLD)
         && document["top_k"] == serde_json::json!(RERANKER_TOP_K)
-        && document["max_unique_pairs"] == serde_json::json!(BGE_MAX_PAIRS)
+        && document["max_unique_pairs"] == serde_json::json!(max_unique_pairs)
         && document["candidate_pipeline"] == BGE_PIPELINE_VERSION
         && document["acceptance"]["pass"] == true
 }
@@ -4188,6 +4185,7 @@ fn score_bge_pairs(
     pairs: &[(SimilarityEndpoint, SimilarityEndpoint)],
     texts: &BTreeMap<(String, String), String>,
     backend: BgeBackendKind,
+    max_unique_pairs: usize,
 ) -> Result<BgeRun> {
     let started = std::time::Instant::now();
     let overrides = bge_directional_overrides()?;
@@ -4268,6 +4266,7 @@ fn score_bge_pairs(
     Ok(BgeRun::enabled(
         evidence,
         pairs.len(),
+        max_unique_pairs,
         started.elapsed().as_millis(),
     ))
 }
@@ -4401,16 +4400,22 @@ fn print_explore_text(
             })
             .count();
         println!(
-            "BGE candidate generator: E5, top_k {}, raw {}, recommended {}, BGE filtered {}, unscored {}, bounded pool",
-            RERANKER_TOP_K, run.e5_candidates, recommended, filtered, run.unscored,
+            "BGE candidate generator: E5, top_k {}, max pairs {}, raw {}, recommended {}, BGE filtered {}, unscored {}, bounded pool",
+            RERANKER_TOP_K,
+            run.max_unique_pairs,
+            run.e5_candidates,
+            recommended,
+            filtered,
+            run.unscored,
         );
         println!(
-            "BGE model: {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
+            "BGE model: {}, max pairs {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
             if run.status == "BGE_ENABLED" {
                 RERANKER_MODEL_ID
             } else {
                 "null"
             },
+            run.max_unique_pairs,
             run.evidence.len(),
             run.evidence.len() * 2,
             run.model_load_attempts,
@@ -4465,16 +4470,22 @@ fn print_explore_text(
                 .unwrap_or_default()
         );
         println!(
-            "NLI candidate generator: E5, top_k {}, raw {}, recommended {}, NLI filtered {}, unscored {}, bounded pool",
-            RERANKER_TOP_K, run.e5_candidates, recommended, filtered, run.unscored
+            "NLI candidate generator: E5, top_k {}, max pairs {}, raw {}, recommended {}, NLI filtered {}, unscored {}, bounded pool",
+            RERANKER_TOP_K,
+            run.max_unique_pairs,
+            run.e5_candidates,
+            recommended,
+            filtered,
+            run.unscored
         );
         println!(
-            "NLI model: {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
+            "NLI model: {}, max pairs {}, unique pairs {}, directional calls {}, model load attempts {}, elapsed runtime ms {}",
             if run.status == "NLI_ENABLED" {
                 NLI_MODEL_ID
             } else {
                 "null"
             },
+            run.max_unique_pairs,
             run.evidence.len(),
             run.evidence.len() * 2,
             run.model_load_attempts,
@@ -4533,16 +4544,23 @@ fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let second_stage_selected = {
-        let mut selected = false;
-        #[cfg(feature = "cross-encoder-reranker")]
+        #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
         {
-            selected |= bge_backend(root)?.is_some();
+            let mut selected = false;
+            #[cfg(feature = "cross-encoder-reranker")]
+            {
+                selected |= bge_backend(root)?.is_some();
+            }
+            #[cfg(feature = "nli-evidence")]
+            {
+                selected |= nli_backend_selection(root)?.is_some();
+            }
+            selected
         }
-        #[cfg(feature = "nli-evidence")]
+        #[cfg(not(any(feature = "cross-encoder-reranker", feature = "nli-evidence")))]
         {
-            selected |= nli_backend_selection(root)?.is_some();
+            false
         }
-        selected
     };
     if second_stage_selected {
         let gate_result = {
@@ -4694,24 +4712,20 @@ fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenari
         similarity_candidate_pool(root, index, delta)?;
     print_advisory_e5_token_caps(&e5_token_caps);
     let backend = bge_backend(root)?.context("BGE backend was not selected")?;
-    if candidates.len() > BGE_MAX_PAIRS {
-        println!(
-            "BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs (reason pair-cap, raw {}, unique pairs 0, directional calls 0, model load attempts 0)",
-            considered
-        );
-        println!("BGE status: BGE_UNAVAILABLE");
-        println!("retrieval advisory: E5-only fallback remains advisory");
-        return Ok(());
-    }
-    let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+    let max_unique_pairs = max_rerank_pairs()?;
+    candidates.sort_by(similarity_candidate_order);
+    let selected = candidates
         .iter()
+        .take(max_unique_pairs)
         .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
-        .collect();
-    let run = match backend {
-        Ok(kind) => score_bge_pairs(root, &pairs, &texts, kind)
+        .collect::<Vec<_>>();
+    let mut run = match backend {
+        Ok(kind) => score_bge_pairs(root, &selected, &texts, kind, max_unique_pairs)
             .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
-        Err(reason) => BgeRun::unavailable(reason, considered),
+        Err(reason) => BgeRun::unavailable(reason, considered, max_unique_pairs),
     };
+    run.e5_candidates = considered;
+    run.unscored = considered.saturating_sub(run.evidence.len());
     if run.status == "BGE_UNAVAILABLE" {
         println!("BGE status: BGE_UNAVAILABLE");
         println!(
@@ -4725,9 +4739,10 @@ fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenari
         return Ok(());
     }
     println!(
-        "BGE: model {}, top_k {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
+        "BGE: model {}, top_k {}, max pairs {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
         RERANKER_MODEL_ID,
         RERANKER_TOP_K,
+        run.max_unique_pairs,
         considered,
         run.evidence.len(),
         run.evidence.len() * 2,
@@ -4738,6 +4753,7 @@ fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenari
     for candidate in &mut candidates {
         let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
         let Some(evidence) = run.evidence.get(&key).cloned() else {
+            candidate.bge_admission = Some("BGE_UNSCORED");
             continue;
         };
         let status = if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
@@ -4764,8 +4780,8 @@ fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenari
         );
     }
     println!(
-        "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, bounded pool <= {}",
-        recommended, filtered, run.unscored, BGE_MAX_PAIRS
+        "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, budget <= {}",
+        recommended, filtered, run.unscored, run.max_unique_pairs
     );
     Ok(())
 }
@@ -4776,45 +4792,55 @@ fn run_second_stage_advisory_review(
     index: &SpecIndex,
     delta: &[DeltaScenario],
 ) -> Result<()> {
+    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     let (mut candidates, considered, texts, e5_token_caps) =
         similarity_candidate_pool(root, index, delta)?;
+    #[cfg(not(any(feature = "cross-encoder-reranker", feature = "nli-evidence")))]
+    let (candidates, considered, _texts, e5_token_caps) =
+        similarity_candidate_pool(root, index, delta)?;
     print_advisory_e5_token_caps(&e5_token_caps);
+    #[cfg(feature = "cross-encoder-reranker")]
     let mut bge_enabled = false;
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    let bge_enabled = false;
+    #[cfg(feature = "cross-encoder-reranker")]
     let mut bge_run: Option<BgeRun> = None;
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    let bge_run: Option<BgeRun> = None;
 
     #[cfg(feature = "cross-encoder-reranker")]
     if let Some(backend) = bge_backend(root)? {
         bge_enabled = true;
-        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+        let max_unique_pairs = max_rerank_pairs()?;
+        candidates.sort_by(similarity_candidate_order);
+        let selected: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
             .iter()
+            .take(max_unique_pairs)
             .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
             .collect();
-        let partition = if candidates.len() > BGE_MAX_PAIRS {
-            PairBudgetPartition::default()
-        } else {
-            let tokenizer = match backend {
-                Ok(BgeBackendKind::Local)
-                    if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
-                {
-                    Some(load_unbounded_tokenizer(
-                        &preflight_bge_artifacts(root)?.join("tokenizer.json"),
-                    )?)
-                }
-                _ => None,
-            };
-            preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?
-        };
-        let mut run = if candidates.len() > BGE_MAX_PAIRS {
-            BgeRun::unavailable(BgeUnavailableReason::PairCap, candidates.len())
-        } else {
-            match backend {
-                Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-                    BgeRun::unavailable(BgeUnavailableReason::TokenCap, candidates.len())
-                }
-                Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind)
-                    .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
-                Err(reason) => BgeRun::unavailable(reason, candidates.len()),
+        let tokenizer = match backend {
+            Ok(BgeBackendKind::Local)
+                if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+            {
+                Some(load_unbounded_tokenizer(
+                    &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+                )?)
             }
+            _ => None,
+        };
+        let partition =
+            preflight_pair_budgets(&selected, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
+        let mut run = match backend {
+            Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+                BgeRun::unavailable(
+                    BgeUnavailableReason::TokenCap,
+                    candidates.len(),
+                    max_unique_pairs,
+                )
+            }
+            Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind, max_unique_pairs)
+                .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
+            Err(reason) => BgeRun::unavailable(reason, candidates.len(), max_unique_pairs),
         };
         run.e5_candidates = considered;
         run.unscored = considered.saturating_sub(run.evidence.len());
@@ -4842,37 +4868,40 @@ fn run_second_stage_advisory_review(
         bge_run = Some(run);
     }
 
+    #[cfg(feature = "nli-evidence")]
     let mut nli_enabled = false;
     #[cfg(feature = "nli-evidence")]
     let mut nli_run: Option<NliRun> = None;
     #[cfg(feature = "nli-evidence")]
     if let Some(selection) = nli_backend_selection(root)? {
         nli_enabled = true;
-        let pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
+        let max_unique_pairs = max_rerank_pairs()?;
+        candidates.sort_by(similarity_candidate_order);
+        let selected: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = candidates
             .iter()
+            .take(max_unique_pairs)
             .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
             .collect();
-        let partition = if candidates.len() > NLI_MAX_PAIRS {
-            PairBudgetPartition::default()
-        } else {
-            let tokenizer = match selection {
-                Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
-                    &preflight_nli_artifacts(root)?.join("tokenizer.json"),
-                )?),
-                _ => None,
-            };
-            preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?
+        let tokenizer = match selection {
+            Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
+                &preflight_nli_artifacts(root)?.join("tokenizer.json"),
+            )?),
+            _ => None,
         };
-        let mut run = if candidates.len() > NLI_MAX_PAIRS {
-            NliRun::unavailable(NliUnavailableReason::PairCap, candidates.len())
-        } else {
-            match selection {
-                Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
-                    NliRun::unavailable(NliUnavailableReason::TokenCap, candidates.len())
-                }
-                Ok(backend) => score_nli_pairs(root, &partition.fitting, &texts, backend)?,
-                Err(reason) => NliRun::unavailable(reason, candidates.len()),
+        let partition =
+            preflight_pair_budgets(&selected, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
+        let mut run = match selection {
+            Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
+                NliRun::unavailable(
+                    NliUnavailableReason::TokenCap,
+                    candidates.len(),
+                    max_unique_pairs,
+                )
             }
+            Ok(backend) => {
+                score_nli_pairs(root, &partition.fitting, &texts, backend, max_unique_pairs)?
+            }
+            Err(reason) => NliRun::unavailable(reason, candidates.len(), max_unique_pairs),
         };
         run.e5_candidates = considered;
         run.unscored = considered.saturating_sub(run.evidence.len());
@@ -4897,13 +4926,13 @@ fn run_second_stage_advisory_review(
                 candidate.nli_admission = Some("NLI_UNSCORED");
             }
         }
-        print_nli_results(&candidates, considered);
+        print_nli_results(&candidates, considered, max_unique_pairs);
         nli_run = Some(run);
     }
     #[cfg(feature = "nli-evidence")]
     if let Some(run) = nli_run.as_ref() {
         println!(
-            "NLI status: {}{}, model {}, unique pairs {}, directional calls {}, recommended {}, filtered {}, unscored {}, model load attempts {}, runtime ms {}",
+            "NLI status: {}{}, model {}, max pairs {}, unique pairs {}, directional calls {}, recommended {}, filtered {}, unscored {}, model load attempts {}, runtime ms {}",
             run.status,
             run.reason
                 .map(|reason| format!(", reason {}", reason.as_str()))
@@ -4913,6 +4942,7 @@ fn run_second_stage_advisory_review(
             } else {
                 "null"
             },
+            run.max_unique_pairs,
             run.evidence.len(),
             run.evidence.len() * 2,
             candidates
@@ -4962,21 +4992,22 @@ fn run_second_stage_advisory_review(
                 .unwrap_or_default()
         );
         println!(
-            "BGE: model {}, top_k {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
+            "BGE: model {}, top_k {}, max pairs {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
             if run.status == "BGE_ENABLED" {
                 RERANKER_MODEL_ID
             } else {
                 "null"
             },
             RERANKER_TOP_K,
+            run.max_unique_pairs,
             considered,
             run.evidence.len(),
             run.evidence.len() * 2,
             run.runtime_ms.unwrap_or(0),
         );
         println!(
-            "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, bounded pool <= {}",
-            recommended, filtered, run.unscored, BGE_MAX_PAIRS
+            "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, budget <= {}",
+            recommended, filtered, run.unscored, run.max_unique_pairs
         );
         for candidate in &candidates {
             let Some(evidence) = candidate.bge.as_ref() else {
@@ -6327,6 +6358,7 @@ fn score_nli_pairs(
     pairs: &[(SimilarityEndpoint, SimilarityEndpoint)],
     texts: &BTreeMap<(String, String), String>,
     backend: NliBackend,
+    max_unique_pairs: usize,
 ) -> Result<NliRun> {
     let started = std::time::Instant::now();
     let overrides = nli_directional_overrides()?;
@@ -6364,6 +6396,7 @@ fn score_nli_pairs(
     Ok(NliRun::enabled(
         evidence,
         pairs.len(),
+        max_unique_pairs,
         started.elapsed().as_millis(),
     ))
 }
@@ -6450,7 +6483,11 @@ fn parse_nli_endpoint(value: &str) -> Result<SimilarityEndpoint> {
 }
 
 #[cfg(feature = "nli-evidence")]
-fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
+fn print_nli_results(
+    candidates: &[SimilarityCandidate],
+    considered: usize,
+    max_unique_pairs: usize,
+) {
     let mut label_counts = [0usize; 3];
     for candidate in candidates {
         if let Some(evidence) = candidate.nli {
@@ -6478,8 +6515,17 @@ fn print_nli_results(candidates: &[SimilarityCandidate], considered: usize) {
         .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
         .count();
     println!(
-        "NLI candidate accounting: raw {}, recommended {}, NLI filtered {}, bounded pool",
-        considered, recommended, filtered
+        "NLI candidate accounting: raw {}, max pairs {}, recommended {}, NLI filtered {}, unscored {}, bounded pool",
+        considered,
+        max_unique_pairs,
+        recommended,
+        filtered,
+        considered.saturating_sub(
+            candidates
+                .iter()
+                .filter(|candidate| candidate.nli.is_some())
+                .count(),
+        )
     );
     println!(
         "nli distribution: entailment {}, neutral {}, contradiction {}",
@@ -6789,6 +6835,32 @@ fn endpoint(file: &str, title: &str) -> SimilarityEndpoint {
         file: file.to_string(),
         title: title.to_string(),
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_candidate_order(
+    left: &SemanticCandidate,
+    right: &SemanticCandidate,
+) -> std::cmp::Ordering {
+    right
+        .score
+        .total_cmp(&left.score)
+        .then_with(|| semantic_endpoint_key(&left.left).cmp(&semantic_endpoint_key(&right.left)))
+        .then_with(|| semantic_endpoint_key(&left.right).cmp(&semantic_endpoint_key(&right.right)))
+        .then_with(|| left.scope.cmp(right.scope))
+        .then_with(|| left.candidate_id.cmp(&right.candidate_id))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn similarity_candidate_order(
+    left: &SimilarityCandidate,
+    right: &SimilarityCandidate,
+) -> std::cmp::Ordering {
+    right
+        .embedding_score
+        .total_cmp(&left.embedding_score)
+        .then_with(|| left.left.cmp(&right.left))
+        .then_with(|| left.right.cmp(&right.right))
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -7464,9 +7536,9 @@ fn stable_hash(bytes: &[u8]) -> u64 {
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn bge_pipeline_descriptor() -> String {
+fn bge_pipeline_descriptor(max_unique_pairs: usize) -> String {
     format!(
-        "model={RERANKER_MODEL_ID};top_k={RERANKER_TOP_K};threshold={RERANKER_LOGIT_THRESHOLD:.4};max_pairs={BGE_MAX_PAIRS};exclusions=identity,deterministic;ordering=e5-desc,file,title;pair=canonical-undirected;directions=forward,reverse;score=symmetric-average"
+        "model={RERANKER_MODEL_ID};top_k={RERANKER_TOP_K};threshold={RERANKER_LOGIT_THRESHOLD:.4};max_pairs={max_unique_pairs};exclusions=identity,deterministic;ordering=e5-desc,file,title;pair=canonical-undirected;directions=forward,reverse;score=symmetric-average;selection=ordered-prefix"
     )
 }
 
@@ -7531,7 +7603,7 @@ mod tests {
     #[test]
     fn duplicate_boundary_passage_scores_are_below_the_similarity_threshold() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let delta_root = root.join("givn/changes/spec-duplicates/specs/spec-duplicates");
+        let delta_root = root.join("givn/specs/spec-duplicates");
         let delta = collect_delta_scenarios(root, &delta_root).expect("load duplicate delta");
         let active: Vec<&DeltaScenario> = delta
             .iter()

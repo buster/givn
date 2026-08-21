@@ -133,21 +133,6 @@ Feature: BGE reranking evidence for bounded semantic search
     And  the report status is "PASS"
 
   @bge
-  Scenario: The exact bounded pair limit refuses inference before model loading
-    Given  a project whose deterministic E5 neighbour union contains exactly 513 eligible pairs
-    And  the local second-stage evidence is enabled
-    When  the user runs the permanent duplicate audit with second-stage evidence enabled
-    Then  the command exits 0
-    And  stdout contains "BGE_UNAVAILABLE: bounded candidate pool exceeds 512 pairs"
-    And  the command reports the bounded-pool overflow and the unavailable BGE status
-    And  the output reports BGE unavailable reason "pair-cap"
-    And  the output reports zero unique pairs, directional calls, recommended pairs, filtered pairs, and model load attempts
-    And  the output reports all E5 raw pairs as unscored
-    And  the output identifies the E5-only unavailable fallback
-    And  the output reports zero BGE model load attempts
-    And  no output claims that BGE participated
-
-  @bge
   Scenario: The exact bounded pair limit accepts 512 unique pairs
     Given  a project whose deterministic E5 neighbour union contains exactly 512 eligible pairs
     And  the local second-stage evidence is enabled
@@ -305,16 +290,6 @@ Feature: BGE reranking evidence for bounded semantic search
     And  the semantic report has zero BGE unique pairs, directional calls, filtered pairs, and model load attempts
     And  the semantic review report contains a normal E5 candidate block
     And  the report contains no `BGE_FILTERED` candidate block
-
-  @bge
-  Scenario: Pair-cap unavailable blocking review retains E5 candidates
-    Given  an end-to-end project with an unresolved blocking semantic candidate and a 513-pair BGE pool
-    And  the local second-stage evidence is enabled
-    When  the end-to-end user runs blocking change review for "running-change" through the givn CLI
-    Then  the command exits non-zero because the E5 candidate is unresolved
-    And  the semantic review report has BGE status "BGE_UNAVAILABLE"
-    And  the semantic review report has BGE reason "pair-cap"
-    And  the semantic report retains the E5 candidate block without `BGE_FILTERED`
 
   @bge
   Scenario: Unavailable BGE change exploration retains the E5 raw fallback

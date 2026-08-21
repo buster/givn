@@ -43,10 +43,11 @@ python tools/approach-comparison/evaluate_bge_admission.py \
 ```
 
 The `bounded` scope is the product set: the top-K endpoint union intersected
-with eligible E5 semantic pairs. It keeps the current copied corpus below the
-512-pair inference cap while the report still records the full top-K union and
-its top-K recall denominator. A separate bounded fixture exercises the 512/513
-overflow cases.
+with eligible E5 semantic pairs. The product budget defaults to `2048` and
+selects the highest E5-scoring pairs when a configured budget is smaller than
+the eligible union. The report still records the full top-K union and its
+top-K recall denominator. A separate bounded fixture exercises the configured
+prefix and the independent 512/513 tokenizer boundary.
 `run_comparison.sh` defaults `HF_HUB_OFFLINE=1`; local E5, BGE, and optional NLI
 artifacts must therefore already exist. The command must not download a model
 during a test run. A benchmark run may
@@ -59,9 +60,10 @@ The comparison report identifies its candidate implementation as
 but is not a production approval artifact because the parser is not the Rust
 candidate pipeline. `evaluate_bge_admission.py --enforce` accepts only a report
 combined with an independently generated JSON attestation from
-`givn spec bge-parity`; the attestation supplies the `rust-production-v1`
-pipeline fingerprint and exact constants. Both `--enforce` and `--rust-parity`
-are required before `givn/.spec-bge-admission.json` can be generated with
+`givn spec bge-parity`; the attestation supplies the `rust-production-v2`
+pipeline fingerprint and exact constants, including the active pair budget.
+Both `--enforce` and `--rust-parity` are required before
+`givn/.spec-bge-admission.json` can be generated with
 `--approval-file`.
 
 ## Measurements

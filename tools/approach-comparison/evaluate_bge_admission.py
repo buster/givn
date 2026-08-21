@@ -148,12 +148,13 @@ def validate_rust_parity(parity_path: Path, binary: Path | None) -> dict:
     if (
         parity["schema_version"] != 1
         or parity["source"] != "givn spec bge-parity"
-        or parity["candidate_pipeline"] != "rust-production-v1"
+        or parity["candidate_pipeline"] != "rust-production-v2"
         or not isinstance(parity["pipeline_fingerprint"], str)
         or not re.fullmatch(r"[0-9a-f]{16}", parity["pipeline_fingerprint"])
         or parity["top_k"] != 5
         or parity["threshold"] != 3.0
-        or parity["max_unique_pairs"] != 512
+        or not isinstance(parity["max_unique_pairs"], int)
+        or parity["max_unique_pairs"] <= 0
     ):
         raise ValueError("invalid Rust production candidate-pipeline attestation")
     return parity
@@ -499,6 +500,7 @@ def main() -> None:
     if report.get("candidate_pipeline") != "python-reference-v1":
         raise SystemExit("BGE admission evaluation requires a python-reference-v1 report")
     if args.enforce:
+        assert parity is not None
         try:
             actual_artifacts = artifact_metadata(Path(args.bge_model))
             reported_artifacts = validate_report_artifacts(report)
@@ -507,12 +509,12 @@ def main() -> None:
         if actual_artifacts != reported_artifacts:
             raise SystemExit("benchmark artifact hashes do not match the local BGE artifact set")
         runtime = report.get("bge_runtime_config")
-        if runtime != {
+        if not isinstance(runtime, dict) or runtime != {
             "max_length_tokens": 512,
             "intra_op_threads": 4,
             "inter_op_threads": 1,
             "batch_size": 32,
-            "max_unique_pairs": 512,
+            "max_unique_pairs": parity["max_unique_pairs"],
         }:
             raise SystemExit("benchmark BGE runtime configuration does not match production")
         if report.get("bge_model") != MODEL_ID or report.get("bge_threshold") != 3.0:
@@ -553,8 +555,8 @@ def main() -> None:
             "model": MODEL_ID,
             "threshold": 3.0,
             "top_k": 5,
-            "max_unique_pairs": 512,
-            "candidate_pipeline": "rust-production-v1",
+            "max_unique_pairs": parity["max_unique_pairs"],
+            "candidate_pipeline": parity["candidate_pipeline"],
             "pipeline_fingerprint": parity["pipeline_fingerprint"],
             "rust_attestation": parity,
             "acceptance": result["acceptance"],
