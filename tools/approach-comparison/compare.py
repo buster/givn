@@ -47,7 +47,25 @@ DEFAULT_NLI_BATCH = 32
 DEFAULT_BGE_BATCH = 32
 STRICT_THRESHOLD = 0.95
 RERANK_THRESHOLD = 3.0
-BGE_MAX_PAIRS = 512
+DEFAULT_MAX_RERANK_PAIRS = 2048
+
+
+def configured_max_rerank_pairs() -> int:
+    raw = os.environ.get("GIVN_SPEC_MAX_RERANK_PAIRS")
+    if raw is None:
+        return DEFAULT_MAX_RERANK_PAIRS
+    try:
+        value = int(raw)
+    except ValueError as error:
+        raise ValueError(
+            "GIVN_SPEC_MAX_RERANK_PAIRS must be a positive decimal integer"
+        ) from error
+    if value <= 0:
+        raise ValueError("GIVN_SPEC_MAX_RERANK_PAIRS must be greater than zero")
+    return value
+
+
+BGE_MAX_PAIRS = configured_max_rerank_pairs()
 
 SCENARIO_RE = re.compile(r"^\s*Scenario(?: Outline)?\s*:\s*(.*)$")
 STEP_RE = re.compile(r"^\s*(Given|When|Then|And|But|\*)\s+(.*)$")

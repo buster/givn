@@ -2,23 +2,23 @@
 set -eu
 
 run_e5() {
-    env -u GIVN_SPEC_BGE GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+    env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
 }
 
 run_bge() {
-    env -u GIVN_SPEC_RERANKER GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub "$@"
+    env -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub "$@"
 }
 
 run_bge_gate() {
-    env -u GIVN_SPEC_RERANKER GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub "$@"
+    env -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub "$@"
 }
 
 run_gate() {
-    GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+    env -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
 }
 
 run_bge_disabled() {
-    env -u GIVN_SPEC_RERANKER GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled "$@"
+    env -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled "$@"
 }
 
 resolve_nli_features_path() {
@@ -37,19 +37,19 @@ resolve_nli_features_path() {
 
 run_nli() {
     if features_path=$(resolve_nli_features_path); then
-        env -u GIVN_SPEC_BGE GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+        env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
     fi
 }
 
 run_nli_disabled() {
     if features_path=$(resolve_nli_features_path); then
-        env -u GIVN_SPEC_BGE GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+        env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
     fi
 }
 
 run_nli_combined() {
     if features_path=$(resolve_nli_features_path); then
-        env GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+        env -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
     fi
 }
 

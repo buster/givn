@@ -1,100 +1,85 @@
 # E5 Threshold Versus Serialization Analysis
 
-## Current Full-Serialization Pool
+## Current Compact-Serialization Pool
 
-The current real no-stub run uses the complete serialization and produces
-`2292` semantic E5 candidates from `395` scanned scenarios. The BGE/NLI pair
-limit is `512`, so both second-stage layers stop with `pair-cap` before model
-inference.
+The current real no-stub run uses the compact complete serialization and scans
+`394` permanent scenarios. It produces `1274` semantic E5 candidates at the
+inclusive `0.9500` boundary. The refreshed E5 index contains `394` fitting
+vectors and `0` E5 token-cap findings.
 
 The observed E5 score distribution is:
 
 | E5 threshold | Semantic candidates |
 |---:|---:|
-| `0.9500` | 2292 |
-| `0.9550` | 1799 |
-| `0.9600` | 1359 |
-| `0.9650` | 897 |
-| `0.9700` | 526 |
-| `0.9703` | 505 |
-| `0.9750` | 284 |
-| `0.9800` | 125 |
-| `0.9850` | 41 |
-| `0.9900` | 5 |
+| `0.9500` | 1274 |
+| `0.9550` | 924 |
+| `0.9600` | 628 |
+| `0.9650` | 428 |
+| `0.9700` | 235 |
+| `0.9750` | 118 |
+| `0.9800` | 50 |
+| `0.9850` | 15 |
+| `0.9900` | 4 |
 
-`0.9703` is the first tested operating point below the `512` pair bound. It
-would remove `1787` of the `2292` candidates produced at the current `0.9500`
-boundary. Without manually adjudicated labels, this is an uncontrolled recall
-loss, not an evidence-based improvement.
+The E5 boundary remains `0.9500`. Raising it would remove candidates without
+manual duplicate/variant/boundary labels and would therefore be an
+uncontrolled recall loss.
+
+## Second-Stage Budget Result
+
+The fixed all-or-nothing `512` pair refusal has been replaced by the positive
+runtime setting `GIVN_SPEC_MAX_RERANK_PAIRS`. Unset means `2048`. Candidates
+are ordered by E5 score descending before each model receives its configured
+prefix.
+
+| Run | E5 candidates | Eligible prefix | Scored | Recommended | Filtered | Token-cap | Unscored |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BGE | 1274 | 795 top-five union | 669 | 1 | 668 | 126 | 605 |
+| NLI | 1274 | 1274 independent pool | 1062 | 17 | 1045 | 212 | 212 |
+| BGE + NLI | 1274 | independent per-layer prefixes | 669 / 1062 | 1 / 17 | 668 / 1045 | 126 / 212 | 605 / 212 |
+
+The `2048` pair budget does not truncate the current E5 candidate count. BGE
+still has its existing top-five endpoint-neighbour eligibility rule, so `479`
+E5 pairs remain outside the BGE union. The BGE unscored accounting also
+includes `126` selected pairs that exceed the separate BGE 512-token input
+limit. NLI selects all `1274` E5 candidates under the pair budget; its `212`
+unscored candidates are selected pairs with `NLI_TOKEN_CAP` evidence.
+
+The pair budget and the model-token limit are separate controls. A budget tail
+is `BGE_UNSCORED` or `NLI_UNSCORED`; a selected pair over 512 tokens is
+`BGE_TOKEN_CAP` or `NLI_TOKEN_CAP`. Neither state is model-filtered evidence.
+
+## Runtime Measurement
+
+The real local-model run was executed with four intra-op threads:
+
+| Run | Wall time | Model runtime | Maximum RSS |
+|---|---:|---:|---:|
+| BGE-only | `821.60 s` | `819.783 s` | `2.01 GiB` |
+| NLI-only | `770.13 s` | `768.072 s` | `2.20 GiB` |
+| BGE + NLI | `1586.62 s` | `808.089 s` + `775.016 s` | `2.62 GiB` |
+
+The combined run takes approximately `26:27 min` wall time. It confirms that
+BGE and NLI run sequentially and independently. The default `2048` setting is
+high enough for this corpus but remains configurable for larger corpora and
+different CPU budgets.
 
 ## Serialization Signal
 
-The prior compact run produced `100` semantic candidates on the earlier
-385-scenario corpus. The current complete run produces `2292` on `395`
-scenarios. This is a strong signal that the new serialization affects E5
-similarity, but it is not yet a perfectly controlled A/B comparison because the
-corpus also gained archived token-cap scenarios.
+The previous complete-serialization measurement used a different corpus state
+and reported `2292` candidates from `395` scenarios. That result is retained in
+repository history only as prior evidence; it is not a current operating-point
+measurement.
 
-The current complete Rust serialization repeats technical section markers for
-every scenario, including empty values such as:
-
-```text
-feature_description: []
-feature_background: []
-rule: []
-rule_description: []
-rule_background: []
-scenario_description: []
-outline_template: []
-examples:
-[]
-```
-
-It also emits role and empty-field syntax around each step. These repeated
-tokens are not removed from the domain content, but they may increase common
-boilerplate across documents and artificially raise cosine similarity.
-
-The current Givn corpus contains `13` step tables, `74` docstrings, and no
-Rules, Backgrounds, Scenario descriptions, or Examples. Therefore the observed
-pool increase is more likely caused by repeated serializer structure and
-complete test-prose context than by actual Background/Examples content.
+The current serializer omits empty optional sections and fields while retaining
+all non-empty Feature/Rule context, Backgrounds, descriptions, steps, tables,
+docstrings, outline templates, and Examples. The candidate count is therefore
+an interaction between current corpus contents, exact serialization, and the
+fixed E5 model; it is not evidence for changing the threshold.
 
 ## Decision
 
-Do not raise the E5 threshold as the first fix. Keep the domain boundary at
-`0.9500` and run a controlled serialization A/B experiment:
-
-1. Full-content serializer with optional sections omitted when empty.
-2. Full-content serializer with compact natural-language section labels.
-3. Full-content serializer retaining all non-empty tables, docstrings,
-   Backgrounds, Rules, descriptions, and Examples.
-4. Compact legacy serializer as the baseline.
-
-The comparison must use the same corpus, same E5 model, same deterministic
-exclusions, and the same candidate ordering. Measure candidate counts at
-`0.9500`, `0.9600`, `0.9700`, and the first threshold that produces at most
-`512` semantic candidates.
-
-Only after the serializer A/B result is known should a threshold change be
-considered. The likely target is:
-
-- preserve complete fachliche content;
-- remove repeated empty/technical markers from model text;
-- keep paths, tags, scores, and classifications as metadata;
-- retain an explicit bounded E5 top-K pool before BGE/NLI;
-- do not silently turn `0.9703` into the new product threshold without manual
-  recall/precision evidence.
-
-## Interpretation
-
-The current BGE/NLI result is not “BGE and NLI filter nothing because they are
-weak.” They did not run. The E5 pool exceeded the pair-cap before either model
-could score a pair.
-
-The correct order of investigation is therefore:
-
-1. controlled serialization A/B;
-2. deterministic bounded E5 candidate selection;
-3. real BGE/NLI scoring on the bounded pool;
-4. manual classification and recall/precision comparison;
-5. only then threshold tuning.
+Keep the E5 boundary at `0.9500`. Use `GIVN_SPEC_MAX_RERANK_PAIRS=2048` as the
+default second-stage work budget, select highest E5 scores first, retain the
+omitted tail as explicit unscored evidence, and continue recording actual
+BGE/NLI runtime before changing the setting or the model-input boundary.

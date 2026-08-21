@@ -355,13 +355,17 @@ in that layer was scoreable.
 4. `spec-similarity-gate` is independent. When it is compiled, its existing E5
    hard-gate behavior runs separately; `cross-encoder-reranker` does not imply
    that feature and BGE does not replace it.
-5. A symmetric BGE score at or above `3.0000` is `BGE_RECOMMENDED`; a lower
+5. The positive `GIVN_SPEC_MAX_RERANK_PAIRS` setting (default `2048`) orders
+   eligible candidates by E5 score and selects a prefix for each enabled
+   second-stage model. Candidates after that prefix are explicitly unscored.
+   A symmetric BGE score at or above `3.0000` is `BGE_RECOMMENDED`; a lower
    score is `BGE_FILTERED`. A symmetric NLI entailment probability at or above
    `0.5000` is `NLI_RECOMMENDED`; a lower probability is `NLI_FILTERED`. Both
    filtered states are visible evidence only and never create a Givn
-   classification or a blocking failure. Missing artifacts or pair-cap
-   overflow emit the corresponding unavailable state and preserve the E5
-   path; failed BGE approval emits no BGE evidence object.
+   classification or a blocking failure. Missing artifacts or selected-pair
+   token failures emit the corresponding unavailable/cap state and preserve
+   the E5 path; a raw pair count above the configured setting is not an
+   unavailable state. Failed BGE approval emits no BGE evidence object.
 6. After a successful archive, the change is moved to `givn/archive/` and the
    permanent index is refreshed. The refresh is best-effort and feature-gated;
    it never runs before a merge gate that could roll the permanent tree back.
@@ -490,9 +494,10 @@ only the existing masked assertion `Fingerprint` shape/subset and fact model,
 not a Given/When action-structure comparison. Semantic candidates are scored
 only after deterministic findings are removed and are advisory threshold hits,
 not automatic duplicate decisions. With BGE enabled, the endpoint top-five
-union is intersected with eligible E5 semantic candidates, capped at 512 unique
-undirected pairs, and scored in both directions. The result preserves E5 raw,
-recommended, filtered, and unavailable accounting. Text and JSON share the same
+ union is intersected with eligible E5 semantic candidates, ordered by E5 score,
+ and truncated to the positive `GIVN_SPEC_MAX_RERANK_PAIRS` budget (default
+ 2048) before being scored in both directions. The result preserves E5 raw,
+ recommended, filtered, unscored, and unavailable accounting. Text and JSON share the same
 fixed header/field grammar, rank values, relation enum, structural facts,
 distinguishing values, score/null semantics, and tie-breaking order. The command
 does not read or call the persistent index, so permanent specs, active changes,
@@ -502,9 +507,9 @@ model-cache creation is allowed.
 The audit's E5 passages and any BGE/NLI pair inputs come from the same complete
 semantic serializer. E5 passage preflight partitions fitting and over-cap
 scenarios before model construction; over-cap endpoints are emitted as
-`E5_TOKEN_CAP` findings and are absent from every E5 semantic pair. BGE and NLI
-independently receive the same eligible E5 candidate pool; neither layer
-receives only the other layer's survivors. Each layer applies the
+`E5_TOKEN_CAP` findings and are absent from every E5 semantic pair. BGE receives
+the existing endpoint top-five union, while NLI independently receives the E5
+semantic pool; neither layer receives only the other layer's survivors. Each layer applies the
 actual-tokenizer guard before model construction, counts pair special tokens
 without truncation or padding, and records `BGE_TOKEN_CAP` or `NLI_TOKEN_CAP`
 for a 513-token pair. A partial run scores fitting pairs and remains enabled. If
@@ -675,6 +680,7 @@ sequenceDiagram
     User->>CLI: explore, review, or duplicate audit
     CLI->>E5: build deterministic top-K union
     E5-->>CLI: raw candidates and canonical pairs
+    CLI->>CLI: sort by E5 score and select configured budget prefix
     par selected BGE
         CLI->>BGE: preflight same pool, then score fitting pairs
         BGE->>Guard: count complete pairs with BGE tokenizer
@@ -691,8 +697,9 @@ sequenceDiagram
     Output-->>User: advisory or blocking result
 ```
 
-An unavailable NLI artifact or pair-cap refusal is rendered as
-`NLI_UNAVAILABLE` with the normal E5 candidate set. A partial token-cap run
+An unavailable NLI artifact is rendered as `NLI_UNAVAILABLE` with the normal E5
+candidate set. A candidate outside the configured budget is `NLI_UNSCORED` and
+is not a model rejection. A partial token-cap run
 remains `NLI_ENABLED` for fitting pairs; only an all-over-cap layer is
 `NLI_UNAVAILABLE` with reason `token-cap`, and each over-cap candidate retains
 `NLI_TOKEN_CAP` evidence. The NLI layer never changes the persisted
@@ -719,14 +726,16 @@ flowchart TD
     S[Complete deterministic semantic serialization] --> E{E5 passage <= 512?}
     E -- no --> EF[E5_TOKEN_CAP metadata; no vector or pair score]
     E -- yes --> P[One immutable E5 candidate pool]
-    P --> B[ BGE actual-tokenizer preflight ]
-    P --> N[ NLI actual-tokenizer preflight ]
+    P --> S[Sort E5 candidates and select configured budget prefix]
+    S --> B[ BGE actual-tokenizer preflight ]
+    S --> N[ NLI actual-tokenizer preflight ]
     B --> BX{Any BGE pair fits?}
     N --> NX{Any NLI pair fits?}
     BX -- yes --> BS[Score fitting pairs; cap others; BGE_ENABLED]
     BX -- no --> BU[BGE_UNAVAILABLE reason token-cap; retain BGE_TOKEN_CAP]
     NX -- yes --> NS[Score fitting pairs; cap others; NLI_ENABLED]
     NX -- no --> NU[NLI_UNAVAILABLE reason token-cap; retain NLI_TOKEN_CAP]
+    S --> U[Budget tail remains BGE_UNSCORED or NLI_UNSCORED]
     BS --> I[Intersect participating recommendations]
     NS --> I
     BU --> I
