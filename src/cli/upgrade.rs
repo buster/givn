@@ -20,6 +20,17 @@ pub fn run() -> Result<()> {
     }
 
     let existing = std::fs::read_to_string(&config_path)?;
+
+    if active_config_version(&existing).as_deref() == Some(crate::cli::migration::LEGACY_VERSION)
+        && env!("CARGO_PKG_VERSION") == crate::cli::migration::TARGET_VERSION
+    {
+        return crate::cli::migration::prepare_legacy_upgrade(
+            &project_root,
+            &config_path,
+            &existing,
+        );
+    }
+
     let present_addons = crate::cli::addons::parse_enabled_addons(&existing);
 
     let new_content = upgrade_config(&existing, env!("CARGO_PKG_VERSION"))?;
@@ -53,6 +64,21 @@ pub fn run() -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Read the active version marker without interpreting commented scaffold
+/// examples as project configuration.
+pub(crate) fn active_config_version(content: &str) -> Option<String> {
+    content.lines().find_map(|line| {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') {
+            return None;
+        }
+        let value = trimmed.strip_prefix("givn_config_version:")?;
+        let value = value.split('#').next().unwrap_or(value).trim();
+        let value = value.trim_matches(['"', '\'']);
+        (!value.is_empty()).then(|| value.to_string())
+    })
 }
 
 /// Upgrade the config content:
