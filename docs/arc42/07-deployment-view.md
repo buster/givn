@@ -3,8 +3,9 @@
 ## 7.1 Product Artifact
 
 The product target is a native executable named `givn` with embedded manifests,
-templates, instructions, and skill assets. The default Cargo feature set is
-empty, so the ordinary binary does not require retrieval model artifacts.
+templates, instructions, and skill assets. The default Cargo install enables
+all declared retrieval features; a feature-free minimal build remains available
+with `--no-default-features`.
 
 The current source-of-truth installation path is a Rust build from this
 checkout:
@@ -16,20 +17,21 @@ cargo install --path .
 The planned release, shell-installer, Homebrew, and Cargo publication channels
 are not yet wired as release infrastructure in this checkout.
 
-## 7.2 Feature-Enabled Retrieval Artifact
+## 7.2 Default Retrieval Artifact
 
-`--features spec-retrieval` adds native ONNX Runtime and local E5 model/tokenizer
-requirements. The default E5 cache is `givn/.spec-model-cache`; the persistent
-index is `givn/.spec-index.json`.
+The default feature set adds native ONNX Runtime and local E5 model/tokenizer
+support. The default E5 cache is `givn/.spec-model-cache`; the persistent index
+is `givn/.spec-index.json`. A feature-free build reports retrieval as
+unavailable rather than passing silently.
 
-`cross-encoder-reranker` adds local BGE evidence. Its default artifact directory
+`cross-encoder-reranker` adds local BGE evidence and is enabled by default. Its default artifact directory
 is `givn/.spec-reranker-cache` and the current production loader preflights
 `model.onnx`, optional referenced `model.onnx.data`, `tokenizer.json`,
 `config.json`, `special_tokens_map.json`, and `tokenizer_config.json` before
 using FastEmbed's user-defined loader. An approval file is checked for the
 runtime metadata required by the BGE admission path.
 
-`nli-evidence` adds local NLI evidence. Its default artifact directory is
+`nli-evidence` adds local NLI evidence and is enabled by default. Its default artifact directory is
 `givn/.spec-nli-cache`, with `model.onnx`, `config.json`, `tokenizer.json`, and
 `tokenizer_config.json` preflighted before session construction.
 

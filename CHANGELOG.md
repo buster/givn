@@ -34,6 +34,9 @@ contains the complete stacked change set that follows that baseline.
 - Added the embedded migration catalog at `assets/migrations/catalog.yaml`.
   Future release-owned migration bundles can be chained and delivered as one
   ordered aggregate maintenance change.
+- Added a normal Cargo installation that enables every declared retrieval,
+  strict E5, BGE, and NLI feature; `--no-default-features` remains the explicit
+  feature-free build.
 
 ### Changed
 
@@ -42,8 +45,10 @@ contains the complete stacked change set that follows that baseline.
 - `givn archive` rechecks the blocking semantic gate immediately before
   modifying permanent specifications and refreshes the permanent retrieval
   index after a successful archive.
-- Retrieval remains feature-gated. A feature-free binary reports explicit
-  retrieval unavailability instead of silently passing a semantic gate.
+- Retrieval remains feature-gated and independently selectable. The normal
+  Cargo installation enables all declared retrieval capabilities, while a
+  feature-free binary reports explicit retrieval unavailability instead of
+  silently passing a semantic gate.
 - Generated review, design, task, and skill guidance now requires concrete
   evidence for strict runners, real-interface E2E tests, overlap decisions,
   semantic remediation, and architecture conformance.

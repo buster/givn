@@ -3,6 +3,10 @@
 Release-owned project migrations live in the binary's embedded asset tree at
 `assets/migrations/`.
 
+The normal Cargo installation includes every declared retrieval feature. This
+bundle contract is independent of installation mode; a `--no-default-features`
+binary still uses the same migration assets but reports retrieval as unavailable.
+
 Each bundle is one ordered migration phase and contains:
 
 - `proposal.md` with the user-facing problem, scope, and completion boundary;

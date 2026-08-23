@@ -9,6 +9,12 @@ architecture records. Updating only the configuration marker leaves a project
 partly on the old contract and forces each team to reconstruct the migration
 from a large repository diff.
 
+The normal source installation also needs to expose the complete released
+capability set. Keeping retrieval, the strict similarity gate, BGE evidence, and
+NLI evidence available only through an undocumented feature combination makes
+the default product boundary differ from the documented release. A feature-free
+build must remain available explicitly for constrained environments.
+
 An upgrade also needs a trustworthy Git boundary. If it silently mixes generated
 Givn files with a project's uncommitted work, the resulting migration cannot be
 reviewed or safely reproduced. If it commits the whole worktree, it can publish
@@ -16,12 +22,13 @@ files that Givn does not own.
 
 ## Proposed Solution
 
-Release Givn as version 0.3.0 with a changelog and a migration guide for every
-project whose `givn/config.yaml` identifies version 0.2.0. The guide is written
-as an executable prompt sequence for an LLM working inside the project. It
-directs the LLM to inspect the real project, update only applicable surfaces,
-resolve newly exposed specification and architecture findings, and verify the
-result before completion.
+Release Givn as version 0.3.0 with all currently declared Cargo features in the
+normal installation, a documented `--no-default-features` escape hatch, a
+changelog, and a migration guide for every project whose `givn/config.yaml`
+identifies version 0.2.0. The guide is written as an executable prompt sequence
+for an LLM working inside the project. It directs the LLM to inspect the real
+project, update only applicable surfaces, resolve newly exposed specification
+and architecture findings, and verify the result before completion.
 
 When a project runs `givn upgrade`, Givn refreshes its managed scaffold and
 regenerates its managed agent integrations. If the project is under Git, this
@@ -48,6 +55,8 @@ the migration plan never claims that human or LLM review has already passed.
 - Adding a synthetic migration feature to the project's permanent
   `givn/specs/` tree.
 - Automatically committing unrelated files or using `git add -A`.
+- Automatically upgrading the Givn binary itself; `givn upgrade` changes the
+  consumer project, not the installed tool.
 - Supporting arbitrary unknown version jumps in this release. The documented
   migration route is exactly 0.2.0 to 0.3.0.
 - Deciding from SemVer alone that a future release needs or does not need a

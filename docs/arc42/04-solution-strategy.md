@@ -82,9 +82,9 @@ node without changing the binary.
 
 ### Installability
 
-The product target is one native executable with embedded defaults. Retrieval,
-BGE, and NLI dependencies are feature-gated and are not part of the default
-build.
+The product target is one native executable with embedded defaults. The default
+Cargo install enables all declared retrieval capabilities; `--no-default-features`
+remains the explicit minimal-build escape hatch.
 
 ### Upgradeability
 
