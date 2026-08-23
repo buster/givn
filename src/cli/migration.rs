@@ -671,7 +671,9 @@ where
         bail!("automatic upgrade produced no managed files to commit");
     }
 
-    let mut args = vec!["add".to_string(), "--".to_string()];
+    // Force is safe here because every path came from the managed allowlist;
+    // never widen this to a directory or the complete worktree.
+    let mut args = vec!["add".to_string(), "-f".to_string(), "--".to_string()];
     args.extend(
         relative_paths
             .iter()
