@@ -9,7 +9,10 @@ use anyhow::Context;
 use ndarray::Array;
 
 #[cfg(feature = "spec-retrieval")]
-use std::collections::{BTreeMap, BTreeSet, HashSet};
+use std::collections::{BTreeMap, BTreeSet};
+
+#[cfg(all(feature = "spec-retrieval", feature = "spec-similarity-gate"))]
+use std::collections::HashSet;
 
 #[cfg(feature = "spec-retrieval")]
 use std::fs;
