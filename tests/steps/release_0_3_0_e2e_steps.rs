@@ -5,6 +5,10 @@ use cucumber::{given, then, when};
 
 #[given("a clean Git project created with Givn 0.2.0")]
 fn clean_legacy_project(world: &mut GivnWorld) {
+    world.env = Some(legacy_git_project());
+}
+
+fn legacy_git_project() -> crate::common::TestEnv {
     let env = crate::common::make_bare_root();
     let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
     assert!(
@@ -43,7 +47,7 @@ fn clean_legacy_project(world: &mut GivnWorld) {
         String::from_utf8_lossy(&commit.stderr)
     );
 
-    world.env = Some(env);
+    env
 }
 
 #[when("the consumer invokes `givn upgrade` for migration")]
@@ -169,23 +173,47 @@ fn git_stdout(env: &crate::common::TestEnv, args: &[&str]) -> String {
 }
 
 #[given("a Givn 0.2.0 project with uncommitted user changes")]
-fn dirty_legacy_project(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the dirty-worktree scenario");
+fn dirty_legacy_project(world: &mut GivnWorld) {
+    let env = legacy_git_project();
+    let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
+    std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
+        .expect("write uncommitted user change");
+    world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
+    world.env = Some(env);
 }
 
 #[then("the command fails before changing project files")]
-fn command_fails_before_file_changes(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the migration scenario");
+fn command_fails_before_file_changes(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(!output.status.success(), "upgrade unexpectedly succeeded");
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("clean Git worktree"), "{stderr}");
+    let env = world.env.as_ref().expect("dirty project fixture");
+    let expected = world.additional_output.as_deref().expect("config snapshot");
+    let actual = std::fs::read_to_string(env.path("givn/config.yaml")).expect("read config");
+    assert_eq!(
+        actual, expected,
+        "config changed before dirty-worktree rejection"
+    );
 }
 
 #[then("no commit is created")]
-fn no_commit_is_created(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the migration scenario");
+fn no_commit_is_created(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dirty project fixture");
+    assert_eq!(
+        git_stdout(env, &["rev-list", "--count", "HEAD"]).trim(),
+        "1"
+    );
 }
 
 #[then("the user changes remain byte-for-byte unchanged")]
-fn user_changes_remain_unchanged(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the migration scenario");
+fn user_changes_remain_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dirty project fixture");
+    assert_eq!(
+        std::fs::read(env.path("user-work.txt")).expect("read user change"),
+        b"uncommitted user change\n"
+    );
+    assert!(git_stdout(env, &["status", "--porcelain"]).contains("?? user-work.txt"));
 }
 
 #[given("a project that already has the 0.3.0 migration change")]

@@ -106,7 +106,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: A clean 0.2.0 project receives a reviewable 0.3.0 migration plan
 
-- [ ] Scenario: `A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
+- [x] Scenario: `A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
   - [ ] RED: invoke the current CLI in an isolated clean 0.2.0 Git fixture
         and assert the new config marker, commits, migration plan, or recorded
         hash is missing. Must fail.
@@ -127,28 +127,28 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; managed paths are calculated centrally and staging uses explicit relative path arguments.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(upgrade): prepare automatic 0.2.0 migration`
+  - [x] COMMIT: `6157355` — `feat(upgrade): A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
 
 ---
 
 ## Scenario: An unclean project is protected from automatic migration commits
 
 - [ ] Scenario: `An unclean project is protected from automatic migration commits`
-  - [ ] RED: add an uncommitted user file/change to a 0.2.0 Git fixture and
+  - [x] RED: add an uncommitted user file/change to a 0.2.0 Git fixture and
         invoke `givn upgrade`. Assert the command succeeds or writes anything.
         Must fail against the intended safety contract.
         ```
-        <!-- paste RED evidence -->
+        The unimplemented dirty-fixture step failed with `not implemented: implemented in the dirty-worktree scenario`.
         ```
-  - [ ] GREEN: reject dirty status before config, skill, migration, staging,
+  - [x] GREEN: reject dirty status before config, skill, migration, staging,
         or commit writes; report how to obtain a clean boundary.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --features spec-retrieval --test features_runner -- --name "An unclean project is protected from automatic migration commits"` passed: `1 scenario (1 passed)`. Config, user bytes, and commit count remained unchanged.
         ```
-  - [ ] REFACTOR: share the preflight with the non-Git guard and assert all
+  - [x] REFACTOR: share the preflight with the non-Git guard and assert all
         original bytes and Git history remain unchanged.
         ```
-        <!-- paste REFACTOR evidence -->
+        The rerun passed with `1 scenario (1 passed)`; `ensure_clean_git` is shared by both automatic migration guards.
         ```
   - [ ] COMMIT: `<hash>` — `fix(upgrade): refuse dirty migration worktrees`
 
