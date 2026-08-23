@@ -237,7 +237,9 @@ Routing has one of these values:
 For `CANONICAL_ARTIFACT`, `target_adr` and `replacement_adr` are `null`. For
 `AMEND_ADR`, `canonical_artifact` and `replacement_adr` are `null`. For
 `SUPERSEDE_ADR`, `canonical_artifact` and `target_adr` are `null`. A qualified
-candidate with no independent boundary is an amendment, not a new ADR.
+candidate with no independent boundary is an amendment, not a new ADR. A
+refinement must amend the existing ADR and must not create a parallel ADR for
+the same decision boundary.
 
 The LLM must search existing ADRs before proposing a new ID, challenge whether
 the candidate belongs in a feature, design, Arc42, process document, or code,

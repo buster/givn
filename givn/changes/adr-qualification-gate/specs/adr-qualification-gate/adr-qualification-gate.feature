@@ -68,7 +68,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance says missing evidence remains empty
     And the guidance forbids inventing alternatives impact consequences or participants
 
-  @givn.added @wip
+  @givn.added
   Scenario: An ADR refinement is routed to amendment without duplication
     Given the ADR qualification guidance is available
     When an author reads the refinement rules
