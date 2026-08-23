@@ -81,6 +81,11 @@ graph TD
 | Q-45 | Architecture documentation | A candidate refines or replaces an existing ADR. | A refinement uses `AMEND_ADR`; a replacement uses `SUPERSEDE_ADR` and retains the old relationship. A duplicate `NEW_ADR` is rejected. |
 | Q-46 | Architecture documentation | The ADR migration is reviewed. | Every assigned identifier has one disposition, reserved IDs have no record, non-ADRs are absent from ADR storage, and `ADR-063` remains proposed under its owning change. |
 | Q-47 | Architecture documentation | Effective and generated guidance are compared. | The canonical Arc42 instruction owns the procedure; derived guidance uses the same policy without claiming runtime enforcement, and project overrides remain effective. |
+| Q-48 | Release | A clean project marked 0.2.0 runs the 0.3.0 upgrade. | Managed config/integrations are updated, Commit A contains only the allowlist, and a maintenance plan with Commit A evidence is committed separately. |
+| Q-49 | Release safety | A project has uncommitted or untracked work. | Upgrade fails before writing or committing and preserves the worktree byte-for-byte. |
+| Q-50 | Release safety | A project is not a Git repository. | The automatic route fails before writing and explains the required Git boundary. |
+| Q-51 | Release safety | A migration plan already exists. | Upgrade reports it and never overwrites or duplicates the plan. |
+| Q-52 | Migration guidance | An LLM opens the generated maintenance change. | Proposal and design provide ordered project-specific prompts; no synthetic product spec or fabricated pass evidence exists. |
 
 ## 10.3 Verification Signals
 

@@ -22,6 +22,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Semantic strictness | E5 `0.95` strict gate only with `spec-similarity-gate`; report and second-stage evidence are separate. |
 | BGE/NLI | Optional local, bidirectional evidence; surface-specific E5 pools, explicit statuses, no automatic Givn classification. |
 | Second-stage budget | Current checkout implements the proposed positive `GIVN_SPEC_MAX_RERANK_PAIRS` budget; ADR-063 remains proposed while its change is incomplete. |
+| Release migration | A clean 0.2.0 project receives a managed two-commit preparation and a visible maintenance change; project semantics remain LLM-reviewed. |
 
 ## 4.2 Configuration and Gate Strategy
 
@@ -87,8 +88,11 @@ build.
 ### Upgradeability
 
 `givn upgrade` refreshes the managed configuration scaffold while preserving
-uncommented project values. Ejected facets remain project-owned. Generated
-skills are refreshed explicitly with `givn skills sync`.
+uncommented project values. For the exact 0.2.0-to-0.3.0 route it first requires
+a clean Git worktree, refreshes managed generated integrations, commits only
+the allowlisted Givn paths, and creates a migration maintenance change that
+records the first commit. Ejected facets, durable docs, specs, and user-owned
+files remain project-owned and are handled by the LLM through that change.
 
 ## 4.5 Current Evidence Boundary
 

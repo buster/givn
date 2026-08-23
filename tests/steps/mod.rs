@@ -35,6 +35,8 @@ pub mod nli_evidence_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
+pub mod release_0_3_0_e2e_steps;
+pub mod release_0_3_0_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;

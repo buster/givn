@@ -14,3 +14,8 @@ meet the strict qualification gate.
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.
+
+ADR-023 is amended by the 0.3.0 release migration protocol. The amendment keeps
+config scaffold upgrades preservation-oriented and adds a clean-worktree,
+allowlisted two-commit preparation plus a visible maintenance change. It does
+not make Givn responsible for semantic project decisions.

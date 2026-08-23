@@ -327,6 +327,26 @@ newly known addons not represented in the old config.
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
 
+## 6.14 `givn upgrade` from 0.2.0 to 0.3.0
+
+When the active config marker is exactly `0.2.0`, the command first verifies
+that the project is inside a Git worktree and that
+`git status --porcelain --untracked-files=all` is empty. A failed preflight
+returns before changing any project file.
+
+The command then refreshes `givn/config.yaml` and synchronizes generated skills,
+commands, and Givn-owned `AGENTS.md` blocks. It stages an explicit allowlist,
+never a complete directory or worktree, and creates Commit A for those managed
+changes. It writes `givn/changes/migrate-0-2-0-to-0-3-0/` with a populated
+proposal, detailed design, and `.givn-skip` entry for `specs`; the design records
+Commit A's hash. Commit B contains only that maintenance plan.
+
+An existing active or archived migration plan is reported and never
+overwritten. The generated plan contains no product feature delta and no
+fabricated design-review, task, implementation, or review evidence. The
+project LLM must continue the normal workflow and archive the maintenance plan
+after all project-specific decisions and verification are complete.
+
 ## 6.13 Repository-Owned Acceptance Flow
 
 The Cucumber test binary creates an isolated temporary project, invokes the
