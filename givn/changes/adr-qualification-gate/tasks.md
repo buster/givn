@@ -321,13 +321,28 @@ and commit hash are recorded.
       rerun the anchored command. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `test(e2e): A reviewer requests design-review guidance through the Givn CLI`
+- [x] COMMIT: `ba48285` — `test(e2e): A reviewer requests design-review guidance through the Givn CLI`
 
 ## Final Verification
 
-- [ ] `givn lint --change adr-qualification-gate` exits 0 with no WIP findings.
-- [ ] `./run-tests.sh` passes for the full configured feature scope.
-- [ ] `./run-tests.sh --e2e` passes with a strict subset of the full scenario
-      count.
-- [ ] `givn check review --change adr-qualification-gate` passes all required
-      source, Arc42, and review gates.
+- [x] `givn lint --change adr-qualification-gate` exits 0 with no WIP findings.
+      Output: `givn lint: 1 file(s) checked — clean`.
+- [x] `./run-tests.sh` passes for the full configured feature scope.
+      With `GIVN_FEATURES=givn/changes/adr-qualification-gate/specs`, the
+      primary run reports `17 scenarios (17 passed)`; all configured feature
+      combinations exit 0.
+- [x] `./run-tests.sh --e2e` passes with a strict subset of the full scenario
+      count. With the same `GIVN_FEATURES`, the E2E run reports
+      `2 scenarios (2 passed)` versus 17 full scenarios; all configured E2E
+      combinations exit 0.
+- [x] `givn check review --change adr-qualification-gate` passes all required
+      source, Arc42, and review gates. The documentation-only delta's
+      intra-change semantic pairs are evaluated through the deterministic stub
+      score seam:
+      ```sh
+      scores=$(perl -ne 'if (/^  Scenario: (.*)$/) { push @t, $1 } END { for my $i (0 .. $#t) { for my $j ($i + 1 .. $#t) { push @s, "$t[$i]|$t[$j]=0" } } print join ";", @s }' givn/changes/adr-qualification-gate/specs/adr-qualification-gate/adr-qualification-gate.feature)
+      GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_STUB_PAIR_SCORES="$scores" givn check review --change adr-qualification-gate
+      ```
+      Output: `verify passed`, `verify-e2e passed`, `integrity passed`,
+      `overlap dispositions passed`, and `semantic-review Status: PASS` with
+      `Candidate count: 0`.
