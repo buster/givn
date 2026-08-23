@@ -75,12 +75,15 @@ evidence until it is present and verified.
 ## 7.6 Upgrade
 
 After a binary upgrade, `givn upgrade` refreshes the managed config scaffold and
-`givn skills sync` refreshes generated guidance. For a clean project whose
-marker is `0.2.0`, the 0.3.0 binary performs this synchronization as the first
-of two narrowly scoped Git commits and creates a second commit containing the
-LLM migration plan. Project overrides, durable Arc42 chapters, and user-owned
+generated guidance. For a clean project whose marker selects the 0.2.0-to-0.3.0
+route, the binary performs this synchronization as the first of two narrowly
+scoped Git commits and creates a second commit containing the LLM migration
+plan. For a release without a selected route, it creates one managed commit
+when files changed and no migration plan. Project overrides, durable Arc42 chapters, and user-owned
 `AGENTS.md` content outside givn blocks remain under project control.
 
-The automatic route requires Git and a clean worktree. Non-Git and dirty
-projects receive no partial update from this route; the public migration guide
-describes the evidence-preserving recovery path.
+The managed route requires Git and a clean worktree. Non-Git and dirty projects
+receive no partial update; the public migration guide describes the
+evidence-preserving recovery path. A migration catalog route may span multiple
+versions, but all of its bundle phases are delivered in one ordered aggregate
+maintenance change.

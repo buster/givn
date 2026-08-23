@@ -87,6 +87,8 @@ graph TD
 | Q-51 | Release safety | A migration plan already exists. | Upgrade reports it and never overwrites or duplicates the plan. |
 | Q-52 | Migration guidance | An LLM opens the generated maintenance change. | Proposal and design provide ordered project-specific prompts; no synthetic product spec or fabricated pass evidence exists. |
 | Q-53 | Maintenance archive | A completed migration change intentionally skips `specs`. | Global verification uses permanent specs, no delta semantic gate is invoked, archive succeeds, and no migration feature is added to permanent specs. |
+| Q-54 | Managed upgrade | A clean project has stale generated guidance but no selected migration route. | Config/guidance changes are committed once through the allowlist and no maintenance change is created. |
+| Q-55 | Version skipping | A 0.2.0 project upgrades directly to a later compatible 0.3.x binary. | The 0.2.0-to-0.3.0 migration route remains selected rather than being bypassed by exact-version matching. |
 
 ## 10.3 Verification Signals
 

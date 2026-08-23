@@ -23,10 +23,12 @@ directs the LLM to inspect the real project, update only applicable surfaces,
 resolve newly exposed specification and architecture findings, and verify the
 result before completion.
 
-When such a project runs `givn upgrade`, Givn refreshes its managed scaffold and
+When a project runs `givn upgrade`, Givn refreshes its managed scaffold and
 regenerates its managed agent integrations. If the project is under Git, this
 machine-safe portion is committed separately and only known Givn-owned paths
-are staged. A visible maintenance change named
+are staged. For a release with no project migration, this is the complete
+operation and no maintenance change is created. For the 0.2.0-to-0.3.0
+compatibility boundary, a visible maintenance change named
 `migrate-0-2-0-to-0-3-0` is then created with the upgrade commit recorded. The
 change contains a detailed proposal and design, deliberately skips a product
 feature specification, and leaves design review, task derivation,
@@ -48,6 +50,8 @@ the migration plan never claims that human or LLM review has already passed.
 - Automatically committing unrelated files or using `git add -A`.
 - Supporting arbitrary unknown version jumps in this release. The documented
   migration route is exactly 0.2.0 to 0.3.0.
+- Deciding from SemVer alone that a future release needs or does not need a
+  migration. Each release must declare its migration policy.
 - Publishing release binaries or package-manager integrations that are not
   already part of this repository.
 

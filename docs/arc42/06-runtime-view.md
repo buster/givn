@@ -327,19 +327,22 @@ newly known addons not represented in the old config.
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
 
-## 6.13 `givn upgrade` from 0.2.0 to 0.3.0
+## 6.13 `givn upgrade` and declared migration bundles
 
-When the active config marker is exactly `0.2.0`, the command first verifies
-that the project is inside a Git worktree and that
+The command selects a declared migration path from the active config marker to
+the installed package version. It first verifies that the project is inside a
+Git worktree and that
 `git status --porcelain --untracked-files=all` is empty. A failed preflight
 returns before changing any project file.
 
 The command then refreshes `givn/config.yaml` and synchronizes generated skills,
 commands, and Givn-owned `AGENTS.md` blocks. It stages an explicit allowlist,
-never a complete directory or worktree, and creates Commit A for those managed
-changes. It writes `givn/changes/migrate-0-2-0-to-0-3-0/` with a populated
-proposal, detailed design, and `.givn-skip` entry for `specs`; the design records
-Commit A's hash. Commit B contains only that maintenance plan.
+never a complete directory or worktree, and creates one managed commit when
+files changed. If the catalog returns one or more bundles, the command then
+writes one aggregate `givn/changes/<aggregate-id>/` with Proposal, Design,
+`migration.yaml`, and `.givn-skip` for `specs`; its Design records the managed
+commit hash and all bundle phases in order. A second commit contains only that
+aggregate plan. A gap with no declared route creates no migration change.
 
 An existing active or archived migration plan is reported and never
 overwritten. The generated plan contains no product feature delta and no

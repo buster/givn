@@ -82,10 +82,14 @@ parallel unit-test substitute.
 | Primitive | Type | Purpose |
 |---|---|---|
 | `active_config_version` | `fn` | Reads the active `givn_config_version` marker without rewriting comments or user values. |
-| `MIGRATION_CHANGE_ID` | constant | Defines the deterministic maintenance-change path for 0.2.0 to 0.3.0. |
+| `MigrationCatalog` | `struct` | Deserializes the embedded ordered migration bundles and their source/target boundaries. |
+| `migration_path` | `fn` | Resolves a version gap into an ordered list of declared bundles or reports an incomplete declared path. |
+| `aggregate_migration_id` | `fn` | Defines the deterministic maintenance-change path for a complete source-to-target gap. |
+| `pending_migration_change` | `fn` | Detects a visible active aggregate plan after its config marker has advanced. |
 | `git_status_is_clean` | `fn` | Rejects dirty or non-Git projects before the automatic migration writes anything. |
 | `managed_generated_paths` | `fn` | Returns the exact config, generated skill/command, and owned-block paths eligible for Commit A. |
-| `create_migration_plan` | `fn` | Writes proposal, detailed design, and `.givn-skip` without writing a synthetic feature. |
+| `prepare_managed_upgrade` | `fn` | Runs the common config/synchronization/allowlist/commit path when no project migration is required. |
+| `create_aggregate_migration_plan` | `fn` | Combines every declared bundle into one ordered proposal/design/metadata plan and writes `.givn-skip` without a synthetic feature. |
 | `run_git` | `fn` | Executes Git commands in the project root and turns non-zero output into actionable errors. |
 
 The migration module owns orchestration. Existing config rendering, skill
@@ -151,6 +155,7 @@ the release documentation and pure fixture assertions.
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
 | run `givn upgrade` in a clean project created with Givn 0.2.0 | A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | CLI | Invoke the compiled `givn upgrade` subprocess and inspect stdout, files, and local Git commits. |
+| run `givn upgrade` in a clean project that needs managed guidance refresh but no project migration | A clean project without migration requirements receives one managed upgrade commit | CLI | Invoke the compiled `givn upgrade` subprocess against a stale generated integration and inspect the single managed commit. |
 | archive a completed 0.2.0-to-0.3.0 maintenance migration without a product specification | A completed maintenance migration can be archived without a product specification | CLI | Invoke the compiled `givn archive --change migrate-0-2-0-to-0-3-0` subprocess and inspect the archive and permanent spec tree. |
 
 The upgrade E2E test does not rely on a pre-existing migration plan, parent
@@ -163,8 +168,8 @@ is specifically the archive boundary for that plan.
 - Bump the package version and lockfile package metadata to 0.3.0.
 - Add `src/cli/migration.rs` for legacy-version detection, Git preflight,
   allowlisted staging, the two-commit sequence, and migration-plan creation.
-- Extend `src/cli/upgrade.rs` to invoke the migration preparation only for the
-  exact 0.2.0 to 0.3.0 route.
+- Extend `src/cli/upgrade.rs` to select a declared migration route or the
+  migration-free managed-upgrade path.
 - Expose the generated-path calculation from `src/skills/targets.rs` so the
   upgrade commit can stage exactly what `skills sync` owns.
 - Add the public changelog and LLM migration guide under `CHANGELOG.md` and
@@ -173,19 +178,43 @@ is specifically the archive boundary for that plan.
   release-maintenance work, without creating a false migration change in this
   repository.
 
-The current `givn upgrade` behavior remains the fallback for versions other
-than the exact migration source. The new route is additive and does not infer
-semantic project changes.
+The migration policy is explicit and stored in the embedded catalog. The current
+route applies to source config 0.2.0 at target package 0.3.0 or later compatible
+0.3.x releases. Every other transition is migration-free unless a later release
+adds another declared bundle; SemVer alone never invents a project migration.
 
-## Migration-Plan Contract
+If a version gap crosses multiple catalog bundles, the resolver follows the
+ordered source-to-target edges and creates one aggregate maintenance change.
+The aggregate metadata and design preserve each bundle's identity, source,
+target, and order so the LLM performs the phases sequentially.
 
-The automatically created directory is:
+## Migration Bundle Contract
+
+Each release-owned bundle is stored below `assets/migrations/<bundle-id>/` and
+is registered by `assets/migrations/catalog.yaml`. The catalog entry declares a
+strictly advancing `source_version`, `target_version`, deterministic `order`,
+and the embedded Proposal/Design asset paths. The Design asset must be
+self-contained for a consumer LLM; the current bundle's explicit guide marker
+is replaced during materialization, while future bundles must carry their own
+complete prompts.
+
+The resolver follows one declared edge after another. If the installed target
+is later in the same compatible minor line, the last bundle covers that patch
+release. If a declared path starts but has no next edge before a different
+minor/major target, upgrade fails explicitly instead of silently skipping a
+required phase.
+
+## Aggregate Migration-Plan Contract
+
+The automatically created directory is deterministic for the complete version
+gap:
 
 ```text
-givn/changes/migrate-0-2-0-to-0-3-0/
+givn/changes/migrate-<source>-to-<installed-target>/
 ├── .givn-skip                 # contains `specs`
 ├── proposal.md               # populated migration proposal
-└── design.md                 # populated design + prompt sequence
+├── migration.yaml            # aggregate bundle sequence and version metadata
+└── design.md                 # aggregate design plus all bundle prompts
 ```
 
 `specs` is skipped intentionally because the migration is a maintenance
@@ -196,32 +225,41 @@ without merging a synthetic feature into `givn/specs/`.
 
 The generated design records:
 
-- `source_version: 0.2.0`;
-- `target_version: 0.3.0`;
+- `source_version`: the active project marker;
+- `target_version`: the installed package version;
 - `upgrade_commit: <Commit A hash>`;
+- `migration_bundles`: the complete ordered catalog path;
 - the exact machine-safe file boundary;
-- the ordered LLM prompts from the public migration guide;
+- all LLM prompts from every selected bundle, in sequence;
 - the rule that project-specific decisions require evidence and review.
 
 If the deterministic migration path already exists under either
 `givn/changes/` or `givn/archive/`, it is never overwritten or duplicated.
 
+For a migration-free transition, the same managed path refreshes config and
+generated integrations and creates one allowlist-only commit if the refresh
+actually changes files. If there are no staged changes, it creates no empty
+commit and no migration change.
+
 ## Two-Commit Protocol
 
 ```mermaid
 flowchart TD
-    A[Read active config version] --> B{Exactly 0.2.0?}
-    B -- No --> Z[Keep existing upgrade behavior]
-    B -- Yes --> C[Require Git repository and clean worktree]
+    A[Read active config and package version] --> B[Select declared route]
+    B --> C[Require Git repository and clean worktree]
     C --> D[Snapshot managed files]
     D --> E[Render config and run skills sync]
     E --> F[Stage explicit managed-path allowlist]
-    F --> G[Commit A: prepare scaffold]
-    G --> H[Read Commit A hash]
-    H --> I[Write migration proposal/design/.givn-skip]
-    I --> J[Stage migration directory only]
-    J --> K[Commit B: record migration plan]
-    K --> L[Report change id, hashes, and next skill]
+    F --> G{Staged changes?}
+    G -- No --> Z[Report no managed changes]
+    G -- Yes --> H[Commit managed upgrade]
+    H --> I{Migration route selected?}
+    I -- No --> Z2[Report one managed commit and no migration change]
+    I -- Yes --> J[Read Commit A hash]
+    J --> K[Write migration proposal/design/.givn-skip]
+    K --> L[Stage migration directory only]
+    L --> M[Commit B: record migration plan]
+    M --> N[Report change id, hashes, and next skill]
 ```
 
 The clean-worktree check happens before any write. The allowlist includes the

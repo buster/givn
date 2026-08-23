@@ -115,6 +115,55 @@ fn guide_forbids_automatic_semantic_edits(world: &mut GivnWorld) {
     assert!(guide.contains("givn/specs"), "{guide}");
 }
 
+#[given("the embedded Givn migration catalog")]
+fn embedded_migration_catalog(_world: &mut GivnWorld) {
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/migrations/catalog.yaml");
+    assert!(path.exists(), "migration catalog is missing");
+}
+
+#[when("a maintainer inspects the migration catalog")]
+fn inspect_migration_catalog(world: &mut GivnWorld) {
+    let path =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("assets/migrations/catalog.yaml");
+    world.additional_output = Some(std::fs::read_to_string(path).expect("read migration catalog"));
+}
+
+#[then("it declares a catalog schema and migration bundle entries")]
+fn catalog_declares_schema_and_bundles(world: &mut GivnWorld) {
+    let catalog = world.additional_output.as_deref().expect("catalog content");
+    let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(catalog).expect("valid catalog");
+    assert!(parsed.get("schema_version").is_some(), "{catalog}");
+    assert!(parsed["migrations"].as_sequence().is_some(), "{catalog}");
+    assert!(
+        !parsed["migrations"].as_sequence().unwrap().is_empty(),
+        "{catalog}"
+    );
+}
+
+#[then("every migration bundle has a source, target, order, proposal asset, and design asset")]
+fn catalog_bundles_are_complete(world: &mut GivnWorld) {
+    let catalog = world.additional_output.as_deref().expect("catalog content");
+    let parsed: serde_yaml_ng::Value = serde_yaml_ng::from_str(catalog).expect("valid catalog");
+    for bundle in parsed["migrations"]
+        .as_sequence()
+        .expect("migration bundles")
+    {
+        for field in [
+            "source_version",
+            "target_version",
+            "order",
+            "proposal_asset",
+            "design_asset",
+        ] {
+            assert!(
+                bundle.get(field).is_some(),
+                "bundle lacks {field}: {bundle:?}"
+            );
+        }
+    }
+}
+
 #[given("an automatically created 0.3.0 migration change")]
 fn automatic_migration_change(world: &mut GivnWorld) {
     let env = crate::steps::release_0_3_0_e2e_steps::legacy_git_project();

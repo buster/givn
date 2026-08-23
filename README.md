@@ -345,7 +345,7 @@ Every `givn` subcommand:
 | `givn addons list` / `enable <name>` / `disable <name>` | Manage opt-in addon artifact/policy sets. |
 | `givn extras install` / `uninstall` | Enable/disable the curated extras skill+command bundle. |
 | `givn skills sync` | Regenerate all skills, commands, and the AGENTS.md blocks from the current templates. |
-| `givn upgrade` | Re-render the managed `config.yaml` documentation scaffold, preserve user overrides, bump `givn_config_version`, and automatically prepare the exact 0.2.0 to 0.3.0 migration in a clean Git project. |
+| `givn upgrade` | Refresh and commit managed config/agent files in a clean Git project; apply declared migration bundles as one ordered aggregate maintenance change when required. |
 | `givn completions <bash\|zsh\|fish>` | Print a shell completion script. |
 
 ## Skills (AI agent workflow)
@@ -469,6 +469,7 @@ Project command scripts belong in the README and are referenced by
 - [`docs/TASKS.md`](docs/TASKS.md) — phase-by-phase implementation task breakdown.
 - [`CHANGELOG.md`](CHANGELOG.md) — release history and the 0.3.0 migration entry point.
 - [`docs/migrations/0.2.0-to-0.3.0.md`](docs/migrations/0.2.0-to-0.3.0.md) — ordered LLM prompts for migrating projects created with Givn 0.2.0.
+- [`docs/migrations/README.md`](docs/migrations/README.md) — authoring contract for future release-owned migration bundles.
 
 ## License
 

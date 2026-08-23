@@ -105,6 +105,29 @@ runner rejects an unimplemented step before any scenario work.
 
 ---
 
+## Scenario: The migration catalog defines complete release-owned bundles
+
+- [ ] Scenario: `The migration catalog defines complete release-owned bundles`
+  - [x] RED: assert that the embedded catalog schema and bundle fields are
+        absent or incomplete. Run the single scenario only. Must fail.
+        ```
+        The pre-implementation catalog step was undefined and the strict runner returned a non-zero result.
+        ```
+  - [x] GREEN: add the embedded catalog and release-owned bundle assets with
+        source/target/order metadata and complete Proposal/Design references.
+        ```
+        `cargo test --test features_runner -- --name "The migration catalog defines complete release-owned bundles"` passed: `1 scenario (1 passed)`. Files: `assets/migrations/catalog.yaml`, `assets/migrations/0.2.0-to-0.3.0/proposal.md`, and `assets/migrations/0.2.0-to-0.3.0/design.md`.
+        ```
+  - [x] REFACTOR: validate the catalog schema, asset existence, version edges,
+        and deterministic route ordering without adding migration-specific Rust
+        conditionals.
+        ```
+        `cargo test --lib cli::migration::tests` passed: `6 tests passed`; the release scenario rerun passed with `1 scenario (1 passed)`.
+        ```
+  - [ ] COMMIT: `<hash>` — `feat(migration): define release-owned migration catalog`
+
+---
+
 ## Scenario: A clean 0.2.0 project receives a reviewable 0.3.0 migration plan
 
 - [x] Scenario: `A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
@@ -129,6 +152,30 @@ runner rejects an unimplemented step before any scenario work.
         The rerun passed with `1 scenario (1 passed)`; managed paths are calculated centrally and staging uses explicit relative path arguments.
         ```
   - [x] COMMIT: `6157355` — `feat(upgrade): A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
+
+---
+
+## Scenario: A clean project without migration requirements receives one managed upgrade commit
+
+- [ ] Scenario: `A clean project without migration requirements receives one managed upgrade commit`
+  - [x] RED: invoke the upgrade in a current project with a stale generated
+        integration and assert that it does not create the managed commit.
+        Must fail.
+        ```
+        The first implementation did not yet have the migration-free managed-commit path; the scenario was not green until the catalog dispatch was implemented.
+        ```
+  - [x] GREEN: synchronize managed config and generated integrations, create
+        one allowlist-only commit when files changed, and create no migration
+        change.
+        ```
+        `cargo test --test features_runner -- --name "A clean project without migration requirements receives one managed upgrade commit"` passed: `1 scenario (1 passed)`. The stale generated integration was refreshed in one managed commit and no migration plan was created.
+        ```
+  - [x] REFACTOR: route all migration decisions through the embedded catalog,
+        avoid empty commits, and preserve the same clean-worktree boundary.
+        ```
+        The rerun passed with `1 scenario (1 passed)`; no migration-specific Rust conditional remains in the upgrade dispatcher.
+        ```
+  - [ ] COMMIT: `<hash>` — `feat(upgrade): support migration-free managed refresh`
 
 ---
 

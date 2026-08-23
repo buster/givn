@@ -386,17 +386,24 @@ version marker, addon flags, overlay examples, and skill-target setting. The
 test-runner and coverage values are in the separate `givn/commands.yaml` file.
 
 `givn upgrade` re-renders the scaffold, preserves uncommented user blocks, bumps
-`givn_config_version`, and leaves legacy user values for review where it cannot
-map them. It also enables newly known addons that were absent from the old
-config. Ejected facets are not automatically replaced.
+`givn_config_version`, synchronizes generated integrations, and leaves legacy
+user values for review where it cannot map them. Addon flags are preserved;
+enabling a new addon remains an explicit `givn addons enable` operation.
+Ejected facets are not automatically replaced.
 
-For the exact 0.2.0-to-0.3.0 route, upgrade has an additional explicit
-compatibility boundary. It refuses a non-Git or dirty worktree before any write,
-runs the managed synchronization, stages only a calculated list of Givn-owned
-paths, and creates Commit A. It then writes a maintenance change under
-`givn/changes/migrate-0-2-0-to-0-3-0/` with proposal, detailed design, and a
-`specs` skip marker, records Commit A's hash, and creates Commit B containing
-only that plan. Existing active or archived plans are never overwritten.
+For every managed upgrade, it refuses a non-Git or dirty worktree before any
+write, stages only a calculated list of Givn-owned paths, and creates one commit
+if the managed files changed. A declared migration route adds an aggregate
+maintenance change under `givn/changes/` and a second commit containing its
+ordered bundle plan. Existing active plans are detected through their visible
+`migration.yaml` metadata; archived plans are historical and do not block a
+later managed upgrade.
+
+The embedded `migrations/catalog.yaml` is the release policy. Each bundle names
+its source and target versions, deterministic order, and Proposal/Design asset
+paths. The resolver follows multiple bundles in sequence and treats later
+patch releases within a covered minor line as compatible. A transition without
+a declared route is migration-free and never creates a maintenance change.
 
 The maintenance change is deliberately not a product feature: it must not add
 a synthetic scenario to `givn/specs/`. The public migration guide is an ordered

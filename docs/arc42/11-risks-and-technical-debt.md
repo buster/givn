@@ -36,6 +36,8 @@ historical measurement is not a current quality claim.
 | R-27 | Automatic upgrade commits a generated file that a project has treated as user-owned. | Medium | High | Require a clean worktree, stage an explicit known-path allowlist, preserve ejected facets, and expose both commit diffs for review. |
 | R-28 | Commit A succeeds but Commit B fails, leaving the generated migration plan uncommitted. | Low | High | Never reset history; keep the plan visible, report the successful hash and remaining files, and make rerun behavior preserve the existing plan. |
 | R-29 | A project interprets `givn_config_version: 0.3.0` as proof that semantic migration is complete. | High | High | Create the visible maintenance change, record the distinction in its design, and require normal LLM review/archive completion. |
+| R-30 | A future migration catalog contains a broken edge or incomplete bundle and leaves a version gap unclear. | Medium | High | Validate schema, unique IDs, advancing versions, referenced assets, ordered paths, and fail explicitly once a declared route has started. |
+| R-31 | Multiple required bundle phases are treated as independent concurrent changes. | Medium | High | Materialize one aggregate maintenance change with `migration.yaml`, explicit sequence numbers, and prompts that require strict phase order. |
 
 ## 11.2 Deliberate Technical Debt
 
