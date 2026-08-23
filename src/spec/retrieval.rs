@@ -5026,6 +5026,17 @@ fn spec_index_path(root: &Path) -> std::path::PathBuf {
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn report_missing_index(root: &Path) {
+    let path = spec_index_path(root);
+    if !path.exists() {
+        eprintln!(
+            "spec index is missing at {}; run `givn spec index` first",
+            path.display()
+        );
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn permanent_specs_path(root: &Path) -> std::path::PathBuf {
     root.join("givn/specs")
 }
@@ -5136,6 +5147,7 @@ fn duplicate_candidates(
     root: &Path,
     scenarios: &[DuplicateScenario],
 ) -> Result<DuplicateCandidateSet> {
+    report_missing_index(root);
     let mut candidates = Vec::new();
     let mut classified = BTreeSet::new();
     for (left_index, left) in scenarios.iter().enumerate() {

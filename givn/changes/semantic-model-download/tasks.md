@@ -78,17 +78,23 @@
   `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `94fde14`.
 
 ## Scenario: Duplicate audit identifies an absent persistent index without changing its fallback contract
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: emit the shared missing-index repair diagnostic while retaining
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: emitted the shared missing-index repair diagnostic while retaining
   transient read-only duplicate auditing and no index write. Production files:
-  _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: ensure the diagnostic is emitted once and rerun the named
-  scenario. Output: _pending_
+  `src/spec/retrieval.rs`. Test files: `tests/steps/mod.rs` and
+  `tests/steps/semantic_model_download_steps.rs`. Compile step:
+  `cargo check --features spec-retrieval` passed. Targeted output: `1 scenario
+  (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files, verified the
+  diagnostic is emitted once, and reran the named scenario; output: `1 scenario
+  (1 passed)`, `6 steps (6 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: Failed second-stage downloads remain unavailable and actionable
