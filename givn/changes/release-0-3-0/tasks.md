@@ -180,7 +180,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: A project outside Git is protected from a partial automatic migration
 
-- [ ] Scenario: `A project outside Git is protected from a partial automatic migration`
+- [x] Scenario: `A project outside Git is protected from a partial automatic migration`
   - [x] RED: invoke `givn upgrade` in a 0.2.0 fixture without a Git repository
         and assert that the config changes. Must fail.
         ```
@@ -197,28 +197,28 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; the existing shared `ensure_clean_git` preflight distinguishes the two diagnostics and no migration folder is created.
         ```
-  - [ ] COMMIT: `<hash>` — `fix(upgrade): require git for automatic migrations`
+  - [x] COMMIT: `56f8b09` — `fix(upgrade): A project outside Git is protected from a partial automatic migration`
 
 ---
 
 ## Scenario: An existing migration plan is never overwritten
 
 - [ ] Scenario: `An existing migration plan is never overwritten`
-  - [ ] RED: create a sentinel migration proposal/design in a 0.2.0 fixture,
+  - [x] RED: create a sentinel migration proposal/design in a 0.2.0 fixture,
         run `givn upgrade`, and assert the sentinel is overwritten or a second
         plan appears. Must fail.
         ```
-        <!-- paste RED evidence -->
+        The unimplemented existing-plan step failed with `not implemented: implemented in the existing-plan scenario`.
         ```
-  - [ ] GREEN: detect the deterministic active/archive path before writing,
+  - [x] GREEN: detect the deterministic active/archive path before writing,
         preserve its bytes, and report the existing plan without duplication.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --features spec-retrieval --test features_runner -- --name "An existing migration plan is never overwritten"` passed: `1 scenario (1 passed)`. The sentinel proposal/design remained unchanged.
         ```
-  - [ ] REFACTOR: document the partial-upgrade recovery path and keep all
+  - [x] REFACTOR: document the partial-upgrade recovery path and keep all
         generated migration content deterministic.
         ```
-        <!-- paste REFACTOR evidence -->
+        The rerun passed with `1 scenario (1 passed)`; the production diagnostic now names the preserved proposal and design.
         ```
   - [ ] COMMIT: `<hash>` — `fix(upgrade): preserve existing migration plans`
 
