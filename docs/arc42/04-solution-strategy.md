@@ -21,6 +21,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Semantic retrieval | Opt-in E5 vectors and permanent content-hash index. |
 | Semantic strictness | E5 `0.95` strict gate only with `spec-similarity-gate`; report and second-stage evidence are separate. |
 | BGE/NLI | Optional local, bidirectional evidence; surface-specific E5 pools, explicit statuses, no automatic Givn classification. |
+| Model availability | Explicit semantic commands resolve and validate missing artifacts in the XDG user cache; project-local index state remains separate. |
 | Second-stage budget | Current checkout implements the proposed positive `GIVN_SPEC_MAX_RERANK_PAIRS` budget; ADR-063 remains proposed while its change is incomplete. |
 | Release migration | A clean 0.2.0 project receives a managed two-commit preparation and a visible maintenance change; project semantics remain LLM-reviewed. |
 | Migration-free upgrade | A release without a selected route synchronizes managed guidance and creates one allowlist-only commit when files changed; it creates no maintenance change. |
@@ -58,6 +59,11 @@ and Fingerprint evidence remain metadata.
 The actual consuming tokenizer preflights E5 passages and selected BGE/NLI
 pairs without truncation or padding. Fitting E5 passages enter the index;
 over-cap passages are additive metadata with no vector or semantic pair score.
+
+Model setup precedes E5 token measurement. E5 uses FastEmbed's cache-aware
+initialization; BGE and NLI use validated synchronous artifact resolution. The
+default cache is user-level XDG storage, while explicit model paths remain a
+controlled escape hatch.
 
 Second-stage selection is not one universal pool:
 

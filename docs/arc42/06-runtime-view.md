@@ -164,7 +164,9 @@ The archive command executes the following stages:
 10. Copy the complete change directory to `givn/archive/<id>/`, then remove the
     active directory.
 11. With retrieval enabled, refresh the permanent index as a best-effort step
-    after archive success; a refresh failure is reported as a warning.
+    after archive success; this maintenance refresh reuses existing model
+    artifacts and does not initiate a new model download. A refresh failure is
+    reported as a warning.
 
 Archive's post-merge checks are hard-coded in `src/cli/archive.rs`; they are not
 the same thing as configurable artifact `post` hooks. Archive does not call the
@@ -307,8 +309,9 @@ pair special tokens. Exactly `512` fits and `513` is over.
 - A candidate omitted by the positive pair budget is `BGE_UNSCORED` or
   `NLI_UNSCORED`; it is not tokenized by that layer and is not filtered.
 
-Production uses real local tokenizers and artifacts. Regular and E2E tests use
-test-only deterministic budget providers and do not download or construct large
+Production uses real tokenizers and artifacts from the XDG cache or explicit
+local paths. Regular and E2E tests use a deterministic local artifact-source
+fixture and do not contact the live Hugging Face service or construct large
 model artifacts.
 
 ## 6.12 Addons, Upgrade, and Completion Commands

@@ -25,7 +25,7 @@ flowchart LR
 | Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
 | Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and executes feature scenarios. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
-| Local model artifacts | Supply E5, BGE, or NLI tokenizers/models for feature-enabled retrieval. No hosted inference service is part of the boundary. |
+| Model artifact source and XDG cache | Supply E5, BGE, or NLI artifacts on explicit semantic use and retain them in the user's cache. No hosted inference service is part of the boundary. |
 
 `AGENTS.md` is user-owned except for named givn fenced blocks. Givn may create or
 replace the content between matching markers such as
@@ -65,6 +65,7 @@ not alter other content.
 - Local E5 retrieval, complete Explore, change-aware Explore, semantic report,
   projected remediation, and permanent duplicate audit.
 - Optional BGE/NLI local evidence with actual-tokenizer cap handling.
+- Automatic validated model acquisition into the user-level XDG cache, with a project-local permanent index.
 - Repository-owned compiled-CLI acceptance fixtures.
 - Strict ADR qualification guidance and canonical routing of architecture rationale.
 - Version 0.3.0 release metadata and the 0.2.0-to-0.3.0 LLM migration path.
@@ -80,3 +81,4 @@ not alter other content.
 - Multi-repository workflow coordination.
 - Release, Homebrew, and shell-installer infrastructure before it is implemented.
 - Treating BGE/NLI evidence as a domain classification.
+- Downloading model artifacts during installation, nonsemantic commands, or implicit background work.
