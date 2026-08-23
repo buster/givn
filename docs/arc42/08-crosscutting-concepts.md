@@ -143,7 +143,8 @@ executes the project tests. Mandatory gate execution is described in section
 
 ## 8.5a Local Scenario Retrieval
 
-Retrieval is compiled only with `spec-retrieval`. The E5 index is
+Retrieval is compiled only with `spec-retrieval`, which is part of the normal
+Cargo default feature set. The E5 index is
 `givn/.spec-index.json` and contains permanent scenario identities, complete
 semantic content hashes, and fitting vectors. A missing, malformed, or
 incompatible index is rebuilt by the refresh path from current permanent specs.

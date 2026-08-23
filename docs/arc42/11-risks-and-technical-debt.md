@@ -38,6 +38,7 @@ historical measurement is not a current quality claim.
 | R-29 | A project interprets `givn_config_version: 0.3.0` as proof that semantic migration is complete. | High | High | Create the visible maintenance change, record the distinction in its design, and require normal LLM review/archive completion. |
 | R-30 | A future migration catalog contains a broken edge or incomplete bundle and leaves a version gap unclear. | Medium | High | Validate schema, unique IDs, advancing versions, referenced assets, ordered paths, and fail explicitly once a declared route has started. |
 | R-31 | Multiple required bundle phases are treated as independent concurrent changes. | Medium | High | Materialize one aggregate maintenance change with `migration.yaml`, explicit sequence numbers, and prompts that require strict phase order. |
+| R-32 | Enabling all declared retrieval features by default increases native build cost or exposes unavailable local model artifacts at first use. | Medium | High | Keep features independently selectable, report missing artifacts explicitly, document `--no-default-features`, and retain the same non-silent unavailable behavior. |
 
 ## 11.2 Deliberate Technical Debt
 

@@ -207,11 +207,11 @@ jedoch (`src/main.rs:174,255`, `src/spec/retrieval.rs:330-383`).
 Die Formulierung in `assets/commands/givn-spec.md:94-95`,
 `assets/skills/givn-spec/SKILL.md.tmpl:50-54` und allen drei generierten
 Skill-Mirrors ist deshalb nur noch fuer die Feature-freie Variante korrekt.
-`Cargo.toml:14-18` unterscheidet `spec-retrieval`,
-`spec-similarity-gate` und den Cross-Encoder. `AGENTS.md:15-19` installiert
-den lokalen Binary dagegen bereits mit `--features spec-retrieval`. Die
-Guidance muss deshalb build-aware sein: Feature-freie Builds sollen die
-explizite Unavailable-Meldung behalten, Retrieval-faehige Builds sollen den
+`Cargo.toml:14-20` unterscheidet `spec-retrieval`,
+`spec-similarity-gate` und die zweite Stufe. `AGENTS.md:15-19` installiert
+jetzt den lokalen Binary mit dem Default-Feature-Set. Die Guidance muss
+build-aware bleiben: Feature-freie Builds sollen die explizite
+Unavailable-Meldung behalten, Retrieval-faehige Builds sollen den
 entsprechenden Workflow nicht verbieten.
 
 Das ist kein Verlust einer alten Regel, sondern fehlende Pflege nach Abschluss

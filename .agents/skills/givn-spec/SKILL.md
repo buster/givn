@@ -49,7 +49,8 @@ it does not restate the policy.
 
 ## Retrieval-aware authoring
 
-In a retrieval-capable build, use `givn spec index` for the permanent index and
+The normal Cargo installation includes every retrieval feature. In a
+retrieval-capable build, use `givn spec index` for the permanent index and
 `givn spec search` or `givn spec explore` for advisory authoring evidence. The
 blocking review path is `givn check review --change <change-id>`. In a
 feature-free build, preserve the explicit `retrieval-unavailable` result;

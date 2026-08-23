@@ -28,7 +28,7 @@ runner rejects an unimplemented step before any scenario work.
       `tests/steps/mod.rs`.
 - [x] Add the release feature to the active test matrix and configure the
       existing strict Cucumber runner to execute it through `GIVN_FEATURES`.
-      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` passed with `8 scenarios (8 passed)` and the E2E run passed with `2 scenarios (2 passed)`.
+      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` passed with `9 scenarios (9 passed)` and the E2E run passed with `3 scenarios (3 passed)`.
 - [x] Establish a temporary Git-project fixture that can create a 0.2.0
       project, set a local author identity, capture file bytes, and inspect
       commit paths without touching the parent checkout.
@@ -53,7 +53,36 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The assertion now compares the CLI output with `env!("CARGO_PKG_VERSION")`; the rerun passed with `1 scenario (1 passed)`.
         ```
-  - [x] COMMIT: `3f02170` — `chore(release): The release identifies itself as its package version`
+- [x] COMMIT: `3f02170` — `chore(release): The release identifies itself as its package version`
+
+---
+
+## Scenario: Cargo installation enables every declared feature by default
+
+- [ ] Scenario: `Cargo installation enables every declared feature by default`
+  - [x] RED: run the scenario with the Cargo metadata step deliberately
+        unimplemented. The strict runner must fail before any default-feature
+        assertion can pass.
+        ```
+        GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --name "Cargo installation enables every declared feature by default"
+        Result: non-zero. `fail_on_skipped()` ran the step and reported `1 step failed` with `not implemented: RED proof: inspect Cargo feature metadata`.
+        ```
+  - [x] GREEN: make the normal Cargo installation enable
+        `spec-retrieval`, `spec-similarity-gate`, `cross-encoder-reranker`, and
+        `nli-evidence`, while documenting `--no-default-features` as the
+        explicit feature-free build. Assert both contracts through the release
+        feature.
+        ```
+        `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --name "Cargo installation enables every declared feature by default"` passed: `1 scenario (1 passed)`, `4 steps (4 passed)`. Files: `Cargo.toml`, `README.md`, `AGENTS.md`, release feature/step definitions, installation and Arc42 guidance, and `src/spec/retrieval.rs` warning cleanup required by the all-default build.
+        ```
+  - [x] REFACTOR: preserve independent feature selectors and explicit
+        feature-free unavailable behavior; remove obsolete feature-combination
+        helpers and make `cargo clippy --workspace --all-targets -- -D warnings`
+        pass with the default feature set.
+        ```
+        Targeted scenario rerun passed after cleanup; default-feature clippy passed with no warnings.
+        ```
+  - [ ] COMMIT: `<hash>` — `feat(release): Cargo installation enables every declared feature by default`
 
 ---
 
@@ -107,7 +136,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: The migration catalog defines complete release-owned bundles
 
-- [ ] Scenario: `The migration catalog defines complete release-owned bundles`
+- [x] Scenario: `The migration catalog defines complete release-owned bundles`
   - [x] RED: assert that the embedded catalog schema and bundle fields are
         absent or incomplete. Run the single scenario only. Must fail.
         ```
@@ -124,7 +153,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         `cargo test --lib cli::migration::tests` passed: `6 tests passed`; the release scenario rerun passed with `1 scenario (1 passed)`.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(migration): define release-owned migration catalog`
+  - [x] COMMIT: `3989ebe` — `feat(migration): define release-owned migration catalog`
 
 ---
 
@@ -137,19 +166,20 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The first implementation run failed at step binding because the generic `the consumer runs ...` step conflicted with the migration-specific CLI step; Cucumber exited non-zero before the success contract was implemented.
         ```
-  - [x] GREEN: implement the exact 0.2.0→0.3.0 path. Preflight Git and
+- [x] GREEN: implement the catalog-selected 0.2.0→0.3.0 path. Preflight Git and
         cleanliness, snapshot managed files, refresh config, synchronize
         generated integrations, stage only the managed allowlist, create
-        Commit A, generate the maintenance proposal/design with its hash and
-        `.givn-skip`, then create Commit B. List files touched.
+        Commit A, resolve the aggregate bundle path, generate the migration
+        proposal/design/metadata with its hash and `.givn-skip`, then create
+        Commit B. List files touched.
         ```
-        `cargo test --features spec-retrieval --test features_runner -- --name "A clean 0.2.0 project receives a reviewable 0.3.0 migration plan"` passed: `1 scenario (1 passed)`, including config, allowlisted Commit A, migration plan, Commit A hash, and no product spec. Files: `src/cli/migration.rs`, `src/cli/upgrade.rs`, `src/skills/targets.rs`, `src/cli/mod.rs`, and E2E step definitions.
+        `cargo test --test features_runner -- --name "A clean 0.2.0 project receives a reviewable 0.3.0 migration plan"` passed: `1 scenario (1 passed)`, including config, allowlisted Commit A, aggregate migration plan, metadata, Commit A hash, and no product spec. Files: `src/cli/migration.rs`, `src/cli/upgrade.rs`, `src/skills/targets.rs`, `src/cli/mod.rs`, migration assets, and E2E step definitions.
         ```
   - [x] REFACTOR: centralize path calculation and Git error handling; verify
         failures never reset history, generated project overrides remain
         untouched, and Commit B contains only the migration plan.
         ```
-        The rerun passed with `1 scenario (1 passed)`; managed paths are calculated centrally and staging uses explicit relative path arguments.
+        The rerun passed with `1 scenario (1 passed)`; managed paths are calculated centrally, catalog assets are resolved declaratively, and staging uses explicit relative path arguments.
         ```
   - [x] COMMIT: `6157355` — `feat(upgrade): A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
 
@@ -157,7 +187,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: A clean project without migration requirements receives one managed upgrade commit
 
-- [ ] Scenario: `A clean project without migration requirements receives one managed upgrade commit`
+- [x] Scenario: `A clean project without migration requirements receives one managed upgrade commit`
   - [x] RED: invoke the upgrade in a current project with a stale generated
         integration and assert that it does not create the managed commit.
         Must fail.
@@ -175,7 +205,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; no migration-specific Rust conditional remains in the upgrade dispatcher.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(upgrade): support migration-free managed refresh`
+  - [x] COMMIT: `3989ebe` — `feat(migration): define release-owned migration catalog`
 
 ---
 
@@ -216,11 +246,11 @@ runner rejects an unimplemented step before any scenario work.
         ```
         `cargo test --features spec-retrieval --test features_runner -- --name "Repeating the upgrade does not duplicate the migration"` passed: `1 scenario (1 passed)`. The second run preserved the design and commit count.
         ```
-  - [x] REFACTOR: make the idempotency check deterministic for active and
-        archived plans and keep the normal non-migration upgrade behavior
-        unchanged.
+  - [x] REFACTOR: make the idempotency check deterministic for active aggregate
+        plans and archived plans and keep the normal migration-free managed
+        upgrade behavior unchanged.
         ```
-        The rerun passed with `1 scenario (1 passed)`; active/archive detection is centralized in `migration_exists`.
+        The rerun passed with `1 scenario (1 passed)`; active plan detection is centralized in `pending_migration_change`, while `migration_exists` covers the deterministic aggregate id.
         ```
   - [x] COMMIT: `8fa1b29` — `fix(upgrade): Repeating the upgrade does not duplicate the migration`
 
@@ -263,10 +293,11 @@ runner rejects an unimplemented step before any scenario work.
         ```
         `cargo test --features spec-retrieval --test features_runner -- --name "An existing migration plan is never overwritten"` passed: `1 scenario (1 passed)`. The sentinel proposal/design remained unchanged.
         ```
-  - [x] REFACTOR: document the partial-upgrade recovery path and keep all
-        generated migration content deterministic.
+  - [x] REFACTOR: document the partial-upgrade recovery path, keep all
+        generated aggregate migration content deterministic, and preserve the
+        catalog-selected phase sequence.
         ```
-        The rerun passed with `1 scenario (1 passed)`; the production diagnostic now names the preserved proposal and design.
+        The rerun passed with `1 scenario (1 passed)`; the production diagnostic now names the preserved proposal and design, and aggregate plan generation is independent of a fixed route constant.
         ```
   - [x] COMMIT: `24bd7fa` — `fix(upgrade): An existing migration plan is never overwritten`
 
@@ -322,11 +353,12 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Arc42 and ADR documentation
 
-- [x] Update the affected durable Arc42 chapters and the change-level
-      `arc42.md` with a full 12-row assessment.
-- [x] Amend ADR-023 with the automatic migration-plan and two-commit protocol;
-      update both ADR indexes if its metadata or relationship changes.
-- [x] Record `ARC42 CONFORMANCE: CLEAN` evidence in `review.md` only after
+- [ ] Update the affected durable Arc42 chapters and the change-level
+      `arc42.md` with a full 12-row assessment plus the default-feature contract.
+- [ ] Amend ADR-023 with the automatic migration-plan and two-commit protocol
+      and ADR-055 with the default-feature contract; update both ADR indexes if
+      metadata or relationships change.
+- [ ] Record `ARC42 CONFORMANCE: CLEAN` evidence in `review.md` only after
       comparing implementation, design, tasks, and durable chapters.
       Evidence: `review.md` contains the full 12-row implementation comparison and `ARC42 CONFORMANCE: CLEAN`.
 
@@ -334,20 +366,20 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Full verification
 
-- [x] Run `givn lint --change release-0-3-0` and resolve all findings.
+- [ ] Run `givn lint --change release-0-3-0` and resolve all findings.
       Evidence: `givn lint --change release-0-3-0` -> `1 file(s) checked — clean`.
-- [x] Run the non-E2E change suite through `GIVN_FEATURES`; paste the output.
-      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` -> `8 scenarios (8 passed)`, `36 steps (36 passed)`.
-- [x] Run the E2E change suite through `GIVN_FEATURES`; paste the output.
-      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags @e2e` -> `2 scenarios (2 passed)`, `13 steps (13 passed)`.
-- [x] Run `cargo fmt --all -- --check`.
+- [ ] Run the non-E2E change suite through `GIVN_FEATURES`; paste the output.
+      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` -> pending final default-feature run.
+- [ ] Run the E2E change suite through `GIVN_FEATURES`; paste the output.
+      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags @e2e` -> pending final default-feature run.
+- [ ] Run `cargo fmt --all -- --check`.
       Evidence: command passed with no output.
-- [x] Run `cargo clippy --workspace --all-targets -- -D warnings`.
-      Evidence: command passed with no warnings.
-- [x] Run repository coverage and classify every uncovered region.
-      Evidence: global merged report `13186/19616` lines (`67.2206%`), release-specific report `1982/9080`, and all gaps are classified in `review.md`.
-- [x] Complete `review.md` with `REVIEW: PASS` only after all gates pass.
-      Evidence: `review.md` ends with `REVIEW: PASS`; the feature-enabled `givn check review --change release-0-3-0` passed verify, verify-e2e, integrity, overlap, and semantic review.
+- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings`.
+      Evidence: default-feature run passed after the feature cleanup; final evidence pending.
+- [ ] Run repository coverage and classify every uncovered region.
+      Evidence: previous reports are stale after the default-feature scenario; final reports pending.
+- [ ] Complete `review.md` with `REVIEW: PASS` only after all gates pass.
+      Evidence: final default-feature suite and feature-enabled `givn check review --change release-0-3-0` evidence pending.
 
 ---
 

@@ -26,6 +26,61 @@ fn reported_version(world: &mut GivnWorld) {
     );
 }
 
+#[given("the Cargo feature metadata for the Givn release")]
+fn cargo_feature_metadata(_world: &mut GivnWorld) {
+    let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("Cargo.toml");
+    assert!(path.exists(), "Cargo.toml is missing");
+}
+
+#[when("a maintainer inspects the default Cargo installation features")]
+fn inspect_default_cargo_features(world: &mut GivnWorld) {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let output = std::process::Command::new("cargo")
+        .args(["metadata", "--no-deps", "--format-version", "1"])
+        .current_dir(root)
+        .output()
+        .expect("run cargo metadata");
+    assert!(
+        output.status.success(),
+        "cargo metadata failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.additional_output = Some(String::from_utf8(output.stdout).expect("metadata is UTF-8"));
+}
+
+#[then("the default feature set contains every declared optional Givn feature")]
+fn default_features_contain_all_optional_features(world: &mut GivnWorld) {
+    let metadata = world.additional_output.as_deref().expect("Cargo metadata");
+    let document: serde_json::Value = serde_json::from_str(metadata).expect("parse Cargo metadata");
+    let package = document["packages"]
+        .as_array()
+        .and_then(|packages| packages.iter().find(|package| package["name"] == "givn"))
+        .expect("givn package metadata");
+    let default_features = package["features"]["default"]
+        .as_array()
+        .expect("default feature list");
+    for feature in [
+        "spec-retrieval",
+        "spec-similarity-gate",
+        "cross-encoder-reranker",
+        "nli-evidence",
+    ] {
+        assert!(
+            default_features.iter().any(|value| value == feature),
+            "default features lack {feature}"
+        );
+    }
+}
+
+#[then("a feature-free minimal build remains explicitly available")]
+fn feature_free_build_remains_available(world: &mut GivnWorld) {
+    let _metadata = world.additional_output.as_deref().expect("Cargo metadata");
+    let readme =
+        std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md"))
+            .expect("read README.md");
+    assert!(readme.contains("--no-default-features"), "{readme}");
+}
+
 #[given("the Givn 0.3.0 release files")]
 fn release_files(_world: &mut GivnWorld) {
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));

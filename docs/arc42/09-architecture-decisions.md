@@ -20,3 +20,8 @@ config scaffold upgrades preservation-oriented and adds a clean-worktree,
 allowlisted managed commit plus a visible aggregate maintenance change when the
 embedded migration catalog declares a route. It does not make Givn responsible
 for semantic project decisions.
+
+ADR-055 is also amended by the release's Cargo installation contract. The four
+semantic capabilities remain independent, but all declared features are enabled
+by the normal installation; `--no-default-features` remains the explicit
+feature-free path.

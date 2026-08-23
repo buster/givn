@@ -86,7 +86,12 @@ the 512-token limit; pair counts include pair special tokens. Exactly 512 is
  irrelevant qualifiers to evade a semantic finding. Do not make scenarios longer,
  repeat setup, or add irrelevant qualifiers as score workarounds.
 
-When `spec-retrieval` is available:
+The normal Cargo installation includes `spec-retrieval`,
+`spec-similarity-gate`, `cross-encoder-reranker`, and `nli-evidence`. A
+feature-free build created with `--no-default-features` reports retrieval as
+unavailable instead of silently passing a semantic gate.
+
+When `spec-retrieval` is compiled:
 
 - `givn spec index` builds or refreshes the permanent scenario index.
 - `givn spec search` and `givn spec explore` provide advisory authoring
@@ -95,8 +100,8 @@ When `spec-retrieval` is available:
   `semantic-review.md` worklist after the structural gates and blocks until
   every admitted candidate is classified and remediated.
 
-When the opt-in `cross-encoder-reranker` capability is active, E5 remains the
-raw candidate generator and the local BGE second stage produces explicit
+When `cross-encoder-reranker` is compiled, E5 remains the raw candidate
+generator and the local BGE second stage produces explicit
 `BGE_RECOMMENDED` and `BGE_FILTERED` evidence. `BGE_FILTERED` is a
 non-blocking evidence status: it is recorded for auditability, does not receive
 one of the Givn classifications, and does not force an author to rename or
@@ -121,8 +126,8 @@ endpoint ordering. A one-query Explore uses the same guard: it reports a
 candidate-level cap state when a selected pair is over the limit and reports
 `BGE_UNAVAILABLE` only when no selected pair can be scored.
 
-When the opt-in `nli-evidence` capability is active, NLI independently scores
-the same E5 candidate pool rather than only BGE survivors. A scored candidate is
+When `nli-evidence` is compiled, NLI independently scores the same E5 candidate
+pool rather than only BGE survivors. A scored candidate is
 `NLI_RECOMMENDED` or `NLI_FILTERED` using the existing NLI rule. An over-cap pair
 is `NLI_TOKEN_CAP`: visible, unresolved, outside `nli_filtered_candidates`, and
 blocking. `NLI_UNAVAILABLE` is a run-level state only when no NLI pair can be

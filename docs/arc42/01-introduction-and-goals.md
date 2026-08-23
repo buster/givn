@@ -63,12 +63,15 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-32 | Bound second-stage work through the proposed `GIVN_SPEC_MAX_RERANK_PAIRS` setting while retaining unscored tails. |
 | FR-33 | Publish version 0.3.0 with a complete changelog and an LLM-executable 0.2.0-to-0.3.0 migration guide. |
 | FR-34 | Prepare legacy projects through a visible, reviewable migration change without inventing product specifications. |
+| FR-35 | Refresh and commit Givn-owned files for migration-free upgrades without creating a migration change. |
+| FR-36 | Resolve multiple release-owned migration bundles into one ordered aggregate maintenance change. |
+| FR-37 | Enable every currently declared Cargo feature in the normal installation while preserving an explicit feature-free build. |
 
 ### Non-functional requirements
 
 | ID | Requirement |
 |---|---|
-| NFR-1 | The default binary has no retrieval model dependency and needs no npm, root, or language runtime to run. |
+| NFR-1 | The default Cargo installation enables all declared retrieval capabilities; `--no-default-features` provides a native feature-free binary without npm, root, or language runtime requirements. |
 | NFR-2 | Defaults are embedded; project-owned files are not silently overwritten. |
 | NFR-3 | Project configuration and lifecycle state are visible under `givn/`. |
 | NFR-4 | Semantic evidence is deterministic in identity, ordering, hashes, and output format where the current contract specifies it. |

@@ -18,6 +18,13 @@ The release has two distinct migration boundaries:
 The migration does not pretend that a generic tool can decide whether a domain
 scenario, step definition, ADR, or Arc42 statement is correct.
 
+The normal Cargo installation enables every declared release feature:
+`spec-retrieval`, `spec-similarity-gate`, `cross-encoder-reranker`, and
+`nli-evidence`. The features remain independent capabilities in the source and
+runtime selectors; `--no-default-features` is the explicit minimal-build path.
+The release does not upgrade the Givn binary itself. `givn upgrade` only
+prepares the consumer project for the installed binary.
+
 ```mermaid
 sequenceDiagram
     participant User
@@ -49,6 +56,15 @@ sequenceDiagram
 No new runtime library is required. Git is an external process dependency of
 the automatic commit path, not a Rust library dependency.
 
+### Cargo Feature Contract
+
+`Cargo.toml` declares all four currently released capabilities in `default`.
+Therefore `cargo install --path .` builds the retrieval, strict E5, BGE, and
+NLI paths without an additional feature flag. Each feature still has an
+independent selector and can be omitted from a constrained build with
+`cargo install --path . --no-default-features`. The feature-free binary keeps
+the explicit retrieval-unavailable behavior; it is not a silent semantic pass.
+
 ## Step Definitions
 
 | Capability | Step definition file |
@@ -71,11 +87,15 @@ GIVN_FEATURES=givn/changes/release-0-3-0/specs ./run-tests.sh --e2e
 Single-scenario run command:
 
 ```sh
-GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --features spec-retrieval --test features_runner -- --name "A clean 0.2.0 project receives a reviewable 0.3.0 migration plan"
+GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --name "A clean 0.2.0 project receives a reviewable 0.3.0 migration plan"
 ```
 
 The repository runner invokes the feature files through Cucumber. It is not a
-parallel unit-test substitute.
+parallel unit-test substitute. Its feature-isolation matrix passes
+`--no-default-features --features ...` explicitly so E5-only, BGE, and NLI
+scenarios do not inherit the all-feature installation defaults; the ordinary
+Cargo install remains covered by the release scenario and the default build
+verification.
 
 ## Internal Primitives
 
@@ -177,6 +197,11 @@ is specifically the archive boundary for that plan.
 - Update the repository's own config marker and generated integrations as
   release-maintenance work, without creating a false migration change in this
   repository.
+- Enable all currently declared Cargo features for the ordinary source
+  installation while preserving the explicit `--no-default-features` minimal
+  build.
+- Keep binary self-upgrade outside the release; only consumer-project files are
+  changed by `givn upgrade`.
 
 The migration policy is explicit and stored in the embedded catalog. The current
 route applies to source config 0.2.0 at target package 0.3.0 or later compatible
@@ -291,7 +316,8 @@ maintenance design as human-readable migration evidence.
 
 `CHANGELOG.md` describes the complete release relative to the 0.2.0 master
 branch, including runtime commands, generated guidance, retrieval/overlap
-behavior, Arc42/ADR guidance, and the migration behavior.
+behavior, the default Cargo feature set and minimal-build escape hatch,
+Arc42/ADR guidance, and the migration behavior.
 
 `docs/migrations/0.2.0-to-0.3.0.md` is the canonical LLM prompt pack. It has
 ordered prompts for:
