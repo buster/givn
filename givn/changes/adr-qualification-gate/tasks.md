@@ -213,19 +213,24 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): The ADR register has one canonical ownership contract`
+- [x] COMMIT: `1d6a768` — `docs(arc42): The ADR register has one canonical ownership contract`
 
 ## Scenario: The migration removes non-ADRs and preserves independent architecture history
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert the 35 accepted plus one proposed count, reserved IDs,
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `2 steps
+      (1 passed, 1 failed)`, `Step panicked. Captured output: not implemented`,
+      and non-zero exit.
+- [x] GREEN: assert the 35 accepted plus one proposed count, reserved IDs,
       removed non-ADRs, four absorbed refinements, three historical superseded
       records, removed Explore/audit ADRs, and untouched proposed ADR-063.
       Production/source files: `docs/arc42/adr/README.md`, retained ADR files,
       and deleted ADR files. Test file:
-      `tests/steps/adr_qualification_gate_steps.rs`. Output: _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `tests/steps/adr_qualification_gate_steps.rs`. Output:
+      `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): The migration removes non-ADRs and preserves independent architecture history`
 
 ## Scenario: All effective guidance sources use the same ADR policy

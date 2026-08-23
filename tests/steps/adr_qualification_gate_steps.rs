@@ -1,5 +1,7 @@
 //! Step definitions for the ADR qualification guidance capability.
 
+use std::{collections::HashSet, fs, path::Path};
+
 use cucumber::{given, then, when};
 
 use crate::steps::GivnWorld;
@@ -450,4 +452,203 @@ fn adr_retains_rationale_and_links(world: &mut GivnWorld) {
     let content = guidance(world);
     assert!(content.contains("Individual ADRs preserve decision rationale and links"));
     assert!(content.contains("not a second copy of those facts"));
+}
+
+#[when("a maintainer compares the register with the canonical sources")]
+fn maintainer_compares_register_and_sources(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "migration sources are empty");
+}
+
+#[given("the consolidated ADR register and canonical sources are available")]
+fn consolidated_register_and_sources_are_available(world: &mut GivnWorld) {
+    let register =
+        fs::read_to_string("docs/arc42/adr/README.md").expect("read consolidated ADR register");
+    let design = fs::read_to_string("givn/changes/adr-qualification-gate/design.md")
+        .expect("read migration manifest");
+    world.additional_output = Some(format!("{register}\n{design}"));
+}
+
+fn active_adr_path(id: &str) -> String {
+    adr_path("docs/arc42/adr", id)
+}
+
+fn archived_adr_path(id: &str) -> String {
+    adr_path("docs/arc42/adr/archive", id)
+}
+
+fn adr_path(directory: &str, id: &str) -> String {
+    let prefix = format!("{id}-");
+    if let Ok(entries) = fs::read_dir(directory) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            let Some(name) = path.file_name().and_then(|value| value.to_str()) else {
+                continue;
+            };
+            if name == format!("{id}.md") || name.starts_with(&prefix) {
+                return path.to_string_lossy().into_owned();
+            }
+        }
+    }
+    format!("{directory}/{id}.md")
+}
+
+fn file_exists(path: &str) -> bool {
+    Path::new(path).is_file()
+}
+
+fn migration_ids(content: &str) -> HashSet<String> {
+    content
+        .lines()
+        .filter_map(|line| {
+            let id = line.split('|').nth(1)?.trim();
+            id.strip_prefix("ADR-")
+                .filter(|value| value.len() == 3 && value.chars().all(|ch| ch.is_ascii_digit()))
+                .map(|value| format!("ADR-{value}"))
+        })
+        .collect()
+}
+
+#[then("the final register has 35 accepted decisions and one proposed decision")]
+fn final_register_has_expected_count(world: &mut GivnWorld) {
+    let register = guidance(world);
+    let accepted = register
+        .lines()
+        .filter(|line| line.contains("| accepted |"))
+        .count();
+    let proposed = register
+        .lines()
+        .filter(|line| line.contains("| proposed |"))
+        .count();
+    assert_eq!(accepted, 35, "unexpected accepted ADR count");
+    assert_eq!(proposed, 1, "unexpected proposed ADR count");
+}
+
+#[then("the change's migration manifest gives every assigned identifier exactly one disposition")]
+fn migration_manifest_covers_all_identifiers(world: &mut GivnWorld) {
+    let design = guidance(world);
+    let ids = migration_ids(design);
+    assert_eq!(
+        ids.len(),
+        65,
+        "migration manifest must contain 65 unique ids"
+    );
+    for number in 1..=65 {
+        assert!(
+            ids.contains(&format!("ADR-{number:03}")),
+            "missing ADR-{number:03}"
+        );
+    }
+}
+
+#[then("reserved identifiers `ADR-050` and `ADR-051` have no record")]
+fn reserved_ids_have_no_record(world: &mut GivnWorld) {
+    let register = guidance(world);
+    for id in ["ADR-050", "ADR-051"] {
+        assert!(!file_exists(&active_adr_path(id)));
+        assert!(!file_exists(&archived_adr_path(id)));
+        assert!(!register.contains(&format!("[{}]", id)));
+    }
+}
+
+#[then("non-ADR records are removed from the active register and ADR archive")]
+fn non_adr_records_are_removed(world: &mut GivnWorld) {
+    let register = guidance(world);
+    for id in [
+        "ADR-003", "ADR-006", "ADR-007", "ADR-012", "ADR-016", "ADR-018", "ADR-022", "ADR-029",
+        "ADR-030", "ADR-031", "ADR-032", "ADR-033", "ADR-034", "ADR-035", "ADR-038", "ADR-040",
+        "ADR-043", "ADR-049", "ADR-064", "ADR-065",
+    ] {
+        assert!(
+            !file_exists(&active_adr_path(id)),
+            "active record remains: {id}"
+        );
+        assert!(
+            !file_exists(&archived_adr_path(id)),
+            "archived record remains: {id}"
+        );
+        assert!(
+            !register.contains(&format!("[{id}]")),
+            "register link remains: {id}"
+        );
+    }
+}
+
+#[then("absorbed records are absent and their refinements are in the target ADRs")]
+fn absorbed_records_are_in_targets(world: &mut GivnWorld) {
+    let register = guidance(world);
+    for id in ["ADR-021", "ADR-025", "ADR-036", "ADR-062"] {
+        assert!(
+            !file_exists(&active_adr_path(id)),
+            "absorbed record remains: {id}"
+        );
+        assert!(
+            !register.contains(&format!("[{id}]")),
+            "register link remains: {id}"
+        );
+    }
+
+    let runner = fs::read_to_string(active_adr_path("ADR-015")).expect("read ADR-015");
+    assert!(runner.contains("missing-testrunner"));
+    let specification = fs::read_to_string(active_adr_path("ADR-011")).expect("read ADR-011");
+    assert!(specification.contains("implementation-independent"));
+    let agent = fs::read_to_string(active_adr_path("ADR-013")).expect("read ADR-013");
+    assert!(agent.contains("Target selection") || agent.contains("target selection"));
+    let serializer = fs::read_to_string(active_adr_path("ADR-059")).expect("read ADR-059");
+    assert!(serializer.contains("Synthetic markers"));
+}
+
+#[then(
+    "superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links"
+)]
+fn superseded_records_remain_archived(world: &mut GivnWorld) {
+    let _ = world;
+    for (id, replacement) in [
+        ("ADR-019", "ADR-027"),
+        ("ADR-042", "ADR-052"),
+        ("ADR-053", "ADR-063"),
+    ] {
+        let path = archived_adr_path(id);
+        let content =
+            fs::read_to_string(&path).unwrap_or_else(|error| panic!("read {path}: {error}"));
+        assert!(content.contains(&format!("status: superseded by {replacement}")));
+        assert!(content.contains(replacement));
+    }
+}
+
+#[then(
+    "`ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications"
+)]
+fn explore_and_audit_adrs_are_spec_owned(world: &mut GivnWorld) {
+    let _ = world;
+    assert!(!file_exists(&active_adr_path("ADR-043")));
+    assert!(!file_exists(&active_adr_path("ADR-049")));
+    assert!(file_exists(
+        "givn/specs/spec-explore-permanent/spec-explore-permanent.feature"
+    ));
+    assert!(file_exists(
+        "givn/specs/spec-duplicates/spec-duplicates.feature"
+    ));
+}
+
+#[then("independent architecture decisions remain separate")]
+fn independent_adrs_remain_separate(world: &mut GivnWorld) {
+    let _ = world;
+    for id in [
+        "ADR-005", "ADR-008", "ADR-009", "ADR-010", "ADR-024", "ADR-039", "ADR-052", "ADR-059",
+    ] {
+        assert!(
+            file_exists(&active_adr_path(id)),
+            "independent ADR missing: {id}"
+        );
+    }
+}
+
+#[then("`ADR-063` remains proposed and owned by its active change")]
+fn proposed_budget_adr_remains_owned(world: &mut GivnWorld) {
+    let content = fs::read_to_string(active_adr_path("ADR-063")).expect("read ADR-063");
+    assert!(content.contains("status: proposed"));
+    assert!(file_exists(
+        "givn/changes/semantic-reranker-budget/design.md"
+    ));
+    assert!(guidance(world).contains("ADR-063"));
 }
