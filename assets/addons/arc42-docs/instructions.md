@@ -161,6 +161,14 @@ qualify unless all five mandatory dimensions pass.
 The following are generally not ADRs unless they introduce a separate durable
 boundary or contract:
 
+- observable behavior with no architectural trade-off -> Gherkin specification;
+- local implementation approach or algorithm detail -> `design.md` and code;
+- current component/runtime/deployment fact -> the corresponding Arc42 chapter
+  and implementation;
+- prompt, workflow, review, test, coverage, licensing, roadmap, or repository
+  policy -> its owning process or project document;
+- a refinement of an existing ADR -> amendment of that ADR, not a new file.
+
 - choosing a logging library;
 - internal variable or method naming;
 - formatting rules such as tabs versus spaces;
