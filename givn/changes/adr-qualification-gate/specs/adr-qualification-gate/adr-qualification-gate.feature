@@ -33,7 +33,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance distinguishes process guidance from architecture rationale
     And the guidance requires exactly one canonical target for a non-ADR decision
 
-  @givn.added @wip
+  @givn.added
   Scenario: The guidance requires an existing-ADR check before drafting
     Given the ADR qualification guidance is available
     When an author reads the duplicate and relationship rules
