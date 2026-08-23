@@ -245,6 +245,8 @@ and stop without drafting when a mandatory gate fails. The qualification
 verdict is an authoring protocol, not a Givn runtime evaluator or persisted
 runtime artifact. Project overrides may replace this default guidance through
 the normal asset cascade.
+An incomplete existing-ADR check fails `existing_adr_check` and blocks a
+`NEW_ADR` route.
 
 ### MADR file contract
 
