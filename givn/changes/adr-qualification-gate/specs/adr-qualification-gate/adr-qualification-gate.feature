@@ -123,7 +123,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And independent architecture decisions remain separate
     And `ADR-063` remains proposed and owned by its active change
 
-  @givn.added @wip
+  @givn.added
   Scenario: All effective guidance sources use the same ADR policy
     Given the canonical Arc42 qualification procedure and design-review guidance are available
     When an author compares the effective and generated guidance sources
