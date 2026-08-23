@@ -370,3 +370,36 @@ fn guidance_does_not_require_adr_for_chapter(world: &mut GivnWorld) {
     let content = guidance(world);
     assert!(content.contains("does not by itself qualify an ADR"));
 }
+
+#[given("the change-level Arc42 assessment template is available")]
+fn change_level_arc42_template_is_available(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string("assets/addons/arc42-docs/template.md")
+        .expect("read Arc42 impact template");
+    world.additional_output = Some(content);
+}
+
+#[when("a maintainer reads the ADR disposition marker")]
+fn maintainer_reads_adr_disposition_marker(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "Arc42 template is empty");
+}
+
+#[then("the marker distinguishes chapter impact from ADR action")]
+fn marker_distinguishes_impact_and_action(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("A change may affect chapter 09 without qualifying"));
+    assert!(content.contains("ADR action:"));
+}
+
+#[then("the marker allows `NONE` with target `none`")]
+fn marker_allows_no_adr_action(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("ADR action: NONE"));
+    assert!(content.contains("ADR target: none"));
+}
+
+#[then("the marker does not duplicate the complete MADR procedure")]
+fn marker_does_not_duplicate_madr(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("Do not copy the complete qualification procedure"));
+    assert!(content.contains("complete ADR procedure and template are owned"));
+}

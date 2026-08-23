@@ -92,7 +92,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance requires an affected chapter to be updated when appropriate
     And the guidance does not require a new ADR solely because a chapter is affected
 
-  @givn.added @wip
+  @givn.added
   Scenario: The change assessment records ADR disposition separately from chapter impact
     Given the change-level Arc42 assessment template is available
     When a maintainer reads the ADR disposition marker
