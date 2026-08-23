@@ -247,18 +247,22 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): All effective guidance sources use the same ADR policy`
+- [x] COMMIT: `876511a` — `docs(arc42): All effective guidance sources use the same ADR policy`
 
 ## Scenario: The ADR guidance requires an adversarial qualification record
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert real alternatives, supplied evidence, one canonical target,
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `2 steps
+      (1 passed, 1 failed)`, `Step panicked. Captured output: not implemented`,
+      and non-zero exit.
+- [x] GREEN: assert real alternatives, supplied evidence, one canonical target,
       duplicate/amend/supersession review, and the checklist's evidence-only
       role. Production/source files: `assets/addons/arc42-docs/instructions.md`.
       Test file: `tests/steps/adr_qualification_gate_steps.rs`. Output:
-      _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): The ADR guidance requires an adversarial qualification record`
 
 ## E2E Smoke Tests

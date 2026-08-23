@@ -193,6 +193,8 @@ qualification by itself.
 
 An LLM must classify the candidate before drafting an ADR. It must first return
 one structured verdict with the following fields:
+The verdict must record the decision classification and exactly one canonical
+target or ADR relationship.
 
 ```json
 {
