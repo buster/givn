@@ -119,8 +119,39 @@ fn commit_managed_upgrade(
 }
 
 fn write_migration_plan(migration_dir: &Path, commit_a: &str) -> Result<()> {
-    std::fs::create_dir_all(migration_dir)
-        .with_context(|| format!("create migration directory '{}'", migration_dir.display()))?;
+    let parent = migration_dir
+        .parent()
+        .ok_or_else(|| anyhow::anyhow!("migration directory has no parent"))?;
+    std::fs::create_dir_all(parent)
+        .with_context(|| format!("create migration parent '{}'", parent.display()))?;
+    let temporary_dir = parent.join(format!(".{MIGRATION_CHANGE_ID}.tmp-{}", std::process::id()));
+    if temporary_dir.exists() {
+        std::fs::remove_dir_all(&temporary_dir).with_context(|| {
+            format!(
+                "remove stale migration staging directory '{}'",
+                temporary_dir.display()
+            )
+        })?;
+    }
+    std::fs::create_dir(&temporary_dir).with_context(|| {
+        format!(
+            "create migration staging directory '{}'",
+            temporary_dir.display()
+        )
+    })?;
+
+    let result = write_migration_plan_files(&temporary_dir, commit_a);
+    if let Err(error) = result {
+        std::fs::remove_dir_all(&temporary_dir).ok();
+        return Err(error);
+    }
+
+    std::fs::rename(&temporary_dir, migration_dir)
+        .with_context(|| format!("publish migration directory '{}'", migration_dir.display()))?;
+    Ok(())
+}
+
+fn write_migration_plan_files(migration_dir: &Path, commit_a: &str) -> Result<()> {
     std::fs::write(migration_dir.join(".givn-skip"), "specs\n")
         .context("write migration skip marker")?;
     std::fs::write(

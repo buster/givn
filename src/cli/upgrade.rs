@@ -287,4 +287,19 @@ mod tests {
         assert!(upgraded.contains("./gradlew test"));
         assert!(upgraded.contains("arc42: true"));
     }
+
+    #[test]
+    fn active_config_version_ignores_commented_examples() {
+        let config = "# givn_config_version: \"0.1.0\"\n\
+                       givn_config_version: \"0.2.0\" # managed\n";
+        assert_eq!(active_config_version(config).as_deref(), Some("0.2.0"));
+    }
+
+    #[test]
+    fn active_config_version_accepts_unquoted_values() {
+        assert_eq!(
+            active_config_version("givn_config_version: 0.2.0\n").as_deref(),
+            Some("0.2.0")
+        );
+    }
 }
