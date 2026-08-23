@@ -388,6 +388,10 @@ Base the decision on the current change's `proposal.md`, `specs/`, and
 checked the change's scope against that row and found nothing, not because
 you stopped looking after an earlier row matched:
 
+Arc42 chapter impact and ADR qualification are independent decisions. A change
+may require a chapter update without requiring a new ADR; an affected chapter
+does not by itself qualify an ADR.
+
 | # | If the change introduces or modifies... | Chapter(s) |
 |---|---|---|
 | 1 | Goals, stakeholders, quality attributes | 01 introduction-and-goals, 10 quality-requirements |
