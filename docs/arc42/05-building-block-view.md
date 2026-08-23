@@ -42,7 +42,8 @@ flowchart TD
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
 | `cli::skills` | Synchronize selected skill targets and opencode commands. |
-| `cli::upgrade` | Refresh managed config comments and preserve uncommented overrides. |
+| `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, and dispatch the exact legacy migration preparation route. |
+| `cli::migration` | Preflight Git state, calculate the managed-path allowlist, create the two commits, and write the 0.2.0-to-0.3.0 maintenance plan. |
 | `config::manifest` | Define artifact, apply, verify, coverage, addon, and hook data structures. |
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |

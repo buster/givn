@@ -45,6 +45,7 @@ not alter other content.
 | `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
 | `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence, and complete permanent audit. |
 | `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
+| `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
 | `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
 | Agent target directories | out | Selected `.opencode`, `.agents`, and `.claude` skill paths; opencode commands use `.opencode/commands`. |
 | Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |
@@ -65,6 +66,7 @@ not alter other content.
 - Optional BGE/NLI local evidence with actual-tokenizer cap handling.
 - Repository-owned compiled-CLI acceptance fixtures.
 - Strict ADR qualification guidance and canonical routing of architecture rationale.
+- Version 0.3.0 release metadata and the 0.2.0-to-0.3.0 LLM migration path.
 
 ### Out of scope
 
@@ -72,7 +74,8 @@ not alter other content.
 - Automatic classification, automatic feature edits, automatic chunking, or
   automatic scenario splitting for token caps.
 - A configurable Arc42 output directory or chapter selection cascade.
-- OpenSpec backward-compatible reads or an implicit migration.
+- OpenSpec backward-compatible reads or migrations from versions other than
+  the documented 0.2.0-to-0.3.0 route.
 - Multi-repository workflow coordination.
 - Release, Homebrew, and shell-installer infrastructure before it is implemented.
 - Treating BGE/NLI evidence as a domain classification.
