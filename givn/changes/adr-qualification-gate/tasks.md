@@ -165,17 +165,22 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): An architectural replacement preserves supersession history`
+- [x] COMMIT: `2898b5f` — `docs(arc42): An architectural replacement preserves supersession history`
 
 ## Scenario: Arc42 impact does not by itself require an ADR
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert the separate chapter-impact and ADR-routing rules.
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `2 steps
+      (1 passed, 1 failed)`, `Step panicked. Captured output: not implemented`,
+      and non-zero exit.
+- [x] GREEN: assert the separate chapter-impact and ADR-routing rules.
       Production/source files: `assets/addons/arc42-docs/instructions.md` and
       `assets/addons/arc42-docs/template.md`. Test file:
-      `tests/steps/adr_qualification_gate_steps.rs`. Output: _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `tests/steps/adr_qualification_gate_steps.rs`. Output:
+      `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): Arc42 impact does not by itself require an ADR`
 
 ## Scenario: The change assessment records ADR disposition separately from chapter impact
