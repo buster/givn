@@ -134,7 +134,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And no source claims that runtime validation enforces the policy
     And a project override remains the effective source when configured
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ADR guidance requires an adversarial qualification record
     Given the ADR qualification guidance is available
     When an author prepares an ADR candidate
