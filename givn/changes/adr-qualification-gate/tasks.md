@@ -37,22 +37,25 @@ and commit hash are recorded.
       contract; rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): The guidance defines strict qualification as an all-gates contract`
+- [x] COMMIT: `c5ad76e` — `docs(arc42): The guidance defines strict qualification as an all-gates contract`
 
 ## Scenario: Shared guidance alone does not qualify an ADR
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run:
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run:
       ```sh
       GIVN_FEATURES=givn/changes/adr-qualification-gate/specs \
         cargo test --features spec-retrieval --test features_runner -- \
         --name '^Shared guidance alone does not qualify an ADR$'
       ```
-      Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert support-only `Must be shared` and single canonical routing.
+      Output: `1 feature`, `1 scenario (1 failed)`, `2 steps (1 passed, 1 failed)`,
+      `Step panicked. Captured output: not implemented`, and non-zero exit.
+- [x] GREEN: assert support-only `Must be shared` and single canonical routing.
       Production/source files: `assets/addons/arc42-docs/instructions.md`.
       Test file: `tests/steps/adr_qualification_gate_steps.rs`. Output:
-      _pending_.
-- [ ] REFACTOR: rerun the anchored scenario after cleanup. Output: _pending_.
+      `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the anchored scenario after cleanup. Output:
+      `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): Shared guidance alone does not qualify an ADR`
 
 ## Scenario: The guidance routes normal design decisions to one canonical artifact

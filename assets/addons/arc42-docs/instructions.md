@@ -92,7 +92,8 @@ qualification = alternatives
 Every mandatory dimension must pass with decision-specific evidence. The MADR
 checklist is evidence for those dimensions; it is not an at-least-one escape
 hatch. `Must be shared` is supporting evidence only and is excluded from the
-Boolean formula. It can never qualify a candidate by itself.
+Boolean formula. It can never qualify a candidate by itself. Shared evidence
+alone does not qualify an ADR.
 
 The mandatory dimensions are:
 

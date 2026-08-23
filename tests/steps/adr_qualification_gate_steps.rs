@@ -77,3 +77,28 @@ fn guidance_defines_boolean_and_gate(world: &mut GivnWorld) {
         );
     }
 }
+
+#[when("an author reads the qualification criteria")]
+fn author_reads_qualification_criteria(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "qualification guidance is empty"
+    );
+}
+
+#[then("the guidance says `Must be shared` is supporting evidence only")]
+fn guidance_says_shared_is_supporting_only(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("`Must be shared` is supporting evidence only"));
+}
+
+#[then("the guidance says shared evidence cannot qualify a candidate by itself")]
+fn guidance_rejects_shared_only_qualification(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("It can never qualify a candidate by itself"));
+}
+
+#[then("the guidance routes a non-qualifying candidate to one canonical artifact")]
+fn guidance_routes_non_qualifying_candidate(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("If any mandatory dimension fails, do not create an ADR"));
+    assert!(content.contains("Route the decision once\nto its canonical artifact"));
+}
