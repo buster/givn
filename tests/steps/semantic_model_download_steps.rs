@@ -52,23 +52,51 @@ fn reports_reused_model_artifacts(world: &mut GivnWorld) {
 }
 
 #[given("an initialized project with unavailable semantic model sources")]
-fn unavailable_semantic_model_sources(_world: &mut GivnWorld) {
-    unimplemented!()
+fn unavailable_semantic_model_sources(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/unavailable.feature"),
+        "Feature: unavailable\n\n  Scenario: Unavailable semantic model\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write unavailable model fixture");
+    let xdg = env.path(".xdg-cache");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("missing".to_string());
 }
 
 #[then("stderr identifies the E5 model cache and failed artifact")]
-fn reports_e5_cache_failure(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_e5_cache_failure(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    let cache = world
+        .xdg_cache_home
+        .as_ref()
+        .expect("XDG cache root")
+        .join("givn/e5");
+    assert!(
+        stderr.contains(&format!("E5 cache={}", cache.display())),
+        "stderr did not identify E5 cache: {stderr}"
+    );
+    assert!(
+        stderr.contains("model.onnx") || stderr.contains("tokenizer.json"),
+        "stderr did not identify failed E5 artifact: {stderr}"
+    );
 }
 
 #[then("stderr names a local artifact or environment-variable alternative")]
-fn reports_local_artifact_alternative(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_local_artifact_alternative(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("GIVN_SPEC_MODEL_CACHE") && stderr.contains("GIVN_SPEC_E5_TOKENIZER"),
+        "stderr did not name local E5 alternatives: {stderr}"
+    );
 }
 
 #[then("no permanent semantic index file is written")]
-fn no_permanent_index_written(_world: &mut GivnWorld) {
-    unimplemented!()
+fn no_permanent_index_written(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    assert!(!env.path("givn/.spec-index.json").exists());
 }
 
 #[given(

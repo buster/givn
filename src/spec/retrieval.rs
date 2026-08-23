@@ -7021,8 +7021,11 @@ fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Emb
     let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => preflight_e5_stub_texts(texts)?,
         Ok("missing") => {
+            let cache = e5_model_cache_dir(root)
+                .map(|path| path.display().to_string())
+                .unwrap_or_else(|_| "<unresolved>".to_string());
             bail!(
-                "retrieval model is unavailable; configure a local model cache or unset GIVN_SPEC_EMBEDDER"
+                "retrieval model is unavailable; E5 cache={cache}; failed artifact=model.onnx or tokenizer.json; configure GIVN_SPEC_MODEL_CACHE or set GIVN_SPEC_E5_TOKENIZER, or unset GIVN_SPEC_EMBEDDER"
             )
         }
         Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),

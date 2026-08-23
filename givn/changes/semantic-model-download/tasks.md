@@ -32,17 +32,22 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `dd3079e`.
 
 ## Scenario: A failed model download explains how to provide the missing artifacts
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: report role, cache, failed artifact, and local override guidance;
-  leave the index absent after E5 acquisition failure. Production files:
-  _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: preserve actionable error formatting and rerun the named
-  scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: reported the E5 cache, failed artifact, and local override guidance;
+  left the index absent after E5 setup failure. Production files:
+  `src/spec/retrieval.rs`. Test files: `tests/steps/semantic_model_download_steps.rs`.
+  Compile step: `cargo check --features spec-retrieval` passed. Targeted output:
+  `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: formatted the changed Rust files with `cargo fmt --all`, checked
+  formatting, and reran the named scenario; output: `1 scenario (1 passed)`,
+  `6 steps (6 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: A failed model download leaves an existing permanent index unchanged
