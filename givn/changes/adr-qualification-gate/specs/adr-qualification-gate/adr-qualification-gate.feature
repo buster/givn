@@ -152,7 +152,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the CLI output says that `Must be shared` is supporting evidence only
     And the CLI output distinguishes `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, and `CANONICAL_ARTIFACT`
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A reviewer requests design-review guidance through the Givn CLI
     Given an initialized ADR qualification project with active change `adr-qualification-gate`
     When the reviewer requests the `design-review` guidance through the Givn CLI
