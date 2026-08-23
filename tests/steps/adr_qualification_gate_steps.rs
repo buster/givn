@@ -273,3 +273,29 @@ fn unused_route_targets_are_null(world: &mut GivnWorld) {
     assert!(content.contains("`canonical_artifact` and `replacement_adr`"));
     assert!(content.contains("`canonical_artifact` and `target_adr`"));
 }
+
+#[when("an author reads the evidence rules")]
+fn author_reads_evidence_rules(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "evidence guidance is empty");
+}
+
+#[then("the guidance requires evidence supplied by the author or source artifacts")]
+fn guidance_requires_supplied_evidence(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("Evidence arrays contain only facts and"));
+    assert!(content.contains("alternatives supplied by the author or source artifacts"));
+}
+
+#[then("the guidance says missing evidence remains empty")]
+fn guidance_keeps_missing_evidence_empty(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("Missing evidence stays"));
+    assert!(content.contains("empty and causes its gate to fail"));
+}
+
+#[then("the guidance forbids inventing alternatives impact consequences or participants")]
+fn guidance_forbids_invented_evidence(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("must not invent alternatives"));
+    assert!(content.contains("impact, consequences, participants, or provenance"));
+}
