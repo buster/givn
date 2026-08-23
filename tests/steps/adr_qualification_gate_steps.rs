@@ -102,3 +102,39 @@ fn guidance_routes_non_qualifying_candidate(world: &mut GivnWorld) {
     assert!(content.contains("If any mandatory dimension fails, do not create an ADR"));
     assert!(content.contains("Route the decision once\nto its canonical artifact"));
 }
+
+#[when("an author reads the lower-level artifact rules")]
+fn author_reads_lower_level_artifact_rules(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "lower-level artifact guidance is empty"
+    );
+}
+
+#[then("the guidance distinguishes a feature specification from technical design")]
+fn guidance_distinguishes_feature_from_design(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("observable behavior with no architectural trade-off"));
+    assert!(content.contains("Gherkin specification"));
+    assert!(content.contains("local implementation approach or algorithm detail"));
+    assert!(content.contains("`design.md` and code"));
+}
+
+#[then("the guidance distinguishes Arc42 documentation from implementation code")]
+fn guidance_distinguishes_arc42_from_code(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("current component/runtime/deployment fact"));
+    assert!(content.contains("corresponding Arc42 chapter"));
+}
+
+#[then("the guidance distinguishes process guidance from architecture rationale")]
+fn guidance_distinguishes_process_from_architecture(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("prompt, workflow, review, test, coverage, licensing, roadmap"));
+    assert!(content.contains("owning process or project document"));
+}
+
+#[then("the guidance requires exactly one canonical target for a non-ADR decision")]
+fn guidance_requires_one_canonical_target(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("`canonical_artifact` naming exactly one destination"));
+}

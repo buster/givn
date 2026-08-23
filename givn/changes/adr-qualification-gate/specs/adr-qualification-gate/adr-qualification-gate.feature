@@ -24,7 +24,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance says shared evidence cannot qualify a candidate by itself
     And the guidance routes a non-qualifying candidate to one canonical artifact
 
-  @givn.added @wip
+  @givn.added
   Scenario: The guidance routes normal design decisions to one canonical artifact
     Given the ADR qualification guidance is available
     When an author reads the lower-level artifact rules
