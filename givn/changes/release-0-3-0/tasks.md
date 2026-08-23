@@ -58,47 +58,47 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: The changelog describes the complete 0.3.0 release
 
-- [ ] Scenario: `The changelog describes the complete 0.3.0 release`
-  - [ ] RED: assert that `CHANGELOG.md` is absent or lacks the required
+- [x] Scenario: `The changelog describes the complete 0.3.0 release`
+  - [x] RED: assert that `CHANGELOG.md` is absent or lacks the required
         release and migration sections. Run the single scenario only. Must
         fail.
         ```
         Before adding `CHANGELOG.md`, the release scenario could not read the required file from the repository; the absent-file precondition failed.
         ```
-  - [ ] GREEN: add `CHANGELOG.md` with the complete user-visible 0.3.0 scope
+  - [x] GREEN: add `CHANGELOG.md` with the complete user-visible 0.3.0 scope
         relative to the 0.2.0 master branch and the migration entry point.
         ```
         `cargo test --test features_runner -- --name "The changelog describes the complete 0.3.0 release"` passed: `1 scenario (1 passed)`. File: `CHANGELOG.md`.
         ```
-  - [ ] REFACTOR: verify headings and links are stable, concise, and do not
+  - [x] REFACTOR: verify headings and links are stable, concise, and do not
         claim unfinished distribution or semantic work as complete.
         ```
         The changelog separates shipped behavior from the incomplete ADR-063/distribution boundary; the rerun passed with `1 scenario (1 passed)`.
         ```
-  - [ ] COMMIT: `<hash>` — `docs(release): add 0.3.0 changelog`
+  - [x] COMMIT: `65d0b62` — `docs(release): The changelog describes the complete 0.3.0 release`
 
 ---
 
 ## Scenario: The migration guide is an executable prompt sequence
 
 - [ ] Scenario: `The migration guide is an executable prompt sequence`
-  - [ ] RED: assert the public migration guide or its ordered prompt markers
+  - [x] RED: assert the public migration guide or its ordered prompt markers
         are missing. Run the single scenario only. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Before adding the guide, the `Given` step failed because `docs/migrations/0.2.0-to-0.3.0.md` was absent.
         ```
-  - [ ] GREEN: write `docs/migrations/0.2.0-to-0.3.0.md` as the canonical
+  - [x] GREEN: write `docs/migrations/0.2.0-to-0.3.0.md` as the canonical
         LLM prompt pack. Cover evidence inventory, machine-safe upgrade,
         synchronization, active/permanent specs, overlap/semantic review,
         Arc42/ADR reconciliation, verification, and archive.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --test features_runner -- --name "The migration guide is an executable prompt sequence"` passed: `1 scenario (1 passed)`. File: `docs/migrations/0.2.0-to-0.3.0.md`.
         ```
-  - [ ] REFACTOR: check that every prompt names inputs, allowed edits,
+  - [x] REFACTOR: check that every prompt names inputs, allowed edits,
         forbidden automatic decisions, expected evidence, and the next Givn
         artifact/command; remove duplicated or contradictory policy.
         ```
-        <!-- paste REFACTOR evidence -->
+        The guide has five ordered copyable prompts, explicit evidence checks, and domain/ADR edit prohibitions; the rerun passed with `1 scenario (1 passed)`.
         ```
   - [ ] COMMIT: `<hash>` — `docs(migration): add 0.2.0 to 0.3.0 LLM guide`
 

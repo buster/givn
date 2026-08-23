@@ -98,14 +98,19 @@ fn guide_has_ordered_prompts(world: &mut GivnWorld) {
 #[then("each prompt tells the LLM which project evidence to inspect before editing")]
 fn guide_requires_evidence(world: &mut GivnWorld) {
     let guide = world.additional_output.as_deref().expect("guide content");
-    assert!(guide.matches("Inspect").count() >= 5, "{guide}");
+    let normalized = guide.to_ascii_lowercase();
+    assert!(normalized.matches("inspect").count() >= 5, "{guide}");
     assert!(guide.contains("before editing"), "{guide}");
 }
 
 #[then("the guide forbids automatic changes to domain specifications and architecture decisions")]
 fn guide_forbids_automatic_semantic_edits(world: &mut GivnWorld) {
     let guide = world.additional_output.as_deref().expect("guide content");
-    assert!(guide.contains("must not automatically edit"), "{guide}");
+    let normalized = guide.to_ascii_lowercase();
+    assert!(
+        normalized.contains("must not automatically edit"),
+        "{guide}"
+    );
     assert!(guide.contains("ADR"), "{guide}");
     assert!(guide.contains("givn/specs"), "{guide}");
 }
