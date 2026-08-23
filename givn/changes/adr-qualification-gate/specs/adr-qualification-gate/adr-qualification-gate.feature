@@ -76,7 +76,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance requires the target ADR to be named
     And the guidance forbids a parallel ADR for the same decision boundary
 
-  @givn.added @wip
+  @givn.added
   Scenario: An architectural replacement preserves supersession history
     Given the ADR qualification guidance is available
     When an author reads the replacement rules
