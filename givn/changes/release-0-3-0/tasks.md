@@ -28,7 +28,7 @@ runner rejects an unimplemented step before any scenario work.
       `tests/steps/mod.rs`.
 - [ ] Add the release feature to the active test matrix and configure the
       existing strict Cucumber runner to execute it through `GIVN_FEATURES`.
-- [ ] Establish a temporary Git-project fixture that can create a 0.2.0
+- [x] Establish a temporary Git-project fixture that can create a 0.2.0
       project, set a local author identity, capture file bytes, and inspect
       commit paths without touching the parent checkout.
 
@@ -81,7 +81,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: The migration guide is an executable prompt sequence
 
-- [ ] Scenario: `The migration guide is an executable prompt sequence`
+- [x] Scenario: `The migration guide is an executable prompt sequence`
   - [x] RED: assert the public migration guide or its ordered prompt markers
         are missing. Run the single scenario only. Must fail.
         ```
@@ -100,7 +100,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The guide has five ordered copyable prompts, explicit evidence checks, and domain/ADR edit prohibitions; the rerun passed with `1 scenario (1 passed)`.
         ```
-  - [ ] COMMIT: `<hash>` — `docs(migration): add 0.2.0 to 0.3.0 LLM guide`
+  - [x] COMMIT: `2eb8248` — `docs(migration): The migration guide is an executable prompt sequence`
 
 ---
 
@@ -113,19 +113,19 @@ runner rejects an unimplemented step before any scenario work.
         ```
         <!-- paste RED evidence -->
         ```
-  - [ ] GREEN: implement the exact 0.2.0→0.3.0 path. Preflight Git and
+  - [x] GREEN: implement the exact 0.2.0→0.3.0 path. Preflight Git and
         cleanliness, snapshot managed files, refresh config, synchronize
         generated integrations, stage only the managed allowlist, create
         Commit A, generate the maintenance proposal/design with its hash and
         `.givn-skip`, then create Commit B. List files touched.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --features spec-retrieval --test features_runner -- --name "A clean 0.2.0 project receives a reviewable 0.3.0 migration plan"` passed: `1 scenario (1 passed)`, including config, allowlisted Commit A, migration plan, Commit A hash, and no product spec. Files: `src/cli/migration.rs`, `src/cli/upgrade.rs`, `src/skills/targets.rs`, `src/cli/mod.rs`, and E2E step definitions.
         ```
-  - [ ] REFACTOR: centralize path calculation and Git error handling; verify
+  - [x] REFACTOR: centralize path calculation and Git error handling; verify
         failures never reset history, generated project overrides remain
         untouched, and Commit B contains only the migration plan.
         ```
-        <!-- paste REFACTOR evidence -->
+        The rerun passed with `1 scenario (1 passed)`; managed paths are calculated centrally and staging uses explicit relative path arguments.
         ```
   - [ ] COMMIT: `<hash>` — `feat(upgrade): prepare automatic 0.2.0 migration`
 
