@@ -16,7 +16,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance requires a completed existing-ADR or duplicate check
     And the guidance defines qualification as Boolean AND across all mandatory gates
 
-  @givn.added @wip
+  @givn.added
   Scenario: Shared guidance alone does not qualify an ADR
     Given the ADR qualification guidance is available
     When an author reads the qualification criteria
