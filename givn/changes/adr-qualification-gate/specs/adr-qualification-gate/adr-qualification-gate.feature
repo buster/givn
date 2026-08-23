@@ -60,7 +60,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And `SUPERSEDE_ADR` requires a `replacement_adr` target
     And unused route-target fields are required to remain null
 
-  @givn.added @wip
+  @givn.added
   Scenario: The guidance forbids invented ADR evidence
     Given the ADR qualification guidance is available
     When an author reads the evidence rules

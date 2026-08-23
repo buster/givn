@@ -118,17 +118,22 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): Route targets are conditional and unused targets stay empty`
+- [x] COMMIT: `2dccc77` — `docs(arc42): Route targets are conditional and unused targets stay empty`
 
 ## Scenario: The guidance forbids invented ADR evidence
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert supplied-evidence-only, empty-missing-evidence, and
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `2 steps
+      (1 passed, 1 failed)`, `Step panicked. Captured output: not implemented`,
+      and non-zero exit.
+- [x] GREEN: assert supplied-evidence-only, empty-missing-evidence, and
       no-invention clauses. Production/source files:
       `assets/addons/arc42-docs/instructions.md`. Test file:
-      `tests/steps/adr_qualification_gate_steps.rs`. Output: _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `tests/steps/adr_qualification_gate_steps.rs`. Output:
+      `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): The guidance forbids invented ADR evidence`
 
 ## Scenario: An ADR refinement is routed to amendment without duplication
