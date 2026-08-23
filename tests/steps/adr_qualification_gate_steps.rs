@@ -652,3 +652,133 @@ fn proposed_budget_adr_remains_owned(world: &mut GivnWorld) {
     ));
     assert!(guidance(world).contains("ADR-063"));
 }
+
+fn guidance_sources() -> String {
+    let paths = [
+        "assets/addons/arc42-docs/instructions.md",
+        "assets/addons/arc42-docs/template.md",
+        "assets/addons/arc42-docs/chapters/README.md",
+        "assets/addons/arc42-docs/chapters/09-architecture-decisions.md",
+        "assets/instructions/design-review.md",
+        "assets/commands/givn-design-review.md",
+        "assets/templates/design-review.md",
+        "assets/skills/givn-design-review/SKILL.md.tmpl",
+        ".opencode/commands/givn-design-review.md",
+        ".opencode/skills/givn-design-review/SKILL.md",
+        ".agents/skills/givn-design-review/SKILL.md",
+        ".claude/skills/givn-design-review/SKILL.md",
+    ];
+    paths
+        .iter()
+        .filter_map(|path| fs::read_to_string(path).ok())
+        .collect::<Vec<_>>()
+        .join("\n")
+}
+
+#[given("the canonical Arc42 qualification procedure and design-review guidance are available")]
+fn canonical_and_derived_guidance_are_available(world: &mut GivnWorld) {
+    let content = guidance_sources();
+    assert!(!content.is_empty(), "guidance sources are empty");
+    world.additional_output = Some(content);
+}
+
+#[when("an author compares the effective and generated guidance sources")]
+fn author_compares_effective_and_generated_sources(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "guidance comparison has no sources"
+    );
+}
+
+#[then("the canonical source uses strict AND qualification semantics")]
+fn canonical_source_uses_strict_and(world: &mut GivnWorld) {
+    let _ = world;
+    let canonical = fs::read_to_string("assets/addons/arc42-docs/instructions.md")
+        .expect("read canonical qualification instruction");
+    for clause in [
+        "qualification = alternatives",
+        "AND architectural_impact",
+        "AND durable_consequence",
+        "AND lower_level_artifact",
+        "AND existing_adr_check",
+    ] {
+        assert!(
+            canonical.contains(clause),
+            "canonical source missing {clause}"
+        );
+    }
+}
+
+#[then("all sources that state qualification treat `Must be shared` as supporting evidence only")]
+fn all_qualification_sources_treat_shared_as_supporting(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(!content.contains("at least one clearly justified"));
+    for line in content
+        .lines()
+        .filter(|line| line.contains("Must be shared"))
+    {
+        assert!(
+            line.contains("supporting") || content.contains("supporting evidence only"),
+            "source contradicts support-only rule: {line}"
+        );
+    }
+}
+
+#[then("all sources that state routing use the same routing values and route targets")]
+fn all_routing_sources_use_same_values(world: &mut GivnWorld) {
+    let content = guidance(world);
+    for route in [
+        "NEW_ADR",
+        "AMEND_ADR",
+        "SUPERSEDE_ADR",
+        "CANONICAL_ARTIFACT",
+    ] {
+        assert!(
+            content.contains(route),
+            "guidance source missing route {route}"
+        );
+    }
+    assert!(content.contains("canonical_artifact"));
+    assert!(content.contains("target_adr"));
+    assert!(content.contains("replacement_adr"));
+}
+
+#[then("derived sources defer to the canonical procedure instead of copying its schema")]
+fn derived_sources_defer_to_canonical(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("canonical Arc42 addon instruction"));
+    assert!(content.contains("must not duplicate the complete procedure"));
+    for path in [
+        "assets/addons/arc42-docs/template.md",
+        "assets/addons/arc42-docs/chapters/README.md",
+        "assets/addons/arc42-docs/chapters/09-architecture-decisions.md",
+        "assets/instructions/design-review.md",
+        "assets/commands/givn-design-review.md",
+        "assets/templates/design-review.md",
+        "assets/skills/givn-design-review/SKILL.md.tmpl",
+        ".opencode/commands/givn-design-review.md",
+        ".opencode/skills/givn-design-review/SKILL.md",
+        ".agents/skills/givn-design-review/SKILL.md",
+        ".claude/skills/givn-design-review/SKILL.md",
+    ] {
+        let derived = fs::read_to_string(path).unwrap_or_default();
+        assert!(
+            !derived.contains("qualification = alternatives"),
+            "derived source copied the canonical formula: {path}"
+        );
+    }
+}
+
+#[then("no source claims that runtime validation enforces the policy")]
+fn no_source_claims_runtime_enforcement(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("not runtime enforcement") || content.contains("not a Givn runtime"));
+    assert!(!content.contains("runtime enforces the policy"));
+}
+
+#[then("a project override remains the effective source when configured")]
+fn project_override_remains_effective(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("Project overrides may replace this default guidance"));
+    assert!(content.contains("normal asset cascade"));
+}

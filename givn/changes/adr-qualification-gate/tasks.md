@@ -231,18 +231,22 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `11 steps (11 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): The migration removes non-ADRs and preserves independent architecture history`
+- [x] COMMIT: `62f83f7` — `docs(arc42): The migration removes non-ADRs and preserves independent architecture history`
 
 ## Scenario: All effective guidance sources use the same ADR policy
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: compare canonical and derived source assets, assert no competing
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `3 steps
+      (2 passed, 1 failed)`, an undefined step failure, and non-zero exit.
+- [x] GREEN: compare canonical and derived source assets, assert no competing
       legacy rule, verify generated mirrors, and verify a project override can
       remain effective. Production/source files: all ADR guidance sources named
       in `design.md` and generated mirrors. Test file:
-      `tests/steps/adr_qualification_gate_steps.rs`. Output: _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `tests/steps/adr_qualification_gate_steps.rs`. Output:
+      `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `8 steps (8 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): All effective guidance sources use the same ADR policy`
 
 ## Scenario: The ADR guidance requires an adversarial qualification record
