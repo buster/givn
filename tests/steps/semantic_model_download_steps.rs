@@ -102,13 +102,50 @@ fn no_permanent_index_written(world: &mut GivnWorld) {
 #[given(
     "an initialized project with an existing permanent semantic index and unavailable semantic model sources"
 )]
-fn existing_index_and_unavailable_sources(_world: &mut GivnWorld) {
-    unimplemented!()
+fn existing_index_and_unavailable_sources(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/existing.feature"),
+        "Feature: existing\n\n  Scenario: Existing semantic model\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write existing index fixture");
+    let xdg = env.path(".xdg-cache");
+    let xdg_value = xdg.to_str().expect("XDG path is UTF-8");
+    let output = common::run_givn_with_envs(
+        &env,
+        &["spec", "index"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg_value),
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "build existing semantic index failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.permanent_index_snapshot =
+        Some(fs::read(env.path("givn/.spec-index.json")).expect("read existing index snapshot"));
+    fs::write(
+        env.path("givn/specs/existing.feature"),
+        "Feature: existing\n\n  Scenario: Existing semantic model\n    Given a configured provider catalog\n    When the provider query changes\n    Then the provider result is returned\n",
+    )
+    .expect("change existing semantic input");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("missing".to_string());
 }
 
 #[then("the existing permanent semantic index remains unchanged byte-for-byte")]
-fn existing_index_is_unchanged(_world: &mut GivnWorld) {
-    unimplemented!()
+fn existing_index_is_unchanged(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let before = world
+        .permanent_index_snapshot
+        .as_ref()
+        .expect("existing index snapshot");
+    let after = fs::read(env.path("givn/.spec-index.json")).expect("read existing index");
+    assert_eq!(after, *before, "E5 failure changed the existing index");
 }
 
 #[given("an initialized project with a malformed or incompatible permanent semantic index")]

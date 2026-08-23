@@ -36,7 +36,7 @@ Feature: Automatic semantic model availability
     And stderr names a local artifact or environment-variable alternative
     And no permanent semantic index file is written
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed model download leaves an existing permanent index unchanged
     Given an initialized project with an existing permanent semantic index and unavailable semantic model sources
     When the user runs `givn spec index`
