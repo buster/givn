@@ -899,4 +899,39 @@ mod tests {
             "migrate-0-2-0-to-0-3-1"
         );
     }
+
+    #[test]
+    fn managed_upgrade_without_changes_does_not_create_empty_commit() {
+        let directory = tempfile::tempdir().unwrap();
+        let config = directory.path().join("givn/config.yaml");
+        std::fs::create_dir_all(config.parent().unwrap()).unwrap();
+        std::fs::write(&config, "givn_config_version: \"0.3.0\"\n").unwrap();
+
+        for args in [
+            ["init"].as_slice(),
+            ["config", "user.name", "Givn Test"].as_slice(),
+            ["config", "user.email", "givn@example.test"].as_slice(),
+            ["add", "--", "givn/config.yaml"].as_slice(),
+            ["commit", "-m", "initial"].as_slice(),
+        ] {
+            let output = Command::new("git")
+                .current_dir(directory.path())
+                .args(args)
+                .output()
+                .unwrap();
+            assert!(output.status.success(), "git {:?} failed", args);
+        }
+
+        let before = git_commit_hash(directory.path()).unwrap();
+        let result = commit_managed_upgrade(
+            directory.path(),
+            &config,
+            std::slice::from_ref(&config),
+            "chore(givn): refresh managed files",
+        )
+        .unwrap();
+
+        assert_eq!(result, None);
+        assert_eq!(git_commit_hash(directory.path()).unwrap(), before);
+    }
 }
