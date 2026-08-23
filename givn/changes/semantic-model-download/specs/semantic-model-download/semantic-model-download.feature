@@ -71,7 +71,7 @@ Feature: Automatic semantic model availability
     And stdout is valid duplicate-audit JSON with unavailable BGE and NLI evidence
     And stderr names the failed model artifacts and their local override variables
 
-  @givn.added @nli @nli-combined @wip
+  @givn.added @nli @nli-combined
   Scenario: A corrupt second-stage cache is repaired before evidence scoring
     Given an initialized project with corrupt BGE and NLI cache snapshots and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers

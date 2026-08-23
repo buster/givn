@@ -267,8 +267,14 @@ fn permanent_candidates_for_both_layers(world: &mut GivnWorld) {
 
 #[given("BGE and NLI evidence are explicitly enabled for automatic acquisition")]
 fn enable_automatic_second_stage_acquisition(world: &mut GivnWorld) {
-    assert_eq!(world.retrieval_bge.as_deref(), Some("missing"));
-    assert_eq!(world.retrieval_reranker.as_deref(), Some("nli-missing"));
+    assert!(matches!(
+        world.retrieval_bge.as_deref(),
+        Some("missing" | "auto")
+    ));
+    assert!(matches!(
+        world.retrieval_reranker.as_deref(),
+        Some("nli-missing" | "nli-auto")
+    ));
 }
 
 #[then("stdout is valid duplicate-audit JSON with unavailable BGE and NLI evidence")]
@@ -305,18 +311,114 @@ fn reports_second_stage_artifact_failure(world: &mut GivnWorld) {
 #[given(
     "an initialized project with corrupt BGE and NLI cache snapshots and reachable model sources"
 )]
-fn corrupt_second_stage_caches(_world: &mut GivnWorld) {
-    unimplemented!()
+fn corrupt_second_stage_caches(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/second-stage.feature"),
+        "Feature: second stage\n\n  Scenario: Primary semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n\n  Scenario: Secondary semantic behavior\n    Given a configured service catalog\n    When the service is queried\n    Then the service result is returned\n",
+    )
+    .expect("write second-stage fixture");
+    let xdg = env.path(".xdg-cache");
+    let bge_cache = xdg.join("givn/bge");
+    let nli_cache = xdg.join("givn/nli");
+    seed_corrupt_snapshot(
+        &bge_cache,
+        "rozgo/bge-reranker-v2-m3",
+        "fbd57b17b4db111a9d16813bb08b4c804fac18e9",
+        &[
+            "model.onnx",
+            "model.onnx.data",
+            "tokenizer.json",
+            "config.json",
+            "special_tokens_map.json",
+            "tokenizer_config.json",
+        ],
+    );
+    seed_corrupt_snapshot(
+        &nli_cache,
+        "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7",
+        "b5113eb38ab63efdd7f280f8c144ea8b13f978ce",
+        &[
+            "onnx/model.onnx",
+            "config.json",
+            "tokenizer.json",
+            "tokenizer_config.json",
+        ],
+    );
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_bge = Some("auto".to_string());
+    world.retrieval_reranker = Some("nli-auto".to_string());
+    world.retrieval_bge_local_stub = true;
+    world.retrieval_nli_local_stub = true;
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/second-stage.feature|Primary semantic behavior::givn/specs/second-stage.feature|Secondary semantic behavior=0.9600".to_string(),
+    );
+    world.artifact_server = Some(common::ArtifactFixtureServer::start());
+}
+
+fn seed_corrupt_snapshot(
+    cache_root: &std::path::Path,
+    repository: &str,
+    revision: &str,
+    files: &[&str],
+) {
+    let repository_dir = repository.replace('/', "--");
+    let snapshot = cache_root.join(format!("models--{repository_dir}/snapshots/{revision}"));
+    for file in files {
+        let path = snapshot.join(file);
+        fs::create_dir_all(path.parent().expect("artifact parent")).expect("create snapshot");
+        fs::write(path, b"corrupt-artifact").expect("write corrupt artifact");
+    }
+    let refs = cache_root.join(format!("models--{repository_dir}/refs"));
+    fs::create_dir_all(&refs).expect("create snapshot refs");
+    fs::write(refs.join(revision), revision).expect("write snapshot ref");
+    fs::create_dir_all(cache_root).expect("create artifact cache");
+    fs::write(
+        cache_root.join("givn-artifacts.json"),
+        format!(
+            "{{\"schema_version\":1,\"model\":\"{repository}\",\"repository\":\"{repository}\",\"revision\":\"{revision}\",\"files\":{{}}}}"
+        ),
+    )
+    .expect("write corrupt artifact manifest");
 }
 
 #[then("stdout is valid duplicate-audit JSON with participating BGE and NLI evidence")]
-fn duplicate_json_reports_participating_layers(_world: &mut GivnWorld) {
-    unimplemented!()
+fn duplicate_json_reports_participating_layers(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("duplicate output JSON");
+    assert_eq!(document["bge_run"]["status"], "BGE_ENABLED");
+    assert_eq!(document["nli_run"]["status"], "NLI_ENABLED");
 }
 
 #[then("the corrupt cache snapshots are replaced by complete validated snapshots")]
-fn corrupt_caches_are_repaired(_world: &mut GivnWorld) {
-    unimplemented!()
+fn corrupt_caches_are_repaired(world: &mut GivnWorld) {
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    for role in ["bge", "nli"] {
+        let manifest = fs::read_to_string(xdg.join(format!("givn/{role}/givn-artifacts.json")))
+            .expect("read repaired artifact manifest");
+        assert!(manifest.contains("\"files\""));
+        assert!(!manifest.contains("\"files\":{}"));
+    }
+    let requests = world
+        .artifact_server
+        .as_ref()
+        .expect("artifact fixture server")
+        .events();
+    assert!(
+        requests
+            .iter()
+            .any(|path| path.contains("bge-reranker-v2-m3")),
+        "BGE cache repair did not request the fixture source: {requests:?}"
+    );
+    assert!(
+        requests
+            .iter()
+            .any(|path| path.contains("mDeBERTa-v3-base-xnli-multilingual-nli-2mil7")),
+        "NLI cache repair did not request the fixture source: {requests:?}"
+    );
 }
 
 #[given(

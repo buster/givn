@@ -111,17 +111,23 @@
   passed. Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `f8541ff`.
 
 ## Scenario: A corrupt second-stage cache is repaired before evidence scoring
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: validate manifest, revision, size, digest, metadata, and snapshot
-  consistency; reacquire only corrupt BGE/NLI snapshots before scoring.
-  Production files: _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: isolate role-specific cache repair without behavior change and
-  rerun the named scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: validated BGE/NLI cache snapshots and reacquired corrupt role
+  artifacts before scoring. Production files: `Cargo.toml`, `Cargo.lock`, and
+  `src/spec/retrieval.rs`. Test files: `tests/common/mod.rs`,
+  `tests/steps/mod.rs`, and `tests/steps/semantic_model_download_steps.rs`.
+  Compile step: `cargo check --features spec-retrieval,cross-encoder-reranker,nli-evidence`
+  passed. Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files, asserted fixture
+  request evidence for both repositories, and reran the named scenario; output:
+  `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: Explicitly disabled evidence layers do not download models
