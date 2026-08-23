@@ -29,6 +29,7 @@ graph TD
     SEMANTIC --> POOLS[Surface-specific independent pools]
     SEMANTIC --> REPORT[Fresh change-local report]
     SEMANTIC --> AUDIT[Read-only permanent audit]
+    SEMANTIC --> CACHE[Validated shared model cache]
 ```
 
 ## 10.2 Quality Scenarios
@@ -92,6 +93,10 @@ graph TD
 | Q-55 | Version skipping | A 0.2.0 project upgrades directly to a later compatible 0.3.x binary. | The 0.2.0-to-0.3.0 migration route remains selected rather than being bypassed by exact-version matching. |
 | Q-56 | Installability | A maintainer installs Givn without an explicit feature flag. | Every declared Cargo feature is enabled by default; `--no-default-features` remains an explicit feature-free escape hatch. |
 | Q-57 | Release safety | A consumer `.gitignore` excludes generated agent files. | Upgrade force-stages only the explicit managed allowlist and still excludes unrelated files and directories. |
+| Q-58 | Model availability | A first explicit semantic command runs with cold model caches. | Missing E5/BGE/NLI artifacts are acquired into the XDG user cache before validation/inference; the project receives only its project-local index when applicable. |
+| Q-59 | Model safety | A model source returns missing, partial, or invalid artifacts. | The command fails or reports the existing unavailable status with the model, cache, failed file, and local override guidance; no invalid artifact participates. |
+| Q-60 | Cache reuse | Two projects use the same model role after one successful setup. | The second operation reuses the validated user-cache snapshot without copying large model files into its project. |
+| Q-61 | Index guidance | A semantic surface starts without a persistent index. | It emits `spec index is missing at <path>; run \`givn spec index\` first`; refresh-capable surfaces retain their documented refresh/fallback behavior. |
 
 ## 10.3 Verification Signals
 

@@ -45,6 +45,8 @@ pub mod semantic_compact_serialization_e2e_steps;
 pub mod semantic_compact_serialization_steps;
 pub mod semantic_e5_token_cap_e2e_steps;
 pub mod semantic_e5_token_cap_steps;
+pub mod semantic_model_download_e2e_steps;
+pub mod semantic_model_download_steps;
 pub mod semantic_remediation_e2e_steps;
 pub mod semantic_remediation_steps;
 pub mod semantic_reranker_budget_e2e_steps;
@@ -142,6 +144,15 @@ pub struct GivnWorld {
     pub(crate) malformed_index_snapshot: Option<Vec<u8>>,
     /// Classification mode for the semantic-remediation fixture.
     pub(crate) semantic_remediation_mode: Option<String>,
+    /// Isolated XDG cache root used by semantic model-download fixtures.
+    #[allow(dead_code)]
+    pub(crate) xdg_cache_home: Option<std::path::PathBuf>,
+    /// Local artifact-source fixture root used by model-download scenarios.
+    #[allow(dead_code)]
+    pub(crate) download_fixture: Option<std::path::PathBuf>,
+    /// Ordered resolver events captured by model-download scenarios.
+    #[allow(dead_code)]
+    pub(crate) download_events: Vec<String>,
 }
 
 // --- helpers ---------------------------------------------------------------
@@ -358,6 +369,13 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_nli_token_budget.as_deref() {
         environments.push(("GIVN_SPEC_NLI_TOKEN_BUDGET", value));
+    }
+    if let Some(value) = world
+        .xdg_cache_home
+        .as_deref()
+        .and_then(|path| path.to_str())
+    {
+        environments.push(("XDG_CACHE_HOME", value));
     }
     if world.retrieval_bge_local_stub {
         environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));

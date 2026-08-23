@@ -4,7 +4,9 @@
 
 `givn` is one Rust CLI crate. It reads embedded defaults and project-local
 configuration, changes lifecycle artifacts, invokes configured commands at gate
-points, and optionally uses local retrieval/model artifacts.
+points, and optionally uses local retrieval/model artifacts. Retrieval model
+artifacts are user-cache data by default; the semantic index remains project
+data.
 
 ## 5.2 Level 1 - Crate Structure
 
@@ -55,7 +57,7 @@ flowchart TD
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, and coverage configuration. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
-| `spec::retrieval` | Build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply BGE/NLI evidence, generate semantic reports, and verify remediation. |
+| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply evidence, generate semantic reports, and verify remediation. |
 
 ## 5.4 Retrieval Building Block
 
@@ -85,7 +87,7 @@ top-five pool.
 | `anyhow`, `thiserror` | Application context and typed errors |
 | `rust-embed` | Embedded defaults and addon assets |
 | `quick-xml` | Cobertura coverage parsing |
-| `fastembed`, `ort`, `tokenizers`, `ndarray` | Optional local E5/BGE/NLI retrieval and inference |
+| `fastembed`, `hf-hub`, `ort`, `tokenizers`, `ndarray` | Optional local E5/BGE/NLI retrieval, artifact acquisition, and inference |
 
 ## 5.6 Repository-Owned Acceptance Blocks
 

@@ -25,3 +25,13 @@ ADR-055 is also amended by the release's Cargo installation contract. The four
 semantic capabilities remain independent, but all declared features are enabled
 by the normal installation; `--no-default-features` remains the explicit
 feature-free path.
+
+ADR-057 is amended by the `semantic-model-download` change. The BGE local
+artifact boundary remains validated and admission-controlled, but an explicit
+semantic operation may acquire missing artifacts into the shared XDG user cache
+before the unchanged local loader is invoked. The change does not create a new
+parallel ADR for this refinement.
+
+ADR-039 is amended by the same change. E5 model-cache ownership moves to the
+shared XDG user cache while the permanent index remains project-local; this is a
+retrieval-boundary refinement, not a new decision.

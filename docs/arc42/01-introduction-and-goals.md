@@ -66,6 +66,8 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-35 | Refresh and commit Givn-owned files for migration-free upgrades without creating a migration change. |
 | FR-36 | Resolve multiple release-owned migration bundles into one ordered aggregate maintenance change. |
 | FR-37 | Enable every currently declared Cargo feature in the normal installation while preserving an explicit feature-free build. |
+| FR-38 | Acquire missing E5, BGE, and NLI model artifacts on explicit semantic use and reuse them from the user-level XDG cache. |
+| FR-39 | Give every semantic surface a consistent missing-index repair hint and actionable model-setup diagnostics. |
 
 ### Non-functional requirements
 
@@ -77,6 +79,8 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | NFR-4 | Semantic evidence is deterministic in identity, ordering, hashes, and output format where the current contract specifies it. |
 | NFR-5 | Feature-free and feature-enabled behavior is explicit rather than silently falling back to a false pass. |
 | NFR-6 | Automatic migration commits are narrowly scoped, reproducible, and never mix uncommitted user work with Givn-owned files. |
+| NFR-7 | Large model artifacts are shared through an XDG user cache; project trees contain only project-specific retrieval state unless an explicit override is selected. |
+| NFR-8 | Model acquisition validates complete artifacts and fails with recovery instructions rather than accepting partial or corrupt cache state. |
 
 ## 1.3 Quality Goals
 

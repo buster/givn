@@ -97,3 +97,7 @@
 | **Aggregate migration change** | One visible maintenance change containing all bundle phases required to cross a version gap, with ordered metadata in `migration.yaml`. |
 | **Managed upgrade** | A migration-free upgrade that synchronizes Givn-owned files and creates one allowlist-only commit when needed. |
 | **Default feature set** | Every currently declared Cargo feature activated by `cargo install` unless `--no-default-features` is supplied. |
+| **XDG model cache** | User-level cache rooted at `$XDG_CACHE_HOME/givn` or `$HOME/.cache/givn`, containing shared E5, BGE, and NLI artifacts rather than project-specific index state. |
+| **Role cache** | The `e5`, `bge`, or `nli` subdirectory of the XDG model cache, selected by the model layer that needs artifacts. |
+| **Artifact resolver** | The validated acquisition boundary that reuses or downloads complete model files before tokenizer/model construction. |
+| **Missing-index diagnostic** | `spec index is missing at <path>; run \`givn spec index\` first`, emitted when a semantic surface has no persistent index. |

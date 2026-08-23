@@ -20,20 +20,30 @@ are not yet wired as release infrastructure in this checkout.
 ## 7.2 Default Retrieval Artifact
 
 The default feature set adds native ONNX Runtime and local E5 model/tokenizer
-support. The default E5 cache is `givn/.spec-model-cache`; the persistent index
-is `givn/.spec-index.json`. A feature-free build reports retrieval as
-unavailable rather than passing silently.
+support. E5 model artifacts are cached at `$XDG_CACHE_HOME/givn/e5`, or
+`$HOME/.cache/givn/e5` when `XDG_CACHE_HOME` is unset; the persistent index is
+`givn/.spec-index.json`. A feature-free build reports retrieval as unavailable
+rather than passing silently.
 
 `cross-encoder-reranker` adds local BGE evidence and is enabled by default. Its default artifact directory
-is `givn/.spec-reranker-cache` and the current production loader preflights
+is `$XDG_CACHE_HOME/givn/bge` (or `$HOME/.cache/givn/bge`) and the production
+loader preflights
 `model.onnx`, optional referenced `model.onnx.data`, `tokenizer.json`,
 `config.json`, `special_tokens_map.json`, and `tokenizer_config.json` before
 using FastEmbed's user-defined loader. An approval file is checked for the
 runtime metadata required by the BGE admission path.
 
 `nli-evidence` adds local NLI evidence and is enabled by default. Its default artifact directory is
-`givn/.spec-nli-cache`, with `model.onnx`, `config.json`, `tokenizer.json`, and
-`tokenizer_config.json` preflighted before session construction.
+`$XDG_CACHE_HOME/givn/nli` (or `$HOME/.cache/givn/nli`). Automatic Hub
+snapshots contain `onnx/model.onnx`, while an explicit flat
+`GIVN_SPEC_NLI_MODEL_DIR` may contain `model.onnx`; both forms are resolved to
+the same preflight contract for `config.json`, `tokenizer.json`, and
+`tokenizer_config.json` before session construction. Explicit `GIVN_SPEC_*`
+model/cache paths override these locations.
+
+The cache is user-owned and shared across projects. Givn creates a role cache
+only on explicit semantic use. It validates downloaded files before model
+construction and never treats a partial transfer as an available model.
 
 Regular and E2E tests use deterministic stubs and do not download or construct
 multi-gigabyte model artifacts. Production model paths remain local and
@@ -60,8 +70,9 @@ givn/archive/
 
 The Arc42 addon currently enabled by default during `init` scaffolds the fixed
 `docs/arc42/` directory. It does not create a configurable output location.
-Retrieval-enabled projects may additionally contain `.spec-index.json` and the
-local model caches above.
+Retrieval-enabled projects may additionally contain `.spec-index.json`; model
+artifacts are normally outside the project in the XDG user cache. A project may
+contain a model cache only when an explicit override points there.
 
 Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those

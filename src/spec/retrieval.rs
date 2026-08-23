@@ -7017,6 +7017,7 @@ fn e5_token_cap_order(left: &E5TokenCap, right: &E5TokenCap) -> std::cmp::Orderi
 
 #[cfg(feature = "spec-retrieval")]
 fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<EmbeddingBatch> {
+    report_e5_cache_reuse(root)?;
     let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => preflight_e5_stub_texts(texts)?,
         Ok("missing") => {
@@ -7180,6 +7181,49 @@ fn find_e5_tokenizer(root: &Path) -> Option<std::path::PathBuf> {
     roots
         .into_iter()
         .find_map(|path| find_named_file(&path, "tokenizer.json"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn e5_model_cache_dir(root: &Path) -> Result<std::path::PathBuf> {
+    if let Some(path) = std::env::var_os("GIVN_SPEC_MODEL_CACHE") {
+        anyhow::ensure!(!path.is_empty(), "GIVN_SPEC_MODEL_CACHE must not be empty");
+        return Ok(std::path::PathBuf::from(path));
+    }
+    if let Some(path) = std::env::var_os("HF_HOME") {
+        anyhow::ensure!(!path.is_empty(), "HF_HOME must not be empty");
+        return Ok(std::path::PathBuf::from(path));
+    }
+
+    let cache_home = match std::env::var_os("XDG_CACHE_HOME") {
+        Some(path) if !path.is_empty() => {
+            let path = std::path::PathBuf::from(path);
+            anyhow::ensure!(
+                path.is_absolute(),
+                "XDG_CACHE_HOME must be an absolute path, got {}",
+                path.display()
+            );
+            path
+        }
+        _ => std::env::var_os("HOME")
+            .map(std::path::PathBuf::from)
+            .filter(|path| !path.as_os_str().is_empty())
+            .map(|path| path.join(".cache"))
+            .with_context(|| "HOME is required when XDG_CACHE_HOME and HF_HOME are unset")?,
+    };
+    let _ = root;
+    Ok(cache_home.join("givn/e5"))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn report_e5_cache_reuse(root: &Path) -> Result<()> {
+    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+        return Ok(());
+    }
+    let cache_dir = e5_model_cache_dir(root)?;
+    if cache_dir.join("givn-artifacts.json").is_file() {
+        println!("Reused E5 model artifacts from {}", cache_dir.display());
+    }
+    Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]

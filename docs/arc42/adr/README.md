@@ -88,6 +88,8 @@ The active register contains only independent durable architecture decisions:
 | ADR-061 -> ADR-063 | ADR-063 adds a configurable ordered budget to the surface-specific independent branches. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
 | ADR-055 (amended by 0.3.0) | The independent semantic-capability decision now enables every declared Cargo feature in the normal installation while retaining `--no-default-features` as the explicit minimal path. |
+| ADR-057 (amended by semantic-model-download) | The validated BGE local-artifact boundary now permits explicit-operation acquisition into the shared XDG cache before the unchanged local loader. |
+| ADR-039 (amended by semantic-model-download) | The local retrieval boundary now keeps E5 artifacts in the shared XDG cache while retaining the project-local permanent index. |
 
 ## Evidence
 
@@ -98,6 +100,7 @@ The active register contains only independent durable architecture decisions:
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/0.2.0-to-0.3.0.md`](../../migrations/0.2.0-to-0.3.0.md), and release migration feature scenarios |
 | Retrieval and semantic evidence | [`src/spec/retrieval.rs`](../../../src/spec/retrieval.rs), retrieval feature files under [`givn/specs/`](../../../givn/specs/) |
+| Model availability | [`semantic-model-download/design.md`](../../../givn/changes/semantic-model-download/design.md), XDG cache and artifact-source scenarios |
 | Active decision status | [`semantic-reranker-budget/tasks.md`](../../../givn/changes/semantic-reranker-budget/tasks.md), [`semantic-reranker-budget/design.md`](../../../givn/changes/semantic-reranker-budget/design.md) |
 | PR #27 measurements | [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
 
