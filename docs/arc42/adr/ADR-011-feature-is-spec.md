@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - introducing a second durable format would require migration and reconciliation of existing specifications.
 - [x] **Shapes quality attributes** - one source improves correctness and reduces specification drift.
 - [x] **Structural** - the feature file is simultaneously the delta, executable contract, and archived permanent record.
@@ -37,13 +53,15 @@ Parallel Markdown specifications duplicate the behavior that a Gherkin runner ex
 
 ## Decision Outcome
 
-Chosen option: **The `.feature` file is the specification**. Active files use `@givn.delta` and scenario delta tags; archive strips `@givn.*` tags into runnable permanent Gherkin.
+Chosen option: **The `.feature` file is the specification**. Active files use `@givn.delta` and scenario delta tags; archive strips `@givn.*` tags into runnable permanent Gherkin. Specification content remains implementation-independent; implementation and runner details belong in the design and task artifacts unless they are observable behavior.
 
 ### Consequences
 
 - Proposals and design documents are supporting lifecycle artifacts, not parallel behavior specifications.
 - A configured test runner must execute the feature files through a Gherkin/Cucumber-compatible path.
 - The archive merge must preserve enough text to keep permanent files usable; replaced scenarios are rendered from the parsed AST.
+- A feature must not encode private module, framework, or step-definition mechanics
+  merely to make implementation convenient.
 
 ### Confirmation
 

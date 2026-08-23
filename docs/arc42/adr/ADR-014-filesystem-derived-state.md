@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - adding a separate state database would change recovery, version control, and every lifecycle command.
 - [x] **Shapes quality attributes** - filesystem state is inspectable, git-friendly, and avoids state drift.
 - [x] **Structural** - artifact paths, markers, and the manifest graph define the state machine boundary.

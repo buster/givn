@@ -52,6 +52,12 @@ Required branches:
   against the matrix table in `design.md` — any inventory entry without a
   matching matrix row is a finding.
 - **Risk** — most likely failure mode and mitigation?
+- **ADR qualification** — use the complete procedure from the canonical Arc42
+  addon instruction. Only a structured verdict with every mandatory gate
+  passing requires a MADR. A non-qualifying choice names exactly one canonical
+  lower-level artifact; a refinement amends an existing ADR and a replacement
+  supersedes it. `Must be shared` is supporting evidence only. This is guidance,
+  not runtime enforcement.
 - **Architecture documentation (arc42)** — N/A if `addons.arc42` is not
   enabled. Otherwise, independently re-derive the expected chapter set
   before trusting `arc42.md`'s claim: walk all 12 rows of the arc42-docs
@@ -59,10 +65,11 @@ Required branches:
   form your own Yes/No per row, then diff against `arc42.md`'s table. A row
   you mark "Yes" that `arc42.md` marks "No" or omits is a finding —
   omission is the failure mode that slips through, not just contradiction.
-  For every "Yes" row (either party), confirm the chapter content actually
-  matches design.md, not placeholder text or a stale contradiction. Does
-  chapter 09 have a MADR entry for every non-trivial tech decision in
-  design.md, and does chapter 11 reflect that decision's consequences?
+   For every "Yes" row (either party), confirm the chapter content actually
+   matches design.md, not placeholder text or a stale contradiction. Does
+   chapter 09 have a MADR entry for every qualified ADR candidate in design.md,
+   and does chapter 11 reflect that decision's consequences? A non-qualifying
+   design choice is complete when its canonical destination is recorded.
   `arc42.md`'s `STATUS: DONE` is a self-report, not verification — treat any
   mismatch, including a missing row, as a finding.
 

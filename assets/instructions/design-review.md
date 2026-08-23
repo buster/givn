@@ -27,6 +27,17 @@ Required branches — cover every one (or explicitly record "no issue found"):
   code? Do the Then-steps assert concrete observable values, not just "it ran"?
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
+- **ADR qualification** — delegate the complete qualification procedure to the
+  canonical Arc42 addon instruction by running `givn instructions arc42-docs
+  --change <id>`. Check only candidates whose structured verdict has all
+  mandatory gates `PASS`; do not turn every non-trivial design choice into an
+  ADR. The verdict must include a completed existing-ADR or duplicate check. A
+  non-qualifying choice must name exactly one canonical feature, design,
+  Arc42, process, project-documentation, or code destination. A refinement must
+  amend an existing ADR, and a replacement must supersede it. `Must be shared`
+  is supporting evidence only. This policy is authoring guidance, not runtime
+  enforcement, and this artifact must not duplicate the complete procedure or
+  verdict schema.
 - **Architecture documentation (arc42)** — N/A if the arc42 addon is not
   enabled (`addons.arc42` in `givn/config.yaml`). Otherwise, do not just
   audit what `arc42.md` claims — independently re-derive the expected
@@ -52,9 +63,12 @@ row where you say "Yes" and `arc42.md` says "No" (or omits the row) is
        `---` or `===` (non-table pseudo-diagrams). If any are found, the
 content violates the diagram policy — treat this as a
         finding and require the diagram to be converted to Mermaid.
-  5. Confirm every non-trivial architecture decision in design.md has a
-     MADR entry in chapter 09, and that any consequence of that decision
-     (e.g. "Bad, because...") is reflected in chapter 11.
+   5. Confirm every qualified ADR candidate in design.md has a MADR entry in
+      chapter 09, and that any consequence of that decision (e.g. "Bad,
+      because...") is reflected in chapter 11. Absence of a MADR for a
+      non-qualifying design choice is correct when its canonical destination is
+      recorded. Do not copy the canonical qualification procedure or verdict
+      schema into this review instruction.
   `arc42.md`'s `STATUS: DONE` is a self-report from the same agent that
   wrote the docs — not verification; treat any mismatch, including a
   missing row, as a finding.

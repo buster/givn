@@ -79,10 +79,12 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | 1 | **Configurability without forking** | Project overlays and facet overrides change workflow behavior without modifying the binary. |
 | 2 | **Installability** | The normal product boundary is one native executable with embedded defaults. |
 | 3 | **Upgradeability** | Project-owned values and files remain reviewable and are not clobbered by scaffold updates. |
+| 4 | **Architecture contract clarity** | The active ADR register contains only independent durable decisions; current facts and implementation details have one canonical home. |
 
 Secondary goals are merge correctness, agent ergonomics, interface-fidelity in
-E2E evidence, deterministic semantic evidence, explicit token-cap safety, and a
-permanent-only retrieval persistence boundary.
+E2E evidence, deterministic semantic evidence, explicit token-cap safety, a
+permanent-only retrieval persistence boundary, and non-redundant architecture
+documentation.
 
 The current second-stage budget work is not yet a completed quality claim. Its
 open tasks and final verification are listed in the active change referenced by

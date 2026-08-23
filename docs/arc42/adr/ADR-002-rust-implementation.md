@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - changing the implementation language would replace the binary, dependency, and test integration surface.
 - [x] **Shapes quality attributes** - Rust supports a small native binary and type-checked merge, state, and parsing logic.
 - [x] **Structural** - the language determines the crate boundary and the implementation of every production module.

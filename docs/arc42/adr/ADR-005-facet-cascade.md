@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - changing precedence would alter every project override and upgrade result.
 - [x] **Shapes quality attributes** - project-owned overrides preserve upgrade safety and maintainability.
 - [x] **Structural** - it defines the dependency direction from embedded defaults to project-owned facets.

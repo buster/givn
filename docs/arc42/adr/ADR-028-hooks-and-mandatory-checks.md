@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - gate ordering and failure semantics affect every project lifecycle.
 - [x] **Shapes quality attributes** - fail-closed verification and integrity checks protect correctness.
 - [x] **Structural** - the binary's mandatory checks and manifest `post` hooks are distinct execution paths.

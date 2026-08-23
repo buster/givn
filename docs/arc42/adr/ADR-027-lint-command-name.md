@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - the command name and exit-code contract are used in scripts and generated guidance.
 - [x] **Shapes quality attributes** - clear separation prevents a static check from being mistaken for executable verification.
 - [x] **Structural** - it defines a public CLI interface distinct from `verify.command`.

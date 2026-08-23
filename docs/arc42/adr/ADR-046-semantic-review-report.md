@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - report grammar, evidence, and carry-forward behavior form a durable workflow contract.
 - [x] **Shapes quality attributes** - stale classifications must not silently approve changed scenarios.
 - [x] **Structural** - the report is a distinct blocking-check output separate from feature files and the permanent index.

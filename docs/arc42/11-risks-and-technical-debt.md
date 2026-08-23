@@ -29,6 +29,10 @@ historical measurement is not a current quality claim.
 | R-20 | Review refreshes the persistent index before parsing delta content. | Medium | High | `spec explore --change` validates before refresh, but advisory and blocking review refresh first. Preserve the distinction and add a transactional ordering fix in a future change. |
 | R-21 | The second-stage budget leaves lower-ranked candidates without model evidence. | Medium | High | Keep `*_UNSCORED` separate from `*_FILTERED`, retain E5 evidence, and require completion of the open `semantic-reranker-budget` change before accepting its ADR. |
 | R-22 | PR #27 measurements are mistaken for reproducible repository state. | Medium | Medium | The current report records `394/1274/795`, but it depends on local ephemeral raw JSON reports. Link the report and label all earlier measurements as historical. |
+| R-23 | Ordinary design, process, or implementation choices inflate the active ADR contract. | High | High | Apply the strict five-dimension AND gate, reject shared-guidance-only claims, and route each non-ADR decision to exactly one canonical artifact. |
+| R-24 | ADR consolidation loses unique rationale, relationships, or ownership. | Medium | High | Use the complete ID-by-ID disposition manifest, preserve only genuine superseded architecture history, and review every target link and canonical source before removing a record. |
+| R-25 | The qualification procedure drifts between the canonical addon instruction and derived design-review guidance. | Medium | High | Keep the complete procedure and MADR template in one source, make derived assets thin, and verify effective/generated guidance parity. |
+| R-26 | Authors treat the LLM verdict as machine-enforced architecture validation. | Medium | High | State the non-runtime boundary explicitly and require human/design-review evidence; the current integrity hooks do not infer architectural significance. |
 
 ## 11.2 Deliberate Technical Debt
 
@@ -46,6 +50,7 @@ historical measurement is not a current quality claim.
 | D-10 | Prior semantic report parsing is not strict and does not reject arbitrary unknown/reordered fields. | Current line-oriented implementation. | Implement a strict grammar parser before treating the wire format as enforced input validation. |
 | D-11 | Semantic remediation does not support prior `delta-to-delta` entries. | Scope precondition rejects them. | Add a deliberate projected-delta remediation design and tests. |
 | D-12 | The current second-stage budget change is unfinished. | `givn status --change semantic-reranker-budget` reports open tasks and final verification. | Complete RED/GREEN/REFACTOR, full/E2E tests, real-model evidence, and blocking review before accepting ADR-063. |
+| D-13 | ADR qualification is guidance-level and the register has no semantic validator. | The LLM/author and design review apply the policy; runtime integrity checks only verify mechanical file conditions. | Add a reviewed semantic register validator only if a future requirement justifies runtime enforcement; until then retain explicit review evidence. |
 
 ## 11.3 Historical Measurements
 

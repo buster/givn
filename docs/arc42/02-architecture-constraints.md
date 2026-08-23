@@ -89,3 +89,15 @@ Regular and E2E tests use deterministic stubs and test-only token-budget seams.
 Production retrieval uses local model artifacts. The current full and E2E
 verification state is not inferred from this document; it is read from
 `givn status --change semantic-reranker-budget` and the active change tasks.
+
+## 2.6 Architecture Documentation Constraints
+
+The architecture register is selective. The complete qualification procedure,
+including its mandatory dimensions and verdict schema, is owned by the resolved
+Arc42 addon instruction; this chapter does not duplicate it. One ADR records
+one independent durable boundary or trade-off. Refinements amend the governing
+ADR instead of creating parallel records. Observable behavior is owned by
+Gherkin specifications, current architecture facts by the relevant Arc42
+chapter, implementation details by code/design, and process rules by their own
+guidance. The qualification policy is authoring guidance and is not inferred or
+enforced by the runtime.
