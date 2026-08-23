@@ -1,45 +1,334 @@
-//! Automatic preparation for the 0.2.0 to 0.3.0 project migration.
+//! Release-owned migration catalog and project upgrade orchestration.
 
 use anyhow::{Context, Result, bail};
-use std::collections::HashMap;
+use serde::{Deserialize, Serialize};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::{Command, Output};
 
-pub const LEGACY_VERSION: &str = "0.2.0";
-pub const TARGET_VERSION: &str = "0.3.0";
-pub const MIGRATION_CHANGE_ID: &str = "migrate-0-2-0-to-0-3-0";
+pub const MIGRATION_CATALOG_PATH: &str = "migrations/catalog.yaml";
 
+const MIGRATION_CATALOG_SCHEMA_VERSION: u32 = 1;
 const MIGRATION_GUIDE: &str = include_str!("../../docs/migrations/0.2.0-to-0.3.0.md");
 
-/// Whether the deterministic migration plan already exists in active or
-/// archived storage.
-pub fn migration_exists(project_root: &Path) -> bool {
-    project_root
-        .join("givn/changes")
-        .join(MIGRATION_CHANGE_ID)
-        .exists()
-        || project_root
-            .join("givn/archive")
-            .join(MIGRATION_CHANGE_ID)
-            .exists()
+/// A release-owned migration bundle. The companion assets must contain all
+/// information needed by an LLM to perform that phase in a consumer project.
+#[derive(Debug, Clone, Deserialize, PartialEq, Eq)]
+pub struct MigrationBundle {
+    pub id: String,
+    pub source_version: String,
+    pub target_version: String,
+    pub order: u32,
+    pub proposal_asset: String,
+    pub design_asset: String,
 }
 
-/// Prepare a legacy project and create the two commits that delimit the
-/// machine-safe upgrade from the project-specific migration work.
+/// The embedded catalog of migration bundles shipped with the binary.
+#[derive(Debug, Clone, Deserialize)]
+pub struct MigrationCatalog {
+    pub schema_version: u32,
+    pub migrations: Vec<MigrationBundle>,
+}
+
+#[derive(Debug, Clone, Copy, Hash, PartialEq, Eq, PartialOrd, Ord)]
+struct ReleaseVersion {
+    major: u64,
+    minor: u64,
+    patch: u64,
+}
+
+impl ReleaseVersion {
+    fn parse(value: &str) -> Result<Self> {
+        let core = value.split_once('-').map(|(v, _)| v).unwrap_or(value);
+        let mut parts = core.split('.');
+        let major = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("version '{value}' has no major component"))?
+            .parse()
+            .with_context(|| format!("version '{value}' has an invalid major component"))?;
+        let minor = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("version '{value}' has no minor component"))?
+            .parse()
+            .with_context(|| format!("version '{value}' has an invalid minor component"))?;
+        let patch = parts
+            .next()
+            .ok_or_else(|| anyhow::anyhow!("version '{value}' has no patch component"))?
+            .parse()
+            .with_context(|| format!("version '{value}' has an invalid patch component"))?;
+        if parts.next().is_some() {
+            bail!("version '{value}' has more than three numeric components");
+        }
+        Ok(Self {
+            major,
+            minor,
+            patch,
+        })
+    }
+
+    fn same_minor(self, other: Self) -> bool {
+        self.major == other.major && self.minor == other.minor
+    }
+}
+
+/// Load and validate the release-owned migration catalog.
+pub fn load_catalog() -> Result<MigrationCatalog> {
+    let yaml = crate::config::embedded::Assets::get_str(MIGRATION_CATALOG_PATH)
+        .ok_or_else(|| anyhow::anyhow!("embedded migration catalog not found"))?;
+    let catalog: MigrationCatalog =
+        serde_yaml_ng::from_str(&yaml).context("parse embedded migration catalog")?;
+    if catalog.schema_version != MIGRATION_CATALOG_SCHEMA_VERSION {
+        bail!(
+            "unsupported migration catalog schema version {}",
+            catalog.schema_version
+        );
+    }
+    let mut ids = HashSet::new();
+    let mut sources = HashSet::new();
+    for bundle in &catalog.migrations {
+        let source = ReleaseVersion::parse(&bundle.source_version)?;
+        let target = ReleaseVersion::parse(&bundle.target_version)?;
+        if target <= source {
+            bail!(
+                "migration bundle '{}' does not advance from {} to {}",
+                bundle.id,
+                bundle.source_version,
+                bundle.target_version
+            );
+        }
+        if !ids.insert(bundle.id.clone()) {
+            bail!(
+                "migration catalog contains duplicate bundle '{}'",
+                bundle.id
+            );
+        }
+        if !sources.insert(source) {
+            bail!(
+                "migration catalog contains multiple bundles from source version '{}'",
+                bundle.source_version
+            );
+        }
+        if bundle.id.is_empty()
+            || bundle.proposal_asset.is_empty()
+            || bundle.design_asset.is_empty()
+        {
+            bail!("migration catalog contains an incomplete bundle definition");
+        }
+        if crate::config::embedded::Assets::get(&bundle.proposal_asset).is_none() {
+            bail!(
+                "migration bundle '{}' references missing proposal asset '{}'",
+                bundle.id,
+                bundle.proposal_asset
+            );
+        }
+        if crate::config::embedded::Assets::get(&bundle.design_asset).is_none() {
+            bail!(
+                "migration bundle '{}' references missing design asset '{}'",
+                bundle.id,
+                bundle.design_asset
+            );
+        }
+    }
+    Ok(catalog)
+}
+
+/// Resolve the declared migration bundles covering a version gap.
+///
+/// An empty result means that no migration route is declared for the
+/// transition, so the caller should perform only a managed upgrade. Once a
+/// route starts, an incomplete route is an error rather than a silent skip.
+pub fn migration_path(source: &str, target: &str) -> Result<Vec<MigrationBundle>> {
+    let source = ReleaseVersion::parse(source)?;
+    let target = ReleaseVersion::parse(target)?;
+    let catalog = load_catalog()?;
+    resolve_migration_path(&catalog, source, target)
+}
+
+fn resolve_migration_path(
+    catalog: &MigrationCatalog,
+    source: ReleaseVersion,
+    target: ReleaseVersion,
+) -> Result<Vec<MigrationBundle>> {
+    if source >= target {
+        return Ok(Vec::new());
+    }
+
+    let mut current = source;
+    let mut path = Vec::new();
+    let mut seen = HashSet::new();
+
+    loop {
+        // A bundle targeting a minor release covers later compatible patch
+        // releases in that minor line.
+        if current >= target || (!path.is_empty() && current.same_minor(target)) {
+            return Ok(path);
+        }
+
+        let mut candidates: Vec<&MigrationBundle> = catalog
+            .migrations
+            .iter()
+            .filter(|bundle| {
+                let Ok(bundle_source) = ReleaseVersion::parse(&bundle.source_version) else {
+                    return false;
+                };
+                let Ok(bundle_target) = ReleaseVersion::parse(&bundle.target_version) else {
+                    return false;
+                };
+                bundle_source == current && bundle_target > current && bundle_target <= target
+            })
+            .collect();
+        candidates.sort_by(|left, right| {
+            left.order
+                .cmp(&right.order)
+                .then_with(|| left.target_version.cmp(&right.target_version))
+                .then_with(|| left.id.cmp(&right.id))
+        });
+
+        let Some(bundle) = candidates.first() else {
+            if path.is_empty() {
+                return Ok(path);
+            }
+            bail!(
+                "migration catalog has no route from {} toward {}",
+                format_version(current),
+                format_version(target)
+            );
+        };
+
+        if !seen.insert(bundle.id.clone()) {
+            bail!(
+                "migration catalog contains a cycle at bundle '{}'",
+                bundle.id
+            );
+        }
+        current = ReleaseVersion::parse(&bundle.target_version)?;
+        path.push((*bundle).clone());
+    }
+}
+
+fn format_version(version: ReleaseVersion) -> String {
+    format!("{}.{}.{}", version.major, version.minor, version.patch)
+}
+
+/// Create the deterministic aggregate maintenance-change id for a version gap.
+pub fn aggregate_migration_id(source: &str, target: &str) -> String {
+    format!(
+        "migrate-{}-to-{}",
+        sanitize_version_for_id(source),
+        sanitize_version_for_id(target)
+    )
+}
+
+fn sanitize_version_for_id(version: &str) -> String {
+    version
+        .chars()
+        .map(|character| {
+            if character.is_ascii_alphanumeric() {
+                character
+            } else {
+                '-'
+            }
+        })
+        .collect()
+}
+
+/// Whether a specific aggregate migration plan exists in active or archived
+/// storage.
+pub fn migration_exists(project_root: &Path, change_id: &str) -> bool {
+    project_root.join("givn/changes").join(change_id).exists()
+        || project_root.join("givn/archive").join(change_id).exists()
+}
+
+/// Find an active aggregate migration plan created by a previous upgrade.
+///
+/// The config marker is advanced by the managed preparation, so later binary
+/// upgrades cannot identify a pending plan from the marker alone. The visible
+/// `migration.yaml` file is the durable pending-work signal.
+pub fn pending_migration_change(project_root: &Path) -> Option<String> {
+    let changes_dir = project_root.join("givn/changes");
+    let mut ids: Vec<String> = std::fs::read_dir(changes_dir)
+        .ok()?
+        .flatten()
+        .filter_map(|entry| {
+            let path = entry.path();
+            if !path.is_dir() || !path.join("migration.yaml").is_file() {
+                return None;
+            }
+            entry.file_name().to_str().map(str::to_string)
+        })
+        .collect();
+    ids.sort();
+    ids.into_iter().next()
+}
+
+/// Run a declared migration path after the managed upgrade commit.
 pub fn prepare_legacy_upgrade(
     project_root: &Path,
     config_path: &Path,
     existing_config: &str,
+    source_version: &str,
+    target_version: &str,
+    bundles: &[MigrationBundle],
 ) -> Result<()> {
-    let migration_dir = project_root.join("givn/changes").join(MIGRATION_CHANGE_ID);
+    let change_id = aggregate_migration_id(source_version, target_version);
+    let migration_dir = project_root.join("givn/changes").join(&change_id);
 
-    if migration_exists(project_root) {
+    if migration_exists(project_root, &change_id) {
         println!(
-            "Migration change '{MIGRATION_CHANGE_ID}' already exists; preserving its proposal and design."
+            "Migration change '{change_id}' already exists; preserving its proposal and design."
         );
         return Ok(());
     }
 
+    let commit_a = prepare_managed_upgrade(
+        project_root,
+        config_path,
+        existing_config,
+        Some(source_version),
+        target_version,
+        &format!("chore(givn): prepare managed upgrade for {source_version} to {target_version}"),
+    )?
+    .ok_or_else(|| anyhow::anyhow!("managed migration preparation produced no commit"))?;
+
+    write_aggregate_migration_plan(
+        &migration_dir,
+        &commit_a,
+        source_version,
+        target_version,
+        bundles,
+    )?;
+    commit_migration_plan(project_root, &migration_dir, &change_id)?;
+    let commit_b = git_commit_hash(project_root)?;
+
+    println!("Prepared Givn {target_version} migration from {source_version}.");
+    println!("  managed upgrade commit (A): {commit_a}");
+    println!("  aggregate migration commit (B): {commit_b}");
+    println!("  migration change: givn/changes/{change_id}");
+    println!(
+        "  migration phases: {}",
+        bundles
+            .iter()
+            .map(|bundle| bundle.id.as_str())
+            .collect::<Vec<_>>()
+            .join(" -> ")
+    );
+    println!(
+        "Next: run `givn status --change {change_id}` and complete the ordered LLM-guided migration."
+    );
+
+    Ok(())
+}
+
+/// Refresh and commit managed files for a migration-free or migration-bearing
+/// upgrade. Returns `None` when the refresh produced no diff.
+pub fn prepare_managed_upgrade(
+    project_root: &Path,
+    config_path: &Path,
+    existing_config: &str,
+    source_version: Option<&str>,
+    target_version: &str,
+    commit_message: &str,
+) -> Result<Option<String>> {
     ensure_clean_git(project_root)?;
 
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
@@ -47,42 +336,25 @@ pub fn prepare_legacy_upgrade(
         std::iter::once(config_path.to_path_buf()).chain(managed_paths.iter().cloned()),
     )?;
 
-    let upgraded = crate::cli::upgrade::upgrade_config(existing_config, TARGET_VERSION)?;
-    if let Err(error) = apply_managed_upgrade(project_root, config_path, &upgraded) {
+    let upgraded = crate::cli::upgrade::upgrade_config(existing_config, target_version)?;
+    if let Err(error) = apply_managed_upgrade(config_path, &upgraded, project_root) {
         snapshot.restore().ok();
         return Err(error);
     }
 
-    let commit_a = match commit_managed_upgrade(project_root, config_path, &managed_paths) {
-        Ok(hash) => hash,
+    match commit_managed_upgrade(project_root, config_path, &managed_paths, commit_message) {
+        Ok(hash) => Ok(hash),
         Err(error) => {
             snapshot.restore().ok();
-            return Err(error);
+            let source = source_version.unwrap_or("unknown");
+            Err(error.context(format!(
+                "managed upgrade from {source} to {target_version} was not committed"
+            )))
         }
-    };
-
-    write_migration_plan(&migration_dir, &commit_a)?;
-    if let Err(error) = commit_migration_plan(project_root, &migration_dir) {
-        eprintln!(
-            "Commit A ({commit_a}) succeeded. The migration plan remains visible at {} for manual review.",
-            migration_dir.display()
-        );
-        return Err(error);
     }
-
-    let commit_b = git_commit_hash(project_root)?;
-    println!("Prepared Givn {TARGET_VERSION} migration from {LEGACY_VERSION}.");
-    println!("  managed upgrade commit (A): {commit_a}");
-    println!("  migration plan commit (B):  {commit_b}");
-    println!("  migration change: givn/changes/{MIGRATION_CHANGE_ID}");
-    println!(
-        "Next: run `givn status --change {MIGRATION_CHANGE_ID}` and complete the LLM-guided migration."
-    );
-
-    Ok(())
 }
 
-fn apply_managed_upgrade(project_root: &Path, config_path: &Path, upgraded: &str) -> Result<()> {
+fn apply_managed_upgrade(config_path: &Path, upgraded: &str, project_root: &Path) -> Result<()> {
     std::fs::write(config_path, upgraded)
         .with_context(|| format!("write managed config '{}'", config_path.display()))?;
 
@@ -96,35 +368,55 @@ fn commit_managed_upgrade(
     project_root: &Path,
     config_path: &Path,
     managed_paths: &[PathBuf],
-) -> Result<String> {
+    commit_message: &str,
+) -> Result<Option<String>> {
     let mut paths = vec![config_path.to_path_buf()];
     paths.extend(managed_paths.iter().cloned());
     stage_paths(project_root, paths)?;
 
-    let output = git(
-        project_root,
-        [
-            "commit",
-            "-m",
-            "chore(givn): prepare 0.2.0 to 0.3.0 migration",
-        ],
-    )?;
+    if !has_staged_changes(project_root)? {
+        return Ok(None);
+    }
+
+    let output = git(project_root, ["commit", "-m", commit_message])?;
     if !output.status.success() {
         bail!(
             "Git could not create the managed upgrade commit: {}",
             command_output(&output)
         );
     }
-    git_commit_hash(project_root)
+    Ok(Some(git_commit_hash(project_root)?))
 }
 
-fn write_migration_plan(migration_dir: &Path, commit_a: &str) -> Result<()> {
+fn has_staged_changes(project_root: &Path) -> Result<bool> {
+    let output = git(project_root, ["diff", "--cached", "--quiet", "--exit-code"])?;
+    match output.status.code() {
+        Some(0) => Ok(false),
+        Some(1) => Ok(true),
+        _ => bail!(
+            "could not inspect staged managed files: {}",
+            command_output(&output)
+        ),
+    }
+}
+
+fn write_aggregate_migration_plan(
+    migration_dir: &Path,
+    commit_a: &str,
+    source_version: &str,
+    target_version: &str,
+    bundles: &[MigrationBundle],
+) -> Result<()> {
     let parent = migration_dir
         .parent()
         .ok_or_else(|| anyhow::anyhow!("migration directory has no parent"))?;
     std::fs::create_dir_all(parent)
         .with_context(|| format!("create migration parent '{}'", parent.display()))?;
-    let temporary_dir = parent.join(format!(".{MIGRATION_CHANGE_ID}.tmp-{}", std::process::id()));
+    let change_id = migration_dir
+        .file_name()
+        .and_then(|name| name.to_str())
+        .unwrap_or("migration");
+    let temporary_dir = parent.join(format!(".{change_id}.tmp-{}", std::process::id()));
     if temporary_dir.exists() {
         std::fs::remove_dir_all(&temporary_dir).with_context(|| {
             format!(
@@ -140,7 +432,13 @@ fn write_migration_plan(migration_dir: &Path, commit_a: &str) -> Result<()> {
         )
     })?;
 
-    let result = write_migration_plan_files(&temporary_dir, commit_a);
+    let result = write_aggregate_migration_files(
+        &temporary_dir,
+        commit_a,
+        source_version,
+        target_version,
+        bundles,
+    );
     if let Err(error) = result {
         std::fs::remove_dir_all(&temporary_dir).ok();
         return Err(error);
@@ -151,32 +449,198 @@ fn write_migration_plan(migration_dir: &Path, commit_a: &str) -> Result<()> {
     Ok(())
 }
 
-fn write_migration_plan_files(migration_dir: &Path, commit_a: &str) -> Result<()> {
+#[derive(Debug, Serialize)]
+struct AggregateMigrationMetadata<'a> {
+    schema_version: u32,
+    source_version: &'a str,
+    target_version: &'a str,
+    tool_version: &'a str,
+    upgrade_commit: &'a str,
+    bundles: Vec<AggregateBundleMetadata<'a>>,
+}
+
+#[derive(Debug, Serialize)]
+struct AggregateBundleMetadata<'a> {
+    sequence: usize,
+    id: &'a str,
+    source_version: &'a str,
+    target_version: &'a str,
+    order: u32,
+}
+
+fn write_aggregate_migration_files(
+    migration_dir: &Path,
+    commit_a: &str,
+    source_version: &str,
+    target_version: &str,
+    bundles: &[MigrationBundle],
+) -> Result<()> {
     std::fs::write(migration_dir.join(".givn-skip"), "specs\n")
         .context("write migration skip marker")?;
+
+    let metadata = AggregateMigrationMetadata {
+        schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+        source_version,
+        target_version,
+        tool_version: target_version,
+        upgrade_commit: commit_a,
+        bundles: bundles
+            .iter()
+            .enumerate()
+            .map(|(index, bundle)| AggregateBundleMetadata {
+                sequence: index + 1,
+                id: &bundle.id,
+                source_version: &bundle.source_version,
+                target_version: &bundle.target_version,
+                order: bundle.order,
+            })
+            .collect(),
+    };
+    std::fs::write(
+        migration_dir.join("migration.yaml"),
+        serde_yaml_ng::to_string(&metadata).context("render migration metadata")?,
+    )
+    .context("write migration metadata")?;
+
     std::fs::write(
         migration_dir.join("proposal.md"),
-        migration_proposal(commit_a),
+        aggregate_migration_proposal(
+            migration_dir
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("migration"),
+            source_version,
+            target_version,
+            commit_a,
+            bundles,
+        )?,
     )
     .context("write migration proposal")?;
-    std::fs::write(migration_dir.join("design.md"), migration_design(commit_a))
-        .context("write migration design")?;
+    std::fs::write(
+        migration_dir.join("design.md"),
+        aggregate_migration_design(
+            migration_dir
+                .file_name()
+                .and_then(|name| name.to_str())
+                .unwrap_or("migration"),
+            source_version,
+            target_version,
+            commit_a,
+            bundles,
+        )?,
+    )
+    .context("write migration design")?;
     Ok(())
 }
 
-fn commit_migration_plan(project_root: &Path, migration_dir: &Path) -> Result<()> {
+fn aggregate_migration_proposal(
+    change_id: &str,
+    source_version: &str,
+    target_version: &str,
+    commit_a: &str,
+    bundles: &[MigrationBundle],
+) -> Result<String> {
+    let mut output = format!(
+        "# Proposal: {change_id}\n\n\
+## Aggregate migration\n\n\
+This maintenance change migrates a project from Givn {source_version} to the\
+installed Givn {target_version} contract. Managed preparation was recorded in\
+Commit A `{commit_a}`. The migration phases below are one ordered plan; complete\
+each phase before continuing to the next.\n\n\
+## Scope\n\n\
+The LLM must inspect project evidence and derive project-specific tasks. It must\
+preserve project-owned overrides and must not invent domain behavior, tests,\
+architecture decisions, or provenance.\n\n\
+## Bundle proposals\n\n"
+    );
+    for (index, bundle) in bundles.iter().enumerate() {
+        output.push_str(&format!(
+            "### Phase {}: {} ({} -> {})\n\n",
+            index + 1,
+            bundle.id,
+            bundle.source_version,
+            bundle.target_version
+        ));
+        output.push_str(&render_bundle_asset(
+            &bundle.proposal_asset,
+            source_version,
+            target_version,
+            commit_a,
+        )?);
+        output.push_str("\n\n");
+    }
+    Ok(output)
+}
+
+fn aggregate_migration_design(
+    change_id: &str,
+    source_version: &str,
+    target_version: &str,
+    commit_a: &str,
+    bundles: &[MigrationBundle],
+) -> Result<String> {
+    let mut output = format!(
+        "# Design: {change_id}\n\n\
+## Migration metadata\n\n\
+- source_version: `{source_version}`\n\
+- target_version: `{target_version}`\n\
+- upgrade_commit: `{commit_a}`\n\
+- migration_type: aggregate maintenance change without a product specification\n\n\
+## Execution order\n\n\
+Complete the following phases strictly in sequence. Do not create independent\
+parallel migration changes for these bundles. The complete sequence is also\
+recorded in `migration.yaml`.\n\n"
+    );
+    for (index, bundle) in bundles.iter().enumerate() {
+        output.push_str(&format!(
+            "### Phase {}: {} ({} -> {})\n\n",
+            index + 1,
+            bundle.id,
+            bundle.source_version,
+            bundle.target_version
+        ));
+        output.push_str(&render_bundle_asset(
+            &bundle.design_asset,
+            source_version,
+            target_version,
+            commit_a,
+        )?);
+        output.push_str("\n\n");
+    }
+    output.push_str(
+        "## Completion boundary\n\nThis generated design does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`, or implementation evidence. The project LLM must derive tasks and complete the normal Givn gates after the ordered bundle phases are understood.\n",
+    );
+    Ok(output)
+}
+
+fn render_bundle_asset(
+    asset_path: &str,
+    source_version: &str,
+    target_version: &str,
+    commit_a: &str,
+) -> Result<String> {
+    let content = crate::config::embedded::Assets::get_str(asset_path)
+        .ok_or_else(|| anyhow::anyhow!("embedded migration asset not found: {asset_path}"))?;
+    Ok(content
+        .replace("{{SOURCE_VERSION}}", source_version)
+        .replace("{{TARGET_VERSION}}", target_version)
+        .replace("{{UPGRADE_COMMIT}}", commit_a)
+        .replace("{{MIGRATION_GUIDE}}", MIGRATION_GUIDE))
+}
+
+fn commit_migration_plan(project_root: &Path, migration_dir: &Path, change_id: &str) -> Result<()> {
     stage_paths(project_root, [migration_dir.to_path_buf()])?;
     let output = git(
         project_root,
         [
             "commit",
             "-m",
-            "docs(upgrade): record 0.2.0 to 0.3.0 migration plan",
+            &format!("docs(upgrade): record aggregate migration plan {change_id}"),
         ],
     )?;
     if !output.status.success() {
         bail!(
-            "Git could not create the migration-plan commit: {}",
+            "Git could not create the aggregate migration-plan commit: {}",
             command_output(&output)
         );
     }
@@ -204,7 +668,7 @@ where
         .collect::<Result<Vec<_>>>()?;
 
     if relative_paths.is_empty() {
-        bail!("automatic migration produced no managed files to commit");
+        bail!("automatic upgrade produced no managed files to commit");
     }
 
     let mut args = vec!["add".to_string(), "--".to_string()];
@@ -216,7 +680,7 @@ where
     let output = git(project_root, args.iter().map(String::as_str))?;
     if !output.status.success() {
         bail!(
-            "Git could not stage managed migration files: {}",
+            "Git could not stage managed upgrade files: {}",
             command_output(&output)
         );
     }
@@ -226,13 +690,11 @@ where
 fn ensure_clean_git(project_root: &Path) -> Result<()> {
     let repository =
         git(project_root, ["rev-parse", "--is-inside-work-tree"]).map_err(|error| {
-            anyhow::anyhow!("automatic 0.2.0 to 0.3.0 migration requires a Git repository: {error}")
+            anyhow::anyhow!("automatic managed upgrade requires a Git repository: {error}")
         })?;
     if !repository.status.success() || String::from_utf8_lossy(&repository.stdout).trim() != "true"
     {
-        bail!(
-            "automatic 0.2.0 to 0.3.0 migration requires a Git repository; no files were changed"
-        );
+        bail!("automatic managed upgrade requires a Git repository; no files were changed");
     }
 
     let status = git(
@@ -241,14 +703,12 @@ fn ensure_clean_git(project_root: &Path) -> Result<()> {
     )?;
     if !status.status.success() {
         bail!(
-            "could not inspect Git worktree before migration: {}",
+            "could not inspect Git worktree before automatic upgrade: {}",
             command_output(&status)
         );
     }
     if !status.stdout.is_empty() {
-        bail!(
-            "automatic 0.2.0 to 0.3.0 migration requires a clean Git worktree; no files were changed"
-        );
+        bail!("automatic managed upgrade requires a clean Git worktree; no files were changed");
     }
     Ok(())
 }
@@ -262,20 +722,20 @@ where
         .current_dir(project_root)
         .args(args)
         .output()
-        .context("run Git command for automatic migration")
+        .context("run Git command for automatic upgrade")
 }
 
 fn git_commit_hash(project_root: &Path) -> Result<String> {
     let output = git(project_root, ["rev-parse", "HEAD"])?;
     if !output.status.success() {
         bail!(
-            "could not read the automatic migration commit hash: {}",
+            "could not read the automatic upgrade commit hash: {}",
             command_output(&output)
         );
     }
     let hash = String::from_utf8_lossy(&output.stdout).trim().to_string();
     if hash.is_empty() {
-        bail!("Git returned an empty automatic migration commit hash");
+        bail!("Git returned an empty automatic upgrade commit hash");
     }
     Ok(hash)
 }
@@ -291,58 +751,6 @@ fn command_output(output: &Output) -> String {
     }
 }
 
-fn migration_proposal(commit_a: &str) -> String {
-    format!(
-        "# Proposal: {MIGRATION_CHANGE_ID}\n\n\
-## Problem / Opportunity\n\n\
-This project was created from Givn {LEGACY_VERSION}, while the installed tool\
-now implements the {TARGET_VERSION} contract. The machine-safe scaffold and\
-generated guidance can be refreshed automatically, but project-specific\
-specification, test, and architecture decisions require evidence from this\
-repository.\n\n\
-## Proposed Solution\n\n\
-Bring this project to the Givn {TARGET_VERSION} contract through the ordered\
-LLM prompts in `design.md`. Preserve project-owned overrides and user content,\
-update only applicable active changes and durable documentation, and complete\
-the normal Givn review and archive gates. The managed preparation was recorded\
-in Commit A `{commit_a}`.\n\n\
-## Out of Scope\n\n\
-- Inventing domain behavior or business invariants.\n\
-- Automatically editing domain specifications, step definitions, source code,\
-  ADR decisions, Arc42 facts, ejected facets, or user-authored documents.\n\
-- Adding a synthetic migration feature to `givn/specs/`.\n\n\
-## Open Questions\n\n\
-The LLM must resolve which of the 0.3.0 contracts apply to this project by\
-inspecting its evidence before deriving tasks.\n"
-    )
-}
-
-fn migration_design(commit_a: &str) -> String {
-    format!(
-        "# Design: {MIGRATION_CHANGE_ID}\n\n\
-## Migration Metadata\n\n\
-- source_version: `{LEGACY_VERSION}`\n\
-- target_version: `{TARGET_VERSION}`\n\
-- upgrade_commit: `{commit_a}`\n\
-- migration_type: maintenance change without a product specification\n\n\
-## Machine-safe Preparation\n\n\
-Commit A `{commit_a}` contains the managed config scaffold and generated agent\
-integrations selected by the project. Commit B will contain this migration\
-plan. Inspect both commits before making project-specific edits. The clean Git\
-preflight and path allowlist are part of the upgrade contract.\n\n\
-## LLM Prompt Pack\n\n\
-The following is the canonical migration guide shipped with Givn {TARGET_VERSION}.\
-Execute its prompts in order, adapting only where the project inventory proves\
-that a surface does not apply. Derive project-specific tasks from this design\
-only after the inventory and design review have been completed.\n\n\
-{MIGRATION_GUIDE}\n\n\
-## Completion Boundary\n\n\
-This design intentionally does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`,\
-or an implementation commit. The project LLM must derive tasks, perform review,\
-and record actual evidence before the maintenance change is archived.\n"
-    )
-}
-
 struct FileSnapshot {
     files: Vec<(PathBuf, Option<Vec<u8>>)>,
 }
@@ -352,9 +760,10 @@ impl FileSnapshot {
     where
         I: IntoIterator<Item = PathBuf>,
     {
-        let mut unique = HashMap::new();
+        let mut seen = HashSet::new();
+        let mut files = Vec::new();
         for path in paths {
-            if unique.contains_key(&path) {
+            if !seen.insert(path.clone()) {
                 continue;
             }
             let content = if path.exists() {
@@ -365,11 +774,9 @@ impl FileSnapshot {
             } else {
                 None
             };
-            unique.insert(path, content);
+            files.push((path, content));
         }
-        Ok(Self {
-            files: unique.into_iter().collect(),
-        })
+        Ok(Self { files })
     }
 
     fn restore(&self) -> Result<()> {
@@ -383,5 +790,113 @@ impl FileSnapshot {
             }
         }
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn bundle(id: &str, source: &str, target: &str, order: u32) -> MigrationBundle {
+        MigrationBundle {
+            id: id.to_string(),
+            source_version: source.to_string(),
+            target_version: target.to_string(),
+            order,
+            proposal_asset: "migrations/0.2.0-to-0.3.0/proposal.md".to_string(),
+            design_asset: "migrations/0.2.0-to-0.3.0/design.md".to_string(),
+        }
+    }
+
+    #[test]
+    fn catalog_contains_the_0_2_to_0_3_bundle() {
+        let catalog = load_catalog().unwrap();
+        assert_eq!(catalog.schema_version, MIGRATION_CATALOG_SCHEMA_VERSION);
+        assert!(catalog.migrations.iter().any(|migration| {
+            migration.id == "migrate-0-2-0-to-0-3-0"
+                && migration.source_version == "0.2.0"
+                && migration.target_version == "0.3.0"
+        }));
+    }
+
+    #[test]
+    fn migration_path_orders_multiple_bundles() {
+        let catalog = MigrationCatalog {
+            schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+            migrations: vec![
+                bundle("second", "0.3.0", "0.4.0", 20),
+                bundle("first", "0.2.0", "0.3.0", 10),
+            ],
+        };
+        let path = resolve_migration_path(
+            &catalog,
+            ReleaseVersion::parse("0.2.0").unwrap(),
+            ReleaseVersion::parse("0.4.0").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            path.iter()
+                .map(|bundle| bundle.id.as_str())
+                .collect::<Vec<_>>(),
+            ["first", "second"]
+        );
+    }
+
+    #[test]
+    fn migration_path_covers_a_skipped_compatible_patch_release() {
+        let catalog = MigrationCatalog {
+            schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+            migrations: vec![bundle("first", "0.2.0", "0.3.0", 10)],
+        };
+        let path = resolve_migration_path(
+            &catalog,
+            ReleaseVersion::parse("0.2.0").unwrap(),
+            ReleaseVersion::parse("0.3.1").unwrap(),
+        )
+        .unwrap();
+        assert_eq!(path.len(), 1);
+    }
+
+    #[test]
+    fn migration_free_patch_release_has_no_path() {
+        let catalog = MigrationCatalog {
+            schema_version: MIGRATION_CATALOG_SCHEMA_VERSION,
+            migrations: vec![bundle("first", "0.2.0", "0.3.0", 10)],
+        };
+        let path = resolve_migration_path(
+            &catalog,
+            ReleaseVersion::parse("0.3.0").unwrap(),
+            ReleaseVersion::parse("0.3.1").unwrap(),
+        )
+        .unwrap();
+        assert!(path.is_empty());
+    }
+
+    #[test]
+    fn aggregate_design_keeps_bundle_phases_in_order() {
+        let bundles = vec![
+            bundle("first", "0.2.0", "0.3.0", 10),
+            bundle("second", "0.3.0", "0.4.0", 20),
+        ];
+        let design = aggregate_migration_design(
+            "migrate-0-2-0-to-0-4-0",
+            "0.2.0",
+            "0.4.0",
+            "commit-a",
+            &bundles,
+        )
+        .unwrap();
+        let first = design.find("### Phase 1: first").unwrap();
+        let second = design.find("### Phase 2: second").unwrap();
+        assert!(first < second, "{design}");
+        assert!(design.contains("## Prompt 1: Inventory"));
+    }
+
+    #[test]
+    fn aggregate_id_is_stable_for_semver_values() {
+        assert_eq!(
+            aggregate_migration_id("0.2.0", "0.3.1"),
+            "migrate-0-2-0-to-0-3-1"
+        );
     }
 }

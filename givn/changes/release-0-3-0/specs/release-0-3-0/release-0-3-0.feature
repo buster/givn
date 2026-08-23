@@ -1,5 +1,6 @@
 # User Interaction Inventory:
 # - run `givn upgrade` in a clean project created with Givn 0.2.0
+# - run `givn upgrade` in a clean project that needs managed guidance refresh but no project migration
 # - archive a completed 0.2.0-to-0.3.0 maintenance migration without a product specification
 
 @givn.delta @release-0-3-0
@@ -29,6 +30,13 @@ Feature: Givn 0.3.0 release and legacy project migration
     And each prompt tells the LLM which project evidence to inspect before editing
     And the guide forbids automatic changes to domain specifications and architecture decisions
 
+  @givn.added
+  Scenario: The migration catalog defines complete release-owned bundles
+    Given the embedded Givn migration catalog
+    When a maintainer inspects the migration catalog
+    Then it declares a catalog schema and migration bundle entries
+    And every migration bundle has a source, target, order, proposal asset, and design asset
+
   @givn.added @e2e
   Scenario: A clean 0.2.0 project receives a reviewable 0.3.0 migration plan
     Given a clean Git project created with Givn 0.2.0
@@ -40,6 +48,15 @@ Feature: Givn 0.3.0 release and legacy project migration
     And the migration change records the managed upgrade commit
     And the migration change contains a proposal and detailed design
     And the migration change intentionally has no product specification
+
+  @givn.added @e2e
+  Scenario: A clean project without migration requirements receives one managed upgrade commit
+    Given a clean Git project with current Givn files and a stale generated integration
+    When the consumer invokes `givn upgrade` for migration-free refresh
+    Then the command exits successfully
+    And the project config identifies the current Givn version
+    And one managed upgrade commit exists
+    And no migration change exists
 
   @givn.added
   Scenario: An unclean project is protected from automatic migration commits

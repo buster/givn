@@ -86,7 +86,7 @@ The active register contains only independent durable architecture decisions:
 | ADR-053 -> ADR-063 | ADR-063 supersedes fixed pair-cap refusal; ADR-063 is still proposed until its change is complete. |
 | ADR-054 -> ADR-058 | ADR-058 supersedes ADR-054's NLI deferral while ADR-054 remains the output-compatibility rule. |
 | ADR-061 -> ADR-063 | ADR-063 adds a configurable ordered budget to the surface-specific independent branches. |
-| ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs the clean-worktree, allowlisted two-commit migration preparation and visible maintenance plan. |
+| ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
 
 ## Evidence
 
@@ -95,7 +95,7 @@ The active register contains only independent durable architecture decisions:
 | Manifest and addons | [`src/config/overlay.rs`](../../../src/config/overlay.rs), [`src/config/manifest.rs`](../../../src/config/manifest.rs), [`src/cli/init.rs`](../../../src/cli/init.rs), [`givn/commands.yaml`](../../../givn/commands.yaml) |
 | Hooks and mandatory checks | [`src/cli/check.rs`](../../../src/cli/check.rs), [`src/hooks.rs`](../../../src/hooks.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs) |
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
-| Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`docs/migrations/0.2.0-to-0.3.0.md`](../../migrations/0.2.0-to-0.3.0.md), and release migration feature scenarios |
+| Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/0.2.0-to-0.3.0.md`](../../migrations/0.2.0-to-0.3.0.md), and release migration feature scenarios |
 | Retrieval and semantic evidence | [`src/spec/retrieval.rs`](../../../src/spec/retrieval.rs), retrieval feature files under [`givn/specs/`](../../../givn/specs/) |
 | Active decision status | [`semantic-reranker-budget/tasks.md`](../../../givn/changes/semantic-reranker-budget/tasks.md), [`semantic-reranker-budget/design.md`](../../../givn/changes/semantic-reranker-budget/design.md) |
 | PR #27 measurements | [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |

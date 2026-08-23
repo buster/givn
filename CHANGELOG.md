@@ -31,6 +31,9 @@ contains the complete stacked change set that follows that baseline.
   history without retaining non-ADR records.
 - Added the LLM migration playbook at
   [`docs/migrations/0.2.0-to-0.3.0.md`](docs/migrations/0.2.0-to-0.3.0.md).
+- Added the embedded migration catalog at `assets/migrations/catalog.yaml`.
+  Future release-owned migration bundles can be chained and delivered as one
+  ordered aggregate maintenance change.
 
 ### Changed
 
@@ -51,11 +54,13 @@ contains the complete stacked change set that follows that baseline.
 
 ### Migration
 
-Projects with `givn/config.yaml` at version `0.2.0` receive an automatic,
-reviewable preparation when they run the 0.3.0 `givn upgrade` command in a
-clean Git worktree. Givn creates a managed upgrade commit, then a separate
-maintenance migration change that records the first commit and contains the
-LLM prompts for project-specific work. The migration guide is the entry point:
+Projects receive an automatic, reviewable managed preparation when they run
+`givn upgrade` in a clean Git worktree. If the embedded migration catalog
+contains a path from their config version to the installed binary, Givn creates
+a managed upgrade commit and a separate aggregate maintenance migration change
+that records the first commit and contains every ordered bundle's LLM prompts.
+If no migration route applies, Givn creates only the managed upgrade commit and
+no migration change. The migration guide is the entry point:
 
 ```text
 docs/migrations/0.2.0-to-0.3.0.md
