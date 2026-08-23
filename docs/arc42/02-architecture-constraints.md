@@ -30,6 +30,8 @@ register](adr/README.md).
 | TC-20 | `GIVN_SPEC_MAX_RERANK_PAIRS` accepts positive decimal values and defaults to `2048` when unset. | Current PR #27 implementation; decision remains proposed |
 | TC-21 | Automatic managed upgrades and declared migrations require a Git repository with a clean worktree. | `src/cli/migration.rs`, migration E2E scenarios |
 | TC-22 | Ignored generated paths are force-staged only through the calculated Givn-owned allowlist. | `src/cli/migration.rs`, ignored-path migration E2E fixture |
+| TC-23 | Large E5, BGE, and NLI artifacts use `$XDG_CACHE_HOME/givn/<role>` or `$HOME/.cache/givn/<role>` by default; explicit model/cache overrides take precedence. | `src/spec/retrieval.rs`, semantic-model-download design |
+| TC-24 | Automatic model acquisition is triggered only by an explicit semantic operation and validates artifacts before inference; the persistent index remains project-local. | `src/spec/retrieval.rs`, semantic-model-download feature |
 
 ## 2.2 Configuration and Gate Constraints
 
@@ -87,9 +89,10 @@ edit feature files.
 
 ## 2.5 Acceptance Boundary
 
-Regular and E2E tests use deterministic stubs and test-only token-budget seams.
-Production retrieval uses local model artifacts. The current full and E2E
-verification state is not inferred from this document; it is read from
+Regular and E2E tests use deterministic stubs and test-only token-budget and
+artifact-source seams. Production retrieval uses validated model artifacts from
+the XDG user cache or explicit local paths. The current full and E2E verification
+state is not inferred from this document; it is read from
 `givn status --change semantic-reranker-budget` and the active change tasks.
 
 ## 2.6 Architecture Documentation Constraints

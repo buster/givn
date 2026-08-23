@@ -7,9 +7,10 @@ Chapter 9 is a register whose decisions are stored as individual MADR files.
 ## Documentation Status
 
 The checkout contains the core Rust CLI, lifecycle, embedded assets, local
-retrieval, semantic review, duplicate audit, BGE/NLI evidence paths, and the
-repository-owned acceptance fixtures. Distribution through release binaries,
-Homebrew, and the shell installer remains planned work.
+retrieval, semantic review, duplicate audit, BGE/NLI evidence paths, automatic
+validated model acquisition into the XDG user cache, and the repository-owned
+acceptance fixtures. Distribution through release binaries, Homebrew, and the
+shell installer remains planned work.
 
 The active change `semantic-reranker-budget` is not complete. `givn status
 --change semantic-reranker-budget` reports open implementation tasks and final
@@ -31,6 +32,12 @@ passages and selected BGE/NLI pairs without truncation or padding; `512` fits
 and `513` is over.
 Fitting E5 passages are indexed, while over-cap passages are visible as
 classification-free `E5_TOKEN_CAP` findings.
+
+Model artifacts are not project files by default. Explicit semantic commands
+reuse or populate `$XDG_CACHE_HOME/givn/{e5,bge,nli}`, falling back to
+`$HOME/.cache/givn/{e5,bge,nli}`. The permanent index remains the project-local
+`givn/.spec-index.json`; explicit model/cache environment variables override
+the shared defaults.
 
 The second-stage pools are surface-dependent:
 
@@ -78,6 +85,7 @@ and `397/1311/803` are historical snapshots and are not current baselines.
 - [`../../README.md`](../../README.md) - user-facing project overview.
 - [`../TASKS.md`](../TASKS.md) - project implementation task breakdown.
 - [`../../givn/changes/semantic-reranker-budget/tasks.md`](../../givn/changes/semantic-reranker-budget/tasks.md) - open current-change verification status.
+- [`../../givn/changes/semantic-model-download/design.md`](../../givn/changes/semantic-model-download/design.md) - active model availability and XDG cache design.
 - [`../migrations/0.2.0-to-0.3.0.md`](../migrations/0.2.0-to-0.3.0.md) - LLM prompt pack for the 0.3.0 project migration.
 - [`../migrations/README.md`](../migrations/README.md) - release-owned migration bundle and aggregate-plan contract.
 

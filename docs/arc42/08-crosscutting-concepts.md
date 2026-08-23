@@ -113,9 +113,11 @@ givn/
   archive/<id>/                  # copied active change after archive
   artifacts/<id>/                # ejected facet overrides
   .spec-index.json               # retrieval-enabled permanent index
-  .spec-model-cache/             # local E5 model cache
-  .spec-reranker-cache/          # local BGE artifact cache
-  .spec-nli-cache/               # local NLI artifact cache
+
+$XDG_CACHE_HOME/givn/            # shared user-level model cache
+  e5/                             # E5 FastEmbed artifacts
+  bge/                            # BGE artifacts
+  nli/                            # NLI Hub snapshots or flat override root
 
 docs/arc42/                      # fixed durable Arc42 output path
 ```
@@ -148,10 +150,15 @@ Cargo default feature set. The E5 index is
 `givn/.spec-index.json` and contains permanent scenario identities, complete
 semantic content hashes, and fitting vectors. A missing, malformed, or
 incompatible index is rebuilt by the refresh path from current permanent specs.
+E5 model artifacts are resolved from the XDG user cache by default and are
+shared across projects; explicit model/cache variables may select another
+location.
 
 `spec index` refreshes and writes this index. `spec search` reads it and returns
-at most five advisory results. `spec-similarity-gate` is a separate feature that
-turns E5 pair findings into a strict gate; `spec-retrieval` alone does not do so.
+at most five advisory results. Explicit semantic use resolves missing model
+artifacts before token measurement. `spec-similarity-gate` is a separate
+feature that turns E5 pair findings into a strict gate; `spec-retrieval` alone
+does not do so.
 
 ### 8.5b Complete Semantic Serialization
 
@@ -297,8 +304,9 @@ only an all-over-cap layer is run-level `*_UNAVAILABLE` with reason `token-cap`.
 The pair-budget tail is separate: a candidate omitted before model tokenization
 is `BGE_UNSCORED` or `NLI_UNSCORED`.
 
-Production uses local model tokenizers. Tests use deterministic token-budget
-seams and do not download or construct multi-gigabyte model artifacts.
+Production uses real tokenizers from the XDG cache or explicit local paths.
+Tests use deterministic token-budget and artifact-source seams and do not
+contact the live model service or construct multi-gigabyte model artifacts.
 
 ## 8.6 Filesystem-derived State
 

@@ -53,11 +53,13 @@ Deterministic fingerprints miss some paraphrases. Authors need local related-sce
 
 ## Decision Outcome
 
-Chosen option: **Use local multilingual E5 embeddings with a persistent permanent-scenario index behind `spec-retrieval`**. The index stores scenario identities, complete semantic content hashes, and vectors; `spec search` remains advisory. The strict E5 gate is a separate feature decision.
+Chosen option: **Use local multilingual E5 embeddings with a persistent permanent-scenario index behind `spec-retrieval`**. The index stores scenario identities, complete semantic content hashes, and vectors; `spec search` remains advisory. The strict E5 gate is a separate feature decision. Model artifacts are shared user data in the XDG cache by default, while the index remains project-local.
 
 ### Consequences
 
-- Retrieval-enabled builds require local model/tokenizer artifacts or model-cache setup; the default feature-free build fails explicitly for retrieval commands.
+- Retrieval-enabled builds acquire or reuse local model/tokenizer artifacts in
+  the XDG cache by default; the default feature-free build fails explicitly for
+  retrieval commands.
 - Index refresh reuses matching identity/hash entries and removes deleted permanent entries.
 - Local model runtime, cache size, and token limits are operational concerns.
 
@@ -85,3 +87,13 @@ Retrieval, exploration, index-refresh, missing-model, and feature-free scenarios
 ## More Information
 
 The strict gate is [ADR-041](ADR-041-e5-uniqueness-gate.md); retrieval mechanics are in [chapter 8.5a](../08-crosscutting-concepts.md#85a-local-scenario-retrieval).
+
+## Amendment (2026-08-23)
+
+The retrieval/index boundary is refined so model artifacts are not copied into
+each project. Explicit semantic operations resolve E5 artifacts from
+`$XDG_CACHE_HOME/givn/e5`, or `$HOME/.cache/givn/e5` when the XDG variable is
+unset; explicit model/cache overrides remain supported. The project-local
+`givn/.spec-index.json` continues to own only permanent scenario vectors and
+cap metadata. This amendment does not change the feature gate, serialization,
+or index schema.
