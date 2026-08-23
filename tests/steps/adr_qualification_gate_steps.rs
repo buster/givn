@@ -299,3 +299,23 @@ fn guidance_forbids_invented_evidence(world: &mut GivnWorld) {
     assert!(content.contains("must not invent alternatives"));
     assert!(content.contains("impact, consequences, participants, or provenance"));
 }
+
+#[when("an author reads the refinement rules")]
+fn author_reads_refinement_rules(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "refinement guidance is empty");
+}
+
+#[then("the guidance routes a refinement to `AMEND_ADR`")]
+fn guidance_routes_refinement_to_amend(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("`AMEND_ADR` for a qualified refinement"));
+}
+
+#[then("the guidance requires the target ADR to be named")]
+fn guidance_requires_target_adr(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("`target_adr` naming the existing"));
+}
+
+#[then("the guidance forbids a parallel ADR for the same decision boundary")]
+fn guidance_forbids_parallel_adr(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("must not create a parallel ADR for"));
+}
