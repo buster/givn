@@ -11,6 +11,19 @@ pub const MIGRATION_CHANGE_ID: &str = "migrate-0-2-0-to-0-3-0";
 
 const MIGRATION_GUIDE: &str = include_str!("../../docs/migrations/0.2.0-to-0.3.0.md");
 
+/// Whether the deterministic migration plan already exists in active or
+/// archived storage.
+pub fn migration_exists(project_root: &Path) -> bool {
+    project_root
+        .join("givn/changes")
+        .join(MIGRATION_CHANGE_ID)
+        .exists()
+        || project_root
+            .join("givn/archive")
+            .join(MIGRATION_CHANGE_ID)
+            .exists()
+}
+
 /// Prepare a legacy project and create the two commits that delimit the
 /// machine-safe upgrade from the project-specific migration work.
 pub fn prepare_legacy_upgrade(
@@ -19,9 +32,8 @@ pub fn prepare_legacy_upgrade(
     existing_config: &str,
 ) -> Result<()> {
     let migration_dir = project_root.join("givn/changes").join(MIGRATION_CHANGE_ID);
-    let archive_dir = project_root.join("givn/archive").join(MIGRATION_CHANGE_ID);
 
-    if migration_dir.exists() || archive_dir.exists() {
+    if migration_exists(project_root) {
         println!("Migration change '{MIGRATION_CHANGE_ID}' already exists; preserving it.");
         return Ok(());
     }

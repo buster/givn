@@ -56,6 +56,11 @@ fn consumer_runs_upgrade(world: &mut GivnWorld) {
     world.last_output = Some(crate::common::run_givn(env, &["upgrade"]));
 }
 
+#[when("the consumer runs `givn upgrade` again")]
+fn consumer_runs_upgrade_again(world: &mut GivnWorld) {
+    consumer_runs_upgrade(world);
+}
+
 #[then("the command exits successfully")]
 fn command_exits_successfully(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
@@ -217,23 +222,55 @@ fn user_changes_remain_unchanged(world: &mut GivnWorld) {
 }
 
 #[given("a project that already has the 0.3.0 migration change")]
-fn prepared_project(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the idempotency scenario");
+fn prepared_project(world: &mut GivnWorld) {
+    let env = legacy_git_project();
+    let first = crate::common::run_givn(&env, &["upgrade"]);
+    assert!(
+        first.status.success(),
+        "initial upgrade failed: {}",
+        String::from_utf8_lossy(&first.stderr)
+    );
+    let design = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-3-0/design.md"))
+        .expect("read prepared migration design");
+    let count = git_stdout(&env, &["rev-list", "--count", "HEAD"]);
+    world.additional_output = Some(format!("{count}\n---DESIGN---\n{design}"));
+    world.env = Some(env);
 }
 
 #[then("the command does not overwrite the migration change")]
-fn migration_not_overwritten(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the idempotency scenario");
+fn migration_not_overwritten(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("prepared project fixture");
+    let actual = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-3-0/design.md"))
+        .expect("read migration design");
+    let expected = world
+        .additional_output
+        .as_deref()
+        .expect("prepared migration snapshot")
+        .split_once("\n---DESIGN---\n")
+        .expect("design snapshot separator")
+        .1;
+    assert_eq!(actual, expected);
 }
 
 #[then("no second migration commit is created")]
-fn no_second_migration_commit(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the idempotency scenario");
+fn no_second_migration_commit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("prepared project fixture");
+    let before = world
+        .additional_output
+        .as_deref()
+        .expect("prepared migration snapshot")
+        .split_once('\n')
+        .expect("commit count snapshot")
+        .0;
+    let after = git_stdout(env, &["rev-list", "--count", "HEAD"]);
+    assert_eq!(after.trim(), before.trim());
 }
 
 #[then("the command reports that the project is already prepared for migration")]
-fn already_prepared_report(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the idempotency scenario");
+fn already_prepared_report(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("already prepared for migration"));
 }
 
 #[given("a Givn 0.2.0 project that is not a Git repository")]

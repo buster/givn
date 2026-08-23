@@ -133,7 +133,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: An unclean project is protected from automatic migration commits
 
-- [ ] Scenario: `An unclean project is protected from automatic migration commits`
+- [x] Scenario: `An unclean project is protected from automatic migration commits`
   - [x] RED: add an uncommitted user file/change to a 0.2.0 Git fixture and
         invoke `givn upgrade`. Assert the command succeeds or writes anything.
         Must fail against the intended safety contract.
@@ -150,29 +150,29 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; `ensure_clean_git` is shared by both automatic migration guards.
         ```
-  - [ ] COMMIT: `<hash>` — `fix(upgrade): refuse dirty migration worktrees`
+  - [x] COMMIT: `86be977` — `fix(upgrade): An unclean project is protected from automatic migration commits`
 
 ---
 
 ## Scenario: Repeating the upgrade does not duplicate the migration
 
 - [ ] Scenario: `Repeating the upgrade does not duplicate the migration`
-  - [ ] RED: run the successful preparation twice and assert the second run
+  - [x] RED: run the successful preparation twice and assert the second run
         creates another migration change or commit. Must fail.
         ```
-        <!-- paste RED evidence -->
+        The prepared-project step failed with `not implemented: implemented in the idempotency scenario` before the idempotency behavior existed.
         ```
-  - [ ] GREEN: detect the target maintenance change in active or archive
+  - [x] GREEN: detect the target maintenance change in active or archive
         storage, preserve it byte-for-byte, and report an already-prepared
         state without a second commit.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --features spec-retrieval --test features_runner -- --name "Repeating the upgrade does not duplicate the migration"` passed: `1 scenario (1 passed)`. The second run preserved the design and commit count.
         ```
-  - [ ] REFACTOR: make the idempotency check deterministic for active and
+  - [x] REFACTOR: make the idempotency check deterministic for active and
         archived plans and keep the normal non-migration upgrade behavior
         unchanged.
         ```
-        <!-- paste REFACTOR evidence -->
+        The rerun passed with `1 scenario (1 passed)`; active/archive detection is centralized in `migration_exists`.
         ```
   - [ ] COMMIT: `<hash>` — `fix(upgrade): make migration preparation idempotent`
 
