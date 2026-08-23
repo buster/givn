@@ -1,5 +1,11 @@
 # NLI Experiment Benchmark
 
+> **Status: historical.** Measurement basis: the NLI comparison branch with 208
+> permanent scenarios and 839 integrated candidate pairs. This predates PR #27
+> and is retained as benchmark history, not as the current operating point. See
+> the current [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md)
+> and [`semantic-duplicates-manual-evaluation.md`](../../semantic-duplicates-manual-evaluation.md).
+
 This document records the NLI comparison branch against the existing
 `cross-encoder-reranker` branch. It is an experiment document, not a givn
 change. No permanent `.feature` file was modified.

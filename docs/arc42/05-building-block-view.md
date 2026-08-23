@@ -1,271 +1,94 @@
 # 5. Building Block View
 
-## 5.1 Level 0 — System
+## 5.1 Level 0 - System
 
-`givn` is a single published binary crate. It reads embedded defaults and the
-project's `givn/` directory, and writes artifacts and agent files.
+`givn` is one Rust CLI crate. It reads embedded defaults and project-local
+configuration, changes lifecycle artifacts, invokes configured commands at gate
+points, and optionally uses local retrieval/model artifacts.
 
-## 5.2 Level 1 — Crate structure
+## 5.2 Level 1 - Crate Structure
 
 ```mermaid
 flowchart TD
-    G["givn single published binary crate"]
-    G --> M["main.rs: clap dispatch and entrypoint"]
-    G --> C["cli modules"]
-    G --> CFG["config modules"]
-    G --> GH["gherkin modules"]
-    G --> O["overlap modules"]
-    G --> S["spec modules"]
-    G --> H["hooks, state, and error"]
-    G --> A["embedded assets"]
-    G --> T["integration tests"]
-
-    C --> CHECK["cli::check: hooks and mandatory review gates"]
-    C --> SPEC["cli::spec: index, search, explore, review, duplicates"]
-    CFG --> MANIFEST["manifest, overlay, cascade, render"]
-    GH --> DELTA["parse, delta, merge"]
-    O --> FINGER["fingerprint and disposition"]
-    S --> RETRIEVAL["spec::retrieval: index, E5 ranking, semantic report"]
-    A --> ADDON["arc42-docs addon and workflow templates"]
+    G[givn CLI crate] --> CLI[cli modules]
+    G --> CFG[config modules]
+    G --> GH[gherkin modules]
+    G --> O[overlap modules]
+    G --> SPEC[spec retrieval modules]
+    G --> HOOK[hooks and integrity]
+    G --> STATE[state]
+    G --> ASSET[embedded assets]
+    G --> TEST[repository acceptance tests]
+    CLI --> CHECK[mandatory check and archive gates]
+    CFG --> GRAPH[manifest overlay and facet cascade]
+    GH --> MERGE[delta parsing and merge]
+    O --> FINGER[Fingerprint evidence]
+    SPEC --> E5[E5 index and semantic surfaces]
+    SPEC --> STAGE[BGE/NLI evidence stages]
 ```
 
-## 5.3 Module responsibilities
+## 5.3 Production Responsibilities
 
-| Module | Responsibility | Key collaborators |
-| --- | --- | --- |
-| `main.rs` | Parse args, dispatch to `cli::*`, map errors to exit codes. | `cli`, `error` |
-| `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, prompt for the agent-target selection (default opencode) and persist it as the `skills:` block, generate skills to the selected targets. | `config`, `skills` |
-| `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Calls the shared `resolve_change_dir` helper to validate `<id>` (kebab-case) and construct the path before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade`, `state` |
-| `cli::instructions` | Resolve the effective artifact node and instruction (cascade), then emit human-readable prose or JSON `{id, generates, requires, instruction}`; `specs` is the canonical source for complete E2E authoring policy. | `config::cascade`, `config::manifest` |
-| `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags) plus the tree-wide overlap scan; produce exit codes 0/1/3/2. Runs no tests. `--json` emits findings machine-readably. | `gherkin::parse`, `overlap::analysis` |
-| `cli::check` | Run an artifact's `post` hooks and mandatory review checks, including structural overlap, the dedicated E5 semantic report/remediation gate, and the existing strict embedding-similarity gate when `spec-similarity-gate` is compiled. `spec-retrieval` alone provides retrieval but does not enable the strict gate. Without retrieval it returns the existing unavailable error rather than passing or writing a report. | `hooks`, `config::manifest`, `overlap::analysis`, `spec::retrieval` |
-| `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
-| `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run coverage, move the change, then refresh the retrieval index. | `hooks`, `gherkin::merge`, `coverage_gate`, `spec::retrieval`, `config::manifest` |
-| `cli::coverage_gate` | Archive-level coverage pipeline: run the project measurement and merge commands, validate source and merged Cobertura XML, update README badges/summary, and restore all changed files on failure. | `cobertura`, `agents_block`, `config::manifest` |
-| `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
-| `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
-| `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
-| `cli::spec` | Build, search, explore, audit, or review the local permanent-only scenario corpus; exploration can add request-local current-change candidates, while `spec review --change` remains the existing advisory path and never creates the semantic report. | `spec::retrieval`, `gherkin::parse`, `state` |
-| `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
-| `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
-| `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
-| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, `post` hooks, deps, apply, verify, and project-owned coverage commands); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
-| `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. Also exposes `load_skills_targets()` — reads the `skills:` block from `givn/config.yaml` (ignored by the manifest itself). | `manifest`, `embedded` |
-| `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
-| `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |
-| `gherkin::parse` | Parse `.feature` into a typed AST; classify lint findings. | `gherkin` crate |
-| `gherkin::delta` | Detect `@givn.*` tags; split features/scenarios. | `parse` |
-| `overlap::analysis` | Tree-wide scenario-overlap analysis: title duplicates (hard error), shape matches, subsets, long scenarios; the review disposition gate and net-delta receipt. | `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `overlap::disposition` |
-| `overlap::fingerprint` | Deterministic scenario fingerprint: masked assertion sequence + extracted facts (exit code, contains polarity, data tables, `[DONE]`, TTY). | `gherkin` crate |
-| `overlap::disposition` | Parse review.md disposition and split-or-keep tables. | — |
-| `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
-| `skills::render` | Render templates with context into SKILL.md; workflow skills choreograph canonical artifact instructions instead of restating their policy. | `config::cascade` |
-| `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `spec::retrieval` | Embed scenario text, persist permanent content-hash/vector entries for existing retrieval commands, rank interactive and complete-scenario queries, construct shared deterministic E5 top-K unions, score optional bidirectional BGE and independent NLI evidence within the pair cap, render raw/recommended/filtered output, audit permanent pairs, collect request-local active deltas, apply lifecycle identity filters, generate the change-local semantic report, and verify projected remediation for admitted classifications. | `fastembed`, `ort`, `tokenizers`, `ndarray`, `gherkin::parse`, `gherkin::delta`, `overlap::fingerprint`, `state`, project FS |
-| `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
-| `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
-| `error` | Typed errors; map to process exit codes. | `thiserror` |
+| Building block | Responsibility |
+|---|---|
+| `main.rs` | Parse `clap` commands, dispatch, and map results to process exit. |
+| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable addons unless `--no-addons`, prompt agent targets, and sync outputs. |
+| `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
+| `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
+| `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs overlap/retrieval gates. |
+| `cli::archive` | Check archive prerequisites, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, run optional coverage, and copy/remove the change to archive. |
+| `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
+| `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
+| `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
+| `cli::skills` | Synchronize selected skill targets and opencode commands. |
+| `cli::upgrade` | Refresh managed config comments and preserve uncommented overrides. |
+| `config::manifest` | Define artifact, apply, verify, coverage, addon, and hook data structures. |
+| `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
+| `config::cascade` | Resolve project override assets before embedded core or addon assets. |
+| `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
+| `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |
+| `gherkin::merge` | Validate all delta preconditions and merge text-level scenario blocks into permanent specs. |
+| `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
+| `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
+| `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
+| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, and coverage configuration. |
+| `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
+| `spec::retrieval` | Build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply BGE/NLI evidence, generate semantic reports, and verify remediation. |
 
-### 5.5 Repository-owned acceptance blocks
+## 5.4 Retrieval Building Block
 
-The Gherkin runner's test-support layer contains two explicit pieces for the
-repository-ownership fixture capability: CLI E2E bindings and shared
-temporary-project helpers. They are test-system building blocks, not production
-CLI modules, and invoke the compiled binary through the existing test
-environment seam.
+`spec::retrieval` has one persistent boundary: `.spec-index.json` contains
+permanent vector entries and additive E5 cap metadata. Active-delta vectors,
+audit-only evidence, classifications, and semantic report state are not
+persisted there.
 
-## 5.4 Dependencies (crates)
+`givn spec duplicates` is an exception to ordinary index refresh: it reads the
+persistent index and reuses it only when every endpoint identity and complete
+content hash matches. Otherwise it embeds fitting current permanent scenarios
+transiently. It never writes the index as part of the audit.
 
-| Crate | Use | Version (verified) |
-| --- | --- | --- |
-| `clap` | CLI parsing | 4.6 |
-| `clap_complete` | Shell completion script generation (bash/zsh/fish/…) | 4 |
-| `serde` + `serde_yaml_ng` | Manifest (de)serialisation | serde 1, serde_yaml_ng 0.10 |
-| `rust-embed` | Embed default assets | 8.12.0 |
-| `gherkin` | Parse `.feature` files | 0.16 |
-| `anyhow` | Application error context | 1.0 |
-| `thiserror` | Library error types | 2.0 |
-| `serde_json` | `--json` output | 1 |
-| `fastembed` | Optional local E5 embeddings and user-defined local BGE reranking for `spec::retrieval`; default features disabled, with Rustls Hub download and ONNX Runtime support. Production BGE uses offline preflight plus `try_new_from_user_defined`; transitive native/runtime dependencies are feature-gated with retrieval. | 5.17.2 |
+The current second-stage implementation is surface-aware. Duplicate Audit BGE
+uses its endpoint top-five union while Duplicate Audit NLI uses the full E5
+semantic candidate set. Blocking semantic review passes its complete report
+candidate list independently to BGE and NLI; it does not pass a Duplicate Audit
+top-five pool.
 
-Versions are pinned in `Cargo.lock`. The dep-age policy (`scripts/check-dep-age.sh`) enforces that every locked dependency is ≥ 30 days old (TC-13).
+## 5.5 Dependencies
 
-### 5.3a Permanent exploration additions
+| Dependency | Use |
+|---|---|
+| `clap`, `clap_complete` | CLI parsing and shell completion |
+| `serde`, `serde_yaml_ng`, `serde_json` | Manifest, config, index, and machine-readable output |
+| `gherkin` | Feature parsing and AST access |
+| `anyhow`, `thiserror` | Application context and typed errors |
+| `rust-embed` | Embedded defaults and addon assets |
+| `quick-xml` | Cobertura coverage parsing |
+| `fastembed`, `ort`, `tokenizers`, `ndarray` | Optional local E5/BGE/NLI retrieval and inference |
 
-`cli::spec` exposes the `explore` option set and rejects missing or conflicting
-input sources before dispatch. `spec::retrieval` parses the complete query,
-reuses unchanged permanent vectors through the existing content hashes, ranks
-all permanent entries, and renders the advisory text/JSON contract. The exact
-identity filter is `(normalized file, scenario title)` and is applied only for
-file queries. All permanent, delta-source, projected-target, and query file
-identities use one project-relative forward-slash normalization helper that
-accepts relative and absolute paths.
+## 5.6 Repository-Owned Acceptance Blocks
 
-The repository-owned acceptance layer adds one capability module for regular
-steps and one separate module for e2e CLI steps. Both invoke the compiled
-binary; neither calls production retrieval functions in-process.
-
-### 5.3b Current-change exploration additions
-
-With `--change`, `cli::spec` passes the validated change identifier to
-`spec::retrieval`. Retrieval validates the change and parses its delta files
-before refreshing the permanent index. It collects only active added and
-modified scenarios, retains the delta source and projected permanent target
-identities, and embeds their text in memory for the current request. Removed
-scenarios and rejected requests never enter the candidate pool. The result
-record adds `scope` and `change` after the existing JSON result fields, while
-the text renderer identifies the source for both permanent and current-change
-records.
-
-### 5.3c Semantic review report additions
-
-The blocking `check review` path calls a dedicated report gate after structural
-overlap and before the existing feature-gated retrieval path completes.
-`spec::retrieval` collects only active `Added` and `Modified` scenarios from the
-requested change, including `Rule:`-nested scenarios, compares them with
-permanent entries and with other active deltas in that same change at E5
-`0.9500`, and excludes removed and permanent-permanent pairs. A Modified
-scenario excludes only its own projected target identity; other scenarios in the
-target file remain candidates. The report is change-local while active and is
-retained by the existing archive move; delta vectors, classifications, and
-report state are never persisted in the permanent index.
-
-The report uses the existing E5 cosine evidence and the public deterministic
-`overlap::fingerprint` facts model. Candidate identity, endpoint identities,
-content hashes, complete evidence hashes, candidate order, score formatting,
-strict prior parsing, and classification carry-forward are deterministic. The
-complete endpoint representation orders feature `Background`, applicable `Rule`
-`Background`, and scenario steps, retaining every docstring and data-table row
-and cell in source order. The report has an exact fixed-header/field-order
-grammar, compact JSON serialization, `null` as its only absent value, one final
-newline, no unknown fields, and no timestamps or environment values. A binary
-without `spec-retrieval` returns the existing unavailable error and does not
-create a report. If the permanent index is malformed or incompatible, refresh
-treats it as stale, rebuilds a permanent-only index, and continues the report
-gate without Delta state in the rebuilt index. Regular acceptance bindings
-exercise the filesystem boundary; the single E2E scenario invokes the compiled
-CLI subprocess and treats its exit status and report output as primary evidence.
-No new runtime or test dependency is introduced.
-
-### 5.3d Semantic remediation additions
-
-The remediation verifier introduces prior-entry and projected-endpoint records
-inside `spec::retrieval`. It recomputes a prior pair independently of report
-candidate admission, so removal and below-boundary transitions remain
-verifiable. `DUPLIKAT` requires removal of the redundant endpoint, `VARIANTE`
-requires one parameterized `Scenario Outline` with a non-empty `Examples`
-table, and `VALID-BOUNDARY` requires a changed deterministic observable fact or
-explicit condition/outcome invariant plus a score strictly below `0.9500`.
-
-### 5.3e Permanent duplicate audit additions
-
-The duplicate audit adds an in-memory permanent-corpus record and candidate
-renderer inside `spec::retrieval`. It reuses `gherkin::parse` for Rules and
-backgrounds, `overlap::fingerprint` for masked assertion shape/subset and fact
-evidence, and the existing local E5 embedding path for advisory semantic
-candidates. It deliberately does not read or call the persistent index refresh
-path. The repository-owned acceptance layer adds one regular step module and
-one separate CLI E2E module, both invoking the compiled binary through a
-temporary project. The test-only score seam is keyed by normalized endpoint
-identity and is available only with the stub embedder.
-
-### 5.3f BGE evidence additions
-
-The BGE layer is compiled only by `cross-encoder-reranker`, independently of
-`spec-similarity-gate`. A shared pool builder performs deterministic identity
-exclusions, stable E5 tie ordering, top-five selection, canonical pair union,
-and the positive `GIVN_SPEC_MAX_RERANK_PAIRS` ordered-prefix budget before
-loading the local BGE model. A pair is scored in both directions and receives
-a symmetric raw-logit evidence record.
-Before construction or inference, the actual BGE tokenizer also preflights each
-complete left/right pair without truncation or padding and counts pair special
-tokens. Exactly 512 pair tokens fit; 513 receives `BGE_TOKEN_CAP` evidence with
-left, right, pair, and limit counts and no score. The renderer records E5 raw
-candidates, `BGE_RECOMMENDED`, `BGE_FILTERED`, `BGE_UNSCORED`, and
-`BGE_TOKEN_CAP` evidence. Pairs outside the successful bounded subset receive
-`BGE_UNSCORED`; over-cap pairs inside the subset receive `BGE_TOKEN_CAP`.
-Both remain visible and blocking, while filtered evidence is non-blocking and
-never becomes a Givn classification. Candidates after the configured E5-ranked
-prefix are `BGE_UNSCORED` and remain blocking. If no selected pair can be scored
-because all selected pairs exceed the token budget, the run is
-`BGE_UNAVAILABLE` with reason `token-cap` and every affected candidate retains
-its cap evidence. Artifact refusal retains its existing unavailable fallback
-without claiming BGE participation; pair-count overflow alone is no longer an
-unavailable state.
-
-The benchmark label artifact and comparison report are repository-owned
-evidence. Their metrics cover top-K recall, admission precision/recall,
-false-positive/false-negative rates, runtime, and scenario verbosity. Test
-steps use local stubs and invoke the compiled CLI as a subprocess.
-
-### 5.3g NLI evidence additions
-
-The independent `nli-evidence` capability uses the same E5 candidate pool as
-BGE and adds `NliEvidence`/`NliRun` records to `spec::retrieval`. The local ONNX NLI
-classifier resolves labels by name, scores both ordered pair directions, and
-stores directional plus symmetric probabilities. A fixed symmetric
-entailment probability of `0.5000` admits `NLI_RECOMMENDED`; lower values are
-`NLI_FILTERED` evidence only. Combined BGE/NLI admission is an intersection,
-while E5 raw candidates remain available for audit and fallback.
-
-NLI is applied to permanent exploration, current-change exploration, advisory
-review, blocking semantic review, and the permanent duplicate audit. It applies
-the same positive ordered E5 budget independently of BGE. A local artifact
-preflight produces `NLI_UNAVAILABLE`, keeps raw E5 candidates blocking, and
-records zero model-load attempts. Before NLI model
-construction or inference, its actual tokenizer independently preflights the
-same E5 candidate pool using untruncated/unpadded pair encodings with pair
-special tokens. A 513-token pair receives `NLI_TOKEN_CAP`, null probabilities,
-exact counts, and remains visible, unresolved, non-filtered, and blocking. If
-no pair fits, the run is `NLI_UNAVAILABLE` with reason `token-cap`; fitting
-pairs in a partial run are still scored and the run remains enabled. Regular
-and E2E acceptance bindings live in separate capability modules and invoke the
-compiled CLI through temporary project roots.
-
-### 5.3h Complete semantic serialization and token-budget guard
-
-The retrieval building block owns one canonical serializer for the Feature,
-optional Rule, inherited Feature/Rule Backgrounds, and Scenario AST nodes. Its
-stable order is Feature keyword/name/context/description, Feature Background,
-Rule keyword/name/context/description, Rule Background, Scenario
-keyword/title/description, resolved behavior steps, tables, docstrings, the
-Scenario Outline template, and concrete Examples rows. `And` and `But` inherit
-the preceding resolved role. Whitespace normalization is deterministic; empty
-optional sections and fields are omitted, while non-empty table cells, example
-values, docstring content, and optional context are retained in full.
-
-The serializer's exact text is the E5 passage input and the source of
-`content_hash`; matching endpoint identity and hash reuse an existing vector,
-while a mismatch re-embeds it. No serializer-version field is introduced.
-Paths, tags, scores, classifications, and run statuses are metadata rather
-than model text. The deterministic `Fingerprint` canonical behavior and facts
-remain a separate evidence source, while report endpoint evidence remains a
-separate carry-forward representation.
-
-The budget guard measures E5 passages before E5 model construction and measures
-BGE/NLI pairs before their respective model construction. It uses each actual
-model tokenizer, no truncation, no padding, and pair special tokens for pair
-counts. A limit of 512 is inclusive; 513 is over. It partitions fitting and
-over-cap candidates without automatic chunking, shortening, splitting, or
-feature edits. A deterministic test-only budget provider supplies exact 512
-and 513 fixtures; it is unavailable on the production tokenizer path, and
-regular/E2E tests use no network or multi-gigabyte model artifact.
-
-### 5.3i E5 passage-cap evidence
-
-The E5 passage guard now returns a positional result for every complete input:
-either a vector for a fitting passage or an `E5_TOKEN_CAP` record for an
-over-cap passage. `refresh_index` persists fitting vectors in the existing
-`entries` collection and stores cap metadata in the additive
-`e5_token_caps` collection. Cap records carry endpoint identity, complete
-token count, limit, E5 model/tokenizer provenance, refactoring-required state,
-and shorten/split guidance. Older index files deserialize with an empty cap
-collection, and atomic replacement remains unchanged.
-
-Duplicate discovery performs deterministic exact and structural analysis before
-semantic embedding. It only forms E5 pairs for endpoints with vectors, so a cap
-cannot receive a fabricated semantic score while deterministic findings remain
-available. Explore and blocking semantic review render cap records separately;
-the semantic report counts them as unresolved blocking findings with no Givn
-classification. The test-only budget seam is applied only with the stub
-embedder, while the production path uses the actual local E5 tokenizer.
+The Cucumber test binary contains regular step modules and separate compiled-CLI
+E2E step modules. They invoke the public binary in temporary project roots.
+They are test building blocks, not production modules, and are intentionally
+owned by this repository.

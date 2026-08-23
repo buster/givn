@@ -1,94 +1,84 @@
-# givn — Architecture Documentation (arc42)
+# givn - Architecture Documentation (arc42)
 
-This is the architecture documentation for **givn**, following the
-[arc42](https://arc42.org) template. Each chapter is a separate file to keep
-documents focused and reviewable.
+This is the durable architecture documentation for `givn`, organized according
+to the [arc42](https://arc42.org) template. Each chapter is a separate file.
+Chapter 9 is a register whose decisions are stored as individual MADR files.
 
-> **Status:** Phases 0–5 implemented (core engine complete). Phases 6–7 (distribution,
-> dogfood) pending. Characterization of the `new` command in progress
-> (change `reverse-engineer-new-command`). All architecture decisions remain
-> binding — see chapter 9.
+## Documentation Status
 
-The semantic retrieval surface includes advisory exploration through
-`givn spec explore`, an optional request-local current-change corpus, and the
-blocking E5 `0.9500` semantic review worklist generated only by `givn check
-review --change <id>`. The opt-in `cross-encoder-reranker` layer adds
-bidirectional BGE evidence to the five complete-scenario/audit E5 surfaces;
-`GIVN_SPEC_MAX_RERANK_PAIRS` selects the highest E5-scoring eligible pairs,
-defaulting to `2048`. Free-text `givn spec search` remains E5-only. E5 raw
-candidates remain visible, omitted budget tails are `BGE_UNSCORED`, and
-`BGE_RECOMMENDED`/`BGE_FILTERED` remain non-classifying evidence.
-Remediation verification remains agent-owned for admitted candidates. A build
-without retrieval fails this blocking layer rather than passing.
+The checkout contains the core Rust CLI, lifecycle, embedded assets, local
+retrieval, semantic review, duplicate audit, BGE/NLI evidence paths, and the
+repository-owned acceptance fixtures. Distribution through release binaries,
+Homebrew, and the shell installer remains planned work.
 
-The independent `nli-evidence` layer uses the same eligible E5 pool and the
-same ordered pair budget on the same five surfaces. It reports bidirectional
-entailment, neutral, and contradiction probabilities, emits
-`NLI_RECOMMENDED` or non-blocking `NLI_FILTERED` evidence at the inclusive
-symmetric entailment point `0.5000`, and records the budget tail as
-`NLI_UNSCORED`. It intersects its recommendations with BGE when both layers
-are active. E5 raw candidates remain visible and NLI never assigns a Givn
-classification.
+The active change `semantic-reranker-budget` is not complete. `givn status
+--change semantic-reranker-budget` reports open implementation tasks and final
+verification. Therefore its ADR-063 is `proposed`, not an accepted current
+architecture contract.
 
-All semantic layers now consume one complete, deterministic Gherkin
-serialization containing Feature/Rule context and descriptions, inherited
-backgrounds, resolved step roles, tables, docstrings, outline templates, and
-concrete example rows. Optional sections and fields are emitted only when they
-contain normalized content; empty markers are omitted so shared boilerplate
-cannot raise cosine similarity. The exact serialized E5 passage is the
-`content_hash` boundary: an existing vector is reused only when identity and
-hash match, with no separate serializer-version field. Paths, tags, scores,
-classifications, and deterministic fingerprints remain outside model text. The actual local
-tokenizer preflights untruncated and unpadded E5 passages and BGE/NLI pair
-encodings, including pair special tokens; `512` fits and `513` is over the
-limit. Fitting E5 passages remain indexed; an over-cap passage is retained as
-additive `E5_TOKEN_CAP` metadata with no vector or semantic pair score. Its
-file/title, complete token count, limit, model/tokenizer provenance,
-`refactoring_required: true`, and shorten/split-and-rerun guidance remain
-visible and blocking without an automatic Givn classification. `BGE_TOKEN_CAP`
-and `NLI_TOKEN_CAP` remain visible, unresolved, non-filtered, and blocking per
-candidate, while run-level unavailable means no pair in that layer was
-scoreable. BGE and NLI independently score the same eligible E5 pool, and
-combined recommendations are their intersection.
+Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
+register](adr/README.md) for status, relationships, evidence, reserved IDs, and
+historical records.
 
-The same retrieval surface also provides `givn spec duplicates`, a complete
-read-only permanent-corpus audit. It reports exact and existing-Fingerprint
-structural relationships plus advisory E5 candidates in one fixed text/JSON
-contract, with optional BGE/NLI raw/recommended/filtered/unscored extensions
-selected by the E5-ranked `GIVN_SPEC_MAX_RERANK_PAIRS` budget, without reading,
-refreshing, or writing the persistent index and without blocking ordinary
-change work. It excludes active changes and archive contents; only the existing
-local model cache may be created.
+## Current Semantic Surface
 
-When the `arc42` addon is enabled, completion review also cross-checks durable
-Arc42 facts against the change's design, mapped tasks, and completed
-implementation. See chapter 8.14 and ADR-035.
+The retrieval feature is opt-in at build time. E5 uses one compact deterministic
+serialization of the complete parsed Gherkin context and hashes that exact text
+for vector reuse. The actual tokenizer preflights E5 passages and selected
+BGE/NLI pairs without truncation or padding; `512` fits and `513` is over.
+Fitting E5 passages are indexed, while over-cap passages are visible as
+classification-free `E5_TOKEN_CAP` findings.
+
+The second-stage pools are surface-dependent:
+
+| Surface | BGE | NLI |
+|---|---|---|
+| `spec duplicates` | Endpoint top-five union, then E5-ranked budget | Full E5 semantic candidate pool, independently budgeted |
+| `spec explore` | At most the five ranked Explore results | The same at-most-five Explore result set, independently scored |
+| advisory `spec review` | The surface's retrieved candidate pool, then budget | The same surface pool, independently scored |
+| blocking `check review` | Complete semantic-report candidates, then budget | The same report candidates, independently budgeted |
+
+BGE and NLI never assign a Givn classification. `*_FILTERED` evidence is
+non-blocking; budget tails are `*_UNSCORED`; selected token-cap evidence remains
+visible and blocking. Combined recommendations intersect only when both layers
+participate.
+
+`givn spec duplicates` reads the persistent E5 index to reuse entries whose
+identity and complete content hash still match. It does not refresh or write the
+persistent index as part of the audit, and computes missing audit embeddings in
+memory. It excludes active changes and archive contents.
+
+The current PR #27 real-model report records `394` permanent scenarios, `1274`
+E5 candidates, and `795` BGE top-five-union pairs. The report relies on local,
+ephemeral raw JSON reports. Older measurements such as `288/414?`, `385/100`,
+and `397/1311/803` are historical snapshots and are not current baselines.
 
 ## Chapters
 
 | # | Chapter | Purpose |
-| --- | --- | --- |
-| 1 | [Introduction and Goals](01-introduction-and-goals.md) | What givn is, top requirements, quality goals, stakeholders |
-| 2 | [Architecture Constraints](02-architecture-constraints.md) | Technical and organisational constraints that are fixed |
-| 3 | [Context and Scope](03-context-and-scope.md) | System boundary, external interfaces, in/out of scope |
-| 4 | [Solution Strategy](04-solution-strategy.md) | Key strategic decisions in brief |
-| 5 | [Building Block View](05-building-block-view.md) | Static decomposition: crate, modules, responsibilities |
-| 6 | [Runtime View](06-runtime-view.md) | Key scenarios: init, propose, lint, check (hooks and semantic report gate), permanent/current-change explore, permanent duplicate audit, strict similarity review, archive, eject |
-| 7 | [Deployment View](07-deployment-view.md) | Distribution, install methods, release pipeline |
-| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade engine, Gherkin delta model, TDD loop, coverage gate, skills, similarity, duplicate audit, and semantic review gates |
-| 9 | [Architecture Decisions](09-architecture-decisions.md) | ADRs — rationale for the complete serializer/hash boundary, tokenizer guard, and independent second-stage pool |
-| 10 | [Quality Requirements](10-quality-requirements.md) | Quality tree and scenarios for semantic completeness, exact token limits, cap evidence, and pool independence |
-| 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and planned debt, including stale hashes, tokenizer mismatch, cap-state loss, and pool divergence |
-| 12 | [Glossary](12-glossary.md) | Domain and technical terms, including serialization, token budgets, cap states, and combined admission |
+|---|---|---|
+| 1 | [Introduction and Goals](01-introduction-and-goals.md) | Product purpose, requirements, quality goals, stakeholders |
+| 2 | [Architecture Constraints](02-architecture-constraints.md) | Technical, organizational, and repository constraints |
+| 3 | [Context and Scope](03-context-and-scope.md) | System boundary, interfaces, and scope |
+| 4 | [Solution Strategy](04-solution-strategy.md) | Strategic architecture choices |
+| 5 | [Building Block View](05-building-block-view.md) | Crate, modules, and responsibilities |
+| 6 | [Runtime View](06-runtime-view.md) | Lifecycle, gates, retrieval, audit, and archive flows |
+| 7 | [Deployment View](07-deployment-view.md) | Binary, feature builds, caches, and planned distribution |
+| 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Cascade, manifest, Gherkin, hooks, skills, coverage, and retrieval |
+| 9 | [Architecture Decisions](09-architecture-decisions.md) | Pointer to the [ADR register](adr/README.md) and individual records |
+| 10 | [Quality Requirements](10-quality-requirements.md) | Quality tree, scenarios, and verification boundaries |
+| 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks, limitations, and historical measurements |
+| 12 | [Glossary](12-glossary.md) | Domain and technical vocabulary |
 
-## Related documents
+## Related Documents
 
-- [`../../README.md`](../../README.md) — user-facing project overview.
-- [`../TASKS.md`](../TASKS.md) — phase-by-phase implementation task breakdown.
+- [`../../README.md`](../../README.md) - user-facing project overview.
+- [`../TASKS.md`](../TASKS.md) - project implementation task breakdown.
+- [`../../givn/changes/semantic-reranker-budget/tasks.md`](../../givn/changes/semantic-reranker-budget/tasks.md) - open current-change verification status.
 
-## How to use this
+## Reading Order
 
-1. Read chapter 1 and 4 for the big picture.
-2. Read chapter 8 (cross-cutting concepts) — it is the heart of the design.
-3. Read chapter 9 to understand *why* each decision was made (do not relitigate).
-4. See [`../TASKS.md`](../TASKS.md) for the phase-by-phase task breakdown and current completion status.
+1. Read chapters 1 and 4 for purpose and strategy.
+2. Read chapter 8 for cross-cutting mechanics and chapter 6 for runtime order.
+3. Read the [ADR register](adr/README.md) and only then individual decisions.
+4. Treat proposed, deprecated, and superseded records as historical or pending evidence, not as accepted architecture.

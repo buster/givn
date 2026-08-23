@@ -1,5 +1,12 @@
 # Semantic Serialization Token Budget Analysis
 
+> **Status: historical.** Measurement basis: the combined Givn/Watn corpus of
+> 425 scenarios, all-pairs tokenizer measurements, and the old strict E5 pool of
+> 199 pairs. The pair-cap measurements below predate PR #27 and are retained as
+> prior evidence, not as the current operating point. See the current
+> [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](../../semantic-duplicates-e5-threshold-vs-serialization-analysis.md)
+> for the refreshed 394-scenario run.
+
 ## Ergebnis
 
 Die geplante vollständige Szenario-Serialisierung wurde gegen die aktiven

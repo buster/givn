@@ -1,5 +1,13 @@
 # Real-Model Semantic Duplicate Analysis
 
+> **Status: historical.** Measurement basis: a 2026-08-19 real local-model run
+> on 385 permanent scenarios and 100 E5 candidates, before PR #27. The 385/100
+> figures and the resulting sequential BGE/NLI measurements are retained for
+> provenance only and are not the current operating-point truth. See the current
+> [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md),
+> [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](../../semantic-duplicates-e5-threshold-vs-serialization-analysis.md),
+> and [`semantic-duplicates-manual-evaluation.md`](../../semantic-duplicates-manual-evaluation.md).
+
 ## Executive Summary
 
 This report records a real-model comparison of the permanent `givn spec
@@ -22,10 +30,10 @@ The only candidate recommended by both real second-stage models is the pair
 about rejecting a path-traversal identifier in `status`.
 
 The 20 highest-impact disagreement and consensus cases are prepared for manual
-classification in `docs/semantic-duplicates-manual-classification-questionnaire.md`.
+classification in `semantic-duplicates-manual-classification-questionnaire.md`.
 
 The token-budget measurement for the planned complete serialization is recorded
-in `docs/semantic-serialization-token-budget-analysis.md`.
+in `semantic-serialization-token-budget-analysis.md`.
 
 ## Reproduction
 

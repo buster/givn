@@ -12,6 +12,15 @@ produces `4230` structural overlaps. E5 produces `1274` semantic candidates at
 the inclusive cosine boundary `0.9500`. The E5 index was refreshed immediately
 before the model runs and reports `0` E5 token-cap findings.
 
+This is the current PR #27 evidence set. The corresponding benchmark and manual
+interpretation are linked below; the raw JSON inputs remain local and ephemeral.
+
+## Related Current Evidence
+
+- [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](semantic-duplicates-e5-threshold-vs-serialization-analysis.md)
+- [`semantic-duplicates-manual-evaluation.md`](semantic-duplicates-manual-evaluation.md)
+- [`bge-reranking-benchmark.md`](bge-reranking-benchmark.md)
+
 The runs were:
 
 ```sh

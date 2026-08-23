@@ -1,5 +1,12 @@
 # Cross-Encoder Benchmark
 
+> **Status: historical.** Measurement basis: the `cross-encoder-reranker` branch
+> with 208 permanent scenarios, 697 standalone candidate pairs, and 839
+> integrated candidate pairs. This predates PR #27 and is retained as benchmark
+> history, not as the current operating point. See the current
+> [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md)
+> and [`bge-reranking-benchmark.md`](../../bge-reranking-benchmark.md).
+
 ## Scope
 
 This report compares the branch `cross-encoder-reranker` with baseline commit

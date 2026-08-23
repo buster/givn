@@ -13,7 +13,61 @@ Maintained by the `arc42-docs` givn artifact — updated with each change via `g
 | 6 | [Runtime View](06-runtime-view.md) | Important runtime scenarios and flows |
 | 7 | [Deployment View](07-deployment-view.md) | Infrastructure and deployment topology |
 | 8 | [Cross-cutting Concepts](08-crosscutting-concepts.md) | Error handling, security, config, etc. |
-| 9 | [Architecture Decisions](09-architecture-decisions.md) | ADRs — context, decision, rationale |
+| 9 | [Architecture Decisions](09-architecture-decisions.md) | ADR register/index; individual ADRs are in [`adr/README.md`](adr/README.md) |
 | 10 | [Quality Requirements](10-quality-requirements.md) | Measurable quality scenarios |
 | 11 | [Risks and Technical Debt](11-risks-and-technical-debt.md) | Known risks and debt |
 | 12 | [Glossary](12-glossary.md) | Domain and technical terms |
+
+## ADR Storage
+
+One architecturally significant decision gets exactly one ADR, and each ADR
+body is stored in its own Markdown file. With the default output directory,
+use these paths:
+
+- `docs/arc42/09-architecture-decisions.md` is the chapter-09 register/index.
+  It contains one row or link per ADR, not multiple ADR bodies or repeated
+  MADR sections.
+- `docs/arc42/adr/README.md` is the index of the ADR directory. Keep it aligned
+  with the chapter-09 register.
+- `docs/arc42/adr/ADR-NNNN-short-slug.md` is the path for an active ADR.
+- `docs/arc42/adr/archive/ADR-NNNN-short-slug.md` is the path for an archived
+  historical ADR. Preserve its ID and update both indexes when moving it.
+
+The current binary uses the fixed `docs/arc42/` output root and does not
+implement an `arc42.output_dir` override. `givn/archive/<change>/` is reserved
+for archived changes and is not a location for ADR bodies. The addon does not
+automatically scaffold individual ADR files; create the directory, file, and
+index entries manually.
+
+## Qualification Gate
+
+Before creating an ADR or registering it, its `## Qualification` section must
+evaluate all four Qualification Checklist items with a concrete,
+decision-specific justification for each. The gate passes only when at least
+one item is checked and backed by a clear justification:
+
+- **Hard to reverse** - undoing the decision later requires significant effort.
+- **Shapes quality attributes** - it materially affects a lasting quality
+  attribute such as performance, security, or maintainability.
+- **Structural** - it defines a boundary, contract, or dependency direction.
+- **Must be shared** - developers would systematically violate the architecture
+  without knowing it.
+
+If none can be justified, do not create an ADR. System relevance,
+implementation effort, long discussion, and a known pattern alone do not pass
+the gate. Logging libraries, internal naming, formatting rules, local
+refactorings, and interchangeable HTTP clients without quality-attribute
+implications are generally not ADRs. System-wide error handling is borderline:
+record it only when an enforced cross-cutting contract exists.
+
+## Status and Supersession
+
+Every individual ADR uses MADR frontmatter. The allowed `status` values are
+`proposed`, `rejected`, `accepted`, `deprecated`, and `superseded by ADR-NNNN`.
+The last form must name a concrete existing replacement ID, such as
+`superseded by ADR-027` or `superseded by ADR-0042`; a bare or placeholder ID is
+invalid. Completed ADRs
+must have a real date and real participant values, contain all MADR sections,
+and contain no template placeholders. The register and both ADR indexes must
+link to the current file path and preserve historical links for archived or
+superseded records.

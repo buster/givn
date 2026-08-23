@@ -1,150 +1,98 @@
 # 4. Solution Strategy
 
-This chapter summarises the key strategic decisions. Full rationale per decision
-is in chapter 9 (Architecture Decisions). Mechanics are in chapter 8
-(Cross-cutting Concepts).
+This chapter summarizes the current implementation strategy. Decision rationale
+is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscutting-concepts.md).
 
-## 4.1 Strategy at a glance
+## 4.1 Strategy at a Glance
 
 | Concern | Strategy |
-| --- | --- |
-| Language & packaging | Single static **Rust** binary; defaults embedded via `rust-embed`. |
-| Configuration model | **CSS-style cascade**: embedded defaults ← project `givn/` files win, per-facet. |
-| Discovery of defaults | **`eject` on demand** — project dir starts empty of overrides. |
-| Artifact graph | **YAML manifest**, embedded default graph + project **overlay/patch**. |
-| Spec format | **`.feature` is the spec** — delta tags + merge-on-archive; no `spec.md`. |
-| TDD | **Scenario-by-scenario** RED/GREEN/REFACTOR loop. |
-| Coverage | **Completeness of gap classification**, not a percentage threshold. |
-| State | **Filesystem-derived** — file presence determines lifecycle state. |
-| Agent integration | `AGENTS.md` is user-owned (never written); generated skills go to the configured agent targets (`.opencode`, `.agents`, `.claude` — selectable at init, default opencode, see ADR-036). |
-| Test running | Manifest-declared `verify.command` runs tests; `givn lint` only statically checks Gherkin (separate concerns). |
-| Architecture conformance | When the `arc42` addon is enabled, completion review cross-checks durable Arc42 facts against design, tasks, and the completed implementation. |
-| Scenario retrieval | Local multilingual E5 embeddings and a persisted permanent-only content-hash index retrieve candidates. Complete compact E5 passages omit empty optional markers, are token-preflighted, and are partitioned: fitting passages enter the vector index, while over-cap passages remain additive `E5_TOKEN_CAP` findings without vectors or fabricated scores. The optional `cross-encoder-reranker` feature scores the highest E5-scoring candidates from its deterministic top-K/E5 intersection up to `GIVN_SPEC_MAX_RERANK_PAIRS` (default 2048) in both directions, while independent `nli-evidence` applies the same ordered budget to its own pool. Both emit non-authoritative recommended/filtered evidence and explicit unscored tails; the independent `spec-similarity-gate` remains the E5 hard gate. |
-| Permanent duplicate audit | `givn spec duplicates` scans every permanent pair, resolves exact and existing-Fingerprint structural relationships before advisory E5 candidates, emits all ranked results through one fixed text/JSON contract, and computes the report in memory without reading, refreshing, or writing the persisted index. |
-| Current-change exploration | Merge active `Added`/`Modified` delta candidates into a request-local exploration corpus; keep the persisted catalogue permanent-only and label each result's source additively. |
-| Semantic review gate | A dedicated entrypoint called only by blocking `givn check review` completely regenerates the change-local report in scope/score/endpoint order; carry a classification only when the candidate id and both complete endpoint evidence hashes are unchanged, parse prior entries strictly, atomically replace the report, and block unresolved candidates recommended by every participating evidence layer without editing feature files. E5-token-cap findings are separate classification-free blocking entries with exact passage counts and provenance. BGE/NLI filtered evidence is non-blocking; budget-omitted candidates are explicit unscored blocking entries, while artifact/token failures preserve the E5 worklist. |
-| Semantic remediation gate | Before returning PASS, verify every prior resolved classification against a read-only projected tree. Recompute prior pairs even below `0.9500`; require duplicate removal, a parameterized variant contract, or changed observable facts for a boundary below the threshold. |
-| Retrieval compatibility | A binary without `spec-retrieval` returns the existing unavailable error from blocking check review and creates no semantic report; `spec-retrieval` alone is E5-only; `cross-encoder-reranker` adds advisory BGE evidence only for an approved artifact or test stub, while `nli-evidence` independently adds local NLI evidence without implying `spec-similarity-gate`; failed/unavailable layers preserve explicit E5 fallback behavior and the advisory `givn spec review` path remains separate. |
-| Historical evidence | The generated report remains in the change directory and is retained by the existing archive move under `givn/archive/<id>/`; archive implementation is not changed by this slice. |
-| Distribution | Release binaries + curl\|sh + brew + cargo; `cargo-dist`. |
+|---|---|
+| Language and packaging | Rust crate producing the `givn` CLI; defaults are embedded in the binary. |
+| Configuration | Embedded manifest plus `givn/config.yaml` overlay, then `givn/commands.yaml` overlay for project commands and coverage. |
+| Facets | Project override wins over embedded template/instruction/command asset. |
+| Lifecycle | Manifest `requires` graph; standard order is proposal, specs, design, design-review, tasks, review, archive. |
+| Specification | `.feature` files with `@givn.*` deltas; archive merges and strips givn tags. |
+| State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
+| Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
+| Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
+| Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
+| Arc42 | `givn init` enables addons by default unless `--no-addons`; Arc42 chapters are scaffolded at fixed `docs/arc42/`. |
+| Structural overlap | Deterministic Fingerprint evidence and disposition gate. |
+| Semantic retrieval | Opt-in E5 vectors and permanent content-hash index. |
+| Semantic strictness | E5 `0.95` strict gate only with `spec-similarity-gate`; report and second-stage evidence are separate. |
+| BGE/NLI | Optional local, bidirectional evidence; surface-specific E5 pools, explicit statuses, no automatic Givn classification. |
+| Second-stage budget | Current checkout implements the proposed positive `GIVN_SPEC_MAX_RERANK_PAIRS` budget; ADR-063 remains proposed while its change is incomplete. |
 
-### 4.1a Complete semantic input and second-stage strategy
+## 4.2 Configuration and Gate Strategy
 
-The semantic model boundary is one complete compact deterministic Gherkin serialization:
-Feature and Rule context/descriptions, inherited backgrounds, resolved
-`Given`/`When`/`Then` roles, tables, docstrings, outline templates, and concrete
-example rows are retained in stable order, while optional fields without
-normalized content are omitted. That exact text feeds E5, BGE, and NLI. The E5
-`content_hash` is computed from the exact passage text; matching
-identity and hash reuse a vector, while a mismatch re-embeds it. There is no
-separate serializer-version field. Paths, tags, scores, and classifications are
-metadata, and deterministic `Fingerprint` findings remain a separate evidence
-source.
+The effective manifest is loaded as embedded defaults, overlaid by
+`givn/config.yaml`, and then overlaid by `givn/commands.yaml` when that file is
+present. Artifact fields are deep-merged by id; the top-level `verify`,
+`coverage`, and `apply` blocks supplied by an overlay replace their effective
+blocks.
 
-The shared guard first selects the E5-ranked prefix using the positive
-`GIVN_SPEC_MAX_RERANK_PAIRS` setting, then uses the actual tokenizer for each
-consuming model before model construction or inference. It measures untruncated and unpadded E5 passages and
-BGE/NLI pair encodings, including pair special tokens; 512 is valid and 513 is
-over. Duplicate audit, Explore, advisory review, and blocking review use the
-same guard. E5 passages are partitioned before inference: fitting passages
-continue normally, while an over-cap passage becomes an `E5_TOKEN_CAP` finding
-with no vector and no E5 pair score. BGE and NLI independently receive their
-eligible E5 candidate pools, each with the same ordered budget, and the combined recommendation is the intersection
-of participating recommended sets. A fitting partial run remains enabled;
-over-cap pairs carry explicit `BGE_TOKEN_CAP` or `NLI_TOKEN_CAP` evidence and
-remain visible, unresolved, non-filtered, and blocking. If no pair in a layer
-fits, that layer is run-level unavailable with reason `token-cap`.
+`post` is not the source of the core review contract. The binary always runs the
+mandatory checks for explicit `givn check tasks` and `givn check review`:
 
-## 4.2 How the strategy meets the top quality goals
+- tasks: WIP protection for a change delta and `verify.command`;
+- review: `verify.command`, `verify-e2e`, `integrity`, and, for a named change,
+  overlap and retrieval checks.
 
-### Configurability without forking (Goal 1)
+Built-in hook names cannot be downgraded with `allow_failure`. Custom shell
+hooks can be configured and may be allowed to fail. A no-argument `givn check`
+only runs configured post hooks and does not call the explicit artifact
+mandatory-check path. Archive has its own hard-coded post-merge verify/e2e and
+optional coverage stages in addition to configured archive hooks.
 
-The cascade engine resolves each *facet* (template, instructions, deps, skill
-template) independently: a project file in `givn/` wins; otherwise the embedded
-default is used. The artifact graph itself is customised by a YAML overlay that
-patches the embedded default graph (add/modify/remove artifacts, reorder, change
-deps, set `apply.requires`, set `verify.command`). Nothing requires editing the
-binary's source.
+## 4.3 Semantic Strategy
 
-### Installability (Goal 2)
+The semantic model input is one complete, compact, deterministic serialization
+of parsed Gherkin: feature and optional rule context, inherited backgrounds,
+scenario identity and description, resolved step roles, tables, docstrings,
+outline information, and examples. Empty optional fields are omitted. The exact
+E5 passage text is hashed for index reuse; paths, tags, scores, classifications,
+and Fingerprint evidence remain metadata.
 
-A single Rust binary with no runtime, distributed through four channels (release
-binary, curl\|sh, Homebrew, cargo). `cargo-dist` builds multi-platform artifacts.
+The actual consuming tokenizer preflights E5 passages and selected BGE/NLI
+pairs without truncation or padding. Fitting E5 passages enter the index;
+over-cap passages are additive metadata with no vector or semantic pair score.
 
-### Upgradeability (Goal 3)
+Second-stage selection is not one universal pool:
 
-Defaults live only in the binary (the fallback layer). Projects own only the
-files they ejected. Upgrading the binary changes the fallback, never the project
-files. `givn skills sync` regenerates agent files from current templates on demand.
+| Surface | E5 candidate input | BGE selection | NLI selection |
+|---|---|---|---|
+| Duplicate Audit | all remaining semantic pairs after exact/structural findings | endpoint top-five union, then E5-ranked budget | full E5 semantic set, independently budgeted |
+| Explore | at most five ranked permanent/request-local results | that result set, then budget | that result set, independently |
+| Advisory review | existing delta/permanent and projected retrieval pool | that pool, then budget | that pool, independently |
+| Blocking review | all report candidates at E5 `0.9500` | report candidates, then budget | report candidates, independently |
 
-## 4.3 Key patterns
+`BGE_FILTERED` and `NLI_FILTERED` are non-blocking evidence. `BGE_UNSCORED`
+token-cap states remain visible and blocking. A combined recommendation is the
+intersection of participating model recommendations.
 
-- **Cascade / override-file resolution** — the central pattern (chapter 8.1).
-- **Overlay/patch merge** for the manifest (chapter 8.2).
-- **Delta + merge** for Gherkin specs (chapter 8.3).
-- **Filesystem-as-state** (chapter 8.6).
-- **Template rendering with multi-target emit** for skills (chapter 8.7).
-- **Arc42-to-change conformance review** — post-implementation evidence
-  cross-check for Arc42-enabled projects (chapter 8.14).
+## 4.4 Quality Goals
 
-Repository workflow contracts are verified at their owning boundary: Givn's
-own acceptance fixtures invoke the public CLI, while consumer repositories
-retain only their domain-specific permanent specifications. This keeps the
-deterministic gate implementation and its regression evidence in one place.
+### Configurability without forking
 
-The semantic authoring and review slices deliberately reuse the existing E5
-embedding representation, binary-fixed `0.9500` boundary, and content-hash
-refresh. The opt-in BGE layer adds a second directional evidence and admission
-stage across explore, advisory review, blocking review, and duplicate audit.
-`BGE_FILTERED` is retained as visible non-blocking evidence; only
-`BGE_RECOMMENDED` candidates enter the agent-classified blocking worklist. No
-BGE status is a Givn classification, and the advisory path never edits specs.
+The cascade controls individual assets and the overlay controls the artifact
+graph. Projects can change a template, instruction, dependency, hook, or graph
+node without changing the binary.
 
-The permanent duplicate audit is a separate advisory surface over the complete
-permanent corpus. It reuses the existing Gherkin parser, deterministic
-`Fingerprint` masked assertion shape/subset and fact model, and E5 passage
-embeddings, but keeps the audit request-local so an inspection cannot alter
-permanent specs, active changes, archive contents, or the persistent index.
-Missing `givn/specs/` is an empty successful corpus; malformed or unreadable
-features fail with their path. Its complete result is not truncated to the
-interactive top-five view, and semantic scores are evidence rather than
-automatic duplicate decisions.
+### Installability
 
-The audit's stable text header and candidate grammar are shared conceptually
-with the stable JSON fields and order: endpoint identities, kind, relation,
-structural evidence, distinguishing facts, contradiction flag, and score/null
-value. The relation enum includes `identical_behavior`,
-`same_assertion_shape`, both direction-specific assertion-subset relations,
-and `semantic_similarity`. The raw score is thresholded before four-decimal
-serialization, so `0.9500` is admitted and `0.9499` is not. A semantic
-candidate has null structural evidence.
+The product target is one native executable with embedded defaults. Retrieval,
+BGE, and NLI dependencies are feature-gated and are not part of the default
+build.
 
-Each eligible scenario is embedded once and remaining pairwise cosines are
-computed in memory. BGE never scores all permanent pairs: it consumes the
-endpoint/query top-five union after deterministic identity exclusions, orders
-that union by E5 score, and selects at most the positive
-`GIVN_SPEC_MAX_RERANK_PAIRS` budget before model loading. Labeled fixtures record top-K
-recall, admission precision/recall, false-positive/false-negative rates, and
-runtime; the BGE status remains evidence rather than a Givn classification.
+### Upgradeability
 
-The current-change slice extends that same advisory path without broadening the
-persisted catalogue. Permanent entries are refreshed as before; active delta
-vectors exist only for the request, and lifecycle identity filtering prevents a
-scenario from being compared with its own source or projected permanent target.
-The semantic report reuses the active-delta corpus for two explicit scopes,
-excludes only a Modified scenario's own projected target rather than its whole
-target file, records complete source-ordered evidence and Fingerprint facts, and
-keeps all feature-file and permanent-spec edits with the agent. Its Markdown wire
-grammar fixes headers, field order, compact JSON values, `null` absence, final
-newline, score/hash formats, and the absence of unknown/timestamp/environment
-fields. A malformed or incompatible index is treated as stale and rebuilt from
-the permanent specifications before report generation continues; its persisted
-entries remain permanent-only and contain no `Delta` state, delta vectors,
-classifications, or report state.
+`givn upgrade` refreshes the managed configuration scaffold while preserving
+uncommented project values. Ejected facets remain project-owned. Generated
+skills are refreshed explicitly with `givn skills sync`.
 
-The remediation slice adds a second, prior-entry verification path after report
-generation. It resolves prior endpoint identities against an in-memory projected
-tree, distinguishes exact matches, changed evidence, disappearance, and no
-match, and only then accepts a classification whose observable contract is
-satisfied. This prevents a vanished or below-boundary candidate from being
-treated as an automatic resolution.
+## 4.5 Current Evidence Boundary
+
+The PR #27 report records `394` permanent scenarios, `1274` E5 candidates, and
+`795` BGE top-five-union pairs for the current local corpus. Its raw JSON inputs
+are local and ephemeral. Earlier values (`288/414?`, `385/100`,
+`397/1311/803`) are historical and are not current strategy baselines.
