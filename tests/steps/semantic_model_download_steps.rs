@@ -195,17 +195,42 @@ fn no_missing_index_diagnostic(world: &mut GivnWorld) {
     "an initialized project with permanent semantic scenarios and no persistent semantic index"
 )]
 fn project_without_persistent_index(_world: &mut GivnWorld) {
-    unimplemented!()
+    let world = _world;
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/absent-index.feature"),
+        "Feature: absent index\n\n  Scenario: Permanent semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write absent-index fixture");
+    let xdg = env.path(".xdg-cache");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("stub".to_string());
 }
 
 #[then("stdout is valid duplicate-audit JSON")]
-fn valid_duplicate_audit_json(_world: &mut GivnWorld) {
-    unimplemented!()
+fn valid_duplicate_audit_json(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("duplicate output JSON");
+    assert!(
+        document.is_object(),
+        "duplicate output is not a JSON object"
+    );
 }
 
 #[then("stderr reports `spec index is missing at <path>; run `givn spec index` first`")]
-fn reports_missing_index_diagnostic(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_missing_index_diagnostic(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let expected = format!(
+        "spec index is missing at {}; run `givn spec index` first",
+        env.path("givn/.spec-index.json").display()
+    );
+    assert!(
+        super::stderr(world).contains(&expected),
+        "stderr did not report missing index: {}",
+        super::stderr(world)
+    );
 }
 
 #[then("the persistent semantic index remains absent")]

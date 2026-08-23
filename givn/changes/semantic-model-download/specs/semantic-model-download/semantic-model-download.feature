@@ -52,7 +52,7 @@ Feature: Automatic semantic model availability
     And stderr reports the index validation problem
     And stderr does not report `spec index is missing at <path>; run `givn spec index` first`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Duplicate audit identifies an absent persistent index without changing its fallback contract
     Given an initialized project with permanent semantic scenarios and no persistent semantic index
     When the user runs `givn spec duplicates --format json`
