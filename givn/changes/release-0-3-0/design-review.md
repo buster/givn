@@ -28,12 +28,15 @@ improving this release.
 ### Missing Scenarios
 
 **Question:** What happens when the target is not a Git repository, when the
-worktree is dirty, or when a migration plan already exists?
+worktree is dirty, when a migration plan already exists, or when the generated
+maintenance change is later archived without a product spec?
 
 **Answer:** These are explicit scenarios. The command refuses before writing in
 the first two cases. It does not overwrite or duplicate an existing migration
 plan. A separate failure path for an unavailable Git identity is handled as a
-Git commit error and leaves the user with an actionable message.
+Git commit error and leaves the user with an actionable message. The archive
+scenario verifies that skipped specs use the permanent project feature path for
+global gates and do not invoke a change-specific semantic comparison.
 
 ### Testability
 
@@ -137,11 +140,17 @@ before `REVIEW: PASS`.
   decisions outside the automatic file operation.
 - Required the generated maintenance change to skip `specs` and to contain no
   fabricated design-review, task, implementation, or review evidence.
+- Added the archive contract for a no-product-delta maintenance change: global
+  verification remains active, while delta merge and the change-specific
+  semantic gate are skipped.
+- Re-ran the interaction coverage review for the new archive action and added
+  its executable E2E scenario and separate permanent-spec assertion.
 
 ## Review Result
 
 The design is complete, the missing boundaries are represented by executable
 scenarios, and the architectural decision is routed to the existing ADR-023
-for amendment.
+for amendment. The additional no-product-delta archive flow is covered by the
+permanent-spec verification path and does not weaken product-change gates.
 
 DESIGN-REVIEW: PASS

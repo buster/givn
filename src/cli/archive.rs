@@ -74,7 +74,11 @@ pub fn run(change: &str) -> Result<()> {
     }
 
     // 4. Run hooks of all apply.requires artifacts.
-    let features_path = change_dir.join("specs").to_string_lossy().into_owned();
+    let features_path = if crate::state::is_skipped("specs", &change_dir) {
+        manifest.verify.features_path.clone()
+    } else {
+        change_dir.join("specs").to_string_lossy().into_owned()
+    };
     println!("Running archive gate hooks...");
     crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
     println!("✓ Gate hooks passed");
@@ -241,6 +245,10 @@ pub fn run(change: &str) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn run_similarity_gate(project_root: &std::path::Path, change_id: &str) -> Result<()> {
+    let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
+    if crate::state::is_skipped("specs", &change_dir) {
+        return Ok(());
+    }
     crate::spec::retrieval::review(project_root, change_id)
 }
 

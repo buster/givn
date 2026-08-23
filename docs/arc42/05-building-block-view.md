@@ -37,7 +37,7 @@ flowchart TD
 | `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs overlap/retrieval gates. |
-| `cli::archive` | Check archive prerequisites, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, run optional coverage, and copy/remove the change to archive. |
+| `cli::archive` | Check archive prerequisites, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, run optional coverage, and copy/remove the change to archive. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
