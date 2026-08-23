@@ -341,3 +341,32 @@ fn guidance_requires_old_replacement_link(world: &mut GivnWorld) {
     assert!(content.contains("old record"));
     assert!(content.contains("explicit replacement link"));
 }
+
+#[when("an author reads the Arc42 impact rules")]
+fn author_reads_arc42_impact_rules(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "Arc42 impact guidance is empty"
+    );
+}
+
+#[then("the guidance distinguishes chapter impact from ADR qualification")]
+fn guidance_distinguishes_chapter_impact(world: &mut GivnWorld) {
+    assert!(
+        guidance(world)
+            .contains("Arc42 chapter impact and ADR qualification are independent decisions")
+    );
+}
+
+#[then("the guidance requires an affected chapter to be updated when appropriate")]
+fn guidance_requires_affected_chapter_update(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("If chapters are affected"));
+    assert!(content.contains("update only the sections affected"));
+}
+
+#[then("the guidance does not require a new ADR solely because a chapter is affected")]
+fn guidance_does_not_require_adr_for_chapter(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("does not by itself qualify an ADR"));
+}

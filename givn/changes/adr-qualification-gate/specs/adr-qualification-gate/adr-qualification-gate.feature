@@ -84,7 +84,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance requires the replacement ADR to be named
     And the guidance requires the old architectural record to keep an explicit replacement link
 
-  @givn.added @wip
+  @givn.added
   Scenario: Arc42 impact does not by itself require an ADR
     Given the ADR qualification guidance is available
     When an author reads the Arc42 impact rules
