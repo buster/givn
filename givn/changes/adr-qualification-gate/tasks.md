@@ -87,18 +87,22 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `5 steps (5 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): The guidance requires an existing-ADR check before drafting`
+- [x] COMMIT: `ee6b7a5` — `docs(arc42): The guidance requires an existing-ADR check before drafting`
 
 ## Scenario: The structured verdict has fixed gate and route fields
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert the five mandatory fields, support field, route fields,
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `2 steps
+      (1 passed, 1 failed)`, `Step panicked. Captured output: not implemented`,
+      and non-zero exit.
+- [x] GREEN: assert the five mandatory fields, support field, route fields,
       and allowed enum values in the canonical guidance. Production/source files:
       `assets/addons/arc42-docs/instructions.md`.
       Test file: `tests/steps/adr_qualification_gate_steps.rs`. Output:
-      _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): The structured verdict has fixed gate and route fields`
 
 ## Scenario: Route targets are conditional and unused targets stay empty

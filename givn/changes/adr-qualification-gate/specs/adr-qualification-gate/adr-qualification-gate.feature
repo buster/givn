@@ -41,7 +41,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance requires an explicit new amend supersede or canonical-artifact route
     And the guidance rejects a new ADR when the existing-ADR check is incomplete
 
-  @givn.added @wip
+  @givn.added
   Scenario: The structured verdict has fixed gate and route fields
     Given the ADR qualification guidance is available
     When an author reads the structured verdict contract

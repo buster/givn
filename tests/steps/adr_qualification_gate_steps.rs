@@ -171,3 +171,65 @@ fn guidance_requires_explicit_route(world: &mut GivnWorld) {
 fn guidance_rejects_incomplete_existing_check(world: &mut GivnWorld) {
     assert!(guidance(world).contains("An incomplete existing-ADR check fails"));
 }
+
+#[when("an author reads the structured verdict contract")]
+fn author_reads_structured_verdict_contract(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "structured verdict guidance is empty"
+    );
+}
+
+#[then("the verdict contract names all five mandatory gate fields")]
+fn verdict_names_mandatory_gate_fields(world: &mut GivnWorld) {
+    let content = guidance(world);
+    for field in [
+        "alternatives",
+        "architectural_impact",
+        "durable_consequence",
+        "lower_level_artifact",
+        "existing_adr_check",
+    ] {
+        assert!(content.contains(field), "verdict contract missing {field}");
+    }
+}
+
+#[then("the verdict contract names the supporting-only `must_be_shared` field")]
+fn verdict_names_supporting_field(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("must_be_shared"));
+    assert!(content.contains("SUPPORTING"));
+}
+
+#[then("the verdict contract names `qualification` and `routing`")]
+fn verdict_names_qualification_and_routing(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("qualification"));
+    assert!(content.contains("routing"));
+}
+
+#[then("the verdict contract names `canonical_artifact`, `target_adr`, and `replacement_adr`")]
+fn verdict_names_route_targets(world: &mut GivnWorld) {
+    let content = guidance(world);
+    for field in ["canonical_artifact", "target_adr", "replacement_adr"] {
+        assert!(content.contains(field), "verdict contract missing {field}");
+    }
+}
+
+#[then("the guidance defines the allowed qualification gate and routing values")]
+fn guidance_defines_verdict_values(world: &mut GivnWorld) {
+    let content = guidance(world);
+    for value in [
+        "QUALIFIED",
+        "NOT_QUALIFIED",
+        "NEW_ADR",
+        "AMEND_ADR",
+        "SUPERSEDE_ADR",
+        "CANONICAL_ARTIFACT",
+    ] {
+        assert!(
+            content.contains(value),
+            "guidance missing verdict value {value}"
+        );
+    }
+}
