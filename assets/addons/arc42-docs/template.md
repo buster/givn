@@ -44,7 +44,7 @@ from the chapter-09 register. Record the result once in the change assessment:
 
 ```text
 ADR action: NONE | NEW_ADR | AMEND_ADR | SUPERSEDE_ADR | CANONICAL_ARTIFACT
-ADR target: <one ADR or canonical artifact, or none>
+ADR target: none | <one ADR or canonical artifact>
 ```
 
 Do not copy the complete qualification procedure or MADR body into this
