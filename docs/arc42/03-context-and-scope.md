@@ -42,6 +42,7 @@ not alter other content.
 | `givn/**` artifacts | in/out | Markdown and `.feature` lifecycle files, plus generated semantic reports. |
 | `GIVN_FEATURES` | in | Feature path exported to project command processes. |
 | `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
+| `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
 | `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence, and complete permanent audit. |
 | `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
 | `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
@@ -63,6 +64,7 @@ not alter other content.
   projected remediation, and permanent duplicate audit.
 - Optional BGE/NLI local evidence with actual-tokenizer cap handling.
 - Repository-owned compiled-CLI acceptance fixtures.
+- Strict ADR qualification guidance and canonical routing of architecture rationale.
 
 ### Out of scope
 

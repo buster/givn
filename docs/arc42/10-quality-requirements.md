@@ -74,6 +74,13 @@ graph TD
 | Q-38 | Remediation | A prior delta-to-delta entry is classified. | Current remediation scope validation rejects it; it is not a supported successful remediation path. |
 | Q-39 | Historical evidence | A generated semantic report is archived with a change. | The existing copy/remove archive retains it under `givn/archive/<id>/` as historical evidence, not as a permanent spec. |
 | Q-40 | Open change | The second-stage budget change is evaluated. | `givn status --change semantic-reranker-budget` remains the authority; open tasks/final verification prevent an accepted-completion claim. |
+| Q-41 | Architecture documentation | An ADR candidate is evaluated. | Qualification passes only when alternatives, architectural impact, durable consequence, lower-level classification, and existing-ADR check all pass. |
+| Q-42 | Architecture documentation | A candidate is justified only by shared guidance or a broad maintainability claim. | It is not qualified; `Must be shared` is supporting evidence only and the candidate is routed to one canonical artifact. |
+| Q-43 | Architecture documentation | A candidate is already fully owned by a specification, design, Arc42 chapter, process document, or code. | No parallel ADR is created and exactly one canonical owner is named. |
+| Q-44 | Architecture documentation | An LLM prepares a qualification verdict. | The verdict uses fixed gate, qualification, route, and conditional target fields; missing evidence stays empty and unused targets stay null. |
+| Q-45 | Architecture documentation | A candidate refines or replaces an existing ADR. | A refinement uses `AMEND_ADR`; a replacement uses `SUPERSEDE_ADR` and retains the old relationship. A duplicate `NEW_ADR` is rejected. |
+| Q-46 | Architecture documentation | The ADR migration is reviewed. | Every assigned identifier has one disposition, reserved IDs have no record, non-ADRs are absent from ADR storage, and `ADR-063` remains proposed under its owning change. |
+| Q-47 | Architecture documentation | Effective and generated guidance are compared. | The canonical Arc42 instruction owns the procedure; derived guidance uses the same policy without claiming runtime enforcement, and project overrides remain effective. |
 
 ## 10.3 Verification Signals
 

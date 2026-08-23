@@ -10,6 +10,8 @@ use cucumber::{World, gherkin::Step, given, then, when};
 
 use crate::common;
 
+pub mod adr_qualification_gate_e2e_steps;
+pub mod adr_qualification_gate_steps;
 pub mod arc42_review_alignment_steps;
 pub mod bge_reranking_evidence_e2e_steps;
 pub mod bge_reranking_evidence_steps;

@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - BGE statuses and output semantics affect review behavior across several commands.
 - [x] **Shapes quality attributes** - the layer trades false-positive worklist size against recall and CPU cost.
 - [x] **Structural** - it defines a second-stage model boundary separate from E5 classification and feature editing.

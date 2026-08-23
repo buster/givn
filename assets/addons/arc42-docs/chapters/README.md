@@ -41,24 +41,12 @@ index entries manually.
 
 ## Qualification Gate
 
-Before creating an ADR or registering it, its `## Qualification` section must
-evaluate all four Qualification Checklist items with a concrete,
-decision-specific justification for each. The gate passes only when at least
-one item is checked and backed by a clear justification:
-
-- **Hard to reverse** - undoing the decision later requires significant effort.
-- **Shapes quality attributes** - it materially affects a lasting quality
-  attribute such as performance, security, or maintainability.
-- **Structural** - it defines a boundary, contract, or dependency direction.
-- **Must be shared** - developers would systematically violate the architecture
-  without knowing it.
-
-If none can be justified, do not create an ADR. System relevance,
-implementation effort, long discussion, and a known pattern alone do not pass
-the gate. Logging libraries, internal naming, formatting rules, local
-refactorings, and interchangeable HTTP clients without quality-attribute
-implications are generally not ADRs. System-wide error handling is borderline:
-record it only when an enforced cross-cutting contract exists.
+Before creating an ADR or registering it, read the complete qualification
+procedure from the resolved Arc42 addon instruction. This chapter README owns
+storage and index rules only; it does not duplicate the qualification formula,
+LLM verdict schema, or routing values. If a mandatory dimension fails, no ADR is
+created and the decision is routed once to its canonical artifact. A refinement
+amends an existing ADR instead of creating a new file.
 
 ## Status and Supersession
 

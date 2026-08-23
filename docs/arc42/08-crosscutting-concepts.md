@@ -479,3 +479,21 @@ from source names.
 The reviewer records `ARC42 CONFORMANCE: CLEAN` only after the evidence rows are
 resolved, then can record `REVIEW: PASS`. When the addon is disabled, the
 conformance block is not applicable.
+
+## 8.15 ADR Qualification and Canonical Sources
+
+The complete ADR qualification procedure and MADR template are owned by the
+resolved Arc42 addon instruction. Design-review guidance delegates to that
+source and does not reproduce its procedure or verdict schema. Generated skills
+and commands are snapshots; project overrides may replace the effective
+instruction through the normal cascade. The resolved instruction is the sole
+normative source for the qualification dimensions, verdict schema, and routing
+values.
+
+Current architecture facts have one home in the relevant Arc42 chapter;
+observable behavior has one home in Gherkin; implementation details have one
+home in code or its design artifact; and workflow, prompt, test, coverage,
+licensing, roadmap, and repository rules have one owning project document. An
+ADR stores the rationale for one independent durable architecture decision and
+links to those facts. A refinement amends an existing ADR. The runtime does not
+infer architectural significance or validate the LLM verdict.

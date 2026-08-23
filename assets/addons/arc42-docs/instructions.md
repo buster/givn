@@ -22,7 +22,7 @@ Then walk **all 12 rows** of the table below, in order, and make an explicit
 yes/no decision for each one — do not stop once you've found two or three
 obviously-affected chapters. A change that touches building blocks almost
 always also touches runtime-view (new flows) and often context-and-scope
-(new user-facing surface) or risks-and-technical-debt (every non-trivial ADR
+(new user-facing surface) or risks-and-technical-debt (every qualified ADR
 "Bad, because..." consequence is a risk or a piece of technical debt by
 definition — if chapter 09 gets a new ADR, chapter 11 needs at least a line).
 Skimming for the first plausible match and stopping there is the failure
@@ -66,7 +66,8 @@ The default storage contract is:
   `docs/arc42/adr/archive/ADR-NNNN-short-slug.md`. Preserve the ADR number and
   links in both indexes when moving a record there. Do not place an ADR body in
   `givn/archive/<change>/`; that is the change archive, not the architecture
-  decision archive.
+  decision archive. A record that fails the qualification gate is not an
+  historical ADR and must not be copied into this archive.
 
 Use the paths above verbatim. The current binary does not implement an
 `arc42.output_dir` override.
@@ -77,59 +78,75 @@ individual ADRs. Do not state that enabling the addon creates ADR files.
 
 ### Qualification gate
 
-Before writing an ADR or adding it to either index, run the Qualification
-Checklist below. The decision passes only when at least one box is checked
-(`[x]`) and has a clear, decision-specific justification. If none of the boxes
-can be checked with a clear justification, do not create an ADR. Handle the
-matter as regular development, a team convention, or an inline comment instead.
+Before writing an ADR or adding it to either index, run the qualification
+procedure below. The result is a strict Boolean contract:
 
-Use all four checklist items in the ADR's `## Qualification` section. Each item
-must have a concrete, decision-specific reason, whether checked or unchecked,
-before the file is considered complete. The gate passes only when at least one
-item is checked (`[x]`) with a clear reason:
+```text
+qualification = alternatives
+              AND architectural_impact
+              AND durable_consequence
+              AND lower_level_artifact
+              AND existing_adr_check
+```
 
-- [ ] **Hard to reverse** - Reverting later would cost significant effort
-  because: _specific reason_.
-- [ ] **Shapes quality attributes** - It materially affects
-  [performance / scalability / security / availability / maintainability /
-  testability] because: _specific reason_.
-- [ ] **Structural** - It defines a boundary, contract, or dependency
-  direction because: _specific reason_.
-- [ ] **Must be shared** - Developers unfamiliar with it would systematically
-  violate the architecture because: _specific reason_.
+Every mandatory dimension must pass with decision-specific evidence. The MADR
+checklist is evidence for those dimensions; it is not an at-least-one escape
+hatch. `Must be shared` is supporting evidence only and is excluded from the
+Boolean formula. It can never qualify a candidate by itself.
 
-An illustrative minimum passing result is one checked item with a concrete
-reason, for example:
+The mandatory dimensions are:
 
-- [x] **Structural** - This decision fixes the dependency direction between
-  the ingestion and persistence components for all future features.
+- **Real alternatives** - the candidate records one actual choice between at
+  least two materially different options. A default, obvious implementation,
+  or post-hoc strawman is not an alternative.
+- **Architectural impact** - the choice fixes a component/ownership boundary,
+  durable contract, dependency direction, system-wide quality constraint,
+  deployment/data boundary, or compatibility/migration boundary.
+- **Durable consequence** - reversal would require migration, broad code or
+  interface changes, cross-command coordination, or protection of a fundamental
+  invariant. Implementation effort alone is not enough.
+- **Lower-level artifact classification** - the author has shown that the
+  complete decision rationale is not already correctly owned by a Gherkin
+  specification, `design.md`, an Arc42 chapter, process guidance, ordinary
+  project documentation, or the implementation. If one of those is the proper
+  complete home, this dimension fails and the candidate is routed there.
+- **Existing-ADR check** - the active and archived registers have been searched
+  for the same boundary, decision, refinement, or replacement. The result must
+  select exactly one route: `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, or
+  `CANONICAL_ARTIFACT`.
 
-The example is not a qualification for a real project decision. Replace it
-with the actual reason. A checkbox that only repeats the decision title is not
-justification and does not pass the gate.
+Use all four MADR checklist items in the ADR's `## Qualification` section. Each
+item must have a concrete reason, whether checked or unchecked. A checked item
+is not sufficient unless all five mandatory dimensions pass. The `Must be
+shared` item records supporting context and does not change the result.
 
-### Qualification criteria
+If any mandatory dimension fails, do not create an ADR. Route the decision once
+to its canonical artifact. Do not copy the same rationale into the ADR archive,
+an Arc42 chapter, and a process document.
 
-The decision qualifies when it meets one or more of these criteria. Evaluate
-them in this order of priority:
+### Qualification exclusions and LLM procedure
 
-1. **Hard to reverse (primary criterion).** Correcting the decision later
+The four checklist items are evidence prompts, not independent qualification
+criteria. Use them to support the five mandatory dimensions above, but do not
+create an ADR unless every mandatory dimension passes.
+
+1. **Hard to reverse (supporting evidence).** Correcting the decision later
    would require significant effort, such as touching many parts of the
    codebase, migrating data, breaking an existing interface, or forcing the
    team to relearn tooling or patterns. Ask: "How expensive would it be to
    undo this in six months?"
-2. **Shapes quality attributes.** The decision directly and materially
+2. **Shapes quality attributes (supporting evidence).** The decision directly and materially
    influences a lasting non-functional constraint or enabler for performance,
    scalability, security, availability, maintainability, or testability. The
    effect must be broader than one local implementation. Ask: "Does this
    decision set a ceiling or a floor on a key quality attribute?"
-3. **Structural.** The decision defines module or service boundaries, assigns
+3. **Structural (supporting evidence).** The decision defines module or service boundaries, assigns
    responsibilities, establishes dependency directions, or fixes a public
    interface or contract such as an API schema, event format, or plugin
    protocol. Internal restructuring of one class or private package layout
    does not qualify. Ask: "Does this decision define who owns what and how
    parts talk to each other?"
-4. **Must be shared.** Every developer joining the project must know and
+4. **Must be shared (supporting only).** Every developer joining the project must know and
    respect the decision before contributing effectively. Ignorance would
    cause systematic violations of a fundamental architecture rule. Ask: "Would
    a new developer break something fundamental without knowing this?"
@@ -137,10 +154,11 @@ them in this order of priority:
 These are not qualification criteria by themselves: system relevance,
 implementation effort, a long discussion, or use of a known pattern. "It
 affects the system" is too broad to qualify a decision in a microservice or
-CLI, and effort is not architectural significance. A known pattern still needs
-to satisfy at least one of the four criteria above.
+CLI, and effort is not architectural significance. A known pattern does not
+qualify unless all five mandatory dimensions pass.
 
-The following are generally not ADRs when they have no qualifying impact:
+The following are generally not ADRs unless they introduce a separate durable
+boundary or contract:
 
 - choosing a logging library;
 - internal variable or method naming;
@@ -158,10 +176,66 @@ service API protocol, adopting Event Sourcing instead of CRUD, delegating
 authentication through OAuth2/JWT, establishing a system-wide retry and
 circuit-breaker strategy, defining a layering model, choosing synchronous
 versus asynchronous inter-service communication, adding a plugin system, and
-choosing an ORM or database access strategy. An ORM choice almost always
-warrants an ADR when its lifecycle assumptions affect maintainability,
-debuggability, query expressiveness, or the domain model, especially for
-event-driven systems or complex aggregates.
+choosing an ORM or database access strategy. These examples still require all
+five mandatory dimensions; a familiar pattern or technology name is not a
+qualification by itself.
+
+### LLM qualification procedure
+
+An LLM must classify the candidate before drafting an ADR. It must first return
+one structured verdict with the following fields:
+
+```json
+{
+  "qualification": "QUALIFIED",
+  "alternatives": "PASS",
+  "architectural_impact": "PASS",
+  "durable_consequence": "PASS",
+  "lower_level_artifact": "PASS",
+  "existing_adr_check": "PASS",
+  "must_be_shared": "SUPPORTING",
+  "routing": "NEW_ADR",
+  "canonical_artifact": null,
+  "target_adr": null,
+  "replacement_adr": null,
+  "evidence": {
+    "alternatives": [],
+    "architectural_impact": [],
+    "durable_consequence": [],
+    "lower_level_artifact": [],
+    "existing_adr_check": []
+  }
+}
+```
+
+The five mandatory fields are `PASS` only when their own supplied evidence is
+present. `qualification` is `QUALIFIED` only when all five are `PASS`;
+otherwise it is `NOT_QUALIFIED`. Evidence arrays contain only facts and
+alternatives supplied by the author or source artifacts. Missing evidence stays
+empty and causes its gate to fail. The LLM must not invent alternatives,
+impact, consequences, participants, or provenance.
+
+Routing has one of these values:
+
+- `NEW_ADR` for a qualified independent decision without an existing record;
+- `AMEND_ADR` for a qualified refinement, with `target_adr` naming the existing
+  record;
+- `SUPERSEDE_ADR` for a qualified replacement, with `replacement_adr` naming
+  the new record and the old record retaining the relationship; or
+- `CANONICAL_ARTIFACT` for a non-qualifying candidate, with
+  `canonical_artifact` naming exactly one destination.
+
+For `CANONICAL_ARTIFACT`, `target_adr` and `replacement_adr` are `null`. For
+`AMEND_ADR`, `canonical_artifact` and `replacement_adr` are `null`. For
+`SUPERSEDE_ADR`, `canonical_artifact` and `target_adr` are `null`. A qualified
+candidate with no independent boundary is an amendment, not a new ADR.
+
+The LLM must search existing ADRs before proposing a new ID, challenge whether
+the candidate belongs in a feature, design, Arc42, process document, or code,
+and stop without drafting when a mandatory gate fails. The qualification
+verdict is an authoring protocol, not a Givn runtime evaluator or persisted
+runtime artifact. Project overrides may replace this default guidance through
+the normal asset cascade.
 
 ### MADR file contract
 
@@ -206,10 +280,37 @@ informed: list everyone kept up-to-date
 
 ## Qualification
 
-- [ ] **Hard to reverse** - Reverting later would cost significant effort because: _..._
-- [ ] **Shapes quality attributes** - It materially affects [quality attribute] because: _..._
-- [ ] **Structural** - It defines a boundary, contract, or dependency direction because: _..._
-- [ ] **Must be shared** - Developers unfamiliar with it would systematically violate the architecture because: _..._
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
+Replace every value with the decision-specific verdict produced before drafting.
+The record is complete only when all mandatory values are supported by concrete
+evidence and the route-specific target fields are correct. This verdict is an
+authoring record; it is not evaluated by the Givn runtime.
+
+### MADR checklist evidence
+
+- [ ] **Hard to reverse** - Reverting later would cost significant effort
+  because: _specific reason_.
+- [ ] **Shapes quality attributes** - It materially affects [quality attribute]
+  because: _specific reason_.
+- [ ] **Structural** - It defines a boundary, contract, or dependency direction
+  because: _specific reason_.
+- [ ] **Must be shared** - Developers unfamiliar with it would systematically
+  violate the architecture because: _supporting reason, never a gate_.
 
 ## Context and Problem Statement
 
@@ -326,8 +427,9 @@ you can skip re-reading the table for each one.
   Statement, Decision Drivers, Considered Options, Decision Outcome,
   Consequences, Confirmation, Pros and Cons of the Options, and More
   Information sections.
-- No ADR file may be created before the Qualification gate passes with at least
-  one clearly justified checked criterion. Keep the status and concrete
+- No ADR file may be created before all five mandatory qualification dimensions
+  pass with decision-specific evidence. A single checked MADR criterion,
+  including `Must be shared`, is never sufficient. Keep the status and concrete
   supersession-ID contract from `## MADR file contract`.
 - Do not delete existing content unless it is factually wrong.
 - The marker file (`arc42.md` in the change dir) must end with a `## Status` section

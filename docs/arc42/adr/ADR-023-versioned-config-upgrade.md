@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - changing upgrade precedence or version markers can damage project-owned configuration across releases.
 - [x] **Shapes quality attributes** - preservation and reviewable upgrades protect maintainability and upgradeability.
 - [x] **Structural** - `givn upgrade` owns the scaffold merge boundary while project values remain outside it.

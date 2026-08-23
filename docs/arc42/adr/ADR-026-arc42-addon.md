@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - the addon changes project scaffolding, lifecycle dependencies, and durable documentation ownership.
 - [x] **Shapes quality attributes** - it creates an explicit architecture-maintenance and conformance boundary.
 - [x] **Structural** - the addon expands the effective graph with `arc42-docs` and fixes the durable output path.
@@ -69,4 +85,4 @@ Addon overlay and initialization tests assert graph expansion, idempotence, requ
 
 ## More Information
 
-The fixed runtime behavior is in [chapter 8.11](../08-crosscutting-concepts.md#811-addons-and-the-arc42-documentation-artifact); the register is [ADR-035](ADR-035-arc42-conformance-review.md).
+The fixed runtime behavior is in [chapter 8.11](../08-crosscutting-concepts.md#811-addons-and-the-arc42-documentation-artifact); conformance review is described in [chapter 8.14](../08-crosscutting-concepts.md#814-arc42-implementation-conformance-review).

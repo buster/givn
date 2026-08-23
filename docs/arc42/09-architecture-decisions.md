@@ -8,4 +8,5 @@ Each accepted, non-superseded decision is a separate MADR file under
 [`adr/`](adr/). Superseded, deprecated, and non-architectural historical records
 remain under [`adr/archive/`](adr/archive/) and are not current architecture.
 `ADR-050` and `ADR-051` are reserved and unassigned. The register explains the
-duplicate-ID migration that preserved the original `ADR-029` and `ADR-030`.
+historical duplicate-ID migration and the later removal of records that do not
+meet the strict qualification gate.

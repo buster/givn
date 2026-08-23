@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - persisted identities and self-filter behavior depend on the normalization rule.
 - [x] **Shapes quality attributes** - deterministic identity prevents false self-matches and false exclusions.
 - [x] **Structural** - the identity is the key connecting permanent entries, delta sources, projected targets, and queries.

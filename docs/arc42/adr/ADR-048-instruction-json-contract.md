@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - generated guidance and machine consumers depend on the instruction contract.
 - [x] **Shapes quality attributes** - one effective policy reduces authoring drift and interface-fidelity failures.
 - [x] **Structural** - the resolved `specs` instruction and JSON object form an agent integration boundary.
@@ -68,4 +84,5 @@ Instruction-integrity scenarios assert canonical policy clauses, override preced
 
 ## More Information
 
-See [ADR-038](ADR-038-canonical-authoring-policy.md) and [chapter 8.3b](../08-crosscutting-concepts.md#83b-machine-readable-instruction-contract).
+The canonical authoring policy is supplied by the resolved specs instruction;
+the machine contract is described in [chapter 8.3b](../08-crosscutting-concepts.md#83b-machine-readable-instruction-contract).

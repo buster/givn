@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - NLI output and its candidate admission semantics affect all semantic review surfaces.
 - [x] **Shapes quality attributes** - a second model changes worklist recall, precision, and local CPU cost.
 - [x] **Structural** - `nli-evidence` and its local model path form a separate evidence subsystem.

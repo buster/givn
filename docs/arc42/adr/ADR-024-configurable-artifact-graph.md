@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - project lifecycle overlays, dependencies, and archive requirements depend on the graph schema.
 - [x] **Shapes quality attributes** - configuration avoids source forks and allows projects to control process complexity.
 - [x] **Structural** - artifact nodes, `requires`, `optional`, `post`, and `apply.requires` define the workflow topology.

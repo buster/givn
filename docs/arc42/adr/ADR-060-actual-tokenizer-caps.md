@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - cap states and remediation behavior are part of retrieval and blocking-review contracts.
 - [x] **Shapes quality attributes** - it prevents silent truncation and bounds model correctness.
 - [x] **Structural** - E5 passages and BGE/NLI pair encodings have explicit pre-inference guards.
