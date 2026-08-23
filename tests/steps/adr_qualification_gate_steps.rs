@@ -319,3 +319,25 @@ fn guidance_requires_target_adr(world: &mut GivnWorld) {
 fn guidance_forbids_parallel_adr(world: &mut GivnWorld) {
     assert!(guidance(world).contains("must not create a parallel ADR for"));
 }
+
+#[when("an author reads the replacement rules")]
+fn author_reads_replacement_rules(world: &mut GivnWorld) {
+    assert!(!guidance(world).is_empty(), "replacement guidance is empty");
+}
+
+#[then("the guidance routes a replacement to `SUPERSEDE_ADR`")]
+fn guidance_routes_replacement_to_supersede(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("`SUPERSEDE_ADR` for a qualified replacement"));
+}
+
+#[then("the guidance requires the replacement ADR to be named")]
+fn guidance_requires_replacement_adr(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("`replacement_adr` naming"));
+}
+
+#[then("the guidance requires the old architectural record to keep an explicit replacement link")]
+fn guidance_requires_old_replacement_link(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("old record"));
+    assert!(content.contains("explicit replacement link"));
+}

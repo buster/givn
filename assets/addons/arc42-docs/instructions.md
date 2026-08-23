@@ -230,7 +230,8 @@ Routing has one of these values:
 - `AMEND_ADR` for a qualified refinement, with `target_adr` naming the existing
   record;
 - `SUPERSEDE_ADR` for a qualified replacement, with `replacement_adr` naming
-  the new record and the old record retaining the relationship; or
+  the new record and the old record retaining the relationship. The old record
+  must keep an explicit replacement link; or
 - `CANONICAL_ARTIFACT` for a non-qualifying candidate, with
   `canonical_artifact` naming exactly one destination.
 
