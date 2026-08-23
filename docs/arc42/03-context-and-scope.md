@@ -46,6 +46,7 @@ not alter other content.
 | `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence, and complete permanent audit. |
 | `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
 | `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
+| `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
 | Agent target directories | out | Selected `.opencode`, `.agents`, and `.claude` skill paths; opencode commands use `.opencode/commands`. |
 | Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |

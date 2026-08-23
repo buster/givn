@@ -28,7 +28,7 @@ register](adr/README.md).
 | TC-18 | Actual model tokenizers preflight E5 passages and selected BGE/NLI pairs; `512` fits and `513` is over. | `src/spec/retrieval.rs` and token-cap features |
 | TC-19 | Over-cap E5 passages have no vector; fitting passages continue indexing. | `SpecIndex.e5_token_caps` and refresh path |
 | TC-20 | `GIVN_SPEC_MAX_RERANK_PAIRS` accepts positive decimal values and defaults to `2048` when unset. | Current PR #27 implementation; decision remains proposed |
-| TC-21 | The 0.2.0-to-0.3.0 automatic migration requires a Git repository with a clean worktree. | `src/cli/migration.rs`, migration E2E scenarios |
+| TC-21 | Automatic managed upgrades and declared migrations require a Git repository with a clean worktree. | `src/cli/migration.rs`, migration E2E scenarios |
 
 ## 2.2 Configuration and Gate Constraints
 

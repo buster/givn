@@ -56,6 +56,41 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     env
 }
 
+fn current_git_project_with_stale_integration() -> crate::common::TestEnv {
+    let env = crate::common::make_bare_root();
+    let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
+    assert!(
+        init.status.success(),
+        "fixture init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+
+    let generated_skill = env.path(".opencode/skills/givn-spec/SKILL.md");
+    let mut skill = std::fs::read_to_string(&generated_skill).expect("read generated skill");
+    skill.push_str("\nstale generated marker\n");
+    std::fs::write(generated_skill, skill).expect("mark generated skill as stale");
+    std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
+    )
+    .expect("configure fixture verification");
+
+    git(&env, &["init"]);
+    git(&env, &["config", "user.name", "Givn Migration Test"]);
+    git(
+        &env,
+        &["config", "user.email", "givn-migration@example.test"],
+    );
+    git(&env, &["add", "--all"]);
+    let commit = git(&env, &["commit", "-m", "fixture: Givn current project"]);
+    assert!(
+        commit.status.success(),
+        "fixture commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+    env
+}
+
 #[when("the consumer invokes `givn upgrade` for migration")]
 fn consumer_runs_upgrade(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
@@ -64,6 +99,11 @@ fn consumer_runs_upgrade(world: &mut GivnWorld) {
 
 #[when("the consumer runs `givn upgrade` again")]
 fn consumer_runs_upgrade_again(world: &mut GivnWorld) {
+    consumer_runs_upgrade(world);
+}
+
+#[when("the consumer invokes `givn upgrade` for migration-free refresh")]
+fn consumer_runs_migration_free_upgrade(world: &mut GivnWorld) {
     consumer_runs_upgrade(world);
 }
 
@@ -88,6 +128,39 @@ fn config_identifies_current_version(world: &mut GivnWorld) {
             env!("CARGO_PKG_VERSION")
         )),
         "{config}"
+    );
+}
+
+#[given("a clean Git project with current Givn files and a stale generated integration")]
+fn current_project_with_stale_integration(world: &mut GivnWorld) {
+    world.env = Some(current_git_project_with_stale_integration());
+}
+
+#[then("one managed upgrade commit exists")]
+fn one_managed_upgrade_commit_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("current project fixture");
+    let count = git_stdout(env, &["rev-list", "--count", "HEAD"]);
+    assert_eq!(
+        count.trim(),
+        "2",
+        "expected fixture commit plus managed commit"
+    );
+    let subjects = git_stdout(env, &["log", "-1", "--format=%s"]);
+    assert!(subjects.contains("update managed files"), "{subjects}");
+}
+
+#[then("no migration change exists")]
+fn no_migration_change_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("current project fixture");
+    let changes = env.path("givn/changes");
+    let archives = env.path("givn/archive");
+    assert!(!changes.join("migrate-0-3-0-to-0-3-0").exists());
+    assert!(!archives.join("migrate-0-3-0-to-0-3-0").exists());
+    assert!(
+        std::fs::read_dir(&changes)
+            .expect("read active changes")
+            .flatten()
+            .all(|entry| entry.file_name() != "migrate-0-2-0-to-0-3-0")
     );
 }
 
@@ -149,8 +222,16 @@ fn migration_contains_plan(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
     let proposal = env.path("givn/changes/migrate-0-2-0-to-0-3-0/proposal.md");
     let design = env.path("givn/changes/migrate-0-2-0-to-0-3-0/design.md");
+    let metadata = env.path("givn/changes/migrate-0-2-0-to-0-3-0/migration.yaml");
     assert!(proposal.exists());
     assert!(design.exists());
+    assert!(metadata.exists());
+    let metadata = std::fs::read_to_string(metadata).expect("read migration metadata");
+    assert!(metadata.contains("sequence: 1"), "{metadata}");
+    assert!(
+        metadata.contains("id: migrate-0-2-0-to-0-3-0"),
+        "{metadata}"
+    );
     assert!(
         std::fs::metadata(design).expect("design metadata").len() > 1_000,
         "migration design is not detailed"

@@ -1,0 +1,16 @@
+# Ordered migration bundles shipped with the Givn binary.
+#
+# A bundle is a release-owned maintenance change. Its proposal and design must
+# contain all information an LLM needs to migrate a consumer project from the
+# source version to the target version. Add future bundles here; do not encode
+# migration decisions in Rust conditionals.
+
+schema_version: 1
+
+migrations:
+  - id: migrate-0-2-0-to-0-3-0
+    source_version: "0.2.0"
+    target_version: "0.3.0"
+    order: 10
+    proposal_asset: "migrations/0.2.0-to-0.3.0/proposal.md"
+    design_asset: "migrations/0.2.0-to-0.3.0/design.md"

@@ -17,5 +17,6 @@ not a second copy of those facts.
 
 ADR-023 is amended by the 0.3.0 release migration protocol. The amendment keeps
 config scaffold upgrades preservation-oriented and adds a clean-worktree,
-allowlisted two-commit preparation plus a visible maintenance change. It does
-not make Givn responsible for semantic project decisions.
+allowlisted managed commit plus a visible aggregate maintenance change when the
+embedded migration catalog declares a route. It does not make Givn responsible
+for semantic project decisions.
