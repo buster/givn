@@ -299,23 +299,28 @@ and commit hash are recorded.
       rerun the anchored command. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `test(e2e): An author requests the strict ADR guidance through the Givn CLI`
+- [x] COMMIT: `be8e626` — `test(e2e): An author requests the strict ADR guidance through the Givn CLI`
 
 ## Scenario: A reviewer requests design-review guidance through the Givn CLI
 
-- [ ] RED: remove only this scenario's `@wip`, add E2E stubs, and run:
+- [x] RED: remove only this scenario's `@wip`, add E2E stubs, and run:
       ```sh
       GIVN_FEATURES=givn/changes/adr-qualification-gate/specs \
         cargo test --features spec-retrieval --test features_runner -- \
         --name '^A reviewer requests design-review guidance through the Givn CLI$'
       ```
-      Output: _pending_. Must exit non-zero.
-- [ ] GREEN: invoke the compiled `givn instructions design-review --change
+      Output: `1 feature`, `1 scenario (1 failed)`, `2 steps (1 passed,
+      1 failed)`, `Step panicked. Captured output: not implemented`, and
+      non-zero exit.
+- [x] GREEN: invoke the compiled `givn instructions design-review --change
       adr-qualification-gate` subprocess and assert CLI stdout and exit status.
       Production files: none; E2E file:
-      `tests/steps/adr_qualification_gate_e2e_steps.rs`. Output: _pending_.
-- [ ] REFACTOR: clean up the E2E fixture without weakening the CLI assertion;
-      rerun the anchored command. Output: _pending_.
+      `tests/steps/adr_qualification_gate_e2e_steps.rs`. Output:
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: clean up the E2E fixture without weakening the CLI assertion;
+      rerun the anchored command. Output:
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `test(e2e): A reviewer requests design-review guidance through the Givn CLI`
 
 ## Final Verification
