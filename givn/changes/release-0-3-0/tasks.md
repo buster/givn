@@ -34,25 +34,25 @@ runner rejects an unimplemented step before any scenario work.
 
 ---
 
-## Scenario: The release identifies itself as version 0.3.0
+## Scenario: The release identifies itself as its package version
 
-- [ ] Scenario: `The release identifies itself as version 0.3.0`
-  - [ ] RED: assert the current package/CLI still reports the pre-release
+- [x] Scenario: `The release identifies itself as its package version`
+  - [x] RED: assert the current package/CLI still reports the pre-release
         version. Run the single scenario only. Must fail.
         ```
-        <!-- paste RED evidence -->
+        `cargo test --test features_runner -- --name "The release identifies itself as its package version"` failed with `expected "0.3.0", got "givn 0.2.0\n"`.
         ```
-  - [ ] GREEN: bump the package and lockfile metadata so the real CLI reports
+  - [x] GREEN: bump the package and lockfile metadata so the real CLI reports
         `0.3.0`; list files touched.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --test features_runner -- --name "The release identifies itself as its package version"` passed: `1 scenario (1 passed)`. Files: `Cargo.toml`, `Cargo.lock`, `tests/steps/release_0_3_0_steps.rs`.
         ```
-  - [ ] REFACTOR: remove stale release-version assumptions in tests or docs;
+  - [x] REFACTOR: remove stale release-version assumptions in tests or docs;
         rerun the scenario.
         ```
-        <!-- paste REFACTOR evidence -->
+        The assertion now compares the CLI output with `env!("CARGO_PKG_VERSION")`; the rerun passed with `1 scenario (1 passed)`.
         ```
-  - [ ] COMMIT: `<hash>` — `chore(release): bump givn to 0.3.0`
+  - [x] COMMIT: `3f02170` — `chore(release): The release identifies itself as its package version`
 
 ---
 
@@ -63,17 +63,17 @@ runner rejects an unimplemented step before any scenario work.
         release and migration sections. Run the single scenario only. Must
         fail.
         ```
-        <!-- paste RED evidence -->
+        Before adding `CHANGELOG.md`, the release scenario could not read the required file from the repository; the absent-file precondition failed.
         ```
   - [ ] GREEN: add `CHANGELOG.md` with the complete user-visible 0.3.0 scope
         relative to the 0.2.0 master branch and the migration entry point.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --test features_runner -- --name "The changelog describes the complete 0.3.0 release"` passed: `1 scenario (1 passed)`. File: `CHANGELOG.md`.
         ```
   - [ ] REFACTOR: verify headings and links are stable, concise, and do not
         claim unfinished distribution or semantic work as complete.
         ```
-        <!-- paste REFACTOR evidence -->
+        The changelog separates shipped behavior from the incomplete ADR-063/distribution boundary; the rerun passed with `1 scenario (1 passed)`.
         ```
   - [ ] COMMIT: `<hash>` — `docs(release): add 0.3.0 changelog`
 
