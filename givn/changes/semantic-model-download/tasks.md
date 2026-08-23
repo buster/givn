@@ -48,16 +48,21 @@
 - [x] REFACTOR: formatted the changed Rust files with `cargo fmt --all`, checked
   formatting, and reran the named scenario; output: `1 scenario (1 passed)`,
   `6 steps (6 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `c41b655`.
 
 ## Scenario: A failed model download leaves an existing permanent index unchanged
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: preserve pre-existing index bytes when E5 acquisition fails.
-  Production files: _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: simplify failure transaction handling without behavior change
-  and rerun the named scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: preserved pre-existing index bytes when E5 setup failed.
+  Production files: `src/spec/retrieval.rs`. Test files:
+  `tests/steps/semantic_model_download_steps.rs`. Compile step:
+  `cargo check --features spec-retrieval` passed. Targeted output: `1 scenario
+  (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
+  output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: Malformed or incompatible indexes are not reported as absent
