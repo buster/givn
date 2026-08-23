@@ -31,7 +31,7 @@ Feature: Givn 0.3.0 release and legacy project migration
   @givn.added @e2e @wip
   Scenario: A clean 0.2.0 project receives a reviewable 0.3.0 migration plan
     Given a clean Git project created with Givn 0.2.0
-    When the consumer runs `givn upgrade`
+    When the consumer invokes `givn upgrade` for migration
     Then the command exits successfully
     And the project config identifies Givn 0.3.0
     And one commit contains only the managed scaffold and generated agent integration changes
