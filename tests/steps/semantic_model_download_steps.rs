@@ -149,23 +149,46 @@ fn existing_index_is_unchanged(world: &mut GivnWorld) {
 }
 
 #[given("an initialized project with a malformed or incompatible permanent semantic index")]
-fn malformed_or_incompatible_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn malformed_or_incompatible_index(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/invalid-index.feature"),
+        "Feature: invalid index\n\n  Scenario: Indexed semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write invalid-index fixture");
+    fs::write(env.path("givn/.spec-index.json"), "not-json")
+        .expect("write malformed index fixture");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
 }
 
 #[when("the user searches for a permanent semantic scenario")]
-fn search_for_permanent_scenario(_world: &mut GivnWorld) {
-    unimplemented!()
+fn search_for_permanent_scenario(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "search", "permanent semantic scenario"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    ));
 }
 
 #[then("stderr reports the index validation problem")]
-fn reports_index_validation_problem(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_index_validation_problem(world: &mut GivnWorld) {
+    assert!(
+        super::stderr(world).contains("failed to parse index"),
+        "stderr did not report index parsing failure: {}",
+        super::stderr(world)
+    );
 }
 
 #[then("stderr does not report `spec index is missing at <path>; run `givn spec index` first`")]
-fn no_missing_index_diagnostic(_world: &mut GivnWorld) {
-    unimplemented!()
+fn no_missing_index_diagnostic(world: &mut GivnWorld) {
+    assert!(
+        !super::stderr(world).contains("spec index is missing at"),
+        "malformed index was mislabeled as absent: {}",
+        super::stderr(world)
+    );
 }
 
 #[given(

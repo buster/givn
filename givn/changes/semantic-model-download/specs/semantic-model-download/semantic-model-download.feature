@@ -44,7 +44,7 @@ Feature: Automatic semantic model availability
     And stderr identifies the E5 model cache and failed artifact
     And the existing permanent semantic index remains unchanged byte-for-byte
 
-  @givn.added @wip
+  @givn.added
   Scenario: Malformed or incompatible indexes are not reported as absent
     Given an initialized project with a malformed or incompatible permanent semantic index
     When the user searches for a permanent semantic scenario
