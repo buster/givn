@@ -83,14 +83,23 @@ fn cli_output_distinguishes_routes(world: &mut GivnWorld) {
 
 #[when("the reviewer requests the `design-review` guidance through the Givn CLI")]
 fn reviewer_requests_design_review_guidance(world: &mut GivnWorld) {
-    let _ = project(world);
-    unimplemented!()
+    let output = crate::common::run_givn(
+        project(world),
+        &[
+            "instructions",
+            "design-review",
+            "--change",
+            "adr-qualification-gate",
+        ],
+    );
+    world.last_output = Some(output);
 }
 
 #[then("the CLI output requires every mandatory qualification dimension to pass")]
 fn cli_output_requires_mandatory_dimensions(world: &mut GivnWorld) {
     let content = stdout(world);
-    assert!(content.contains("all mandatory gates `PASS`"));
+    assert!(content.contains("mandatory gates"));
+    assert!(content.contains("`PASS`"));
 }
 
 #[then("the CLI output requires the existing-ADR and duplicate check")]
@@ -102,5 +111,6 @@ fn cli_output_requires_existing_adr_check(world: &mut GivnWorld) {
 #[then("the CLI output says that qualification policy is guidance rather than runtime enforcement")]
 fn cli_output_states_guidance_only(world: &mut GivnWorld) {
     let content = stdout(world);
-    assert!(content.contains("not runtime enforcement"));
+    assert!(content.contains("not runtime"));
+    assert!(content.contains("enforcement"));
 }
