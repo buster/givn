@@ -403,3 +403,51 @@ fn marker_does_not_duplicate_madr(world: &mut GivnWorld) {
     assert!(content.contains("Do not copy the complete qualification procedure"));
     assert!(content.contains("complete ADR procedure and template are owned"));
 }
+
+#[given("the consolidated ADR register guidance is available")]
+fn consolidated_adr_register_guidance_is_available(world: &mut GivnWorld) {
+    let register =
+        std::fs::read_to_string("docs/arc42/adr/README.md").expect("read ADR directory register");
+    let chapter = std::fs::read_to_string("docs/arc42/09-architecture-decisions.md")
+        .expect("read Arc42 chapter 9");
+    world.additional_output = Some(format!("{register}\n{chapter}"));
+}
+
+#[when("a maintainer reads the register rules")]
+fn maintainer_reads_register_rules(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "ADR register guidance is empty"
+    );
+}
+
+#[then("the active register contains accepted non-superseded architectural decisions only")]
+fn active_register_contains_architecture_only(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(
+        content
+            .contains("active register contains only independent durable architecture decisions")
+    );
+    assert!(content.contains("accepted"));
+}
+
+#[then("non-ADR information is not copied into the ADR archive")]
+fn non_adr_information_is_not_archived(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("archive contains only genuinely architectural decisions"));
+    assert!(content.contains("Non-ADR records are not retained there"));
+}
+
+#[then("current architecture facts are owned by Arc42 or the implementation")]
+fn current_facts_have_canonical_owner(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("Current architecture"));
+    assert!(content.contains("facts remain in the relevant Arc42 chapters or implementation"));
+}
+
+#[then("an ADR retains rationale and links instead of duplicating current facts")]
+fn adr_retains_rationale_and_links(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("Individual ADRs preserve decision rationale and links"));
+    assert!(content.contains("not a second copy of those facts"));
+}

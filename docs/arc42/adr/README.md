@@ -107,6 +107,9 @@ measurement snapshots and must not be used as the current baseline.
 
 ## Archived ADRs
 
+The archive contains only genuinely architectural decisions that were
+superseded by an explicit replacement. Non-ADR records are not retained there.
+
 | ID | Status | Reason for archive |
 |---|---|---|
 | [ADR-019](archive/ADR-019-lint-contract.md) | superseded by ADR-027 | Original static-check record. |
