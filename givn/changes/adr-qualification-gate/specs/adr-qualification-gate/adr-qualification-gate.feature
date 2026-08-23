@@ -143,7 +143,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the guidance requires an explicit duplicate amendment or supersession check
     And the MADR checklist is evidence for all mandatory gates rather than an at-least-one escape hatch
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An author requests the strict ADR guidance through the Givn CLI
     Given an initialized ADR qualification project with active change `adr-qualification-gate`
     When the author requests the Arc42 ADR guidance through the Givn CLI
