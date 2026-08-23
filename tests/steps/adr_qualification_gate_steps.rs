@@ -782,3 +782,43 @@ fn project_override_remains_effective(world: &mut GivnWorld) {
     assert!(content.contains("Project overrides may replace this default guidance"));
     assert!(content.contains("normal asset cascade"));
 }
+
+#[when("an author prepares an ADR candidate")]
+fn author_prepares_adr_candidate(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "ADR candidate guidance is empty"
+    );
+}
+
+#[then("the guidance requires real alternatives and supplied evidence")]
+fn guidance_requires_real_alternatives_and_evidence(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("actual choice between at"));
+    assert!(content.contains("least two materially different options"));
+    assert!(content.contains("Evidence arrays contain only facts and"));
+}
+
+#[then("the guidance requires a decision classification and one canonical target")]
+fn guidance_requires_classification_and_target(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("decision classification"));
+    assert!(content.contains("exactly one canonical"));
+}
+
+#[then("the guidance requires an explicit duplicate amendment or supersession check")]
+fn guidance_requires_relationship_check(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("search existing ADRs before proposing a new ID"));
+    assert!(content.contains("AMEND_ADR"));
+    assert!(content.contains("SUPERSEDE_ADR"));
+}
+
+#[then(
+    "the MADR checklist is evidence for all mandatory gates rather than an at-least-one escape hatch"
+)]
+fn madr_checklist_is_evidence_not_escape(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("checklist is evidence for those dimensions"));
+    assert!(content.contains("not an at-least-one escape"));
+}
