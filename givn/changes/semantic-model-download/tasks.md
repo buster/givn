@@ -63,17 +63,21 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `f98bbd2`.
 
 ## Scenario: Malformed or incompatible indexes are not reported as absent
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: distinguish absent index files from malformed, incompatible, and
-  dimension-invalid indexes while retaining the existing validation error.
-  Production files: _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: centralize index-read error classification without behavior
-  change and rerun the named scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: distinguished absent index files from malformed, incompatible, and
+  dimension-invalid indexes while retaining validation errors. Production files:
+  `src/spec/retrieval.rs`. Test files: `tests/steps/semantic_model_download_steps.rs`.
+  Compile step: `cargo check --features spec-retrieval` passed. Targeted output:
+  `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files and reran the named
+  scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: Duplicate audit identifies an absent persistent index without changing its fallback contract

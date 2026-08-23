@@ -3418,12 +3418,18 @@ fn refresh_index(root: &Path) -> Result<IndexRefresh> {
 #[cfg(feature = "spec-retrieval")]
 fn search_enabled(root: &Path, query: &str) -> Result<()> {
     let index_path = spec_index_path(root);
-    let index = read_index(&index_path).with_context(|| {
-        format!(
-            "spec index is missing at {}; run `givn spec index` first",
-            index_path.display()
-        )
-    })?;
+    let index = match read_index(&index_path) {
+        Ok(index) => index,
+        Err(error) if !index_path.exists() => {
+            return Err(error).with_context(|| {
+                format!(
+                    "spec index is missing at {}; run `givn spec index` first",
+                    index_path.display()
+                )
+            });
+        }
+        Err(error) => return Err(error),
+    };
     let query_vector = embed_texts(root, &[query.to_string()], EmbeddingRole::Query)?
         .vectors
         .into_iter()
