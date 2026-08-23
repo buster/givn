@@ -2,115 +2,75 @@
 
 ## 3.1 Business Context
 
-`givn` sits between a developer (often working with an AI coding agent) and a
-project's source tree. It manages spec-driven changes whose specifications are
-Gherkin `.feature` files.
+`givn` sits between a developer or AI coding agent and a project filesystem. It
+manages Gherkin specifications, change artifacts, generated guidance, and local
+review evidence.
 
 ```mermaid
-graph TB
-    CLI["givn (CLI)<br/>init · new · instructions · lint · check/review · status ·<br/>archive · eject · skills sync · spec index/search/explore/review"]
-    PROJECT["givn/ project config dir<br/>(specs, changes, archive, ...)"]
-    SKILLS["skills<br/>(.agents, .claude, .opencode)"]
-    EMBEDDED["embedded defaults<br/>(baked into the binary)"]
-
-    CLI -->|reads/writes| PROJECT
-    CLI -->|emits| SKILLS
-    CLI -->|reads| EMBEDDED
+flowchart LR
+    user[Developer or agent] --> cli[givn CLI]
+    cli --> project[Project filesystem]
+    cli --> defaults[Embedded defaults]
+    cli --> targets[Selected agent targets]
+    runner[Test runner] -->|reads GIVN_FEATURES| project
+    cli -->|runs configured commands at gates| runner
 ```
 
 ### External entities
 
 | Entity | Interaction |
-| --- | --- |
-| Developer | Runs `givn` commands from the terminal. On `givn init`, answers the agent-target selection prompt (default: opencode only). |
-| AI coding agent | Reads `givn instructions --json`, generated skills, and the change-local generated semantic review report (including archived historical reports); `AGENTS.md` (user-authored, if present); edits artifacts and code. |
-| Project filesystem | Holds the `givn/` directory, source code, and generated agent files. |
-| Test runner (cargo/npm/pytest/…) | The `verify.command`; executes step definitions. Invoked by givn via `post` hooks (`givn check`, archive gate) and directly by the agent during the TDD loop. |
-| CI system | Runs `givn lint` (static) and `givn check`/`givn archive` (which run the test runner via hooks); relies on exit codes. |
+|---|---|
+| Developer | Runs lifecycle, lint, check, archive, retrieval, and addon commands. |
+| AI coding agent | Reads effective instructions, generated skills, review reports, and Arc42 docs; edits project artifacts and source. |
+| Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
+| Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and executes feature scenarios. |
+| CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
+| Local model artifacts | Supply E5, BGE, or NLI tokenizers/models for feature-enabled retrieval. No hosted inference service is part of the boundary. |
 
-## 3.2 Technical Context — Interfaces
+`AGENTS.md` is user-owned except for named givn fenced blocks. Givn may create or
+replace the content between matching markers such as
+`<!-- givn:begin:givn-project -->` and `<!-- givn:end:givn-project -->`; it does
+not alter other content.
 
-| Interface | Direction | Format / contract |
-| --- | --- | --- |
-| CLI args | in | `clap`-parsed subcommands and flags. |
-| `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
-| `givn/**` artifacts | in/out | Markdown + `.feature` files, including the deterministic `semantic-review.md` wire grammar with fixed headers/field order, compact JSON values, `null` absence, exact score/hash formats, and no timestamp/environment fields. |
-| `givn instructions --json` | out | One JSON object `{id, generates, requires, instruction}` for AI agents, resolved from the effective manifest and instruction cascade. |
-| `givn spec index/search/explore/review/duplicates` | in/out | Local permanent-only scenario-index construction, advisory retrieval and review, and the complete read-only duplicate audit. The opt-in BGE and independent NLI features cover the five named E5-backed complete-scenario/audit surfaces; free-text `spec search` remains its existing E5-only advisory command. `spec review --change` does not create the semantic report; `spec duplicates` reads current `givn/specs/` files, ignores active/archive/index evidence, and emits the fixed E5-only contract or versioned BGE/NLI extensions. A positive `GIVN_SPEC_MAX_RERANK_PAIRS` budget selects the highest E5 candidates first and reports the omitted tail as unscored. Over-cap E5 passages are reported additively rather than aborting fitting index work. |
-| `givn spec explore --file/--stdin [--change <id>]` | in/out | One complete Gherkin scenario in; permanent-corpus candidates plus optional active-change candidates, source metadata, index metadata, and optional stable JSON out. |
-| `givn check review --change <id>` | in/out | Runs the existing review checks, calls the dedicated semantic-report and remediation-verification gates, writes `givn/changes/<id>/semantic-review.md` atomically when retrieval is available, and records E5 raw, BGE/NLI admissions, filtered and unscored evidence, model probabilities/scores, and runtime when either second-stage layer participates. Missing/failed BGE approval keeps BGE on its E5-only contract; NLI artifact/pair failures use explicit `NLI_UNAVAILABLE` fallback. Filtered evidence is non-blocking; admitted candidates still require agent classification/remediation. A malformed/incompatible index is rebuilt as permanent-only before continuing. A feature-free retrieval build fails non-zero with `spec retrieval is unavailable`. |
-| `givn lint --json` | out | Machine-readable lint findings (kind/level/files/titles), for tools and the project's own E2E scenarios. |
-| `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
-| Canonical authoring guidance | out | `givn instructions specs` emits the complete normative E2E and interaction-inventory policy consumed by agents; project overrides may replace the effective policy. |
-| Exit codes | out | For `givn lint`: 0 clean / 1 parse error / 3 duplicate scenario title / 2 wip (1 > 3 > 2); standard 0/non-0 elsewhere. |
-| `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
-| Embedded assets | in | Compiled-in default manifest, templates, skill templates. |
-| Shared semantic model input | in/out | One complete compact deterministic Gherkin serialization feeds E5, BGE, and NLI, including Feature/Rule context, inherited backgrounds, resolved step roles, tables, docstrings, outline templates, and concrete example rows. Optional empty sections and fields are omitted. Its exact E5 text supplies `content_hash`; paths, tags, scores, classifications, and deterministic fingerprints remain metadata/evidence. |
-| Shared semantic budget guard | in/out | `GIVN_SPEC_MAX_RERANK_PAIRS` selects a deterministic E5-ranked prefix before actual model tokenizers preflight untruncated/unpadded BGE/NLI pairs, including pair special tokens. The separate model-token limit remains 512: 512 fits, 513 is over, and selected token-cap states remain visible and blocking. |
-| Token-cap semantic evidence | out | Participating JSON and Markdown reports expose complete E5 passage token counts, limit, model/tokenizer provenance, and `E5_TOKEN_CAP` refactoring findings, alongside left/right/pair/limit counts and `BGE_TOKEN_CAP`/`NLI_TOKEN_CAP` per-candidate states. Fitting E5 passages remain indexed; capped passages have no vector or pair score and remain visible, unresolved, classification-free, and blocking with shorten/split remediation guidance. A partial BGE/NLI run remains enabled for fitting pairs; an all-over-cap second-stage layer is unavailable with reason `token-cap`. |
+## 3.2 Technical Context - Interfaces
+
+| Interface | Direction | Contract |
+|---|---|---|
+| CLI arguments | in | `clap` subcommands, options, and exit status. |
+| `givn/config.yaml` | in/out | Project overlay, addon flags, version marker, and skill targets. |
+| `givn/commands.yaml` | in/out | Project-owned `verify`, E2E, and coverage commands/paths; applied as a later overlay. |
+| `givn/**` artifacts | in/out | Markdown and `.feature` lifecycle files, plus generated semantic reports. |
+| `GIVN_FEATURES` | in | Feature path exported to project command processes. |
+| `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
+| `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence, and complete permanent audit. |
+| `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
+| `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
+| Agent target directories | out | Selected `.opencode`, `.agents`, and `.claude` skill paths; opencode commands use `.opencode/commands`. |
+| Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |
 
 ## 3.3 Scope
 
-### In scope (MVP)
+### In scope
 
-- Full lifecycle: propose → spec → design → design-review → tasks → implement → review → archive.
-- `.feature`-as-spec with delta tags and merge-on-archive.
-- Cascade configuration with per-facet override and `eject`.
-- YAML manifest overlay onto embedded default graph.
-- `givn lint` (static Gherkin check with exit codes; runs no tests).
-- Filesystem-derived state and task-progress tracking.
-- Skill generation (neutral + claude + opencode, configurable target selection at init). `AGENTS.md` is user-owned.
-- Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
-- Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
-- Per-artifact `post` hooks; givn runs `verify.command` at gates (`givn check`, archive).
-- Feature-enabled review rejects every permanent or current-delta scenario pair
-  at or above the fixed `0.95` similarity threshold; duplicates are removed and
-  valid boundaries are rewritten below the threshold.
-- Configurable artifacts (add/remove/reorder/optional) via overlay.
-- Opt-in addons; bundled `arc42-docs` addon maintaining durable arc42 docs.
-- Distribution: release binaries, curl\|sh, brew, cargo.
-- Advisory permanent-scenario exploration from a complete file or stdin query;
-  optional request-local exploration of active scenarios in the named current
-  change.
-- Complete read-only permanent-corpus duplicate auditing with deterministic text
-  or JSON output for exact, Fingerprint-based structural, and advisory E5
-  candidates; the semantic layer is threshold-eligible evidence, not an
-  automatic duplicate decision.
-- Optional BGE second-stage evidence on every E5-backed search surface. The E5
-  raw candidate set remains visible; BGE narrows only the recommended worklist,
-  records `BGE_FILTERED` evidence without blocking, and never assigns a Givn
-  classification or edits a specification.
-- One complete compact deterministic Gherkin semantic serialization for E5, BGE, and
-  NLI, with Feature/Rule context, inherited backgrounds, resolved step roles,
-  tables, docstrings, outline templates, and concrete example rows. Empty
-  optional sections and fields are omitted. Paths, tags, scores,
-  classifications, and deterministic fingerprints remain outside model text.
-- A shared actual-tokenizer preflight for E5 passages and BGE/NLI pairs on the
-  permanent duplicate audit, Explore, advisory review, and blocking review.
-  Counts are untruncated and unpadded, pair special tokens are included, 512 is
-  valid, 513 is over, and no automatic chunking or scenario edit occurs.
-- Independent BGE and NLI branches over the same E5 candidate pool. Combined
-  recommendations intersect participating recommendation sets; partial
-  token-cap states remain visible and blocking.
-- Blocking semantic review report generation for active added/modified delta
-  scenarios against permanent and current-change candidates at E5 `0.9500`, with
-  agent-owned classifications, complete source-ordered evidence invalidation,
-  exact report grammar, and no feature-file mutation. A malformed or
-  incompatible permanent index is rebuilt as permanent-only before review
-  continues. The generated report remains historical evidence when the existing
-  archive move relocates the change directory.
+- Gherkin-first change lifecycle and delta merge.
+- YAML manifest overlay and per-facet cascade.
+- Filesystem-derived state and visible skip markers.
+- Static lint and explicit project test-runner commands.
+- Mandatory task/review checks plus additional post hooks.
+- Addon management, including fixed-path durable Arc42 scaffolding and review.
+- Agent skill/command generation with selected targets and fenced-block ownership.
+- Local E5 retrieval, complete Explore, change-aware Explore, semantic report,
+  projected remediation, and permanent duplicate audit.
+- Optional BGE/NLI local evidence with actual-tokenizer cap handling.
+- Repository-owned compiled-CLI acceptance fixtures.
 
-### Out of scope (deferred / non-goals)
+### Out of scope
 
-| Item | Reason |
-| --- | --- |
-| `givn migrate` from `openspec/` | Deferred nice-to-have (OC-2). |
-| `spec.md` parallel format | Explicit non-goal — `.feature` is the spec. |
-| Telemetry / analytics | Dropped from the prototype's surface. |
-| Profiles / global config layers | "All config in one place" — single project dir. |
-| Workspace/multi-repo coordination | Out of scope for v1. |
-| Automatic chunking, shortening, splitting, or scenario edits for token caps | Out of scope — the report exposes exact counts and instructs the agent to shorten or split scenarios before rerunning review. |
-| Context stores / initiatives | Dropped weight from the prototype. |
-| Additional skill targets (cursor, gemini, …) | The built-in target set is fixed at opencode, .agents, .claude (selectable at init); other tools are achievable via `eject`; not shipped built-in in v1. |
-| Automatic classification and automatic feature-file edits | The report records evidence, the agent classifies and edits, and Givn verifies projected remediation without choosing or applying edits. |
-| Hosted model inference | All E5, BGE, and NLI evidence is local; no hosted inference service is part of the product boundary. |
+- Hosted model inference or a remote retrieval service.
+- Automatic classification, automatic feature edits, automatic chunking, or
+  automatic scenario splitting for token caps.
+- A configurable Arc42 output directory or chapter selection cascade.
+- OpenSpec backward-compatible reads or an implicit migration.
+- Multi-repository workflow coordination.
+- Release, Homebrew, and shell-installer infrastructure before it is implemented.
+- Treating BGE/NLI evidence as a domain classification.

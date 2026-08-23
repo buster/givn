@@ -1,5 +1,12 @@
 # Combined Givn/Watn Approach Comparison
 
+> **Status: historical.** Measurement basis: the combined Givn/Watn corpus with
+> 425 scenarios, a strict E5 pool of 199 pairs, and a top-five union of 1,428
+> pairs. This experiment predates PR #27's current 394/1274/795 run and is
+> retained for historical comparison only. Current evidence is in
+> [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md)
+> and [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](../../semantic-duplicates-e5-threshold-vs-serialization-analysis.md).
+
 ## Scope
 
 This is a corpus experiment. It is not a givn change. No permanent Givn spec

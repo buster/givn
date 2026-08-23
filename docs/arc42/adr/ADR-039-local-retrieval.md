@@ -1,0 +1,71 @@
+---
+status: accepted
+date: 2026-08-14
+decision-makers:
+  - givn maintainers
+consulted:
+  - retrieval implementation and local model setup
+informed:
+  - authors and maintainers using semantic evidence
+---
+
+# Provide local model-backed scenario retrieval
+
+## Qualification
+
+- [x] **Hard to reverse** - the index schema, model cache, and feature boundary are persistent project interfaces.
+- [x] **Shapes quality attributes** - local retrieval changes authoring recall, runtime, and dependency footprint.
+- [x] **Structural** - `spec-retrieval`, E5 vectors, and `.spec-index.json` form a retrieval subsystem boundary.
+- [x] **Must be shared** - authors must distinguish advisory retrieval from blocking review and know its feature requirement.
+
+## Context and Problem Statement
+
+Deterministic fingerprints miss some paraphrases. Authors need local related-scenario evidence without adding a hosted service or forcing the default binary to link ONNX Runtime.
+
+## Decision Drivers
+
+- local and offline-capable operation after model setup
+- incremental permanent index refresh
+- multilingual scenario retrieval
+- feature-gated dependency footprint
+
+## Considered Options
+
+- Rely only on deterministic overlap.
+- Shell out to an external Python indexer.
+- Embed local multilingual E5 retrieval behind an opt-in Cargo feature.
+
+## Decision Outcome
+
+Chosen option: **Use local multilingual E5 embeddings with a persistent permanent-scenario index behind `spec-retrieval`**. The index stores scenario identities, complete semantic content hashes, and vectors; `spec search` remains advisory. The strict E5 gate is a separate feature decision.
+
+### Consequences
+
+- Retrieval-enabled builds require local model/tokenizer artifacts or model-cache setup; the default feature-free build fails explicitly for retrieval commands.
+- Index refresh reuses matching identity/hash entries and removes deleted permanent entries.
+- Local model runtime, cache size, and token limits are operational concerns.
+
+### Confirmation
+
+Retrieval, exploration, index-refresh, missing-model, and feature-free scenarios assert local setup, ranking, hash reuse, and explicit unavailable behavior.
+
+## Pros and Cons of the Options
+
+### Local E5 feature
+
+- Good, because paraphrase evidence is available without a hosted service.
+- Bad, because native dependencies and model artifacts are optional but heavy.
+
+### Deterministic overlap only
+
+- Good, because setup and runtime remain minimal.
+- Bad, because paraphrases are invisible.
+
+### External Python indexer
+
+- Good, because Python model tooling is broad.
+- Bad, because it adds a runtime and process boundary to a single-binary tool.
+
+## More Information
+
+The strict gate is [ADR-041](ADR-041-e5-uniqueness-gate.md); retrieval mechanics are in [chapter 8.5a](../08-crosscutting-concepts.md#85a-local-scenario-retrieval).

@@ -1,5 +1,10 @@
 # E5 Threshold Versus Serialization Analysis
 
+> **Status: current.** This analysis describes the current 394-scenario PR #27
+> run with 1,274 E5 candidates and the default second-stage budget of 2,048.
+> Historical 425-scenario and 199-pair measurements are retained in the archive
+> and are not substituted for this operating point.
+
 ## Current Compact-Serialization Pool
 
 The current real no-stub run uses the compact complete serialization and scans
@@ -83,3 +88,9 @@ Keep the E5 boundary at `0.9500`. Use `GIVN_SPEC_MAX_RERANK_PAIRS=2048` as the
 default second-stage work budget, select highest E5 scores first, retain the
 omitted tail as explicit unscored evidence, and continue recording actual
 BGE/NLI runtime before changing the setting or the model-input boundary.
+
+## Related Current Evidence
+
+- [`semantic-duplicates-real-model-filter-report.md`](semantic-duplicates-real-model-filter-report.md)
+- [`semantic-duplicates-manual-evaluation.md`](semantic-duplicates-manual-evaluation.md)
+- [`bge-reranking-benchmark.md`](bge-reranking-benchmark.md)

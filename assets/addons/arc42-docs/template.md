@@ -1,5 +1,12 @@
 # arc42 Documentation Update: {{CHANGE_ID}}
 
+> This is the change-level arc42 **impact assessment template**. It is not an
+> ADR template and must not be used to draft, store, or combine architecture
+> decisions. An architecturally significant decision gets exactly one separate
+> MADR file at `docs/arc42/adr/ADR-NNNN-short-slug.md`; chapter 09 is only its
+> register/index. Use the ADR guidance and the Qualification gate before
+> creating that file.
+
 ## Impact assessment
 
 <!-- Walk every row below against this change's proposal.md/specs/design.md.
@@ -28,7 +35,12 @@
 <!-- Any observations about gaps in the arc42 docs, decisions not yet captured,
      or sections that need follow-up in a future change.
 
-     Diagrams in chapter content MUST be Mermaid (```mermaid), never ASCII art. -->
+      Diagrams in chapter content MUST be Mermaid (```mermaid), never ASCII art. -->
+
+This impact marker does not replace the ADR Qualification Checklist or the
+individual ADR file. A change may affect chapter 09 without qualifying for an
+ADR, and a qualifying ADR must still be recorded as its own file and linked
+from the chapter-09 register.
 
 ---
 
