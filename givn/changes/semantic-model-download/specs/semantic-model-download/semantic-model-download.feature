@@ -27,7 +27,7 @@ Feature: Automatic semantic model availability
     And stdout reports that existing semantic model artifacts were reused
     And the permanent semantic index file exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed model download explains how to provide the missing artifacts
     Given an initialized project with unavailable semantic model sources
     When the user runs `givn spec index`
