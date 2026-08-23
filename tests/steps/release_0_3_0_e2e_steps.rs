@@ -38,6 +38,8 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
     )
     .expect("configure fixture verification");
+    std::fs::write(env.path(".gitignore"), ".opencode/\nAGENTS.md\n")
+        .expect("ignore generated agent files");
 
     git(&env, &["init"]);
     git(&env, &["config", "user.name", "Givn Migration Test"]);
