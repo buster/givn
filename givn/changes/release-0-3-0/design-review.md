@@ -39,7 +39,7 @@ patch version is skipped, when several bundles are needed, when the target is
 not a Git repository, when the worktree is dirty, when a migration plan already
 exists, when the generated maintenance change is later archived without a
 product spec, or when a maintainer installs the release without an explicit
-feature flag?
+feature flag or the project ignores generated agent files?
 
 **Answer:** The catalog returns an empty path for a migration-free transition,
 and Givn performs one managed commit without creating a Change. A route covers
@@ -49,6 +49,8 @@ not overwrite an existing plan, and the archive scenario verifies that skipped
 specs use the permanent feature path for global gates without a change-specific
 semantic comparison. The Cargo default list enables every released optional
 feature, while `--no-default-features` remains a documented feature-free path.
+Explicitly ignored generated paths are force-staged only through the calculated
+allowlist, never through a directory-wide force add.
 
 ### Testability
 
@@ -77,7 +79,9 @@ write, a pre-write snapshot, and an output that names the successful commits.
 Enabling all features by default also increases native build and model-artifact
 cost; the explicit `--no-default-features` path prevents that from becoming an
 undocumented requirement for constrained environments. The command never
-resets or reverts user history.
+resets or reverts user history. A consumer `.gitignore` can exclude generated
+agent paths, so force-staging must remain limited to the explicit allowlist to
+avoid publishing unrelated content.
 
 ### ADR Qualification
 
@@ -178,7 +182,7 @@ The change affects chapters 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, and 12:
 | Chapter | Affected? | Reason |
 |---|---|---|
 | 01 introduction-and-goals | Yes | 0.3.0 adds upgradeability, migration, and the complete default Cargo capability set. |
-| 02 architecture-constraints | Yes | Managed upgrades and catalog routes require a Git worktree boundary and explicit ownership rules; installation defaults change. |
+| 02 architecture-constraints | Yes | Managed upgrades and catalog routes require a Git worktree boundary, explicit ownership rules, and safe handling of ignored generated paths; installation defaults change. |
 | 03 context-and-scope | Yes | `givn upgrade` gains managed-only and aggregate migration interactions. |
 | 04 solution-strategy | Yes | The release separates migration-free managed commits from ordered LLM-reviewed migration phases and defines the default/minimal feature paths. |
 | 05 building-block-view | Yes | Catalog loading, path resolution, and upgrade orchestration gain migration responsibilities. |
@@ -186,8 +190,8 @@ The change affects chapters 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, and 12:
 | 07 deployment-view | Yes | The binary carries migration assets, resolves version gaps through the Git CLI, and enables all declared features by default. |
 | 08 crosscutting-concepts | Yes | Config, generated guidance, catalog ownership, aggregate ordering, and migration contracts change. |
 | 09 architecture-decisions | Yes | ADR-023 is amended with the automatic migration protocol and ADR-055 with the default feature set. |
-| 10 quality-requirements | Yes | New release, managed-upgrade, version-skipping, migration safety, and default-install scenarios are added. |
-| 11 risks-and-technical-debt | Yes | Commit failure, clean-worktree, project-specific migration, and default-build cost risks change. |
+| 10 quality-requirements | Yes | New release, managed-upgrade, version-skipping, migration safety, default-install, and ignored-path staging scenarios are added. |
+| 11 risks-and-technical-debt | Yes | Commit failure, clean-worktree, project-specific migration, default-build cost, and force-staging risks change. |
 | 12 glossary | Yes | Release migration, maintenance change, and managed upgrade commit become domain terms. |
 
 The durable chapter updates and both ADR amendments are part of the
@@ -216,6 +220,8 @@ before `REVIEW: PASS`.
   ordered multi-bundle resolution.
 - Added a release scenario that asserts every declared feature is in the normal
   Cargo default set and that the feature-free build remains explicit.
+- Covered a consumer `.gitignore` that excludes `.opencode/` and `AGENTS.md`;
+  the real migration path force-stages only the calculated managed allowlist.
 - Removed obsolete feature-combination helpers exposed by the all-default build
   and made the full default-feature lint configuration warning-free.
 

@@ -25,6 +25,11 @@ content. The LLM must complete the phases in order. If no bundle route applies,
 Givn performs only the managed config/guidance refresh and creates no migration
 change.
 
+Managed paths are staged with an explicit force flag so a consumer `.gitignore`
+cannot block its own generated Givn files. The force applies only to the
+calculated allowlist; Givn never force-stages a directory or the complete
+worktree.
+
 Bundle designs must be self-contained. They may use the
 `{{SOURCE_VERSION}}`, `{{TARGET_VERSION}}`, and `{{UPGRADE_COMMIT}}` placeholders
 for generated metadata. The current 0.2.0-to-0.3.0 bundle additionally uses

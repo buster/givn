@@ -32,7 +32,7 @@ exit status, output, files, and commit history.
 | The migration guide is an executable prompt sequence | `2eb8248` | Yes — public migration artifact and executable guide binding |
 | The migration catalog defines complete release-owned bundles | `3989ebe` | Yes — embedded catalog, bundle assets, resolver, and executable catalog binding |
 | Cargo installation enables every declared feature by default | `65ece69`, `426f2a1`, `082d3db` | Yes — Cargo default list, minimal-build documentation, executable release assertion, all-default lint cleanup, and the corrected blocking-pair scope |
-| A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | `6157355` | Yes — migration runtime, allowlist, Git commits, and CLI binding |
+| A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | `6157355`, `787db96` | Yes — migration runtime, allowlist, ignored-path staging, Git commits, and CLI binding |
 | A clean project without migration requirements receives one managed upgrade commit | `c678344` | Yes — managed-upgrade runtime, no-migration dispatch, CLI binding, and no-empty-commit unit boundary |
 | An unclean project is protected from automatic migration commits | `86be977` | Yes — dirty-worktree runtime guard and CLI binding |
 | Repeating the upgrade does not duplicate the migration | `8fa1b29` | Yes — idempotent runtime guard and CLI binding |
@@ -106,6 +106,7 @@ review-gate run exercised the same 13-scenario feature scope.
 | Git preflight | Repository and fully clean worktree before writes | `ensure_clean_git` checks repository and porcelain status | Yes |
 | Generated scope | Explicit config/skill/command/owned-block allowlist | `managed_generated_paths` plus `givn/config.yaml` | Yes |
 | Commit protocol | One managed commit without migration, or Commit A plus aggregate plan Commit B | `prepare_managed_upgrade`, `prepare_legacy_upgrade`, and `commit_migration_plan` | Yes |
+| Ignored managed paths | Explicit allowlist may be force-staged without widening to a directory | `stage_paths` uses `git add -f --` after path calculation | Yes |
 | Plan shape | Proposal, design, `migration.yaml`, `.givn-skip: specs`; no fake evidence | `write_aggregate_migration_plan` and generated content | Yes |
 | Blocking semantic scope | Active Delta relationships only; permanent-permanent pairs excluded | `embedding_similarity_candidates` filters projected pairs by active delta identity | Yes |
 | Maintenance archive | Permanent verify path; no delta semantic gate or synthetic feature | `check.rs` and `archive.rs` inspect the skip marker | Yes |
@@ -129,7 +130,7 @@ implementation:
 | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Implementation evidence | Match? |
 |---|---|---|---|---|---|---|
 | Release/migration/install goal | `01-introduction-and-goals.md` | Yes | Overview, public contract, and default feature set | Release, guide, and Cargo scenarios | `Cargo.toml`, `CHANGELOG.md`, guide | Yes |
-| Git and ownership constraint | `02-architecture-constraints.md` | Yes | Allowlist and clean preflight | Dirty/non-Git scenarios | `ensure_clean_git`, `stage_paths` | Yes |
+| Git and ownership constraint | `02-architecture-constraints.md` | Yes | Allowlist, clean preflight, and ignored-path force-staging | Dirty/non-Git scenarios and ignored generated paths | `ensure_clean_git`, `stage_paths` | Yes |
 | Upgrade interface | `03-context-and-scope.md` | Yes | CLI E2E surface | Clean upgrade scenario | `givn upgrade` subprocess | Yes |
 | Separation strategy | `04-solution-strategy.md` | Yes | Managed-only versus catalog-selected aggregate phases | Upgrade and honesty scenarios | Managed commit, aggregate metadata, and plan content | Yes |
 | Migration building block | `05-building-block-view.md` | Yes | `cli::migration` and embedded catalog responsibility | Catalog and clean upgrade scenarios | `src/cli/migration.rs`, `assets/migrations/` | Yes |
@@ -137,8 +138,8 @@ implementation:
 | Binary/Git deployment boundary | `07-deployment-view.md` | Yes | Git requirement and generated footprint | Non-Git scenario | Git preflight | Yes |
 | Cross-cutting ownership/idempotency | `08-crosscutting-concepts.md` | Yes | Config, allowlist, catalog, pending plan, and gates | Catalog, repeat, existing-plan, and managed-only scenarios | `migration_path`, `pending_migration_change`, snapshots | Yes |
 | ADR-023/ADR-055 refinement | `09-architecture-decisions.md`, ADR-023, ADR-055 | Yes | `AMEND_ADR` to both existing decisions | ADR documentation task | ADR-023, ADR-055, and both indexes | Yes |
-| Release quality scenarios | `10-quality-requirements.md` | Yes | E2E matrix, managed-only path, safety boundaries, and installation defaults | Q-48 through Q-56 | 13 passing scenarios | Yes |
-| Migration risks | `11-risks-and-technical-debt.md` | Yes | Failure, marker, catalog, aggregate-order, and default-build-cost semantics | Review and archive tasks | R-27 through R-32 | Yes |
+| Release quality scenarios | `10-quality-requirements.md` | Yes | E2E matrix, managed-only path, safety boundaries, installation defaults, and ignored-path staging | Q-48 through Q-57 | 13 passing scenarios | Yes |
+| Migration risks | `11-risks-and-technical-debt.md` | Yes | Failure, marker, catalog, aggregate-order, default-build-cost, and force-staging semantics | Review and archive tasks | R-27 through R-33 | Yes |
 | Migration vocabulary | `12-glossary.md` | Yes | Managed upgrade, bundle/catalog, aggregate plan terminology | Catalog, honesty, and archive scenarios | glossary entries | Yes |
 
 - [x] Every affected chapter was opened and checked for stale or placeholder
@@ -217,10 +218,10 @@ GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner
 3 scenarios passed; 19 steps passed
 
 cargo test --lib
-156 tests passed
+157 tests passed
 
 cargo test --no-default-features --lib
-151 tests passed
+152 tests passed
 
 cargo fmt --all -- --check
 passed

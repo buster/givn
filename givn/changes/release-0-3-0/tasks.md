@@ -169,7 +169,7 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The first implementation run failed at step binding because the generic `the consumer runs ...` step conflicted with the migration-specific CLI step; Cucumber exited non-zero before the success contract was implemented.
         ```
-- [x] GREEN: implement the catalog-selected 0.2.0→0.3.0 path. Preflight Git and
+  - [x] GREEN: implement the catalog-selected 0.2.0→0.3.0 path. Preflight Git and
         cleanliness, snapshot managed files, refresh config, synchronize
         generated integrations, stage only the managed allowlist, create
         Commit A, resolve the aggregate bundle path, generate the migration
@@ -180,11 +180,13 @@ runner rejects an unimplemented step before any scenario work.
         ```
   - [x] REFACTOR: centralize path calculation and Git error handling; verify
         failures never reset history, generated project overrides remain
-        untouched, and Commit B contains only the migration plan.
+        untouched, Commit B contains only the migration plan, and ignored
+        generated paths are staged only through the explicit allowlist.
         ```
-        The rerun passed with `1 scenario (1 passed)`; managed paths are calculated centrally, catalog assets are resolved declaratively, and staging uses explicit relative path arguments.
+        The regression RED run with `.opencode/` and `AGENTS.md` ignored failed at the success assertion because normal `git add` rejected the ignored managed paths. After the fix, the targeted rerun passed with `1 scenario (1 passed)` and `9 steps (9 passed)`; `git add -f --` is still given only explicit relative managed paths.
         ```
   - [x] COMMIT: `6157355` — `feat(upgrade): A clean 0.2.0 project receives a reviewable 0.3.0 migration plan`
+  - [x] COMMIT: `787db96` — `fix(upgrade): stage ignored managed files`
 
 ---
 
@@ -358,7 +360,7 @@ runner rejects an unimplemented step before any scenario work.
 
 - [x] Update the affected durable Arc42 chapters and the change-level
       `arc42.md` with a full 12-row assessment plus the default-feature contract.
-      Evidence: `docs/arc42/01-introduction-and-goals.md`, `02`, `04`, `07`, `08`, `09`, `10`, `11`, `12`, `README.md`, and the release `arc42.md` carry the default/minimal feature contract and Q-56/R-32 mappings.
+      Evidence: `docs/arc42/01-introduction-and-goals.md`, `02`, `04`, `07`, `08`, `09`, `10`, `11`, `12`, `README.md`, and the release `arc42.md` carry the default/minimal feature contract and Q-56/Q-57/R-32/R-33 mappings.
 - [x] Amend ADR-023 with the automatic migration-plan and two-commit protocol
       and ADR-055 with the default-feature contract; update both ADR indexes if
       metadata or relationships change.
@@ -380,7 +382,7 @@ runner rejects an unimplemented step before any scenario work.
 - [x] Run `cargo fmt --all -- --check`.
       Evidence: command passed with no output after the feature cleanup.
 - [x] Run `cargo clippy --workspace --all-targets -- -D warnings`.
-      Evidence: default build and explicit `spec-retrieval`, `spec-retrieval,cross-encoder-reranker`, `spec-retrieval,spec-similarity-gate`, and `spec-retrieval,nli-evidence` builds passed with `-D warnings`.
+      Evidence: default build and explicit `spec-retrieval`, `spec-retrieval,cross-encoder-reranker`, `spec-retrieval,spec-similarity-gate`, and `spec-retrieval,nli-evidence` builds passed with `-D warnings`; ignored-path staging introduces no warnings.
 - [x] Run repository coverage and classify every uncovered region.
       Evidence: global merged report `13168/19656` lines (`66.9923%`), release-specific report `2610/19656` (`13.2784%`), migration module `450/548` (`82.1168%`), and the remaining gaps are classified in `review.md`.
 - [x] Complete `review.md` with `REVIEW: PASS` only after all gates pass.
