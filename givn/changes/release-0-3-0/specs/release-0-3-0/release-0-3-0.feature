@@ -34,7 +34,7 @@ Feature: Givn 0.3.0 release and legacy project migration
     Given a clean Git project created with Givn 0.2.0
     When the consumer invokes `givn upgrade` for migration
     Then the command exits successfully
-    And the project config identifies Givn 0.3.0
+    And the project config identifies the current Givn version
     And one commit contains only the managed scaffold and generated agent integration changes
     And a migration change named "migrate-0-2-0-to-0-3-0" exists
     And the migration change records the managed upgrade commit

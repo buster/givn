@@ -26,6 +26,7 @@ Status values:
 
 - [Implementation Task Breakdown](TASKS.md) - `current`; phase-by-phase implementation tasks and completion markers.
 - [Root Plan](../PLAN.md) - `reference`; six-change refactor plan and dependency context outside the `docs/` tree.
+- [Givn 0.2.0 to 0.3.0 Migration Guide](migrations/0.2.0-to-0.3.0.md) - `reference`; ordered LLM prompts for upgrading projects created from the 0.2.0 master branch.
 
 ## Architecture
 
