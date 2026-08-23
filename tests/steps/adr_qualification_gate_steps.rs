@@ -138,3 +138,36 @@ fn guidance_distinguishes_process_from_architecture(world: &mut GivnWorld) {
 fn guidance_requires_one_canonical_target(world: &mut GivnWorld) {
     assert!(guidance(world).contains("`canonical_artifact` naming exactly one destination"));
 }
+
+#[when("an author reads the duplicate and relationship rules")]
+fn author_reads_duplicate_relationship_rules(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "relationship guidance is empty"
+    );
+}
+
+#[then("the guidance requires searching existing ADRs before drafting")]
+fn guidance_requires_searching_existing_adrs(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("active and archived registers have been searched"));
+    assert!(content.contains("before proposing a new ID"));
+}
+
+#[then("the guidance requires an explicit new amend supersede or canonical-artifact route")]
+fn guidance_requires_explicit_route(world: &mut GivnWorld) {
+    let content = guidance(world);
+    for route in [
+        "NEW_ADR",
+        "AMEND_ADR",
+        "SUPERSEDE_ADR",
+        "CANONICAL_ARTIFACT",
+    ] {
+        assert!(content.contains(route), "guidance missing route {route}");
+    }
+}
+
+#[then("the guidance rejects a new ADR when the existing-ADR check is incomplete")]
+fn guidance_rejects_incomplete_existing_check(world: &mut GivnWorld) {
+    assert!(guidance(world).contains("An incomplete existing-ADR check fails"));
+}
