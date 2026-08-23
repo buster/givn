@@ -10,3 +10,7 @@ remain under [`adr/archive/`](adr/archive/) and are not current architecture.
 `ADR-050` and `ADR-051` are reserved and unassigned. The register explains the
 historical duplicate-ID migration and the later removal of records that do not
 meet the strict qualification gate.
+
+Individual ADRs preserve decision rationale and links. Current architecture
+facts remain in the relevant Arc42 chapters or implementation; the register is
+not a second copy of those facts.
