@@ -233,3 +233,43 @@ fn guidance_defines_verdict_values(world: &mut GivnWorld) {
         );
     }
 }
+
+#[when("an author reads the route-target rules")]
+fn author_reads_route_target_rules(world: &mut GivnWorld) {
+    assert!(
+        !guidance(world).is_empty(),
+        "route-target guidance is empty"
+    );
+}
+
+#[then("`CANONICAL_ARTIFACT` requires a `canonical_artifact` target")]
+fn canonical_artifact_requires_target(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("`CANONICAL_ARTIFACT` for a non-qualifying candidate"));
+    assert!(content.contains("`canonical_artifact` naming exactly one destination"));
+}
+
+#[then("`AMEND_ADR` requires a `target_adr` target")]
+fn amend_adr_requires_target(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("`AMEND_ADR` for a qualified refinement"));
+    assert!(content.contains("`target_adr` naming the existing"));
+}
+
+#[then("`SUPERSEDE_ADR` requires a `replacement_adr` target")]
+fn supersede_adr_requires_target(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("`SUPERSEDE_ADR` for a qualified replacement"));
+    assert!(content.contains("`replacement_adr` naming"));
+}
+
+#[then("unused route-target fields are required to remain null")]
+fn unused_route_targets_are_null(world: &mut GivnWorld) {
+    let content = guidance(world);
+    assert!(content.contains("For `CANONICAL_ARTIFACT`"));
+    assert!(content.contains("For\n`AMEND_ADR`") || content.contains("For `AMEND_ADR`"));
+    assert!(content.contains("For\n`SUPERSEDE_ADR`") || content.contains("For `SUPERSEDE_ADR`"));
+    assert!(content.matches("are `null`").count() >= 3);
+    assert!(content.contains("`canonical_artifact` and `replacement_adr`"));
+    assert!(content.contains("`canonical_artifact` and `target_adr`"));
+}

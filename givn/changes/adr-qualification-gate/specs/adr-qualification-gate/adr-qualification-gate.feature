@@ -51,7 +51,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the verdict contract names `canonical_artifact`, `target_adr`, and `replacement_adr`
     And the guidance defines the allowed qualification gate and routing values
 
-  @givn.added @wip
+  @givn.added
   Scenario: Route targets are conditional and unused targets stay empty
     Given the ADR qualification guidance is available
     When an author reads the route-target rules

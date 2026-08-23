@@ -103,17 +103,21 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `7 steps (7 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): The structured verdict has fixed gate and route fields`
+- [x] COMMIT: `12be1ca` — `docs(arc42): The structured verdict has fixed gate and route fields`
 
 ## Scenario: Route targets are conditional and unused targets stay empty
 
-- [ ] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
-      scenario command. Output: _pending_. Must exit non-zero.
-- [ ] GREEN: assert all conditional target/null rules for the four routes.
+- [x] RED: remove only this scenario's `@wip`, add stubs, and run the anchored
+      scenario command. Output: `1 feature`, `1 scenario (1 failed)`, `2 steps
+      (1 passed, 1 failed)`, `Step panicked. Captured output: not implemented`,
+      and non-zero exit.
+- [x] GREEN: assert all conditional target/null rules for the four routes.
       Production/source files: `assets/addons/arc42-docs/instructions.md`.
       Test file: `tests/steps/adr_qualification_gate_steps.rs`. Output:
-      _pending_.
-- [ ] REFACTOR: rerun the anchored scenario. Output: _pending_.
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: rerun the anchored scenario. Output:
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `docs(arc42): Route targets are conditional and unused targets stay empty`
 
 ## Scenario: The guidance forbids invented ADR evidence
