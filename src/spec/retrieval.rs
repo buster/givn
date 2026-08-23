@@ -4079,7 +4079,12 @@ fn bge_backend(
     match selected.as_deref() {
         Ok("disabled") => Ok(None),
         Ok("stub") => Ok(Some(Ok(BgeBackendKind::Stub))),
-        Ok("missing") => Ok(Some(Err(BgeUnavailableReason::MissingArtifact))),
+        Ok("missing") => {
+            eprintln!(
+                "BGE model is unavailable; model={RERANKER_MODEL_ID}; failed artifact=model.onnx; set GIVN_SPEC_BGE_MODEL_DIR or GIVN_SPEC_BGE_CACHE"
+            );
+            Ok(Some(Err(BgeUnavailableReason::MissingArtifact)))
+        }
         Ok("local") => Ok(Some(match preflight_bge_artifacts(root) {
             Ok(_) => Ok(BgeBackendKind::Local),
             Err(_) => Err(BgeUnavailableReason::MissingArtifact),
@@ -6237,7 +6242,12 @@ fn nli_backend_selection(
             Err(_) => Err(NliUnavailableReason::MissingArtifact),
         })),
         Ok(value) if value == NLI_STUB_SELECTOR => Ok(Some(Ok(NliBackend::Stub))),
-        Ok("nli-missing") => Ok(Some(Err(NliUnavailableReason::MissingArtifact))),
+        Ok("nli-missing") => {
+            eprintln!(
+                "NLI model is unavailable; model={NLI_MODEL_ID}; failed artifact=onnx/model.onnx; set GIVN_SPEC_NLI_MODEL_DIR or GIVN_SPEC_NLI_CACHE"
+            );
+            Ok(Some(Err(NliUnavailableReason::MissingArtifact)))
+        }
         Ok("disabled") | Ok("stub") | Ok("missing") => Ok(None),
         Ok(value) => bail!("unknown GIVN_SPEC_RERANKER value `{value}`"),
         Err(std::env::VarError::NotPresent) => Ok(None),
