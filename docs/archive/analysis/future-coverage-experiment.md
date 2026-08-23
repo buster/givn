@@ -1,5 +1,9 @@
 # Future Experiment: Scenario-Level Branch Coverage
 
+> **Status: reference archive.** This is an unimplemented optional experiment
+> proposal retained as historical planning context. It contains no current
+> coverage measurement and is not part of the active retrieval evidence.
+
 **Status:** Future optional experiment. Not part of the current Givn production
 extension and not part of the Cross-Encoder, NLI, or combined-corpus experiment
 decision.

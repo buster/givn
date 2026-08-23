@@ -1,5 +1,9 @@
 # BGE Reranking Admission Benchmark
 
+> **Status: current benchmark reference.** The current full-corpus evidence is
+> the PR #27 run described below. The older combined-corpus measurements remain
+> explicitly labeled as historical and are not the current operating point.
+
 This document defines the evidence required before the opt-in BGE admission
 filter can be treated as useful. It is not a Givn classifier specification.
 The production path remains E5-only when this benchmark does not support the
@@ -91,6 +95,27 @@ For each label configuration report:
 - scenario character count, step count, assertion count, E5 score, and BGE
   score.
 
+## Current PR #27 Run
+
+The current full-corpus run is [PR #27](https://github.com/buster/givn/pull/27),
+tip `37b27d3`. It uses `394` permanent scenarios and produces `1274` semantic
+E5 candidates. The BGE-eligible top-five endpoint union contains `795` pairs.
+`GIVN_SPEC_MAX_RERANK_PAIRS` was unset, so the production default `2048`
+applied. Both second-stage models ran against real local ONNX artifacts; no BGE
+or NLI stub was used.
+
+| Layer | E5 candidates | Eligible pairs | Scored | Recommended | Filtered | Token-cap | Unscored |
+|---|---:|---:|---:|---:|---:|---:|---:|
+| BGE | 1274 | 795 | 669 | 1 | 668 | 126 | 605 |
+| NLI | 1274 | 1274 | 1062 | 17 | 1045 | 212 | 212 |
+
+The BGE and NLI recommendations are independent; their intersection contains
+`0` pairs in this run. Full runtime and accounting details are in
+[`semantic-duplicates-real-model-filter-report.md`](semantic-duplicates-real-model-filter-report.md)
+and [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](semantic-duplicates-e5-threshold-vs-serialization-analysis.md).
+The manually reviewed top-five outputs are preserved in
+[`semantic-duplicates-manual-evaluation.md`](semantic-duplicates-manual-evaluation.md).
+
 `BGE_FILTERED` is not treated as `VALID-BOUNDARY` or `UNRELATED`; those labels
 remain benchmark labels only. A BGE score above `3.0000` is not proof of a
 Givn class and remains subject to agent classification.
@@ -137,10 +162,14 @@ systematically penalized, and that increasing prose solely to lower a score is
 observable as authoring debt. Guidance must sharpen the invariant and the
 boundary fact instead of adding text as a scoring workaround.
 
-## Known Limitations
+## Historical Baseline (Not Current)
 
-The historical combined-corpus run found 199 strict E5 pairs and 45 BGE hits
-at `3.0`, while a larger 1,428-pair union was too expensive for an unbounded
-CPU run. A valid boundary also exceeded `3.0` in the selected sample. These
-results prove why BGE reduces a worklist but cannot classify Givn semantics.
-They do not constitute a production pass for the new admission filter.
+The archived combined-corpus run found `199` strict E5 pairs and `45` BGE hits
+at `3.0`, while a larger `1,428`-pair union was too expensive for an unbounded
+CPU run. A valid boundary also exceeded `3.0` in the selected sample. Those
+measurements use the old 425-scenario corpus and are retained only as historical
+evidence. They explain why BGE can reduce a worklist but cannot classify Givn
+semantics; they do not describe the current PR #27 run or constitute a current
+production pass. See the archived
+[`approach-comparison-report.md`](archive/analysis/approach-comparison-report.md)
+for the original measurement basis.

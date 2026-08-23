@@ -1,7 +1,7 @@
 # PLAN.md — givn 0.3 Refactor: sechs Changes
 
 Dieses Dokument spezifiziert die Refactor-Vorhaben aus
-`docs/givn-refactor-0.3/analysis.md` (Entscheidungsstand nach
+`docs/archive/analysis/analysis.md` (Entscheidungsstand nach
 Design-Review-Grilling, 2026-08-14) als sechs aufeinanderfolgende givn-Changes.
 Für jede Change enthält es mindestens den Inhalt einer proposal.md
 (Problem/Opportunity, Proposed Solution, Out of Scope, Open Questions) in
@@ -17,7 +17,7 @@ werden nacheinander abgearbeitet — niemals parallel, die Abhängigkeiten sind
 hart. Ergebnisse werden als Stacked PRs abgelegt (Abschnitt
 "PR-Workflow — Stacked PRs").
 
-Quellen: `docs/givn-refactor-0.3/analysis.md`,
+Quellen: `docs/archive/analysis/analysis.md`,
 `tools/embed-analysis/HANDOFF-EMBEDDINGS.md`, watn-Repo (`~/projects/watn`,
 Referenz-Konsument) mit `watn/docs/feature-step-overlap-report.md`.
 

@@ -1,5 +1,11 @@
 # Givn 0.3 Refactor: Analyse und Entscheidungsstand
 
+> **Status: historical archive.** This is the 2026-08-14 refactor analysis and
+> decision context. It describes a pre-retrieval design state, not a current
+> implementation or measurement report. Current retrieval evidence is collected
+> in [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md)
+> and [`semantic-duplicates-e5-threshold-vs-serialization-analysis.md`](../../semantic-duplicates-e5-threshold-vs-serialization-analysis.md).
+
 Date: 2026-08-14
 
 Status: Ergebnis einer Diskussion zwischen Autor und Modell. Implementiert

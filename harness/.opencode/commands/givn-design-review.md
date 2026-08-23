@@ -120,8 +120,8 @@ Read all of these in full before forming any questions:
   selection table (`givn instructions arc42-docs`) yourself against
   proposal.md/specs/design.md, and form your own Yes/No per row. Only after
   that, open `givn/changes/<id>/arc42.md` and every chapter file under
-  `docs/arc42/` (or the configured `arc42.output_dir`) that the marker file
-  claims to have touched. This is required input for the Architecture
+  fixed `docs/arc42/` path that the marker file claims to have touched. This is
+  required input for the Architecture
   documentation branch below — do not skip it because arc42.md says
   `STATUS: DONE`; that marker is a self-report from the same agent that
   wrote the docs, not verification.
