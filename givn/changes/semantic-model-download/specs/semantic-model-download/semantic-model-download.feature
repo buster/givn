@@ -61,7 +61,7 @@ Feature: Automatic semantic model availability
     And stderr reports `spec index is missing at <path>; run `givn spec index` first`
     And the persistent semantic index remains absent
 
-  @givn.added @nli @nli-combined @wip
+  @givn.added @nli @nli-combined
   Scenario: Failed second-stage downloads remain unavailable and actionable
     Given an initialized project with unavailable BGE and NLI model sources
     And the project contains permanent semantic candidates for both evidence layers

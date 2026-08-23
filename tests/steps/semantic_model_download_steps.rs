@@ -240,28 +240,66 @@ fn persistent_index_remains_absent(world: &mut GivnWorld) {
 }
 
 #[given("an initialized project with unavailable BGE and NLI model sources")]
-fn unavailable_second_stage_sources(_world: &mut GivnWorld) {
-    unimplemented!()
+fn unavailable_second_stage_sources(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/second-stage.feature"),
+        "Feature: second stage\n\n  Scenario: Primary semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n\n  Scenario: Secondary semantic behavior\n    Given a configured service catalog\n    When the service is queried\n    Then the service result is returned\n",
+    )
+    .expect("write second-stage fixture");
+    let xdg = env.path(".xdg-cache");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_bge = Some("missing".to_string());
+    world.retrieval_reranker = Some("nli-missing".to_string());
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/second-stage.feature|Primary semantic behavior::givn/specs/second-stage.feature|Secondary semantic behavior=0.9600".to_string(),
+    );
 }
 
 #[given("the project contains permanent semantic candidates for both evidence layers")]
-fn permanent_candidates_for_both_layers(_world: &mut GivnWorld) {
-    unimplemented!()
+fn permanent_candidates_for_both_layers(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("second-stage project");
+    assert!(env.path("givn/specs/second-stage.feature").is_file());
 }
 
 #[given("BGE and NLI evidence are explicitly enabled for automatic acquisition")]
-fn enable_automatic_second_stage_acquisition(_world: &mut GivnWorld) {
-    unimplemented!()
+fn enable_automatic_second_stage_acquisition(world: &mut GivnWorld) {
+    assert_eq!(world.retrieval_bge.as_deref(), Some("missing"));
+    assert_eq!(world.retrieval_reranker.as_deref(), Some("nli-missing"));
 }
 
 #[then("stdout is valid duplicate-audit JSON with unavailable BGE and NLI evidence")]
-fn duplicate_json_reports_unavailable_layers(_world: &mut GivnWorld) {
-    unimplemented!()
+fn duplicate_json_reports_unavailable_layers(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("duplicate output JSON");
+    assert_eq!(document["bge_run"]["status"], "BGE_UNAVAILABLE");
+    assert_eq!(document["nli_run"]["status"], "NLI_UNAVAILABLE");
 }
 
 #[then("stderr names the failed model artifacts and their local override variables")]
-fn reports_second_stage_artifact_failure(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_second_stage_artifact_failure(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("BGE model is unavailable"),
+        "stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("NLI model is unavailable"),
+        "stderr: {stderr}"
+    );
+    assert!(stderr.contains("model.onnx"), "stderr: {stderr}");
+    assert!(stderr.contains("onnx/model.onnx"), "stderr: {stderr}");
+    assert!(
+        stderr.contains("GIVN_SPEC_BGE_MODEL_DIR"),
+        "stderr: {stderr}"
+    );
+    assert!(
+        stderr.contains("GIVN_SPEC_NLI_MODEL_DIR"),
+        "stderr: {stderr}"
+    );
 }
 
 #[given(
