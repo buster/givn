@@ -9,7 +9,7 @@ use anyhow::Context;
 use ndarray::Array;
 
 #[cfg(feature = "spec-retrieval")]
-use std::collections::{BTreeMap, BTreeSet};
+use std::collections::{BTreeMap, BTreeSet, HashSet};
 
 #[cfg(feature = "spec-retrieval")]
 use std::fs;
@@ -6118,6 +6118,10 @@ fn embedding_similarity_candidates(
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
         .collect();
+    let active_delta_identities: HashSet<(String, String)> = active_delta
+        .iter()
+        .map(|item| (item.target_file.clone(), item.scenario.title.clone()))
+        .collect();
     let delta_texts: Vec<String> = active_delta
         .iter()
         .map(|item| item.scenario.text.clone())
@@ -6166,11 +6170,22 @@ fn embedding_similarity_candidates(
     let projected = project_records(index, delta, &delta_batch.vectors, &active_delta)?;
     for (left, right) in projected.iter().enumerate() {
         for other in projected.iter().skip(left + 1) {
+            let left_is_delta = active_delta_identities
+                .contains(&(right.endpoint.file.clone(), right.endpoint.title.clone()));
+            let right_is_delta = active_delta_identities
+                .contains(&(other.endpoint.file.clone(), other.endpoint.title.clone()));
+            if !left_is_delta && !right_is_delta {
+                continue;
+            }
             let score = cosine_similarity(&right.embedding, &other.embedding);
             if score >= SIMILARITY_THRESHOLD {
                 add_similarity_candidate(
                     &mut candidates,
-                    "projected-permanent",
+                    if left_is_delta && right_is_delta {
+                        "delta-to-delta"
+                    } else {
+                        "delta-to-permanent"
+                    },
                     right.endpoint.clone(),
                     other.endpoint.clone(),
                     score,
