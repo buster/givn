@@ -191,7 +191,10 @@ where
 }
 
 fn ensure_clean_git(project_root: &Path) -> Result<()> {
-    let repository = git(project_root, ["rev-parse", "--is-inside-work-tree"])?;
+    let repository =
+        git(project_root, ["rev-parse", "--is-inside-work-tree"]).map_err(|error| {
+            anyhow::anyhow!("automatic 0.2.0 to 0.3.0 migration requires a Git repository: {error}")
+        })?;
     if !repository.status.success() || String::from_utf8_lossy(&repository.stdout).trim() != "true"
     {
         bail!(

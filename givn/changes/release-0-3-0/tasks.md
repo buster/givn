@@ -156,7 +156,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: Repeating the upgrade does not duplicate the migration
 
-- [ ] Scenario: `Repeating the upgrade does not duplicate the migration`
+- [x] Scenario: `Repeating the upgrade does not duplicate the migration`
   - [x] RED: run the successful preparation twice and assert the second run
         creates another migration change or commit. Must fail.
         ```
@@ -174,28 +174,28 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; active/archive detection is centralized in `migration_exists`.
         ```
-  - [ ] COMMIT: `<hash>` — `fix(upgrade): make migration preparation idempotent`
+  - [x] COMMIT: `8fa1b29` — `fix(upgrade): Repeating the upgrade does not duplicate the migration`
 
 ---
 
 ## Scenario: A project outside Git is protected from a partial automatic migration
 
 - [ ] Scenario: `A project outside Git is protected from a partial automatic migration`
-  - [ ] RED: invoke `givn upgrade` in a 0.2.0 fixture without a Git repository
+  - [x] RED: invoke `givn upgrade` in a 0.2.0 fixture without a Git repository
         and assert that the config changes. Must fail.
         ```
-        <!-- paste RED evidence -->
+        The unimplemented non-Git-fixture step failed with `not implemented: implemented in the non-Git scenario`.
         ```
-  - [ ] GREEN: reject the automatic route before any write with an actionable
+  - [x] GREEN: reject the automatic route before any write with an actionable
         message explaining that Git is required for the requested commit
         boundary.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --features spec-retrieval --test features_runner -- --name "A project outside Git is protected from a partial automatic migration"` passed: `1 scenario (1 passed)`. The config remained byte-for-byte unchanged and the error named the Git requirement.
         ```
-  - [ ] REFACTOR: ensure the diagnostic distinguishes missing Git metadata
+  - [x] REFACTOR: ensure the diagnostic distinguishes missing Git metadata
         from a dirty worktree and does not create a partial migration folder.
         ```
-        <!-- paste REFACTOR evidence -->
+        The rerun passed with `1 scenario (1 passed)`; the existing shared `ensure_clean_git` preflight distinguishes the two diagnostics and no migration folder is created.
         ```
   - [ ] COMMIT: `<hash>` — `fix(upgrade): require git for automatic migrations`
 
