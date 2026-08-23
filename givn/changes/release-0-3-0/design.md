@@ -81,7 +81,7 @@ parallel unit-test substitute.
 
 | Primitive | Type | Purpose |
 |---|---|---|
-| `legacy_config_version` | `fn` | Reads the active `givn_config_version` marker without rewriting comments or user values. |
+| `active_config_version` | `fn` | Reads the active `givn_config_version` marker without rewriting comments or user values. |
 | `MIGRATION_CHANGE_ID` | constant | Defines the deterministic maintenance-change path for 0.2.0 to 0.3.0. |
 | `git_status_is_clean` | `fn` | Rejects dirty or non-Git projects before the automatic migration writes anything. |
 | `managed_generated_paths` | `fn` | Returns the exact config, generated skill/command, and owned-block paths eligible for Commit A. |

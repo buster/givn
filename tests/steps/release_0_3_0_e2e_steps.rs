@@ -22,7 +22,7 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     std::fs::write(
         &config_path,
         config.replace(
-            "givn_config_version: \"0.3.0\"",
+            &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
             "givn_config_version: \"0.2.0\"",
         ),
     )
@@ -78,12 +78,15 @@ fn command_exits_successfully(world: &mut GivnWorld) {
     );
 }
 
-#[then("the project config identifies Givn 0.3.0")]
+#[then("the project config identifies the current Givn version")]
 fn config_identifies_current_version(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
     let config = std::fs::read_to_string(env.path("givn/config.yaml")).expect("read config");
     assert!(
-        config.contains("givn_config_version: \"0.3.0\""),
+        config.contains(&format!(
+            "givn_config_version: \"{}\"",
+            env!("CARGO_PKG_VERSION")
+        )),
         "{config}"
     );
 }
@@ -290,7 +293,7 @@ fn non_git_legacy_project(world: &mut GivnWorld) {
     let config_path = env.path("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).expect("read fixture config");
     let legacy = config.replace(
-        "givn_config_version: \"0.3.0\"",
+        &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
         "givn_config_version: \"0.2.0\"",
     );
     std::fs::write(&config_path, &legacy).expect("write legacy config");

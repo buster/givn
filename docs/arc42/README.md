@@ -75,6 +75,7 @@ and `397/1311/803` are historical snapshots and are not current baselines.
 - [`../../README.md`](../../README.md) - user-facing project overview.
 - [`../TASKS.md`](../TASKS.md) - project implementation task breakdown.
 - [`../../givn/changes/semantic-reranker-budget/tasks.md`](../../givn/changes/semantic-reranker-budget/tasks.md) - open current-change verification status.
+- [`../migrations/0.2.0-to-0.3.0.md`](../migrations/0.2.0-to-0.3.0.md) - LLM prompt pack for the 0.3.0 project migration.
 
 ## Reading Order
 
