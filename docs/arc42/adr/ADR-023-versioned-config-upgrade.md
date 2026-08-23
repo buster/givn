@@ -56,7 +56,9 @@ The embedded configuration documentation evolves with the binary, while project 
 Chosen option: **Use `givn_config_version` and a preservation-oriented managed
 upgrade**. The implementation re-renders the scaffold, retains uncommented
 blocks, synchronizes generated integrations, and commits only an explicit
-Givn-owned path allowlist when files changed. Addon enablement remains explicit.
+Givn-owned path allowlist when files changed. Ignored generated paths are
+force-staged only as individual allowlisted paths; no directory or complete
+worktree is force-staged. Addon enablement remains explicit.
 
 The 0.3.0 refinement adds the embedded migration catalog. A declared route is
 resolved from the active config version to the installed package version,

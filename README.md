@@ -86,7 +86,7 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 | Skill templates hardcoded; overwritten on update | Templates are ejectable override files; updates touch only the embedded fallback |
 | Config scattered across 3 layers | One visible `givn/` directory holds all project config |
 | Opaque config; unclear what's changeable | `givn/config.yaml` is fully commented with documented defaults for every key |
-| No upgrade path when the tool evolves | Config and generated guidance are versioned; `givn upgrade` refreshes and commits managed files, while declared migration bundles become an ordered maintenance change |
+| No upgrade path when the tool evolves | Config and generated guidance are versioned; `givn upgrade` refreshes and commits the explicit managed allowlist, even when generated paths are ignored, while declared migration bundles become an ordered maintenance change |
 | Silent/guessed test running | Default runner is a sentinel that prints setup guidance and fails until configured |
 | A parallel `spec.md` format duplicating the `.feature` | The `.feature` file **is** the spec — nothing duplicated |
 | Coverage gated on an arbitrary percentage | Gate is **completeness of gap classification**, not a number |

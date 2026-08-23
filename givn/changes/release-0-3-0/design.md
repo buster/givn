@@ -155,6 +155,9 @@ shared working tree.
   and refuses before writing.
 - A generated file may share a directory with user files: production staging is
   an explicit path allowlist, never `git add -A` or a directory-wide wildcard.
+- A project may ignore generated agent files in `.gitignore`: staging uses
+  `git add -f --` only for the calculated managed-path allowlist, never for a
+  directory or the complete worktree.
 - The second commit cannot contain its own hash: Commit A is created first;
   its resolved hash is inserted into the migration plan before Commit B.
 

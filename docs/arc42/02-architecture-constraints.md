@@ -29,6 +29,7 @@ register](adr/README.md).
 | TC-19 | Over-cap E5 passages have no vector; fitting passages continue indexing. | `SpecIndex.e5_token_caps` and refresh path |
 | TC-20 | `GIVN_SPEC_MAX_RERANK_PAIRS` accepts positive decimal values and defaults to `2048` when unset. | Current PR #27 implementation; decision remains proposed |
 | TC-21 | Automatic managed upgrades and declared migrations require a Git repository with a clean worktree. | `src/cli/migration.rs`, migration E2E scenarios |
+| TC-22 | Ignored generated paths are force-staged only through the calculated Givn-owned allowlist. | `src/cli/migration.rs`, ignored-path migration E2E fixture |
 
 ## 2.2 Configuration and Gate Constraints
 
@@ -107,7 +108,9 @@ enforced by the runtime.
 
 The automatic 0.2.0-to-0.3.0 route may write and commit only the config
 scaffold, generated agent integrations, Givn-owned fenced blocks, and its own
-migration plan. It must refuse a dirty or non-Git project before writing.
+migration plan. It may force-stage an ignored managed path only after the path
+has been calculated explicitly. It must refuse a dirty or non-Git project
+before writing and must never force-stage a directory or the complete worktree.
 Domain specs, source code, ejected facets, durable Arc42 content, and
 architecture decisions remain project-owned and are changed only through the
 LLM-guided maintenance change.
