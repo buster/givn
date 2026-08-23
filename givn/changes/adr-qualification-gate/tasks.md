@@ -263,32 +263,42 @@ and commit hash are recorded.
 - [x] REFACTOR: rerun the anchored scenario. Output:
       `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
       `cargo fmt --all`.
-- [ ] COMMIT: `<hash>` — `docs(arc42): The ADR guidance requires an adversarial qualification record`
+- [x] COMMIT: `7a923d3` — `docs(arc42): The ADR guidance requires an adversarial qualification record`
 
 ## E2E Smoke Tests
 
-- [ ] E2E setup: verify `./run-tests.sh --e2e` is distinct from
+- [x] E2E setup: verify `./run-tests.sh --e2e` is distinct from
       `./run-tests.sh`, uses the `@e2e` filters, and the capability-specific
       fixture creates an initialized project with active change
-      `adr-qualification-gate`. Full/e2e scenario-count proof: _pending_.
-- [ ] E2E strict proof: run each anchored E2E command with an unimplemented
-      step and confirm non-zero exit before GREEN. Output: _pending_.
+      `adr-qualification-gate`. Full/e2e scenario-count proof: full non-E2E
+      selection ran `15 scenarios (15 passed)`; the E2E selection ran
+      `2 scenarios (1 passed, 1 failed)` while the second E2E step was still
+      unimplemented. The E2E count is strictly smaller.
+- [x] E2E strict proof: run each anchored E2E command with an unimplemented
+      step and confirm non-zero exit before GREEN. Output: the E2E tag run
+      returned `2 scenarios (1 passed, 1 failed)`, with
+      `Step panicked. Captured output: not implemented` and non-zero exit.
 
 ## Scenario: An author requests the strict ADR guidance through the Givn CLI
 
-- [ ] RED: remove only this scenario's `@wip`, add E2E stubs, and run:
+- [x] RED: remove only this scenario's `@wip`, add E2E stubs, and run:
       ```sh
       GIVN_FEATURES=givn/changes/adr-qualification-gate/specs \
         cargo test --features spec-retrieval --test features_runner -- \
         --name '^An author requests the strict ADR guidance through the Givn CLI$'
       ```
-      Output: _pending_. Must exit non-zero.
-- [ ] GREEN: invoke the compiled `givn instructions arc42-docs --change
+      Output: `1 feature`, `1 scenario (1 failed)`, `2 steps (1 passed,
+      1 failed)`, `Step panicked. Captured output: not implemented`, and
+      non-zero exit.
+- [x] GREEN: invoke the compiled `givn instructions arc42-docs --change
       adr-qualification-gate` subprocess and assert CLI stdout and exit status.
       Production files: none; E2E file:
-      `tests/steps/adr_qualification_gate_e2e_steps.rs`. Output: _pending_.
-- [ ] REFACTOR: clean up the E2E fixture without weakening the CLI assertion;
-      rerun the anchored command. Output: _pending_.
+      `tests/steps/adr_qualification_gate_e2e_steps.rs`. Output:
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: clean up the E2E fixture without weakening the CLI assertion;
+      rerun the anchored command. Output:
+      `1 feature`, `1 scenario (1 passed)`, `6 steps (6 passed)` after
+      `cargo fmt --all`.
 - [ ] COMMIT: `<hash>` — `test(e2e): An author requests the strict ADR guidance through the Givn CLI`
 
 ## Scenario: A reviewer requests design-review guidance through the Givn CLI
