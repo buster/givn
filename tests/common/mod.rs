@@ -6,8 +6,16 @@
 //! it is removed automatically on drop, including on panic.
 
 use std::fs;
+use std::io::{Read as _, Write as _};
+use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Command, Output};
+use std::sync::{
+    Arc, Mutex,
+    atomic::{AtomicBool, Ordering},
+};
+use std::thread::{self, JoinHandle};
+use std::time::Duration;
 use tempfile::TempDir;
 
 /// Handle carrying the per-test temp directory. Drop removes the directory.
@@ -26,6 +34,165 @@ impl TestEnv {
     pub fn path(&self, rel: &str) -> PathBuf {
         self.root().join(rel)
     }
+}
+
+/// A local Hugging Face-compatible source used by model acquisition scenarios.
+/// It serves deterministic small artifacts and is never used by production code.
+#[derive(Debug)]
+pub struct ArtifactFixtureServer {
+    endpoint: String,
+    stop: Arc<AtomicBool>,
+    events: Arc<Mutex<Vec<String>>>,
+    thread: Option<JoinHandle<()>>,
+}
+
+impl ArtifactFixtureServer {
+    pub fn start() -> Self {
+        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind artifact fixture");
+        listener
+            .set_nonblocking(true)
+            .expect("configure artifact fixture listener");
+        let endpoint = format!(
+            "http://{}",
+            listener
+                .local_addr()
+                .expect("read artifact fixture address")
+        );
+        let stop = Arc::new(AtomicBool::new(false));
+        let events = Arc::new(Mutex::new(Vec::new()));
+        let stop_thread = Arc::clone(&stop);
+        let events_thread = Arc::clone(&events);
+        let thread = thread::spawn(move || {
+            while !stop_thread.load(Ordering::Relaxed) {
+                match listener.accept() {
+                    Ok((stream, _)) => serve_artifact_request(stream, &events_thread),
+                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
+                        thread::sleep(Duration::from_millis(2));
+                    }
+                    Err(_) => break,
+                }
+            }
+        });
+        Self {
+            endpoint,
+            stop,
+            events,
+            thread: Some(thread),
+        }
+    }
+
+    pub fn endpoint(&self) -> &str {
+        &self.endpoint
+    }
+
+    pub fn events(&self) -> Vec<String> {
+        self.events.lock().expect("lock artifact events").clone()
+    }
+}
+
+impl Drop for ArtifactFixtureServer {
+    fn drop(&mut self) {
+        self.stop.store(true, Ordering::Relaxed);
+        if let Some(thread) = self.thread.take() {
+            thread.join().expect("join artifact fixture server");
+        }
+    }
+}
+
+fn serve_artifact_request(mut stream: TcpStream, events: &Mutex<Vec<String>>) {
+    let mut request = [0u8; 8192];
+    let Ok(size) = stream.read(&mut request) else {
+        return;
+    };
+    let request = String::from_utf8_lossy(&request[..size]);
+    let Some(path) = request
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+    else {
+        return;
+    };
+    events
+        .lock()
+        .expect("lock artifact events")
+        .push(path.to_string());
+    let payload = artifact_fixture_payload(path);
+    let metadata = request.contains("bytes=0-0");
+    let body = if metadata {
+        &payload[..payload.len().min(1)]
+    } else {
+        payload.as_slice()
+    };
+    let end = body.len().saturating_sub(1);
+    let response = format!(
+        "HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nContent-Range: bytes 0-{end}/{}\r\netag: \"fixture-{}\"\r\nx-repo-commit: {}\r\nConnection: close\r\n\r\n",
+        body.len(),
+        payload.len(),
+        stable_fixture_hash(path),
+        fixture_revision(path),
+    );
+    let _ = stream.write_all(response.as_bytes());
+    let _ = stream.write_all(body);
+}
+
+fn fixture_revision(path: &str) -> &str {
+    path.split_once("/resolve/")
+        .and_then(|(_, rest)| rest.split_once('/'))
+        .map(|(revision, _)| revision)
+        .unwrap_or("fixture")
+}
+
+fn stable_fixture_hash(value: &str) -> String {
+    let mut hash = 0xcbf29ce484222325u64;
+    for byte in value.as_bytes() {
+        hash ^= u64::from(*byte);
+        hash = hash.wrapping_mul(0x100000001b3);
+    }
+    format!("{hash:016x}")
+}
+
+fn artifact_fixture_payload(path: &str) -> Vec<u8> {
+    if path.ends_with("tokenizer.json") {
+        return br#"{
+            "version": "1.0",
+            "truncation": null,
+            "padding": null,
+            "added_tokens": [],
+            "normalizer": null,
+            "pre_tokenizer": null,
+            "post_processor": null,
+            "decoder": null,
+            "model": {
+                "type": "BPE",
+                "dropout": null,
+                "unk_token": "[UNK]",
+                "fuse_unk": false,
+                "byte_fallback": false,
+                "vocab": {"[UNK]": 0, "[PAD]": 1, "hello": 2},
+                "merges": []
+            }
+        }"#
+        .to_vec();
+    }
+    if path.ends_with("config.json") && path.contains("mDeBERTa") {
+        return br#"{"id2label":{"0":"entailment","1":"neutral","2":"contradiction"},"pad_token_id":0}"#.to_vec();
+    }
+    if path.ends_with("config.json") {
+        return br#"{"pad_token_id":0}"#.to_vec();
+    }
+    if path.ends_with("tokenizer_config.json") {
+        return br#"{"model_max_length":512,"pad_token":"[PAD]"}"#.to_vec();
+    }
+    if path.ends_with("special_tokens_map.json") {
+        return b"{}".to_vec();
+    }
+    if path.ends_with("model.onnx.data") {
+        return b"fixture-onnx-external-data".to_vec();
+    }
+    if path.ends_with("model.onnx") {
+        return b"fixture-onnx-model".to_vec();
+    }
+    b"fixture-artifact".to_vec()
 }
 
 /// A bare temp directory with no `givn/` subtree — for the uninitialised

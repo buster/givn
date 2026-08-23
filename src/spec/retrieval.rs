@@ -24,6 +24,8 @@ use std::io::Read;
 use serde::{Deserialize, Serialize};
 
 #[cfg(feature = "spec-retrieval")]
+use sha2::{Digest, Sha256};
+#[cfg(feature = "spec-retrieval")]
 use tokenizers::Tokenizer;
 
 #[cfg(feature = "spec-retrieval")]
@@ -32,6 +34,8 @@ const INDEX_VERSION: u32 = 1;
 const MODEL_ID: &str = "intfloat/multilingual-e5-large";
 #[cfg(feature = "spec-retrieval")]
 const E5_TOKENIZER_ID: &str = "intfloat/multilingual-e5-large/tokenizer.json";
+#[cfg(feature = "spec-retrieval")]
+const E5_MODEL_REPOSITORY: &str = "Qdrant/multilingual-e5-large-onnx";
 #[cfg(feature = "spec-retrieval")]
 const E5_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
@@ -54,6 +58,14 @@ const BGE_MAX_LENGTH: usize = 512;
 const RERANKER_TOP_K: usize = 5;
 #[cfg(feature = "nli-evidence")]
 const NLI_MODEL_ID: &str = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7";
+#[cfg(feature = "cross-encoder-reranker")]
+const BGE_MODEL_REVISION: &str = "fbd57b17b4db111a9d16813bb08b4c804fac18e9";
+#[cfg(feature = "nli-evidence")]
+const NLI_MODEL_REVISION: &str = "b5113eb38ab63efdd7f280f8c144ea8b13f978ce";
+#[cfg(feature = "spec-retrieval")]
+const ARTIFACT_MANIFEST_NAME: &str = "givn-artifacts.json";
+#[cfg(feature = "spec-retrieval")]
+const ARTIFACT_MANIFEST_VERSION: u32 = 1;
 #[cfg(feature = "nli-evidence")]
 const NLI_STUB_SELECTOR: &str = "nli-stub";
 #[cfg(feature = "nli-evidence")]
@@ -676,6 +688,7 @@ type DuplicatePairKey = ((String, String), (String, String));
 enum NliBackend {
     Stub,
     Local,
+    Auto,
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -770,6 +783,7 @@ type CandidatePool = (
 enum BgeBackendKind {
     Stub,
     Local,
+    Auto,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -885,6 +899,453 @@ impl BgeRun {
 enum EmbeddingRole {
     Passage,
     Query,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ArtifactManifestFile {
+    bytes: u64,
+    sha256: String,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct ArtifactManifest {
+    schema_version: u32,
+    model: String,
+    repository: String,
+    revision: String,
+    files: BTreeMap<String, ArtifactManifestFile>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+struct ResolvedArtifacts {
+    snapshot: std::path::PathBuf,
+    files: BTreeMap<String, std::path::PathBuf>,
+}
+
+#[cfg(feature = "nli-evidence")]
+#[derive(Debug, Clone)]
+struct NliArtifacts {
+    directory: std::path::PathBuf,
+    model_path: std::path::PathBuf,
+    tokenizer_path: std::path::PathBuf,
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn model_cache_dir(root: &Path, role: &str) -> Result<std::path::PathBuf> {
+    if let Some(path) = std::env::var_os("HF_HOME") {
+        anyhow::ensure!(!path.is_empty(), "HF_HOME must not be empty");
+        return Ok(std::path::PathBuf::from(path));
+    }
+
+    let cache_home = match std::env::var_os("XDG_CACHE_HOME") {
+        Some(path) if !path.is_empty() => {
+            let path = std::path::PathBuf::from(path);
+            anyhow::ensure!(
+                path.is_absolute(),
+                "XDG_CACHE_HOME must be an absolute path, got {}",
+                path.display()
+            );
+            path
+        }
+        _ => std::env::var_os("HOME")
+            .map(std::path::PathBuf::from)
+            .filter(|path| !path.as_os_str().is_empty())
+            .map(|path| path.join(".cache"))
+            .with_context(|| "HOME is required when XDG_CACHE_HOME and HF_HOME are unset")?,
+    };
+    let _ = root;
+    Ok(cache_home.join("givn").join(role))
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn artifact_digest(path: &Path) -> Result<ArtifactManifestFile> {
+    let mut file =
+        fs::File::open(path).with_context(|| format!("read model artifact {}", path.display()))?;
+    let mut hasher = Sha256::new();
+    let mut bytes = 0u64;
+    let mut buffer = [0u8; 8192];
+    loop {
+        let read = file
+            .read(&mut buffer)
+            .with_context(|| format!("read model artifact {}", path.display()))?;
+        if read == 0 {
+            break;
+        }
+        hasher.update(&buffer[..read]);
+        bytes += read as u64;
+    }
+    let sha256 = hasher
+        .finalize()
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect::<String>();
+    Ok(ArtifactManifestFile { bytes, sha256 })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn artifact_manifest_path(cache_root: &Path) -> std::path::PathBuf {
+    cache_root.join(ARTIFACT_MANIFEST_NAME)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn read_artifact_manifest(cache_root: &Path) -> Option<ArtifactManifest> {
+    let bytes = fs::read(artifact_manifest_path(cache_root)).ok()?;
+    serde_json::from_slice(&bytes).ok()
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn snapshot_root(path: &Path, filename: &str) -> Option<std::path::PathBuf> {
+    let mut root = path.to_path_buf();
+    for _ in std::path::Path::new(filename).components() {
+        root.pop();
+    }
+    root.is_dir().then_some(root)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn manifest_matches(
+    manifest: &ArtifactManifest,
+    model: &str,
+    repository: &str,
+    revision: &str,
+    files: &[&str],
+    paths: &BTreeMap<String, std::path::PathBuf>,
+) -> bool {
+    if manifest.schema_version != ARTIFACT_MANIFEST_VERSION
+        || manifest.model != model
+        || manifest.repository != repository
+        || manifest.revision != revision
+        || manifest.files.len() != files.len()
+        || !files.iter().all(|file| manifest.files.contains_key(*file))
+    {
+        return false;
+    }
+    let Some(snapshot) = files
+        .iter()
+        .filter_map(|file| paths.get(*file).and_then(|path| snapshot_root(path, file)))
+        .next()
+    else {
+        return false;
+    };
+    files.iter().all(|file| {
+        let Some(path) = paths.get(*file) else {
+            return false;
+        };
+        snapshot_root(path, file).as_ref() == Some(&snapshot)
+            && path.is_file()
+            && artifact_digest(path)
+                .ok()
+                .as_ref()
+                .zip(manifest.files.get(*file))
+                .is_some_and(|(actual, expected)| {
+                    actual.bytes == expected.bytes && actual.sha256 == expected.sha256
+                })
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn hf_api(cache_root: &Path) -> Result<hf_hub::api::sync::Api> {
+    let mut builder =
+        hf_hub::api::sync::ApiBuilder::from_cache(hf_hub::Cache::new(cache_root.to_path_buf()))
+            .with_progress(false)
+            .with_retries(2);
+    if let Some(endpoint) = std::env::var_os("HF_ENDPOINT") {
+        let endpoint = endpoint
+            .into_string()
+            .map_err(|_| anyhow::anyhow!("HF_ENDPOINT is not valid UTF-8"))?;
+        builder = builder.with_endpoint(endpoint);
+    }
+    builder
+        .build()
+        .context("initialize Hugging Face artifact source")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn fetch_hf_artifacts(
+    cache_root: &Path,
+    model: &str,
+    repository: &str,
+    revision: &str,
+    files: &[&str],
+    force_download: bool,
+) -> Result<ResolvedArtifacts> {
+    fs::create_dir_all(cache_root)
+        .with_context(|| format!("create model cache {}", cache_root.display()))?;
+    let cache = hf_hub::Cache::new(cache_root.to_path_buf());
+    let api = hf_api(cache_root)?;
+    let repo_definition = hf_hub::Repo::with_revision(
+        repository.to_string(),
+        hf_hub::RepoType::Model,
+        revision.to_string(),
+    );
+    let repo = api.repo(repo_definition.clone());
+    let cache_repo = cache.repo(repo_definition);
+    let mut paths = BTreeMap::new();
+    if !force_download {
+        for file in files {
+            let Some(path) = cache_repo.get(file) else {
+                paths.clear();
+                break;
+            };
+            paths.insert((*file).to_string(), path);
+        }
+        if paths.len() == files.len()
+            && read_artifact_manifest(cache_root).is_some_and(|manifest| {
+                manifest_matches(&manifest, model, repository, revision, files, &paths)
+            })
+        {
+            let first_file = files
+                .first()
+                .copied()
+                .context("model artifact list is empty")?;
+            let snapshot = paths
+                .get(first_file)
+                .and_then(|path| snapshot_root(path, first_file))
+                .context("model artifact cache has no snapshot root")?;
+            return Ok(ResolvedArtifacts {
+                snapshot,
+                files: paths,
+            });
+        }
+    }
+
+    for file in files {
+        if let Some(path) = cache_repo.get(file) {
+            let _ = fs::remove_file(path);
+        }
+    }
+    paths.clear();
+    for file in files {
+        let path = repo.download(file).with_context(|| {
+            format!(
+                "download {model} artifact {file} into {}",
+                cache_root.display()
+            )
+        })?;
+        paths.insert((*file).to_string(), path);
+    }
+    let first_file = files
+        .first()
+        .copied()
+        .context("model artifact list is empty")?;
+    let snapshot = paths
+        .get(first_file)
+        .and_then(|path| snapshot_root(path, first_file))
+        .context("downloaded model artifacts have no snapshot root")?;
+    anyhow::ensure!(
+        files.iter().all(|file| {
+            paths
+                .get(*file)
+                .and_then(|path| snapshot_root(path, file))
+                .as_ref()
+                == Some(&snapshot)
+        }),
+        "downloaded model artifacts belong to mixed snapshots"
+    );
+    Ok(ResolvedArtifacts {
+        snapshot,
+        files: paths,
+    })
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn write_artifact_manifest(
+    cache_root: &Path,
+    model: &str,
+    repository: &str,
+    revision: &str,
+    files: &BTreeMap<String, std::path::PathBuf>,
+) -> Result<()> {
+    let manifest = ArtifactManifest {
+        schema_version: ARTIFACT_MANIFEST_VERSION,
+        model: model.to_string(),
+        repository: repository.to_string(),
+        revision: revision.to_string(),
+        files: files
+            .iter()
+            .map(|(name, path)| Ok((name.clone(), artifact_digest(path)?)))
+            .collect::<Result<BTreeMap<_, _>>>()?,
+    };
+    let temporary = artifact_manifest_path(cache_root).with_extension("json.tmp");
+    fs::write(&temporary, serde_json::to_vec_pretty(&manifest)?)
+        .with_context(|| format!("write temporary model manifest {}", temporary.display()))?;
+    fs::rename(&temporary, artifact_manifest_path(cache_root)).with_context(|| {
+        format!(
+            "replace model manifest {}",
+            artifact_manifest_path(cache_root).display()
+        )
+    })?;
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn validate_json_artifact(path: &Path, label: &str) -> Result<()> {
+    let bytes = fs::read(path).with_context(|| format!("read {label} {}", path.display()))?;
+    serde_json::from_slice::<serde_json::Value>(&bytes)
+        .with_context(|| format!("parse {label} {}", path.display()))?;
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn validate_required_files(files: &BTreeMap<String, std::path::PathBuf>) -> Result<()> {
+    for (name, path) in files {
+        anyhow::ensure!(
+            path.is_file(),
+            "model artifact {name} is not a regular file at {}",
+            path.display()
+        );
+        anyhow::ensure!(
+            fs::metadata(path)
+                .with_context(|| format!("read model artifact {}", path.display()))?
+                .len()
+                > 0,
+            "model artifact {name} is empty at {}",
+            path.display()
+        );
+    }
+    Ok(())
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn auto_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
+    let cache_root = std::env::var_os("GIVN_SPEC_BGE_CACHE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or(model_cache_dir(root, "bge")?);
+    let files = [
+        "model.onnx",
+        "model.onnx.data",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ];
+    let mut artifacts = fetch_hf_artifacts(
+        &cache_root,
+        RERANKER_MODEL_ID,
+        RERANKER_MODEL_ID,
+        BGE_MODEL_REVISION,
+        &files,
+        false,
+    )?;
+    let valid = validate_required_files(&artifacts.files)
+        .and_then(|_| load_unbounded_tokenizer(artifacts.files.get("tokenizer.json").unwrap()))
+        .and_then(|_| {
+            validate_json_artifact(artifacts.files.get("config.json").unwrap(), "BGE config")
+        })
+        .and_then(|_| {
+            validate_json_artifact(
+                artifacts.files.get("special_tokens_map.json").unwrap(),
+                "BGE special-token map",
+            )
+        })
+        .and_then(|_| {
+            validate_json_artifact(
+                artifacts.files.get("tokenizer_config.json").unwrap(),
+                "BGE tokenizer config",
+            )
+        });
+    if valid.is_err() {
+        artifacts = fetch_hf_artifacts(
+            &cache_root,
+            RERANKER_MODEL_ID,
+            RERANKER_MODEL_ID,
+            BGE_MODEL_REVISION,
+            &files,
+            true,
+        )?;
+        validate_required_files(&artifacts.files)?;
+        load_unbounded_tokenizer(artifacts.files.get("tokenizer.json").unwrap())?;
+        for name in [
+            "config.json",
+            "special_tokens_map.json",
+            "tokenizer_config.json",
+        ] {
+            validate_json_artifact(artifacts.files.get(name).unwrap(), "BGE metadata")?;
+        }
+    }
+    write_artifact_manifest(
+        &cache_root,
+        RERANKER_MODEL_ID,
+        RERANKER_MODEL_ID,
+        BGE_MODEL_REVISION,
+        &artifacts.files,
+    )?;
+    Ok(artifacts.snapshot)
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn bge_artifact_directory(root: &Path, automatic: bool) -> Result<std::path::PathBuf> {
+    if automatic {
+        auto_bge_artifacts(root)
+    } else {
+        preflight_bge_artifacts(root)
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn auto_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
+    let cache_root = std::env::var_os("GIVN_SPEC_NLI_CACHE")
+        .map(std::path::PathBuf::from)
+        .unwrap_or(model_cache_dir(root, "nli")?);
+    let files = [
+        "onnx/model.onnx",
+        "config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+    ];
+    let mut artifacts = fetch_hf_artifacts(
+        &cache_root,
+        NLI_MODEL_ID,
+        NLI_MODEL_ID,
+        NLI_MODEL_REVISION,
+        &files,
+        false,
+    )?;
+    let validate = |artifacts: &ResolvedArtifacts| -> Result<()> {
+        validate_required_files(&artifacts.files)?;
+        load_unbounded_tokenizer(artifacts.files.get("tokenizer.json").unwrap())?;
+        for name in ["config.json", "tokenizer_config.json"] {
+            validate_json_artifact(artifacts.files.get(name).unwrap(), "NLI metadata")?;
+        }
+        let config_bytes = fs::read(artifacts.files.get("config.json").unwrap())?;
+        let config: serde_json::Value = serde_json::from_slice(&config_bytes)?;
+        nli_label_indices(&config)?;
+        Ok(())
+    };
+    if validate(&artifacts).is_err() {
+        artifacts = fetch_hf_artifacts(
+            &cache_root,
+            NLI_MODEL_ID,
+            NLI_MODEL_ID,
+            NLI_MODEL_REVISION,
+            &files,
+            true,
+        )?;
+        validate(&artifacts)?;
+    }
+    write_artifact_manifest(
+        &cache_root,
+        NLI_MODEL_ID,
+        NLI_MODEL_ID,
+        NLI_MODEL_REVISION,
+        &artifacts.files,
+    )?;
+    Ok(NliArtifacts {
+        directory: artifacts.snapshot,
+        model_path: artifacts.files.get("onnx/model.onnx").unwrap().clone(),
+        tokenizer_path: artifacts.files.get("tokenizer.json").unwrap().clone(),
+    })
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_artifacts_for_backend(root: &Path, automatic: bool) -> Result<NliArtifacts> {
+    if automatic {
+        return auto_nli_artifacts(root);
+    }
+    preflight_nli_artifacts(root)
 }
 
 pub fn index(root: &Path) -> Result<()> {
@@ -1214,11 +1675,12 @@ fn apply_duplicate_bge(
         })
         .collect();
     let tokenizer = match backend {
-        Ok(BgeBackendKind::Local)
+        Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
             if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
         {
+            let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
             Some(load_unbounded_tokenizer(
-                &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+                &bge_artifact_directory(root, automatic)?.join("tokenizer.json"),
             )?)
         }
         _ => None,
@@ -1336,9 +1798,11 @@ fn apply_duplicate_nli(
             })
             .collect();
         let tokenizer = match selection {
-            Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
-                &preflight_nli_artifacts(root)?.join("tokenizer.json"),
-            )?),
+            Ok(NliBackend::Local | NliBackend::Auto) => {
+                let artifacts =
+                    nli_artifacts_for_backend(root, matches!(selection, Ok(NliBackend::Auto)))?;
+                Some(load_unbounded_tokenizer(&artifacts.tokenizer_path)?)
+            }
             _ => None,
         };
         let partition =
@@ -2343,11 +2807,12 @@ fn apply_semantic_bge(
         })
         .collect();
     let tokenizer = match backend {
-        Ok(BgeBackendKind::Local)
+        Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
             if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
         {
+            let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
             Some(load_unbounded_tokenizer(
-                &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+                &bge_artifact_directory(root, automatic)?.join("tokenizer.json"),
             )?)
         }
         _ => None,
@@ -2434,9 +2899,11 @@ fn apply_semantic_nli(
         })
         .collect();
     let tokenizer = match selection {
-        Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
-            &preflight_nli_artifacts(root)?.join("tokenizer.json"),
-        )?),
+        Ok(NliBackend::Local | NliBackend::Auto) => {
+            let artifacts =
+                nli_artifacts_for_backend(root, matches!(selection, Ok(NliBackend::Auto)))?;
+            Some(load_unbounded_tokenizer(&artifacts.tokenizer_path)?)
+        }
         _ => None,
     };
     let partition =
@@ -3952,11 +4419,12 @@ fn bge_explore_run(
         pairs.push((query_endpoint.clone(), candidate_endpoint));
     }
     let tokenizer = match backend {
-        Ok(BgeBackendKind::Local)
+        Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
             if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
         {
+            let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
             Some(load_unbounded_tokenizer(
-                &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+                &bge_artifact_directory(root, automatic)?.join("tokenizer.json"),
             )?)
         }
         _ => None,
@@ -4010,9 +4478,11 @@ fn nli_explore_run(
         pairs.push((query_endpoint.clone(), candidate_endpoint));
     }
     let tokenizer = match selection {
-        Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
-            &preflight_nli_artifacts(root)?.join("tokenizer.json"),
-        )?),
+        Ok(NliBackend::Local | NliBackend::Auto) => {
+            let artifacts =
+                nli_artifacts_for_backend(root, matches!(selection, Ok(NliBackend::Auto)))?;
+            Some(load_unbounded_tokenizer(&artifacts.tokenizer_path)?)
+        }
         _ => None,
     };
     let partition =
@@ -4085,15 +4555,29 @@ fn bge_backend(
             );
             Ok(Some(Err(BgeUnavailableReason::MissingArtifact)))
         }
+        Ok("auto") => Ok(Some(match auto_bge_artifacts(root) {
+            Ok(_) => Ok(BgeBackendKind::Auto),
+            Err(error) => {
+                eprintln!(
+                    "BGE model is unavailable; automatic acquisition failed: {error:#}; set GIVN_SPEC_BGE_MODEL_DIR for a validated local artifact set"
+                );
+                Err(BgeUnavailableReason::MissingArtifact)
+            }
+        })),
         Ok("local") => Ok(Some(match preflight_bge_artifacts(root) {
             Ok(_) => Ok(BgeBackendKind::Local),
             Err(_) => Err(BgeUnavailableReason::MissingArtifact),
         })),
         Ok(value) => bail!("unknown GIVN_SPEC_BGE value `{value}`"),
         Err(std::env::VarError::NotPresent) if !bge_approval_valid(root) => Ok(None),
-        Err(std::env::VarError::NotPresent) => Ok(Some(match preflight_bge_artifacts(root) {
-            Ok(_) => Ok(BgeBackendKind::Local),
-            Err(_) => Err(BgeUnavailableReason::MissingArtifact),
+        Err(std::env::VarError::NotPresent) => Ok(Some(match auto_bge_artifacts(root) {
+            Ok(_) => Ok(BgeBackendKind::Auto),
+            Err(error) => {
+                eprintln!(
+                    "BGE model is unavailable; automatic acquisition failed: {error:#}; set GIVN_SPEC_BGE_MODEL_DIR for a validated local artifact set"
+                );
+                Err(BgeUnavailableReason::MissingArtifact)
+            }
         })),
         Err(std::env::VarError::NotUnicode(_)) => bail!("GIVN_SPEC_BGE is not valid UTF-8"),
     }
@@ -4226,8 +4710,8 @@ fn score_bge_pairs(
                 );
             }
         }
-        BgeBackendKind::Local => {
-            let directory = preflight_bge_artifacts(root)?;
+        BgeBackendKind::Local | BgeBackendKind::Auto => {
+            let directory = bge_artifact_directory(root, matches!(backend, BgeBackendKind::Auto))?;
             if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() == Ok("1") {
                 for (left, right) in pairs {
                     let forward = bge_directional_score(left, right, texts, overrides.as_ref())?;
@@ -4778,11 +5262,12 @@ fn run_second_stage_advisory_review(
             .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
             .collect();
         let tokenizer = match backend {
-            Ok(BgeBackendKind::Local)
+            Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
                 if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
             {
+                let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
                 Some(load_unbounded_tokenizer(
-                    &preflight_bge_artifacts(root)?.join("tokenizer.json"),
+                    &bge_artifact_directory(root, automatic)?.join("tokenizer.json"),
                 )?)
             }
             _ => None,
@@ -4839,9 +5324,11 @@ fn run_second_stage_advisory_review(
             .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
             .collect();
         let tokenizer = match selection {
-            Ok(NliBackend::Local) => Some(load_unbounded_tokenizer(
-                &preflight_nli_artifacts(root)?.join("tokenizer.json"),
-            )?),
+            Ok(NliBackend::Local | NliBackend::Auto) => {
+                let artifacts =
+                    nli_artifacts_for_backend(root, matches!(selection, Ok(NliBackend::Auto)))?;
+                Some(load_unbounded_tokenizer(&artifacts.tokenizer_path)?)
+            }
             _ => None,
         };
         let partition =
@@ -6241,6 +6728,15 @@ fn nli_backend_selection(
             Ok(_) => Ok(NliBackend::Local),
             Err(_) => Err(NliUnavailableReason::MissingArtifact),
         })),
+        Ok("nli-auto") => Ok(Some(match auto_nli_artifacts(root) {
+            Ok(_) => Ok(NliBackend::Auto),
+            Err(error) => {
+                eprintln!(
+                    "NLI model is unavailable; automatic acquisition failed: {error:#}; set GIVN_SPEC_NLI_MODEL_DIR for a validated local artifact set"
+                );
+                Err(NliUnavailableReason::MissingArtifact)
+            }
+        })),
         Ok(value) if value == NLI_STUB_SELECTOR => Ok(Some(Ok(NliBackend::Stub))),
         Ok("nli-missing") => {
             eprintln!(
@@ -6258,10 +6754,10 @@ fn nli_backend_selection(
 }
 
 #[cfg(feature = "nli-evidence")]
-fn preflight_nli_artifacts(root: &Path) -> Result<std::path::PathBuf> {
+fn preflight_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
     let directory = std::env::var_os("GIVN_SPEC_NLI_MODEL_DIR")
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| root.join("givn/.spec-nli-cache"));
+        .unwrap_or(model_cache_dir(root, "nli")?);
     let model_path = directory.join("model.onnx");
     anyhow::ensure!(
         fs::metadata(&model_path)
@@ -6279,7 +6775,17 @@ fn preflight_nli_artifacts(root: &Path) -> Result<std::path::PathBuf> {
                 .with_context(|| format!("parse NLI model artifact {}", path.display()))?;
         }
     }
-    Ok(directory)
+    load_unbounded_tokenizer(&directory.join("tokenizer.json"))?;
+    let config: serde_json::Value = serde_json::from_slice(
+        &fs::read(directory.join("config.json")).context("read NLI config.json")?,
+    )
+    .context("parse NLI config.json")?;
+    nli_label_indices(&config)?;
+    Ok(NliArtifacts {
+        tokenizer_path: directory.join("tokenizer.json"),
+        model_path,
+        directory,
+    })
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -6304,22 +6810,33 @@ fn score_nli_pairs(
                 );
             }
         }
-        NliBackend::Local => {
-            let mut classifier = NliClassifier::load(root)
-                .context("NLI model is unavailable; check GIVN_SPEC_NLI_MODEL_DIR")?;
-            let mut input_pairs = Vec::with_capacity(pairs.len() * 2);
-            for (left, right) in pairs {
-                let left_text = scenario_text_for(texts, left)?;
-                let right_text = scenario_text_for(texts, right)?;
-                input_pairs.push((left_text.to_string(), right_text.to_string()));
-                input_pairs.push((right_text.to_string(), left_text.to_string()));
-            }
-            let logits = classifier.score_pairs(&input_pairs)?;
-            for ((left, right), pair_logits) in pairs.iter().zip(logits.chunks_exact(2)) {
-                evidence.insert(
-                    canonical_pair_key(left.clone(), right.clone()),
-                    nli_evidence(pair_logits[0], pair_logits[1]),
-                );
+        NliBackend::Local | NliBackend::Auto => {
+            if std::env::var("GIVN_SPEC_NLI_LOCAL_STUB").as_deref() == Ok("1") {
+                for (left, right) in pairs {
+                    let forward = nli_directional_logits(left, right, texts, overrides.as_ref())?;
+                    let reverse = nli_directional_logits(right, left, texts, overrides.as_ref())?;
+                    evidence.insert(
+                        canonical_pair_key(left.clone(), right.clone()),
+                        nli_evidence(forward, reverse),
+                    );
+                }
+            } else {
+                let mut classifier = NliClassifier::load(root, matches!(backend, NliBackend::Auto))
+                    .context("NLI model is unavailable; check GIVN_SPEC_NLI_MODEL_DIR")?;
+                let mut input_pairs = Vec::with_capacity(pairs.len() * 2);
+                for (left, right) in pairs {
+                    let left_text = scenario_text_for(texts, left)?;
+                    let right_text = scenario_text_for(texts, right)?;
+                    input_pairs.push((left_text.to_string(), right_text.to_string()));
+                    input_pairs.push((right_text.to_string(), left_text.to_string()));
+                }
+                let logits = classifier.score_pairs(&input_pairs)?;
+                for ((left, right), pair_logits) in pairs.iter().zip(logits.chunks_exact(2)) {
+                    evidence.insert(
+                        canonical_pair_key(left.clone(), right.clone()),
+                        nli_evidence(pair_logits[0], pair_logits[1]),
+                    );
+                }
             }
         }
     }
@@ -6562,10 +7079,9 @@ struct NliClassifier {
 
 #[cfg(feature = "nli-evidence")]
 impl NliClassifier {
-    fn load(root: &Path) -> Result<Self> {
-        let model_dir = std::env::var_os("GIVN_SPEC_NLI_MODEL_DIR")
-            .map(std::path::PathBuf::from)
-            .unwrap_or_else(|| root.join("givn/.spec-nli-cache"));
+    fn load(root: &Path, automatic: bool) -> Result<Self> {
+        let artifacts = nli_artifacts_for_backend(root, automatic)?;
+        let model_dir = artifacts.directory;
         let config_path = model_dir.join("config.json");
         let config_bytes = fs::read(&config_path)
             .with_context(|| format!("read NLI config {}", config_path.display()))?;
@@ -6573,18 +7089,16 @@ impl NliClassifier {
             serde_json::from_slice(&config_bytes).context("parse NLI config.json")?;
         let label_indices = nli_label_indices(&config)?;
 
-        let tokenizer_path = model_dir.join("tokenizer.json");
-        let tokenizer = load_unbounded_tokenizer(&tokenizer_path)?;
+        let tokenizer = load_unbounded_tokenizer(&artifacts.tokenizer_path)?;
 
-        let model_path = model_dir.join("model.onnx");
         let session = ort::session::Session::builder()
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
             .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
             .with_intra_threads(4)
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
-            .commit_from_file(&model_path)
-            .with_context(|| format!("load NLI ONNX model {}", model_path.display()))?;
+            .commit_from_file(&artifacts.model_path)
+            .with_context(|| format!("load NLI ONNX model {}", artifacts.model_path.display()))?;
         let need_token_type_ids = session
             .inputs()
             .iter()
@@ -7053,7 +7567,7 @@ fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Emb
                 .map(|path| path.display().to_string())
                 .unwrap_or_else(|_| "<unresolved>".to_string());
             bail!(
-                "retrieval model is unavailable; E5 cache={cache}; failed artifact=model.onnx or tokenizer.json; configure GIVN_SPEC_MODEL_CACHE or set GIVN_SPEC_E5_TOKENIZER, or unset GIVN_SPEC_EMBEDDER"
+                "retrieval model is unavailable; repository={E5_MODEL_REPOSITORY}; E5 cache={cache}; failed artifact=model.onnx or tokenizer.json; configure GIVN_SPEC_MODEL_CACHE or set GIVN_SPEC_E5_TOKENIZER, or unset GIVN_SPEC_EMBEDDER"
             )
         }
         Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),
