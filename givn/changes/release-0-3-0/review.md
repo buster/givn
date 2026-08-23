@@ -31,9 +31,9 @@ exit status, output, files, and commit history.
 | The changelog describes the complete 0.3.0 release | `65d0b62` | Yes — public release artifact and executable documentation binding |
 | The migration guide is an executable prompt sequence | `2eb8248` | Yes — public migration artifact and executable guide binding |
 | The migration catalog defines complete release-owned bundles | `3989ebe` | Yes — embedded catalog, bundle assets, resolver, and executable catalog binding |
-| Cargo installation enables every declared feature by default | `<pending>` | Yes — Cargo default list, minimal-build documentation, executable release assertion, and all-default lint cleanup |
+| Cargo installation enables every declared feature by default | `65ece69`, `426f2a1`, `082d3db` | Yes — Cargo default list, minimal-build documentation, executable release assertion, all-default lint cleanup, and the corrected blocking-pair scope |
 | A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | `6157355` | Yes — migration runtime, allowlist, Git commits, and CLI binding |
-| A clean project without migration requirements receives one managed upgrade commit | `3989ebe` | Yes — managed-upgrade runtime, no-migration dispatch, and CLI binding |
+| A clean project without migration requirements receives one managed upgrade commit | `c678344` | Yes — managed-upgrade runtime, no-migration dispatch, CLI binding, and no-empty-commit unit boundary |
 | An unclean project is protected from automatic migration commits | `86be977` | Yes — dirty-worktree runtime guard and CLI binding |
 | Repeating the upgrade does not duplicate the migration | `8fa1b29` | Yes — idempotent runtime guard and CLI binding |
 | A project outside Git is protected from a partial automatic migration | `56f8b09` | Yes — Git preflight diagnostic and CLI binding |
@@ -93,11 +93,10 @@ has no remote or shared state.
 
 | `verify.command` value | `verify.e2e_command` value | Identical? | Full change-suite count | E2e-only count | Strictly smaller? |
 |---|---|---|---:|---:|---|
-| `./run-tests.sh` | `./run-tests.sh --e2e` | No | pending final run | pending final run | Yes |
+| `./run-tests.sh` | `./run-tests.sh --e2e` | No | 13 scenarios, 13 passed | 3 scenarios, 3 passed | Yes |
 
-The direct release run before the current feature-default scenario proved 9
-non-E2E scenarios and 3 E2E scenarios. The final run must include the new
-default-feature scenario.
+The direct release runs proved 10 non-E2E scenarios and 3 E2E scenarios; the
+review-gate run exercised the same 13-scenario feature scope.
 
 **Design.md conformance check**
 
@@ -108,6 +107,7 @@ default-feature scenario.
 | Generated scope | Explicit config/skill/command/owned-block allowlist | `managed_generated_paths` plus `givn/config.yaml` | Yes |
 | Commit protocol | One managed commit without migration, or Commit A plus aggregate plan Commit B | `prepare_managed_upgrade`, `prepare_legacy_upgrade`, and `commit_migration_plan` | Yes |
 | Plan shape | Proposal, design, `migration.yaml`, `.givn-skip: specs`; no fake evidence | `write_aggregate_migration_plan` and generated content | Yes |
+| Blocking semantic scope | Active Delta relationships only; permanent-permanent pairs excluded | `embedding_similarity_candidates` filters projected pairs by active delta identity | Yes |
 | Maintenance archive | Permanent verify path; no delta semantic gate or synthetic feature | `check.rs` and `archive.rs` inspect the skip marker | Yes |
 | E2E bindings | Separate compiled-CLI capability file | `tests/steps/release_0_3_0_e2e_steps.rs` | Yes |
 | Runner strictness | Cucumber `fail_on_skipped()` and real step bodies | `tests/features_runner.rs` and release bindings | Yes |
@@ -137,7 +137,7 @@ implementation:
 | Binary/Git deployment boundary | `07-deployment-view.md` | Yes | Git requirement and generated footprint | Non-Git scenario | Git preflight | Yes |
 | Cross-cutting ownership/idempotency | `08-crosscutting-concepts.md` | Yes | Config, allowlist, catalog, pending plan, and gates | Catalog, repeat, existing-plan, and managed-only scenarios | `migration_path`, `pending_migration_change`, snapshots | Yes |
 | ADR-023/ADR-055 refinement | `09-architecture-decisions.md`, ADR-023, ADR-055 | Yes | `AMEND_ADR` to both existing decisions | ADR documentation task | ADR-023, ADR-055, and both indexes | Yes |
-| Release quality scenarios | `10-quality-requirements.md` | Yes | E2E matrix, managed-only path, safety boundaries, and installation defaults | Q-48 through Q-56 | 13 passing scenarios pending final run | Yes |
+| Release quality scenarios | `10-quality-requirements.md` | Yes | E2E matrix, managed-only path, safety boundaries, and installation defaults | Q-48 through Q-56 | 13 passing scenarios | Yes |
 | Migration risks | `11-risks-and-technical-debt.md` | Yes | Failure, marker, catalog, aggregate-order, and default-build-cost semantics | Review and archive tasks | R-27 through R-32 | Yes |
 | Migration vocabulary | `12-glossary.md` | Yes | Managed upgrade, bundle/catalog, aggregate plan terminology | Catalog, honesty, and archive scenarios | glossary entries | Yes |
 
@@ -150,14 +150,17 @@ implementation:
 - [x] The durable chapters and change-level assessment agree.
 - [x] No Arc42 mismatch remains.
 
-ARC42 CONFORMANCE: PENDING FINAL DEFAULT-FEATURE REVIEW
+ARC42 CONFORMANCE: CLEAN
 
 ## Coverage
 
 **Full repository coverage:**
 
 ```text
-pending final default-feature coverage run
+non-E2E: 335 scenarios passed
+E2E:      61 scenarios passed
+merged:   13168 / 19656 lines covered = 66.9923%
+branches: 0 / 0 (Cobertura emitted no branch nodes)
 ```
 
 The global report is `coverage/cobertura-coverage.xml`, produced by
@@ -166,7 +169,9 @@ The global report is `coverage/cobertura-coverage.xml`, produced by
 **Release-specific coverage:**
 
 ```text
-pending final default-feature coverage run
+release scope: 13 scenarios passed
+merged release scope: 2610 / 19656 lines covered = 13.2784%
+src/cli/migration.rs: 450 / 548 lines covered = 82.1168%
 ```
 
 The release-specific report is `coverage/release-cobertura.xml`, produced by
@@ -179,7 +184,9 @@ migration path from being misclassified as absent coverage.
 
 | Location | Lines | Classification | Action taken |
 |---|---:|---|---|
-| All coverage regions | Pending | Pending | Re-run after the default feature set and release scenario are complete. |
+| Existing production modules outside the release delta | 6488 uncovered lines in the full repository report | Legitimately hard to test in this change | The permanent suite and prior change evidence own those paths; adding unrelated release scenarios would violate the release boundary and the black-box-first rule. |
+| Release-specific existing runtime code not reached by the thirteen migration scenarios | 17046 lines in the release-only report | Legitimately hard to test in this change | The report is a change-scope diagnostic; existing code is covered by the full permanent suite, while the release scenarios cover every new externally observable route. |
+| `src/cli/migration.rs` failure-only Git commit, snapshot-restore, and temporary-I/O branches | 98 uncovered lines in the release-specific report | Legitimately hard to test | These branches require injected filesystem failure, failing Git hooks, or missing commit identity while preserving the pre-write fixture. The success, managed-only, dirty, non-Git, existing-plan, idempotent, catalog, and archive boundaries are covered through the real CLI or focused catalog tests; the remaining fault-injection paths are explicitly isolated and do not alter user history. |
 | Branch metric | 0 valid branch nodes emitted | Legitimately hard to test in this Cobertura format | The producer emitted `0/0`; no branch denominator exists to classify. |
 
 No dead code was introduced and no redundant unit-test copy of a release
@@ -191,48 +198,71 @@ boundaries that are not distinct user actions.
 The blocking review gate generated and retained:
 
 ```text
-Status: PENDING FINAL DEFAULT-FEATURE REVIEW
-Candidate count: pending
+Status: PASS
+Candidate count: 0
 ```
 
-The previous gate was run with the feature-enabled CLI and deterministic stub
-embedding environment before the default-feature scenario was added. Re-run it
-with the final binary and retain the resulting report.
+The gate was run with the installed all-feature `givn 0.3.0` binary and
+deterministic stub embedding with BGE/NLI disabled. The blocking path reported
+zero candidates after permanent-permanent projected pairs were excluded. No
+semantic report was silently omitted.
 
 ## Test Suite Result
 
 ```text
-final default-feature verification pending
+GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'
+10 scenarios passed; 44 steps passed
+
+GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags @e2e
+3 scenarios passed; 19 steps passed
+
+cargo test --lib
+156 tests passed
+
+cargo test --no-default-features --lib
+151 tests passed
+
+cargo fmt --all -- --check
+passed
+
+cargo clippy --workspace --all-targets -- -D warnings
+passed
+
+givn lint --change release-0-3-0
+clean
+
+GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled GIVN_SPEC_RERANKER=disabled givn check review --change release-0-3-0
+verify, verify-e2e, integrity, overlap, and semantic review passed
 ```
 
-**Result:** PENDING
+**Result:** PASS
 
-**Coverage measured:** pending final default-feature run
+**Coverage measured:** YES
 
 ## Sign-off
 
-- [ ] Fabrication audit clean: no empty step bodies, all task commits and
+- [x] Fabrication audit clean: no empty step bodies, all task commits and
       authoritative release/runtime paths checked, all promised components
       exist, and no downgraded or over-produced E2E scenarios remain.
-- [ ] All release scenarios pass through the configured Cucumber runner.
-- [ ] Every coverage region relevant to this change is measured or classified
+- [x] All release scenarios pass through the configured Cucumber runner.
+- [x] Every coverage region relevant to this change is measured or classified
       in one of the three permitted buckets.
-- [ ] No `@wip` tags remain in the release delta.
-- [ ] The release delta contains observable behavior only; implementation
+- [x] No `@wip` tags remain in the release delta.
+- [x] The release delta contains observable behavior only; implementation
       detail remains in `design.md` and the task plan.
-- [ ] Local runnability requires no external service and uses isolated local
+- [x] Local runnability requires no external service and uses isolated local
       Git fixtures.
-- [ ] The exact E2E command and capability-specific implementation were read;
+- [x] The exact E2E command and capability-specific implementation were read;
       no parallel implementation exists.
-- [ ] `verify.e2e_command` is distinct from `verify.command` and its count is
+- [x] `verify.e2e_command` is distinct from `verify.command` and its count is
       strictly smaller.
-- [ ] Implementation commands, file layout, framework, and interface match
+- [x] Implementation commands, file layout, framework, and interface match
       `design.md` after the follow-up archive hardening review.
-- [ ] Every interaction inventory entry maps to the design matrix, a matching
+- [x] Every interaction inventory entry maps to the design matrix, a matching
       E2E scenario, and the promised real CLI mechanism.
-- [ ] `design.md` contains `## Internal Primitives` and those primitives exist
+- [x] `design.md` contains `## Internal Primitives` and those primitives exist
       in the implementation.
-- [ ] Every Arc42 slug maps to an existing durable chapter file.
-- [ ] No finding is excused with a fourth classification bucket.
+- [x] Every Arc42 slug maps to an existing durable chapter file.
+- [x] No finding is excused with a fourth classification bucket.
 
-REVIEW: IN PROGRESS
+REVIEW: PASS
