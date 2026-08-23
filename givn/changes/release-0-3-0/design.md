@@ -151,9 +151,12 @@ the release documentation and pure fixture assertions.
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
 | run `givn upgrade` in a clean project created with Givn 0.2.0 | A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | CLI | Invoke the compiled `givn upgrade` subprocess and inspect stdout, files, and local Git commits. |
+| archive a completed 0.2.0-to-0.3.0 maintenance migration without a product specification | A completed maintenance migration can be archived without a product specification | CLI | Invoke the compiled `givn archive --change migrate-0-2-0-to-0-3-0` subprocess and inspect the archive and permanent spec tree. |
 
-The E2E test does not rely on a pre-existing migration plan, parent checkout,
-network, or direct library calls to prove the CLI behavior.
+The upgrade E2E test does not rely on a pre-existing migration plan, parent
+checkout, network, or direct library calls to prove preparation. The archive
+E2E test creates a controlled completed maintenance plan because its behavior
+is specifically the archive boundary for that plan.
 
 ## Architecture Impact
 
@@ -227,6 +230,12 @@ opencode commands, and `AGENTS.md` because Givn owns only its fenced blocks in
 that file. It excludes source code, specs, active changes other than the
 deterministic migration directory, Arc42 durable content, ejected facets, and
 all unrelated files.
+
+When the maintenance change lists `specs` in `.givn-skip`, archive verification
+uses the project's permanent `verify.features_path` rather than the absent
+change delta. The blocking semantic gate is not run for a change with no
+product delta. Archive still requires the maintenance change's tasks and review
+artifacts and still runs the configured global verification and coverage gates.
 
 If a managed render fails before Commit A, the pre-write snapshot is restored
 and no commit is attempted. If Git refuses Commit A or Commit B, the command

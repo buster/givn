@@ -9,11 +9,11 @@
 | 03 context-and-scope | Yes | Adds the upgraded `givn upgrade` interaction and 0.3.0 migration scope. |
 | 04 solution-strategy | Yes | Separates machine-safe preparation from LLM-reviewed project migration. |
 | 05 building-block-view | Yes | Adds the migration orchestration building block. |
-| 06 runtime-view | Yes | Documents the preflight, Commit A, plan creation, and Commit B sequence. |
+| 06 runtime-view | Yes | Documents the preflight, Commit A, plan creation, Commit B, and no-product-delta archive sequence. |
 | 07 deployment-view | Yes | Documents the 0.3.0 binary use and Git requirement. |
 | 08 crosscutting-concepts | Yes | Defines ownership, idempotency, maintenance-change, and two-commit semantics. |
 | 09 architecture-decisions | Yes | Records the ADR-023 amendment and its boundary. |
-| 10 quality-requirements | Yes | Adds release, safety, and migration-guidance scenarios Q-48 through Q-52. |
+| 10 quality-requirements | Yes | Adds release, safety, migration-guidance, and maintenance-archive scenarios Q-48 through Q-53. |
 | 11 risks-and-technical-debt | Yes | Adds risks for generated-path ownership, split commits, and marker interpretation. |
 | 12 glossary | Yes | Adds managed upgrade, maintenance change, migration plan, and commit terminology. |
 

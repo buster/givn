@@ -12,7 +12,11 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     // Determine features_path: active change's features, or default specs.
     let features_path = if let Some(id) = change {
         let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
-        change_dir.join("specs").to_string_lossy().into_owned()
+        if crate::state::is_skipped("specs", &change_dir) {
+            manifest.verify.features_path.clone()
+        } else {
+            change_dir.join("specs").to_string_lossy().into_owned()
+        }
     } else {
         manifest.verify.features_path.clone()
     };

@@ -86,6 +86,7 @@ graph TD
 | Q-50 | Release safety | A project is not a Git repository. | The automatic route fails before writing and explains the required Git boundary. |
 | Q-51 | Release safety | A migration plan already exists. | Upgrade reports it and never overwrites or duplicates the plan. |
 | Q-52 | Migration guidance | An LLM opens the generated maintenance change. | Proposal and design provide ordered project-specific prompts; no synthetic product spec or fabricated pass evidence exists. |
+| Q-53 | Maintenance archive | A completed migration change intentionally skips `specs`. | Global verification uses permanent specs, no delta semantic gate is invoked, archive succeeds, and no migration feature is added to permanent specs. |
 
 ## 10.3 Verification Signals
 

@@ -327,7 +327,7 @@ newly known addons not represented in the old config.
 `givn completions <shell>` writes no project files and prints a shell completion
 script to stdout.
 
-## 6.14 `givn upgrade` from 0.2.0 to 0.3.0
+## 6.13 `givn upgrade` from 0.2.0 to 0.3.0
 
 When the active config marker is exactly `0.2.0`, the command first verifies
 that the project is inside a Git worktree and that
@@ -347,7 +347,12 @@ fabricated design-review, task, implementation, or review evidence. The
 project LLM must continue the normal workflow and archive the maintenance plan
 after all project-specific decisions and verification are complete.
 
-## 6.13 Repository-Owned Acceptance Flow
+At archive time, a maintenance change whose `.givn-skip` lists `specs` has no
+delta to merge or compare semantically. Its global verify and E2E hooks run
+against the permanent project feature path, and the change-specific semantic
+gate is skipped. Tasks, review, and all other archive gates remain required.
+
+## 6.14 Repository-Owned Acceptance Flow
 
 The Cucumber test binary creates an isolated temporary project, invokes the
 compiled CLI, captures exit status and stdout/stderr, and performs secondary
