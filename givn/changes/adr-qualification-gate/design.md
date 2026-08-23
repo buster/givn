@@ -116,6 +116,13 @@ an ADR candidate at runtime; the structured verdict is an LLM/authoring
 protocol whose wording is verified through the guidance and CLI-output
 contracts.
 
+## Internal Primitives
+
+None. This change introduces no production Rust struct, function, enum, schema,
+or runtime abstraction. The structured verdict is a guidance-level JSON
+contract, and the test bindings use the existing `GivnWorld` and subprocess
+helpers.
+
 ## ADR Qualification Model
 
 The implementation will make the following checks explicit in the guidance.
