@@ -39,6 +39,7 @@ historical measurement is not a current quality claim.
 | R-30 | A future migration catalog contains a broken edge or incomplete bundle and leaves a version gap unclear. | Medium | High | Validate schema, unique IDs, advancing versions, referenced assets, ordered paths, and fail explicitly once a declared route has started. |
 | R-31 | Multiple required bundle phases are treated as independent concurrent changes. | Medium | High | Materialize one aggregate maintenance change with `migration.yaml`, explicit sequence numbers, and prompts that require strict phase order. |
 | R-32 | Enabling all declared retrieval features by default increases native build cost or exposes unavailable local model artifacts at first use. | Medium | High | Keep features independently selectable, report missing artifacts explicitly, document `--no-default-features`, and retain the same non-silent unavailable behavior. |
+| R-33 | Force-staging an ignored managed path could accidentally include unrelated user content. | Medium | Critical | Resolve individual managed paths before staging, use `git add -f --` only for that allowlist, never stage directories, and retain the clean-worktree preflight. |
 
 ## 11.2 Deliberate Technical Debt
 

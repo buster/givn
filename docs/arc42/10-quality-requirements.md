@@ -91,6 +91,7 @@ graph TD
 | Q-54 | Managed upgrade | A clean project has stale generated guidance but no selected migration route. | Config/guidance changes are committed once through the allowlist and no maintenance change is created. |
 | Q-55 | Version skipping | A 0.2.0 project upgrades directly to a later compatible 0.3.x binary. | The 0.2.0-to-0.3.0 migration route remains selected rather than being bypassed by exact-version matching. |
 | Q-56 | Installability | A maintainer installs Givn without an explicit feature flag. | Every declared Cargo feature is enabled by default; `--no-default-features` remains an explicit feature-free escape hatch. |
+| Q-57 | Release safety | A consumer `.gitignore` excludes generated agent files. | Upgrade force-stages only the explicit managed allowlist and still excludes unrelated files and directories. |
 
 ## 10.3 Verification Signals
 

@@ -73,7 +73,9 @@ docs/migrations/0.2.0-to-0.3.0.md
 
 The automatic preparation never changes domain specifications, source code,
 ejected facets, durable Arc42 facts, or user-authored files. It refuses dirty
-or non-Git projects before writing and never stages the complete worktree.
+or non-Git projects before writing, force-stages only its explicit managed
+allowlist when generated paths are ignored, and never stages the complete
+worktree.
 
 ### Verification Boundary
 

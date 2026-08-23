@@ -12,6 +12,9 @@ source repository available.
    active changes, permanent specs, ejected facets, and optional Arc42/ADR
    documents before editing.
 2. Confirm the machine-safe managed upgrade commit and inspect its allowlist.
+   The allowlist may include generated paths ignored by the consumer's
+   `.gitignore`; Givn force-stages only those exact managed paths, never a
+   directory or the complete worktree.
 3. Synchronize generated guidance without overwriting project-owned overrides.
 4. Review active changes and permanent specifications against the 0.3.0
    interaction, overlap, semantic, E2E, and review contracts.
