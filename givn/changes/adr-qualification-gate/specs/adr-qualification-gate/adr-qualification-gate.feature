@@ -100,7 +100,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And the marker allows `NONE` with target `none`
     And the marker does not duplicate the complete MADR procedure
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ADR register has one canonical ownership contract
     Given the consolidated ADR register guidance is available
     When a maintainer reads the register rules
