@@ -404,6 +404,12 @@ LLM prompt pack for the remaining project-specific work, including active
 change review, overlap and semantic remediation, and Arc42/ADR reconciliation.
 Normal design-review, tasks, review, and archive gates remain authoritative.
 
+For the maintenance change itself, a `specs` skip marker is an explicit
+no-product-delta signal. Global verification uses the permanent feature path,
+while the change-specific semantic gate has no delta to evaluate. Archive
+still requires completed tasks and review artifacts and does not turn this
+exception into a general bypass for product changes.
+
 ## 8.11 Addons and the Arc42 Documentation Artifact
 
 An addon is embedded behavior toggled through `addons.<name>` in the project

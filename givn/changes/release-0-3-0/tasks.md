@@ -226,7 +226,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: The migration change remains honest until the project review passes
 
-- [ ] Scenario: `The migration change remains honest until the project review passes`
+- [x] Scenario: `The migration change remains honest until the project review passes`
   - [x] RED: inspect the generated plan and assert it already contains a
         fabricated pass marker or implementation commit. Must fail.
         ```
@@ -243,7 +243,32 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; the generated design embeds the public guide and `givn graph` still exposes design-review, tasks, and review.
         ```
-  - [ ] COMMIT: `<hash>` — `docs(upgrade): keep generated migration evidence honest`
+  - [x] COMMIT: `9193317` — `docs(upgrade): The migration change remains honest until the project review passes`
+
+---
+
+## Scenario: A completed maintenance migration can be archived without a product specification
+
+- [ ] Scenario: `A completed maintenance migration can be archived without a product specification`
+  - [x] RED: invoke archive for a completed no-spec maintenance change and
+        assert it succeeds without the permanent verification boundary. Must
+        fail.
+        ```
+        The undefined archive-fixture step failed with a non-zero Cucumber result before the no-product-delta archive path existed.
+        ```
+  - [x] GREEN: use the permanent feature path for global verification and
+        skip only the change-specific semantic gate and delta merge when
+        `specs` is explicitly skipped.
+        ```
+        `cargo test --features spec-retrieval --test features_runner -- --name "A completed maintenance migration can be archived without a product specification"` passed: `1 scenario (1 passed)`. The maintenance change archived and permanent `givn/specs/` remained free of a migration feature. Files: `src/cli/check.rs`, `src/cli/archive.rs`, and E2E fixture steps.
+        ```
+  - [x] REFACTOR: keep normal product changes on their existing delta and
+        semantic paths; assert the no-spec exception remains explicit and
+        review/task gates still apply.
+        ```
+        The rerun passed with `1 scenario (1 passed)` using the retrieval-enabled binary; no-product-delta handling is conditioned on `.givn-skip` containing `specs`.
+        ```
+  - [ ] COMMIT: `<hash>` — `fix(archive): allow completed maintenance migrations without product specs`
 
 ---
 

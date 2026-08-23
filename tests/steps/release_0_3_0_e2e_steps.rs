@@ -33,6 +33,12 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     skill.push_str("\nlegacy generated marker\n");
     std::fs::write(generated_skill, skill).expect("mark generated skill as legacy");
 
+    std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
+    )
+    .expect("configure fixture verification");
+
     git(&env, &["init"]);
     git(&env, &["config", "user.name", "Givn Migration Test"]);
     git(
@@ -336,4 +342,80 @@ fn existing_plan_reported(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
     assert!(output.status.success());
     assert!(String::from_utf8_lossy(&output.stdout).contains("already exists"));
+}
+
+#[given("a completed automatic 0.3.0 migration change")]
+fn completed_automatic_migration(world: &mut GivnWorld) {
+    let env = legacy_git_project();
+    let upgrade = crate::common::run_givn(&env, &["upgrade"]);
+    assert!(
+        upgrade.status.success(),
+        "upgrade failed: {}",
+        String::from_utf8_lossy(&upgrade.stderr)
+    );
+    let migration = env.path("givn/changes/migrate-0-2-0-to-0-3-0");
+    std::fs::write(
+        migration.join("design-review.md"),
+        "# Design Review\n\nDESIGN-REVIEW: PASS\n",
+    )
+    .expect("write completed design review");
+    std::fs::write(
+        migration.join("tasks.md"),
+        "# Tasks\n\n- [x] Complete the migration\n",
+    )
+    .expect("write completed tasks");
+    std::fs::write(migration.join("review.md"), "# Review\n\nREVIEW: PASS\n")
+        .expect("write completed review");
+    world.env = Some(env);
+}
+
+#[when("the consumer archives the maintenance migration")]
+fn archive_maintenance_migration(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("completed migration fixture");
+    world.last_output = Some(crate::common::run_givn(
+        env,
+        &["archive", "--change", "migrate-0-2-0-to-0-3-0"],
+    ));
+}
+
+#[then("the maintenance migration is archived successfully")]
+fn maintenance_migration_archived(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(
+        output.status.success(),
+        "archive failed: stdout={} stderr={}",
+        String::from_utf8_lossy(&output.stdout),
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let env = world.env.as_ref().expect("completed migration fixture");
+    assert!(env.path("givn/archive/migrate-0-2-0-to-0-3-0").is_dir());
+    assert!(!env.path("givn/changes/migrate-0-2-0-to-0-3-0").exists());
+}
+
+#[then("the permanent specification tree contains no migration feature")]
+fn permanent_tree_has_no_migration_feature(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("completed migration fixture");
+    let specs = env.path("givn/specs");
+    let features = walk_feature_files(&specs);
+    assert!(
+        features
+            .iter()
+            .all(|path| !path.to_string_lossy().contains("migrate-0-2-0-to-0-3-0")),
+        "migration feature appeared in permanent specs: {features:?}"
+    );
+}
+
+fn walk_feature_files(root: &std::path::Path) -> Vec<std::path::PathBuf> {
+    let mut files = Vec::new();
+    if let Ok(entries) = std::fs::read_dir(root) {
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                files.extend(walk_feature_files(&path));
+            } else if path.extension().and_then(|ext| ext.to_str()) == Some("feature") {
+                files.push(path);
+            }
+        }
+    }
+    files
 }
