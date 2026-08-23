@@ -300,16 +300,40 @@ fn git_required_report(world: &mut GivnWorld) {
 }
 
 #[given(regex = r#"^a Givn 0.2.0 project with an existing "([^"]+)" change$"#)]
-fn existing_migration_project(_world: &mut GivnWorld, _id: String) {
-    unimplemented!("implemented in the existing-plan scenario");
+fn existing_migration_project(world: &mut GivnWorld, id: String) {
+    assert_eq!(id, "migrate-0-2-0-to-0-3-0");
+    let env = legacy_git_project();
+    let migration = env.path("givn/changes/migrate-0-2-0-to-0-3-0");
+    std::fs::create_dir_all(&migration).expect("create existing migration plan");
+    let proposal = "# Existing migration proposal\nkeep this proposal\n";
+    let design = "# Existing migration design\nkeep this design\n";
+    std::fs::write(migration.join("proposal.md"), proposal).expect("write existing proposal");
+    std::fs::write(migration.join("design.md"), design).expect("write existing design");
+    world.additional_output = Some(format!("{proposal}---\n{design}"));
+    world.env = Some(env);
 }
 
 #[then("the command does not overwrite the existing migration proposal or design")]
-fn existing_plan_preserved(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the existing-plan scenario");
+fn existing_plan_preserved(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("existing migration fixture");
+    let migration = env.path("givn/changes/migrate-0-2-0-to-0-3-0");
+    let actual = format!(
+        "{}---\n{}",
+        std::fs::read_to_string(migration.join("proposal.md")).expect("read proposal"),
+        std::fs::read_to_string(migration.join("design.md")).expect("read design")
+    );
+    assert_eq!(
+        actual,
+        world
+            .additional_output
+            .as_deref()
+            .expect("existing migration snapshot")
+    );
 }
 
 #[then("the command reports the existing migration change")]
-fn existing_plan_reported(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the existing-plan scenario");
+fn existing_plan_reported(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    assert!(output.status.success());
+    assert!(String::from_utf8_lossy(&output.stdout).contains("already exists"));
 }
