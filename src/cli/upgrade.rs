@@ -21,6 +21,16 @@ pub fn run() -> Result<()> {
 
     let existing = std::fs::read_to_string(&config_path)?;
 
+    if active_config_version(&existing).as_deref() == Some(crate::cli::migration::TARGET_VERSION)
+        && crate::cli::migration::migration_exists(&project_root)
+    {
+        println!(
+            "Migration change '{}' already exists; project is already prepared for migration.",
+            crate::cli::migration::MIGRATION_CHANGE_ID
+        );
+        return Ok(());
+    }
+
     if active_config_version(&existing).as_deref() == Some(crate::cli::migration::LEGACY_VERSION)
         && env!("CARGO_PKG_VERSION") == crate::cli::migration::TARGET_VERSION
     {
