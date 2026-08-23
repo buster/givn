@@ -61,6 +61,8 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-30 | Audit the complete permanent corpus through `givn spec duplicates` without writing audit state. |
 | FR-31 | Use complete compact semantic input and actual-tokenizer cap evidence. |
 | FR-32 | Bound second-stage work through the proposed `GIVN_SPEC_MAX_RERANK_PAIRS` setting while retaining unscored tails. |
+| FR-33 | Publish version 0.3.0 with a complete changelog and an LLM-executable 0.2.0-to-0.3.0 migration guide. |
+| FR-34 | Prepare legacy projects through a visible, reviewable migration change without inventing product specifications. |
 
 ### Non-functional requirements
 
@@ -71,6 +73,7 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | NFR-3 | Project configuration and lifecycle state are visible under `givn/`. |
 | NFR-4 | Semantic evidence is deterministic in identity, ordering, hashes, and output format where the current contract specifies it. |
 | NFR-5 | Feature-free and feature-enabled behavior is explicit rather than silently falling back to a false pass. |
+| NFR-6 | Automatic migration commits are narrowly scoped, reproducible, and never mix uncommitted user work with Givn-owned files. |
 
 ## 1.3 Quality Goals
 
@@ -100,6 +103,7 @@ the [ADR register](adr/README.md).
 | Contributors | Need stable Rust modules, contracts, and review gates. |
 | CI systems | Need deterministic lint, test-runner, archive, and semantic outcomes. |
 | Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
+| Migrating project maintainers | Need a clean Git boundary and an explicit plan for project-specific 0.3.0 work. |
 
 ## 1.5 Acceptance Ownership
 

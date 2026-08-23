@@ -55,11 +55,20 @@ The embedded configuration documentation evolves with the binary, while project 
 
 Chosen option: **Use `givn_config_version` and a preservation-oriented `givn upgrade`**. The current implementation re-renders the scaffold, retains uncommented blocks, appends preserved overrides where needed, and auto-enables newly known addons absent from the old config.
 
+The 0.3.0 refinement adds an exact 0.2.0-to-0.3.0 compatibility route. When
+the project is a clean Git worktree, `givn upgrade` refreshes the managed
+scaffold and generated integrations, commits only an explicit Givn-owned
+allowlist as Commit A, then creates a visible maintenance migration change and
+commits that plan separately as Commit B. The plan records Commit A's hash and
+contains no synthetic product feature. Non-Git or dirty projects are refused
+before any write; existing active or archived plans are preserved.
+
 ### Consequences
 
-- Users review the resulting file with `git diff`.
+- Users review the resulting file and the two migration commits with `git diff`.
 - Ejected facets are not automatically upgraded; they remain project-owned.
 - Line-based preservation is intentionally conservative and can leave legacy keys for manual review.
+- The config marker reaching 0.3.0 means scaffold preparation completed, not that the project-specific migration was reviewed or archived.
 
 ### Confirmation
 
@@ -84,4 +93,4 @@ Upgrade tests assert version replacement, valid YAML, idempotent rendering for t
 
 ## More Information
 
-See [chapter 8.10](../08-crosscutting-concepts.md#810-configuration-versioning-and-command-files) and [ADR-005](ADR-005-facet-cascade.md).
+See [chapter 8.10](../08-crosscutting-concepts.md#810-configuration-versioning-and-command-files), [chapter 6.14](../06-runtime-view.md#614-givn-upgrade-from-020-to-030), and [ADR-005](ADR-005-facet-cascade.md).

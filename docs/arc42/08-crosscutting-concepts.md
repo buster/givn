@@ -390,6 +390,20 @@ test-runner and coverage values are in the separate `givn/commands.yaml` file.
 map them. It also enables newly known addons that were absent from the old
 config. Ejected facets are not automatically replaced.
 
+For the exact 0.2.0-to-0.3.0 route, upgrade has an additional explicit
+compatibility boundary. It refuses a non-Git or dirty worktree before any write,
+runs the managed synchronization, stages only a calculated list of Givn-owned
+paths, and creates Commit A. It then writes a maintenance change under
+`givn/changes/migrate-0-2-0-to-0-3-0/` with proposal, detailed design, and a
+`specs` skip marker, records Commit A's hash, and creates Commit B containing
+only that plan. Existing active or archived plans are never overwritten.
+
+The maintenance change is deliberately not a product feature: it must not add
+a synthetic scenario to `givn/specs/`. The public migration guide is an ordered
+LLM prompt pack for the remaining project-specific work, including active
+change review, overlap and semantic remediation, and Arc42/ADR reconciliation.
+Normal design-review, tasks, review, and archive gates remain authoritative.
+
 ## 8.11 Addons and the Arc42 Documentation Artifact
 
 An addon is embedded behavior toggled through `addons.<name>` in the project
