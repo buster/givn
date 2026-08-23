@@ -116,31 +116,74 @@ fn guide_forbids_automatic_semantic_edits(world: &mut GivnWorld) {
 }
 
 #[given("an automatically created 0.3.0 migration change")]
-fn automatic_migration_change(_world: &mut GivnWorld) {
-    unimplemented!("implemented by the CLI migration scenario");
+fn automatic_migration_change(world: &mut GivnWorld) {
+    let env = crate::steps::release_0_3_0_e2e_steps::legacy_git_project();
+    let output = crate::common::run_givn(&env, &["upgrade"]);
+    assert!(
+        output.status.success(),
+        "upgrade failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.env = Some(env);
 }
 
 #[when("an LLM opens the migration change")]
-fn llm_opens_migration_change(_world: &mut GivnWorld) {
-    unimplemented!("implemented by the CLI migration scenario");
+fn llm_opens_migration_change(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("migration project fixture");
+    let design = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-3-0/design.md"))
+        .expect("read migration design");
+    world.additional_output = Some(design);
 }
 
 #[then("the change asks for project-specific task derivation")]
-fn change_asks_for_tasks(_world: &mut GivnWorld) {
-    unimplemented!("implemented by the CLI migration scenario");
+fn change_asks_for_tasks(world: &mut GivnWorld) {
+    let design = world
+        .additional_output
+        .as_deref()
+        .expect("migration design");
+    assert!(design.contains("project-specific"), "{design}");
+    assert!(design.contains("derive tasks"), "{design}");
 }
 
 #[then("it does not contain a fabricated design-review pass")]
-fn no_fabricated_design_review(_world: &mut GivnWorld) {
-    unimplemented!("implemented by the CLI migration scenario");
+fn no_fabricated_design_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("migration project fixture");
+    let design = world
+        .additional_output
+        .as_deref()
+        .expect("migration design");
+    assert!(
+        !design
+            .lines()
+            .any(|line| line.trim() == "DESIGN-REVIEW: PASS")
+    );
+    assert!(
+        !env.path("givn/changes/migrate-0-2-0-to-0-3-0/design-review.md")
+            .exists()
+    );
 }
 
 #[then("it does not contain a fabricated implementation commit")]
-fn no_fabricated_implementation_commit(_world: &mut GivnWorld) {
-    unimplemented!("implemented by the CLI migration scenario");
+fn no_fabricated_implementation_commit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("migration project fixture");
+    let design = world
+        .additional_output
+        .as_deref()
+        .expect("migration design");
+    assert!(!design.contains("IMPLEMENTATION COMMIT:"));
+    assert!(
+        !env.path("givn/changes/migrate-0-2-0-to-0-3-0/tasks.md")
+            .exists()
+    );
 }
 
 #[then("the normal Givn review and archive gates remain required")]
-fn normal_gates_remain_required(_world: &mut GivnWorld) {
-    unimplemented!("implemented by the CLI migration scenario");
+fn normal_gates_remain_required(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("migration project fixture");
+    let output = crate::common::run_givn(env, &["graph", "--change", "migrate-0-2-0-to-0-3-0"]);
+    assert!(output.status.success());
+    let graph = String::from_utf8_lossy(&output.stdout);
+    assert!(graph.contains("design-review"), "{graph}");
+    assert!(graph.contains("tasks"), "{graph}");
+    assert!(graph.contains("review"), "{graph}");
 }

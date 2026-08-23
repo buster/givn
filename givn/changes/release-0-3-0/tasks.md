@@ -203,7 +203,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: An existing migration plan is never overwritten
 
-- [ ] Scenario: `An existing migration plan is never overwritten`
+- [x] Scenario: `An existing migration plan is never overwritten`
   - [x] RED: create a sentinel migration proposal/design in a 0.2.0 fixture,
         run `givn upgrade`, and assert the sentinel is overwritten or a second
         plan appears. Must fail.
@@ -220,28 +220,28 @@ runner rejects an unimplemented step before any scenario work.
         ```
         The rerun passed with `1 scenario (1 passed)`; the production diagnostic now names the preserved proposal and design.
         ```
-  - [ ] COMMIT: `<hash>` — `fix(upgrade): preserve existing migration plans`
+  - [x] COMMIT: `24bd7fa` — `fix(upgrade): An existing migration plan is never overwritten`
 
 ---
 
 ## Scenario: The migration change remains honest until the project review passes
 
 - [ ] Scenario: `The migration change remains honest until the project review passes`
-  - [ ] RED: inspect the generated plan and assert it already contains a
+  - [x] RED: inspect the generated plan and assert it already contains a
         fabricated pass marker or implementation commit. Must fail.
         ```
-        <!-- paste RED evidence -->
+        The unimplemented honesty step failed with `not implemented: implemented by the CLI migration scenario`.
         ```
-  - [ ] GREEN: generate only proposal, detailed design, and `.givn-skip`;
+  - [x] GREEN: generate only proposal, detailed design, and `.givn-skip`;
         include project-specific task prompts and no fabricated design-review,
         task, implementation, or review evidence.
         ```
-        <!-- paste GREEN evidence -->
+        `cargo test --features spec-retrieval --test features_runner -- --name "The migration change remains honest until the project review passes"` passed: `1 scenario (1 passed)`. The generated plan has no design-review/tasks/implementation evidence.
         ```
-  - [ ] REFACTOR: keep the plan aligned with the public guide and assert that
+  - [x] REFACTOR: keep the plan aligned with the public guide and assert that
         normal Givn review/archive gates remain the completion authority.
         ```
-        <!-- paste REFACTOR evidence -->
+        The rerun passed with `1 scenario (1 passed)`; the generated design embeds the public guide and `givn graph` still exposes design-review, tasks, and review.
         ```
   - [ ] COMMIT: `<hash>` — `docs(upgrade): keep generated migration evidence honest`
 
