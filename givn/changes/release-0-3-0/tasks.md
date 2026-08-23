@@ -28,7 +28,7 @@ runner rejects an unimplemented step before any scenario work.
       `tests/steps/mod.rs`.
 - [x] Add the release feature to the active test matrix and configure the
       existing strict Cucumber runner to execute it through `GIVN_FEATURES`.
-      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` passed with `9 scenarios (9 passed)` and the E2E run passed with `3 scenarios (3 passed)`.
+      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` passed with `10 scenarios (10 passed)` and the E2E run passed with `3 scenarios (3 passed)`.
 - [x] Establish a temporary Git-project fixture that can create a 0.2.0
       project, set a local author identity, capture file bytes, and inspect
       commit paths without touching the parent checkout.
@@ -59,7 +59,7 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Scenario: Cargo installation enables every declared feature by default
 
-- [ ] Scenario: `Cargo installation enables every declared feature by default`
+- [x] Scenario: `Cargo installation enables every declared feature by default`
   - [x] RED: run the scenario with the Cargo metadata step deliberately
         unimplemented. The strict runner must fail before any default-feature
         assertion can pass.
@@ -78,11 +78,14 @@ runner rejects an unimplemented step before any scenario work.
   - [x] REFACTOR: preserve independent feature selectors and explicit
         feature-free unavailable behavior; remove obsolete feature-combination
         helpers and make `cargo clippy --workspace --all-targets -- -D warnings`
-        pass with the default feature set.
+        pass with the default feature set. Correct the blocking semantic review
+        candidate scope so permanent-only pairs are excluded as documented.
         ```
-        Targeted scenario rerun passed after cleanup; default-feature clippy passed with no warnings.
+        Targeted scenario rerun passed after cleanup; default-feature clippy passed with no warnings, and the all-feature blocking review reported zero candidates after the permanent-only scope fix.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(release): Cargo installation enables every declared feature by default`
+  - [x] COMMIT: `65ece69` — `feat(release): enable all declared features by default`
+  - [x] COMMIT: `426f2a1` — `fix(review): exclude permanent-only semantic pairs`
+  - [x] COMMIT: `082d3db` — `fix(review): keep feature matrix warning-free`
 
 ---
 
@@ -203,9 +206,9 @@ runner rejects an unimplemented step before any scenario work.
   - [x] REFACTOR: route all migration decisions through the embedded catalog,
         avoid empty commits, and preserve the same clean-worktree boundary.
         ```
-        The rerun passed with `1 scenario (1 passed)`; no migration-specific Rust conditional remains in the upgrade dispatcher.
+        The rerun passed with `1 scenario (1 passed)`; no migration-specific Rust conditional remains in the upgrade dispatcher, and `managed_upgrade_without_changes_does_not_create_empty_commit` passed without producing a second Git commit.
         ```
-  - [x] COMMIT: `3989ebe` — `feat(migration): define release-owned migration catalog`
+  - [x] COMMIT: `c678344` — `test(migration): cover empty managed upgrade`
 
 ---
 
@@ -353,33 +356,35 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Arc42 and ADR documentation
 
-- [ ] Update the affected durable Arc42 chapters and the change-level
+- [x] Update the affected durable Arc42 chapters and the change-level
       `arc42.md` with a full 12-row assessment plus the default-feature contract.
-- [ ] Amend ADR-023 with the automatic migration-plan and two-commit protocol
+      Evidence: `docs/arc42/01-introduction-and-goals.md`, `02`, `04`, `07`, `08`, `09`, `10`, `11`, `12`, `README.md`, and the release `arc42.md` carry the default/minimal feature contract and Q-56/R-32 mappings.
+- [x] Amend ADR-023 with the automatic migration-plan and two-commit protocol
       and ADR-055 with the default-feature contract; update both ADR indexes if
       metadata or relationships change.
-- [ ] Record `ARC42 CONFORMANCE: CLEAN` evidence in `review.md` only after
+      Evidence: ADR-023 already owns the upgrade protocol; ADR-055 now records the 0.3.0 default-feature amendment and `docs/arc42/adr/README.md` records both amendment relationships.
+- [x] Record `ARC42 CONFORMANCE: CLEAN` evidence in `review.md` only after
       comparing implementation, design, tasks, and durable chapters.
-      Evidence: `review.md` contains the full 12-row implementation comparison and `ARC42 CONFORMANCE: CLEAN`.
+      Evidence: `review.md` contains the full 12-row implementation comparison and `ARC42 CONFORMANCE: CLEAN` after the all-feature blocking review gate passed.
 
 ---
 
 ## Full verification
 
-- [ ] Run `givn lint --change release-0-3-0` and resolve all findings.
+- [x] Run `givn lint --change release-0-3-0` and resolve all findings.
       Evidence: `givn lint --change release-0-3-0` -> `1 file(s) checked — clean`.
-- [ ] Run the non-E2E change suite through `GIVN_FEATURES`; paste the output.
-      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` -> pending final default-feature run.
-- [ ] Run the E2E change suite through `GIVN_FEATURES`; paste the output.
-      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags @e2e` -> pending final default-feature run.
-- [ ] Run `cargo fmt --all -- --check`.
-      Evidence: command passed with no output.
-- [ ] Run `cargo clippy --workspace --all-targets -- -D warnings`.
-      Evidence: default-feature run passed after the feature cleanup; final evidence pending.
-- [ ] Run repository coverage and classify every uncovered region.
-      Evidence: previous reports are stale after the default-feature scenario; final reports pending.
-- [ ] Complete `review.md` with `REVIEW: PASS` only after all gates pass.
-      Evidence: final default-feature suite and feature-enabled `givn check review --change release-0-3-0` evidence pending.
+- [x] Run the non-E2E change suite through `GIVN_FEATURES`; paste the output.
+      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'` -> `10 scenarios (10 passed)`, `44 steps (44 passed)`.
+- [x] Run the E2E change suite through `GIVN_FEATURES`; paste the output.
+      Evidence: `GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags @e2e` -> `3 scenarios (3 passed)`, `19 steps (19 passed)`.
+- [x] Run `cargo fmt --all -- --check`.
+      Evidence: command passed with no output after the feature cleanup.
+- [x] Run `cargo clippy --workspace --all-targets -- -D warnings`.
+      Evidence: default build and explicit `spec-retrieval`, `spec-retrieval,cross-encoder-reranker`, `spec-retrieval,spec-similarity-gate`, and `spec-retrieval,nli-evidence` builds passed with `-D warnings`.
+- [x] Run repository coverage and classify every uncovered region.
+      Evidence: global merged report `13168/19656` lines (`66.9923%`), release-specific report `2610/19656` (`13.2784%`), migration module `450/548` (`82.1168%`), and the remaining gaps are classified in `review.md`.
+- [x] Complete `review.md` with `REVIEW: PASS` only after all gates pass.
+      Evidence: `review.md` ends with `REVIEW: PASS`; the installed all-feature `givn 0.3.0` passed verify, verify-e2e, integrity, overlap, and semantic review with deterministic stub embedding and disabled second-stage runtime selectors.
 
 ---
 
