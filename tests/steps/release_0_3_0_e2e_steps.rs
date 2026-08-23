@@ -192,7 +192,10 @@ fn command_fails_before_file_changes(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
     assert!(!output.status.success(), "upgrade unexpectedly succeeded");
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("clean Git worktree"), "{stderr}");
+    assert!(
+        stderr.contains("clean Git worktree") || stderr.contains("requires a Git repository"),
+        "{stderr}"
+    );
     let env = world.env.as_ref().expect("dirty project fixture");
     let expected = world.additional_output.as_deref().expect("config snapshot");
     let actual = std::fs::read_to_string(env.path("givn/config.yaml")).expect("read config");
@@ -274,13 +277,26 @@ fn already_prepared_report(world: &mut GivnWorld) {
 }
 
 #[given("a Givn 0.2.0 project that is not a Git repository")]
-fn non_git_legacy_project(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the non-Git scenario");
+fn non_git_legacy_project(world: &mut GivnWorld) {
+    let env = crate::common::make_bare_root();
+    let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
+    assert!(init.status.success(), "fixture init failed");
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read fixture config");
+    let legacy = config.replace(
+        "givn_config_version: \"0.3.0\"",
+        "givn_config_version: \"0.2.0\"",
+    );
+    std::fs::write(&config_path, &legacy).expect("write legacy config");
+    world.additional_output = Some(legacy);
+    world.env = Some(env);
 }
 
 #[then("the command explains that a Git repository is required for the automatic migration")]
-fn git_required_report(_world: &mut GivnWorld) {
-    unimplemented!("implemented in the non-Git scenario");
+fn git_required_report(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("requires a Git repository"), "{stderr}");
 }
 
 #[given(regex = r#"^a Givn 0.2.0 project with an existing "([^"]+)" change$"#)]
