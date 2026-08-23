@@ -40,7 +40,16 @@
 This impact marker does not replace the ADR Qualification Checklist or the
 individual ADR file. A change may affect chapter 09 without qualifying for an
 ADR, and a qualifying ADR must still be recorded as its own file and linked
-from the chapter-09 register.
+from the chapter-09 register. Record the result once in the change assessment:
+
+```text
+ADR action: NONE | NEW_ADR | AMEND_ADR | SUPERSEDE_ADR | CANONICAL_ARTIFACT
+ADR target: <one ADR or canonical artifact, or none>
+```
+
+Do not copy the complete qualification procedure or MADR body into this
+impact marker. The complete ADR procedure and template are owned by the Arc42
+addon instruction.
 
 ---
 

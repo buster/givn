@@ -130,7 +130,7 @@ und getrennte Step-Definitionen hat. Sie schreibt nicht ausdruecklich vor:
 Diese Passagen wurden durch `9ab7910` aus mehreren Skills, Commands und
 Instructions entfernt. Sie sind in Output-Templates und Review-Anweisungen
 noch auffindbar. Das ist deshalb kein vollstaendiger globaler Regelverlust,
-aber ein Verlust genau an der Stelle, die laut ADR-038 die vollstaendige
+aber ein Verlust genau an der Stelle, die laut der kanonischen Specs-Instruction die vollstaendige
 normative Policy sein soll.
 
 Die historische Ursache liegt frueher: `6d3eaec` fuehrte die primaeren
@@ -164,8 +164,8 @@ von der behaupteten zentralen Instruction.
 
 **Nicht gerechtfertigt als abgeschlossene Zentralisierung.** Die Absicht, die
 Duplikation zu entfernen, ist gerechtfertigt. Die kanonische Datei muss dann
-aber genau die delegierten Regeln vollstaendig enthalten. ADR-038 beschreibt
-selbst eine "complete policy in the `specs` instruction"; der aktuelle Stand
+aber genau die delegierten Regeln vollstaendig enthalten. Die kanonische
+Specs-Instruction beschreibt selbst eine "complete policy"; der aktuelle Stand
 entspricht diesem Architekturentscheid nicht.
 
 ## S2: Design-Instruction verlor design-spezifische E2E-Vorgaben
@@ -192,7 +192,7 @@ muessen in einem Design beschrieben werden. Teile stehen weiterhin in
 generierten `design.md`, weil das Output-Template die Felder noch erzeugt.
 Die Instruction, die ein Agent beim direkten Aufruf von
 `givn instructions design` bekommt, ist jedoch nicht mehr allein ausreichend.
-Das verletzt die Trennung aus ADR-038 in die andere Richtung: Artefakt-
+Das verletzt die Trennung aus der kanonischen Authoring-Policy in die andere Richtung: Artefakt-
 spezifische Choreografie darf nicht aus der Instruction verschwinden, nur weil
 normative Specs-Policy zentralisiert wird.
 

@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - output fields and schema versions are consumed by agents and scripts.
 - [x] **Shapes quality attributes** - explicit fallback and provenance protect review integrity.
 - [x] **Structural** - E5-only, BGE, and NLI output modes form separate interface contracts.

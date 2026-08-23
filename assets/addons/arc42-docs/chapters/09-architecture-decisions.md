@@ -21,23 +21,20 @@ second MADR section into this file.
 
 ## Individual ADR contract
 
-Before creating a file or adding a register entry, pass the Qualification gate
-and evaluate all four criteria in the individual ADR's `## Qualification`
-section with a concrete, decision-specific justification for each. The gate
-passes only when at least one of the following is checked with a clear
-justification: **Hard to reverse**, **Shapes quality attributes**,
-**Structural**, or **Must be shared**. If no item can be justified, do not
-create an ADR. System relevance, implementation effort, a long discussion, and
-a known pattern alone do not qualify. Logging, internal naming, formatting,
-local refactorings, and interchangeable HTTP clients without quality-attribute
-implications are generally not ADRs. System-wide error handling qualifies only
-when it is an enforced cross-cutting contract.
+Before creating a file or adding a register entry, read and pass the complete
+qualification procedure from the resolved Arc42 addon instruction. This chapter
+records the register contract only; it does not duplicate the qualification
+formula, LLM verdict schema, or routing values. A failed candidate is routed
+exactly once to its canonical feature, design, Arc42, process,
+project-documentation, or code location. A refinement amends an existing ADR;
+it does not create a parallel file.
 
 Each individual file uses the complete MADR structure, including
 `## Qualification`, `## Context and Problem Statement`, `## Decision Drivers`,
 `## Considered Options`, `## Decision Outcome`, `### Consequences`,
 `### Confirmation`, `## Pros and Cons of the Options`, and
-`## More Information`, with real frontmatter.
+`## More Information`, with real frontmatter and an `ADR-QUALIFICATION: PASS`
+verdict whose route-specific target fields are valid.
 Allowed statuses are `proposed`, `rejected`, `accepted`, `deprecated`, and
 `superseded by ADR-NNNN`. A superseded status must name a concrete existing
 replacement ID, such as `superseded by ADR-027` or `superseded by ADR-0042`;
@@ -50,3 +47,6 @@ An archived historical ADR keeps its ID and filename and is moved to
 `docs/arc42/adr/archive/ADR-NNNN-short-slug.md`. Update both indexes when the
 path changes. Do not move ADRs into `givn/archive/<change>/`; that path is for
 change artifacts, not durable architecture decisions.
+Non-ADR material is not archived as an ADR. Move useful information once to its
+canonical feature, design, Arc42, process, project-documentation, or code
+location, and remove the redundant record.

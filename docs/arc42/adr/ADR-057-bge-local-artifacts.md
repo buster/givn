@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - the local artifact layout and loader determine the product's model deployment boundary.
 - [x] **Shapes quality attributes** - preflight prevents hidden downloads and opaque model-load failures.
 - [x] **Structural** - model, tokenizer, configuration, and optional external-data files form the BGE input boundary.

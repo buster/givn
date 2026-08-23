@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - the index schema, model cache, and feature boundary are persistent project interfaces.
 - [x] **Shapes quality attributes** - local retrieval changes authoring recall, runtime, and dependency footprint.
 - [x] **Structural** - `spec-retrieval`, E5 vectors, and `.spec-index.json` form a retrieval subsystem boundary.

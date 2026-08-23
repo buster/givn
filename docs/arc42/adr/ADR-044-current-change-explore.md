@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - persisting delta scenarios would contaminate the permanent catalogue and change later search results.
 - [x] **Shapes quality attributes** - request-local work preserves deterministic state and avoids abandoned-change leakage.
 - [x] **Structural** - it defines the boundary between permanent index entries and transient current-change candidates.
@@ -69,4 +85,5 @@ Change-aware Explore scenarios assert source labeling, added/modified filtering,
 
 ## More Information
 
-See [ADR-043](ADR-043-permanent-explore.md) and [ADR-045](ADR-045-project-relative-identity.md).
+The permanent query contract is maintained by the
+[`spec-explore-permanent` feature](../../../givn/specs/spec-explore-permanent/spec-explore-permanent.feature); see also [ADR-045](ADR-045-project-relative-identity.md).

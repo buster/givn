@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - changing the threshold changes which specifications can be archived and requires a new evidence baseline.
 - [x] **Shapes quality attributes** - the gate protects specification uniqueness and review integrity.
 - [x] **Structural** - it defines the E5 comparison boundary for projected permanent and change-local pairs.

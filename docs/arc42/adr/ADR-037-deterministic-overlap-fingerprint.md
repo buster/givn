@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - lint and review behavior depends on the fingerprint and its facts model.
 - [x] **Shapes quality attributes** - deterministic overlap checks provide reproducible, explainable review evidence.
 - [x] **Structural** - the fingerprint defines the relation between scenario assertions and the review disposition gate.

@@ -9,7 +9,7 @@ use crate::skills::render::{
 /// - `.opencode/commands/<name>.md` when `opencode` is selected
 ///
 /// The target set comes from the `skills:` block of `givn/config.yaml`
-/// (default: `[opencode]`). See ADR-036.
+/// (default: `[opencode]`). See the agent-integration architecture documentation.
 ///
 /// `AGENTS.md` at the repo root is otherwise user-owned. The only exception:
 /// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it:

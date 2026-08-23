@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - candidate identity, layer selection, and combined admission affect review evidence across commands.
 - [x] **Shapes quality attributes** - independent selection controls recall, CPU cost, and order dependence.
 - [x] **Structural** - each model branch has its own pool selection, tokenizer preflight, evidence, and status.

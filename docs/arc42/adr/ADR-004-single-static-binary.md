@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - a runtime-dependent distribution model would change installation, release artifacts, and project support assumptions.
 - [x] **Shapes quality attributes** - it directly sets the installability and operational portability floor.
 - [x] **Structural** - the executable and embedded assets form the product deployment boundary.

@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - accepting classifications without checking the projected specification would allow durable false resolutions.
 - [x] **Shapes quality attributes** - the verifier protects semantic review integrity without adding a classifier.
 - [x] **Structural** - it defines a second verification path over the in-memory projected permanent tree.

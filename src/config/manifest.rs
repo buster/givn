@@ -254,7 +254,7 @@ mod tests {
     use super::*;
 
     /// Verify that every key documented in config.yaml.tmpl maps to a real
-    /// manifest schema key, and vice versa (ADR-022 — no drift allowed).
+    /// manifest schema key, and vice versa (no drift allowed).
     ///
     /// This is a structural smoke test: we check that the config template
     /// references the same top-level keys the manifest schema defines.

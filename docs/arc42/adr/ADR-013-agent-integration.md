@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - generated paths and ownership rules are consumed by projects and agents.
 - [x] **Shapes quality attributes** - the policy protects project context and keeps generated guidance maintainable.
 - [x] **Structural** - it defines the boundary between generated skill/command files and the root `AGENTS.md`.
@@ -27,7 +43,8 @@ Agents need on-demand workflow guidance, but a root `AGENTS.md` is project conte
 - never overwrite user content
 - provide neutral skills with supported mirrors
 - make generated guidance refreshable
-- keep target choice refinable by [ADR-036](ADR-036-agent-target-selection.md)
+- keep target selection within the generated-agent ownership contract
+- make a newly selected target explicit and persistent
 
 ## Considered Options
 
@@ -37,13 +54,15 @@ Agents need on-demand workflow guidance, but a root `AGENTS.md` is project conte
 
 ## Decision Outcome
 
-Chosen option: **Emit skills and commands to configured agent directories; manage only givn-owned fenced blocks in `AGENTS.md`**. Content outside `<!-- givn:begin:<name> -->` and matching end markers is user-owned and is not changed.
+Chosen option: **Emit skills and commands to configured agent directories; manage only givn-owned fenced blocks in `AGENTS.md`**. Content outside `<!-- givn:begin:<name> -->` and matching end markers is user-owned and is not changed. Initialization records the selected targets, defaults to `opencode` for empty input, and synchronization writes only to those targets.
 
 ### Consequences
 
 - Skills are written under selected `.opencode/`, `.agents/`, and `.claude/` locations; opencode commands use `.opencode/commands/`.
 - The always-on `givn-project` block and the `absolute-mode` block are separately managed when applicable.
 - Generated files are snapshots and are refreshed by `givn skills sync`.
+- Target selection is explicit project configuration; an unknown-only or empty
+  selection falls back to `opencode` rather than writing every target.
 
 ### Confirmation
 
@@ -68,4 +87,5 @@ The target-selection, block-preservation, and skill synchronization tests assert
 
 ## More Information
 
-Target selection is refined by [ADR-036](ADR-036-agent-target-selection.md); the implementation boundary is in [chapter 8.7](../08-crosscutting-concepts.md#87-skill-and-rule-generation).
+Target selection and the implementation boundary are described in [chapter
+8.7](../08-crosscutting-concepts.md#87-skill-and-rule-generation).

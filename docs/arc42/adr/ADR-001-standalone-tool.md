@@ -13,6 +13,22 @@ informed:
 
 ## Qualification
 
+ADR-QUALIFICATION: PASS
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
 - [x] **Hard to reverse** - replacing the tool boundary later would require migrating project layouts, commands, and generated guidance.
 - [x] **Shapes quality attributes** - the boundary determines installability, upgrade safety, and the maintenance surface.
 - [x] **Structural** - it defines a new CLI, project directory, artifact model, and ownership boundary instead of extending OpenSpec.
