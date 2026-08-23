@@ -8,7 +8,7 @@ fn clean_legacy_project(world: &mut GivnWorld) {
     world.env = Some(legacy_git_project());
 }
 
-fn legacy_git_project() -> crate::common::TestEnv {
+pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     let env = crate::common::make_bare_root();
     let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
     assert!(

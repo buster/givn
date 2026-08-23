@@ -302,7 +302,8 @@ preflight and path allowlist are part of the upgrade contract.\n\n\
 ## LLM Prompt Pack\n\n\
 The following is the canonical migration guide shipped with Givn {TARGET_VERSION}.\
 Execute its prompts in order, adapting only where the project inventory proves\
-that a surface does not apply.\n\n\
+that a surface does not apply. Derive project-specific tasks from this design\
+only after the inventory and design review have been completed.\n\n\
 {MIGRATION_GUIDE}\n\n\
 ## Completion Boundary\n\n\
 This design intentionally does not contain `DESIGN-REVIEW: PASS`, `REVIEW: PASS`,\
