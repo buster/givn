@@ -34,7 +34,9 @@ pub fn prepare_legacy_upgrade(
     let migration_dir = project_root.join("givn/changes").join(MIGRATION_CHANGE_ID);
 
     if migration_exists(project_root) {
-        println!("Migration change '{MIGRATION_CHANGE_ID}' already exists; preserving it.");
+        println!(
+            "Migration change '{MIGRATION_CHANGE_ID}' already exists; preserving its proposal and design."
+        );
         return Ok(());
     }
 
