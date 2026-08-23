@@ -12,7 +12,12 @@ repository = "https://github.com/TBD/givn"
 path = "src/lib.rs"
 
 [features]
-default = []
+default = [
+    "spec-retrieval",
+    "spec-similarity-gate",
+    "cross-encoder-reranker",
+    "nli-evidence",
+]
 spec-retrieval = ["dep:fastembed", "dep:ndarray", "dep:ort", "dep:tokenizers"]
 spec-similarity-gate = ["spec-retrieval"]
 cross-encoder-reranker = ["spec-retrieval"]

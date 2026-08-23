@@ -87,6 +87,7 @@ The active register contains only independent durable architecture decisions:
 | ADR-054 -> ADR-058 | ADR-058 supersedes ADR-054's NLI deferral while ADR-054 remains the output-compatibility rule. |
 | ADR-061 -> ADR-063 | ADR-063 adds a configurable ordered budget to the surface-specific independent branches. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
+| ADR-055 (amended by 0.3.0) | The independent semantic-capability decision now enables every declared Cargo feature in the normal installation while retaining `--no-default-features` as the explicit minimal path. |
 
 ## Evidence
 

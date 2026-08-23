@@ -33,7 +33,7 @@ const E5_TOKENIZER_ID: &str = "intfloat/multilingual-e5-large/tokenizer.json";
 const E5_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "spec-similarity-gate"))]
 const SIMILARITY_THRESHOLD: f32 = 0.95;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
@@ -41,9 +41,9 @@ const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_PIPELINE_VERSION: &str = "rust-production-v2";
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 const DEFAULT_MAX_RERANK_PAIRS: usize = 2048;
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 const MAX_RERANK_PAIRS_ENV: &str = "GIVN_SPEC_MAX_RERANK_PAIRS";
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_MAX_LENGTH: usize = 512;
@@ -57,7 +57,7 @@ const NLI_STUB_SELECTOR: &str = "nli-stub";
 const NLI_REPORT_LIMIT: usize = 20;
 #[cfg(feature = "nli-evidence")]
 const NLI_ADMISSION_THRESHOLD: f32 = 0.5;
-#[cfg(feature = "spec-retrieval")]
+#[cfg(feature = "nli-evidence")]
 const SEMANTIC_NLI_REPORT_SCHEMA_VERSION: u32 = 3;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_REPORT_SCHEMA_VERSION: u32 = 1;
@@ -81,7 +81,7 @@ const E5_TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenario, then rerun r
 const DUPLICATE_E5_TOKEN_CAP_GUIDANCE: &str =
     "shorten or split the scenario, then rerun the duplicate audit";
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn max_rerank_pairs() -> Result<usize> {
     let Some(raw) = std::env::var_os(MAX_RERANK_PAIRS_ENV) else {
         return Ok(DEFAULT_MAX_RERANK_PAIRS);
@@ -387,6 +387,7 @@ struct PriorRemediationEntry {
 struct ExploreCandidate {
     title: String,
     file: String,
+    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     text: String,
     embedding: Vec<f32>,
     scope: &'static str,
@@ -401,16 +402,23 @@ struct SimilarityEndpoint {
     title: String,
 }
 
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
+type SimilarityPair = (SimilarityEndpoint, SimilarityEndpoint);
+
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
+type SimilarityTexts = BTreeMap<(String, String), String>;
+
+#[cfg(feature = "nli-evidence")]
+type NliDirectionalOverrides = BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), [f32; 3]>;
+
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone)]
 struct SimilarityCandidate {
     left: SimilarityEndpoint,
     right: SimilarityEndpoint,
     embedding_score: f32,
-    rerank_score: f32,
     bge: Option<BgePairEvidence>,
     bge_admission: Option<&'static str>,
-    bge_token_cap: Option<PairTokenBudget>,
     #[cfg(feature = "nli-evidence")]
     nli: Option<NliEvidence>,
     #[cfg(feature = "nli-evidence")]
@@ -764,6 +772,7 @@ enum BgeBackendKind {
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum BgeUnavailableReason {
+    #[cfg(feature = "cross-encoder-reranker")]
     MissingArtifact,
     TokenCap,
 }
@@ -772,6 +781,7 @@ enum BgeUnavailableReason {
 impl BgeUnavailableReason {
     fn as_str(self) -> &'static str {
         match self {
+            #[cfg(feature = "cross-encoder-reranker")]
             Self::MissingArtifact => "missing-artifact",
             Self::TokenCap => "token-cap",
         }
@@ -795,15 +805,16 @@ struct PairTokenBudget {
     limit: usize,
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 #[derive(Debug, Clone, Copy)]
 enum TokenBudgetModel {
+    #[cfg(feature = "cross-encoder-reranker")]
     Bge,
     #[cfg(feature = "nli-evidence")]
     Nli,
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 #[derive(Debug, Default)]
 struct PairBudgetPartition {
     fitting: Vec<(SimilarityEndpoint, SimilarityEndpoint)>,
@@ -826,6 +837,7 @@ struct BgeRun {
 
 #[cfg(feature = "spec-retrieval")]
 impl BgeRun {
+    #[cfg(feature = "cross-encoder-reranker")]
     fn enabled(
         evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), BgePairEvidence>,
         e5_candidates: usize,
@@ -845,6 +857,7 @@ impl BgeRun {
         }
     }
 
+    #[cfg(feature = "cross-encoder-reranker")]
     fn unavailable(
         reason: BgeUnavailableReason,
         e5_candidates: usize,
@@ -984,7 +997,7 @@ pub fn bge_parity(root: &Path) -> Result<()> {
             "max_unique_pairs": max_unique_pairs,
         });
         println!("{}", serde_json::to_string_pretty(&document)?);
-        return Ok(());
+        Ok(())
     }
 
     #[cfg(not(all(feature = "spec-retrieval", feature = "cross-encoder-reranker")))]
@@ -1062,7 +1075,7 @@ fn duplicate_audit(root: &Path, scenarios: &[DuplicateScenario]) -> Result<Dupli
     audit.e5_token_caps = e5_token_caps;
     #[cfg(feature = "nli-evidence")]
     {
-        return apply_duplicate_nli(root, scenarios, audit);
+        apply_duplicate_nli(root, scenarios, audit)
     }
     #[cfg(not(feature = "nli-evidence"))]
     {
@@ -1122,12 +1135,12 @@ fn apply_duplicate_bge(
         run.e5_candidates = raw_count;
         run.unscored = raw_count.saturating_sub(pairs.len());
         let mut unscored = Vec::new();
-        if run.unscored > 0 {
-            if let Some(template) = semantic.first() {
-                let mut candidate = template.clone();
-                candidate.bge_admission = Some("BGE_UNSCORED");
-                unscored.push(candidate);
-            }
+        if run.unscored > 0
+            && let Some(template) = semantic.first()
+        {
+            let mut candidate = template.clone();
+            candidate.bge_admission = Some("BGE_UNSCORED");
+            unscored.push(candidate);
         }
         return Ok(DuplicateAudit {
             candidates,
@@ -1391,12 +1404,12 @@ fn apply_duplicate_nli(
     };
     run.e5_candidates = raw_count;
     run.unscored = raw_count.saturating_sub(pairs.len());
-    if run.unscored > 0 {
-        if let Some(template) = semantic.first() {
-            let mut candidate = template.clone();
-            candidate.nli_admission = Some("NLI_UNSCORED");
-            audit.nli_unscored_candidates.push(candidate);
-        }
+    if run.unscored > 0
+        && let Some(template) = semantic.first()
+    {
+        let mut candidate = template.clone();
+        candidate.nli_admission = Some("NLI_UNSCORED");
+        audit.nli_unscored_candidates.push(candidate);
     }
     for candidate in &mut audit.candidates {
         if candidate.kind == "semantic_candidate" {
@@ -1431,12 +1444,7 @@ fn nli_test_pool() -> Result<Option<(usize, usize)>> {
 }
 
 #[cfg(feature = "nli-evidence")]
-fn synthetic_nli_pairs(
-    count: usize,
-) -> (
-    Vec<(SimilarityEndpoint, SimilarityEndpoint)>,
-    BTreeMap<(String, String), String>,
-) {
+fn synthetic_nli_pairs(count: usize) -> (Vec<SimilarityPair>, SimilarityTexts) {
     let mut pairs = Vec::with_capacity(count);
     let mut texts = BTreeMap::new();
     for index in 0..count {
@@ -1458,12 +1466,13 @@ fn synthetic_nli_pairs(
     (pairs, texts)
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn token_budget_fixture(model: TokenBudgetModel) -> Result<Option<String>> {
     if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
         return Ok(None);
     }
     let key = match model {
+        #[cfg(feature = "cross-encoder-reranker")]
         TokenBudgetModel::Bge => "GIVN_SPEC_BGE_TOKEN_BUDGET",
         #[cfg(feature = "nli-evidence")]
         TokenBudgetModel::Nli => "GIVN_SPEC_NLI_TOKEN_BUDGET",
@@ -1480,7 +1489,7 @@ fn token_budget_fixture(model: TokenBudgetModel) -> Result<Option<String>> {
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn fixture_pair_budget(fixture: &str, index: usize) -> Result<PairTokenBudget> {
     let budget = match fixture {
         "exact-512" | "bounded-512" | "all-512" => PairTokenBudget {
@@ -1519,7 +1528,7 @@ fn fixture_pair_budget(fixture: &str, index: usize) -> Result<PairTokenBudget> {
     Ok(budget)
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn preflight_pair_budgets(
     pairs: &[(SimilarityEndpoint, SimilarityEndpoint)],
     texts: &BTreeMap<(String, String), String>,
@@ -1553,12 +1562,12 @@ fn preflight_pair_budgets(
     Ok(partition)
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn token_budget_fits(budget: PairTokenBudget) -> bool {
     budget.pair_tokens <= budget.limit
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn actual_pair_budget(
     tokenizer: &Tokenizer,
     left: &str,
@@ -2285,6 +2294,7 @@ fn apply_semantic_bge(
         return Ok(None);
     };
     let max_unique_pairs = max_rerank_pairs()?;
+    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
@@ -2998,24 +3008,23 @@ fn render_semantic_report(
     } else {
         "BLOCKED"
     };
+    let report_schema_version = {
+        #[cfg(feature = "nli-evidence")]
+        {
+            nli_run
+                .is_some()
+                .then_some(SEMANTIC_NLI_REPORT_SCHEMA_VERSION)
+        }
+        #[cfg(not(feature = "nli-evidence"))]
+        {
+            None
+        }
+    }
+    .or_else(|| bge_run.map(|_| SEMANTIC_BGE_REPORT_SCHEMA_VERSION))
+    .unwrap_or(SEMANTIC_REPORT_SCHEMA_VERSION);
     let mut report = format!(
         "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
-        if {
-            #[cfg(feature = "nli-evidence")]
-            {
-                nli_run.is_some()
-            }
-            #[cfg(not(feature = "nli-evidence"))]
-            {
-                false
-            }
-        } {
-            SEMANTIC_NLI_REPORT_SCHEMA_VERSION
-        } else if bge_run.is_some() {
-            SEMANTIC_BGE_REPORT_SCHEMA_VERSION
-        } else {
-            SEMANTIC_REPORT_SCHEMA_VERSION
-        },
+        report_schema_version,
         blocking.len(),
     );
     if expose_e5_cap_contract(e5_token_caps) {
@@ -3067,17 +3076,18 @@ fn render_semantic_report(
         report.push_str(&format!("refactoring required: {TOKEN_CAP_GUIDANCE}\n"));
     }
     #[cfg(feature = "nli-evidence")]
-    if bge_run.is_none() {
-        if let Some(run) = nli_run {
-            let recommended = candidates
-                .iter()
-                .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
-                .count();
-            let filtered = candidates
-                .iter()
-                .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
-                .count();
-            report.push_str(&format!(
+    if bge_run.is_none()
+        && let Some(run) = nli_run
+    {
+        let recommended = candidates
+            .iter()
+            .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+            .count();
+        let filtered = candidates
+            .iter()
+            .filter(|candidate| candidate.nli_admission == Some("NLI_FILTERED"))
+            .count();
+        report.push_str(&format!(
                 "NLI status: {}\nNLI reason: {}\nNLI model: {}\nNLI top_k: {}\nNLI max unique pairs: {}\nNLI E5 raw count: {}\nNLI recommended count: {}\nNLI filtered count: {}\nNLI unscored count: {}\nNLI unique pair count: {}\nNLI directional call count: {}\nNLI model load attempts: {}\nNLI runtime ms: {}\n",
                 run.status,
                 run.reason.map(NliUnavailableReason::as_str).unwrap_or("null"),
@@ -3093,14 +3103,14 @@ fn render_semantic_report(
                 run.model_load_attempts,
                 run.runtime_ms.map(|value| value.to_string()).unwrap_or_else(|| "null".to_string()),
             ));
-            let mut index = 0;
-            for candidate in candidates {
-                if candidate.nli_admission == Some("NLI_FILTERED") {
-                    report.push_str(&render_nli_filtered_candidate(candidate));
-                    continue;
-                }
-                index += 1;
-                report.push_str(&format!(
+        let mut index = 0;
+        for candidate in candidates {
+            if candidate.nli_admission == Some("NLI_FILTERED") {
+                report.push_str(&render_nli_filtered_candidate(candidate));
+                continue;
+            }
+            index += 1;
+            report.push_str(&format!(
                     "\n## Candidate {index}\n- candidate_id: {}\n- classification: {}\n- rationale: {}\n- scope: {}\n- left_scope: {}\n- left_file: \"{}\"\n- left_title: \"{}\"\n- left_delta_operation: {}\n- left_projected_target: {}\n- left_evidence_json: {}\n- left_content_hash: {}\n- left_evidence_hash: {}\n- right_scope: {}\n- right_file: \"{}\"\n- right_title: \"{}\"\n- right_delta_operation: {}\n- right_projected_target: {}\n- right_evidence_json: {}\n- right_content_hash: {}\n- right_evidence_hash: {}\n- embedding_score: {:.4}\n- fact_contradiction: {}\n",
                     candidate.candidate_id,
                     candidate.classification,
@@ -3125,11 +3135,10 @@ fn render_semantic_report(
                     candidate.score,
                     candidate.left.facts.facts.contradicts(&candidate.right.facts.facts),
                 ));
-                append_semantic_bge_token_cap_fields(&mut report, candidate);
-                append_nli_candidate_fields(&mut report, candidate);
-            }
-            return report;
+            append_semantic_bge_token_cap_fields(&mut report, candidate);
+            append_nli_candidate_fields(&mut report, candidate);
         }
+        return report;
     }
     if let Some(run) = bge_run {
         let recommended = candidates
@@ -3447,6 +3456,7 @@ fn explore_enabled(
     };
     let refresh = refresh_index(root)?;
     let mut e5_token_caps = refresh.index.e5_token_caps.clone();
+    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
@@ -3469,6 +3479,7 @@ fn explore_enabled(
             .map(|entry| ExploreCandidate {
                 title: entry.title.clone(),
                 file: entry.file.clone(),
+                #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
                 text: permanent_texts
                     .get(&(entry.file.clone(), entry.title.clone()))
                     .cloned()
@@ -3514,6 +3525,7 @@ fn explore_enabled(
             candidates.push(ExploreCandidate {
                 title: item.scenario.title.clone(),
                 file: item.scenario.file.clone(),
+                #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
                 text: item.scenario.text.clone(),
                 embedding,
                 scope: "current-change",
@@ -4093,12 +4105,7 @@ fn bge_test_pool() -> Result<Option<(usize, usize)>> {
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn synthetic_bge_pairs(
-    count: usize,
-) -> (
-    Vec<(SimilarityEndpoint, SimilarityEndpoint)>,
-    BTreeMap<(String, String), String>,
-) {
+fn synthetic_bge_pairs(count: usize) -> (Vec<SimilarityPair>, SimilarityTexts) {
     let mut pairs = Vec::with_capacity(count);
     let mut texts = BTreeMap::new();
     for index in 0..count {
@@ -4269,6 +4276,24 @@ fn score_bge_pairs(
         max_unique_pairs,
         started.elapsed().as_millis(),
     ))
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn stub_reranker_score(left: &str, right: &str) -> f32 {
+    let left_tokens = reranker_tokens(left);
+    let right_tokens = reranker_tokens(right);
+    let shared = left_tokens.intersection(&right_tokens).count() as f32;
+    let union = left_tokens.union(&right_tokens).count() as f32;
+    if union == 0.0 {
+        0.0
+    } else {
+        let overlap = shared / union;
+        if overlap >= 0.85 {
+            7.0 * overlap
+        } else {
+            2.0 * overlap
+        }
+    }
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
@@ -4649,7 +4674,7 @@ fn advisory_review(
     Ok(())
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "spec-similarity-gate"))]
 fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
     let (candidates, considered, e5_token_caps) =
         embedding_similarity_candidates(root, index, delta)?;
@@ -4704,86 +4729,6 @@ fn print_advisory_e5_token_caps(caps: &[E5TokenCap]) {
             cap.title, cap.file, cap.token_count, cap.limit, cap.model, cap.tokenizer,
         );
     }
-}
-
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn run_bge_advisory_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
-    let (mut candidates, considered, texts, e5_token_caps) =
-        similarity_candidate_pool(root, index, delta)?;
-    print_advisory_e5_token_caps(&e5_token_caps);
-    let backend = bge_backend(root)?.context("BGE backend was not selected")?;
-    let max_unique_pairs = max_rerank_pairs()?;
-    candidates.sort_by(similarity_candidate_order);
-    let selected = candidates
-        .iter()
-        .take(max_unique_pairs)
-        .map(|candidate| (candidate.left.clone(), candidate.right.clone()))
-        .collect::<Vec<_>>();
-    let mut run = match backend {
-        Ok(kind) => score_bge_pairs(root, &selected, &texts, kind, max_unique_pairs)
-            .map_err(|error| anyhow::anyhow!("BGE model load attempts: 0; {error}"))?,
-        Err(reason) => BgeRun::unavailable(reason, considered, max_unique_pairs),
-    };
-    run.e5_candidates = considered;
-    run.unscored = considered.saturating_sub(run.evidence.len());
-    if run.status == "BGE_UNAVAILABLE" {
-        println!("BGE status: BGE_UNAVAILABLE");
-        println!(
-            "BGE_UNAVAILABLE: reason {}, recommended 0, filtered 0, unscored {}",
-            run.reason
-                .map(BgeUnavailableReason::as_str)
-                .unwrap_or("missing-artifact"),
-            considered
-        );
-        println!("retrieval advisory: E5-only fallback remains advisory");
-        return Ok(());
-    }
-    println!(
-        "BGE: model {}, top_k {}, max pairs {}, E5 raw {}, unique pairs {}, directional calls {}, runtime ms {}, evidence is advisory",
-        RERANKER_MODEL_ID,
-        RERANKER_TOP_K,
-        run.max_unique_pairs,
-        considered,
-        run.evidence.len(),
-        run.evidence.len() * 2,
-        run.runtime_ms.unwrap_or(0),
-    );
-    let mut recommended = 0;
-    let mut filtered = 0;
-    for candidate in &mut candidates {
-        let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
-        let Some(evidence) = run.evidence.get(&key).cloned() else {
-            candidate.bge_admission = Some("BGE_UNSCORED");
-            continue;
-        };
-        let status = if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
-            recommended += 1;
-            "BGE_RECOMMENDED"
-        } else {
-            filtered += 1;
-            "BGE_FILTERED"
-        };
-        candidate.rerank_score = evidence.symmetric_raw;
-        candidate.bge = Some(evidence.clone());
-        candidate.bge_admission = Some(status);
-        println!(
-            "{}: '{}' ({}) resembles '{}' ({}) E5 {:.4}, forward {:.4}, reverse {:.4}, symmetric {:.4}; evidence is advisory and no Givn classification is assigned",
-            status,
-            candidate.left.title,
-            candidate.left.file,
-            candidate.right.title,
-            candidate.right.file,
-            candidate.embedding_score,
-            evidence.forward_raw,
-            evidence.reverse_raw,
-            evidence.symmetric_raw,
-        );
-    }
-    println!(
-        "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, budget <= {}",
-        recommended, filtered, run.unscored, run.max_unique_pairs
-    );
-    Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -4847,12 +4792,10 @@ fn run_second_stage_advisory_review(
         run.token_caps = partition.capped;
         for candidate in &mut candidates {
             let key = canonical_pair_key(candidate.left.clone(), candidate.right.clone());
-            if let Some(budget) = run.token_caps.get(&key).copied() {
+            if run.token_caps.contains_key(&key) {
                 candidate.bge = None;
-                candidate.bge_token_cap = Some(budget);
                 candidate.bge_admission = Some("BGE_TOKEN_CAP");
             } else if let Some(evidence) = run.evidence.get(&key).cloned() {
-                candidate.bge_token_cap = None;
                 candidate.bge_admission =
                     Some(if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
                         "BGE_RECOMMENDED"
@@ -4861,7 +4804,6 @@ fn run_second_stage_advisory_review(
                     });
                 candidate.bge = Some(evidence);
             } else {
-                candidate.bge_token_cap = None;
                 candidate.bge_admission = Some("BGE_UNSCORED");
             }
         }
@@ -5060,44 +5002,6 @@ fn run_second_stage_advisory_review(
     println!(
         "combined recommended {} of {} E5 candidates; evidence is advisory and no Givn classification is assigned",
         recommended, considered
-    );
-    Ok(())
-}
-
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn run_reranker_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
-    let (candidates, considered) = similarity_candidates(root, index, delta)?;
-    println!(
-        "reranker: model {}, top_k {}, considered {} candidate pairs, fixed raw-logit boundary {:.4}",
-        RERANKER_MODEL_ID, RERANKER_TOP_K, considered, RERANKER_LOGIT_THRESHOLD,
-    );
-    for candidate in &candidates {
-        println!(
-            "reranker candidate [{}]: '{}' ({}) resembles '{}' ({}) embedding {:.4}, rerank raw {:.4}, sigmoid {:.4}, boundary {:.4}; remediation: MERGE (delete an exact duplicate or parameterize a variant) or KEEP-AS-BOUNDARY (rewrite the distinct invariant below the boundary)",
-            candidate.scopes.join(","),
-            candidate.left.title,
-            candidate.left.file,
-            candidate.right.title,
-            candidate.right.file,
-            candidate.embedding_score,
-            candidate.rerank_score,
-            sigmoid(candidate.rerank_score),
-            RERANKER_LOGIT_THRESHOLD,
-        );
-    }
-    println!(
-        "retrieval advisory: pair reranker evaluated {} candidate pairs",
-        considered
-    );
-    if !candidates.is_empty() {
-        bail!(
-            "similarity gate failed: {} reranker candidate(s) are at or above the fixed raw-logit boundary {RERANKER_LOGIT_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the boundary",
-            candidates.len()
-        );
-    }
-    println!(
-        "reranker gate: no scenario pair at or above fixed raw-logit boundary {:.4}",
-        RERANKER_LOGIT_THRESHOLD
     );
     Ok(())
 }
@@ -5956,10 +5860,10 @@ fn semantic_serialization(
         sections.push("steps:".to_string());
         sections.extend(scenario.steps.iter().map(semantic_step));
     }
-    if scenario.keyword.trim() == "Scenario Outline" {
-        if let Some(template) = semantic_optional_text(Some(&scenario.name)) {
-            sections.push(format!("outline_template: {template}"));
-        }
+    if scenario.keyword.trim() == "Scenario Outline"
+        && let Some(template) = semantic_optional_text(Some(&scenario.name))
+    {
+        sections.push(format!("outline_template: {template}"));
     }
     if scenario.examples.is_empty() {
         return sections.join("\n");
@@ -6204,7 +6108,7 @@ fn similarity_candidate_pool(
     Ok((result, considered, candidate_texts, e5_token_caps))
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(all(feature = "spec-retrieval", feature = "spec-similarity-gate"))]
 fn embedding_similarity_candidates(
     root: &Path,
     index: &SpecIndex,
@@ -6285,26 +6189,6 @@ fn embedding_similarity_candidates(
             .then_with(|| left.right.cmp(&right.right))
     });
     Ok((result, considered, e5_token_caps))
-}
-
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn similarity_candidates(
-    root: &Path,
-    index: &SpecIndex,
-    delta: &[DeltaScenario],
-) -> Result<(Vec<SimilarityCandidate>, usize)> {
-    let (mut result, considered, candidate_texts, _) =
-        similarity_candidate_pool(root, index, delta)?;
-    rerank_candidates(root, &mut result, &candidate_texts)?;
-    result.retain(|candidate| candidate.rerank_score >= RERANKER_LOGIT_THRESHOLD);
-    result.sort_by(|left, right| {
-        right
-            .rerank_score
-            .total_cmp(&left.rerank_score)
-            .then_with(|| left.left.cmp(&right.left))
-            .then_with(|| left.right.cmp(&right.right))
-    });
-    Ok((result, considered))
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -6406,7 +6290,7 @@ fn nli_directional_logits(
     left: &SimilarityEndpoint,
     right: &SimilarityEndpoint,
     texts: &BTreeMap<(String, String), String>,
-    overrides: Option<&BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), [f32; 3]>>,
+    overrides: Option<&NliDirectionalOverrides>,
 ) -> Result<[f32; 3]> {
     if let Some(logits) = overrides.and_then(|items| items.get(&(left.clone(), right.clone()))) {
         return Ok(*logits);
@@ -6418,8 +6302,7 @@ fn nli_directional_logits(
 }
 
 #[cfg(feature = "nli-evidence")]
-fn nli_directional_overrides()
--> Result<Option<BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), [f32; 3]>>> {
+fn nli_directional_overrides() -> Result<Option<NliDirectionalOverrides>> {
     let Some(raw) = std::env::var_os("GIVN_SPEC_NLI_DIRECTIONAL_SCORES") else {
         return Ok(None);
     };
@@ -6662,7 +6545,7 @@ impl NliClassifier {
             .any(|input| input.name() == "token_type_ids");
 
         Ok(Self {
-            tokenizer: tokenizer.into(),
+            tokenizer,
             session,
             label_indices,
             need_token_type_ids,
@@ -6837,7 +6720,7 @@ fn endpoint(file: &str, title: &str) -> SimilarityEndpoint {
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn semantic_candidate_order(
     left: &SemanticCandidate,
     right: &SemanticCandidate,
@@ -6851,7 +6734,7 @@ fn semantic_candidate_order(
         .then_with(|| left.candidate_id.cmp(&right.candidate_id))
 }
 
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn similarity_candidate_order(
     left: &SimilarityCandidate,
     right: &SimilarityCandidate,
@@ -6887,7 +6770,6 @@ fn add_similarity_candidate(
         }
         if score > existing.embedding_score {
             existing.embedding_score = score;
-            existing.rerank_score = score;
         }
         return;
     }
@@ -6897,10 +6779,8 @@ fn add_similarity_candidate(
             left,
             right,
             embedding_score: score,
-            rerank_score: f32::NEG_INFINITY,
             bge: None,
             bge_admission: None,
-            bge_token_cap: None,
             #[cfg(feature = "nli-evidence")]
             nli: None,
             #[cfg(feature = "nli-evidence")]
@@ -6912,99 +6792,7 @@ fn add_similarity_candidate(
     );
 }
 
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn rerank_candidates(
-    root: &Path,
-    candidates: &mut [SimilarityCandidate],
-    texts: &BTreeMap<(String, String), String>,
-) -> Result<()> {
-    if candidates.is_empty() {
-        return Ok(());
-    }
-
-    match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
-        Ok("stub") => {
-            for candidate in candidates {
-                let left = scenario_text_for(texts, &candidate.left)?;
-                let right = scenario_text_for(texts, &candidate.right)?;
-                let forward = stub_reranker_score(left, right);
-                let reverse = stub_reranker_score(right, left);
-                candidate.rerank_score = (forward + reverse) / 2.0;
-            }
-            Ok(())
-        }
-        Ok("missing") => bail!(
-            "reranker model is unavailable; configure a local reranker cache or unset GIVN_SPEC_RERANKER"
-        ),
-        Ok(value) => bail!("unknown GIVN_SPEC_RERANKER value `{value}`"),
-        Err(std::env::VarError::NotPresent) => rerank_with_fastembed(root, candidates, texts),
-        Err(std::env::VarError::NotUnicode(_)) => {
-            bail!("GIVN_SPEC_RERANKER is not valid UTF-8")
-        }
-    }
-}
-
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn rerank_with_fastembed(
-    root: &Path,
-    candidates: &mut [SimilarityCandidate],
-    texts: &BTreeMap<(String, String), String>,
-) -> Result<()> {
-    let cache_dir = root.join("givn/.spec-reranker-cache");
-    fs::create_dir_all(&cache_dir)
-        .with_context(|| format!("create reranker model cache {}", cache_dir.display()))?;
-    let options = fastembed::RerankInitOptions::new(fastembed::RerankerModel::BGERerankerV2M3)
-        .with_cache_dir(cache_dir)
-        .with_show_download_progress(false)
-        .with_intra_threads(4);
-    let mut model = fastembed::TextRerank::try_new(options)
-        .context("reranker model is unavailable; check the local reranker cache and network")?;
-
-    let mut documents_by_query: BTreeMap<SimilarityEndpoint, Vec<SimilarityEndpoint>> =
-        BTreeMap::new();
-    for candidate in candidates.iter() {
-        documents_by_query
-            .entry(candidate.left.clone())
-            .or_default()
-            .push(candidate.right.clone());
-        documents_by_query
-            .entry(candidate.right.clone())
-            .or_default()
-            .push(candidate.left.clone());
-    }
-
-    let mut directed_scores: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32> =
-        BTreeMap::new();
-    for (query, documents) in documents_by_query {
-        let query_text = scenario_text_for(texts, &query)?.to_string();
-        let document_texts: Vec<String> = documents
-            .iter()
-            .map(|document| scenario_text_for(texts, document).map(str::to_string))
-            .collect::<Result<Vec<_>>>()?;
-        let results = model
-            .rerank(query_text, document_texts, false, Some(32))
-            .context("rerank similarity candidates")?;
-        for result in results {
-            directed_scores.insert(
-                (query.clone(), documents[result.index].clone()),
-                result.score,
-            );
-        }
-    }
-
-    for candidate in candidates {
-        let forward = directed_scores
-            .get(&(candidate.left.clone(), candidate.right.clone()))
-            .context("reranker omitted forward pair score")?;
-        let reverse = directed_scores
-            .get(&(candidate.right.clone(), candidate.left.clone()))
-            .context("reranker omitted reverse pair score")?;
-        candidate.rerank_score = (forward + reverse) / 2.0;
-    }
-    Ok(())
-}
-
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn scenario_text_for<'a>(
     texts: &'a BTreeMap<(String, String), String>,
     endpoint: &SimilarityEndpoint,
@@ -7015,36 +6803,13 @@ fn scenario_text_for<'a>(
         .with_context(|| format!("missing scenario text for '{}'", endpoint.title))
 }
 
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn stub_reranker_score(left: &str, right: &str) -> f32 {
-    let left_tokens = reranker_tokens(left);
-    let right_tokens = reranker_tokens(right);
-    let shared = left_tokens.intersection(&right_tokens).count() as f32;
-    let union = left_tokens.union(&right_tokens).count() as f32;
-    if union == 0.0 {
-        0.0
-    } else {
-        let overlap = shared / union;
-        if overlap >= 0.85 {
-            7.0 * overlap
-        } else {
-            2.0 * overlap
-        }
-    }
-}
-
-#[cfg(feature = "spec-retrieval")]
+#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn reranker_tokens(text: &str) -> std::collections::BTreeSet<String> {
     text.split(|character: char| !character.is_alphanumeric())
         .filter(|token| !token.is_empty())
         .map(str::to_lowercase)
         .filter(|token| !is_stub_structure_token(token))
         .collect()
-}
-
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn sigmoid(value: f32) -> f32 {
-    1.0 / (1.0 + (-value).exp())
 }
 
 #[cfg(feature = "spec-retrieval")]

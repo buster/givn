@@ -2,12 +2,13 @@
 
 ## Fabrication Audit
 
-This change adds release metadata, public migration guidance, and a real CLI
-upgrade path. The release-specific production behavior is exercised through
-the compiled binary in isolated temporary Git repositories.
+This change adds release metadata, public migration guidance, a real CLI
+upgrade path, and an explicit all-feature Cargo installation contract. The
+release-specific production behavior is exercised through the compiled binary
+in isolated temporary Git repositories.
 
-**@e2e tag integrity:** The feature contains two intended interaction entries
-and two matching `@e2e` scenarios. No planned `@e2e` tag was removed.
+**@e2e tag integrity:** The feature contains three intended interaction entries
+and three matching `@e2e` scenarios. No planned `@e2e` tag was removed.
 
 **Step definition scan** — both capability-specific files were checked for
 empty bodies, `unimplemented!()`, `todo!()`, bare returns, and no-op bodies:
@@ -29,7 +30,10 @@ exit status, output, files, and commit history.
 | The release identifies itself as its package version | `3f02170` | Yes — package and lockfile metadata plus real CLI binding |
 | The changelog describes the complete 0.3.0 release | `65d0b62` | Yes — public release artifact and executable documentation binding |
 | The migration guide is an executable prompt sequence | `2eb8248` | Yes — public migration artifact and executable guide binding |
+| The migration catalog defines complete release-owned bundles | `3989ebe` | Yes — embedded catalog, bundle assets, resolver, and executable catalog binding |
+| Cargo installation enables every declared feature by default | `<pending>` | Yes — Cargo default list, minimal-build documentation, executable release assertion, and all-default lint cleanup |
 | A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | `6157355` | Yes — migration runtime, allowlist, Git commits, and CLI binding |
+| A clean project without migration requirements receives one managed upgrade commit | `3989ebe` | Yes — managed-upgrade runtime, no-migration dispatch, and CLI binding |
 | An unclean project is protected from automatic migration commits | `86be977` | Yes — dirty-worktree runtime guard and CLI binding |
 | Repeating the upgrade does not duplicate the migration | `8fa1b29` | Yes — idempotent runtime guard and CLI binding |
 | A project outside Git is protected from a partial automatic migration | `56f8b09` | Yes — Git preflight diagnostic and CLI binding |
@@ -49,8 +53,9 @@ Gherkin steps.
 | Legacy-version detection | Yes | `src/cli/upgrade.rs:active_config_version` |
 | Migration orchestration | Yes | `src/cli/migration.rs` |
 | Managed generated-path allowlist | Yes | `src/skills/targets.rs:managed_generated_paths` |
-| Clean Git preflight and two commits | Yes | `src/cli/migration.rs` |
-| Maintenance proposal/design generation | Yes | `src/cli/migration.rs` |
+| Clean Git preflight and managed/aggregate commits | Yes | `src/cli/migration.rs` |
+| Migration catalog and path resolver | Yes | `src/cli/migration.rs`, `assets/migrations/catalog.yaml` |
+| Maintenance proposal/design/metadata generation | Yes | `src/cli/migration.rs` |
 | Canonical LLM prompt pack | Yes | `docs/migrations/0.2.0-to-0.3.0.md` |
 | Regular release step definitions | Yes | `tests/steps/release_0_3_0_steps.rs` |
 | Separate CLI E2E step definitions | Yes | `tests/steps/release_0_3_0_e2e_steps.rs` |
@@ -64,13 +69,14 @@ uses `GivnWorld::cucumber().fail_on_skipped()`.
 | @e2e Scenario | Real-interface assertion present? | Browser driver required? | Downgraded? |
 |---|---|---|---|
 | A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | Yes — CLI exit status/output, config, generated plan, and local Git commits | No — CLI | No |
+| A clean project without migration requirements receives one managed upgrade commit | Yes — CLI exit status/output, config, and local Git commit | No — CLI | No |
 | A completed maintenance migration can be archived without a product specification | Yes — CLI archive result and permanent tree | No — CLI | No |
 
 **E2E scope check**
 
 | Capability | @e2e scenario count | Distinct actions? | Over-produced? |
 |---|---:|---|---|
-| 0.2.0-to-0.3.0 migration | 2 | Yes — prepare upgrade and archive maintenance plan are distinct CLI actions | No |
+| 0.2.0-to-0.3.0 migration | 3 | Yes — prepare upgrade, managed-only refresh, and archive maintenance plan are distinct CLI actions | No |
 
 **Duplicate-implementation check**
 
@@ -87,20 +93,21 @@ has no remote or shared state.
 
 | `verify.command` value | `verify.e2e_command` value | Identical? | Full change-suite count | E2e-only count | Strictly smaller? |
 |---|---|---|---:|---:|---|
-| `./run-tests.sh` | `./run-tests.sh --e2e` | No | 10 scenarios, 10 passed | 2 scenarios, 2 passed | Yes |
+| `./run-tests.sh` | `./run-tests.sh --e2e` | No | pending final run | pending final run | Yes |
 
-The direct release runs also proved 8 non-E2E scenarios and 2 E2E scenarios;
-the review-gate run exercised the same 10-scenario feature scope.
+The direct release run before the current feature-default scenario proved 9
+non-E2E scenarios and 3 E2E scenarios. The final run must include the new
+default-feature scenario.
 
 **Design.md conformance check**
 
 | Decision | `design.md` says | Actually built | Matches? |
 |---|---|---|---|
-| Version route | Exact active 0.2.0 to package 0.3.0 route | `upgrade.rs` dispatches to `migration.rs` only for those values | Yes |
+| Version route | Catalog-selected route, including compatible skipped patches | `upgrade.rs` dispatches through `migration_path` | Yes |
 | Git preflight | Repository and fully clean worktree before writes | `ensure_clean_git` checks repository and porcelain status | Yes |
 | Generated scope | Explicit config/skill/command/owned-block allowlist | `managed_generated_paths` plus `givn/config.yaml` | Yes |
-| Commit protocol | Commit A, then plan with Commit A hash as Commit B | `commit_managed_upgrade`, plan creation, `commit_migration_plan` | Yes |
-| Plan shape | Proposal, design, `.givn-skip: specs`; no fake evidence | `write_migration_plan` and generated content | Yes |
+| Commit protocol | One managed commit without migration, or Commit A plus aggregate plan Commit B | `prepare_managed_upgrade`, `prepare_legacy_upgrade`, and `commit_migration_plan` | Yes |
+| Plan shape | Proposal, design, `migration.yaml`, `.givn-skip: specs`; no fake evidence | `write_aggregate_migration_plan` and generated content | Yes |
 | Maintenance archive | Permanent verify path; no delta semantic gate or synthetic feature | `check.rs` and `archive.rs` inspect the skip marker | Yes |
 | E2E bindings | Separate compiled-CLI capability file | `tests/steps/release_0_3_0_e2e_steps.rs` | Yes |
 | Runner strictness | Cucumber `fail_on_skipped()` and real step bodies | `tests/features_runner.rs` and release bindings | Yes |
@@ -110,6 +117,7 @@ the review-gate run exercised the same 10-scenario feature scope.
 | Inventory entry | Matrix row? | Matching @e2e scenario? | Promised driving mechanism | Actual mechanism | Match? |
 |---|---|---|---|---|---|
 | run `givn upgrade` in a clean project created with Givn 0.2.0 | Yes | A clean 0.2.0 project receives a reviewable 0.3.0 migration plan | Compiled CLI subprocess plus local Git inspection | `run_givn` and fixture `git` subprocess | Yes |
+| run `givn upgrade` in a clean project that needs managed guidance refresh but no project migration | Yes | A clean project without migration requirements receives one managed upgrade commit | Compiled CLI subprocess plus local Git inspection | `run_givn` and fixture `git` subprocess | Yes |
 | archive a completed 0.2.0-to-0.3.0 maintenance migration without a product specification | Yes | A completed maintenance migration can be archived without a product specification | Compiled `givn archive` plus permanent-tree inspection | `run_givn` and recursive feature-file inspection | Yes |
 
 ## Arc42 Implementation Conformance
@@ -120,39 +128,36 @@ implementation:
 
 | Arc42 chapter or fact | Durable-doc source | `arc42.md` claim | `design.md` treatment | `tasks.md` treatment | Implementation evidence | Match? |
 |---|---|---|---|---|---|---|
-| Release/migration goal | `01-introduction-and-goals.md` | Yes | Overview and public contract | Release and guide scenarios | `Cargo.toml`, `CHANGELOG.md`, guide | Yes |
+| Release/migration/install goal | `01-introduction-and-goals.md` | Yes | Overview, public contract, and default feature set | Release, guide, and Cargo scenarios | `Cargo.toml`, `CHANGELOG.md`, guide | Yes |
 | Git and ownership constraint | `02-architecture-constraints.md` | Yes | Allowlist and clean preflight | Dirty/non-Git scenarios | `ensure_clean_git`, `stage_paths` | Yes |
 | Upgrade interface | `03-context-and-scope.md` | Yes | CLI E2E surface | Clean upgrade scenario | `givn upgrade` subprocess | Yes |
-| Separation strategy | `04-solution-strategy.md` | Yes | Machine-safe versus LLM-reviewed phases | Upgrade and honesty scenarios | Commit A/B and plan content | Yes |
-| Migration building block | `05-building-block-view.md` | Yes | `cli::migration` responsibility | Clean upgrade scenario | `src/cli/migration.rs` | Yes |
-| Two-commit and archive flow | `06-runtime-view.md` | Yes | Sequence and no-spec archive behavior | Upgrade/archive scenarios | `upgrade.rs`, `archive.rs`, `check.rs` | Yes |
+| Separation strategy | `04-solution-strategy.md` | Yes | Managed-only versus catalog-selected aggregate phases | Upgrade and honesty scenarios | Managed commit, aggregate metadata, and plan content | Yes |
+| Migration building block | `05-building-block-view.md` | Yes | `cli::migration` and embedded catalog responsibility | Catalog and clean upgrade scenarios | `src/cli/migration.rs`, `assets/migrations/` | Yes |
+| Managed, aggregate, and archive flow | `06-runtime-view.md` | Yes | Route selection, managed commit, aggregate plan, and no-spec archive behavior | Upgrade/archive scenarios and catalog tests | `upgrade.rs`, `migration.rs`, `archive.rs`, `check.rs` | Yes |
 | Binary/Git deployment boundary | `07-deployment-view.md` | Yes | Git requirement and generated footprint | Non-Git scenario | Git preflight | Yes |
-| Cross-cutting ownership/idempotency | `08-crosscutting-concepts.md` | Yes | Config, allowlist, plan, and gates | Repeat/existing-plan scenarios | `migration_exists`, snapshots | Yes |
-| ADR-023 refinement | `09-architecture-decisions.md`, ADR-023 | Yes | `AMEND_ADR` to ADR-023 | ADR documentation task | ADR-023 and both indexes | Yes |
-| Release quality scenarios | `10-quality-requirements.md` | Yes | E2E matrix and safety boundaries | Q-48 through Q-53 | 10 passing scenarios | Yes |
-| Migration risks | `11-risks-and-technical-debt.md` | Yes | Failure and marker semantics | Review and archive tasks | R-27 through R-29 | Yes |
-| Migration vocabulary | `12-glossary.md` | Yes | Maintenance/change terminology | Honesty/archive scenarios | glossary entries | Yes |
+| Cross-cutting ownership/idempotency | `08-crosscutting-concepts.md` | Yes | Config, allowlist, catalog, pending plan, and gates | Catalog, repeat, existing-plan, and managed-only scenarios | `migration_path`, `pending_migration_change`, snapshots | Yes |
+| ADR-023/ADR-055 refinement | `09-architecture-decisions.md`, ADR-023, ADR-055 | Yes | `AMEND_ADR` to both existing decisions | ADR documentation task | ADR-023, ADR-055, and both indexes | Yes |
+| Release quality scenarios | `10-quality-requirements.md` | Yes | E2E matrix, managed-only path, safety boundaries, and installation defaults | Q-48 through Q-56 | 13 passing scenarios pending final run | Yes |
+| Migration risks | `11-risks-and-technical-debt.md` | Yes | Failure, marker, catalog, aggregate-order, and default-build-cost semantics | Review and archive tasks | R-27 through R-32 | Yes |
+| Migration vocabulary | `12-glossary.md` | Yes | Managed upgrade, bundle/catalog, aggregate plan terminology | Catalog, honesty, and archive scenarios | glossary entries | Yes |
 
 - [x] Every affected chapter was opened and checked for stale or placeholder
       content.
 - [x] Every relevant architecture fact and ADR refinement is represented in
       `design.md` and mapped to tasks.
-- [x] The implementation follows the documented ownership, Git, two-commit,
-      and no-product-spec archive decisions.
+- [x] The implementation follows the documented ownership, Git, catalog,
+      aggregate, managed-only, and no-product-spec archive decisions.
 - [x] The durable chapters and change-level assessment agree.
 - [x] No Arc42 mismatch remains.
 
-ARC42 CONFORMANCE: CLEAN
+ARC42 CONFORMANCE: PENDING FINAL DEFAULT-FEATURE REVIEW
 
 ## Coverage
 
 **Full repository coverage:**
 
 ```text
-non-E2E: 335 scenarios passed
-E2E:      61 scenarios passed
-merged:   13186 / 19616 lines covered = 67.2206%
-branches: 0 / 0 (Cobertura emitted no branch nodes)
+pending final default-feature coverage run
 ```
 
 The global report is `coverage/cobertura-coverage.xml`, produced by
@@ -161,9 +166,7 @@ The global report is `coverage/cobertura-coverage.xml`, produced by
 **Release-specific coverage:**
 
 ```text
-release scope: 10 scenarios passed
-merged release scope: 1982 / 9080 lines covered
-src/cli/migration.rs: 187 / 247 lines covered = 75.7085%
+pending final default-feature coverage run
 ```
 
 The release-specific report is `coverage/release-cobertura.xml`, produced by
@@ -176,9 +179,7 @@ migration path from being misclassified as absent coverage.
 
 | Location | Lines | Classification | Action taken |
 |---|---:|---|---|
-| Existing production modules outside the release delta | 6430 uncovered lines in the full repository report | Legitimately hard to test in this change | The permanent suite and prior change evidence own those paths; adding unrelated release scenarios would violate the release boundary and the black-box-first rule. |
-| Release-specific existing runtime code not reached by the ten migration scenarios | 7098 lines in the release-only report | Legitimately hard to test in this change | The report is a change-scope diagnostic; existing code is covered by the full permanent suite, while the release scenarios cover every new externally observable route. |
-| `src/cli/migration.rs` failure-only Git commit, snapshot-restore, and temporary-I/O branches | 60 uncovered lines in the release-specific report | Legitimately hard to test | These branches require injected filesystem failure, failing Git hooks, or missing commit identity while preserving the pre-write fixture. The success, dirty, non-Git, existing-plan, idempotent, and archive boundary cases are covered through the real CLI; the remaining fault-injection paths are explicitly isolated and do not alter user history. |
+| All coverage regions | Pending | Pending | Re-run after the default feature set and release scenario are complete. |
 | Branch metric | 0 valid branch nodes emitted | Legitimately hard to test in this Cobertura format | The producer emitted `0/0`; no branch denominator exists to classify. |
 
 No dead code was introduced and no redundant unit-test copy of a release
@@ -190,65 +191,48 @@ boundaries that are not distinct user actions.
 The blocking review gate generated and retained:
 
 ```text
-Status: PASS
-Candidate count: 0
+Status: PENDING FINAL DEFAULT-FEATURE REVIEW
+Candidate count: pending
 ```
 
-The gate was run with the feature-enabled CLI and deterministic stub embedding
-environment. The semantic candidates were advisory-low and the resulting
-report had no admitted candidate requiring classification. No semantic report
-was silently omitted.
+The previous gate was run with the feature-enabled CLI and deterministic stub
+embedding environment before the default-feature scenario was added. Re-run it
+with the final binary and retain the resulting report.
 
 ## Test Suite Result
 
 ```text
-GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags 'not @e2e'
-8 scenarios passed; 36 steps passed
-
-GIVN_FEATURES=givn/changes/release-0-3-0/specs cargo test --test features_runner -- --tags @e2e
-2 scenarios passed; 13 steps passed
-
-cargo test --lib
-143 tests passed
-
-cargo fmt --all -- --check
-passed
-
-cargo clippy --workspace --all-targets -- -D warnings
-passed
-
-givn lint --change release-0-3-0
-clean
+final default-feature verification pending
 ```
 
-**Result:** PASS
+**Result:** PENDING
 
-**Coverage measured:** YES
+**Coverage measured:** pending final default-feature run
 
 ## Sign-off
 
-- [x] Fabrication audit clean: no empty step bodies, all task commits and
+- [ ] Fabrication audit clean: no empty step bodies, all task commits and
       authoritative release/runtime paths checked, all promised components
       exist, and no downgraded or over-produced E2E scenarios remain.
-- [x] All release scenarios pass through the configured Cucumber runner.
-- [x] Every coverage region relevant to this change is measured or classified
+- [ ] All release scenarios pass through the configured Cucumber runner.
+- [ ] Every coverage region relevant to this change is measured or classified
       in one of the three permitted buckets.
-- [x] No `@wip` tags remain in the release delta.
-- [x] The release delta contains observable behavior only; implementation
+- [ ] No `@wip` tags remain in the release delta.
+- [ ] The release delta contains observable behavior only; implementation
       detail remains in `design.md` and the task plan.
-- [x] Local runnability requires no external service and uses isolated local
+- [ ] Local runnability requires no external service and uses isolated local
       Git fixtures.
-- [x] The exact E2E command and capability-specific implementation were read;
+- [ ] The exact E2E command and capability-specific implementation were read;
       no parallel implementation exists.
-- [x] `verify.e2e_command` is distinct from `verify.command` and its count is
+- [ ] `verify.e2e_command` is distinct from `verify.command` and its count is
       strictly smaller.
-- [x] Implementation commands, file layout, framework, and interface match
+- [ ] Implementation commands, file layout, framework, and interface match
       `design.md` after the follow-up archive hardening review.
-- [x] Every interaction inventory entry maps to the design matrix, a matching
+- [ ] Every interaction inventory entry maps to the design matrix, a matching
       E2E scenario, and the promised real CLI mechanism.
-- [x] `design.md` contains `## Internal Primitives` and those primitives exist
+- [ ] `design.md` contains `## Internal Primitives` and those primitives exist
       in the implementation.
-- [x] Every Arc42 slug maps to an existing durable chapter file.
-- [x] No finding is excused with a fourth classification bucket.
+- [ ] Every Arc42 slug maps to an existing durable chapter file.
+- [ ] No finding is excused with a fourth classification bucket.
 
-REVIEW: PASS
+REVIEW: IN PROGRESS

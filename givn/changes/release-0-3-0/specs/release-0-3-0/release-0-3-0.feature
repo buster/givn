@@ -16,6 +16,13 @@ Feature: Givn 0.3.0 release and legacy project migration
     Then the reported version matches the package version
 
   @givn.added
+  Scenario: Cargo installation enables every declared feature by default
+    Given the Cargo feature metadata for the Givn release
+    When a maintainer inspects the default Cargo installation features
+    Then the default feature set contains every declared optional Givn feature
+    And a feature-free minimal build remains explicitly available
+
+  @givn.added
   Scenario: The changelog describes the complete 0.3.0 release
     Given the Givn 0.3.0 release files
     When a maintainer reads the changelog

@@ -10,7 +10,7 @@ register](adr/README.md).
 |---|---|---|
 | TC-1 | Production implementation is Rust. | `Cargo.toml`, `src/` |
 | TC-2 | The default product unit is one native binary with embedded assets. | `src/config/embedded.rs`, Cargo package |
-| TC-3 | The default build has no retrieval model or ONNX dependency. | `Cargo.toml` default features are empty |
+| TC-3 | The default Cargo install enables all declared retrieval features; a feature-free build remains explicitly available with `--no-default-features`. | `Cargo.toml` default feature list |
 | TC-4 | Project lifecycle/configuration data lives under visible `givn/`. | `src/cli/init.rs`, `src/state.rs` |
 | TC-5 | Embedded defaults are fallback; project facets and overlays win. | `src/config/cascade.rs`, `src/config/overlay.rs` |
 | TC-6 | Manifest/config parsing uses YAML through `serde_yaml_ng`. | `src/config/manifest.rs` |
@@ -19,7 +19,7 @@ register](adr/README.md).
 | TC-9 | Lifecycle state is filesystem-derived; there is no state database. | `src/state.rs` |
 | TC-10 | Delta tags use the `@givn.*` namespace. | `src/gherkin/delta.rs`, `src/gherkin/merge.rs` |
 | TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
-| TC-12 | Retrieval is opt-in through `spec-retrieval`; the E5 strict gate is independently selected by `spec-similarity-gate`. | `Cargo.toml`, `src/spec/retrieval.rs` |
+| TC-12 | Retrieval, strict E5, BGE, and NLI are enabled by default for Cargo installation, while runtime selectors and a feature-free build remain explicit. | `Cargo.toml`, `src/spec/retrieval.rs` |
 | TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
 | TC-14 | E5 uses the binary-fixed similarity value `0.95` where the strict gate is compiled. | `src/spec/retrieval.rs` |
 | TC-15 | BGE is optional local evidence; its operating point is `3.0`, not a Givn classification. | `src/spec/retrieval.rs` |

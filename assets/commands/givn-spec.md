@@ -91,11 +91,12 @@ Feature: My Capability
 the inventory, real-interface, and one-E2E-per-distinct-action rules. This
 command only choreographs the spec-writing steps and must not restate them.
 
-Retrieval-aware authoring is feature-dependent. In a retrieval-capable build,
-use `givn spec index` to refresh permanent scenarios and `givn spec search` or
-`givn spec explore` for advisory authoring evidence. The blocking path is
-`givn check review --change <id>`. In a feature-free build, preserve the
-explicit `retrieval-unavailable` failure rather than passing silently.
+Retrieval-aware authoring is feature-dependent. The normal Cargo installation
+includes every retrieval feature; use `givn spec index` to refresh permanent
+scenarios and `givn spec search` or `givn spec explore` for advisory authoring
+evidence. The blocking path is `givn check review --change <id>`. In a
+feature-free build, preserve the explicit `retrieval-unavailable` failure
+rather than passing silently.
 
 E5, BGE, and NLI use the same complete deterministic Gherkin serialization.
 Actual model tokenizers check complete inputs before model construction or

@@ -96,3 +96,4 @@
 | **Migration bundle** | A release-owned Proposal/Design asset pair describing one project migration phase. |
 | **Aggregate migration change** | One visible maintenance change containing all bundle phases required to cross a version gap, with ordered metadata in `migration.yaml`. |
 | **Managed upgrade** | A migration-free upgrade that synchronizes Givn-owned files and creates one allowlist-only commit when needed. |
+| **Default feature set** | Every currently declared Cargo feature activated by `cargo install` unless `--no-default-features` is supplied. |

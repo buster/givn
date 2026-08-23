@@ -22,10 +22,13 @@ historical records.
 
 ## Current Semantic Surface
 
-The retrieval feature is opt-in at build time. E5 uses one compact deterministic
-serialization of the complete parsed Gherkin context and hashes that exact text
-for vector reuse. The actual tokenizer preflights E5 passages and selected
-BGE/NLI pairs without truncation or padding; `512` fits and `513` is over.
+Retrieval is compiled through the `spec-retrieval` feature, which is included in
+the normal Cargo default set together with the strict E5, BGE, and NLI features.
+`--no-default-features` remains the explicit feature-free build. E5 uses one
+compact deterministic serialization of the complete parsed Gherkin context and
+hashes that exact text for vector reuse. The actual tokenizer preflights E5
+passages and selected BGE/NLI pairs without truncation or padding; `512` fits
+and `513` is over.
 Fitting E5 passages are indexed, while over-cap passages are visible as
 classification-free `E5_TOKEN_CAP` findings.
 

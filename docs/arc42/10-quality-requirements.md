@@ -14,7 +14,8 @@ graph TD
     CONFIG --> UPGRADE[Preserve project overrides]
     Q --> INSTALL[Installability]
     INSTALL --> BINARY[Native binary and embedded defaults]
-    INSTALL --> DEFAULT[Feature-free default build]
+    INSTALL --> DEFAULT[All declared features by default]
+    INSTALL --> MINIMAL[Explicit feature-free minimal build]
     Q --> CORRECT[Correctness]
     CORRECT --> MERGE[All-or-nothing delta merge]
     CORRECT --> STATE[Filesystem-derived state]
@@ -89,6 +90,7 @@ graph TD
 | Q-53 | Maintenance archive | A completed migration change intentionally skips `specs`. | Global verification uses permanent specs, no delta semantic gate is invoked, archive succeeds, and no migration feature is added to permanent specs. |
 | Q-54 | Managed upgrade | A clean project has stale generated guidance but no selected migration route. | Config/guidance changes are committed once through the allowlist and no maintenance change is created. |
 | Q-55 | Version skipping | A 0.2.0 project upgrades directly to a later compatible 0.3.x binary. | The 0.2.0-to-0.3.0 migration route remains selected rather than being bypassed by exact-version matching. |
+| Q-56 | Installability | A maintainer installs Givn without an explicit feature flag. | Every declared Cargo feature is enabled by default; `--no-default-features` remains an explicit feature-free escape hatch. |
 
 ## 10.3 Verification Signals
 

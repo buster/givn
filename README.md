@@ -86,7 +86,7 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 | Skill templates hardcoded; overwritten on update | Templates are ejectable override files; updates touch only the embedded fallback |
 | Config scattered across 3 layers | One visible `givn/` directory holds all project config |
 | Opaque config; unclear what's changeable | `givn/config.yaml` is fully commented with documented defaults for every key |
-| No upgrade path when the tool evolves | Config is versioned; `givn upgrade` refreshes it, with `git diff` as the merge surface |
+| No upgrade path when the tool evolves | Config and generated guidance are versioned; `givn upgrade` refreshes and commits managed files, while declared migration bundles become an ordered maintenance change |
 | Silent/guessed test running | Default runner is a sentinel that prints setup guidance and fails until configured |
 | A parallel `spec.md` format duplicating the `.feature` | The `.feature` file **is** the spec — nothing duplicated |
 | Coverage gated on an arbitrary percentage | Gate is **completeness of gap classification**, not a number |
@@ -148,6 +148,11 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   with every key present-but-commented, documented inline (description, default,
   allowed values). It carries `givn_config_version`; `givn upgrade` provides a
   version-to-version upgrade path that preserves your overrides.
+- **All retrieval capabilities by default.** `cargo install --path .` enables
+  every currently declared Cargo feature, including E5 retrieval, the strict
+  similarity gate, BGE evidence, and NLI evidence. Use `--no-default-features`
+  for the minimal feature-free binary; unavailable retrieval is always reported
+  explicitly.
 - **Lint and test are separate, by design.** `givn lint` is a built-in command
   that statically checks your `.feature` files (syntax, `@wip`, delta tags) and
   **runs no tests**. Running the actual tests is a separate command you configure
@@ -179,13 +184,16 @@ Existing spec-driven tools have pain points this project fixes deliberately:
 ## Install
 
 Not yet published to crates.io, Homebrew, or as release binaries — the only
-way to install it today is to build from source. No npm, no root, no
-runtime beyond a Rust toolchain.
+way to install it today is to build from source. No npm, no root, no runtime
+beyond a Rust toolchain. The default Cargo install enables all declared
+features; use `--no-default-features` when a feature-free binary is required.
 
 ```sh
 git clone <this repository's URL>
 cd givn
 cargo install --path .
+# Minimal build without retrieval/model dependencies:
+cargo install --path . --no-default-features
 ```
 
 This installs the `givn` binary to `~/.cargo/bin` (make sure that's on your
@@ -246,7 +254,7 @@ givn completions fish                       # print fish completion script (sour
 > `givn/config.yaml` ships **fully commented** — every option is documented inline
 > with its default and allowed values. It is **versioned** (`givn_config_version`);
 > `givn upgrade` refreshes the documentation scaffold to a newer givn release while
-> preserving your overrides, with `git diff` as the review/merge surface.
+> preserving your overrides and committing managed changes as the review surface.
 
 ## Development
 
@@ -268,7 +276,7 @@ After archiving every change, update the local Givn binary and regenerate all
 agent integrations before starting the next change:
 
 ```sh
-cargo install --path . --locked --force --features spec-retrieval
+cargo install --path . --locked --force
 givn skills sync
 givn instructions
 ./run-tests.sh

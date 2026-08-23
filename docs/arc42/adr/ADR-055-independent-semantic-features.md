@@ -40,7 +40,8 @@ Earlier experiments coupled reranking, the E5 gate, and an NLI selector. That co
 
 ## Decision Drivers
 
-- feature-free default build
+- complete capability set in the normal Cargo install
+- explicit feature-free `--no-default-features` escape hatch
 - explicit E5 hard-gate selection
 - independent BGE and NLI evidence
 - testable dispatch matrix
@@ -53,11 +54,21 @@ Earlier experiments coupled reranking, the E5 gate, and an NLI selector. That co
 
 ## Decision Outcome
 
-Chosen option: **Use independent `spec-retrieval`, `spec-similarity-gate`, `cross-encoder-reranker`, and `nli-evidence` capabilities**. BGE is selected through `GIVN_SPEC_BGE`; NLI is selected through `GIVN_SPEC_RERANKER=nli` or `nli-stub`; neither second-stage feature implies the E5 hard gate or the other model.
+Chosen option: **Use independent `spec-retrieval`, `spec-similarity-gate`, `cross-encoder-reranker`, and `nli-evidence` capabilities**. BGE is selected through `GIVN_SPEC_BGE`; NLI is selected through `GIVN_SPEC_RERANKER=nli` or `nli-stub`; neither second-stage feature implies the E5 hard gate or the other model. The normal Cargo installation enables all four declared capabilities, while `--no-default-features` provides the explicit feature-free build.
+
+### 0.3.0 Amendment
+
+The 0.3.0 release changes only the Cargo default selection, not the
+independence contract. A source installation without an explicit feature flag
+now includes retrieval, the strict E5 gate, BGE evidence, and NLI evidence.
+Runtime selectors and the feature-free unavailable behavior remain explicit.
 
 ### Consequences
 
-- The default build has no retrieval model dependency.
+- The normal build includes retrieval model dependencies and may require local
+  model artifacts when those runtime paths are selected.
+- Constrained environments can use `--no-default-features` for a feature-free
+  binary with explicit retrieval-unavailable behavior.
 - Test scripts must select the feature and environment matrix deliberately.
 - Combined output is produced only when both layers participate.
 
