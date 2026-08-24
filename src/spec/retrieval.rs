@@ -1110,6 +1110,28 @@ fn fetch_hf_artifacts(
                 files: paths,
             });
         }
+        if paths.len() == files.len() {
+            let first_file = files
+                .first()
+                .copied()
+                .context("model artifact list is empty")?;
+            let snapshot = paths
+                .get(first_file)
+                .and_then(|path| snapshot_root(path, first_file))
+                .context("model artifact cache has no snapshot root")?;
+            if files.iter().all(|file| {
+                paths
+                    .get(*file)
+                    .and_then(|path| snapshot_root(path, file))
+                    .as_ref()
+                    == Some(&snapshot)
+            }) {
+                return Ok(ResolvedArtifacts {
+                    snapshot,
+                    files: paths,
+                });
+            }
+        }
     }
 
     for file in files {
@@ -1206,6 +1228,58 @@ fn validate_required_files(files: &BTreeMap<String, std::path::PathBuf>) -> Resu
             path.display()
         );
     }
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn auto_e5_artifacts(root: &Path) -> Result<()> {
+    let cache_root = e5_model_cache_dir(root)?;
+    let files = [
+        "model.onnx",
+        "model.onnx_data",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ];
+    let mut artifacts = fetch_hf_artifacts(
+        &cache_root,
+        MODEL_ID,
+        E5_MODEL_REPOSITORY,
+        "main",
+        &files,
+        false,
+    )?;
+    let validate = |artifacts: &ResolvedArtifacts| -> Result<()> {
+        validate_required_files(&artifacts.files)?;
+        load_unbounded_tokenizer(artifacts.files.get("tokenizer.json").unwrap())?;
+        for name in [
+            "config.json",
+            "special_tokens_map.json",
+            "tokenizer_config.json",
+        ] {
+            validate_json_artifact(artifacts.files.get(name).unwrap(), "E5 metadata")?;
+        }
+        Ok(())
+    };
+    if validate(&artifacts).is_err() {
+        artifacts = fetch_hf_artifacts(
+            &cache_root,
+            MODEL_ID,
+            E5_MODEL_REPOSITORY,
+            "main",
+            &files,
+            true,
+        )?;
+        validate(&artifacts)?;
+    }
+    write_artifact_manifest(
+        &cache_root,
+        MODEL_ID,
+        E5_MODEL_REPOSITORY,
+        "main",
+        &artifacts.files,
+    )?;
     Ok(())
 }
 
@@ -7585,7 +7659,9 @@ fn embed_texts_with_policy(
         Err(std::env::VarError::NotPresent)
     );
     let mut model = if use_real_embedder {
-        if !allow_download {
+        if allow_download {
+            auto_e5_artifacts(root)?;
+        } else {
             ensure_e5_cache_available(root)?;
         }
         Some(fastembed_model(root)?)
@@ -7594,6 +7670,10 @@ fn embed_texts_with_policy(
     };
     let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => preflight_e5_stub_texts(texts)?,
+        Ok("download-stub") => {
+            auto_e5_artifacts(root)?;
+            preflight_e5_stub_texts(texts)?
+        }
         Ok("missing") => {
             let cache = e5_model_cache_dir(root)
                 .map(|path| path.display().to_string())
@@ -7619,6 +7699,10 @@ fn embed_texts_with_policy(
         .collect();
     let vectors = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => fitting_texts
+            .iter()
+            .map(|text| stub_embedding(text, role))
+            .collect(),
+        Ok("download-stub") => fitting_texts
             .iter()
             .map(|text| stub_embedding(text, role))
             .collect(),
