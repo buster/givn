@@ -67,18 +67,32 @@ fn announces_e5_download_start(world: &mut GivnWorld) {
 }
 
 #[then("stderr reports per-file download progress for the E5 model artifacts")]
-fn reports_e5_per_file_progress(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_e5_per_file_progress(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for artifact in ["model.onnx", "tokenizer.json"] {
+        assert!(
+            stderr.contains(&format!("downloading {artifact} ")),
+            "stderr missing per-file progress for {artifact}: {stderr}"
+        );
+    }
 }
 
 #[then("stderr announces the completion of the retrieval model download")]
-fn announces_e5_download_completion(_world: &mut GivnWorld) {
-    unimplemented!()
+fn announces_e5_download_completion(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("retrieval model artifacts (E5) resolved"),
+        "stderr did not announce the E5 download completion: {stderr}"
+    );
 }
 
 #[then("stderr announces the preparation of the retrieval embedder")]
-fn announces_embedder_preparation(_world: &mut GivnWorld) {
-    unimplemented!()
+fn announces_embedder_preparation(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("preparing retrieval embedder"),
+        "stderr did not announce the embedder preparation: {stderr}"
+    );
 }
 
 #[then("stderr announces the embedding of three pending scenarios")]
@@ -106,8 +120,12 @@ fn reports_per_scenario_embedding_progress(world: &mut GivnWorld) {
 }
 
 #[then("stderr announces the completion of the embedding phase")]
-fn announces_embedding_completion(_world: &mut GivnWorld) {
-    unimplemented!()
+fn announces_embedding_completion(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("embedding complete"),
+        "stderr did not announce the embedding completion: {stderr}"
+    );
 }
 
 #[then("stderr does not announce a model download")]
