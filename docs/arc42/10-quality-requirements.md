@@ -97,6 +97,7 @@ graph TD
 | Q-59 | Model safety | A model source returns missing, partial, or invalid artifacts. | The command fails or reports the existing unavailable status with the model, cache, failed file, and local override guidance; no invalid artifact participates. |
 | Q-60 | Cache reuse | Two projects use the same model role after one successful setup. | The second operation reuses the validated user-cache snapshot without copying large model files into its project. |
 | Q-61 | Index guidance | A semantic surface starts without a persistent index. | It emits `spec index is missing at <path>; run \`givn spec index\` first`; refresh-capable surfaces retain their documented refresh/fallback behavior. |
+| Q-62 | Cache ownership | A maintainer runs a benchmark export or comparison without an explicit model path. | E5, BGE, NLI, and flat-export model paths resolve under the XDG Givn cache; the generated comparison index remains project-local. |
 
 ## 10.3 Verification Signals
 

@@ -20,7 +20,7 @@ historical measurement is not a current quality claim.
 | R-11 | Complete semantic serialization increases token count and changes vector reuse. | Medium | High | Hash the exact serialization, preflight actual tokenizers, expose cap evidence, and re-embed on hash mismatch. |
 | R-12 | The complete Duplicate Audit is quadratic in permanent corpus size. | Medium | Medium | Embed each fitting scenario once and score remaining pairs in memory; measure runtime before introducing a bounded/indexed redesign. |
 | R-13 | E5 candidate generation misses a semantic duplicate. | Medium | Critical | Keep the `0.9500` gate and measure candidate recall against labeled evidence; E5 remains the recall boundary for BGE/NLI. |
-| R-14 | BGE filters a true duplicate or variant. | Medium | Critical | Preserve raw E5 evidence, require matching approval for default BGE, and treat the BGE operating point as non-classifying evidence. |
+| R-14 | BGE filters a true duplicate or variant. | Medium | Critical | Preserve raw E5 evidence, keep benchmark approval separate from runtime activation, and treat the BGE operating point as non-classifying evidence. |
 | R-15 | NLI filters a true duplicate or variant. | Medium | Critical | Preserve raw E5 and directional NLI evidence, keep NLI independent and non-authoritative, and measure labeled admission quality. |
 | R-16 | BGE and NLI pool descriptions diverge from implementation by surface. | Medium | High | Duplicate Audit BGE uses its top-five endpoint union while Duplicate Audit NLI uses the full E5 semantic set; blocking review uses complete report candidates, not a universal top-five pool. |
 | R-17 | Benchmark approval is mistaken for runtime artifact integrity. | Medium | High | Runtime approval checks schema/model/threshold/top-k/budget/pipeline/pass fields; separate artifact preflight checks local files. The current runtime does not recheck benchmark file hashes. |
@@ -43,6 +43,7 @@ historical measurement is not a current quality claim.
 | R-34 | A shared user cache can be corrupted or changed outside a project review. | Medium | High | Validate every required file before use, retain explicit local artifact overrides, and distinguish artifact integrity from BGE admission. |
 | R-35 | Automatic model acquisition consumes disk space or network bandwidth unexpectedly. | Medium | Medium | Trigger downloads only from explicit semantic commands, keep role-specific cache directories, reuse snapshots across projects, and report the resolved path. |
 | R-36 | The XDG environment is incomplete or nonconforming. | Low | Medium | Require an absolute `XDG_CACHE_HOME` or fall back to `$HOME/.cache`; fail with the required environment and explicit override when neither is usable. |
+| R-37 | Benchmark tooling reintroduces project-local or `/tmp` model defaults. | Medium | Medium | Derive E5, BGE, NLI, and flat-export defaults from the shared XDG cache and assert the shell helper's default output through its real subprocess path. |
 
 ## 11.2 Deliberate Technical Debt
 
