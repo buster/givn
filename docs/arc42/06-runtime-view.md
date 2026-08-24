@@ -189,7 +189,14 @@ permanent-only index is written through a temporary file and rename.
 
 Search reads the existing `.spec-index.json`; it does not refresh it. It embeds
 the free-text query with the `query:` role, ranks vector entries by cosine, and
-prints at most five results. This path is advisory and E5-only.
+prints at most five results. This path is advisory and E5-only by default.
+
+With `--evidence`, the same five displayed results are passed to the BGE and,
+when compiled, NLI second stages exactly like Explore: the raw query text is
+the query side of the pair, candidate scenario text is resolved from the
+permanent specs, and per-candidate verdicts plus a layer-availability summary
+are appended to the output. The layer is reported as unavailable (and never as
+filtered) when it cannot score; the flag does not change the E5 ranking.
 
 ### 6.8.3 `givn spec explore`
 

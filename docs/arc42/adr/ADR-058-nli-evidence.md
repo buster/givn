@@ -55,7 +55,7 @@ BGE supplies one relevance signal, while NLI supplies directional relationship e
 
 Chosen option: **Add local NLI evidence behind `nli-evidence`**. The selected pairs are scored in both directions; label names are resolved from `id2label`; directional probabilities and a symmetric probability vector are reported. The symmetric entailment point `0.5000` emits `NLI_RECOMMENDED` or `NLI_FILTERED` evidence only. It never assigns a Givn classification.
 
-On the Duplicate Audit, NLI receives the full E5 semantic candidate pool independently of BGE's endpoint top-five union. On Explore, advisory review, and blocking semantic review it receives the E5 candidates selected by that surface, independently of BGE.
+On the Duplicate Audit, NLI receives the full E5 semantic candidate pool independently of BGE's endpoint top-five union. On Explore, advisory review, blocking semantic review, and `spec search --evidence` it receives the E5 candidates selected by that surface, independently of BGE.
 
 ### Consequences
 

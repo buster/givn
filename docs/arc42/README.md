@@ -47,6 +47,7 @@ The second-stage pools are surface-dependent:
 |---|---|---|
 | `spec duplicates` | Endpoint top-five union, then E5-ranked budget | Full E5 semantic candidate pool, independently budgeted |
 | `spec explore` | At most the five ranked Explore results | The same at-most-five Explore result set, independently scored |
+| `spec search --evidence` | The five displayed search results | The same five displayed results, independently scored |
 | advisory `spec review` | The surface's retrieved candidate pool, then budget | The same surface pool, independently scored |
 | blocking `check review` | Complete semantic-report candidates, then budget | The same report candidates, independently budgeted |
 
