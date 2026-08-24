@@ -18,7 +18,7 @@ use std::collections::HashSet;
 use std::fs;
 
 #[cfg(feature = "spec-retrieval")]
-use std::io::Read;
+use std::io::{Read, Write};
 
 #[cfg(feature = "spec-retrieval")]
 use serde::{Deserialize, Serialize};
@@ -921,6 +921,7 @@ struct ArtifactManifest {
 #[cfg(feature = "spec-retrieval")]
 #[derive(Debug, Clone)]
 struct ResolvedArtifacts {
+    #[allow(dead_code)]
     snapshot: std::path::PathBuf,
     files: BTreeMap<String, std::path::PathBuf>,
 }
@@ -935,12 +936,29 @@ struct NliArtifacts {
 
 #[cfg(feature = "spec-retrieval")]
 fn model_cache_dir(root: &Path, role: &str) -> Result<std::path::PathBuf> {
-    if let Some(path) = std::env::var_os("HF_HOME") {
+    let resolved = model_cache_dir_from_values(
+        role,
+        std::env::var_os("HF_HOME").as_deref(),
+        std::env::var_os("XDG_CACHE_HOME").as_deref(),
+        std::env::var_os("HOME").as_deref(),
+    )?;
+    let _ = root;
+    Ok(resolved)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn model_cache_dir_from_values(
+    role: &str,
+    hf_home: Option<&std::ffi::OsStr>,
+    xdg_cache_home: Option<&std::ffi::OsStr>,
+    home: Option<&std::ffi::OsStr>,
+) -> Result<std::path::PathBuf> {
+    if let Some(path) = hf_home {
         anyhow::ensure!(!path.is_empty(), "HF_HOME must not be empty");
         return Ok(std::path::PathBuf::from(path));
     }
 
-    let cache_home = match std::env::var_os("XDG_CACHE_HOME") {
+    let cache_home = match xdg_cache_home {
         Some(path) if !path.is_empty() => {
             let path = std::path::PathBuf::from(path);
             anyhow::ensure!(
@@ -950,13 +968,12 @@ fn model_cache_dir(root: &Path, role: &str) -> Result<std::path::PathBuf> {
             );
             path
         }
-        _ => std::env::var_os("HOME")
+        _ => home
+            .filter(|path| !path.is_empty())
             .map(std::path::PathBuf::from)
-            .filter(|path| !path.as_os_str().is_empty())
             .map(|path| path.join(".cache"))
             .with_context(|| "HOME is required when XDG_CACHE_HOME and HF_HOME are unset")?,
     };
-    let _ = root;
     Ok(cache_home.join("givn").join(role))
 }
 
@@ -1141,12 +1158,22 @@ fn fetch_hf_artifacts(
     }
     paths.clear();
     for file in files {
+        let expected_size = api
+            .metadata(&repo.url(file))
+            .with_context(|| format!("read metadata for {model} artifact {file}"))?
+            .size();
         let path = repo.download(file).with_context(|| {
             format!(
                 "download {model} artifact {file} into {}",
                 cache_root.display()
             )
         })?;
+        let actual = artifact_digest(&path)?;
+        anyhow::ensure!(
+            actual.bytes == expected_size as u64,
+            "downloaded {model} artifact {file} has {} bytes; expected {expected_size}",
+            actual.bytes
+        );
         paths.insert((*file).to_string(), path);
     }
     let first_file = files
@@ -1200,6 +1227,22 @@ fn write_artifact_manifest(
             artifact_manifest_path(cache_root).display()
         )
     })?;
+    Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn record_download_event(event: &str) -> Result<()> {
+    let Some(path) = std::env::var_os("GIVN_SPEC_DOWNLOAD_EVENTS") else {
+        return Ok(());
+    };
+    let path = std::path::PathBuf::from(path);
+    let mut file = fs::OpenOptions::new()
+        .create(true)
+        .append(true)
+        .open(&path)
+        .with_context(|| format!("open download event log {}", path.display()))?;
+    writeln!(file, "{event}")
+        .with_context(|| format!("write download event log {}", path.display()))?;
     Ok(())
 }
 
@@ -1280,6 +1323,7 @@ fn auto_e5_artifacts(root: &Path) -> Result<()> {
         "main",
         &artifacts.files,
     )?;
+    record_download_event("artifact-resolved")?;
     Ok(())
 }
 
@@ -1481,6 +1525,7 @@ pub fn explore(
 pub fn review(root: &Path, change_id: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
+        report_missing_index(root);
         review_enabled(root, change_id, true)
     }
 
@@ -1498,9 +1543,16 @@ pub fn review_without_download(root: &Path, change_id: &str) -> Result<()> {
     review_enabled(root, change_id, false)
 }
 
+#[cfg(feature = "spec-retrieval")]
+pub fn review_without_index_notice(root: &Path, change_id: &str) -> Result<()> {
+    review_enabled(root, change_id, true)
+}
+
+#[allow(dead_code)]
 pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
+        report_missing_index(root);
         semantic_review_enabled(root, change_id)
     }
 
@@ -1511,6 +1563,11 @@ pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+pub fn semantic_review_without_index_notice(root: &Path, change_id: &str) -> Result<()> {
+    semantic_review_enabled(root, change_id)
 }
 
 pub fn duplicates(root: &Path, json: bool) -> Result<()> {
@@ -2656,7 +2713,6 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
 fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
-    report_missing_index(root);
     let refresh = refresh_index(root, true)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
@@ -5148,7 +5204,6 @@ fn print_explore_text(
 fn review_enabled(root: &Path, change_id: &str, allow_download: bool) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
-    report_missing_index(root);
     index_enabled(root, allow_download)?;
     let index = read_index(&spec_index_path(root))?;
 
@@ -5605,7 +5660,7 @@ fn spec_index_path(root: &Path) -> std::path::PathBuf {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn report_missing_index(root: &Path) {
+pub fn report_missing_index(root: &Path) {
     let path = spec_index_path(root);
     if !path.exists() {
         eprintln!(
@@ -7672,10 +7727,16 @@ fn embed_texts_with_policy(
         None
     };
     let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
-        Ok("stub") => preflight_e5_stub_texts(texts)?,
+        Ok("stub") => {
+            let caps = preflight_e5_stub_texts(texts)?;
+            record_download_event("token-budget-measured")?;
+            caps
+        }
         Ok("download-stub") => {
             auto_e5_artifacts(root)?;
-            preflight_e5_stub_texts(texts)?
+            let caps = preflight_e5_stub_texts(texts)?;
+            record_download_event("token-budget-measured")?;
+            caps
         }
         Ok("missing") => {
             let cache = e5_model_cache_dir(root)
@@ -7832,22 +7893,29 @@ fn preflight_e5_texts(
             limit: E5_MAX_LENGTH,
         }));
     }
+    record_download_event("token-budget-measured")?;
     Ok(caps)
 }
 
 #[cfg(feature = "spec-retrieval")]
 fn find_e5_tokenizer(root: &Path) -> Option<std::path::PathBuf> {
-    let mut roots = Vec::new();
-    if let Some(path) = std::env::var_os("GIVN_SPEC_MODEL_CACHE") {
-        roots.push(std::path::PathBuf::from(path));
-    }
-    if let Some(path) = std::env::var_os("HF_HOME") {
-        roots.push(std::path::PathBuf::from(path));
-    }
-    roots.push(root.join("givn/.spec-model-cache"));
-    roots
-        .into_iter()
-        .find_map(|path| find_named_file(&path, "tokenizer.json"))
+    let cache_dir = e5_model_cache_dir(root).ok()?;
+    let cache = hf_hub::Cache::new(cache_dir.clone());
+    let repo = cache.repo(hf_hub::Repo::new(
+        E5_MODEL_REPOSITORY.to_string(),
+        hf_hub::RepoType::Model,
+    ));
+    repo.get("tokenizer.json")
+        .or_else(|| {
+            cache_dir
+                .join("tokenizer.json")
+                .is_file()
+                .then(|| cache_dir.join("tokenizer.json"))
+        })
+        .or_else(|| {
+            let legacy = root.join("givn/.spec-model-cache/tokenizer.json");
+            legacy.is_file().then_some(legacy)
+        })
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -7856,29 +7924,7 @@ fn e5_model_cache_dir(root: &Path) -> Result<std::path::PathBuf> {
         anyhow::ensure!(!path.is_empty(), "GIVN_SPEC_MODEL_CACHE must not be empty");
         return Ok(std::path::PathBuf::from(path));
     }
-    if let Some(path) = std::env::var_os("HF_HOME") {
-        anyhow::ensure!(!path.is_empty(), "HF_HOME must not be empty");
-        return Ok(std::path::PathBuf::from(path));
-    }
-
-    let cache_home = match std::env::var_os("XDG_CACHE_HOME") {
-        Some(path) if !path.is_empty() => {
-            let path = std::path::PathBuf::from(path);
-            anyhow::ensure!(
-                path.is_absolute(),
-                "XDG_CACHE_HOME must be an absolute path, got {}",
-                path.display()
-            );
-            path
-        }
-        _ => std::env::var_os("HOME")
-            .map(std::path::PathBuf::from)
-            .filter(|path| !path.as_os_str().is_empty())
-            .map(|path| path.join(".cache"))
-            .with_context(|| "HOME is required when XDG_CACHE_HOME and HF_HOME are unset")?,
-    };
-    let _ = root;
-    Ok(cache_home.join("givn/e5"))
+    model_cache_dir(root, "e5")
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -7891,25 +7937,6 @@ fn report_e5_cache_reuse(root: &Path) -> Result<()> {
         println!("Reused E5 model artifacts from {}", cache_dir.display());
     }
     Ok(())
-}
-
-#[cfg(feature = "spec-retrieval")]
-fn find_named_file(root: &Path, name: &str) -> Option<std::path::PathBuf> {
-    if root.is_file() {
-        return (root.file_name().and_then(|value| value.to_str()) == Some(name))
-            .then(|| root.to_path_buf());
-    }
-    let mut entries = fs::read_dir(root)
-        .ok()?
-        .filter_map(|entry| entry.ok().map(|entry| entry.path()))
-        .collect::<Vec<_>>();
-    entries.sort();
-    for path in entries {
-        if let Some(found) = find_named_file(&path, name) {
-            return Some(found);
-        }
-    }
-    None
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -8098,6 +8125,50 @@ fn print_search_results(ranked: &[(&IndexEntry, f32)]) {
 #[cfg(all(test, feature = "spec-retrieval"))]
 mod tests {
     use super::*;
+
+    #[test]
+    fn model_cache_resolution_prefers_explicit_hf_then_xdg_then_home() {
+        let hf = model_cache_dir_from_values(
+            "e5",
+            Some(Path::new("/srv/huggingface").as_os_str()),
+            Some(Path::new("/srv/xdg").as_os_str()),
+            Some(Path::new("/home/tester").as_os_str()),
+        )
+        .unwrap();
+        assert_eq!(hf, Path::new("/srv/huggingface"));
+
+        let xdg = model_cache_dir_from_values(
+            "bge",
+            None,
+            Some(Path::new("/srv/xdg").as_os_str()),
+            Some(Path::new("/home/tester").as_os_str()),
+        )
+        .unwrap();
+        assert_eq!(xdg, Path::new("/srv/xdg/givn/bge"));
+
+        let home = model_cache_dir_from_values(
+            "nli",
+            None,
+            None,
+            Some(Path::new("/home/tester").as_os_str()),
+        )
+        .unwrap();
+        assert_eq!(home, Path::new("/home/tester/.cache/givn/nli"));
+    }
+
+    #[test]
+    fn model_cache_resolution_rejects_relative_xdg_and_missing_home() {
+        let relative = model_cache_dir_from_values(
+            "e5",
+            None,
+            Some(Path::new("relative/cache").as_os_str()),
+            Some(Path::new("/home/tester").as_os_str()),
+        );
+        assert!(relative.is_err());
+
+        let missing_home = model_cache_dir_from_values("e5", None, None, None);
+        assert!(missing_home.is_err());
+    }
 
     #[test]
     #[cfg(feature = "nli-evidence")]

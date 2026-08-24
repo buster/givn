@@ -153,6 +153,11 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   similarity gate, BGE evidence, and NLI evidence. Use `--no-default-features`
   for the minimal feature-free binary; unavailable retrieval is always reported
   explicitly.
+- **Shared model cache.** Explicit semantic commands download and validate E5,
+  BGE, and NLI artifacts in `$XDG_CACHE_HOME/givn/{e5,bge,nli}`, falling back to
+  `$HOME/.cache/givn/{e5,bge,nli}`. The permanent index stays in the project at
+  `givn/.spec-index.json`. See [`docs/retrieval-models.md`](docs/retrieval-models.md)
+  for model sources, overrides, selector modes, and offline recovery.
 - **Lint and test are separate, by design.** `givn lint` is a built-in command
   that statically checks your `.feature` files (syntax, `@wip`, delta tags) and
   **runs no tests**. Running the actual tests is a separate command you configure

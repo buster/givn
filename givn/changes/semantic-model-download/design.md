@@ -308,7 +308,7 @@ threshold, output schema, or BGE/NLI recommendation rule changes.
 - `tests/common/mod.rs`: carry isolated XDG cache and start/stop the local
   deterministic HF-compatible artifact-source fixture for subprocesses.
 - `tests/steps/mod.rs`: register the regular and E2E capability bindings and
-  carry the cache/download fixture selectors.
+  carry isolated cache/source state into subprocess environments.
 - `tests/steps/semantic_model_download_steps.rs`: regular Gherkin bindings,
   one file for this capability.
 - `tests/steps/semantic_model_download_e2e_steps.rs`: compiled-CLI E2E
