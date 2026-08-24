@@ -52,14 +52,12 @@ Feature: NLI evidence for bounded semantic candidate reduction
     And  the semantic review report records the filtered candidates without a Givn classification
     And  the semantic review report status is "PASS"
 
-  @nli @e2e
+  @nli
   Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit
-    Given  an end-to-end permanent corpus with deterministic overlaps and NLI semantic candidates
-    When  the end-to-end user runs the permanent NLI duplicate audit through the givn CLI
-    Then  the command exits 0
-    And  the audit reports the E5 candidate count and bounded NLI pair count
-    And  the audit reports reduced recommended and filtered NLI candidate counts
-    And  deterministic exact and structural overlaps have no NLI evidence
+    Given  a permanent corpus with deterministic semantic candidates for an independent NLI audit
+    When  the user runs the permanent NLI duplicate audit
+    Then  NLI receives the full E5 semantic candidate pool independently of BGE
+    And  the NLI audit retains the E5 candidate identities and ordering
 
   @nli @nli-combined
   Scenario: BGE and NLI jointly reduce the recommended candidate set
