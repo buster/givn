@@ -30,8 +30,9 @@ is `$XDG_CACHE_HOME/givn/bge` (or `$HOME/.cache/givn/bge`) and the production
 loader preflights
 `model.onnx`, optional referenced `model.onnx.data`, `tokenizer.json`,
 `config.json`, `special_tokens_map.json`, and `tokenizer_config.json` before
-using FastEmbed's user-defined loader. An approval file is checked for the
-runtime metadata required by the BGE admission path.
+using FastEmbed's user-defined loader. Benchmark approval is a separate
+evidence and release decision; it does not gate runtime BGE participation.
+Explicit `GIVN_SPEC_BGE=disabled` remains the runtime opt-out.
 
 `nli-evidence` adds local NLI evidence and is enabled by default. Its default artifact directory is
 `$XDG_CACHE_HOME/givn/nli` (or `$HOME/.cache/givn/nli`). Automatic Hub
@@ -44,6 +45,9 @@ model/cache paths override these locations.
 The cache is user-owned and shared across projects. Givn creates a role cache
 only on explicit semantic use. It validates downloaded files before model
 construction and never treats a partial transfer as an available model.
+Benchmark tooling uses the same user cache policy; flat exported benchmark NLI
+artifacts are stored under `$XDG_CACHE_HOME/givn/nli-exported` or its
+`$HOME/.cache/givn/nli-exported` fallback.
 
 Regular and E2E tests use deterministic stubs and do not download or construct
 multi-gigabyte model artifacts. Production model paths remain local and

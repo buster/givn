@@ -11,9 +11,9 @@ Example:
     uv run --with 'fastembed==0.8.0' --with 'onnxruntime' \
       --with 'tokenizers' --with 'numpy' \
       tools/approach-comparison/compare.py \
-      --nli-model /tmp/opencode/nli-model \
-      --bge-model givn/.spec-reranker-cache/models--rozgo/bge-reranker-v2-m3 \
-      run
+       --nli-model "$XDG_CACHE_HOME/givn/nli-exported" \
+       --bge-cache "$XDG_CACHE_HOME/givn/bge" \
+       run
 """
 
 from __future__ import annotations
@@ -35,9 +35,22 @@ import numpy as np
 ROOT = Path(__file__).resolve().parents[2]
 DEFAULT_CORPUS = ROOT / "test-corpus" / "specs"
 DEFAULT_INDEX = ROOT / "test-corpus" / "indexes" / "combined-e5"
-DEFAULT_EMBED_CACHE = ROOT / "givn" / ".spec-model-cache"
-DEFAULT_BGE_CACHE = ROOT / "givn" / ".spec-reranker-cache"
-DEFAULT_NLI_MODEL = Path("/tmp/opencode/nli-model")
+
+
+def default_xdg_cache() -> Path:
+    configured = os.environ.get("XDG_CACHE_HOME")
+    if configured:
+        path = Path(configured)
+        if not path.is_absolute():
+            raise ValueError("XDG_CACHE_HOME must be an absolute path")
+        return path / "givn"
+    return Path.home() / ".cache" / "givn"
+
+
+DEFAULT_MODEL_CACHE = default_xdg_cache()
+DEFAULT_EMBED_CACHE = DEFAULT_MODEL_CACHE / "e5"
+DEFAULT_BGE_CACHE = DEFAULT_MODEL_CACHE / "bge"
+DEFAULT_NLI_MODEL = DEFAULT_MODEL_CACHE / "nli-exported"
 EMBED_MODEL = "intfloat/multilingual-e5-large"
 BGE_MODEL_ID = "rozgo/bge-reranker-v2-m3"
 NLI_MODEL_ID = "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"

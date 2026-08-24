@@ -314,6 +314,16 @@ local paths. Regular and E2E tests use a deterministic local artifact-source
 fixture and do not contact the live Hugging Face service or construct large
 model artifacts.
 
+### 6.12.1 Benchmark model export and comparison
+
+The benchmark helpers are maintainer-facing shell interfaces, not product
+commands. `export_nli_model.sh` resolves its flat export destination from
+`XDG_CACHE_HOME` or `HOME`; `run_comparison.sh` passes that same default to the
+Python comparison process. `compare.py` keeps its generated index under the
+project's `test-corpus/indexes/` while E5, BGE, and NLI model defaults point to
+the shared user cache. An explicit command argument may override a model path,
+but no default points to the project or `/tmp`.
+
 ## 6.12 Addons, Upgrade, and Completion Commands
 
 `givn addons list` reads enabled flags from `givn/config.yaml`. `enable arc42`

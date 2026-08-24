@@ -2,7 +2,15 @@
 set -eu
 
 ROOT=$(CDPATH= cd -- "$(dirname -- "$0")/../.." && pwd)
-NLI_MODEL=${NLI_MODEL:-/tmp/opencode/nli-model}
+XDG_CACHE_HOME=${XDG_CACHE_HOME:-${HOME:?HOME must be set when XDG_CACHE_HOME is unset}/.cache}
+case "$XDG_CACHE_HOME" in
+    /*) ;;
+    *)
+        printf '%s\n' 'XDG_CACHE_HOME must be an absolute path' >&2
+        exit 2
+        ;;
+esac
+NLI_MODEL=${NLI_MODEL:-$XDG_CACHE_HOME/givn/nli-exported}
 CANDIDATE_SCOPE=${CANDIDATE_SCOPE:-bounded}
 
 if [ "${SKIP_NLI:-0}" = "1" ]; then

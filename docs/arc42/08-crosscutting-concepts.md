@@ -118,6 +118,7 @@ $XDG_CACHE_HOME/givn/            # shared user-level model cache
   e5/                             # E5 FastEmbed artifacts
   bge/                            # BGE artifacts
   nli/                            # NLI Hub snapshots or flat override root
+  nli-exported/                   # flat benchmark/export artifacts
 
 docs/arc42/                      # fixed durable Arc42 output path
 ```

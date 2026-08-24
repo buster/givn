@@ -101,3 +101,4 @@
 | **Role cache** | The `e5`, `bge`, or `nli` subdirectory of the XDG model cache, selected by the model layer that needs artifacts. |
 | **Artifact resolver** | The validated acquisition boundary that reuses or downloads complete model files before tokenizer/model construction. |
 | **Missing-index diagnostic** | `spec index is missing at <path>; run \`givn spec index\` first`, emitted when a semantic surface has no persistent index. |
+| **Benchmark export cache** | The XDG `givn/nli-exported` directory containing a flat NLI ONNX export for the external comparison tooling; it is separate from the product's `givn/nli` Hub snapshot. |
