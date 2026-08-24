@@ -143,17 +143,22 @@
   `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `02b61b0`.
 
 ## Scenario: Archive maintenance does not download models implicitly
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: pass an explicit no-download acquisition policy through archive
-  pre-merge and post-success refresh paths. Production files: _pending_. Test
-  files: _pending_. Output: _pending_
-- [ ] REFACTOR: keep archive download policy explicit and rerun the named
-  scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: passed an explicit no-download acquisition policy through archive
+  pre-merge and post-success refresh paths. Production files:
+  `src/spec/retrieval.rs`, `src/cli/archive.rs`. Test files:
+  `tests/steps/semantic_model_download_steps.rs`. Compile step:
+  `cargo check --features spec-retrieval` passed. Targeted output: `1 scenario
+  (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files and reran the named
+  scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit

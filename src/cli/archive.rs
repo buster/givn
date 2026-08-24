@@ -249,7 +249,7 @@ fn run_similarity_gate(project_root: &std::path::Path, change_id: &str) -> Resul
     if crate::state::is_skipped("specs", &change_dir) {
         return Ok(());
     }
-    crate::spec::retrieval::review(project_root, change_id)
+    crate::spec::retrieval::review_without_download(project_root, change_id)
 }
 
 #[cfg(not(feature = "spec-retrieval"))]
@@ -259,7 +259,7 @@ fn run_similarity_gate(_project_root: &std::path::Path, _change_id: &str) -> Res
 
 #[cfg(feature = "spec-retrieval")]
 fn refresh_similarity_index(project_root: &std::path::Path) {
-    if let Err(error) = crate::spec::retrieval::index(project_root) {
+    if let Err(error) = crate::spec::retrieval::index_without_download(project_root) {
         eprintln!("warning: retrieval index refresh after archive failed: {error:#}");
     }
 }
