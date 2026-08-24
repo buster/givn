@@ -150,6 +150,11 @@
   `605` unscored, `126` token-cap, `821.6 s`; NLI `1062` scored,
   `1045` filtered, `212` unscored, `212` token-cap, `770.1 s`; combined
   `0` recommended; E5 `1274` candidates.
-- [ ] `givn check review --change semantic-reranker-budget` passes all required
-  gates. (Final gate for the review stage; runs verify + verify-e2e +
-  integrity + overlap + retrieval.)
+- [x] `givn check review --change semantic-reranker-budget` passes all required
+  gates. Evidence: run with the repository stub environment
+  (`GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled GIVN_SPEC_RERANKER=disabled`);
+  `verify`, `verify-e2e`, `integrity`, `overlap dispositions`, and the
+  similarity gate all pass (exit 0); the semantic gate reports
+  `Candidate count: 0` after the two invalid-budget scenarios were
+  sharpened with their concrete stderr messages, dropping the
+  delta-to-delta pair below the 0.9500 threshold.
