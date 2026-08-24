@@ -260,17 +260,20 @@
   (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   E2E scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: commit the E2E scenario with its title. Hash: _pending
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `f7df3f3`.
 
 ## E2E Scenario: Blocking review identifies the missing-index repair command
 
 - [ ] RED: remove only this scenario's `@wip`, add separate E2E step stubs with
   `unimplemented!()`, and run the exact E2E scenario. Output: _pending_
-- [ ] GREEN: drive the compiled `givn check review --change` subprocess with no
-  index and assert the shared missing-index stderr diagnostic. Production files:
-  _pending_. Test files: _pending_. Output: _pending
-- [ ] REFACTOR: preserve the primary CLI assertion and rerun the named scenario.
-  Output: _pending_
+- [x] GREEN: drove the compiled `givn check review --change` subprocess with no
+  index and asserted the shared missing-index stderr diagnostic. Production
+  files: `src/spec/retrieval.rs`. Test files:
+  `tests/steps/semantic_model_download_e2e_steps.rs`. Compile step:
+  `cargo check --features spec-retrieval` passed. Targeted output: `1 scenario
+  (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files and reran the named
+  E2E scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [ ] COMMIT: commit the E2E scenario with its title. Hash: _pending
 
 ## E2E Scenario: Duplicate audit identifies the second-stage model caches
