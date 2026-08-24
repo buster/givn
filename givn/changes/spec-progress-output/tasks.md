@@ -104,16 +104,21 @@
 
 ## Scenario: Search with a cold E5 cache announces model acquisition before results (@e2e)
 
-- [ ] RED: remove only this scenario's `@wip`, add e2e step stubs with
-  `unimplemented!()`, and run the exact named scenario via the e2e runner.
-  Output: _pending_
-- [ ] GREEN: add the cold-E5-cache-with-index fixture and the
-  search-with-acquisition e2e when-step; confirm `search` emits the shared
-  acquisition notices and ranked results on stdout. Production files:
-  _pending_. Output: _pending_
-- [ ] REFACTOR: simplify without behavior change and rerun the named scenario.
-  Output: _pending_
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] RED: removed only this scenario's `@wip`; ran the named scenario via
+  the e2e runner with the previous commit's step stubs. Output:
+  `1 scenario (1 failed)`, `1 step (1 failed)`,
+  `Step panicked. Captured output: not implemented`, non-zero exit.
+- [x] GREEN: cold-E5-cache-with-index fixture, reachable-model-source step,
+  search-with-acquisition when-step; search emits the shared acquisition
+  notices and ranked results on stdout. Production files: none (shared
+  notices from previous scenarios). Test files:
+  `tests/steps/spec_progress_output_e2e_steps.rs`,
+  `tests/steps/spec_progress_output_steps.rs`.
+  Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
+  scenario: `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
+  Hash: _pending_
 
 ## Scenario: Duplicate audit keeps stdout pure JSON while progress runs on stderr (@e2e, @nli-combined)
 
