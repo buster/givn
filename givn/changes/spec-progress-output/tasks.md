@@ -118,7 +118,7 @@
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: _pending_
+  Hash: `4173c75`
 
 ## Scenario: Duplicate audit keeps stdout pure JSON while progress runs on stderr (@e2e, @nli-combined)
 
@@ -131,7 +131,7 @@
   Production files: _pending_. Output: _pending_
 - [ ] REFACTOR: simplify without behavior change and rerun the named scenario.
   Output: _pending_
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `4173c75`
 
 ## Scenario: Advisory review announces second-stage model acquisition during the run (@e2e, @nli-combined)
 
@@ -144,7 +144,7 @@
   Production files: _pending_. Output: _pending_
 - [ ] REFACTOR: simplify without behavior change and rerun the named scenario.
   Output: _pending_
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `4173c75`
 
 ## Final verification
 
