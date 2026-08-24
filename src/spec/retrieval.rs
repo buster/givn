@@ -8208,7 +8208,7 @@ fn bge_candidate_line(
             budget.pair_tokens, budget.left_tokens, budget.right_tokens, budget.limit
         )
     } else {
-        String::new()
+        "BGE: BGE_UNSCORED".to_string()
     }
 }
 
@@ -8436,6 +8436,6 @@ fn nli_candidate_line(
             budget.pair_tokens, budget.left_tokens, budget.right_tokens, budget.limit
         )
     } else {
-        String::new()
+        "NLI: NLI_UNSCORED".to_string()
     }
 }
