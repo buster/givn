@@ -4094,7 +4094,16 @@ fn search_enabled(root: &Path, query: &str, evidence: bool) -> Result<()> {
     let bge_run = bge_explore_run(root, &query_obj, &candidates)?;
     #[cfg(not(feature = "cross-encoder-reranker"))]
     let bge_run: Option<BgeRun> = None;
-    print_search_results_with_evidence(&ranked, &query_endpoint, bge_run.as_ref());
+    #[cfg(all(feature = "spec-retrieval", feature = "nli-evidence"))]
+    let nli_run = nli_explore_run(root, &query_obj, &candidates)?;
+
+    print_search_results_with_evidence(
+        &ranked,
+        &query_endpoint,
+        bge_run.as_ref(),
+        #[cfg(feature = "nli-evidence")]
+        nli_run.as_ref(),
+    );
     Ok(())
 }
 
@@ -8132,6 +8141,7 @@ fn print_search_results_with_evidence(
     ranked: &[(&IndexEntry, f32)],
     query_endpoint: &SimilarityEndpoint,
     bge_run: Option<&BgeRun>,
+    #[cfg(feature = "nli-evidence")] nli_run: Option<&NliRun>,
 ) {
     for (rank, (entry, score)) in ranked.iter().take(SEARCH_EVIDENCE_TOP_K).enumerate() {
         println!(
@@ -8143,6 +8153,10 @@ fn print_search_results_with_evidence(
         );
         if let Some(run) = bge_run {
             println!("  {}", bge_candidate_line(run, query_endpoint, &entry.file, &entry.title));
+        }
+        #[cfg(feature = "nli-evidence")]
+        if let Some(run) = nli_run {
+            println!("  {}", nli_candidate_line(run, query_endpoint, &entry.file, &entry.title));
         }
     }
 }
@@ -8386,5 +8400,33 @@ mod tests {
         }
         assert!(!text.contains("[]"));
         assert_eq!(semantic_optional_text(Some(" \n\t")), None);
+    }
+}
+
+#[cfg(feature = "nli-evidence")]
+fn nli_candidate_line(
+    run: &NliRun,
+    query_endpoint: &SimilarityEndpoint,
+    file: &str,
+    title: &str,
+) -> String {
+    let key = canonical_pair_key(query_endpoint.clone(), endpoint(file, title));
+    if let Some(evidence) = run.evidence.get(&key) {
+        let status = if evidence.symmetric[0] >= NLI_ADMISSION_THRESHOLD {
+            "NLI_RECOMMENDED"
+        } else {
+            "NLI_FILTERED"
+        };
+        format!(
+            "NLI: {status} (entailment {:.4}, neutral {:.4}, contradiction {:.4})",
+            evidence.symmetric[0], evidence.symmetric[1], evidence.symmetric[2]
+        )
+    } else if let Some(budget) = run.token_caps.get(&key) {
+        format!(
+            "NLI: NLI_TOKEN_CAP (pair {} tokens, left {}, right {}, limit {})",
+            budget.pair_tokens, budget.left_tokens, budget.right_tokens, budget.limit
+        )
+    } else {
+        String::new()
     }
 }
