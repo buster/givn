@@ -4,7 +4,6 @@ use cucumber::{given, when};
 
 use super::GivnWorld;
 
-
 #[given(
     "an initialized project with a completed permanent semantic index and a cold E5 model cache"
 )]
