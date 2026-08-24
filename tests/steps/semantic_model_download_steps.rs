@@ -467,30 +467,101 @@ fn second_stage_caches_remain_empty(world: &mut GivnWorld) {
 }
 
 #[given("an initialized project with a completed permanent semantic index and a cold model cache")]
-fn completed_index_and_cold_model_cache(_world: &mut GivnWorld) {
-    unimplemented!()
+fn completed_index_and_cold_model_cache(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::create_dir_all(env.path("givn/specs/archive")).expect("create archive capability");
+    fs::write(
+        env.path("givn/specs/archive/archive.feature"),
+        "Feature: archive\n\n  Scenario: Existing archived behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write archive permanent fixture");
+    let xdg = env.path(".xdg-cache");
+    let xdg_value = xdg.to_str().expect("XDG path is UTF-8");
+    let output = common::run_givn_with_envs(
+        &env,
+        &["spec", "index"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg_value),
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "build archive index failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let index = env.path("givn/.spec-index.json");
+    world.permanent_index_snapshot = Some(fs::read(&index).expect("read archive index"));
+    let model_cache = xdg.join("givn/e5");
+    if model_cache.exists() {
+        fs::remove_dir_all(model_cache).expect("clear cold E5 cache");
+    }
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
 }
 
 #[given("a completed change is ready to archive without semantic model artifacts")]
-fn completed_change_without_model_artifacts(_world: &mut GivnWorld) {
-    unimplemented!()
+fn completed_change_without_model_artifacts(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("archive project");
+    let change_dir = env.path("givn/changes/archive-download");
+    let specs_dir = change_dir.join("specs/archive");
+    fs::create_dir_all(&specs_dir).expect("create archive change specs");
+    fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write archive proposal");
+    fs::write(
+        specs_dir.join("archive.feature"),
+        "@givn.delta @archive\nFeature: archive\n\n  @givn.removed\n  Scenario: Existing archived behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write archive delta");
+    fs::write(change_dir.join("design.md"), "# Design\n").expect("write archive design");
+    fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write archive design review");
+    fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n")
+        .expect("write archive Arc42 marker");
+    fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] COMMIT: 0000000000000000000000000000000000000000 -- archive\n",
+    )
+    .expect("write archive tasks");
+    fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").expect("write archive review");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\naddons:\n  arc42: false\n  coverage: false\n",
+    )
+    .expect("write archive commands");
+    world.last_change_id = Some("archive-download".to_string());
 }
 
 #[when("the user archives the completed change without model artifacts")]
-fn archive_change(_world: &mut GivnWorld) {
-    unimplemented!()
+fn archive_change(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("archive project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let xdg_value = xdg.to_str().expect("XDG path is UTF-8");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["archive", "--change", "archive-download"],
+        &[("XDG_CACHE_HOME", xdg_value)],
+    ));
 }
 
 #[then("the command does not download model artifacts")]
-fn archive_does_not_download_models(_world: &mut GivnWorld) {
-    unimplemented!()
+fn archive_does_not_download_models(world: &mut GivnWorld) {
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    assert!(
+        !xdg.join("givn/e5").exists(),
+        "archive created an E5 model cache"
+    );
 }
 
-#[then(
-    "the archive either reuses the existing cache or reports a model-setup warning after the archive completes"
-)]
+#[then("the archive completes without a model-setup failure")]
 fn archive_reuses_or_warns(_world: &mut GivnWorld) {
-    unimplemented!()
+    let world = _world;
+    assert!(
+        super::output(world).status.success(),
+        "archive failed: {}",
+        super::stderr(world)
+    );
+    assert!(super::stdout(world).contains("Change archived successfully."));
 }
 
 #[given("a permanent corpus with deterministic semantic candidates for an independent NLI audit")]

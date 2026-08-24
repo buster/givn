@@ -118,13 +118,13 @@ Feature: Automatic semantic model availability
     When the end-to-end user runs blocking review without an index through the givn CLI
     Then the blocking review reports `spec index is missing at <path>; run `givn spec index` first`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive maintenance does not download models implicitly
     Given an initialized project with a completed permanent semantic index and a cold model cache
     And a completed change is ready to archive without semantic model artifacts
     When the user archives the completed change without model artifacts
     Then the command does not download model artifacts
-    And the archive either reuses the existing cache or reports a model-setup warning after the archive completes
+    And the archive completes without a model-setup failure
 
   @givn.added @nli @nli-combined @e2e @wip
   Scenario: Duplicate audit identifies the second-stage model caches

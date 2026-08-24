@@ -1351,7 +1351,7 @@ fn nli_artifacts_for_backend(root: &Path, automatic: bool) -> Result<NliArtifact
 pub fn index(root: &Path) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        index_enabled(root)
+        index_enabled(root, true)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
@@ -1361,6 +1361,11 @@ pub fn index(root: &Path) -> Result<()> {
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+pub fn index_without_download(root: &Path) -> Result<()> {
+    index_enabled(root, false)
 }
 
 pub fn search(root: &Path, query: &str) -> Result<()> {
@@ -1402,7 +1407,7 @@ pub fn explore(
 pub fn review(root: &Path, change_id: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        review_enabled(root, change_id)
+        review_enabled(root, change_id, true)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
@@ -1412,6 +1417,11 @@ pub fn review(root: &Path, change_id: &str) -> Result<()> {
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
     }
+}
+
+#[cfg(feature = "spec-retrieval")]
+pub fn review_without_download(root: &Path, change_id: &str) -> Result<()> {
+    review_enabled(root, change_id, false)
 }
 
 pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
@@ -1474,8 +1484,8 @@ pub fn bge_parity(root: &Path) -> Result<()> {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn index_enabled(root: &Path) -> Result<()> {
-    let refresh = refresh_index(root)?;
+fn index_enabled(root: &Path, allow_download: bool) -> Result<()> {
+    let refresh = refresh_index(root, allow_download)?;
     println!(
         "Indexed {} permanent scenarios",
         refresh.index.entries.len()
@@ -2572,7 +2582,7 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
 fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
-    let refresh = refresh_index(root)?;
+    let refresh = refresh_index(root, true)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
     let semantic_set = semantic_candidates(root, &refresh.index, &delta)?;
@@ -3813,7 +3823,7 @@ fn render_nli_filtered_candidate(candidate: &SemanticCandidate) -> String {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn refresh_index(root: &Path) -> Result<IndexRefresh> {
+fn refresh_index(root: &Path, allow_download: bool) -> Result<IndexRefresh> {
     let entries = collect_scenarios(root)?;
     let index_path = spec_index_path(root);
     let previous = read_index(&index_path).unwrap_or_else(|_| SpecIndex {
@@ -3842,7 +3852,7 @@ fn refresh_index(root: &Path) -> Result<IndexRefresh> {
     let mut embedded = 0usize;
     if !pending.is_empty() {
         let texts: Vec<String> = pending.iter().map(|item| item.text.clone()).collect();
-        let batch = embed_texts(root, &texts, EmbeddingRole::Passage)?;
+        let batch = embed_texts_with_policy(root, &texts, EmbeddingRole::Passage, allow_download)?;
         for (index, scenario) in pending.into_iter().enumerate() {
             if let Some(embedding) = batch.vectors[index].clone() {
                 result.push(IndexEntry {
@@ -3930,7 +3940,7 @@ fn explore_enabled(
     } else {
         None
     };
-    let refresh = refresh_index(root)?;
+    let refresh = refresh_index(root, true)?;
     let mut e5_token_caps = refresh.index.e5_token_caps.clone();
     #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
@@ -5059,10 +5069,10 @@ fn print_explore_text(
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn review_enabled(root: &Path, change_id: &str) -> Result<()> {
+fn review_enabled(root: &Path, change_id: &str, allow_download: bool) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
-    index_enabled(root)?;
+    index_enabled(root, allow_download)?;
     let index = read_index(&spec_index_path(root))?;
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
@@ -7559,7 +7569,29 @@ fn e5_token_cap_order(left: &E5TokenCap, right: &E5TokenCap) -> std::cmp::Orderi
 
 #[cfg(feature = "spec-retrieval")]
 fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<EmbeddingBatch> {
+    embed_texts_with_policy(root, texts, role, true)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn embed_texts_with_policy(
+    root: &Path,
+    texts: &[String],
+    role: EmbeddingRole,
+    allow_download: bool,
+) -> Result<EmbeddingBatch> {
     report_e5_cache_reuse(root)?;
+    let use_real_embedder = matches!(
+        std::env::var("GIVN_SPEC_EMBEDDER"),
+        Err(std::env::VarError::NotPresent)
+    );
+    let mut model = if use_real_embedder {
+        if !allow_download {
+            ensure_e5_cache_available(root)?;
+        }
+        Some(fastembed_model(root)?)
+    } else {
+        None
+    };
     let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => preflight_e5_stub_texts(texts)?,
         Ok("missing") => {
@@ -7592,7 +7624,10 @@ fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Emb
             .collect(),
         Ok("missing") => unreachable!("missing embedder handled by preflight"),
         Ok(value) => bail!("unknown GIVN_SPEC_EMBEDDER value `{value}`"),
-        Err(std::env::VarError::NotPresent) => fastembed_texts(root, &fitting_texts, role)?,
+        Err(std::env::VarError::NotPresent) => {
+            let model = model.as_mut().expect("real embedder model initialized");
+            fastembed_texts_with_model(model, &fitting_texts, role)?
+        }
         Err(std::env::VarError::NotUnicode(_)) => {
             bail!("GIVN_SPEC_EMBEDDER is not valid UTF-8")
         }
@@ -7859,18 +7894,25 @@ fn is_stub_structure_token(token: &str) -> bool {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn fastembed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<Vec<Vec<f32>>> {
-    let cache_dir = std::env::var_os("GIVN_SPEC_MODEL_CACHE")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| root.join("givn/.spec-model-cache"));
+fn fastembed_model(root: &Path) -> Result<fastembed::TextEmbedding> {
+    let cache_dir = e5_model_cache_dir(root)?;
     fs::create_dir_all(&cache_dir)
         .with_context(|| format!("create retrieval model cache {}", cache_dir.display()))?;
-    let options = fastembed::InitOptions::new(fastembed::EmbeddingModel::MultilingualE5Large)
+    let options = fastembed::TextInitOptions::new(fastembed::EmbeddingModel::MultilingualE5Large)
         .with_cache_dir(cache_dir)
         .with_show_download_progress(false)
         .with_intra_threads(1);
-    let mut model = fastembed::TextEmbedding::try_new(options)
-        .context("retrieval model is unavailable; check the local model cache and network")?;
+    fastembed::TextEmbedding::try_new(options).context(
+        "retrieval model is unavailable; check the local E5 model cache, network, and GIVN_SPEC_MODEL_CACHE",
+    )
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn fastembed_texts_with_model(
+    model: &mut fastembed::TextEmbedding,
+    texts: &[String],
+    role: EmbeddingRole,
+) -> Result<Vec<Vec<f32>>> {
     let prefix = match role {
         EmbeddingRole::Passage => "passage: ",
         EmbeddingRole::Query => "query: ",
@@ -7879,6 +7921,30 @@ fn fastembed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result
     model
         .embed(input, Some(32))
         .context("generate retrieval embeddings")
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn ensure_e5_cache_available(root: &Path) -> Result<()> {
+    let cache_dir = e5_model_cache_dir(root)?;
+    let cache = hf_hub::Cache::new(cache_dir.clone());
+    let repo = cache.repo(hf_hub::Repo::new(
+        E5_MODEL_REPOSITORY.to_string(),
+        hf_hub::RepoType::Model,
+    ));
+    let required = [
+        "model.onnx",
+        "model.onnx_data",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ];
+    anyhow::ensure!(
+        required.iter().all(|file| repo.get(file).is_some()),
+        "model download is disabled for this operation; provide a complete E5 cache at {} or run `givn spec index` first",
+        cache_dir.display()
+    );
+    Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]
