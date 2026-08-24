@@ -64,6 +64,8 @@ pub mod spec_explore_permanent_e2e_steps;
 pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
 pub mod spec_retrieval_steps;
+pub mod search_evidence_e2e_steps;
+pub mod search_evidence_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
