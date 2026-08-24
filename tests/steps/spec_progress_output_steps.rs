@@ -131,8 +131,17 @@ fn reports_second_stage_per_file_progress(_world: &mut GivnWorld) {
 }
 
 #[then("stderr does not announce a BGE or NLI model download")]
-fn does_not_announce_second_stage_downloads(_world: &mut GivnWorld) {
-    unimplemented!()
+fn does_not_announce_second_stage_downloads(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for needle in [
+        "resolving reranker model artifacts (BGE)",
+        "resolving NLI model artifacts",
+    ] {
+        assert!(
+            !stderr.contains(needle),
+            "stderr announced a second-stage download: {stderr}"
+        );
+    }
 }
 
 #[then("stdout reports ranked search results")]
