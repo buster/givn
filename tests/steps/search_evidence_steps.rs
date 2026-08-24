@@ -6,7 +6,7 @@ use super::GivnWorld;
 
 #[given("local NLI evidence is enabled")]
 fn local_nli_enabled(world: &mut GivnWorld) {
-    unimplemented!("local NLI evidence is enabled");
+    world.retrieval_reranker = Some("nli-stub".to_string());
 }
 
 #[given("every BGE pair exceeds the token limit")]
