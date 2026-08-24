@@ -195,8 +195,12 @@ fn does_not_announce_second_stage_downloads(world: &mut GivnWorld) {
 }
 
 #[then("stdout reports ranked search results")]
-fn reports_ranked_search_results(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_ranked_search_results(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    assert!(
+        stdout.contains("rank 1:"),
+        "stdout did not report ranked search results: {stdout}"
+    );
 }
 
 #[then("stdout reports advisory retrieval evidence")]
