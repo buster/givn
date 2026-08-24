@@ -100,7 +100,7 @@
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `11 steps (11 passed)`.
 - [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `366cbec`
+  Hash: `c6082dc`
 
 ## Scenario: Search with a cold E5 cache announces model acquisition before results (@e2e)
 
