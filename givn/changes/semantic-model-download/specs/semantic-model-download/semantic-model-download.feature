@@ -145,9 +145,9 @@ Feature: Automatic semantic model availability
     Then NLI receives the full E5 semantic candidate pool independently of BGE
     And the NLI audit retains the E5 candidate identities and ordering
 
-  @givn.added @wip
+  @givn.added
   Scenario: A feature-free build keeps retrieval explicitly unavailable
     Given an initialized project with permanent semantic scenarios
     When the user runs semantic search through a build without the retrieval capability
     Then the command exits non-zero
-    And stderr contains `spec retrieval is unavailable`
+    And stderr contains "spec retrieval is unavailable"
