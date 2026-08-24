@@ -42,6 +42,7 @@ Feature: Configurable second-stage candidate budget
     When the user runs `givn spec duplicates --format json`
     Then the command exits non-zero
     And stderr identifies the invalid second-stage pair budget
+    And stderr contains "must be a positive decimal integer, got"
 
   @givn.added @bge
   Scenario: A zero second-stage pair budget is rejected
@@ -51,6 +52,7 @@ Feature: Configurable second-stage candidate budget
     When the user runs `givn spec duplicates --format json`
     Then the command exits non-zero
     And stderr identifies the invalid second-stage pair budget
+    And stderr contains "must be greater than zero"
 
   @givn.added @nli-combined
   Scenario: BGE and NLI select the same highest E5 candidates independently
