@@ -162,6 +162,21 @@ resolves missing model artifacts before token measurement. `spec-similarity-gate
 feature that turns E5 pair findings into a strict gate; `spec-retrieval` alone
 does not do so.
 
+### 8.5a.1 Progress and Status Channels
+
+Retrieval commands separate the result channel from the progress channel.
+Machine-readable and user results (index summaries, search rankings,
+duplicate-audit JSON, review reports) go to stdout. Phase status and download
+progress go to stderr, always — there is no terminal detection and no
+suppression for pipes or CI.
+
+Announced phases are model artifact acquisition (start with the cache
+directory, per-file download progress, completion), retrieval-embedder
+preparation before scenario processing, and scenario embedding (pending
+count, per-scenario progress, completion). A warm validated cache emits no
+download announcements; a disabled evidence layer emits none for that
+layer.
+
 ### 8.5b Complete Semantic Serialization
 
 E5, BGE, and NLI use one compact deterministic serialization for each parsed
