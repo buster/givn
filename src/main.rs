@@ -176,6 +176,9 @@ enum SpecCommands {
     Search {
         /// Behavior description or completed scenario text.
         query: String,
+        /// Also run BGE and NLI cross-encoder evidence on the listed candidates.
+        #[arg(long)]
+        evidence: bool,
     },
     /// Explore one complete draft scenario against permanent scenarios.
     Explore {
@@ -262,7 +265,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         } => cli::skills::run_sync(),
         Commands::Spec { command } => match command {
             SpecCommands::Index => cli::spec::run_index(),
-            SpecCommands::Search { query } => cli::spec::run_search(&query),
+            SpecCommands::Search { query, evidence } => {
+                cli::spec::run_search(&query, evidence)
+            }
             SpecCommands::Explore {
                 file,
                 stdin,

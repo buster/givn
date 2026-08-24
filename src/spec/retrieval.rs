@@ -1486,15 +1486,15 @@ pub fn index_without_download(root: &Path) -> Result<()> {
     index_enabled(root, false)
 }
 
-pub fn search(root: &Path, query: &str) -> Result<()> {
+pub fn search(root: &Path, query: &str, evidence: bool) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
-        search_enabled(root, query)
+        search_enabled(root, query, evidence)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
     {
-        let _ = (root, query);
+        let _ = (root, query, evidence);
         bail!(
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
@@ -4024,7 +4024,7 @@ fn refresh_index(root: &Path, allow_download: bool) -> Result<IndexRefresh> {
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn search_enabled(root: &Path, query: &str) -> Result<()> {
+fn search_enabled(root: &Path, query: &str, evidence: bool) -> Result<()> {
     let index_path = spec_index_path(root);
     let index = match read_index(&index_path) {
         Ok(index) => index,
@@ -4047,7 +4047,54 @@ fn search_enabled(root: &Path, query: &str) -> Result<()> {
 
     let ranked = rank_entries(&index.entries, &query_vector);
 
-    print_search_results(&ranked);
+    if !evidence {
+        print_search_results(&ranked);
+        return Ok(());
+    }
+
+    let query_obj = ExploreQuery {
+        title: query.trim().to_string(),
+        source: "search",
+        file: None,
+        content_hash: Sha256::digest(query.as_bytes())
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>(),
+        text: query.to_string(),
+    };
+    let query_endpoint = explore_query_endpoint(&query_obj);
+    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
+    let permanent_texts: BTreeMap<(String, String), String> = collect_scenarios(root)?
+        .into_iter()
+        .map(|scenario| ((scenario.file, scenario.title), scenario.text))
+        .collect();
+    let candidates: Vec<(ExploreCandidate, f32)> = ranked
+        .iter()
+        .take(RERANKER_TOP_K)
+        .map(|(entry, score)| {
+            (
+                ExploreCandidate {
+                    title: entry.title.clone(),
+                    file: entry.file.clone(),
+                    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
+                    text: permanent_texts
+                        .get(&(entry.file.clone(), entry.title.clone()))
+                        .cloned()
+                        .unwrap_or_else(|| entry.title.clone()),
+                    embedding: entry.embedding.clone(),
+                    scope: "permanent",
+                    change: None,
+                    projected_file: None,
+                },
+                *score,
+            )
+        })
+        .collect();
+    #[cfg(feature = "cross-encoder-reranker")]
+    let bge_run = bge_explore_run(root, &query_obj, &candidates)?;
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    let bge_run: Option<BgeRun> = None;
+    print_search_results_with_evidence(&ranked, &query_endpoint, bge_run.as_ref());
     Ok(())
 }
 
@@ -8078,8 +8125,32 @@ fn rank_entries<'a>(entries: &'a [IndexEntry], query: &[f32]) -> Vec<(&'a IndexE
 }
 
 #[cfg(feature = "spec-retrieval")]
+const SEARCH_EVIDENCE_TOP_K: usize = 5;
+
+#[cfg(feature = "spec-retrieval")]
+fn print_search_results_with_evidence(
+    ranked: &[(&IndexEntry, f32)],
+    query_endpoint: &SimilarityEndpoint,
+    bge_run: Option<&BgeRun>,
+) {
+    for (rank, (entry, score)) in ranked.iter().take(SEARCH_EVIDENCE_TOP_K).enumerate() {
+        println!(
+            "rank {}: {} ({}, score {:.4})",
+            rank + 1,
+            entry.title,
+            entry.file,
+            score
+        );
+        if let Some(run) = bge_run {
+            println!("  {}", bge_candidate_line(run, query_endpoint, &entry.file, &entry.title));
+        }
+    }
+}
+
+
+#[cfg(feature = "spec-retrieval")]
 fn print_search_results(ranked: &[(&IndexEntry, f32)]) {
-    for (rank, (entry, score)) in ranked.iter().take(5).enumerate() {
+    for (rank, (entry, score)) in ranked.iter().take(SEARCH_EVIDENCE_TOP_K).enumerate() {
         println!(
             "rank {}: {} ({}, score {:.4})",
             rank + 1,
@@ -8089,6 +8160,35 @@ fn print_search_results(ranked: &[(&IndexEntry, f32)]) {
         );
     }
 }
+
+#[cfg(feature = "spec-retrieval")]
+fn bge_candidate_line(
+    run: &BgeRun,
+    query_endpoint: &SimilarityEndpoint,
+    file: &str,
+    title: &str,
+) -> String {
+    let key = canonical_pair_key(query_endpoint.clone(), endpoint(file, title));
+    if let Some(evidence) = run.evidence.get(&key) {
+        let status = if evidence.symmetric_raw >= BGE_ADMISSION_THRESHOLD {
+            "BGE_RECOMMENDED"
+        } else {
+            "BGE_FILTERED"
+        };
+        format!(
+            "BGE: {status} (symmetric raw {:.4}, forward {:.4}, reverse {:.4})",
+            evidence.symmetric_raw, evidence.forward_raw, evidence.reverse_raw
+        )
+    } else if let Some(budget) = run.token_caps.get(&key) {
+        format!(
+            "BGE: BGE_TOKEN_CAP (pair {} tokens, left {}, right {}, limit {})",
+            budget.pair_tokens, budget.left_tokens, budget.right_tokens, budget.limit
+        )
+    } else {
+        String::new()
+    }
+}
+
 
 #[cfg(all(test, feature = "spec-retrieval"))]
 mod tests {

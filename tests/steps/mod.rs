@@ -41,6 +41,8 @@ pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
 pub mod review_disposition_gates_steps;
+pub mod search_evidence_e2e_steps;
+pub mod search_evidence_steps;
 pub mod semantic_compact_serialization_e2e_steps;
 pub mod semantic_compact_serialization_steps;
 pub mod semantic_e5_token_cap_e2e_steps;
@@ -64,8 +66,6 @@ pub mod spec_explore_permanent_e2e_steps;
 pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
 pub mod spec_retrieval_steps;
-pub mod search_evidence_e2e_steps;
-pub mod search_evidence_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
@@ -323,16 +323,9 @@ fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
     std::fs::write(&file_path, content).expect("write .feature file");
 }
 
-// --- When ------------------------------------------------------------------
-
-#[when(regex = r"^the user runs `([^`]+)`$")]
-fn user_runs(world: &mut GivnWorld, cmd: String) {
-    let args = parse_command(&cmd);
-    let env = world
-        .env
-        .as_ref()
-        .expect("a project root is required first");
-    let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+/// Environment overrides for the current subprocess, assembled from the
+/// world's retrieval fixture fields. Used by every retrieval command step.
+pub(crate) fn world_envs(world: &GivnWorld) -> Vec<(&'static str, &str)> {
     let mut environments = Vec::new();
     if let Some(value) = world.retrieval_embedder.as_deref() {
         environments.push(("GIVN_SPEC_EMBEDDER", value));
@@ -392,6 +385,29 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     if let Some(server) = world.artifact_server.as_ref() {
         environments.push(("HF_ENDPOINT", server.endpoint()));
     }
+    environments
+}
+
+/// Run the givn binary with the world's assembled retrieval environment.
+pub(crate) fn run_givn(
+    env: &common::TestEnv,
+    argv: &[&str],
+    world: &GivnWorld,
+) -> std::process::Output {
+    common::run_givn_with_envs(env, argv, &world_envs(world))
+}
+
+// --- When ------------------------------------------------------------------
+
+#[when(regex = r"^the user runs `([^`]+)`$")]
+fn user_runs(world: &mut GivnWorld, cmd: String) {
+    let args = parse_command(&cmd);
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
+    let environments = world_envs(world);
     let out = common::run_givn_with_envs(env, &argv, &environments);
     if let Some(id) = change_id_from_args(&args) {
         world.last_change_id = Some(id);
