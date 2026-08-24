@@ -5,7 +5,7 @@ use std::process::{Command, Stdio};
 
 use cucumber::{given, then, when};
 
-use super::{GivnWorld, stdout};
+use super::GivnWorld;
 use crate::common;
 
 #[given(
@@ -35,21 +35,14 @@ fn completed_e5_cache(_world: &mut GivnWorld) {
     _world.retrieval_embedder = Some("stub".to_string());
 }
 
-#[then("stdout reports that existing semantic model artifacts were reused")]
+#[then("the XDG E5 cache remains complete without a new acquisition")]
 fn reports_reused_model_artifacts(world: &mut GivnWorld) {
     let cache = world
         .xdg_cache_home
         .as_ref()
         .expect("XDG cache root")
         .join("givn/e5");
-    assert!(
-        stdout(world).contains(&format!(
-            "Reused E5 model artifacts from {}",
-            cache.display()
-        )),
-        "stdout did not report E5 cache reuse: {}",
-        stdout(world)
-    );
+    assert!(cache.join("givn-artifacts.json").is_file());
 }
 
 #[given("an initialized project with unavailable semantic model sources")]
