@@ -128,17 +128,21 @@
 - [x] REFACTOR: formatted and checked the changed Rust files, asserted fixture
   request evidence for both repositories, and reran the named scenario; output:
   `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `7c87c6d`.
 
 ## Scenario: Explicitly disabled evidence layers do not download models
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: ensure disabled BGE/NLI selectors bypass acquisition and preserve
-  E5-only JSON output. Production files: _pending_. Test files: _pending_.
-  Output: _pending_
-- [ ] REFACTOR: simplify selector checks without behavior change and rerun the
-  named scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: ensured disabled BGE/NLI selectors bypass acquisition and preserve
+  E5-only JSON output. Production files: none; existing selector behavior was
+  reused. Test files: `tests/steps/semantic_model_download_steps.rs`. Compile
+  step: `cargo check --features spec-retrieval` passed. Targeted output:
+  `1 scenario (1 passed)`, `7 steps (7 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files and reran the named
+  scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
 
 ## Scenario: Archive maintenance does not download models implicitly

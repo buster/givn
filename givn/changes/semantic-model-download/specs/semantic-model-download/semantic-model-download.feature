@@ -81,7 +81,7 @@ Feature: Automatic semantic model availability
     And stdout is valid duplicate-audit JSON with participating BGE and NLI evidence
     And the corrupt cache snapshots are replaced by complete validated snapshots
 
-  @givn.added @wip
+  @givn.added
   Scenario: Explicitly disabled evidence layers do not download models
     Given an initialized project with fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers
