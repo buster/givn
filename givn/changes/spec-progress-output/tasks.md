@@ -2,7 +2,7 @@
 
 ## Setup
 
-- [ ] Register `spec_progress_output_steps.rs` and
+- [x] Register `spec_progress_output_steps.rs` and
   `spec_progress_output_e2e_steps.rs` in `tests/steps/mod.rs`, add the
   `hf_endpoint_override` field to `GivnWorld`, create the two step skeleton
   files (all steps `unimplemented!()`), and record the strict-mode proof.
@@ -12,20 +12,27 @@
     (`tests/features_runner.rs:20`)
   - Strict proof command:
     `GIVN_FEATURES=givn/changes/spec-progress-output/specs cargo test --no-default-features --features spec-retrieval --test features_runner -- --name "A warm model cache produces no download announcements"`
-  - Strict proof output: _pending_ (must show the unimplemented step panic and
-    non-zero exit; exit 0 means the strict config is broken)
+  - Strict proof output:
+    `1 feature`, `1 scenario (1 failed)`, `4 steps (3 passed, 1 failed)` with
+    `Step panicked. Captured output: not implemented` and non-zero process
+    exit. This proves `.fail_on_skipped()` rejects the unimplemented step.
 
 ## Scenario: A warm model cache produces no download announcements
 
-- [ ] RED: remove only this scenario's `@wip`, add step stubs with
-  `unimplemented!()`, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: implement the `notice` helper, the embedder-preparation
-  announcement, the embedding count announcement in `refresh_index`, and the
-  warm-cache silence (no download notices when artifacts are cached).
-  Production files: _pending_. Output: _pending_
-- [ ] REFACTOR: simplify without behavior change and rerun the named scenario.
-  Output: _pending_
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] RED: removed only this scenario's `@wip`; ran the named scenario with
+  step stubs. Output: `1 scenario (1 failed)`, `4 steps (3 passed, 1 failed)`,
+  `Step panicked. Captured output: not implemented`, non-zero exit.
+- [x] GREEN: implemented the `notice` helper, the embedder-preparation
+  announcement, the embedding count/complete announcements in `refresh_index`,
+  and the warm-cache silence (notices only inside acquisition).
+  Production files: `src/spec/retrieval.rs`. Test files:
+  `tests/steps/mod.rs`, `tests/steps/spec_progress_output_steps.rs`.
+  Targeted output: `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] REFACTOR: removed the unused `mut` on the progress parameter
+  (clippy `-D warnings` clean), reran the targeted scenario; output:
+  `1 scenario (1 passed)`, `6 steps (6 passed)`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
+  Hash: `62eb89b`
 
 ## Scenario: A failed model download still announces the started download phase
 

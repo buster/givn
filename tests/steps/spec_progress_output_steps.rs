@@ -1,12 +1,26 @@
 //! Regular black-box steps for retrieval progress output.
 
+use std::fs;
+
 use cucumber::{given, then};
 
 use super::GivnWorld;
+use crate::common;
 
 #[given("an initialized project with unreachable semantic model sources")]
-fn unreachable_semantic_model_sources(_world: &mut GivnWorld) {
-    unimplemented!()
+fn unreachable_semantic_model_sources(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/unreachable.feature"),
+        "Feature: unreachable\n\n  Scenario: Unreachable semantic model\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write unreachable model fixture");
+    let xdg = env.path(".xdg-cache");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("download-stub".to_string());
+    world.hf_endpoint_override = Some("http://127.0.0.1:1/".to_string());
 }
 
 #[given(
@@ -17,8 +31,21 @@ fn completed_e5_cache_with_three_scenarios(_world: &mut GivnWorld) {
 }
 
 #[then("stderr announces the start of the retrieval model download with the E5 cache location")]
-fn announces_e5_download_start(_world: &mut GivnWorld) {
-    unimplemented!()
+fn announces_e5_download_start(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("resolving retrieval model artifacts (E5) into "),
+        "stderr did not announce the E5 download start: {stderr}"
+    );
+    let cache = world
+        .xdg_cache_home
+        .as_ref()
+        .expect("XDG cache root")
+        .join("givn/e5");
+    assert!(
+        stderr.contains(&cache.display().to_string()),
+        "stderr did not name the E5 cache location: {stderr}"
+    );
 }
 
 #[then("stderr reports per-file download progress for the E5 model artifacts")]
@@ -85,8 +112,12 @@ fn announces_embedding_count(world: &mut GivnWorld) {
 }
 
 #[then("stderr identifies the failed E5 model artifact")]
-fn identifies_failed_e5_artifact(_world: &mut GivnWorld) {
-    unimplemented!()
+fn identifies_failed_e5_artifact(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("model.onnx") || stderr.contains("tokenizer.json"),
+        "stderr did not identify the failed E5 artifact: {stderr}"
+    );
 }
 
 #[then("stderr announces the BGE and NLI model downloads")]
