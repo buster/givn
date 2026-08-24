@@ -44,6 +44,7 @@ historical measurement is not a current quality claim.
 | R-35 | Automatic model acquisition consumes disk space or network bandwidth unexpectedly. | Medium | Medium | Trigger downloads only from explicit semantic commands, keep role-specific cache directories, reuse snapshots across projects, and report the resolved path. |
 | R-36 | The XDG environment is incomplete or nonconforming. | Low | Medium | Require an absolute `XDG_CACHE_HOME` or fall back to `$HOME/.cache`; fail with the required environment and explicit override when neither is usable. |
 | R-37 | Benchmark tooling reintroduces project-local or `/tmp` model defaults. | Medium | Medium | Derive E5, BGE, NLI, and flat-export defaults from the shared XDG cache and assert the shell helper's default output through its real subprocess path. |
+| R-38 | `spec search --evidence` incurs a second-stage model load per invocation and may be slow without artifacts. | Medium | Low | Keep the flag opt-in, reuse the shared XDG caches and existing unavailable fallback, and report an unchanged E5-only ranking when a layer cannot score. |
 
 ## 11.2 Deliberate Technical Debt
 

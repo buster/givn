@@ -43,7 +43,7 @@ not alter other content.
 | `GIVN_FEATURES` | in | Feature path exported to project command processes. |
 | `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
 | `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
-| `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence, and complete permanent audit. |
+| `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence (explore, search with `--evidence`), and complete permanent audit. |
 | `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
 | `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |

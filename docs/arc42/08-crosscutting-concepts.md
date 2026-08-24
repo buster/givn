@@ -156,8 +156,9 @@ shared across projects; explicit model/cache variables may select another
 location.
 
 `spec index` refreshes and writes this index. `spec search` reads it and returns
-at most five advisory results. Explicit semantic use resolves missing model
-artifacts before token measurement. `spec-similarity-gate` is a separate
+at most five advisory results; the opt-in `--evidence` flag attaches BGE/NLI
+verdicts to those results without changing the ranking. Explicit semantic use
+resolves missing model artifacts before token measurement. `spec-similarity-gate` is a separate
 feature that turns E5 pair findings into a strict gate; `spec-retrieval` alone
 does not do so.
 
