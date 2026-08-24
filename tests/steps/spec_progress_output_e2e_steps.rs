@@ -2,7 +2,7 @@
 
 use std::fs;
 
-use cucumber::{given, when};
+use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use crate::common;
@@ -65,6 +65,24 @@ fn e2e_search_with_model_acquisition(world: &mut GivnWorld) {
             ("HF_ENDPOINT", server.endpoint()),
         ],
     ));
+}
+
+#[then("the search logs the start of the E5 model download into the cache directory")]
+fn search_logs_e5_download_start(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("resolving retrieval model artifacts (E5) into "),
+        "stderr did not log the E5 download start: {stderr}"
+    );
+    let cache = world
+        .xdg_cache_home
+        .as_ref()
+        .expect("XDG cache root")
+        .join("givn/e5");
+    assert!(
+        stderr.contains(&cache.display().to_string()),
+        "stderr did not name the E5 cache directory: {stderr}"
+    );
 }
 
 #[given(

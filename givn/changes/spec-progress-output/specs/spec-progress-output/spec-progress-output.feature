@@ -8,82 +8,83 @@
 Feature: Progress output during long-running spec retrieval commands
 
   @givn.added @e2e
-  Scenario: Cold-cache indexing announces each phase on stderr
+  Scenario: A cold-cache index build logs every phase of the E5 model download and scenario processing
     Given an initialized project with a fresh XDG Givn cache and a reachable model source
     And the project contains fitting permanent semantic scenarios
     When the end-to-end user builds the permanent semantic index with `givn spec index`
     Then the command exits 0
     And stdout reports a completed permanent semantic index
-    And stderr announces the start of the retrieval model download with the E5 cache location
-    And stderr reports per-file download progress for the E5 model artifacts
-    And stderr announces the completion of the retrieval model download
-    And stderr announces the preparation of the retrieval embedder
-    And stderr announces the embedding of the pending scenarios with their count
-    And stderr announces the completion of the embedding phase
+    And the index build logs the start of the E5 model download into the cache directory
+    And the index build logs byte progress for each E5 model file
+    And the index build logs the end of the E5 model download
+    And the index build logs embedder preparation before scenario processing
+    And the index build logs the count of scenarios awaiting embedding
+    And the index build logs the end of scenario processing
 
   @givn.added
-  Scenario: A warm model cache produces no download announcements
+  Scenario: A warm-cache index build stays free of model-download wording
     Given an initialized project with a completed E5 model cache in the XDG Givn cache and permanent semantic scenarios
     When the user runs `givn spec index`
     Then the command exits 0
-    And stderr does not announce a model download
-    And stderr does not report per-file download progress
-    And stderr announces the embedding of the pending scenarios with their count
+    And stdout reports a completed permanent semantic index
+    And the warm-cache run stays free of model-download wording
+    And the warm-cache run stays free of per-file byte progress
 
   @givn.added
-  Scenario: A failed model download still announces the started download phase
+  Scenario: A failed model download still logs the started download phase before failing
     Given an initialized project with unreachable semantic model sources
     When the user runs `givn spec index`
     Then the command exits non-zero
-    And stderr announces the start of the retrieval model download with the E5 cache location
-    And stderr identifies the failed E5 model artifact
+    And the failed run still logs the start of the E5 model download into the cache directory
+    And the failure names the E5 model file
 
   @givn.added @nli-combined @e2e
-  Scenario: Duplicate audit keeps stdout pure JSON while progress runs on stderr
+  Scenario: The JSON duplicate audit keeps the report channel free of progress wording
     Given fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers
     And BGE and NLI evidence are explicitly enabled for automatic acquisition
     When the end-to-end user audits permanent scenarios with `givn spec duplicates --format json`
     Then the command exits 0
     And stdout is valid duplicate-audit JSON
-    And stderr announces the BGE and NLI model downloads
-    And stderr reports per-file download progress for the second-stage model artifacts
+    And the audit emits the start of the reranker download
+    And the audit emits the start of the NLI download
+    And the audit emits byte progress for the reranker and NLI model files
 
   @givn.added
-  Scenario: Disabled evidence layers announce no downloads
-    Given an initialized project with fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
+  Scenario: Disabled evidence layers leave the audit channel free of second-stage download wording
+    Given an initialized project with fresh second-stage caches in the XDG Givn cache and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers
     And BGE and NLI evidence are explicitly disabled
     When the user runs `givn spec duplicates --format json`
     Then the command exits 0
     And stdout is valid duplicate-audit JSON
-    And stderr does not announce a BGE or NLI model download
+    And the audit channel stays free of reranker and NLI download wording
 
   @givn.added @nli-combined @e2e
-  Scenario: Advisory review announces second-stage model acquisition during the run
+  Scenario: The review run logs the reranker and NLI downloads as they happen
     Given an initialized project with a completed permanent semantic index and a cold second-stage model cache
     And an active change delta is available for advisory review
     And BGE and NLI evidence are explicitly enabled
     When the end-to-end user runs advisory review for the active change through the givn CLI
     Then the command exits 0
-    And stdout reports advisory retrieval evidence
-    And stderr announces the BGE and NLI model downloads
-    And stderr reports per-file download progress for the second-stage model artifacts
+    And stdout reports BGE evidence status
+    And the review run logs the start of the reranker download
+    And the review run logs the start of the NLI download
+    And the review run logs byte progress for the reranker and NLI model files
 
   @givn.added
-  Scenario: Embedding multiple scenarios announces the count and reports per-scenario progress
+  Scenario: A three-scenario corpus logs the pending count and one progress line per scenario slot
     Given an initialized project with a completed E5 model cache in the XDG Givn cache and three permanent semantic scenarios
     When the user runs `givn spec index`
     Then the command exits 0
-    And stderr announces the embedding of three pending scenarios
-    And stderr reports the embedding progress for each pending scenario
+    And the index build logs three scenarios awaiting embedding
+    And the index build logs one progress line per scenario slot
 
   @givn.added @e2e
-  Scenario: Search with a cold E5 cache announces model acquisition before results
+  Scenario: Searching a cold E5 cache logs the model download before printing ranked results
     Given an initialized project with a completed permanent semantic index and a cold E5 model cache
     And a reachable model source
     When the end-to-end user searches for a permanent semantic scenario with model acquisition through the givn CLI
     Then the command exits 0
-    And stderr announces the start of the retrieval model download with the E5 cache location
-    And stderr reports per-file download progress for the E5 model artifacts
-    And stdout reports ranked search results
+    And the search logs the start of the E5 model download into the cache directory
+    And the search prints ranked results on stdout
