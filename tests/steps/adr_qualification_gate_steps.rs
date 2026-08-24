@@ -463,7 +463,9 @@ fn maintainer_compares_register_and_sources(world: &mut GivnWorld) {
 fn consolidated_register_and_sources_are_available(world: &mut GivnWorld) {
     let register =
         fs::read_to_string("docs/arc42/adr/README.md").expect("read consolidated ADR register");
-    let design = fs::read_to_string("givn/changes/adr-qualification-gate/design.md")
+    let design = ["givn/changes/adr-qualification-gate/design.md", "givn/archive/adr-qualification-gate/design.md"]
+        .iter()
+        .find_map(|path| fs::read_to_string(path).ok())
         .expect("read migration manifest");
     world.additional_output = Some(format!("{register}\n{design}"));
 }
