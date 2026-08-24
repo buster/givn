@@ -171,13 +171,28 @@ fn identifies_failed_e5_artifact(world: &mut GivnWorld) {
 }
 
 #[then("stderr announces the BGE and NLI model downloads")]
-fn announces_second_stage_downloads(_world: &mut GivnWorld) {
-    unimplemented!()
+fn announces_second_stage_downloads(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for needle in [
+        "resolving reranker model artifacts (BGE) into ",
+        "resolving NLI model artifacts into ",
+    ] {
+        assert!(
+            stderr.contains(needle),
+            "stderr did not announce the second-stage download {needle:?}: {stderr}"
+        );
+    }
 }
 
 #[then("stderr reports per-file download progress for the second-stage model artifacts")]
-fn reports_second_stage_per_file_progress(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_second_stage_per_file_progress(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for artifact in ["model.onnx", "onnx/model.onnx"] {
+        assert!(
+            stderr.contains(&format!("downloading {artifact} ")),
+            "stderr missing second-stage per-file progress for {artifact}: {stderr}"
+        );
+    }
 }
 
 #[then("stderr does not announce a BGE or NLI model download")]
