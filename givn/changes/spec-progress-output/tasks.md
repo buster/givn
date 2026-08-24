@@ -31,8 +31,7 @@
 - [x] REFACTOR: removed the unused `mut` on the progress parameter
   (clippy `-D warnings` clean), reran the targeted scenario; output:
   `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `62eb89b`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `62eb89b`
 
 ## Scenario: A failed model download still announces the started download phase
 
@@ -49,8 +48,7 @@
   Targeted output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `5bcce96`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `5bcce96`
 
 ## Scenario: Disabled evidence layers announce no downloads
 
@@ -66,8 +64,7 @@
   Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `58f993c`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `58f993c`
 
 ## Scenario: Embedding multiple scenarios announces the count and reports per-scenario progress
 
@@ -83,8 +80,7 @@
   Targeted output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `566e8ba`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `566e8ba`
 
 ## Scenario: Cold-cache indexing announces each phase on stderr (@e2e)
 
@@ -99,8 +95,7 @@
   Targeted output: `1 scenario (1 passed)`, `11 steps (11 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `11 steps (11 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `c6082dc`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `c6082dc`
 
 ## Scenario: Search with a cold E5 cache announces model acquisition before results (@e2e)
 
@@ -117,8 +112,7 @@
   Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `4173c75`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `4173c75`
 
 ## Scenario: Duplicate audit keeps stdout pure JSON while progress runs on stderr (@e2e, @nli-combined)
 
@@ -134,8 +128,7 @@
   Targeted output: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `8c5be3b`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `8c5be3b`
 
 ## Scenario: Advisory review announces second-stage model acquisition during the run (@e2e, @nli-combined)
 
@@ -152,8 +145,7 @@
   Targeted output: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: `bab8d25`
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `bab8d25`
 
 ## Final verification
 
