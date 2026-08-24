@@ -49,7 +49,7 @@ Feature: Progress output during long-running spec retrieval commands
     And stderr announces the BGE and NLI model downloads
     And stderr reports per-file download progress for the second-stage model artifacts
 
-  @givn.added @wip
+  @givn.added
   Scenario: Disabled evidence layers announce no downloads
     Given an initialized project with fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers
