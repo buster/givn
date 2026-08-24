@@ -7711,7 +7711,6 @@ fn embed_texts_with_policy(
     role: EmbeddingRole,
     allow_download: bool,
 ) -> Result<EmbeddingBatch> {
-    report_e5_cache_reuse(root)?;
     let use_real_embedder = matches!(
         std::env::var("GIVN_SPEC_EMBEDDER"),
         Err(std::env::VarError::NotPresent)
@@ -7925,18 +7924,6 @@ fn e5_model_cache_dir(root: &Path) -> Result<std::path::PathBuf> {
         return Ok(std::path::PathBuf::from(path));
     }
     model_cache_dir(root, "e5")
-}
-
-#[cfg(feature = "spec-retrieval")]
-fn report_e5_cache_reuse(root: &Path) -> Result<()> {
-    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
-        return Ok(());
-    }
-    let cache_dir = e5_model_cache_dir(root)?;
-    if cache_dir.join("givn-artifacts.json").is_file() {
-        println!("Reused E5 model artifacts from {}", cache_dir.display());
-    }
-    Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]

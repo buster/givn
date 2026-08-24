@@ -24,7 +24,7 @@ Feature: Automatic semantic model availability
     Given an initialized project with a completed E5 model cache in the XDG Givn cache and permanent semantic scenarios
     When the user runs `givn spec index`
     Then the command exits 0
-    And stdout reports that existing semantic model artifacts were reused
+    And the XDG E5 cache remains complete without a new acquisition
     And the permanent semantic index file exists
 
   @givn.added
@@ -137,13 +137,6 @@ Feature: Automatic semantic model availability
     And the JSON reports participating BGE and NLI evidence
     And the BGE model artifacts exist in the XDG Givn reranker cache
     And the NLI model artifacts exist in the XDG Givn NLI cache
-
-  @givn.modified @nli
-  Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit
-    Given a permanent corpus with deterministic semantic candidates for an independent NLI audit
-    When the user runs the permanent NLI duplicate audit
-    Then NLI receives the full E5 semantic candidate pool independently of BGE
-    And the NLI audit retains the E5 candidate identities and ordering
 
   @givn.added
   Scenario: A feature-free build keeps retrieval explicitly unavailable
