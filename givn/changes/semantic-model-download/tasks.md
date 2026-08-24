@@ -159,17 +159,22 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `0a4c4f9`.
 
 ## Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: implement the amended independent full-E5 NLI audit-pool contract
-  and preserve E5 identities/order. Production files: _pending_. Test files:
-  _pending_. Output: _pending_
-- [ ] REFACTOR: align wording and shared pool helpers without behavior change and
-  rerun the named scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact named run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: implemented and verified the amended independent full-E5 NLI
+  audit-pool contract while preserving E5 identities/order. Production files:
+  none; the existing implementation already matched the amended contract. Test
+  files: `tests/steps/semantic_model_download_steps.rs`. Compile step:
+  `cargo check --features spec-retrieval,nli-evidence` passed. Targeted output:
+  `1 scenario (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files and reran the named
+  scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending
 
 ## Scenario: A feature-free build keeps retrieval explicitly unavailable
