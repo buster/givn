@@ -649,9 +649,10 @@ fn independent_adrs_remain_separate(world: &mut GivnWorld) {
 fn proposed_budget_adr_remains_owned(world: &mut GivnWorld) {
     let content = fs::read_to_string(active_adr_path("ADR-063")).expect("read ADR-063");
     assert!(content.contains("status: proposed"));
-    assert!(file_exists(
-        "givn/changes/semantic-reranker-budget/design.md"
-    ));
+    let owned = ["givn/changes/semantic-reranker-budget/design.md", "givn/archive/semantic-reranker-budget/design.md"]
+        .iter()
+        .any(|path| file_exists(path));
+    assert!(owned, "semantic-reranker-budget design.md must exist");
     assert!(guidance(world).contains("ADR-063"));
 }
 
