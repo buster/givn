@@ -1,27 +1,59 @@
 //! Compiled-CLI E2E bindings for semantic model acquisition and diagnostics.
 
+use std::fs;
+
 use cucumber::{given, then, when};
 
 use super::GivnWorld;
+use crate::common;
 
 #[given("an initialized project with a fresh XDG Givn cache and a reachable model source")]
-fn e2e_fresh_e5_cache(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_fresh_e5_cache(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let xdg = env.path(".xdg-cache");
+    assert!(!xdg.exists(), "E5 fixture cache must start cold");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.artifact_server = Some(common::ArtifactFixtureServer::start());
 }
 
 #[given("the project contains fitting permanent semantic scenarios")]
-fn e2e_fitting_permanent_scenarios(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_fitting_permanent_scenarios(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E5 project");
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/retrieval.feature"),
+        "Feature: retrieval\n\n  Scenario: Fitting retrieval behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write E5 retrieval fixture");
 }
 
 #[when("the end-to-end user builds the permanent semantic index with `givn spec index`")]
-fn e2e_runs_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_runs_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("E5 project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let server = world
+        .artifact_server
+        .as_ref()
+        .expect("artifact fixture server");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "index"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "download-stub"),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+            ("HF_ENDPOINT", server.endpoint()),
+        ],
+    ));
 }
 
 #[then("stdout reports a completed permanent semantic index")]
-fn e2e_index_completed(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_index_completed(world: &mut GivnWorld) {
+    assert!(
+        super::stdout(world).contains("Indexed 1 permanent scenarios"),
+        "stdout did not report the completed index: {}",
+        super::stdout(world)
+    );
 }
 
 #[then("the permanent semantic index file exists")]
@@ -34,8 +66,20 @@ fn e2e_index_file_exists(world: &mut GivnWorld) {
 }
 
 #[then("the E5 tokenizer and model artifacts exist in the XDG Givn cache")]
-fn e2e_e5_artifacts_exist(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_e5_artifacts_exist(world: &mut GivnWorld) {
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let snapshot = xdg.join("givn/e5/models--Qdrant--multilingual-e5-large-onnx/snapshots/main");
+    for file in [
+        "model.onnx",
+        "model.onnx_data",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ] {
+        assert!(snapshot.join(file).is_file(), "missing E5 artifact {file}");
+    }
+    assert!(xdg.join("givn/e5/givn-artifacts.json").is_file());
 }
 
 #[when(
