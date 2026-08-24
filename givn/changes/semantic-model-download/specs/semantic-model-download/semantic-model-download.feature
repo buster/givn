@@ -138,7 +138,7 @@ Feature: Automatic semantic model availability
     And the BGE model artifacts exist in the XDG Givn reranker cache
     And the NLI model artifacts exist in the XDG Givn NLI cache
 
-  @givn.modified @nli @wip
+  @givn.modified @nli
   Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit
     Given a permanent corpus with deterministic semantic candidates for an independent NLI audit
     When the user runs the permanent NLI duplicate audit

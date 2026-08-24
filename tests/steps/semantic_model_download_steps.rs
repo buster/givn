@@ -565,23 +565,73 @@ fn archive_reuses_or_warns(_world: &mut GivnWorld) {
 }
 
 #[given("a permanent corpus with deterministic semantic candidates for an independent NLI audit")]
-fn independent_nli_audit_corpus(_world: &mut GivnWorld) {
-    unimplemented!()
+fn independent_nli_audit_corpus(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("nli-pool.feature"),
+        "Feature: NLI pool\n\n  Scenario: Alpha semantic behavior\n    Given a configured alpha catalog\n    When alpha is queried\n    Then alpha is returned\n\n  Scenario: Beta semantic behavior\n    Given a configured beta catalog\n    When beta is queried\n    Then beta is returned\n\n  Scenario: Gamma semantic behavior\n    Given a configured gamma catalog\n    When gamma is queried\n    Then gamma is returned\n",
+    )
+    .expect("write NLI pool fixture");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_bge = Some("disabled".to_string());
+    world.retrieval_reranker = Some("nli-stub".to_string());
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/nli-pool.feature|Alpha semantic behavior::givn/specs/nli-pool.feature|Beta semantic behavior=0.9600;givn/specs/nli-pool.feature|Alpha semantic behavior::givn/specs/nli-pool.feature|Gamma semantic behavior=0.9600;givn/specs/nli-pool.feature|Beta semantic behavior::givn/specs/nli-pool.feature|Gamma semantic behavior=0.9600".to_string(),
+    );
 }
 
 #[when("the user runs the permanent NLI duplicate audit")]
-fn run_permanent_nli_duplicate_audit(_world: &mut GivnWorld) {
-    unimplemented!()
+fn run_permanent_nli_duplicate_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("NLI audit project");
+    let scores = world
+        .retrieval_duplicate_scores
+        .as_deref()
+        .expect("NLI audit score overrides");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "nli-stub"),
+            ("GIVN_SPEC_DUPLICATES_TEST_SCORES", scores),
+        ],
+    ));
 }
 
 #[then("NLI receives the full E5 semantic candidate pool independently of BGE")]
-fn nli_receives_full_e5_pool(_world: &mut GivnWorld) {
-    unimplemented!()
+fn nli_receives_full_e5_pool(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(output.contains("NLI E5 raw count: 3"), "stdout: {output}");
+    assert!(
+        output.contains("NLI unique pair count: 3"),
+        "stdout: {output}"
+    );
+    assert!(
+        !output.contains("BGE status:"),
+        "BGE unexpectedly participated"
+    );
 }
 
 #[then("the NLI audit retains the E5 candidate identities and ordering")]
-fn nli_retains_e5_ordering(_world: &mut GivnWorld) {
-    unimplemented!()
+fn nli_retains_e5_ordering(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let alpha = output
+        .find("Alpha semantic behavior")
+        .expect("alpha candidate in output");
+    let beta = output
+        .find("Beta semantic behavior")
+        .expect("beta candidate in output");
+    let gamma = output
+        .find("Gamma semantic behavior")
+        .expect("gamma candidate in output");
+    assert!(
+        alpha < beta && beta < gamma,
+        "NLI E5 ordering changed: {output}"
+    );
 }
 
 #[when("the user runs semantic search through a build without the retrieval capability")]
