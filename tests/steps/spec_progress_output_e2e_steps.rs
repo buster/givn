@@ -70,11 +70,61 @@ fn e2e_search_with_model_acquisition(world: &mut GivnWorld) {
 #[given(
     "an initialized project with a completed permanent semantic index and a cold second-stage model cache"
 )]
-fn completed_index_and_cold_second_stage_cache(_world: &mut GivnWorld) {
-    unimplemented!()
+fn completed_index_and_cold_second_stage_cache(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/review.feature"),
+        "Feature: review\n\n  Scenario: Reviewed semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write review fixture");
+    let xdg = env.path(".xdg-cache");
+    let xdg_value = xdg.to_str().expect("XDG path is UTF-8");
+    let output = common::run_givn_with_envs(
+        &env,
+        &["spec", "index"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg_value),
+        ],
+    );
+    assert!(
+        output.status.success(),
+        "build review index failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    for role in ["bge", "nli"] {
+        let cache = xdg.join(format!("givn/{role}"));
+        assert!(!cache.exists(), "second-stage cache {role} must start cold");
+    }
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_bge = Some("auto".to_string());
+    world.retrieval_reranker = Some("nli-auto".to_string());
+    world.retrieval_bge_local_stub = true;
+    world.retrieval_nli_local_stub = true;
+    world.artifact_server = Some(common::ArtifactFixtureServer::start());
 }
 
 #[when("the end-to-end user runs advisory review for the active change through the givn CLI")]
-fn e2e_advisory_review_with_acquisition(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_advisory_review_with_acquisition(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("review project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let server = world
+        .artifact_server
+        .as_ref()
+        .expect("artifact fixture server");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "auto"),
+            ("GIVN_SPEC_RERANKER", "nli-auto"),
+            ("GIVN_SPEC_BGE_LOCAL_STUB", "1"),
+            ("GIVN_SPEC_NLI_LOCAL_STUB", "1"),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+            ("HF_ENDPOINT", server.endpoint()),
+        ],
+    ));
 }
