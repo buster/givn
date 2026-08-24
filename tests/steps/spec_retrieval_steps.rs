@@ -8,7 +8,7 @@ use super::GivnWorld;
 use crate::common;
 
 #[given("a givn project with permanent scenarios for retrieval")]
-fn retrieval_project(world: &mut GivnWorld) {
+pub(crate) fn retrieval_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
     let specs = env.path("givn/specs");
     if specs.exists() {
@@ -50,7 +50,7 @@ fn rebuild_retrieval_index(world: &mut GivnWorld) {
 }
 
 #[given("the local spec index has been built")]
-fn local_spec_index_built(world: &mut GivnWorld) {
+pub(crate) fn local_spec_index_built(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("retrieval project is required");
     let output = common::run_givn_with_env(
         env,
@@ -129,13 +129,10 @@ fn review_disposition(world: &mut GivnWorld, delta_title: String, permanent_titl
 #[when(regex = r#"^the user searches for "([^"]+)"$"#)]
 fn search_retrieval(world: &mut GivnWorld, query: String) {
     let env = world.env.as_ref().expect("retrieval project is required");
-    world.last_output = Some(common::run_givn_with_env(
+    world.last_output = Some(super::run_givn(
         env,
-        &["spec", "search", &query],
-        Some((
-            "GIVN_SPEC_EMBEDDER",
-            world.retrieval_embedder.as_deref().unwrap_or("stub"),
-        )),
+        &["spec", "search", query.as_str()],
+        world,
     ));
 }
 
