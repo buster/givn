@@ -4068,6 +4068,7 @@ fn search_enabled(root: &Path, query: &str, evidence: bool) -> Result<()> {
         .into_iter()
         .map(|scenario| ((scenario.file, scenario.title), scenario.text))
         .collect();
+    #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     let candidates: Vec<(ExploreCandidate, f32)> = ranked
         .iter()
         .take(RERANKER_TOP_K)
