@@ -185,6 +185,13 @@ identity/content-hash entries are reused. Changed or new fitting scenarios are
 embedded; over-cap scenarios become `e5_token_caps` metadata. The resulting
 permanent-only index is written through a temporary file and rename.
 
+Long-running phases report status on stderr: artifact acquisition announces
+its start (with the cache directory) before any download, per-file download
+progress during acquisition, acquisition completion, the pending embedding
+count before batch embedding, and completion after. A warm, validated cache
+produces no download announcements. Disabled evidence layers are never
+announced as downloads.
+
 ### 6.8.2 `givn spec search`
 
 Search reads the existing `.spec-index.json`; it does not refresh it. It embeds

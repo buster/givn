@@ -1064,6 +1064,67 @@ fn manifest_matches(
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn notice(message: impl AsRef<str>) {
+    eprintln!("{}", message.as_ref());
+}
+
+/// stderr-based per-file download progress for hf-hub.
+///
+/// hf-hub re-invokes `init` on every download attempt (including retries)
+/// and passes the cumulative resume offset to `update`, so this
+/// implementation treats every reported byte count as absolute and resets
+/// on `init`. Updates are throttled to >= 1 % deltas plus a final line.
+#[cfg(feature = "spec-retrieval")]
+struct StderrDownloadProgress {
+    filename: String,
+    total: usize,
+    last_reported: usize,
+}
+
+#[cfg(feature = "spec-retrieval")]
+impl StderrDownloadProgress {
+    fn new(filename: &str) -> Self {
+        Self {
+            filename: filename.to_string(),
+            total: 0,
+            last_reported: 0,
+        }
+    }
+
+    fn report(&mut self, current: usize, force: bool) {
+        if self.total == 0 {
+            return;
+        }
+        let step = (self.total / 100).max(1);
+        if !force && current.saturating_sub(self.last_reported) < step {
+            return;
+        }
+        notice(format!(
+            "downloading {} {}/{} bytes",
+            self.filename, current, self.total
+        ));
+        self.last_reported = current;
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+impl hf_hub::api::Progress for StderrDownloadProgress {
+    fn init(&mut self, size: usize, filename: &str) {
+        self.filename = filename.to_string();
+        self.total = size;
+        self.last_reported = 0;
+    }
+
+    fn update(&mut self, size: usize) {
+        self.report(size, false);
+    }
+
+    fn finish(&mut self) {
+        self.report(self.total, true);
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn hf_api(cache_root: &Path) -> Result<hf_hub::api::sync::Api> {
     let mut builder =
         hf_hub::api::sync::ApiBuilder::from_cache(hf_hub::Cache::new(cache_root.to_path_buf()))
@@ -1162,12 +1223,14 @@ fn fetch_hf_artifacts(
             .metadata(&repo.url(file))
             .with_context(|| format!("read metadata for {model} artifact {file}"))?
             .size();
-        let path = repo.download(file).with_context(|| {
-            format!(
-                "download {model} artifact {file} into {}",
-                cache_root.display()
-            )
-        })?;
+        let path = repo
+            .download_with_progress(file, StderrDownloadProgress::new(file))
+            .with_context(|| {
+                format!(
+                    "download {model} artifact {file} into {}",
+                    cache_root.display()
+                )
+            })?;
         let actual = artifact_digest(&path)?;
         anyhow::ensure!(
             actual.bytes == expected_size as u64,
@@ -1277,6 +1340,10 @@ fn validate_required_files(files: &BTreeMap<String, std::path::PathBuf>) -> Resu
 #[cfg(feature = "spec-retrieval")]
 fn auto_e5_artifacts(root: &Path) -> Result<()> {
     let cache_root = e5_model_cache_dir(root)?;
+    notice(format!(
+        "resolving retrieval model artifacts (E5) into {}",
+        cache_root.display()
+    ));
     let files = [
         "model.onnx",
         "model.onnx_data",
@@ -1323,6 +1390,7 @@ fn auto_e5_artifacts(root: &Path) -> Result<()> {
         "main",
         &artifacts.files,
     )?;
+    notice("retrieval model artifacts (E5) resolved");
     record_download_event("artifact-resolved")?;
     Ok(())
 }
@@ -1332,6 +1400,10 @@ fn auto_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
     let cache_root = std::env::var_os("GIVN_SPEC_BGE_CACHE")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "bge")?);
+    notice(format!(
+        "resolving reranker model artifacts (BGE) into {}",
+        cache_root.display()
+    ));
     let files = [
         "model.onnx",
         "model.onnx.data",
@@ -1391,6 +1463,7 @@ fn auto_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
         BGE_MODEL_REVISION,
         &artifacts.files,
     )?;
+    notice("reranker model artifacts (BGE) resolved");
     Ok(artifacts.snapshot)
 }
 
@@ -1408,6 +1481,10 @@ fn auto_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
     let cache_root = std::env::var_os("GIVN_SPEC_NLI_CACHE")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "nli")?);
+    notice(format!(
+        "resolving NLI model artifacts into {}",
+        cache_root.display()
+    ));
     let files = [
         "onnx/model.onnx",
         "config.json",
@@ -1451,6 +1528,7 @@ fn auto_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
         NLI_MODEL_REVISION,
         &artifacts.files,
     )?;
+    notice("NLI model artifacts resolved");
     Ok(NliArtifacts {
         directory: artifacts.snapshot,
         model_path: artifacts.files.get("onnx/model.onnx").unwrap().clone(),
@@ -3982,8 +4060,18 @@ fn refresh_index(root: &Path, allow_download: bool) -> Result<IndexRefresh> {
 
     let mut embedded = 0usize;
     if !pending.is_empty() {
+        notice(format!("embedding {} pending scenarios", pending.len()));
         let texts: Vec<String> = pending.iter().map(|item| item.text.clone()).collect();
-        let batch = embed_texts_with_policy(root, &texts, EmbeddingRole::Passage, allow_download)?;
+        let mut report_progress = |done: usize, total: usize| {
+            notice(format!("embedded {done}/{total} scenarios"));
+        };
+        let batch = embed_texts_with_policy(
+            root,
+            &texts,
+            EmbeddingRole::Passage,
+            allow_download,
+            Some(&mut report_progress),
+        )?;
         for (index, scenario) in pending.into_iter().enumerate() {
             if let Some(embedding) = batch.vectors[index].clone() {
                 result.push(IndexEntry {
@@ -3999,6 +4087,7 @@ fn refresh_index(root: &Path, allow_download: bool) -> Result<IndexRefresh> {
                 token_caps.push(e5_token_cap(&scenario, budget));
             }
         }
+        notice("embedding complete");
     }
 
     result.sort_by(|left, right| {
@@ -7743,7 +7832,7 @@ fn e5_token_cap_order(left: &E5TokenCap, right: &E5TokenCap) -> std::cmp::Orderi
 
 #[cfg(feature = "spec-retrieval")]
 fn embed_texts(root: &Path, texts: &[String], role: EmbeddingRole) -> Result<EmbeddingBatch> {
-    embed_texts_with_policy(root, texts, role, true)
+    embed_texts_with_policy(root, texts, role, true, None)
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -7752,7 +7841,9 @@ fn embed_texts_with_policy(
     texts: &[String],
     role: EmbeddingRole,
     allow_download: bool,
+    progress: Option<&mut dyn FnMut(usize, usize)>,
 ) -> Result<EmbeddingBatch> {
+    notice("preparing retrieval embedder");
     let use_real_embedder = matches!(
         std::env::var("GIVN_SPEC_EMBEDDER"),
         Err(std::env::VarError::NotPresent)
@@ -7830,6 +7921,11 @@ fn embed_texts_with_policy(
     let mut mapped = vec![None; texts.len()];
     for (index, vector) in fitting_indices.into_iter().zip(vectors) {
         mapped[index] = Some(vector);
+    }
+    if let Some(progress) = progress {
+        for index in 0..texts.len() {
+            progress(index + 1, texts.len());
+        }
     }
     Ok(EmbeddingBatch {
         vectors: mapped,

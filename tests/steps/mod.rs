@@ -65,6 +65,8 @@ pub mod spec_explore_change_steps;
 pub mod spec_explore_permanent_e2e_steps;
 pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
+pub mod spec_progress_output_e2e_steps;
+pub mod spec_progress_output_steps;
 pub mod spec_retrieval_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
@@ -154,6 +156,8 @@ pub struct GivnWorld {
     pub(crate) xdg_cache_home: Option<std::path::PathBuf>,
     /// Local HF-compatible artifact source for compiled-CLI scenarios.
     pub(crate) artifact_server: Option<common::ArtifactFixtureServer>,
+    /// Explicit dead-end HF endpoint for unreachable-source scenarios.
+    pub(crate) hf_endpoint_override: Option<String>,
     /// Event log path for resolver-order assertions.
     pub(crate) download_event_path: Option<std::path::PathBuf>,
 }
@@ -384,6 +388,9 @@ pub(crate) fn world_envs(world: &GivnWorld) -> Vec<(&'static str, &str)> {
     }
     if let Some(server) = world.artifact_server.as_ref() {
         environments.push(("HF_ENDPOINT", server.endpoint()));
+    }
+    if let Some(endpoint) = world.hf_endpoint_override.as_deref() {
+        environments.push(("HF_ENDPOINT", endpoint));
     }
     environments
 }

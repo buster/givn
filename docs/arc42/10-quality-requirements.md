@@ -98,6 +98,8 @@ graph TD
 | Q-60 | Cache reuse | Two projects use the same model role after one successful setup. | The second operation reuses the validated user-cache snapshot without copying large model files into its project. |
 | Q-61 | Index guidance | A semantic surface starts without a persistent index. | It emits `spec index is missing at <path>; run \`givn spec index\` first`; refresh-capable surfaces retain their documented refresh/fallback behavior. |
 | Q-62 | Cache ownership | A maintainer runs a benchmark export or comparison without an explicit model path. | E5, BGE, NLI, and flat-export model paths resolve under the XDG Givn cache; the generated comparison index remains project-local. |
+| Q-63 | Usability | A spec retrieval command downloads models or embeds scenarios. | Phase status and per-file download progress stream to stderr during the run; stdout formats remain byte-identical. |
+| Q-64 | Usability | A spec retrieval command runs with a warm validated cache. | No download announcements or per-file progress appear; embedding status still reports the pending count. |
 
 ## 10.3 Verification Signals
 
