@@ -2656,6 +2656,7 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
 fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
+    report_missing_index(root);
     let refresh = refresh_index(root, true)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
@@ -4014,6 +4015,7 @@ fn explore_enabled(
     } else {
         None
     };
+    report_missing_index(root);
     let refresh = refresh_index(root, true)?;
     let mut e5_token_caps = refresh.index.e5_token_caps.clone();
     #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
