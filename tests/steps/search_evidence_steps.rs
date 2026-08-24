@@ -18,7 +18,7 @@ fn every_bge_pair_over_limit(world: &mut GivnWorld) {
 
 #[given("every NLI pair exceeds the token limit")]
 fn every_nli_pair_over_limit(world: &mut GivnWorld) {
-    unimplemented!("every NLI pair exceeds the token limit");
+    world.retrieval_nli_token_budget = Some("all-513".to_string());
 }
 
 #[given("BGE evidence recommends all listed candidates")]
