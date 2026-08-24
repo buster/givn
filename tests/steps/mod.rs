@@ -147,16 +147,11 @@ pub struct GivnWorld {
     /// Classification mode for the semantic-remediation fixture.
     pub(crate) semantic_remediation_mode: Option<String>,
     /// Isolated XDG cache root used by semantic model-download fixtures.
-    #[allow(dead_code)]
     pub(crate) xdg_cache_home: Option<std::path::PathBuf>,
-    /// Local artifact-source fixture root used by model-download scenarios.
-    #[allow(dead_code)]
-    pub(crate) download_fixture: Option<std::path::PathBuf>,
-    /// Ordered resolver events captured by model-download scenarios.
-    #[allow(dead_code)]
-    pub(crate) download_events: Vec<String>,
     /// Local HF-compatible artifact source for compiled-CLI scenarios.
     pub(crate) artifact_server: Option<common::ArtifactFixtureServer>,
+    /// Event log path for resolver-order assertions.
+    pub(crate) download_event_path: Option<std::path::PathBuf>,
 }
 
 // --- helpers ---------------------------------------------------------------

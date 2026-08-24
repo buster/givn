@@ -138,8 +138,9 @@ fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow
     {
         return Ok(());
     }
-    crate::spec::retrieval::semantic_review(project_root, change_id)?;
-    crate::spec::retrieval::review(project_root, change_id)
+    crate::spec::retrieval::report_missing_index(project_root);
+    crate::spec::retrieval::semantic_review_without_index_notice(project_root, change_id)?;
+    crate::spec::retrieval::review_without_index_notice(project_root, change_id)
 }
 
 #[cfg(not(feature = "spec-retrieval"))]

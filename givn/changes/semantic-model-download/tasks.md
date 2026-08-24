@@ -32,8 +32,7 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `dd3079e`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `dd3079e`.
 
 ## Scenario: A failed model download explains how to provide the missing artifacts
 
@@ -48,8 +47,7 @@
 - [x] REFACTOR: formatted the changed Rust files with `cargo fmt --all`, checked
   formatting, and reran the named scenario; output: `1 scenario (1 passed)`,
   `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `c41b655`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `c41b655`.
 
 ## Scenario: A failed model download leaves an existing permanent index unchanged
 
@@ -63,8 +61,7 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `f98bbd2`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `f98bbd2`.
 
 ## Scenario: Malformed or incompatible indexes are not reported as absent
 
@@ -78,8 +75,7 @@
   `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `94fde14`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `94fde14`.
 
 ## Scenario: Duplicate audit identifies an absent persistent index without changing its fallback contract
 
@@ -95,8 +91,7 @@
 - [x] REFACTOR: formatted and checked the changed Rust files, verified the
   diagnostic is emitted once, and reran the named scenario; output: `1 scenario
   (1 passed)`, `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `b686cd6`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `b686cd6`.
 
 ## Scenario: Failed second-stage downloads remain unavailable and actionable
 
@@ -111,8 +106,7 @@
   passed. Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `f8541ff`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `f8541ff`.
 
 ## Scenario: A corrupt second-stage cache is repaired before evidence scoring
 
@@ -128,8 +122,7 @@
 - [x] REFACTOR: formatted and checked the changed Rust files, asserted fixture
   request evidence for both repositories, and reran the named scenario; output:
   `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `7c87c6d`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `7c87c6d`.
 
 ## Scenario: Explicitly disabled evidence layers do not download models
 
@@ -143,8 +136,7 @@
   `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `02b61b0`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `02b61b0`.
 
 ## Scenario: Archive maintenance does not download models implicitly
 
@@ -159,8 +151,7 @@
   (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `0a4c4f9`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `0a4c4f9`.
 
 ## Scenario: NLI uses the bounded E5 neighbour union for the permanent duplicate audit
 
@@ -175,8 +166,7 @@
   `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
-  `532d569`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: `532d569`.
 
 ## Scenario: A feature-free build keeps retrieval explicitly unavailable
 
@@ -264,8 +254,9 @@
 
 ## E2E Scenario: Blocking review identifies the missing-index repair command
 
-- [ ] RED: remove only this scenario's `@wip`, add separate E2E step stubs with
-  `unimplemented!()`, and run the exact E2E scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact E2E run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined And step
+  panicking with `not implemented`.
 - [x] GREEN: drove the compiled `givn check review --change` subprocess with no
   index and asserted the shared missing-index stderr diagnostic. Production
   files: `src/spec/retrieval.rs`. Test files:
@@ -290,19 +281,37 @@
   passed. Targeted output: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   combined E2E scenario; output: `1 scenario (1 passed)`, `9 steps (9 passed)`.
-- [ ] COMMIT: commit the E2E scenario with its title. Hash: _pending
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `30ae663`.
 
 ## Final Verification
 
-- [ ] `givn lint --change semantic-model-download` passes with no WIP or other
-  findings.
-- [ ] `./run-tests.sh` passes and includes the active change feature path at the
-  mandatory task/review gates.
-- [ ] `./run-tests.sh --e2e` passes with a strict subset count and the combined
-  BGE/NLI scenario runs only in the combined feature phase.
-- [ ] Default-feature unit tests pass, minimal `--no-default-features` tests
-  pass, and XDG/override precedence tests pass.
-- [ ] Real local E5/BGE/NLI probes confirm cold-cache setup, cache reuse, and
-  actionable offline failure without writing model files into a project.
-- [ ] `givn check review --change semantic-model-download` passes all required
-  gates.
+- [x] `givn lint --change semantic-model-download` passes with no WIP or other
+  findings; output: `1 file(s) checked — clean`.
+- [x] `GIVN_FEATURES=givn/changes/semantic-model-download/specs ./run-tests.sh`
+  passes with active-change coverage: E5 phase `13 scenarios (13 passed)`,
+  NLI phase `1 scenario (1 passed)`, combined phase `2 scenarios (2 passed)`,
+  and the other feature-filtered phases reported zero scenarios without error.
+- [x] `GIVN_FEATURES=givn/changes/semantic-model-download/specs ./run-tests.sh
+  --e2e` passes: the E5 phase ran `5 scenarios (5 passed)`, the combined BGE/NLI
+  phase ran `1 scenario (1 passed)`, and the other filtered phases ran zero
+  scenarios. The combined scenario ran only in the `@nli-combined` phase; the
+  E2E subset was `6` scenarios versus `16` active full-matrix phase scenarios.
+- [x] Default-feature unit tests pass: `cargo test --lib` -> `159 passed`;
+  minimal build passes: `cargo test --no-default-features --lib` -> `152
+  passed`; XDG/HF/HOME precedence, relative-XDG rejection, and missing-home
+  tests pass. `cargo clippy --workspace --all-targets -- -D warnings` also
+  passes.
+- [x] Real probes completed: E5 loaded/reused the existing local model through
+  `GIVN_SPEC_MODEL_CACHE` and through an XDG symlinked cache; BGE local ONNX ran
+  with `GIVN_SPEC_BGE=local` and one pair (`BGE_ENABLED`, two directional calls,
+  11,756 ms); NLI auto-acquired into `$HOME/.cache/givn/nli` and ran one
+  pair (`NLI_ENABLED`, two directional calls, 68,082 ms). Cold-cache HTTP-fixture
+  runs populated only isolated XDG role caches, while the offline E5 failure
+  retained no index and named recovery variables. No project NLI cache was
+  created.
+- [x] `env XDG_CACHE_HOME=/tmp/opencode/xdg-manual GIVN_SPEC_EMBEDDER=stub
+  GIVN_SPEC_BGE=disabled GIVN_SPEC_RERANKER=disabled givn check review
+  --change semantic-model-download` passes `verify`, `verify-e2e`, integrity,
+  overlap dispositions, and retrieval gates; output includes `REVIEW` gate
+  success and `similarity gate: no scenario pair at or above fixed threshold
+  0.9500`.
