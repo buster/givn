@@ -2,7 +2,45 @@
 
 All notable changes to Givn are documented here. Version 0.2.0 refers to the
 master branch that is the source baseline for this release. Version 0.3.0
-contains the complete stacked change set that follows that baseline.
+contains the complete stacked change set that follows that baseline. Version
+0.3.1 adds the search-evidence and configurable second-stage-budget
+capabilities and the ADR qualification gate.
+
+## [0.3.1] - 2026-08-24
+
+### Added
+
+- Added `givn spec search --evidence "<query>"`, an opt-in cross-encoder
+  evidence surface that appends BGE and NLI verdicts (`BGE_RECOMMENDED`,
+  `BGE_FILTERED`, `BGE_UNSCORED`, `BGE_TOKEN_CAP` and the NLI
+  counterparts) to the existing E5 ranking without changing the flag-off
+  output. Absent layers are reported as `BGE evidence: unavailable` /
+  `NLI evidence: unavailable` and never as model verdicts. Candidates beyond
+  the pair budget stay `BGE_UNSCORED`/`NLI_UNSCORED`; complete pairs over
+  the model's 512-token input limit receive visible token-cap evidence.
+- Added a configurable second-stage candidate budget
+  (`GIVN_SPEC_MAX_RERANK_PAIRS`, default `2048`). The fixed pair-count
+  refusal is gone: E5 candidates are ordered by descending E5 score and the
+  configured prefix is scored by BGE and NLI independently, with the tail
+  reported as explicitly unscored instead of as an unavailable model run.
+  Invalid, empty, zero, negative, malformed, and overflowing setting values
+  are rejected with an error naming the setting.
+- Added the explicit ADR qualification gate: strict AND-semantics
+  qualification guidance, canonical routing, a consolidated Arc42 ADR
+  register, `ADR-063` kept proposed and owned by its active change, and
+  comprehensive removal/absorption/supersession coverage audit.
+
+### Changed
+
+- The package and CLI version are now `0.3.1`.
+- The ADR migration-manifest and `ADR-063` ownership steps resolve both the
+  active-change and the archived-change path so the permanent suite stays
+  green after archiving the qualifying changes.
+
+### Fixed
+
+- The consolidated-ADR-register scenario reads the migration manifest from
+  the archived change directory when the active directory no longer exists.
 
 ## [0.3.0] - 2026-08-23
 
