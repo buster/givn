@@ -84,7 +84,7 @@
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: _pending_
+  Hash: `566e8ba`
 
 ## Scenario: Cold-cache indexing announces each phase on stderr (@e2e)
 
