@@ -13,6 +13,7 @@ The default role-specific cache locations are:
 $XDG_CACHE_HOME/givn/e5
 $XDG_CACHE_HOME/givn/bge
 $XDG_CACHE_HOME/givn/nli
+$XDG_CACHE_HOME/givn/nli-exported
 ```
 
 When `XDG_CACHE_HOME` is unset, Givn uses:
@@ -21,6 +22,7 @@ When `XDG_CACHE_HOME` is unset, Givn uses:
 $HOME/.cache/givn/e5
 $HOME/.cache/givn/bge
 $HOME/.cache/givn/nli
+$HOME/.cache/givn/nli-exported
 ```
 
 `XDG_CACHE_HOME` must be an absolute path. Givn fails with setup guidance when
@@ -67,16 +69,20 @@ The existing offline selectors retain their meaning:
 - `GIVN_SPEC_BGE=disabled` or `stub` does not download.
 - `GIVN_SPEC_BGE=local` validates an explicitly provisioned flat artifact set
   and does not download.
-- `GIVN_SPEC_BGE=auto` acquires and validates the XDG BGE snapshot.
+- An unset `GIVN_SPEC_BGE` selects automatic BGE acquisition when the
+  `cross-encoder-reranker` feature is compiled.
+- `GIVN_SPEC_BGE=auto` explicitly selects the same automatic XDG BGE path.
 - `GIVN_SPEC_RERANKER=disabled`, `stub`, `nli-stub`, or `nli-missing` does not
   download.
 - `GIVN_SPEC_RERANKER=nli` validates an explicitly provisioned flat artifact
   set and does not download.
-- `GIVN_SPEC_RERANKER=nli-auto` acquires and validates the XDG NLI snapshot.
+- An unset `GIVN_SPEC_RERANKER` selects automatic NLI acquisition when the
+  `nli-evidence` feature is compiled.
+- `GIVN_SPEC_RERANKER=nli-auto` explicitly selects the same automatic XDG NLI
+  path.
 
-An approved default BGE admission document may select the automatic BGE path,
-but model availability never substitutes for benchmark approval. NLI remains
-independent from BGE.
+Benchmark approval remains a separate evidence and release decision; it does
+not gate runtime participation. NLI remains independent from BGE.
 
 ## Offline And Failure Behavior
 
@@ -90,6 +96,12 @@ E5 remains a command failure because it generates the raw candidate set.
 
 The `--no-default-features` build contains no retrieval model path and reports
 `spec retrieval is unavailable` for semantic commands.
+
+The repository benchmark helpers use `givn/nli-exported` for flat ONNX exports
+and `givn/e5`/`givn/bge` for model caches. Their defaults are derived from
+`XDG_CACHE_HOME` or `HOME`; they do not use `/tmp` or a project-local model
+directory. Passing an explicit `--nli-model`, `--embed-cache`, or `--bge-cache`
+is a deliberate override.
 
 ## Index Guidance
 

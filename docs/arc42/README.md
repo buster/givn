@@ -38,6 +38,8 @@ reuse or populate `$XDG_CACHE_HOME/givn/{e5,bge,nli}`, falling back to
 `$HOME/.cache/givn/{e5,bge,nli}`. The permanent index remains the project-local
 `givn/.spec-index.json`; explicit model/cache environment variables override
 the shared defaults.
+Repository benchmark/export helpers also use the XDG cache and no longer
+default to `/tmp` or hidden project model directories.
 
 The second-stage pools are surface-dependent:
 

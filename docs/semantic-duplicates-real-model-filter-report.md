@@ -30,14 +30,16 @@ env -u GIVN_SPEC_EMBEDDER -u GIVN_SPEC_BGE -u GIVN_SPEC_RERANKER \
   target/release/givn spec duplicates --format json
 
 env -u GIVN_SPEC_EMBEDDER -u GIVN_SPEC_RERANKER GIVN_SPEC_BGE=local \
+  GIVN_SPEC_BGE_MODEL_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/givn/bge" \
   target/release/givn spec duplicates --format json
 
 env -u GIVN_SPEC_EMBEDDER -u GIVN_SPEC_BGE \
-  GIVN_SPEC_RERANKER=nli GIVN_SPEC_NLI_MODEL_DIR=/tmp/opencode/nli-model \
+  GIVN_SPEC_RERANKER=nli GIVN_SPEC_NLI_MODEL_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/givn/nli-exported" \
   target/release/givn spec duplicates --format json
 
 env -u GIVN_SPEC_EMBEDDER GIVN_SPEC_BGE=local \
-  GIVN_SPEC_RERANKER=nli GIVN_SPEC_NLI_MODEL_DIR=/tmp/opencode/nli-model \
+  GIVN_SPEC_BGE_MODEL_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/givn/bge" \
+  GIVN_SPEC_RERANKER=nli GIVN_SPEC_NLI_MODEL_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/givn/nli-exported" \
   target/release/givn spec duplicates --format json
 ```
 

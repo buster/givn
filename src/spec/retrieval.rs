@@ -4711,7 +4711,6 @@ fn bge_backend(
             Err(_) => Err(BgeUnavailableReason::MissingArtifact),
         })),
         Ok(value) => bail!("unknown GIVN_SPEC_BGE value `{value}`"),
-        Err(std::env::VarError::NotPresent) if !bge_approval_valid(root) => Ok(None),
         Err(std::env::VarError::NotPresent) => Ok(Some(match auto_bge_artifacts(root) {
             Ok(_) => Ok(BgeBackendKind::Auto),
             Err(error) => {
@@ -4768,34 +4767,12 @@ fn synthetic_bge_pairs(count: usize) -> (Vec<SimilarityPair>, SimilarityTexts) {
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn bge_approval_valid(root: &Path) -> bool {
-    let path = std::env::var_os("GIVN_SPEC_BGE_APPROVAL_FILE")
-        .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| root.join("givn/.spec-bge-admission.json"));
-    let Ok(bytes) = fs::read(path) else {
-        return false;
-    };
-    let Ok(document) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
-        return false;
-    };
-    let Ok(max_unique_pairs) = max_rerank_pairs() else {
-        return false;
-    };
-    document["schema_version"] == 1
-        && document["model"] == RERANKER_MODEL_ID
-        && document["threshold"] == serde_json::json!(BGE_ADMISSION_THRESHOLD)
-        && document["top_k"] == serde_json::json!(RERANKER_TOP_K)
-        && document["max_unique_pairs"] == serde_json::json!(max_unique_pairs)
-        && document["candidate_pipeline"] == BGE_PIPELINE_VERSION
-        && document["acceptance"]["pass"] == true
-}
-
-#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
-fn preflight_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
+fn preflight_bge_artifacts(_root: &Path) -> Result<std::path::PathBuf> {
     let directory = std::env::var_os("GIVN_SPEC_BGE_MODEL_DIR")
-        .or_else(|| std::env::var_os("GIVN_SPEC_BGE_CACHE"))
         .map(std::path::PathBuf::from)
-        .unwrap_or_else(|| root.join("givn/.spec-reranker-cache"));
+        .context(
+            "GIVN_SPEC_BGE=local requires GIVN_SPEC_BGE_MODEL_DIR; use GIVN_SPEC_BGE=auto for XDG acquisition",
+        )?;
     let model = directory.join("model.onnx");
     let model_bytes =
         fs::read(&model).with_context(|| format!("read BGE model artifact {}", model.display()))?;
@@ -6888,7 +6865,15 @@ fn nli_backend_selection(
         }
         Ok("disabled") | Ok("stub") | Ok("missing") => Ok(None),
         Ok(value) => bail!("unknown GIVN_SPEC_RERANKER value `{value}`"),
-        Err(std::env::VarError::NotPresent) => Ok(None),
+        Err(std::env::VarError::NotPresent) => Ok(Some(match auto_nli_artifacts(root) {
+            Ok(_) => Ok(NliBackend::Auto),
+            Err(error) => {
+                eprintln!(
+                    "NLI model is unavailable; automatic acquisition failed: {error:#}; set GIVN_SPEC_NLI_MODEL_DIR for a validated local artifact set"
+                );
+                Err(NliUnavailableReason::MissingArtifact)
+            }
+        })),
         Err(std::env::VarError::NotUnicode(_)) => {
             bail!("GIVN_SPEC_RERANKER is not valid UTF-8")
         }
@@ -7904,17 +7889,13 @@ fn find_e5_tokenizer(root: &Path) -> Option<std::path::PathBuf> {
         E5_MODEL_REPOSITORY.to_string(),
         hf_hub::RepoType::Model,
     ));
-    repo.get("tokenizer.json")
-        .or_else(|| {
-            cache_dir
-                .join("tokenizer.json")
-                .is_file()
-                .then(|| cache_dir.join("tokenizer.json"))
-        })
-        .or_else(|| {
-            let legacy = root.join("givn/.spec-model-cache/tokenizer.json");
-            legacy.is_file().then_some(legacy)
-        })
+    repo.get("tokenizer.json").or_else(|| {
+        std::env::var_os("GIVN_SPEC_MODEL_CACHE")?;
+        cache_dir
+            .join("tokenizer.json")
+            .is_file()
+            .then(|| cache_dir.join("tokenizer.json"))
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]

@@ -98,6 +98,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_embedder: Option<String>,
     /// Optional BGE backend override for the current subprocess.
     pub(crate) retrieval_bge: Option<String>,
+    /// Explicit local BGE artifact directory for the current subprocess.
+    pub(crate) retrieval_bge_model_dir: Option<String>,
     /// Optional maximum BGE/NLI pair budget for the current subprocess.
     pub(crate) retrieval_max_rerank_pairs: Option<String>,
     /// Deterministic E5 passage token-budget fixture selector.
@@ -335,6 +337,9 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     }
     if let Some(value) = world.retrieval_bge.as_deref() {
         environments.push(("GIVN_SPEC_BGE", value));
+    }
+    if let Some(value) = world.retrieval_bge_model_dir.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_MODEL_DIR", value));
     }
     if let Some(value) = world.retrieval_max_rerank_pairs.as_deref() {
         environments.push(("GIVN_SPEC_MAX_RERANK_PAIRS", value));

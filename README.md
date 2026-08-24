@@ -158,7 +158,9 @@ Existing spec-driven tools have pain points this project fixes deliberately:
   BGE, and NLI artifacts in `$XDG_CACHE_HOME/givn/{e5,bge,nli}`, falling back to
   `$HOME/.cache/givn/{e5,bge,nli}`. The permanent index stays in the project at
   `givn/.spec-index.json`. See [`docs/retrieval-models.md`](docs/retrieval-models.md)
-  for model sources, overrides, selector modes, and offline recovery.
+  for model sources, overrides, selector modes, runtime opt-outs, and offline
+  recovery. Compiled BGE and NLI features participate by default; set their
+  runtime selectors to `disabled` to opt out.
 - **Lint and test are separate, by design.** `givn lint` is a built-in command
   that statically checks your `.feature` files (syntax, `@wip`, delta tags) and
   **runs no tests**. Running the actual tests is a separate command you configure

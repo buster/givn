@@ -448,6 +448,7 @@ fn complete_local_bge_project(world: &mut GivnWorld) {
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_reranker = Some("local".to_string());
+    world.retrieval_bge_model_dir = Some(cache.display().to_string());
     world.retrieval_bge_local_stub = true;
 }
 
@@ -942,6 +943,9 @@ fn run_advisory_bge_review(world: &mut GivnWorld) {
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if world.retrieval_reranker.as_deref() == Some("unapproved") {
         environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+    }
+    if let Some(model_dir) = world.retrieval_bge_model_dir.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_MODEL_DIR", model_dir));
     }
     if let Some(scores) = world.retrieval_bge_scores.as_deref() {
         environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", scores));

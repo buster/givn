@@ -14,8 +14,8 @@ excluded because it contains superseded scenarios rather than the active
 permanent corpus. The Watn checkout is never modified.
 
 Generated embedding and comparison files stay under `test-corpus/indexes/` and
-are ignored by Git. Model caches remain in the existing local Givn cache or the
-explicit NLI model directory.
+are ignored by Git. Model caches default to the XDG Givn cache; an explicit
+model/cache argument remains a deliberate override.
 
 ## Scripts
 
@@ -32,13 +32,19 @@ explicit NLI model directory.
 
 ```sh
 tools/approach-comparison/prepare_corpus.sh
-tools/approach-comparison/export_nli_model.sh /tmp/opencode/nli-model
+tools/approach-comparison/export_nli_model.sh
 tools/approach-comparison/run_comparison.sh \
   --report-limit 30 \
   --report-name test-corpus/indexes/combined-approach-report-strict.json
 tools/approach-comparison/selected_pairs.py
 tools/approach-comparison/mixed_pairs.py
 ```
+
+The default flat NLI export is `$XDG_CACHE_HOME/givn/nli-exported`, falling back
+to `$HOME/.cache/givn/nli-exported`. The E5 and BGE defaults are the corresponding
+`givn/e5` and `givn/bge` directories. Use `NLI_MODEL`, `--nli-model`,
+`--embed-cache`, or `--bge-cache` only when intentionally selecting an explicit
+alternative.
 
 The wrapper defaults to `CANDIDATE_SCOPE=bounded`, the product set formed by
 the top-K union intersected with strict E5 candidates. The historical strict

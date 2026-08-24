@@ -43,7 +43,7 @@ python tools/approach-comparison/evaluate_bge_admission.py \
   --enforce \
   --rust-parity /tmp/givn-bge-parity.json \
   --givn-binary target/release/givn \
-  --bge-model givn/.spec-reranker-cache/models--rozgo/bge-reranker-v2-m3
+  --bge-model "${XDG_CACHE_HOME:-$HOME/.cache}/givn/bge"
 ```
 
 The `bounded` scope is the product set: the top-K endpoint union intersected
