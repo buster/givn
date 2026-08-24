@@ -36,15 +36,21 @@
 
 ## Scenario: A failed model download still announces the started download phase
 
-- [ ] RED: remove only this scenario's `@wip`, add step stubs with
-  `unimplemented!()`, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: emit the acquisition-start notice before the first fetch in
-  `auto_e5_artifacts` (also on failure), add the `hf_endpoint_override` env
-  plumbing, and the new `stderr identifies the failed E5 model artifact` step.
-  Production files: _pending_. Output: _pending_
-- [ ] REFACTOR: simplify without behavior change and rerun the named scenario.
-  Output: _pending_
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] RED: removed only this scenario's `@wip`; ran the named scenario with
+  the previous commit's step stubs. Output: `1 scenario (1 failed)`,
+  `1 step (1 failed)`, `Step panicked. Captured output: not implemented`,
+  non-zero exit.
+- [x] GREEN: acquisition-start notice before the first fetch in
+  `auto_e5_artifacts` fires even on failure; `hf_endpoint_override` env
+  plumbing; new `stderr identifies the failed E5 model artifact` and
+  `announces the start` steps.
+  Production files: `src/spec/retrieval.rs`. Test files:
+  `tests/steps/mod.rs`, `tests/steps/spec_progress_output_steps.rs`.
+  Targeted output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
+  scenario: `1 scenario (1 passed)`, `5 steps (5 passed)`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
+  Hash: `5bcce96`
 
 ## Scenario: Disabled evidence layers announce no downloads
 
