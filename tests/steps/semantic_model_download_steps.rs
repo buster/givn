@@ -1,6 +1,7 @@
 //! Regular Gherkin bindings for semantic model acquisition and cache policy.
 
 use std::fs;
+use std::process::{Command, Stdio};
 
 use cucumber::{given, then, when};
 
@@ -634,7 +635,42 @@ fn nli_retains_e5_ordering(world: &mut GivnWorld) {
     );
 }
 
+#[given("an initialized project with permanent semantic scenarios")]
+fn feature_free_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/feature-free.feature"),
+        "Feature: feature free\n\n  Scenario: Retrieval behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write feature-free fixture");
+    world.env = Some(env);
+}
+
 #[when("the user runs semantic search through a build without the retrieval capability")]
-fn run_search_without_retrieval(_world: &mut GivnWorld) {
-    unimplemented!()
+fn run_search_without_retrieval(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let manifest = env!("CARGO_MANIFEST_DIR");
+    let target_dir = env.path(".cargo-target-no-retrieval");
+    world.last_output = Some(
+        Command::new("cargo")
+            .current_dir(env.root())
+            .args([
+                "run",
+                "--quiet",
+                "--manifest-path",
+                &format!("{manifest}/Cargo.toml"),
+                "--no-default-features",
+                "--bin",
+                "givn",
+                "--",
+                "spec",
+                "search",
+                "semantic behavior",
+            ])
+            .env("CARGO_TARGET_DIR", target_dir)
+            .stdin(Stdio::null())
+            .output()
+            .expect("run feature-free givn process"),
+    );
 }

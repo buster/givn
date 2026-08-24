@@ -175,17 +175,21 @@
   `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `532d569`.
 
 ## Scenario: A feature-free build keeps retrieval explicitly unavailable
 
-- [ ] RED: remove only this scenario's `@wip`, add `unimplemented!()` step
-  bodies, and run the exact named scenario. Output: _pending_
-- [ ] GREEN: preserve explicit retrieval-unavailable behavior in the
-  feature-free build. Production files: _pending_. Test files: _pending_.
-  Output: _pending_
-- [ ] REFACTOR: keep feature gating explicit and rerun the named scenario.
-  Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact no-default-feature run
+  exited non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`, and the
+  undefined Given step rejected by strict mode.
+- [x] GREEN: preserved explicit retrieval-unavailable behavior in the
+  feature-free build. Production files: none; existing feature gate was reused.
+  Test files: `tests/steps/semantic_model_download_steps.rs`. Compile step:
+  `cargo check --no-default-features` passed. Targeted output: `1 scenario
+  (1 passed)`, `4 steps (4 passed)`.
+- [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
+  output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
 - [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending
 
 ## E2E Scenario: First semantic indexing downloads E5 artifacts before applying the token guard
