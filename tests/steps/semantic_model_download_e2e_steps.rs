@@ -195,20 +195,56 @@ fn e2e_advisory_reports_missing_index(world: &mut GivnWorld) {
 }
 
 #[given("an active change delta is available for blocking review")]
-fn e2e_blocking_change_available(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_blocking_change_available(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let change_dir = env.path("givn/changes/running-change");
+    let specs_dir = change_dir.join("specs/running-change");
+    fs::create_dir_all(&specs_dir).expect("create blocking delta");
+    fs::write(
+        specs_dir.join("running-change.feature"),
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.removed\n  Scenario: Permanent semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write blocking delta");
+    fs::write(
+        env.path("givn/config.yaml"),
+        "givn_config_version: \"0.3.0\"\naddons:\n  arc42: false\n  coverage: false\n",
+    )
+    .expect("disable optional archive addons");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
+    )
+    .expect("write blocking review commands");
 }
 
 #[when("the end-to-end user runs blocking review without an index through the givn CLI")]
-fn e2e_blocking_review_without_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_blocking_review_without_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+        ],
+    ));
 }
 
 #[then(
     "the blocking review reports `spec index is missing at <path>; run `givn spec index` first`"
 )]
-fn e2e_blocking_reports_missing_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_blocking_reports_missing_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let expected = format!(
+        "spec index is missing at {}; run `givn spec index` first",
+        env.path("givn/.spec-index.json").display()
+    );
+    assert!(
+        super::stderr(world).contains(&expected),
+        "stderr did not report missing blocking-review index: {}",
+        super::stderr(world)
+    );
 }
 
 #[given("fresh BGE and NLI caches in the XDG Givn cache and reachable model sources")]
