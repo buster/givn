@@ -78,7 +78,7 @@ Feature: Progress output during long-running spec retrieval commands
     And stderr announces the embedding of three pending scenarios
     And stderr reports the embedding progress for each pending scenario
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Search with a cold E5 cache announces model acquisition before results
     Given an initialized project with a completed permanent semantic index and a cold E5 model cache
     And a reachable model source
