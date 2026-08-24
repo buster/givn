@@ -425,22 +425,45 @@ fn corrupt_caches_are_repaired(world: &mut GivnWorld) {
     "an initialized project with fresh BGE and NLI caches in the XDG Givn cache and reachable model sources"
 )]
 fn fresh_second_stage_caches(_world: &mut GivnWorld) {
-    unimplemented!()
+    let world = _world;
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/second-stage.feature"),
+        "Feature: second stage\n\n  Scenario: Primary semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n\n  Scenario: Secondary semantic behavior\n    Given a configured service catalog\n    When the service is queried\n    Then the service result is returned\n",
+    )
+    .expect("write second-stage fixture");
+    let xdg = env.path(".xdg-cache");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_bge = Some("disabled".to_string());
+    world.retrieval_reranker = Some("disabled".to_string());
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/second-stage.feature|Primary semantic behavior::givn/specs/second-stage.feature|Secondary semantic behavior=0.9600".to_string(),
+    );
 }
 
 #[given("BGE and NLI evidence are explicitly disabled")]
-fn disable_second_stage_evidence(_world: &mut GivnWorld) {
-    unimplemented!()
+fn disable_second_stage_evidence(world: &mut GivnWorld) {
+    assert_eq!(world.retrieval_bge.as_deref(), Some("disabled"));
+    assert_eq!(world.retrieval_reranker.as_deref(), Some("disabled"));
 }
 
 #[then("the JSON contains the E5 candidates without BGE or NLI evidence")]
-fn json_contains_e5_without_second_stage(_world: &mut GivnWorld) {
-    unimplemented!()
+fn json_contains_e5_without_second_stage(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("duplicate output JSON");
+    assert!(document["candidate_count"].as_u64().unwrap_or(0) > 0);
+    assert!(document.get("bge_run").is_none());
+    assert!(document.get("nli_run").is_none());
 }
 
 #[then("the BGE and NLI caches remain empty")]
-fn second_stage_caches_remain_empty(_world: &mut GivnWorld) {
-    unimplemented!()
+fn second_stage_caches_remain_empty(world: &mut GivnWorld) {
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    assert!(!xdg.join("givn/bge").exists());
+    assert!(!xdg.join("givn/nli").exists());
 }
 
 #[given("an initialized project with a completed permanent semantic index and a cold model cache")]
