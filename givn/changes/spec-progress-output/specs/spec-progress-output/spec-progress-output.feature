@@ -30,7 +30,7 @@ Feature: Progress output during long-running spec retrieval commands
     And stderr does not report per-file download progress
     And stderr announces the embedding of the pending scenarios with their count
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failed model download still announces the started download phase
     Given an initialized project with unreachable semantic model sources
     When the user runs `givn spec index`
