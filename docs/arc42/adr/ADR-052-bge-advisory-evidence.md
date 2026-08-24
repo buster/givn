@@ -55,7 +55,7 @@ E5 candidates can contain valid boundaries or unrelated scenarios that share set
 
 Chosen option: **Use the symmetric BGE raw-logit point `3.0` only for `BGE_RECOMMENDED` versus `BGE_FILTERED` evidence**. Filtered evidence is visible and non-blocking; recommended candidates retain the normal agent classification/remediation requirement. BGE never assigns a Givn classification and never edits specifications.
 
-The BGE input pool is surface-specific: the Duplicate Audit uses its endpoint top-five union; advisory review uses the candidate pool produced by its retrieval path; blocking semantic review uses the complete E5 semantic report candidates before its own budget selection; Explore applies BGE to its at-most-five ranked results.
+The BGE input pool is surface-specific: the Duplicate Audit uses its endpoint top-five union; advisory review uses the candidate pool produced by its retrieval path; blocking semantic review uses the complete E5 semantic report candidates before its own budget selection; Explore applies BGE to its at-most-five ranked results; `spec search --evidence` applies BGE to the five displayed search results.
 
 ### Consequences
 
