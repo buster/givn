@@ -5148,6 +5148,7 @@ fn print_explore_text(
 fn review_enabled(root: &Path, change_id: &str, allow_download: bool) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
+    report_missing_index(root);
     index_enabled(root, allow_download)?;
     let index = read_index(&spec_index_path(root))?;
 
