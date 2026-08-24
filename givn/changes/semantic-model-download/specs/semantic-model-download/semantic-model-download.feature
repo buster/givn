@@ -9,7 +9,7 @@
 @givn.delta @semantic-model-download
 Feature: Automatic semantic model availability
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: First semantic indexing downloads E5 artifacts before applying the token guard
     Given an initialized project with a fresh XDG Givn cache and a reachable model source
     And the project contains fitting permanent semantic scenarios

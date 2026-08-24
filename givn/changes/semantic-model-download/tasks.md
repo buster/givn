@@ -190,20 +190,31 @@
   (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named scenario;
   output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash:
+  `78bd375`.
 
 ## E2E Scenario: First semantic indexing downloads E5 artifacts before applying the token guard
 
-- [ ] E2E setup: start the local deterministic HF-compatible artifact source,
-  isolate `XDG_CACHE_HOME`, prove strict E2E filtering, and record full/e2e
-  counts. Evidence: _pending_.
-- [ ] RED: remove only this scenario's `@wip`, add separate E2E step stubs with
-  `unimplemented!()`, and run the exact E2E scenario. Output: _pending_
-- [ ] GREEN: drive the compiled `givn spec index` subprocess, assert stdout and
-  exit status, and verify the XDG E5 cache as secondary evidence. Production
-  files: _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: simplify the E2E binding without changing the CLI assertions and
-  rerun the named scenario. Output: _pending_
+- [x] E2E setup: local runnability is self-contained; the per-scenario local
+  HF-compatible artifact fixture starts on loopback, and each E2E world receives
+  an isolated `XDG_CACHE_HOME`. Strict E2E proof command:
+  `GIVN_FEATURES=givn/changes/semantic-model-download/specs cargo test --features spec-retrieval --test features_runner -- --name "First semantic indexing downloads E5 artifacts before applying the token guard"`.
+  It exited non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`, and the
+  E2E Given step panicking with `not implemented`. Baseline count proof:
+  `./run-tests.sh` passed phase counts `336/34/9/7/4`; `./run-tests.sh --e2e`
+  passed `48/7/5/1` (61 E2E phase scenarios versus 390 full phase scenarios).
+- [x] RED: removed only this scenario's `@wip`; exact E2E run exited non-zero
+  with `1 scenario (1 failed)`, `1 step (1 failed)`, and the defined Given step
+  panicking with `not implemented`.
+- [x] GREEN: drove the compiled `givn spec index` subprocess through the local
+  HF-compatible source, asserted stdout/exit status, and verified the XDG E5
+  cache. Production files: `src/spec/retrieval.rs`. Test files:
+  `tests/common/mod.rs`, `tests/steps/semantic_model_download_e2e_steps.rs`,
+  and `tests/steps/mod.rs`. Compile step: `cargo check --features
+  spec-retrieval` passed. Targeted output: `1 scenario (1 passed)`, `7 steps
+  (7 passed)`.
+- [x] REFACTOR: ran `cargo fmt --all -- --check` and reran the named E2E
+  scenario; output: `1 scenario (1 passed)`, `7 steps (7 passed)`.
 - [ ] COMMIT: commit the E2E scenario with its title. Hash: _pending
 
 ## E2E Scenario: Search identifies the missing-index repair command
