@@ -59,7 +59,7 @@ Feature: Progress output during long-running spec retrieval commands
     And stdout is valid duplicate-audit JSON
     And stderr does not announce a BGE or NLI model download
 
-  @givn.added @nli-combined @e2e @wip
+  @givn.added @nli-combined @e2e
   Scenario: Advisory review announces second-stage model acquisition during the run
     Given an initialized project with a completed permanent semantic index and a cold second-stage model cache
     And an active change delta is available for advisory review

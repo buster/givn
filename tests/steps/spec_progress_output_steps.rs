@@ -219,6 +219,10 @@ fn reports_ranked_search_results(world: &mut GivnWorld) {
 }
 
 #[then("stdout reports advisory retrieval evidence")]
-fn reports_advisory_retrieval_evidence(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_advisory_retrieval_evidence(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    assert!(
+        stdout.contains("BGE status:"),
+        "stdout did not report advisory retrieval evidence: {stdout}"
+    );
 }
