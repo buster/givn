@@ -24,8 +24,8 @@
   Targeted output: `1 scenario (1 passed)`, `5 steps (5 passed)`.
 - [x] REFACTOR: ran `cargo fmt --all` and reran the targeted scenario; output:
   `1 scenario (1 passed)`, `5 steps (5 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title (delivered in
-  the single change commit). Hash: `37b27d3`
+- [x] COMMIT: feat(retrieval): The default second-stage budget scores every
+  candidate below 2048. Hash: `37b27d3`
 
 ## Scenario: BGE receives the highest E5 candidates within the configured budget
 
@@ -42,8 +42,8 @@
   `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title (delivered in
-  the single change commit). Hash: `37b27d3`
+- [x] COMMIT: feat(retrieval): BGE receives the highest E5 candidates within
+  the configured budget. Hash: `37b27d3`
 
 ## Scenario: NLI receives the highest E5 candidates within the configured budget
 
@@ -60,8 +60,8 @@
   `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `8 steps (8 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title (delivered in
-  the single change commit). Hash: `37b27d3`
+- [x] COMMIT: feat(retrieval): NLI receives the highest E5 candidates within
+  the configured budget. Hash: `37b27d3`
 
 ## Scenario: An invalid second-stage pair budget is rejected
 
@@ -76,8 +76,8 @@
   `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title (delivered in
-  the single change commit). Hash: `37b27d3`
+- [x] COMMIT: feat(retrieval): An invalid second-stage pair budget is rejected.
+  Hash: `37b27d3`
 
 ## Scenario: A zero second-stage pair budget is rejected
 
@@ -91,8 +91,8 @@
   `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title (delivered in
-  the single change commit). Hash: `37b27d3`
+- [x] COMMIT: feat(retrieval): A zero second-stage pair budget is rejected.
+  Hash: `37b27d3`
 
 ## Scenario: BGE and NLI select the same highest E5 candidates independently
 
@@ -107,8 +107,8 @@
   `7 steps (7 passed)`.
 - [x] REFACTOR: simplify without behavior change and rerun the named scenario.
   Evidence: `1 scenario (1 passed)`, `7 steps (7 passed)`.
-- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title (delivered in
-  the single change commit). Hash: `37b27d3`
+- [x] COMMIT: feat(retrieval): BGE and NLI select the same highest E5
+  candidates independently. Hash: `37b27d3`
 
 ## Scenario: The CLI reports the configured second-stage pair budget
 
@@ -129,8 +129,8 @@
   Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
 - [x] REFACTOR: simplify E2E bindings without changing assertions and rerun the
   named scenario. Evidence: `1 scenario (1 passed)`, `6 steps (6 passed)`.
-- [x] COMMIT: commit the E2E scenario with its title (delivered in the single
-  change commit). Hash: `37b27d3`
+- [x] COMMIT: test(e2e): The CLI reports the configured second-stage pair
+  budget. Hash: `37b27d3`
 
 ## Final Verification
 
@@ -151,5 +151,5 @@
   `1045` filtered, `212` unscored, `212` token-cap, `770.1 s`; combined
   `0` recommended; E5 `1274` candidates.
 - [ ] `givn check review --change semantic-reranker-budget` passes all required
-  gates. (Belongs to the review stage after the tasks are done; the review
-  artifact is not written yet — done by the review flow.)
+  gates. (Final gate for the review stage; runs verify + verify-e2e +
+  integrity + overlap + retrieval.)
