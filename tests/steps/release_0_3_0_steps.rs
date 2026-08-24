@@ -219,7 +219,7 @@ fn catalog_bundles_are_complete(world: &mut GivnWorld) {
     }
 }
 
-#[given("an automatically created 0.3.0 migration change")]
+#[given("an automatically created 0.3.1 migration change")]
 fn automatic_migration_change(world: &mut GivnWorld) {
     let env = crate::steps::release_0_3_0_e2e_steps::legacy_git_project();
     let output = crate::common::run_givn(&env, &["upgrade"]);
@@ -234,7 +234,7 @@ fn automatic_migration_change(world: &mut GivnWorld) {
 #[when("an LLM opens the migration change")]
 fn llm_opens_migration_change(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("migration project fixture");
-    let design = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-3-0/design.md"))
+    let design = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-3-1/design.md"))
         .expect("read migration design");
     world.additional_output = Some(design);
 }
@@ -262,7 +262,7 @@ fn no_fabricated_design_review(world: &mut GivnWorld) {
             .any(|line| line.trim() == "DESIGN-REVIEW: PASS")
     );
     assert!(
-        !env.path("givn/changes/migrate-0-2-0-to-0-3-0/design-review.md")
+        !env.path("givn/changes/migrate-0-2-0-to-0-3-1/design-review.md")
             .exists()
     );
 }
@@ -276,7 +276,7 @@ fn no_fabricated_implementation_commit(world: &mut GivnWorld) {
         .expect("migration design");
     assert!(!design.contains("IMPLEMENTATION COMMIT:"));
     assert!(
-        !env.path("givn/changes/migrate-0-2-0-to-0-3-0/tasks.md")
+        !env.path("givn/changes/migrate-0-2-0-to-0-3-1/tasks.md")
             .exists()
     );
 }
@@ -284,7 +284,7 @@ fn no_fabricated_implementation_commit(world: &mut GivnWorld) {
 #[then("the normal Givn review and archive gates remain required")]
 fn normal_gates_remain_required(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("migration project fixture");
-    let output = crate::common::run_givn(env, &["graph", "--change", "migrate-0-2-0-to-0-3-0"]);
+    let output = crate::common::run_givn(env, &["graph", "--change", "migrate-0-2-0-to-0-3-1"]);
     assert!(output.status.success());
     let graph = String::from_utf8_lossy(&output.stdout);
     assert!(graph.contains("design-review"), "{graph}");
