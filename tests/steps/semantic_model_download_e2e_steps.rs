@@ -114,18 +114,41 @@ fn e2e_search_reports_missing_index(world: &mut GivnWorld) {
 }
 
 #[given("a complete draft scenario is available for exploration")]
-fn e2e_draft_for_exploration(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_draft_for_exploration(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    fs::write(
+        env.path("draft.feature"),
+        "Feature: draft\n\n  Scenario: Draft semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write draft feature");
 }
 
 #[when("the end-to-end user explores the draft without an index through the givn CLI")]
-fn e2e_explore_without_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_explore_without_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "explore", "--file", "draft.feature"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+        ],
+    ));
 }
 
 #[then("the exploration reports `spec index is missing at <path>; run `givn spec index` first`")]
-fn e2e_explore_reports_missing_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_explore_reports_missing_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let expected = format!(
+        "spec index is missing at {}; run `givn spec index` first",
+        env.path("givn/.spec-index.json").display()
+    );
+    assert!(
+        super::stderr(world).contains(&expected),
+        "stderr did not report missing exploration index: {}",
+        super::stderr(world)
+    );
 }
 
 #[given("an active change delta is available for advisory review")]
