@@ -8152,11 +8152,17 @@ fn print_search_results_with_evidence(
             score
         );
         if let Some(run) = bge_run {
-            println!("  {}", bge_candidate_line(run, query_endpoint, &entry.file, &entry.title));
+            println!(
+                "  {}",
+                bge_candidate_line(run, query_endpoint, &entry.file, &entry.title)
+            );
         }
         #[cfg(feature = "nli-evidence")]
         if let Some(run) = nli_run {
-            println!("  {}", nli_candidate_line(run, query_endpoint, &entry.file, &entry.title));
+            println!(
+                "  {}",
+                nli_candidate_line(run, query_endpoint, &entry.file, &entry.title)
+            );
         }
     }
     if bge_run.is_none() || bge_run.is_some_and(|run| run.status == "BGE_UNAVAILABLE") {
@@ -8169,7 +8175,6 @@ fn print_search_results_with_evidence(
     #[cfg(not(feature = "nli-evidence"))]
     println!("NLI evidence: unavailable");
 }
-
 
 #[cfg(feature = "spec-retrieval")]
 fn print_search_results(ranked: &[(&IndexEntry, f32)]) {
@@ -8211,7 +8216,6 @@ fn bge_candidate_line(
         "BGE: BGE_UNSCORED".to_string()
     }
 }
-
 
 #[cfg(all(test, feature = "spec-retrieval"))]
 mod tests {

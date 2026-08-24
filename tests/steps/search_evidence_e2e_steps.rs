@@ -25,7 +25,10 @@ fn e2e_evidence_recommends(world: &mut GivnWorld) {
 
 #[when(regex = r#"^the end-to-end user searches "([^"]+)" with evidence$"#)]
 fn e2e_search_with_evidence(world: &mut GivnWorld, query: String) {
-    let env = world.env.as_ref().expect("evidence search project is required");
+    let env = world
+        .env
+        .as_ref()
+        .expect("evidence search project is required");
     world.last_output = Some(common::run_givn_with_envs(
         env,
         &["spec", "search", "--evidence", &query],

@@ -60,7 +60,6 @@ pub(crate) fn bge_recommend_fixture() -> String {
         .join(";")
 }
 
-
 pub(crate) fn nli_recommend_fixture() -> String {
     let query = format!("__query__|{SEARCH_QUERY}");
     let candidates = [
