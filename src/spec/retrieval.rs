@@ -8159,6 +8159,9 @@ fn print_search_results_with_evidence(
             println!("  {}", nli_candidate_line(run, query_endpoint, &entry.file, &entry.title));
         }
     }
+    if bge_run.is_none() || bge_run.is_some_and(|run| run.status == "BGE_UNAVAILABLE") {
+        println!("BGE evidence: unavailable");
+    }
 }
 
 
