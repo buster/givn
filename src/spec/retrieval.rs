@@ -8162,6 +8162,12 @@ fn print_search_results_with_evidence(
     if bge_run.is_none() || bge_run.is_some_and(|run| run.status == "BGE_UNAVAILABLE") {
         println!("BGE evidence: unavailable");
     }
+    #[cfg(feature = "nli-evidence")]
+    if nli_run.is_none() || nli_run.is_some_and(|run| run.status == "NLI_UNAVAILABLE") {
+        println!("NLI evidence: unavailable");
+    }
+    #[cfg(not(feature = "nli-evidence"))]
+    println!("NLI evidence: unavailable");
 }
 
 
