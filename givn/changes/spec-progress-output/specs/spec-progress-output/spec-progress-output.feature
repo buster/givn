@@ -70,7 +70,7 @@ Feature: Progress output during long-running spec retrieval commands
     And stderr announces the BGE and NLI model downloads
     And stderr reports per-file download progress for the second-stage model artifacts
 
-  @givn.added @wip
+  @givn.added
   Scenario: Embedding multiple scenarios announces the count and reports per-scenario progress
     Given an initialized project with a completed E5 model cache in the XDG Givn cache and three permanent semantic scenarios
     When the user runs `givn spec index`
