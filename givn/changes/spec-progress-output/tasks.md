@@ -88,16 +88,19 @@
 
 ## Scenario: Cold-cache indexing announces each phase on stderr (@e2e)
 
-- [ ] RED: remove only this scenario's `@wip`, add e2e step stubs with
-  `unimplemented!()`, and run the exact named scenario via the e2e runner.
-  Output: _pending_
-- [ ] GREEN: implement `StderrDownloadProgress` and switch `fetch_hf_artifacts`
-  to `download_with_progress`; emit acquisition start/end and per-file
-  progress; extend the existing cold-cache e2e steps with the new stderr
-  assertions. Production files: _pending_. Output: _pending_
-- [ ] REFACTOR: simplify without behavior change and rerun the named scenario.
-  Output: _pending_
-- [ ] COMMIT: commit RED/GREEN/REFACTOR with the scenario title. Hash: _pending_
+- [x] RED: removed only this scenario's `@wip`; ran the named scenario via
+  the e2e runner with the previous commit's step stubs. Output:
+  `1 scenario (1 failed)`, `7 steps (6 passed, 1 failed)`,
+  `Step panicked. Captured output: not implemented`, non-zero exit.
+- [x] GREEN: `StderrDownloadProgress` + `download_with_progress` switch in
+  `fetch_hf_artifacts`; acquisition start/end and per-file progress notices;
+  new stderr assertions. Production files: `src/spec/retrieval.rs`. Test
+  files: `tests/steps/spec_progress_output_steps.rs`.
+  Targeted output: `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
+  scenario: `1 scenario (1 passed)`, `11 steps (11 passed)`.
+- [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
+  Hash: `366cbec`
 
 ## Scenario: Search with a cold E5 cache announces model acquisition before results (@e2e)
 

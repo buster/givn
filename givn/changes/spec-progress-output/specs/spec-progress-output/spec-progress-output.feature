@@ -7,7 +7,7 @@
 @givn.delta @spec-progress-output
 Feature: Progress output during long-running spec retrieval commands
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Cold-cache indexing announces each phase on stderr
     Given an initialized project with a fresh XDG Givn cache and a reachable model source
     And the project contains fitting permanent semantic scenarios
