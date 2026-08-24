@@ -157,9 +157,14 @@
 
 ## Final verification
 
-- [ ] Full non-e2e suite: `GIVN_FEATURES=givn/changes/spec-progress-output/specs ./run-tests.sh`
-  plus the default `./run-tests.sh` (permanent specs unaffected). Output: _pending_
-- [ ] Full e2e suite: `GIVN_FEATURES=givn/changes/spec-progress-output/specs ./run-tests.sh --e2e`
-  plus the default `./run-tests.sh --e2e`. Output: _pending_
-- [ ] `cargo fmt --all && cargo clippy --workspace --all-targets -- -D warnings`.
-  Output: _pending_
+- [x] Full non-e2e suite: `GIVN_FEATURES=givn/changes/spec-progress-output/specs ./run-tests.sh`
+  plus the default `./run-tests.sh` (permanent specs unaffected).
+  Output: delta `6 scenarios (6 passed)`; permanent
+  `349 + 34 + 9 + 8 + 6 scenarios, all passed`.
+- [x] Full e2e suite: `GIVN_FEATURES=givn/changes/spec-progress-output/specs ./run-tests.sh --e2e`
+  plus the default `./run-tests.sh --e2e`.
+  Output: delta `2 + 2 scenarios, all passed`; permanent
+  `53 + 7 + 4 + 2 scenarios, all passed`.
+- [x] `cargo fmt --all && cargo clippy --workspace --all-targets -- -D warnings`.
+  Output: `Finished dev profile` with no warnings; no unimplemented step
+  stubs remain in the two capability step files (grep-verified).
