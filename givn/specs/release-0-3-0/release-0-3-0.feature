@@ -31,13 +31,13 @@ Feature: Givn 0.3.0 release and legacy project migration
     And  every migration bundle has a source, target, order, proposal asset, and design asset
 
   @e2e
-  Scenario: A clean 0.2.0 project receives a reviewable 0.3.0 migration plan
+  Scenario: A clean 0.2.0 project receives a reviewable 0.3.1 migration plan
     Given  a clean Git project created with Givn 0.2.0
     When  the consumer invokes `givn upgrade` for migration
     Then  the command exits successfully
     And  the project config identifies the current Givn version
     And  one commit contains only the managed scaffold and generated agent integration changes
-    And  a migration change named "migrate-0-2-0-to-0-3-0" exists
+    And  a migration change named "migrate-0-2-0-to-0-3-1" exists
     And  the migration change records the managed upgrade commit
     And  the migration change contains a proposal and detailed design
     And  the migration change intentionally has no product specification
@@ -59,7 +59,7 @@ Feature: Givn 0.3.0 release and legacy project migration
     And  the user changes remain byte-for-byte unchanged
 
   Scenario: Repeating the upgrade does not duplicate the migration
-    Given  a project that already has the 0.3.0 migration change
+    Given  a project that already has the 0.3.1 migration change
     When  the consumer runs `givn upgrade` again
     Then  the command does not overwrite the migration change
     And  no second migration commit is created
@@ -72,13 +72,13 @@ Feature: Givn 0.3.0 release and legacy project migration
     And  the command explains that a Git repository is required for the automatic migration
 
   Scenario: An existing migration plan is never overwritten
-    Given  a Givn 0.2.0 project with an existing "migrate-0-2-0-to-0-3-0" change
+    Given  a Givn 0.2.0 project with an existing "migrate-0-2-0-to-0-3-1" change
     When  the consumer invokes `givn upgrade` for migration
     Then  the command does not overwrite the existing migration proposal or design
     And  the command reports the existing migration change
 
   Scenario: The migration change remains honest until the project review passes
-    Given  an automatically created 0.3.0 migration change
+    Given  an automatically created 0.3.1 migration change
     When  an LLM opens the migration change
     Then  the change asks for project-specific task derivation
     And  it does not contain a fabricated design-review pass
@@ -87,7 +87,7 @@ Feature: Givn 0.3.0 release and legacy project migration
 
   @e2e
   Scenario: A completed maintenance migration can be archived without a product specification
-    Given  a completed automatic 0.3.0 migration change
+    Given  a completed automatic 0.3.1 migration change
     When  the consumer archives the maintenance migration
     Then  the maintenance migration is archived successfully
     And  the permanent specification tree contains no migration feature
