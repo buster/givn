@@ -28,7 +28,7 @@ fn bge_recommends_all(world: &mut GivnWorld) {
 
 #[given("NLI evidence recommends all listed candidates")]
 fn nli_recommends_all(world: &mut GivnWorld) {
-    unimplemented!("NLI evidence recommends all listed candidates");
+    world.retrieval_nli_scores = Some(nli_recommend_fixture().to_string());
 }
 
 #[when(regex = r#"^the user searches with evidence for "([^"]+)"$"#)]
@@ -60,3 +60,22 @@ pub(crate) fn bge_recommend_fixture() -> String {
         .join(";")
 }
 
+
+pub(crate) fn nli_recommend_fixture() -> String {
+    let query = format!("__query__|{SEARCH_QUERY}");
+    let candidates = [
+        "givn/specs/retrieval.feature|Provider name is unknown",
+        "givn/specs/retrieval.feature|Authentication token is missing",
+        "givn/specs/retrieval.feature|Provider configuration is valid",
+    ];
+    candidates
+        .iter()
+        .flat_map(|candidate| {
+            [
+                format!("{query}->{candidate}=4.0000,0.0000,0.0000"),
+                format!("{candidate}->{query}=4.0000,0.0000,0.0000"),
+            ]
+        })
+        .collect::<Vec<_>>()
+        .join(";")
+}
