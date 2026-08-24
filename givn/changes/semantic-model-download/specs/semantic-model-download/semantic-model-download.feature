@@ -91,7 +91,7 @@ Feature: Automatic semantic model availability
     And the JSON contains the E5 candidates without BGE or NLI evidence
     And the BGE and NLI caches remain empty
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Search identifies the missing-index repair command
     Given an initialized project with permanent semantic scenarios and no persistent semantic index
     When the end-to-end user searches for a permanent semantic scenario without an index through the givn CLI

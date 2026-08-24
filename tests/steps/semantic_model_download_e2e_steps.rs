@@ -86,12 +86,31 @@ fn e2e_e5_artifacts_exist(world: &mut GivnWorld) {
     "the end-to-end user searches for a permanent semantic scenario without an index through the givn CLI"
 )]
 fn e2e_search_without_index(_world: &mut GivnWorld) {
-    unimplemented!()
+    let world = _world;
+    let env = world.env.as_ref().expect("semantic project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "search", "permanent semantic scenario"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+        ],
+    ));
 }
 
 #[then("the search reports `spec index is missing at <path>; run `givn spec index` first`")]
-fn e2e_search_reports_missing_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_search_reports_missing_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let expected = format!(
+        "spec index is missing at {}; run `givn spec index` first",
+        env.path("givn/.spec-index.json").display()
+    );
+    assert!(
+        super::stderr(world).contains(&expected),
+        "stderr did not report missing search index: {}",
+        super::stderr(world)
+    );
 }
 
 #[given("a complete draft scenario is available for exploration")]
