@@ -152,20 +152,46 @@ fn e2e_explore_reports_missing_index(world: &mut GivnWorld) {
 }
 
 #[given("an active change delta is available for advisory review")]
-fn e2e_advisory_change_available(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_advisory_change_available(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let path = env.path("givn/changes/running-change/specs/running-change.feature");
+    fs::create_dir_all(path.parent().expect("advisory delta parent"))
+        .expect("create advisory delta");
+    fs::write(
+        path,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Advisory change behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n",
+    )
+    .expect("write advisory delta");
 }
 
 #[when("the end-to-end user runs advisory review without an index through the givn CLI")]
-fn e2e_advisory_review_without_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_advisory_review_without_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+        ],
+    ));
 }
 
 #[then(
     "the advisory review reports `spec index is missing at <path>; run `givn spec index` first`"
 )]
-fn e2e_advisory_reports_missing_index(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_advisory_reports_missing_index(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("semantic project");
+    let expected = format!(
+        "spec index is missing at {}; run `givn spec index` first",
+        env.path("givn/.spec-index.json").display()
+    );
+    assert!(
+        super::stderr(world).contains(&expected),
+        "stderr did not report missing advisory-review index: {}",
+        super::stderr(world)
+    );
 }
 
 #[given("an active change delta is available for blocking review")]
