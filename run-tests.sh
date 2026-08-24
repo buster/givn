@@ -36,21 +36,27 @@ resolve_nli_features_path() {
 }
 
 run_nli() {
-    if features_path=$(resolve_nli_features_path); then
-        env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
-    fi
+    features_path=$(resolve_nli_features_path) || {
+        printf '%s\n' 'NLI feature path could not be resolved' >&2
+        return 1
+    }
+    env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
 }
 
 run_nli_disabled() {
-    if features_path=$(resolve_nli_features_path); then
-        env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
-    fi
+    features_path=$(resolve_nli_features_path) || {
+        printf '%s\n' 'NLI feature path could not be resolved' >&2
+        return 1
+    }
+    env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
 }
 
 run_nli_combined() {
-    if features_path=$(resolve_nli_features_path); then
-        env -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
-    fi
+    features_path=$(resolve_nli_features_path) || {
+        printf '%s\n' 'NLI feature path could not be resolved'
+        return 1
+    }
+    env -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
 }
 
 case "${1:-}" in

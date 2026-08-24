@@ -12,8 +12,10 @@ fn e2e_fresh_e5_cache(world: &mut GivnWorld) {
     let env = common::make_init_root();
     let xdg = env.path(".xdg-cache");
     assert!(!xdg.exists(), "E5 fixture cache must start cold");
+    let event_path = env.path("download-events.log");
     world.env = Some(env);
     world.xdg_cache_home = Some(xdg);
+    world.download_event_path = Some(event_path);
     world.artifact_server = Some(common::ArtifactFixtureServer::start());
 }
 
@@ -43,6 +45,15 @@ fn e2e_runs_index(world: &mut GivnWorld) {
             ("GIVN_SPEC_EMBEDDER", "download-stub"),
             ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
             ("HF_ENDPOINT", server.endpoint()),
+            (
+                "GIVN_SPEC_DOWNLOAD_EVENTS",
+                world
+                    .download_event_path
+                    .as_ref()
+                    .expect("download event path")
+                    .to_str()
+                    .expect("download event path is UTF-8"),
+            ),
         ],
     ));
 }
@@ -80,6 +91,15 @@ fn e2e_e5_artifacts_exist(world: &mut GivnWorld) {
         assert!(snapshot.join(file).is_file(), "missing E5 artifact {file}");
     }
     assert!(xdg.join("givn/e5/givn-artifacts.json").is_file());
+    let events = fs::read_to_string(
+        world
+            .download_event_path
+            .as_ref()
+            .expect("download event path"),
+    )
+    .expect("read download events");
+    let events: Vec<&str> = events.lines().collect();
+    assert_eq!(events, ["artifact-resolved", "token-budget-measured"]);
 }
 
 #[when(

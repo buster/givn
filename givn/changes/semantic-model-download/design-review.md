@@ -98,3 +98,17 @@ duplicate-title, or structural errors; exit status `2`.
 ## Status
 
 DESIGN-REVIEW: PASS
+
+## Post-Review Revalidation
+
+The implementation phase made only contract-preserving clarifications after
+the fresh design review: the archive scenario uses an existing removed target so
+the no-download path cannot require new E5 vectors, the feature-free assertion
+uses the existing CLI diagnostic form, and the duplicate-audit E2E wording is
+unique from older capability bindings. The six inventory entries, six E2E
+scenarios, combined-feature routing, XDG precedence, resolver snapshot model
+paths, archive no-download policy, and ADR-039/ADR-057 amendment routing remain
+unchanged. `givn lint --change semantic-model-download` is clean and the final
+active full/E2E matrices pass.
+
+DESIGN-REVIEW: PASS
