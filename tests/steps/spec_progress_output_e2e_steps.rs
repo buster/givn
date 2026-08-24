@@ -70,11 +70,11 @@ fn e2e_search_with_model_acquisition(world: &mut GivnWorld) {
 #[given(
     "an initialized project with a completed permanent semantic index and a cold second-stage model cache"
 )]
-fn completed_index_and_cold_second_stage_cache(world: &mut GivnWorld) {
+fn completed_index_and_cold_second_stage_cache(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[when("the end-to-end user runs advisory review for the active change through the givn CLI")]
-fn e2e_advisory_review_with_acquisition(world: &mut GivnWorld) {
+fn e2e_advisory_review_with_acquisition(_world: &mut GivnWorld) {
     unimplemented!()
 }
