@@ -26,8 +26,26 @@ fn unreachable_semantic_model_sources(world: &mut GivnWorld) {
 #[given(
     "an initialized project with a completed E5 model cache in the XDG Givn cache and three permanent semantic scenarios"
 )]
-fn completed_e5_cache_with_three_scenarios(_world: &mut GivnWorld) {
-    unimplemented!()
+fn completed_e5_cache_with_three_scenarios(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("three.feature"),
+        "Feature: three\n\n  Scenario: First cached semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the first behavior is returned\n\n  Scenario: Second cached semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the second behavior is returned\n\n  Scenario: Third cached semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the third behavior is returned\n",
+    )
+    .expect("write three-scenario cache fixture");
+    let xdg = env.path(".xdg-cache");
+    let cache = xdg.join("givn/e5");
+    fs::create_dir_all(&cache).expect("create XDG E5 cache");
+    fs::write(
+        cache.join("givn-artifacts.json"),
+        "{\"model\":\"intfloat/multilingual-e5-large\",\"complete\":true}\n",
+    )
+    .expect("write E5 cache manifest");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("stub".to_string());
 }
 
 #[then("stderr announces the start of the retrieval model download with the E5 cache location")]
@@ -64,13 +82,27 @@ fn announces_embedder_preparation(_world: &mut GivnWorld) {
 }
 
 #[then("stderr announces the embedding of three pending scenarios")]
-fn announces_three_pending_scenarios(_world: &mut GivnWorld) {
-    unimplemented!()
+fn announces_three_pending_scenarios(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("embedding 3 pending scenarios"),
+        "stderr did not announce the three pending scenarios: {stderr}"
+    );
 }
 
 #[then("stderr reports the embedding progress for each pending scenario")]
-fn reports_per_scenario_embedding_progress(_world: &mut GivnWorld) {
-    unimplemented!()
+fn reports_per_scenario_embedding_progress(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for line in [
+        "embedded 1/3 scenarios",
+        "embedded 2/3 scenarios",
+        "embedded 3/3 scenarios",
+    ] {
+        assert!(
+            stderr.contains(line),
+            "stderr missing embedding progress {line}: {stderr}"
+        );
+    }
 }
 
 #[then("stderr announces the completion of the embedding phase")]
