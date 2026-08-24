@@ -17,6 +17,12 @@
 
 
 
+<<<<<<< HEAD
+=======
+
+
+
+>>>>>>> f4b7b0b (chore(release): archive adr-qualification-gate, release-0-3-0, search-evidence, semantic-reranker-budget)
 ```
   ________  .__
  /  _____/  |__|__  __ ____
