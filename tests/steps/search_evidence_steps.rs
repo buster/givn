@@ -13,7 +13,7 @@ fn local_nli_enabled(world: &mut GivnWorld) {
 
 #[given("every BGE pair exceeds the token limit")]
 fn every_bge_pair_over_limit(world: &mut GivnWorld) {
-    unimplemented!("every BGE pair exceeds the token limit");
+    world.retrieval_bge_token_budget = Some("all-513".to_string());
 }
 
 #[given("every NLI pair exceeds the token limit")]
