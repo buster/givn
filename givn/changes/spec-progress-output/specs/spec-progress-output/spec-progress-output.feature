@@ -38,7 +38,7 @@ Feature: Progress output during long-running spec retrieval commands
     And stderr announces the start of the retrieval model download with the E5 cache location
     And stderr identifies the failed E5 model artifact
 
-  @givn.added @nli-combined @e2e @wip
+  @givn.added @nli-combined @e2e
   Scenario: Duplicate audit keeps stdout pure JSON while progress runs on stderr
     Given fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers
