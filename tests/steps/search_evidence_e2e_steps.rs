@@ -5,17 +5,17 @@ use cucumber::{given, when};
 use super::GivnWorld;
 
 #[given("an end-to-end project with a permanent spec index for evidence search")]
-fn e2e_evidence_project(world: &mut GivnWorld) {
+fn e2e_evidence_project(_world: &mut GivnWorld) {
     unimplemented!("end-to-end evidence search project");
 }
 
 #[given("BGE and NLI evidence are enabled for the end-to-end search")]
-fn e2e_evidence_enabled(world: &mut GivnWorld) {
+fn e2e_evidence_enabled(_world: &mut GivnWorld) {
     unimplemented!("BGE/NLI evidence enabled for e2e search");
 }
 
 #[given("BGE and NLI evidence recommend the listed candidates")]
-fn e2e_evidence_recommends(world: &mut GivnWorld) {
+fn e2e_evidence_recommends(_world: &mut GivnWorld) {
     unimplemented!("BGE/NLI evidence recommends the listed candidates");
 }
 
