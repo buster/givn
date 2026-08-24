@@ -126,9 +126,9 @@ Feature: Automatic semantic model availability
     Then the command does not download model artifacts
     And the archive completes without a model-setup failure
 
-  @givn.added @nli @nli-combined @e2e @wip
+  @givn.added @nli @nli-combined @e2e
   Scenario: Duplicate audit identifies the second-stage model caches
-    Given an initialized project with fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
+    Given fresh BGE and NLI caches in the XDG Givn cache and reachable model sources
     And the project contains permanent semantic candidates for both evidence layers
     And BGE and NLI evidence are explicitly enabled
     When the end-to-end user audits permanent scenarios with `givn spec duplicates --format json`
