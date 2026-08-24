@@ -153,7 +153,7 @@
 - [x] REFACTOR: clippy `-D warnings` clean, `cargo fmt`; reran the named
   scenario: `1 scenario (1 passed)`, `8 steps (8 passed)`.
 - [x] COMMIT: commit RED/GREEN/REFACTOR with the scenario title.
-  Hash: _pending_
+  Hash: `bab8d25`
 
 ## Final verification
 
