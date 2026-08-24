@@ -104,7 +104,7 @@ Feature: Automatic semantic model availability
     When the end-to-end user explores the draft without an index through the givn CLI
     Then the exploration reports `spec index is missing at <path>; run `givn spec index` first`
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Advisory review identifies the missing-index repair command
     Given an initialized project with permanent semantic scenarios and no persistent semantic index
     And an active change delta is available for advisory review
