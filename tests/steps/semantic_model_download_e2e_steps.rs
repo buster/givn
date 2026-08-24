@@ -248,31 +248,101 @@ fn e2e_blocking_reports_missing_index(world: &mut GivnWorld) {
 }
 
 #[given("fresh BGE and NLI caches in the XDG Givn cache and reachable model sources")]
-fn e2e_fresh_second_stage_caches(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_fresh_second_stage_caches(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    fs::create_dir_all(env.path("givn/specs")).expect("create permanent specs");
+    fs::write(
+        env.path("givn/specs/second-stage.feature"),
+        "Feature: second stage\n\n  Scenario: Primary semantic behavior\n    Given a configured provider catalog\n    When the provider is queried\n    Then the provider result is returned\n\n  Scenario: Secondary semantic behavior\n    Given a configured service catalog\n    When the service is queried\n    Then the service result is returned\n",
+    )
+    .expect("write second-stage fixture");
+    let xdg = env.path(".xdg-cache");
+    assert!(!xdg.exists(), "second-stage fixture cache must start cold");
+    world.env = Some(env);
+    world.xdg_cache_home = Some(xdg);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_bge = Some("auto".to_string());
+    world.retrieval_reranker = Some("nli-auto".to_string());
+    world.retrieval_bge_local_stub = true;
+    world.retrieval_nli_local_stub = true;
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/second-stage.feature|Primary semantic behavior::givn/specs/second-stage.feature|Secondary semantic behavior=0.9600".to_string(),
+    );
+    world.artifact_server = Some(common::ArtifactFixtureServer::start());
 }
 
 #[given("BGE and NLI evidence are explicitly enabled")]
-fn e2e_enable_second_stage_evidence(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_enable_second_stage_evidence(world: &mut GivnWorld) {
+    assert_eq!(world.retrieval_bge.as_deref(), Some("auto"));
+    assert_eq!(world.retrieval_reranker.as_deref(), Some("nli-auto"));
 }
 
 #[when("the end-to-end user audits permanent scenarios with `givn spec duplicates --format json`")]
-fn e2e_runs_duplicate_audit(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_runs_duplicate_audit(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("second-stage project");
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let server = world
+        .artifact_server
+        .as_ref()
+        .expect("artifact fixture server");
+    let scores = world
+        .retrieval_duplicate_scores
+        .as_deref()
+        .expect("second-stage score override");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "auto"),
+            ("GIVN_SPEC_RERANKER", "nli-auto"),
+            ("GIVN_SPEC_BGE_LOCAL_STUB", "1"),
+            ("GIVN_SPEC_NLI_LOCAL_STUB", "1"),
+            ("GIVN_SPEC_DUPLICATES_TEST_SCORES", scores),
+            ("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")),
+            ("HF_ENDPOINT", server.endpoint()),
+        ],
+    ));
 }
 
 #[then("the JSON reports participating BGE and NLI evidence")]
-fn e2e_json_reports_bge_nli(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_json_reports_bge_nli(world: &mut GivnWorld) {
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("duplicate output JSON");
+    assert_eq!(document["bge_run"]["status"], "BGE_ENABLED");
+    assert_eq!(document["nli_run"]["status"], "NLI_ENABLED");
 }
 
 #[then("the BGE model artifacts exist in the XDG Givn reranker cache")]
-fn e2e_bge_artifacts_exist(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_bge_artifacts_exist(world: &mut GivnWorld) {
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let snapshot = xdg.join(
+        "givn/bge/models--rozgo--bge-reranker-v2-m3/snapshots/fbd57b17b4db111a9d16813bb08b4c804fac18e9",
+    );
+    for file in [
+        "model.onnx",
+        "model.onnx.data",
+        "tokenizer.json",
+        "config.json",
+        "special_tokens_map.json",
+        "tokenizer_config.json",
+    ] {
+        assert!(snapshot.join(file).is_file(), "missing BGE artifact {file}");
+    }
 }
 
 #[then("the NLI model artifacts exist in the XDG Givn NLI cache")]
-fn e2e_nli_artifacts_exist(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_nli_artifacts_exist(world: &mut GivnWorld) {
+    let xdg = world.xdg_cache_home.as_ref().expect("XDG cache root");
+    let snapshot = xdg.join(
+        "givn/nli/models--MoritzLaurer--mDeBERTa-v3-base-xnli-multilingual-nli-2mil7/snapshots/b5113eb38ab63efdd7f280f8c144ea8b13f978ce",
+    );
+    for file in [
+        "onnx/model.onnx",
+        "config.json",
+        "tokenizer.json",
+        "tokenizer_config.json",
+    ] {
+        assert!(snapshot.join(file).is_file(), "missing NLI artifact {file}");
+    }
 }

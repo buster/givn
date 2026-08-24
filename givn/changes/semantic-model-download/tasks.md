@@ -274,18 +274,22 @@
   (1 passed)`, `4 steps (4 passed)`.
 - [x] REFACTOR: formatted and checked the changed Rust files and reran the named
   E2E scenario; output: `1 scenario (1 passed)`, `4 steps (4 passed)`.
-- [ ] COMMIT: commit the E2E scenario with its title. Hash: _pending
+- [x] COMMIT: commit the E2E scenario with its title. Hash: `f15ed15`.
 
 ## E2E Scenario: Duplicate audit identifies the second-stage model caches
 
-- [ ] RED: remove only this scenario's `@wip`, add separate E2E step stubs with
-  `unimplemented!()`, and run the exact combined E2E scenario. Output: _pending_
-- [ ] GREEN: drive the compiled `givn spec duplicates --format json` subprocess
-  through the combined BGE/NLI feature build, assert JSON stdout and exit
-  status, and verify both XDG caches as secondary evidence. Production files:
-  _pending_. Test files: _pending_. Output: _pending_
-- [ ] REFACTOR: simplify the combined E2E binding without changing assertions and
-  rerun the named scenario. Output: _pending_
+- [x] RED: removed only this scenario's `@wip`; exact combined-feature E2E run
+  exited non-zero with `1 scenario (1 failed)`, `1 step (1 failed)`, and the
+  defined And step panicking with `not implemented`.
+- [x] GREEN: drove the compiled `givn spec duplicates --format json` subprocess
+  through the combined BGE/NLI feature build, asserted JSON stdout/exit status,
+  and verified both XDG caches. Production files: `src/spec/retrieval.rs`.
+  Test files: `tests/common/mod.rs`, `tests/steps/mod.rs`, and
+  `tests/steps/semantic_model_download_e2e_steps.rs`. Compile step:
+  `cargo check --features spec-retrieval,cross-encoder-reranker,nli-evidence`
+  passed. Targeted output: `1 scenario (1 passed)`, `9 steps (9 passed)`.
+- [x] REFACTOR: formatted and checked the changed Rust files and reran the named
+  combined E2E scenario; output: `1 scenario (1 passed)`, `9 steps (9 passed)`.
 - [ ] COMMIT: commit the E2E scenario with its title. Hash: _pending
 
 ## Final Verification
