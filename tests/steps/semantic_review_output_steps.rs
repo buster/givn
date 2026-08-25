@@ -397,7 +397,6 @@ fn recommended_nli_entailments(world: &GivnWorld) -> Vec<f32> {
                     .trim()
                     .parse::<f32>()
                     .ok()
-                    .into()
             } else {
                 None
             }
@@ -417,7 +416,6 @@ fn recommended_bge_raws(world: &GivnWorld) -> Vec<f32> {
                 .trim()
                 .parse::<f32>()
                 .ok()
-                .into()
         })
         .collect()
 }
