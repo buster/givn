@@ -891,3 +891,96 @@ fn stdout_pure(world: &mut GivnWorld) {
         "stdout does not start with a JSON document: {stdout}"
     );
 }
+
+#[when(
+    "the user runs the advisory semantic review for \"running-change\" once as text and once as structured JSON"
+)]
+fn run_review_text_and_json(world: &mut GivnWorld) {
+    run_review_with(world, &[], &[]);
+    world.additional_output = Some(super::stdout(world));
+    run_review_with(world, &["--format", "json"], &[]);
+}
+
+fn parse_accounting_number(output: &str, label: &str, field: &str) -> usize {
+    output
+        .lines()
+        .find(|line| line.contains(label))
+        .unwrap_or_else(|| panic!("missing {label}"))
+        .split(field)
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.trim().parse().ok())
+        .unwrap_or_else(|| panic!("missing {field} in {label}"))
+}
+
+#[then("both runs reach the same verdict")]
+fn same_verdict(world: &mut GivnWorld) {
+    let document = review_json_document(world);
+    let flagged = document["verdict"]["problem_flagged"].as_bool().unwrap();
+    assert!(flagged, "json verdict: {document}");
+    assert!(
+        super::stderr(world).contains("semantic review flagged 3 recommended candidate(s)"),
+        "stderr: {}",
+        super::stderr(world)
+    );
+}
+
+#[then("every count printed by the text run has an equal field value in the JSON document")]
+fn counters_match(world: &mut GivnWorld) {
+    let text = world.additional_output.as_ref().expect("text stdout");
+    let document = review_json_document(world);
+    for (label, json_field, key) in [
+        ("BGE candidate accounting:", "bge_run", "recommended"),
+        ("BGE candidate accounting:", "bge_run", "filtered"),
+        ("NLI candidate accounting:", "nli_run", "recommended"),
+        ("NLI candidate accounting:", "nli_run", "filtered"),
+    ] {
+        let expected = parse_accounting_number(
+            text,
+            label,
+            if key == "filtered" && label.contains("NLI") {
+                "NLI filtered "
+            } else if key == "filtered" {
+                "BGE filtered "
+            } else {
+                "recommended "
+            },
+        );
+        let actual = document[json_field][format!("{key}_count").as_str()]
+            .as_u64()
+            .unwrap_or_else(|| panic!("{json_field}.{key}_count"));
+        assert_eq!(
+            actual, expected as u64,
+            "{label} {key}: json={actual} text={expected}"
+        );
+    }
+    let raw = parse_accounting_number(text, "NLI candidate accounting:", "raw ");
+    assert_eq!(document["verdict"]["e5_candidates"], raw as u64);
+}
+
+#[then("both runs agree on the candidate identities and their admission labels")]
+fn identities_and_admissions_match(world: &mut GivnWorld) {
+    let text = world.additional_output.as_ref().expect("text stdout");
+    let mut text_pairs: Vec<(String, String)> = Vec::new();
+    for line in text.lines() {
+        if line.starts_with("BGE_RECOMMENDED:") || line.contains("token-cap: NLI_TOKEN_CAP") {
+            let left = line.split('\'').nth(1).expect("left title");
+            let right = line.split('\'').nth(3).expect("right title");
+            text_pairs.push((left.to_string(), right.to_string()));
+        }
+    }
+    text_pairs.sort();
+    let candidates = review_json_document(world)["candidates"]
+        .as_array()
+        .expect("candidates")
+        .clone();
+    for (left, right) in text_pairs {
+        assert!(
+            candidates.iter().any(|candidate| {
+                candidate["left"]["title"] == left.as_str()
+                    && candidate["right"]["title"] == right.as_str()
+            }),
+            "pair {left} / {right} missing from JSON candidates"
+        );
+    }
+}

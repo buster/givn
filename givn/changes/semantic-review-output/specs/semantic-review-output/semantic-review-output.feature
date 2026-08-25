@@ -128,7 +128,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And the document reports the combined recommendation total across participating stages
     And the document contains no log lines outside the JSON document
 
-  @givn.added @wip
+  @givn.added
   Scenario: JSON counters match the text counters of the same run
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change" once as text and once as structured JSON
