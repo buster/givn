@@ -177,7 +177,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stdout shows the recommended pair's detail line
     And stdout shows no FILTERED detail line
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI verbose review lists all second-stage evidence
     Given an end-to-end project whose semantic review recommends one pair and filters many
     When the end-to-end user runs the advisory semantic review with verbose output through the givn CLI
