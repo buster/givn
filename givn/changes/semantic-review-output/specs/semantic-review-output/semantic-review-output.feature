@@ -71,7 +71,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stdout keeps the exact distribution line naming entailment, neutral, and contradiction counts
     And each reported pair keeps the exact established detail line including its advisory disclaimer
 
-  @givn.added @wip
+  @givn.added
   Scenario: Verbose output lists every scored second-stage pair
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change" with verbose output

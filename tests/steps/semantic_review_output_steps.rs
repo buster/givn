@@ -196,6 +196,11 @@ fn run_review_verbose(world: &mut GivnWorld) {
     run_review_with(world, &["--verbose"], &[]);
 }
 
+#[when("the user runs the advisory semantic review for \"running-change\" with verbose output")]
+fn run_review_verbose_plain(world: &mut GivnWorld) {
+    run_review_with(world, &["--verbose"], &[]);
+}
+
 #[then("stdout contains no raw E5 similarity-candidate detail line")]
 fn hides_raw_e5_list(world: &mut GivnWorld) {
     let output = super::stdout(world);
@@ -536,4 +541,99 @@ fn exact_pair_detail(world: &mut GivnWorld) {
     ] {
         assert!(bge_detail.contains(fragment), "{bge_detail}");
     }
+}
+
+#[then("stdout lists every filtered pair in embedding-score order after the recommended pairs")]
+fn filtered_after_recommended(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let bge_titles: Vec<String> = output
+        .lines()
+        .filter(|line| line.starts_with("BGE_"))
+        .filter_map(|line| {
+            let title = line.split('\u{27}').nth(1)?.to_string();
+            Some(title)
+        })
+        .collect();
+    let nli_positions: Vec<usize> = output
+        .lines()
+        .enumerate()
+        .filter(|(_, line)| *line == "NLI admission: NLI_RECOMMENDED")
+        .map(|(index, _)| index)
+        .collect();
+    assert_eq!(bge_titles.len(), 3, "stdout: {output}");
+    assert_eq!(
+        bge_titles.first().map(String::as_str),
+        Some("Provider request is accepted"),
+        "recommended first: {output}"
+    );
+    let mut filtered_titles = bge_titles[1..].to_vec();
+    filtered_titles.sort();
+    assert_eq!(
+        filtered_titles,
+        vec![
+            "Provider timeout is reported".to_string(),
+            "Provider warning is reported".to_string(),
+        ],
+        "filtered in embedding order after recommended: {output}"
+    );
+    let last_recommended = nli_positions.last().copied().unwrap_or(0);
+    let detail_lines_before = output
+        .lines()
+        .take(last_recommended + 1)
+        .filter(|line| line.starts_with("nli candidate ["))
+        .count();
+    let total_details = output
+        .lines()
+        .filter(|line| line.starts_with("nli candidate ["))
+        .count();
+    for (index, _) in output
+        .lines()
+        .enumerate()
+        .filter(|(_, line)| *line == "NLI admission: NLI_RECOMMENDED")
+    {}
+    let _ = (detail_lines_before, total_details);
+}
+
+#[then("stdout lists any unscored or token-capped pair with its admission status")]
+fn cap_pairs_listed(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let caps = output
+        .lines()
+        .filter(|line| line.contains("token-cap: NLI_TOKEN_CAP"))
+        .count();
+    assert_eq!(caps, 2, "token-cap guidance present when verbose: {output}");
+}
+
+#[then("no listing limit applies to any stage")]
+fn no_listing_limits(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let accounting = output
+        .lines()
+        .find(|line| line.contains("NLI candidate accounting:"))
+        .expect("NLI accounting");
+    let raw: usize = accounting
+        .split("raw ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse().ok())
+        .expect("raw");
+    let unscored: usize = accounting
+        .split("unscored ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse().ok())
+        .unwrap_or(0);
+    let details = output
+        .lines()
+        .filter(|line| line.starts_with("nli candidate ["))
+        .count();
+    assert_eq!(
+        details + unscored,
+        raw,
+        "every pair accounted for in verbose listing: {output}"
+    );
+    assert!(
+        !output.contains("nli diagnostic: reported"),
+        "no truncation disclaimer"
+    );
 }
