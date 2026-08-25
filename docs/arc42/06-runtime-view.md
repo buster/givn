@@ -283,8 +283,9 @@ to today, including the raw E5 candidate list.
   failures warn on stderr naming the path without masking the failure.
   The blocking surfaces keep `semantic-review.md` as their persisted
   evidence and write no findings file.
-- Model artifact resolution chatter collapses to one summary line per stage
-  unless `--verbose` is given.
+- Model artifact resolution chatter collapses so the start and the
+  completion of each stage resolve at most once per run unless
+  `--verbose` is given; download progress stays observable.
 - `GIVN_SPEC_NLI_REPORT_LIMIT` remains parsed but has no effect; it is a
   deprecated compatibility alias accepted silently.
 

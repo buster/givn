@@ -683,10 +683,16 @@ fn no_repeated_resolution_lines(world: &mut GivnWorld) {
             .count();
         assert!(count <= 1, "{stage} summarized {count} times: {stderr}");
     }
-    assert!(
-        !stderr.contains("resolving "),
-        "resolution start lines suppressed by default: {stderr}"
-    );
+    for stage in ["(E5)", "(BGE)", "NLI"] {
+        let starts = stderr
+            .lines()
+            .filter(|line| line.contains(stage) && line.starts_with("resolving "))
+            .count();
+        assert!(
+            starts <= 1,
+            "{stage} start repeated {starts} times: {stderr}"
+        );
+    }
 }
 
 #[then("stderr contains the full repeated resolution lines for every participating stage")]
