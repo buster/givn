@@ -29,8 +29,25 @@ pub fn run_explore(
     )
 }
 
-pub fn run_review(change_id: &str) -> Result<()> {
-    crate::spec::retrieval::review(&std::env::current_dir()?, change_id)
+#[cfg(feature = "spec-retrieval")]
+pub fn run_review(change_id: &str, verbose: bool, json: bool) -> Result<()> {
+    crate::spec::retrieval::review_with_options(
+        &std::env::current_dir()?,
+        change_id,
+        crate::spec::retrieval::ReviewOptions {
+            verbose,
+            json,
+            findings: true,
+        },
+    )
+}
+
+#[cfg(not(feature = "spec-retrieval"))]
+pub fn run_review(change_id: &str, _verbose: bool, _json: bool) -> Result<()> {
+    let _ = change_id;
+    anyhow::bail!(
+        "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
+    )
 }
 
 pub fn run_duplicates(json: bool) -> Result<()> {

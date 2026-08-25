@@ -54,6 +54,8 @@ pub mod semantic_remediation_steps;
 pub mod semantic_reranker_budget_e2e_steps;
 pub mod semantic_reranker_budget_steps;
 pub mod semantic_review_e2e_steps;
+pub mod semantic_review_output_e2e_steps;
+pub mod semantic_review_output_steps;
 pub mod semantic_review_steps;
 pub mod semantic_token_cap_review_e2e_steps;
 pub mod semantic_token_cap_review_steps;
@@ -126,6 +128,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_bge_token_budget: Option<String>,
     /// Deterministic NLI token-budget fixture selector.
     pub(crate) retrieval_nli_token_budget: Option<String>,
+    /// Extra environment overrides for review-output scenarios.
+    pub(crate) retrieval_review_extra: Option<Vec<(String, String)>>,
     /// Use the deterministic stub behind the validated local-artifact seam.
     pub(crate) retrieval_bge_local_stub: bool,
     /// Use deterministic NLI scores after validating automatic artifacts.

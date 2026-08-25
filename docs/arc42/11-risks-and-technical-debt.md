@@ -45,6 +45,7 @@ historical measurement is not a current quality claim.
 | R-36 | The XDG environment is incomplete or nonconforming. | Low | Medium | Require an absolute `XDG_CACHE_HOME` or fall back to `$HOME/.cache`; fail with the required environment and explicit override when neither is usable. |
 | R-37 | Benchmark tooling reintroduces project-local or `/tmp` model defaults. | Medium | Medium | Derive E5, BGE, NLI, and flat-export defaults from the shared XDG cache and assert the shell helper's default output through its real subprocess path. |
 | R-38 | `spec search --evidence` incurs a second-stage model load per invocation and may be slow without artifacts. | Medium | Low | Keep the flag opt-in, reuse the shared XDG caches and existing unavailable fallback, and report an unchanged E5-only ranking when a layer cannot score. |
+| R-39 | A true duplicate above the E5 threshold that both second-stage models filter passes review unflagged under corroborated gating. | Low | High | Preserve raw E5 evidence in verbose output, JSON, and findings documents; keep benchmark approval separate from runtime activation; treat the union rule as fail-safe (any layer unable to score restores the binding threshold). |
 
 ## 11.2 Deliberate Technical Debt
 
@@ -58,6 +59,7 @@ historical measurement is not a current quality claim.
 | D-6 | Natural `givn new -foo` is rejected by `clap`, while `givn new -- -foo` reaches the id validator. | Characterized behavior. | Unify the two input paths if a consistent diagnostic is required. |
 | D-7 | `givn init` does not create `givn/artifacts/` proactively. | Eject can create needed parent paths, but the directory is absent initially. | Add explicit scaffolding or improve eject guidance. |
 | D-8 | Replaced scenario docstrings may lose delimiter/content-type formatting. | Content is retained; source delimiter style is not. | Carry source block formatting in a future merge change. |
+| D-14 | `GIVN_SPEC_NLI_REPORT_LIMIT` is parsed but silently ignored. | Deprecated compatibility alias kept so scripts and fixtures setting it neither break nor change behaviour. | Remove the parse path after one release cycle once external users have migrated. |
 | D-9 | Rule-nested WIP/E2E checks use existing direct-scenario traversal limits. | Current parser helper limitation. | Extend traversal and add regression coverage. |
 | D-10 | Prior semantic report parsing is not strict and does not reject arbitrary unknown/reordered fields. | Current line-oriented implementation. | Implement a strict grammar parser before treating the wire format as enforced input validation. |
 | D-11 | Semantic remediation does not support prior `delta-to-delta` entries. | Scope precondition rejects them. | Add a deliberate projected-delta remediation design and tests. |

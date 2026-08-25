@@ -40,6 +40,8 @@
 | **Semantic review candidate** | A blocking-report pair involving an active Added/Modified delta in either `delta-to-permanent` or `delta-to-delta` scope. Removed and permanent-permanent pairs are excluded. |
 | **Semantic report** | `givn/changes/<id>/semantic-review.md`, generated only by blocking `givn check review --change <id>` and retained under archive as historical evidence. |
 | **Semantic report writer** | The code that emits fixed report headers/fields, compact JSON values, `null` absence, and atomic replacement. |
+| **Decision-first reporting** | Advisory review's visibility policy: default text shows status lines, counters, and only recommended second-stage pairs ordered by model confidence; `--verbose` lifts all limits; `--format json` emits one complete document. |
+| **Findings document** | The schema-version-1 JSON review document persisted to `givn/changes/<id>/review-findings.json` when the similarity gate fails; successful reviews write nothing. |
 | **Prior report extraction** | The current line-oriented carry-forward reader for candidate id, classification, rationale, and evidence hashes. It is not a complete strict wire-grammar parser. |
 | **Candidate identity** | A 16-character lowercase hexadecimal FNV-1a hash of scope and canonical endpoint scopes/files/titles. It excludes score, evidence hashes, and report schema. |
 | **Endpoint evidence hash** | A separate 16-character hash over canonical endpoint evidence and model/index/schema metadata. Both endpoint hashes must match for classification carry-forward. |

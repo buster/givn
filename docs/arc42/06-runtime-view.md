@@ -240,6 +240,54 @@ Modified delta's own projected target in delta-to-permanent comparisons. The
 Duplicate Audit evaluates same-file pairs, and Explore excludes only the exact
 file/title query identity.
 
+### 6.8.4.1 Decision-first review reporting and corroborated gating
+
+Advisory review applies one visibility policy to every detail listing:
+
+- Default text lists stage status lines, accounting counters, label
+  distributions, token-cap guidance lines (always visible; cap evidence
+  never hides behind a flag), and only those BGE/NLI pairs whose
+  admission is `*_RECOMMENDED`, ordered by model confidence (NLI
+  symmetric entailment, then BGE symmetric raw score) rather than
+  embedding rank. When both second-stage layers participate, the raw E5
+  candidate list is verbose-only detail: an E5 score alone is not
+  actionable signal. In fallback mode (no participating second stage)
+  the output stays byte-identical to today, including the raw list.
+- `--verbose` lifts every listing limit: the full E5 candidate list,
+  filtered and unscored pairs in embedding-score order after the
+  recommended rows, full artifact-resolution detail on stderr, and no
+  truncation disclaimer.
+- `--format json` emits exactly one structured document on stdout that
+  extends the existing duplicate-audit JSON contract (same candidate
+  and run field grammar under ADR-054 versioning) with review-only
+  sections: verdict with the problem outcome and threshold, an `index`
+  summary replacing the banner lines, every candidate with endpoint
+  identities, embedding score, admission labels, evidence scores, and
+  the combined recommendation total. Exit codes and stderr failure
+  messages do not change between formats.
+
+Corroborated gating replaces the threshold-only verdict whenever both
+second-stage layers participate with scored runs: the review fails only
+for the union of BGE- or NLI-recommended pairs, while E5-only hits that
+both models filter remain counters and evidence. If either layer is
+missing, disabled, or unable to score a candidate, that candidate falls
+under the established E5-threshold rule — no silent pass. The blocking
+workflow path (`givn check review`, `givn archive`) applies the same
+rule; its report's unresolved-set already exempts filtered pairs, so
+the classification/remediation contract is unchanged. In fallback mode
+(no participating second stage) the advisory output stays byte-identical
+to today, including the raw E5 candidate list.
+- The authoring command persists the identical document beside the change
+  as `givn/changes/<id>/review-findings.json` when the review flags a
+  problem, overwriting prior runs; successful runs write nothing. Write
+  failures warn on stderr naming the path without masking the failure.
+  The blocking surfaces keep `semantic-review.md` as their persisted
+  evidence and write no findings file.
+- Model artifact resolution chatter collapses to one summary line per stage
+  unless `--verbose` is given.
+- `GIVN_SPEC_NLI_REPORT_LIMIT` remains parsed but has no effect; it is a
+  deprecated compatibility alias accepted silently.
+
 ## 6.9 Blocking Semantic Review Report
 
 Only `givn check review --change <id>` invokes the dedicated semantic report
