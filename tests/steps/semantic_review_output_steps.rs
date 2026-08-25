@@ -688,3 +688,24 @@ fn no_repeated_resolution_lines(world: &mut GivnWorld) {
         "resolution start lines suppressed by default: {stderr}"
     );
 }
+
+#[then("stderr contains the full repeated resolution lines for every participating stage")]
+fn verbose_repeated_resolution_lines(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for (stage, detail) in [
+        ("retrieval model artifacts (E5)", "/stub/e5-cache"),
+        ("reranker model artifacts (BGE)", "/stub/bge-cache"),
+        ("NLI model artifacts", "/stub/nli-cache"),
+    ] {
+        let starts = stderr
+            .lines()
+            .filter(|line| *line == format!("resolving {stage} into {detail}"))
+            .count();
+        let dones = stderr
+            .lines()
+            .filter(|line| *line == format!("{stage} resolved"))
+            .count();
+        assert_eq!(starts, 2, "{stage}: {stderr}");
+        assert_eq!(dones, 2, "{stage}: {stderr}");
+    }
+}
