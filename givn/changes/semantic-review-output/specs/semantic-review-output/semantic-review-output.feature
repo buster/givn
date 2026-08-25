@@ -193,7 +193,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stdout parses as a schema-version-1 review document
     And the JSON counters equal those of an equivalent text run
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI persists findings beside the change after flagged recommendations
     Given an end-to-end project whose second-stage evidence recommends at least one pair
     When the end-to-end user runs the advisory semantic review for "running-change" through the givn CLI
