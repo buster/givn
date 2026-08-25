@@ -252,11 +252,18 @@ fn e2e_nli_advisory_reduced(world: &mut GivnWorld) {
 
 #[then("stdout records the filtered candidate as NLI evidence")]
 fn e2e_nli_advisory_filtered(world: &mut GivnWorld) {
-    assert!(
-        super::stdout(world).contains("NLI_FILTERED"),
-        "stdout: {}",
-        super::stdout(world)
-    );
+    let output = super::stdout(world);
+    let accounting = output
+        .lines()
+        .find(|line| line.contains("NLI candidate accounting:"))
+        .expect("NLI advisory accounting");
+    let filtered = accounting
+        .split("NLI filtered ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("NLI filtered count");
+    assert!(filtered >= 1, "filtered pair not recorded: {output}");
 }
 
 #[then("stdout assigns no automatic Givn classification")]
