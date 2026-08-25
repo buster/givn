@@ -52,11 +52,11 @@ vector. `NLI_RECOMMENDED` uses symmetric entailment `>= 0.5000`.
 
 | ID | Feature | Scenario A | Scenario B | E5 | NLI symmetric E/N/C | Audit status | Subagent class | User verdict |
 |---|---|---|---|---:|---|---|---|---|
-| NLI-1 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by status` | 0.9748 | 0.8394 / 0.0929 / 0.0677 | `NLI_RECOMMENDED` | `DUPLIKAT` | subagent correct |
-| NLI-2 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by check` | 0.9648 | 0.8228 / 0.1101 / 0.0671 | `NLI_RECOMMENDED` | `VARIANTE` | subagent correct |
-| NLI-3 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by instructions` | 0.9645 | 0.8123 / 0.1042 / 0.0835 | `NLI_RECOMMENDED` | `VARIANTE` | subagent correct |
-| NLI-4 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by archive` | 0.9599 | 0.8036 / 0.1053 / 0.0912 | `NLI_RECOMMENDED` | `VARIANTE` | subagent correct |
-| NLI-5 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by lint` | 0.9515 | 0.7959 / 0.1133 / 0.0908 | `NLI_RECOMMENDED` | `VARIANTE` | subagent correct |
+| NLI-1 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by status` | 0.9748 | 0.8394 / 0.0929 / 0.0677 | `NLI_RECOMMENDED` | `DUPLICATE` | subagent correct |
+| NLI-2 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by check` | 0.9648 | 0.8228 / 0.1101 / 0.0671 | `NLI_RECOMMENDED` | `VARIANT` | subagent correct |
+| NLI-3 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by instructions` | 0.9645 | 0.8123 / 0.1042 / 0.0835 | `NLI_RECOMMENDED` | `VARIANT` | subagent correct |
+| NLI-4 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by archive` | 0.9599 | 0.8036 / 0.1053 / 0.0912 | `NLI_RECOMMENDED` | `VARIANT` | subagent correct |
+| NLI-5 | `validate-change-id-input` | `Consumer invokes givn status with a path traversal change id and gets a clear error` | `Path traversal id is rejected by lint` | 0.9515 | 0.7959 / 0.1133 / 0.0908 | `NLI_RECOMMENDED` | `VARIANT` | subagent correct |
 
 Feature file for all NLI pairs:
 
@@ -67,7 +67,7 @@ Feature file for all NLI pairs:
 - Accepted subagent classifications: `10/10`.
 - BGE admission decisions accepted: `1/1` recommended and `4/4` filtered.
 - NLI admission decisions accepted: `5/5` recommended.
-- Domain classifications: `1 DUPLIKAT`, `4 VARIANTE`, `4 VALID-BOUNDARY`,
+- Domain classifications: `1 DUPLICATE`, `4 VARIANT`, `4 VALID-BOUNDARY`,
   `1 UNRELATED`.
 - The five NLI pairs are one `validate-change-id-input` invariant family, not
   five independent samples.

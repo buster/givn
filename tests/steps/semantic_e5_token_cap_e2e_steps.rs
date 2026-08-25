@@ -328,14 +328,14 @@ fn blocking_report_has_review_guidance(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the cap record has `classification: null` and `rationale: null` and no automatic `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` classification"
+    "the cap record has `classification: null` and `rationale: null` and no automatic `DUPLICATE`, `VARIANT`, or `VALID-BOUNDARY` classification"
 )]
 fn blocking_report_cap_is_unresolved(world: &mut GivnWorld) {
     let report = semantic_e5_report(world);
     assert!(report.contains("- classification: null"));
     assert!(report.contains("- rationale: null"));
-    assert!(!report.contains("DUPLIKAT"));
-    assert!(!report.contains("VARIANTE"));
+    assert!(!report.contains("DUPLICATE"));
+    assert!(!report.contains("VARIANT"));
     assert!(!report.contains("VALID-BOUNDARY"));
 }
 

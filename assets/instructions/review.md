@@ -204,7 +204,7 @@ These decisions are review evidence, not score thresholds.
 ## Semantic review classifications
 
 When `semantic-review.md` exists, classify every generated candidate as
-`DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` and provide a rationale. `UNCERTAIN`
+`DUPLICATE`, `VARIANT`, or `VALID-BOUNDARY` and provide a rationale. `UNCERTAIN`
 or a missing rationale blocks `givn check review --change <id>`. There is no
 `UNRELATED` escape classification. If a high-score pair appears to describe
 different behavior, sharpen the overloaded domain terms and observable
@@ -228,8 +228,8 @@ the class-specific remediation evidence:
 
 | Classification | Required projected result |
 |---|---|
-| `DUPLIKAT` | The redundant endpoint is absent and the retained endpoint remains. |
-| `VARIANTE` | One parameterized `Scenario Outline` with a non-empty `Examples` table covers the variant, and the recomputed score is strictly `< 0.9500`. |
+| `DUPLICATE` | The redundant endpoint is absent and the retained endpoint remains. |
+| `VARIANT` | One parameterized `Scenario Outline` with a non-empty `Examples` table covers the variant, and the recomputed score is strictly `< 0.9500`. |
 | `VALID-BOUNDARY` | Both endpoints remain, an observable fact or condition/outcome invariant differs, and the recomputed score is strictly `< 0.9500`. |
 
 The review evidence names the prior candidate, projected endpoint state, score,

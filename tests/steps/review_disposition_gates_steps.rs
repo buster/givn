@@ -44,7 +44,7 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
     let report_path = change_dir(world).join("semantic-review.md");
     let report = std::fs::read_to_string(&report_path).expect("semantic seed report");
     let report = report
-        .replace("- classification: UNCERTAIN", "- classification: DUPLIKAT")
+        .replace("- classification: UNCERTAIN", "- classification: DUPLICATE")
         .replace(
             "- rationale: null",
             "- rationale: \"The existing disposition covers this behavior\"",

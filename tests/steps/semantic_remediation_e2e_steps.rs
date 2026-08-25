@@ -9,7 +9,7 @@ use crate::common;
 
 #[given("an end-to-end project prepared for a duplicate remediation")]
 fn e2e_duplicate_remediation_project(world: &mut GivnWorld) {
-    super::semantic_remediation_steps::remediation_project(world, "DUPLIKAT".to_string());
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
     let env = world.env.as_ref().expect("remediation project is required");
     let output = common::run_givn_with_envs(
         env,
@@ -29,7 +29,7 @@ fn e2e_duplicate_remediation_project(world: &mut GivnWorld) {
     let report_path = env.path("givn/changes/running-change/semantic-review.md");
     let report = fs::read_to_string(&report_path).expect("read remediation report");
     let report = report
-        .replace("- classification: UNCERTAIN", "- classification: DUPLIKAT")
+        .replace("- classification: UNCERTAIN", "- classification: DUPLICATE")
         .replace(
             "- rationale: null",
             "- rationale: \"The duplicate is removed from the projected change\"",

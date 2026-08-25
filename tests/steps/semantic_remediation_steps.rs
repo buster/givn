@@ -13,7 +13,7 @@ fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
 }
 
 #[given(
-    regex = r#"^a project prepared for semantic remediation with a \"(DUPLIKAT|VARIANTE|VALID-BOUNDARY)\" candidate$"#
+    regex = r#"^a project prepared for semantic remediation with a \"(DUPLICATE|VARIANT|VALID-BOUNDARY)\" candidate$"#
 )]
 pub(crate) fn remediation_project(world: &mut GivnWorld, classification: String) {
     let env = common::make_init_root();

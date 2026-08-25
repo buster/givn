@@ -150,8 +150,8 @@ removed+added pair as supersession or unrelated work before sign-off.
 
 ### Semantic review classifications
 
-When `semantic-review.md` exists, classify every candidate as `DUPLIKAT`,
-`VARIANTE`, or `VALID-BOUNDARY` and write a rationale. `UNCERTAIN` or a missing
+When `semantic-review.md` exists, classify every candidate as `DUPLICATE`,
+`VARIANT`, or `VALID-BOUNDARY` and write a rationale. `UNCERTAIN` or a missing
 rationale blocks `givn check review --change <id>`. There is no `UNRELATED`
 escape classification. A seemingly unrelated pair that remains above the
 active boundary requires sharper domain vocabulary and observable invariants,
