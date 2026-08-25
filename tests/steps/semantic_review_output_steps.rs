@@ -709,3 +709,21 @@ fn verbose_repeated_resolution_lines(world: &mut GivnWorld) {
         assert_eq!(dones, 2, "{stage}: {stderr}");
     }
 }
+
+#[then("stdout contains no truncation disclaimer for either second-stage stage")]
+fn no_truncation_disclaimer(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        !output.contains("nli diagnostic: reported"),
+        "NLI truncation disclaimer present: {output}"
+    );
+    assert!(
+        !output.contains("reported at most"),
+        "truncation disclaimer present: {output}"
+    );
+}
+
+#[then("stdout still contains no truncation disclaimer")]
+fn still_no_truncation_disclaimer(world: &mut GivnWorld) {
+    no_truncation_disclaimer(world);
+}
