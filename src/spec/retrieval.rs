@@ -6313,19 +6313,25 @@ fn run_second_stage_advisory_review(
             "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, budget <= {}",
             recommended, filtered, run.unscored, run.max_unique_pairs
         );
-        let mut bge_rows: Vec<&SimilarityCandidate> = candidates
+        let raw_score = |candidate: &SimilarityCandidate| {
+            candidate
+                .bge
+                .as_ref()
+                .map(|evidence| evidence.symmetric_raw)
+                .unwrap_or(f32::NEG_INFINITY)
+        };
+        let mut bge_recommended_rows: Vec<&SimilarityCandidate> = candidates
             .iter()
-            .filter(|candidate| candidate.bge.is_some())
+            .filter(|candidate| {
+                candidate.bge.is_some() && candidate.bge_admission == Some("BGE_RECOMMENDED")
+            })
             .collect();
-        if !options.verbose {
-            bge_rows.retain(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"));
-            bge_rows.sort_by(|left, right| {
-                let left_score = left.bge.as_ref().map(|evidence| evidence.symmetric_raw);
-                let right_score = right.bge.as_ref().map(|evidence| evidence.symmetric_raw);
-                right_score
-                    .unwrap_or(f32::NEG_INFINITY)
-                    .total_cmp(&left_score.unwrap_or(f32::NEG_INFINITY))
-            });
+        bge_recommended_rows.sort_by(|left, right| raw_score(right).total_cmp(&raw_score(left)));
+        let mut bge_rows: Vec<&SimilarityCandidate> = bge_recommended_rows;
+        if options.verbose {
+            bge_rows.extend(candidates.iter().filter(|candidate| {
+                candidate.bge.is_some() && candidate.bge_admission != Some("BGE_RECOMMENDED")
+            }));
         }
         for candidate in bge_rows {
             let Some(evidence) = candidate.bge.as_ref() else {
@@ -7891,24 +7897,27 @@ fn print_nli_results(
         .iter()
         .filter(|candidate| candidate.nli.is_some())
         .collect();
-    let rows: Vec<&SimilarityCandidate> = if verbose {
-        scored_rows.clone()
-    } else {
-        let mut recommended_rows: Vec<&SimilarityCandidate> = scored_rows
-            .iter()
-            .copied()
-            .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
-            .collect();
-        recommended_rows.sort_by(|left, right| {
-            let entailment = |candidate: &SimilarityCandidate| {
-                candidate.nli.map(|evidence| evidence.symmetric[0])
-            };
-            entailment(right)
-                .unwrap_or(f32::NEG_INFINITY)
-                .total_cmp(&entailment(left).unwrap_or(f32::NEG_INFINITY))
-        });
-        recommended_rows
+    let entailment = |candidate: &SimilarityCandidate| {
+        candidate
+            .nli
+            .map(|evidence| evidence.symmetric[0])
+            .unwrap_or(f32::NEG_INFINITY)
     };
+    let mut recommended_rows: Vec<&SimilarityCandidate> = scored_rows
+        .iter()
+        .copied()
+        .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+        .collect();
+    recommended_rows.sort_by(|left, right| entailment(right).total_cmp(&entailment(left)));
+    let other_rows: Vec<&SimilarityCandidate> = scored_rows
+        .iter()
+        .copied()
+        .filter(|candidate| candidate.nli_admission != Some("NLI_RECOMMENDED"))
+        .collect();
+    let mut rows: Vec<&SimilarityCandidate> = recommended_rows;
+    if verbose {
+        rows.extend(other_rows);
+    }
     for candidate in &rows {
         let Some(evidence) = candidate.nli else {
             continue;
