@@ -1,9 +1,10 @@
 # User Interaction Inventory:
-# TODO: Enumerate every interaction a consumer performs against the
-# real interface. One @e2e scenario per entry.
+# TODO: Enumerate normalized distinct user actions against the real interface.
+# Read `givn instructions specs --change <id>` for the canonical E2E policy.
 #
 # Web UI: every button click, form submission, nav link, SSE/WS event.
-# CLI: every subcommand, every output-affecting flag.
+# CLI: every distinct action; output-affecting flags are variants unless they
+# change the action or side effect.
 # HTTP API: every endpoint, every side-effect-permitting operation.
 # Library: every public function/method a consumer invokes.
 # Message bus: every message type consumed, every side-effect-producing message.
@@ -23,7 +24,8 @@ Feature: {{FEATURE_TITLE}}
   # Tag new scenarios @givn.added, changed ones @givn.modified, deleted ones @givn.removed.
   # Tag @wip while step definitions are not yet implemented.
   # Tag @e2e for end-to-end smoke tests that exercise the real interaction surface.
-  # One @e2e scenario per User Interaction Inventory entry — not one per variant/error case.
+# One @e2e scenario per distinct real user action, as defined by the canonical
+# specs instruction — not one per variant/error case.
 
   @givn.added @wip
   Scenario: {{SCENARIO_TITLE}}
@@ -31,7 +33,7 @@ Feature: {{FEATURE_TITLE}}
     When {{action}}
     Then {{observable_outcome}}
 
-  # @e2e smoke tests — one per inventory entry; use verify.e2e_command + e2e step definitions.
+  # @e2e smoke tests — one per normalized inventory entry; use verify.e2e_command + e2e step definitions.
 
   @givn.added @e2e @wip
   Scenario: {{E2E_SCENARIO_TITLE}}

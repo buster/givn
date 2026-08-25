@@ -5,10 +5,14 @@ mod error;
 mod gherkin;
 mod hooks;
 mod integrity_hook;
+mod overlap;
 mod skills;
+mod spec;
 mod state;
 
-use clap::{CommandFactory, Parser, Subcommand};
+use std::path::PathBuf;
+
+use clap::{CommandFactory, Parser, Subcommand, ValueEnum};
 use clap_complete::{Shell, generate};
 
 /// givn — from Given to done.
@@ -62,6 +66,9 @@ enum Commands {
         change: Option<String>,
         /// Paths to check (default: all .feature files under givn/).
         paths: Vec<String>,
+        /// Emit findings as a JSON array on stdout.
+        #[arg(long)]
+        json: bool,
     },
     /// Run an artifact's post hooks (e.g. the test suite via verify.command).
     Check {
@@ -115,6 +122,11 @@ enum Commands {
         #[command(subcommand)]
         command: SkillsCommands,
     },
+    /// Build and query the local permanent-scenario retrieval index.
+    Spec {
+        #[command(subcommand)]
+        command: SpecCommands,
+    },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
@@ -156,6 +168,56 @@ enum SkillsCommands {
     Sync,
 }
 
+#[derive(Subcommand)]
+enum SpecCommands {
+    /// Build or refresh the permanent-scenario index.
+    Index,
+    /// Search the local index for related scenarios.
+    Search {
+        /// Behavior description or completed scenario text.
+        query: String,
+        /// Also run BGE and NLI cross-encoder evidence on the listed candidates.
+        #[arg(long)]
+        evidence: bool,
+    },
+    /// Explore one complete draft scenario against permanent scenarios.
+    Explore {
+        /// Complete Gherkin file containing exactly one scenario.
+        #[arg(long)]
+        file: Option<PathBuf>,
+        /// Read one complete Gherkin scenario from standard input.
+        #[arg(long)]
+        stdin: bool,
+        /// Also compare against active scenarios in this change.
+        #[arg(long)]
+        change: Option<String>,
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
+    },
+    /// Refresh the permanent index and report advisory candidates for a change.
+    Review {
+        /// Active change identifier.
+        #[arg(long)]
+        change: String,
+    },
+    /// Report duplicate and related permanent scenarios.
+    Duplicates {
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
+    },
+    /// Emit the Rust production candidate-pipeline attestation for benchmark approval.
+    #[command(name = "bge-parity", hide = true)]
+    BgeParity,
+}
+
+#[derive(Clone, Copy, Debug, ValueEnum)]
+enum SpecFormat {
+    Text,
+    Json,
+}
+
 fn main() {
     let cli = Cli::parse();
 
@@ -175,8 +237,12 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             change,
             json,
         } => cli::instructions::run(artifact.as_deref(), change.as_deref(), json),
-        Commands::Lint { change, paths } => {
-            let code = cli::lint::run(change.as_deref(), paths)?;
+        Commands::Lint {
+            change,
+            paths,
+            json,
+        } => {
+            let code = cli::lint::run(change.as_deref(), paths, json)?;
             if code != 0 {
                 std::process::exit(code);
             }
@@ -197,6 +263,26 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         Commands::Skills {
             command: SkillsCommands::Sync,
         } => cli::skills::run_sync(),
+        Commands::Spec { command } => match command {
+            SpecCommands::Index => cli::spec::run_index(),
+            SpecCommands::Search { query, evidence } => cli::spec::run_search(&query, evidence),
+            SpecCommands::Explore {
+                file,
+                stdin,
+                change,
+                format,
+            } => cli::spec::run_explore(
+                file,
+                stdin,
+                change.as_deref(),
+                matches!(format, SpecFormat::Json),
+            ),
+            SpecCommands::Review { change } => cli::spec::run_review(&change),
+            SpecCommands::Duplicates { format } => {
+                cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
+            }
+            SpecCommands::BgeParity => cli::spec::run_bge_parity(),
+        },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::Completions { shell } => {

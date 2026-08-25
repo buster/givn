@@ -34,8 +34,10 @@ missing or skipped design-review.
 givn instructions tasks --change <id>
 ```
 
-Parse `output`, `template`, `instruction`, `context`/`rules` (do not copy
-into the file), `dependencies`.
+When `--json` is supplied, parse `id`, `generates`, `requires`, and
+`instruction`. Use `generates` for the output path and `requires` for
+prerequisite artifacts; do not copy instruction prose into the file. Without
+`--json`, the command emits the resolved instruction text only.
 
 ### 3. Read the inputs
 
@@ -91,6 +93,10 @@ design.md, so everything needed must be in the task.
 ```
 
 **After all non-@e2e scenarios: e2e setup + one task per @e2e scenario.**
+
+Read `givn instructions specs --change <id>` for the canonical normalized
+action scope and real-interface policy. This command defines task mechanics,
+not a second E2E policy.
 
 ```markdown
 - [ ] Setup: configure e2e test infrastructure, strict mode, and verify.e2e_command

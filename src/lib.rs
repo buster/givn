@@ -11,5 +11,7 @@ pub mod error;
 pub mod gherkin;
 pub mod hooks;
 pub mod integrity_hook;
+pub mod overlap;
 pub mod skills;
+pub mod spec;
 pub mod state;

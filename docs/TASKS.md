@@ -39,26 +39,26 @@ age policy (`scripts/check-dep-age.sh`).
       renaming tags to `@givn.*` and paths to `givn/...`. Artifacts: proposal,
       specs, design, tasks, review; `apply.requires: [tasks, review]`;
       `apply.tracks: tasks.md`; `verify` block; default hooks
-      `tasks.post: [verify]` and `review.post: [verify]` (ADR-028).
+      `tasks.post: [verify]` and `review.post: [verify]`.
 - [x] 1.4 Port the 5 templates into `assets/templates/`
       (`proposal.md`, `spec.feature`, `design.md`, `tasks.md`, `review.md`),
       with `@givn.*` tags and `GIVN_FEATURES` default `givn/specs`.
 - [x] 1.5 Implement `config/manifest.rs` serde types; load + parse the embedded
       manifest; unit test it deserialises. Default `verify.command` is the
-      sentinel `givn missing-testrunner` (ADR-021).
+      sentinel `givn missing-testrunner`.
 - [x] 1.6 Author `assets/config.yaml.tmpl`: the fully-commented, documented
-      config scaffold (ADR-022) — every key present-but-commented with
+      config scaffold — every key present-but-commented with
       description/default/allowed-values, `verify.command` uncommented as the
       sentinel with a "CHANGE ME" note, and a `givn_config_version` marker
       (ADR-023). Cross-reference arc42 ch.8.10.
 - [x] 1.7 Implement `cli::missing_testrunner`: print per-language setup guidance
-      (cargo/mvn/cucumber-js/behave/go test/...) and exit non-zero (ADR-021).
+      (cargo/mvn/cucumber-js/behave/go test/...) and exit non-zero.
 - [x] 1.8 Implement `config/render.rs` (initial): render `config.yaml.tmpl` with
       the current binary version into `givn_config_version`.
 - [x] 1.9 Implement `cli::init`: scaffold `givn/{specs,changes,archive}` and
       write the documented, versioned `givn/config.yaml`. Idempotent; `--force`.
 - [x] 1.10 Test: every documented key in `config.yaml.tmpl` maps to a real
-      manifest schema key and vice versa (no drift — ADR-022).
+      manifest schema key and vice versa (no drift).
 - [x] 1.11 Commit: "feat: embedded defaults, manifest model, documented config, givn init".
 
 **Done when:** `givn init` scaffolds a project with a fully-documented, versioned
@@ -224,23 +224,24 @@ completion script.
 
 ---
 
-## Phase 5.6 — Prompt fixes (ADR-029)
+## Phase 5.6 — Prompt fixes
 
 - [x] 5.6.1 Fix `assets/commands/givn-tasks.md`: add mandatory "Design constraints"
       block to the scenario task template, populated from design.md per scenario.
       Update GREEN instruction: "minimum code following the design constraints
       exactly". Add guardrail: a task without a populated constraints block is
-      incomplete. (ADR-029)
+       incomplete.
 - [x] 5.6.2 Fix `assets/commands/givn-implement.md`: step 4 requires full
       design.md passed to every subagent (not "relevant sections"); if a task
       lacks a constraints block, add it before spawning. Subagent prompt gains
       pre-RED "read design.md in full" step. GREEN sharpened: "minimum lines,
       not simpler architecture". Orchestrator guardrail: reject GREEN that
-      deviates from the design and re-spawn. (ADR-029)
+       deviates from the design and re-spawn.
 - [x] 5.6.3 Fix `assets/commands/givn-propose.md`: architect's tasks section
       makes "Design constraints" block mandatory per scenario task, with example
-      structure and explicit rationale. (ADR-029)
-- [x] 5.6.4 Record ADR-029 in `docs/arc42/09-architecture-decisions.md`.
+       structure and explicit rationale.
+- [x] 5.6.4 Document the task-level design-constraint rule in the canonical
+       implementation guidance.
 - [x] 5.6.5 Commit: "fix(prompts): embed design constraints in tasks; enforce
       design adherence in implement".
 
@@ -250,12 +251,12 @@ before writing code; GREEN means scenario passes AND design is followed.
 
 ---
 
-## Phase 5.7 — Design-review artifact (ADR-030)
+## Phase 5.7 — Design-review artifact
 
 - [x] 5.7.1 Add `design-review` artifact to `assets/default-manifest.yaml`:
       `requires: [design]`, `optional: false`, `post: []`. Update `tasks` to
       `requires: [design-review]`. `review` stays `requires: [tasks]`.
-      `apply.requires` unchanged: `[tasks, review]`. (ADR-030)
+       `apply.requires` unchanged: `[tasks, review]`.
 - [x] 5.7.2 Write `assets/instructions/design-review.md`: two mandatory phases
       (grilling + hardening); one-question-at-a-time constraint; required branches
       (scope, tech, missing scenarios, testability, risk); hardening edits;
@@ -278,8 +279,7 @@ before writing code; GREEN means scenario passes AND design is followed.
       markers (`DESIGN-REVIEW: PASS` and `REVIEW: PASS`).
 - [x] 5.7.8 Update `docs/arc32/08-crosscutting-concepts.md`: state table,
       marker conventions, project layout, apply.requires note.
-- [x] 5.7.9 Record ADR-030 in `docs/arc42/09-architecture-decisions.md`;
-      update ADR-024 sequence reference.
+- [x] 5.7.9 Update ADR-024 sequence reference in the architecture documentation.
 - [x] 5.7.10 Update `docs/arc42/01-introduction-and-goals.md` and
       `docs/arc42/03-context-and-scope.md` sequence references.
 - [x] 5.7.11 Update `README.md` workflow sequence and quickstart.
@@ -293,7 +293,7 @@ pass.
 
 ---
 
-## Phase 5.8 — Explore skill (ADR-031)
+## Phase 5.8 — Explore skill
 
 - [x] 5.8.1 Write `assets/commands/givn-explore.md`: pre-lifecycle thinking
       stance; curious, visual, grounded, patient; never implement; offer to
@@ -301,7 +301,7 @@ pass.
 - [x] 5.8.2 Write `assets/skills/givn-explore/SKILL.md.tmpl`: skill summarising
       stance, when to use, what not to do, transition out.
 - [x] 5.8.3 Update `docs/arc42/08-crosscutting-concepts.md` skills list.
-- [x] 5.8.4 Record ADR-031 in `docs/arc42/09-architecture-decisions.md`.
+- [x] 5.8.4 Document the Explore workflow in the canonical skill and Arc42 content.
 - [x] 5.8.5 Update `README.md` quickstart with `/givn-explore`.
 - [x] 5.8.6 Commit.
 
@@ -311,34 +311,34 @@ artifact, no state tracking, no gate; 48 tests pass.
 
 ---
 
-## Phase 5.9 — Reverse-engineering mode (ADR-032, superseded by ADR-033)
+## Phase 5.9 — Reverse-engineering mode
 
-### 5.9a Original implementation (ADR-032) — completed, then superseded
+### 5.9a Original implementation — completed, then replaced
 
 - [x] 5.9.1 Fix `src/gherkin/merge.rs`: `apply_deltas` now takes
       `delta_feature_name` and uses it for the empty-baseline header (was
       `"Feature: (merged)\n"`). Update `merge_file` call site. Update all test
       call sites. Add test: empty baseline uses delta feature name.
-- [x] 5.9.2 Write `assets/instructions/proposal-reverse.md` (deleted in ADR-033).
-- [x] 5.9.3 Write `assets/instructions/specs-reverse.md` (simplified in ADR-033).
-- [x] 5.9.4 Write `assets/instructions/design-reverse.md` (deleted in ADR-033).
-- [x] 5.9.5 Write `assets/instructions/tasks-reverse.md` (rewritten in ADR-033).
-- [x] 5.9.6 Write `assets/instructions/review-reverse.md` (slimmed in ADR-033).
-- [x] 5.9.7 Write `assets/commands/givn-reverse-engineer.md` (rewritten in ADR-033).
-- [x] 5.9.8 Write `assets/commands/givn-characterize.md` (simplified in ADR-033).
+- [x] 5.9.2 Write `assets/instructions/proposal-reverse.md` (later removed).
+- [x] 5.9.3 Write `assets/instructions/specs-reverse.md` (later simplified).
+- [x] 5.9.4 Write `assets/instructions/design-reverse.md` (later removed).
+- [x] 5.9.5 Write `assets/instructions/tasks-reverse.md` (later rewritten).
+- [x] 5.9.6 Write `assets/instructions/review-reverse.md` (later slimmed).
+- [x] 5.9.7 Write `assets/commands/givn-reverse-engineer.md` (later rewritten).
+- [x] 5.9.8 Write `assets/commands/givn-characterize.md` (later simplified).
 - [x] 5.9.9 Write `assets/skills/givn-reverse-engineer/SKILL.md.tmpl` and
-      `assets/skills/givn-characterize/SKILL.md.tmpl` (rewritten in ADR-033).
+       `assets/skills/givn-characterize/SKILL.md.tmpl` (later rewritten).
 - [x] 5.9.10 Add `givn-reverse-engineer` and `givn-characterize` to
        `default_skill_names()` and `default_command_names()` in
        `src/skills/render.rs` and `src/skills/targets.rs`.
-- [x] 5.9.11 Record ADR-032 in `docs/arc42/09-architecture-decisions.md`.
+- [x] 5.9.11 Record the initial reverse-engineering behavior in the architecture documentation.
 - [x] 5.9.12 Update `docs/arc42/08-crosscutting-concepts.md`: section 8.13.
 - [x] 5.9.13 Update `docs/TASKS.md`: Phase 5.9 (this section) + Phase 7.
 - [x] 5.9.14 Update `README.md`: quickstart entries for the new commands.
 - [x] 5.9.15 Commit: "feat: reverse-engineering mode — /givn-reverse-engineer
-       and /givn-characterize (ADR-032)".
+       and /givn-characterize".
 
-### 5.9b ADR-033 — reverse-engineering as a peer flow (supersedes ADR-032)
+### 5.9b Reverse-engineering as a peer flow
 
 - [x] 5.9.16 Add `ArtifactStatus::Skipped` to `src/state.rs`; update
        `next_required()`, `all_required_done()`, `stage_label()` to treat
@@ -383,10 +383,9 @@ artifact, no state tracking, no gate; 48 tests pass.
        for coverage mechanics; reverse rules only.
 - [x] 5.9.32 Delete `assets/instructions/proposal-reverse.md` and
        `assets/instructions/design-reverse.md`.
-- [x] 5.9.33 Record ADR-033 in `docs/arc42/09-architecture-decisions.md`;
-       mark ADR-032 as superseded.
+- [x] 5.9.33 Record the peer-flow behavior in the canonical workflow documentation.
 - [x] 5.9.34 Update `docs/arc42/08-crosscutting-concepts.md`: §8.13 rewritten
-       for ADR-033.
+       for the peer flow.
 - [x] 5.9.35 Update `README.md`: reverse-engineering section + quickstart.
 - [x] 5.9.36 Update `docs/TASKS.md`: Phase 5.9b (this section).
 
@@ -419,8 +418,8 @@ skipped artifacts as ⊘; empty-baseline merge creates a clean permanent spec;
 
 ## Phase 7 — Dogfood
 
-The dogfood path uses reverse-engineering mode (ADR-032) to create the initial
-baseline specs for givn's own capabilities, then transitions to normal
+The dogfood path uses reverse-engineering mode to create the initial baseline
+specs for givn's own capabilities, then transitions to normal
 `/givn-propose` for future development.
 
 - [ ] 7.1 `givn init` in the givn repo; set `verify.command` to `cargo test`;

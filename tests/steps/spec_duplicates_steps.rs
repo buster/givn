@@ -1,0 +1,3083 @@
+//! Regular black-box steps for the permanent scenario duplicate audit.
+
+use std::ffi::OsString;
+use std::fs;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Output, Stdio};
+
+use cucumber::gherkin::Step;
+use cucumber::{given, then, when};
+
+use super::{GivnWorld, output, stderr, stdout};
+use crate::common;
+
+const EXACT_DUPLICATE_FEATURE: &str = "Feature: provider\n\n  Scenario: Provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
+const CROSS_FEATURE_PROVIDER: &str = "Feature: provider\n\n  Scenario: Provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
+const CROSS_FEATURE_AUTH: &str = "Feature: auth\n\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n";
+const STRUCTURAL_OVERLAP_FEATURE: &str = r#"Feature: provider
+
+  Scenario: Provider exits successfully
+    Given a configured provider catalog
+    When the provider command is run normally
+    Then the command exits 0 and output "contains" "ready"
+      | provider |
+      | aws      |
+
+  Scenario: [DONE] Provider exits with a warning
+    Given a configured provider catalog
+    When the provider command is run in TTY mode
+    Then the command exits 2 and output "not contains" "ready"
+      | provider |
+      | gcp      |
+"#;
+const STRUCTURAL_FACTS: &str = r#"facts={"left":{"exit_code":"0","contains_polarity":{"0":"positive"},"tables":{"provider":"aws"},"done":false,"tty":false},"right":{"exit_code":"2","contains_polarity":{"0":"negative"},"tables":{"provider":"gcp"},"done":true,"tty":true}}"#;
+const SHORT_ASSERTION_FEATURE: &str = r#"Feature: provider assertions
+
+  Scenario: Short provider assertion
+    Given a configured provider catalog
+    When the provider command is run
+    Then the command exits 0
+"#;
+const LONG_ASSERTION_FEATURE: &str = r#"Feature: provider assertions
+
+  Scenario: Long provider assertion
+    Given a configured provider catalog
+    When the provider command is run
+    Then the command exits 0
+    And the output contains 1
+"#;
+const SEMANTIC_AUTH_FEATURE: &str = r#"Feature: auth
+
+  Scenario: Token is required
+    Given a client request
+    When the client sends a request without credentials
+    Then the server responds with unauthorized status
+"#;
+const SEMANTIC_TOKEN_FEATURE: &str = r#"Feature: token
+
+  Scenario: Authentication needs a token
+    Given an identity service
+    When the client authenticates without a token
+    Then access is denied with message "token required"
+"#;
+const SEMANTIC_ACCOUNT_FEATURE: &str = r#"Feature: account
+
+  Scenario: Account access needs credentials
+    Given an account gateway
+    When the client sends a request without a login
+    Then the account service denies access with message "credentials required"
+"#;
+const SEMANTIC_SESSION_FEATURE: &str = r#"Feature: session
+
+  Scenario: Session credentials are needed
+    Given a session gateway
+    When the client connects without a login
+    Then the session service refuses access with message "credentials required"
+"#;
+const EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES: &str = "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600;givn/specs/account/account.feature|Account access needs credentials::givn/specs/session/session.feature|Session credentials are needed=0.9600";
+const INCLUSIVE_THRESHOLD_LEFT_FEATURE: &str = r#"Feature: threshold left
+
+  Scenario: Left semantic boundary
+    Given a boundary client
+    When the client submits a credentialless request
+    Then the server returns an unauthorized response
+"#;
+const INCLUSIVE_THRESHOLD_RIGHT_FEATURE: &str = r#"Feature: threshold right
+
+  Scenario: Right semantic boundary
+    Given a boundary gateway
+    When the gateway receives a credentialless request
+    Then the gateway returns an access denied response
+"#;
+const RULE_NESTED_DUPLICATE_FEATURE: &str = r#"Feature: rule nested providers
+
+  Rule: provider validation
+    Background:
+      Given a configured provider catalog
+
+    Scenario: Provider is rejected in a rule
+      When the user selects an unknown provider
+      Then the command rejects the request
+
+    Scenario: Unknown provider is rejected in a rule
+      When the user selects an unknown provider
+      Then the command rejects the request
+"#;
+const REMOVED_PERMANENT_FEATURE: &str = r#"Feature: removed providers
+
+  @givn.removed
+  Scenario: Removed provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+
+  Scenario: Retained provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#;
+const SAME_SHAPE_RELATION_FEATURE: &str = r#"Feature: same shape relation
+
+  Scenario: Same shape left
+    Given the left alpha context
+    When the left alpha action runs
+    Then alpha result is ready
+
+  Scenario: Same shape right
+    Given the right alpha context
+    When the right alpha action runs
+    Then alpha result is ready
+"#;
+const LEFT_SUBSET_RELATION_FEATURE: &str = r#"Feature: left subset relation
+
+  Scenario: A short beta assertion
+    Given the short beta context
+    When the short beta action runs
+    Then beta result is ready
+
+  Scenario: Z long beta assertion
+    Given the long beta context
+    When the long beta action runs
+    Then beta result is ready
+    And gamma result is complete
+"#;
+const RIGHT_SUBSET_RELATION_FEATURE: &str = r#"Feature: right subset relation
+
+  Scenario: Long delta assertion
+    Given the long delta context
+    When the long delta action runs
+    Then delta result is ready
+    And epsilon result is complete
+
+  Scenario: Short epsilon assertion
+    Given the short epsilon context
+    When the short epsilon action runs
+    Then epsilon result is complete
+"#;
+const RIGHT_TIE_SHARED_FEATURE: &str = r#"Feature: shared semantic source
+
+  Scenario: Shared semantic source
+    Given the shared semantic context
+    When the shared semantic action runs
+    Then shared semantic result is complete
+"#;
+const RIGHT_TIE_ALPHA_FEATURE: &str = r#"Feature: alpha semantic target
+
+  Scenario: Alpha semantic target
+    Given the alpha semantic context
+    When the alpha semantic action runs
+    Then alpha semantic result is complete
+"#;
+const RIGHT_TIE_BETA_FEATURE: &str = r#"Feature: beta semantic target
+
+  Scenario: Beta semantic target
+    Given the beta semantic context
+    When the beta semantic action runs
+    Then beta semantic result is complete
+"#;
+const RIGHT_ENDPOINT_TIE_SCORE_OVERRIDES: &str = "givn/specs/a/shared.feature|Shared semantic source::givn/specs/b/alpha.feature|Alpha semantic target=0.9600;givn/specs/a/shared.feature|Shared semantic source::givn/specs/b/beta.feature|Beta semantic target=0.9600;givn/specs/b/alpha.feature|Alpha semantic target::givn/specs/b/beta.feature|Beta semantic target=0.0000";
+const SCORE_VALIDATION_FEATURE: &str = r#"Feature: duplicate score validation
+
+  Scenario: Alpha score validation case
+    Given the alpha score validation context
+    When the alpha score validation action runs
+    Then alpha score validation is complete
+
+  Scenario: Beta score validation case
+    Given the beta score validation context
+    When the beta score validation action runs
+    Then beta score validation is complete
+"#;
+const REVERSED_SCORE_LEFT_FEATURE: &str = r#"Feature: reversed score left
+
+  Scenario: Canonical score left
+    Given the canonical score left context
+    When the canonical score left action runs
+    Then canonical score left is complete
+"#;
+const REVERSED_SCORE_RIGHT_FEATURE: &str = r#"Feature: reversed score right
+
+  Scenario: Canonical score right
+    Given the canonical score right context
+    When the canonical score right action runs
+    Then canonical score right is complete
+"#;
+const REVERSED_SCORE_OVERRIDE: &str = "givn/specs/reverse/b.feature|Canonical score right::givn/specs/reverse/a.feature|Canonical score left=0.9600";
+const EMPTY_ASSERTION_FEATURE: &str = r#"Feature: empty assertion case
+
+  Scenario: Empty assertion scenario
+    Given the empty assertion context
+    When the empty assertion action runs
+"#;
+const EMPTY_PAIR_LONG_FEATURE: &str = r#"Feature: empty pair long case
+
+  Scenario: Long unrelated assertion
+    Given the long unrelated context
+    When the long unrelated action runs
+    Then long unrelated result is ready
+    And long unrelated details are complete
+"#;
+const REVERSE_SUBSET_LONG_FEATURE: &str = r#"Feature: reverse subset long case
+
+  Scenario: Long reverse subset
+    Given the long reverse subset context
+    When the long reverse subset action runs
+    Then reverse subset primary result is ready
+    And reverse subset secondary result is complete
+"#;
+const REVERSE_SUBSET_SHORT_FEATURE: &str = r#"Feature: reverse subset short case
+
+  Scenario: Short reverse subset
+    Given the short reverse subset context
+    When the short reverse subset action runs
+    Then reverse subset secondary result is complete
+"#;
+const EMPTY_AND_REVERSE_SUBSET_SCORE_OVERRIDES: &str = "givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/empty/b-long.feature|Long unrelated assertion=0.0000;givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/subset/a-long.feature|Long reverse subset=0.0000;givn/specs/empty/a-empty.feature|Empty assertion scenario::givn/specs/subset/b-short.feature|Short reverse subset=0.0000;givn/specs/empty/b-long.feature|Long unrelated assertion::givn/specs/subset/a-long.feature|Long reverse subset=0.0000;givn/specs/empty/b-long.feature|Long unrelated assertion::givn/specs/subset/b-short.feature|Short reverse subset=0.0000";
+const QUALITY_FALSE_NEGATIVE_LEFT_FEATURE: &str = r#"Feature: quality false negative left
+
+  Scenario: Valid boundary left
+    Given the valid boundary left context
+    When the valid boundary left action runs
+    Then valid boundary left result is observed
+"#;
+const QUALITY_FALSE_NEGATIVE_RIGHT_FEATURE: &str = r#"Feature: quality false negative right
+
+  Scenario: Valid boundary right
+    Given the valid boundary right context
+    When the valid boundary right action runs
+    Then valid boundary right result is observed
+"#;
+const QUALITY_FALSE_POSITIVE_LEFT_FEATURE: &str = r#"Feature: quality false positive left
+
+  Scenario: Unrelated glacier left
+    Given the unrelated glacier left context
+    When the unrelated glacier left action runs
+    Then unrelated glacier left result is observed
+"#;
+const QUALITY_FALSE_POSITIVE_RIGHT_FEATURE: &str = r#"Feature: quality false positive right
+
+  Scenario: Unrelated orchard right
+    Given the unrelated orchard right context
+    When the unrelated orchard right action runs
+    Then unrelated orchard right result is observed
+"#;
+const QUALITY_TRUE_POSITIVE_LEFT_FEATURE: &str = r#"Feature: quality true positive left
+
+  Scenario: Known token wording
+    Given the known token wording context
+    When the known token wording action runs
+    Then known token wording result is observed
+"#;
+const QUALITY_TRUE_POSITIVE_RIGHT_FEATURE: &str = r#"Feature: quality true positive right
+
+  Scenario: Known credential wording
+    Given the known credential wording context
+    When the known credential wording action runs
+    Then known credential wording result is observed
+"#;
+const QUALITY_SCORE_OVERRIDES: &str = "givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/false-negative-right.feature|Valid boundary right=0.9499;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/false-positive-left.feature|Unrelated glacier left=0.0000;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/false-positive-right.feature|Unrelated orchard right=0.0000;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-negative-left.feature|Valid boundary left::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/false-positive-left.feature|Unrelated glacier left=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/false-positive-right.feature|Unrelated orchard right=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-negative-right.feature|Valid boundary right::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/false-positive-left.feature|Unrelated glacier left::givn/specs/quality/false-positive-right.feature|Unrelated orchard right=0.9600;givn/specs/quality/false-positive-left.feature|Unrelated glacier left::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-positive-left.feature|Unrelated glacier left::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/false-positive-right.feature|Unrelated orchard right::givn/specs/quality/true-positive-left.feature|Known token wording=0.0000;givn/specs/quality/false-positive-right.feature|Unrelated orchard right::givn/specs/quality/true-positive-right.feature|Known credential wording=0.0000;givn/specs/quality/true-positive-left.feature|Known token wording::givn/specs/quality/true-positive-right.feature|Known credential wording=0.9600";
+
+#[given("a permanent feature has two identical scenarios nested under a Rule")]
+fn rule_nested_duplicate_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/rule-nested/rule-nested.feature",
+            RULE_NESTED_DUPLICATE_FEATURE,
+        )],
+    );
+}
+
+#[then("the JSON report scans 2 eligible scenarios")]
+fn rule_nested_scanned_scenarios(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["scanned_scenarios"],
+        serde_json::json!(2)
+    );
+}
+
+#[then("the Rule-nested scenarios produce one exact duplicate")]
+fn rule_nested_exact_duplicate(world: &mut GivnWorld) {
+    let document = json_document(world);
+    assert_eq!(document["candidate_count"], serde_json::json!(1));
+    assert_eq!(
+        document["candidates"][0]["kind"],
+        serde_json::json!("exact_duplicate")
+    );
+    assert_eq!(
+        document["candidates"][0]["evidence"]["relation"],
+        serde_json::json!("identical_behavior")
+    );
+}
+
+#[then("the Rule-nested candidate retains both scenario identities")]
+fn rule_nested_candidate_identities(world: &mut GivnWorld) {
+    let candidate = &json_document(world)["candidates"][0];
+    assert_eq!(
+        candidate["left"],
+        serde_json::json!({
+            "file": "givn/specs/rule-nested/rule-nested.feature",
+            "title": "Provider is rejected in a rule"
+        })
+    );
+    assert_eq!(
+        candidate["right"],
+        serde_json::json!({
+            "file": "givn/specs/rule-nested/rule-nested.feature",
+            "title": "Unknown provider is rejected in a rule"
+        })
+    );
+}
+
+#[given("the permanent specifications path is blocked by a non-directory")]
+fn blocked_permanent_specs_path(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let givn_root = env.path("givn");
+    fs::remove_dir_all(&givn_root).expect("remove initialized givn directory");
+    fs::write(&givn_root, b"not-a-directory").expect("write blocking givn path");
+
+    let error = fs::metadata(env.path("givn/specs")).expect_err("givn/specs unexpectedly exists");
+    assert_ne!(
+        error.kind(),
+        std::io::ErrorKind::NotFound,
+        "blocking fixture produced the missing-directory case"
+    );
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
+#[given("a permanent feature contains a removed duplicate beside a retained scenario")]
+fn removed_permanent_scenario_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/removed/removed.feature",
+            REMOVED_PERMANENT_FEATURE,
+        )],
+    );
+}
+
+#[then("the JSON report scans 1 eligible scenario")]
+fn removed_scenario_scanned_count(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["scanned_scenarios"],
+        serde_json::json!(1)
+    );
+}
+
+#[then("the removed scenario does not create a candidate")]
+fn removed_scenario_candidate_count(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["candidate_count"],
+        serde_json::json!(0)
+    );
+    assert_eq!(json_document(world)["candidates"], serde_json::json!([]));
+}
+
+#[then(regex = r##"^no candidate identity contains "([^"]+)"$"##)]
+fn removed_scenario_identity_absent(world: &mut GivnWorld, title: String) {
+    assert!(!stdout(world).contains(&title));
+}
+
+#[given("a permanent corpus contains same-shape, left-subset, and right-subset overlaps")]
+fn structural_relation_order_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/a/same-shape.feature",
+                SAME_SHAPE_RELATION_FEATURE,
+            ),
+            (
+                "givn/specs/b/left-subset/a-short.feature",
+                LEFT_SUBSET_RELATION_FEATURE,
+            ),
+            (
+                "givn/specs/c/right-subset/a-long.feature",
+                RIGHT_SUBSET_RELATION_FEATURE,
+            ),
+        ],
+    );
+}
+
+#[then(regex = r##"^structural candidates are ordered `([^`]+)`$"##)]
+fn structural_candidate_relation_order(world: &mut GivnWorld, relations: String) {
+    let expected = relations.split(',').collect::<Vec<_>>();
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), expected.len());
+    assert_eq!(
+        candidates
+            .iter()
+            .map(|candidate| candidate["evidence"]["relation"].as_str().unwrap())
+            .collect::<Vec<_>>(),
+        expected
+    );
+    assert!(
+        candidates
+            .iter()
+            .all(|candidate| candidate["kind"] == serde_json::json!("structural_overlap"))
+    );
+}
+
+#[then("every structural candidate has a null semantic score")]
+fn structural_candidates_have_null_scores(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_eq!(candidate["evidence"]["score"], serde_json::Value::Null);
+    }
+}
+
+#[given("two semantic candidates share one left endpoint and have distinct right endpoints")]
+fn right_endpoint_tie_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/a/shared.feature", RIGHT_TIE_SHARED_FEATURE),
+            ("givn/specs/b/alpha.feature", RIGHT_TIE_ALPHA_FEATURE),
+            ("givn/specs/b/beta.feature", RIGHT_TIE_BETA_FEATURE),
+        ],
+    );
+}
+
+#[given("both right-endpoint candidates have equal test score `0.9600`")]
+fn right_endpoint_tie_scores(world: &mut GivnWorld) {
+    world.retrieval_duplicate_scores = Some(RIGHT_ENDPOINT_TIE_SCORE_OVERRIDES.to_string());
+}
+
+#[then("equal-score candidates with one left endpoint are ordered by right endpoint")]
+fn right_endpoint_tie_order(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 2);
+    for candidate in &candidates {
+        assert_eq!(
+            candidate["left"],
+            serde_json::json!({
+                "file": "givn/specs/a/shared.feature",
+                "title": "Shared semantic source"
+            })
+        );
+    }
+    assert_eq!(
+        candidates[0]["right"],
+        serde_json::json!({
+            "file": "givn/specs/b/alpha.feature",
+            "title": "Alpha semantic target"
+        })
+    );
+    assert_eq!(
+        candidates[1]["right"],
+        serde_json::json!({
+            "file": "givn/specs/b/beta.feature",
+            "title": "Beta semantic target"
+        })
+    );
+}
+
+#[then("both right-endpoint candidates retain score `0.9600`")]
+fn right_endpoint_tie_scores_output(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_eq!(candidate["evidence"]["score"], serde_json::json!("0.9600"));
+    }
+}
+
+#[given("a permanent corpus for duplicate score validation")]
+fn duplicate_score_validation_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/score-validation/score-validation.feature",
+            SCORE_VALIDATION_FEATURE,
+        )],
+    );
+}
+
+#[given(regex = r"^the duplicate score seam has these invalid entries:$")]
+fn duplicate_score_validation_entries(world: &mut GivnWorld, step: &Step) {
+    let rows = step
+        .table
+        .as_ref()
+        .expect("duplicate score validation table is required")
+        .rows
+        .to_vec();
+    assert_eq!(
+        rows.first()
+            .map(|row| row.iter().map(String::as_str).collect::<Vec<_>>()),
+        Some(vec!["case", "raw", "expected"])
+    );
+    let entries = rows
+        .into_iter()
+        .skip(1)
+        .map(|row| {
+            assert_eq!(
+                row.len(),
+                3,
+                "invalid score validation row has three columns"
+            );
+            let mut values = row
+                .into_iter()
+                .map(|value| value.replace("__PIPE__", "|"))
+                .collect::<Vec<_>>();
+            values[1] = duplicate_score_validation_raw(&values[0], &values[1]);
+            values.join("\x1f")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(entries.len(), 12);
+    world.additional_output = Some(entries.join("\n"));
+}
+
+fn duplicate_score_validation_raw(_label: &str, raw: &str) -> String {
+    const LEFT: &str = "givn/specs/a/a.feature|A";
+    const RIGHT: &str = "givn/specs/b/b.feature|B";
+    const PAIR: &str = "givn/specs/a/a.feature|A::givn/specs/b/b.feature|B";
+
+    match raw {
+        "empty-entry" => format!("{PAIR}=0.9600;"),
+        "missing-equals" => PAIR.to_string(),
+        "missing-pair" => format!("{LEFT}=0.9600"),
+        "equal-endpoints" => format!("{LEFT}::{LEFT}=0.9600"),
+        "duplicate-pair" => format!("{PAIR}=0.9600;{RIGHT}::{LEFT}=0.9500"),
+        "malformed-endpoint" => format!("{LEFT}::broken=0.9600"),
+        "empty-title" => format!("givn/specs/a/a.feature|::{RIGHT}=0.9600"),
+        "invalid-file" => format!("project/spec.feature|A::{RIGHT}=0.9600"),
+        "invalid-score-shape" => format!("{PAIR}=0.960"),
+        "out-of-range-score" => format!("{PAIR}=1.0001"),
+        _ => raw.to_string(),
+    }
+}
+
+#[when("the user validates each duplicate score override")]
+fn validate_duplicate_score_overrides(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate score validation project is missing");
+    let entries = world
+        .additional_output
+        .take()
+        .expect("duplicate score validation entries are missing");
+    let mut evidence = String::new();
+    for entry in entries.lines() {
+        let fields = entry.splitn(3, '\x1f').collect::<Vec<_>>();
+        assert_eq!(fields.len(), 3, "malformed invalid score validation row");
+        let (label, raw, expected) = (fields[0], fields[1], fields[2]);
+        let value = if label == "invalid UTF-8" {
+            #[cfg(unix)]
+            {
+                use std::os::unix::ffi::OsStringExt;
+
+                OsString::from_vec(vec![0xff, 0xfe])
+            }
+            #[cfg(not(unix))]
+            {
+                OsString::from(raw)
+            }
+        } else {
+            OsString::from(raw)
+        };
+        let mut command = Command::new(env!("CARGO_BIN_EXE_givn"));
+        let output = command
+            .args(["spec", "duplicates"])
+            .current_dir(env.root())
+            .env("GIVN_SPEC_EMBEDDER", "stub")
+            .env("GIVN_SPEC_DUPLICATES_TEST_SCORES", value)
+            .output()
+            .expect("run duplicate score validation subprocess");
+        let stderr = String::from_utf8_lossy(&output.stderr).replace(['\r', '\n'], " ");
+        evidence.push_str(&format!(
+            "{label}\x1f{expected}\x1f{}\x1f{stderr}\n",
+            output.status.success()
+        ));
+    }
+    world.additional_output = Some(evidence);
+}
+
+#[then("every invalid duplicate score override fails with its expected diagnostic")]
+fn invalid_duplicate_score_overrides_fail(world: &mut GivnWorld) {
+    let evidence = world
+        .additional_output
+        .as_deref()
+        .expect("duplicate score validation evidence is missing");
+    let records = evidence.lines().collect::<Vec<_>>();
+    assert_eq!(records.len(), 12);
+    for record in records {
+        let fields = record.splitn(4, '\x1f').collect::<Vec<_>>();
+        assert_eq!(
+            fields.len(),
+            4,
+            "malformed score validation evidence: {record}"
+        );
+        assert_eq!(
+            fields[2], "false",
+            "score override unexpectedly succeeded: {record}"
+        );
+        assert!(
+            fields[3].contains(fields[1]),
+            "{} diagnostic missing {:?}: {}",
+            fields[0],
+            fields[1],
+            fields[3]
+        );
+    }
+}
+
+#[given("two permanent semantic scenarios have a reversed score override pair")]
+fn reversed_score_override_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/reverse/a.feature", REVERSED_SCORE_LEFT_FEATURE),
+            ("givn/specs/reverse/b.feature", REVERSED_SCORE_RIGHT_FEATURE),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(REVERSED_SCORE_OVERRIDE.to_string());
+}
+
+#[then("the reversed score override reports one semantic candidate at `0.9600`")]
+fn reversed_score_override_candidate(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 1);
+    assert_eq!(
+        candidates[0]["kind"],
+        serde_json::json!("semantic_candidate")
+    );
+    assert_eq!(
+        candidates[0]["evidence"]["score"],
+        serde_json::json!("0.9600")
+    );
+}
+
+#[then("the reversed score candidate uses canonical endpoint order")]
+fn reversed_score_override_endpoint_order(world: &mut GivnWorld) {
+    let candidate = &json_candidates(world)[0];
+    assert_eq!(
+        candidate["left"],
+        serde_json::json!({
+            "file": "givn/specs/reverse/a.feature",
+            "title": "Canonical score left"
+        })
+    );
+    assert_eq!(
+        candidate["right"],
+        serde_json::json!({
+            "file": "givn/specs/reverse/b.feature",
+            "title": "Canonical score right"
+        })
+    );
+}
+
+#[given("a corpus contains an empty assertion scenario and a reverse subset pair")]
+fn empty_and_reverse_subset_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/empty/a-empty.feature", EMPTY_ASSERTION_FEATURE),
+            ("givn/specs/empty/b-long.feature", EMPTY_PAIR_LONG_FEATURE),
+            (
+                "givn/specs/subset/a-long.feature",
+                REVERSE_SUBSET_LONG_FEATURE,
+            ),
+            (
+                "givn/specs/subset/b-short.feature",
+                REVERSE_SUBSET_SHORT_FEATURE,
+            ),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(EMPTY_AND_REVERSE_SUBSET_SCORE_OVERRIDES.to_string());
+}
+
+#[then("the empty assertion scenario produces no structural candidate")]
+fn empty_assertion_no_structural_candidate(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 1);
+    assert!(candidates.iter().all(|candidate| {
+        candidate["left"]["title"] != serde_json::json!("Empty assertion scenario")
+            && candidate["right"]["title"] != serde_json::json!("Empty assertion scenario")
+    }));
+}
+
+#[then("the reverse subset candidate has relation `right_assertions_subset_of_left`")]
+fn reverse_subset_relation(world: &mut GivnWorld) {
+    assert_eq!(
+        json_candidates(world)[0]["evidence"]["relation"],
+        serde_json::json!("right_assertions_subset_of_left")
+    );
+}
+
+#[then("the reverse subset candidate retains its two assertion shapes")]
+fn reverse_subset_shapes(world: &mut GivnWorld) {
+    assert_eq!(
+        json_candidates(world)[0]["evidence"]["assertion_shape"],
+        serde_json::json!({
+            "left": [
+                "reverse subset primary result is ready",
+                "reverse subset secondary result is complete"
+            ],
+            "right": ["reverse subset secondary result is complete"]
+        })
+    );
+}
+
+#[given(
+    "a small semantic-quality fixture has labeled true-positive, false-positive, and false-negative pairs"
+)]
+fn semantic_quality_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/quality/false-negative-left.feature",
+                QUALITY_FALSE_NEGATIVE_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/false-negative-right.feature",
+                QUALITY_FALSE_NEGATIVE_RIGHT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/false-positive-left.feature",
+                QUALITY_FALSE_POSITIVE_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/false-positive-right.feature",
+                QUALITY_FALSE_POSITIVE_RIGHT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/true-positive-left.feature",
+                QUALITY_TRUE_POSITIVE_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/quality/true-positive-right.feature",
+                QUALITY_TRUE_POSITIVE_RIGHT_FEATURE,
+            ),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(QUALITY_SCORE_OVERRIDES.to_string());
+}
+
+#[given(regex = r#"^its expected labels and stub scores are:$"#)]
+fn semantic_quality_labels(world: &mut GivnWorld, step: &Step) {
+    let rows = step
+        .table
+        .as_ref()
+        .expect("semantic-quality label table is required")
+        .rows
+        .to_vec();
+    assert_eq!(
+        rows.first()
+            .map(|row| row.iter().map(String::as_str).collect::<Vec<_>>()),
+        Some(vec!["label", "expected relation", "stub score"])
+    );
+    let entries = rows
+        .into_iter()
+        .skip(1)
+        .map(|row| {
+            assert_eq!(row.len(), 3, "semantic-quality row has three columns");
+            row.join("\x1f")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(entries.len(), 3);
+    world.additional_output = Some(entries.join("\n"));
+}
+
+#[when("the user measures semantic quality at threshold `0.9500`")]
+fn measure_semantic_quality(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("semantic-quality fixture is missing");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_DUPLICATES_TEST_SCORES", QUALITY_SCORE_OVERRIDES),
+        ],
+    );
+    world.last_output = Some(output);
+}
+
+#[then(
+    "semantic-quality evidence reports TP 1, FP 1, FN 1, precision `0.5000`, and recall `0.5000`"
+)]
+fn semantic_quality_metrics(world: &mut GivnWorld) {
+    let labels = world
+        .additional_output
+        .as_deref()
+        .expect("semantic-quality labels are missing");
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 2);
+    let mut true_positives = 0;
+    let mut false_positives = 0;
+    let mut false_negatives = 0;
+    for entry in labels.lines() {
+        let fields = entry.splitn(3, '\x1f').collect::<Vec<_>>();
+        assert_eq!(fields.len(), 3, "malformed semantic-quality label: {entry}");
+        let (left_file, left_title, right_file, right_title) = semantic_quality_pair(fields[0]);
+        let candidate = candidates.iter().find(|candidate| {
+            candidate["left"] == serde_json::json!({"file": left_file, "title": left_title})
+                && candidate["right"]
+                    == serde_json::json!({"file": right_file, "title": right_title})
+        });
+        let expected_positive = fields[0] != "false positive";
+        if let Some(candidate) = candidate {
+            assert_eq!(
+                candidate["kind"],
+                serde_json::json!("semantic_candidate"),
+                "labeled semantic pair was not classified semantically"
+            );
+            assert_eq!(candidate["evidence"]["score"], serde_json::json!(fields[2]));
+            if expected_positive {
+                true_positives += 1;
+            } else {
+                false_positives += 1;
+            }
+        } else if expected_positive {
+            false_negatives += 1;
+        }
+    }
+
+    let precision = true_positives as f32 / (true_positives + false_positives) as f32;
+    let recall = true_positives as f32 / (true_positives + false_negatives) as f32;
+    assert_eq!(true_positives, 1);
+    assert_eq!(false_positives, 1);
+    assert_eq!(false_negatives, 1);
+    assert_eq!(format!("{precision:.4}"), "0.5000");
+    assert_eq!(format!("{recall:.4}"), "0.5000");
+    println!(
+        "semantic-quality threshold=0.9500 true_positives={true_positives} false_positives={false_positives} false_negatives={false_negatives} precision={precision:.4} recall={recall:.4} formulas=TP/(TP+FP),TP/(TP+FN)"
+    );
+}
+
+#[then("semantic-quality evidence remains advisory")]
+fn semantic_quality_remains_advisory(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_eq!(
+            candidate["kind"],
+            serde_json::json!("semantic_candidate"),
+            "semantic evidence changed deterministic classification"
+        );
+    }
+}
+
+fn semantic_quality_pair(label: &str) -> (&'static str, &'static str, &'static str, &'static str) {
+    match label {
+        "true positive" => (
+            "givn/specs/quality/true-positive-left.feature",
+            "Known token wording",
+            "givn/specs/quality/true-positive-right.feature",
+            "Known credential wording",
+        ),
+        "false positive" => (
+            "givn/specs/quality/false-positive-left.feature",
+            "Unrelated glacier left",
+            "givn/specs/quality/false-positive-right.feature",
+            "Unrelated orchard right",
+        ),
+        "false negative" => (
+            "givn/specs/quality/false-negative-left.feature",
+            "Valid boundary left",
+            "givn/specs/quality/false-negative-right.feature",
+            "Valid boundary right",
+        ),
+        other => panic!("unknown semantic-quality label: {other}"),
+    }
+}
+
+#[given(
+    "the corpus contains one exact duplicate, one structural overlap, and two semantic candidates"
+)]
+fn mixed_candidate_classes_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("the two semantic candidates have equal test score `0.9600`")]
+fn equal_semantic_candidate_scores(world: &mut GivnWorld) {
+    world.retrieval_duplicate_scores = Some(EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES.to_string());
+}
+
+#[then("candidate rank 2 is the structural overlap")]
+fn structural_overlap_rank_two(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates[1]["rank"], serde_json::json!(2));
+    assert_eq!(
+        candidates[1]["kind"],
+        serde_json::json!("structural_overlap")
+    );
+    assert!(candidates[1]["evidence"]["assertion_shape"].is_object());
+    assert!(candidates[1]["evidence"]["facts"].is_object());
+    assert_eq!(candidates[1]["evidence"]["score"], serde_json::Value::Null);
+}
+
+#[then("candidate rank 1 is the exact duplicate")]
+fn exact_duplicate_rank_one(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates[0]["rank"], serde_json::json!(1));
+    assert_eq!(candidates[0]["kind"], serde_json::json!("exact_duplicate"));
+    assert_eq!(
+        candidates[0]["evidence"]["assertion_shape"],
+        serde_json::Value::Null
+    );
+    assert_eq!(candidates[0]["evidence"]["facts"], serde_json::Value::Null);
+    assert_eq!(candidates[0]["evidence"]["score"], serde_json::Value::Null);
+}
+
+#[then("candidate ranks 3 and 4 are semantic candidates with score `0.9600`")]
+fn equal_score_semantic_candidate_ranks(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_eq!(candidates.len(), 4);
+    for (rank, candidate) in [3, 4].into_iter().zip(&candidates[2..]) {
+        assert_eq!(candidate["rank"], serde_json::json!(rank));
+        assert_eq!(candidate["kind"], serde_json::json!("semantic_candidate"));
+        assert_eq!(
+            candidate["evidence"]["assertion_shape"],
+            serde_json::Value::Null
+        );
+        assert_eq!(candidate["evidence"]["facts"], serde_json::Value::Null);
+        assert_eq!(
+            candidate["evidence"]["distinguishing_facts"],
+            serde_json::json!([])
+        );
+        assert_eq!(
+            candidate["evidence"]["fact_contradiction"],
+            serde_json::json!(false)
+        );
+        assert_eq!(candidate["evidence"]["score"], serde_json::json!("0.9600"));
+    }
+}
+
+#[then(
+    "equal-score semantic candidates are ordered by left file, left title, right file, and right title"
+)]
+fn equal_score_semantic_candidate_order(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert_json_candidate_endpoints(
+        &candidates[2],
+        "givn/specs/account/account.feature",
+        "Account access needs credentials",
+        "givn/specs/session/session.feature",
+        "Session credentials are needed",
+    );
+    assert_json_candidate_endpoints(
+        &candidates[3],
+        "givn/specs/auth/auth.feature",
+        "Token is required",
+        "givn/specs/token/token.feature",
+        "Authentication needs a token",
+    );
+}
+
+#[then("candidate ranks are exactly `1,2,3,4`")]
+fn mixed_candidate_ranks_are_contiguous(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    let ranks = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["rank"]
+                .as_u64()
+                .expect("candidate rank is an integer")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(ranks, vec![1, 2, 3, 4]);
+}
+
+const NO_CANDIDATE_FEATURE: &str = r#"Feature: unrelated operations
+
+  Scenario: Glacier replication completes
+    Given a glacier archive is configured
+    When replication checkpoints are flushed
+    Then the archive reports completion
+
+  Scenario: Orchard irrigation starts
+    Given an orchard schedule is loaded
+    When irrigation valves are opened
+    Then the orchard reports watering
+"#;
+const PERMANENT_RELATED_FEATURE_PATH: &str = "givn/specs/provider/provider.feature";
+const ACTIVE_CHANGE_FEATURE_PATH: &str =
+    "givn/changes/active-provider/specs/provider/provider.feature";
+const ACTIVE_CHANGE_SCENARIO_TITLE: &str = "Active provider is rejected";
+const ACTIVE_CHANGE_FEATURE: &str = r#"Feature: active provider
+
+  Scenario: Active provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#;
+const ARCHIVE_MATCHING_FEATURE_PATH: &str = "givn/archive/old-change/specs/old/old.feature";
+const ARCHIVE_PATH_PREFIX: &str = "givn/archive/old-change/";
+const ARCHIVE_MATCHING_FEATURE: &str = r#"Feature: old
+
+  Scenario: Archived provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#;
+const ACTIVE_AUDIT_ROOT: &str = "givn/changes/audit-boundary";
+const ARCHIVE_AUDIT_ROOT: &str = "givn/archive/audit-boundary";
+const ACTIVE_AUDIT_FILES: [(&str, &str); 3] = [
+    (
+        "givn/changes/audit-boundary/specs/active/active.feature",
+        r#"Feature: active audit boundary
+
+  Scenario: Active provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#,
+    ),
+    (
+        "givn/changes/audit-boundary/proposal.md",
+        "# Active audit fixture\nThis file must remain unchanged.\n",
+    ),
+    (
+        "givn/changes/audit-boundary/notes.txt",
+        "active fixture bytes\n",
+    ),
+];
+const ARCHIVE_AUDIT_FILES: [(&str, &str); 3] = [
+    (
+        "givn/archive/audit-boundary/specs/archived/archived.feature",
+        r#"Feature: archived audit boundary
+
+  Scenario: Archived provider is rejected
+    Given a configured provider catalog
+    When the user selects an unknown provider
+    Then the command rejects the request
+"#,
+    ),
+    (
+        "givn/archive/audit-boundary/README.md",
+        "# Archive audit fixture\nThis file must remain unchanged.\n",
+    ),
+    (
+        "givn/archive/audit-boundary/record.txt",
+        "archive fixture bytes\n",
+    ),
+];
+const PERSISTENT_INDEX_PATH: &str = "givn/.spec-index.json";
+const MALFORMED_INDEX_BYTES: &[u8] = b"not-json";
+const MALFORMED_PERMANENT_FEATURE: &str =
+    "this is not a Gherkin feature document\nwithout a structural keyword\n";
+const UNREADABLE_PERMANENT_FEATURE: &str = r#"Feature: private
+
+  Scenario: Private fixture is readable
+    Given a private fixture
+    When the private fixture is inspected
+    Then the private fixture is readable
+"#;
+
+#[derive(Debug)]
+pub(crate) struct UnreadableFeatureGuard {
+    path: PathBuf,
+    original_permissions: fs::Permissions,
+    fallback_backup: Option<PathBuf>,
+}
+
+impl Drop for UnreadableFeatureGuard {
+    fn drop(&mut self) {
+        if let Some(backup) = self.fallback_backup.take() {
+            let _ = fs::remove_dir_all(&self.path);
+            let _ = fs::rename(backup, &self.path);
+        }
+        let _ = fs::set_permissions(&self.path, self.original_permissions.clone());
+    }
+}
+
+fn make_unreadable_feature_guard(path: PathBuf) -> UnreadableFeatureGuard {
+    let original_permissions = fs::metadata(&path)
+        .expect("read unreadable feature metadata")
+        .permissions();
+    let permission_is_enforced = set_unreadable_permissions(&path);
+    let fallback_backup = if permission_is_enforced {
+        None
+    } else {
+        // Elevated test users can bypass mode 000. A directory at the same
+        // .feature path makes Feature::parse_path fail with an I/O error
+        // (EISDIR) instead of exercising malformed-Gherkin parsing.
+        let backup = path.with_extension("readable");
+        fs::rename(&path, &backup).expect("move readable feature for I/O fallback");
+        if let Err(error) = fs::set_permissions(&backup, original_permissions.clone()) {
+            let _ = fs::rename(&backup, &path);
+            panic!("restore readable feature permissions for I/O fallback: {error}");
+        }
+        if let Err(error) = fs::create_dir(&path) {
+            let _ = fs::rename(&backup, &path);
+            panic!("create unreadable feature I/O fixture directory: {error}");
+        }
+        Some(backup)
+    };
+
+    UnreadableFeatureGuard {
+        path,
+        original_permissions,
+        fallback_backup,
+    }
+}
+
+#[cfg(unix)]
+fn set_unreadable_permissions(path: &Path) -> bool {
+    use std::os::unix::fs::PermissionsExt;
+
+    if fs::set_permissions(path, fs::Permissions::from_mode(0o000)).is_err() {
+        return false;
+    }
+    fs::read_to_string(path).is_err()
+}
+
+#[cfg(not(unix))]
+fn set_unreadable_permissions(_path: &Path) -> bool {
+    false
+}
+
+#[given(regex = r##"^a permanent feature with invalid Gherkin syntax at "([^"]+)"$"##)]
+fn malformed_permanent_feature(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, "givn/specs/broken/broken.feature");
+    permanent_project(world, &[(path.as_str(), MALFORMED_PERMANENT_FEATURE)]);
+}
+
+#[given(regex = r##"^a permanent feature that exists but cannot be read at "([^"]+)"$"##)]
+fn unreadable_permanent_feature(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, "givn/specs/private/private.feature");
+    permanent_project(world, &[(path.as_str(), UNREADABLE_PERMANENT_FEATURE)]);
+    let feature_path = world
+        .env
+        .as_ref()
+        .expect("unreadable feature project is initialized")
+        .path(&path);
+    world.unreadable_feature = Some(make_unreadable_feature_guard(feature_path));
+}
+
+#[given("a project without a `givn/specs/` directory")]
+fn missing_permanent_specs_directory(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    assert!(
+        specs.is_dir(),
+        "givn init did not create the specs directory"
+    );
+    fs::remove_dir_all(&specs).expect("remove initialized permanent specs directory");
+    assert!(!specs.exists(), "permanent specs directory still exists");
+
+    let index = env.path(PERSISTENT_INDEX_PATH);
+    if index.exists() {
+        fs::remove_file(&index).expect("remove pre-existing persistent retrieval index");
+    }
+    assert!(
+        !index.exists(),
+        "persistent retrieval index unexpectedly exists"
+    );
+
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
+#[then(regex = r##"^stderr contains the project-relative path "([^"]+)"$"##)]
+fn stderr_contains_project_relative_path(world: &mut GivnWorld, path: String) {
+    let message = stderr(world);
+    assert!(
+        message.contains(&path),
+        "stderr missing project-relative path {path:?}: {message}"
+    );
+}
+
+#[then("stdout is empty")]
+fn stdout_is_empty(world: &mut GivnWorld) {
+    assert!(
+        output(world).stdout.is_empty(),
+        "duplicate audit emitted stdout: {}",
+        stdout(world)
+    );
+    drop(world.unreadable_feature.take());
+}
+
+const MANY_DUPLICATE_FEATURES: [(&str, &str); 6] = [
+    (
+        "givn/specs/alpha/alpha.feature",
+        r#"Feature: alpha
+
+  Scenario: Alpha behavior
+    Given alpha setup
+    When alpha action
+    Then alpha result is stable
+
+  Scenario: Alpha behavior copy
+    Given alpha setup
+    When alpha action
+    Then alpha result is stable
+"#,
+    ),
+    (
+        "givn/specs/bravo/bravo.feature",
+        r#"Feature: bravo
+
+  Scenario: Bravo behavior
+    Given bravo setup
+    When bravo action
+    Then bravo result is stable
+
+  Scenario: Bravo behavior copy
+    Given bravo setup
+    When bravo action
+    Then bravo result is stable
+"#,
+    ),
+    (
+        "givn/specs/charlie/charlie.feature",
+        r#"Feature: charlie
+
+  Scenario: Charlie behavior
+    Given charlie setup
+    When charlie action
+    Then charlie result is stable
+
+  Scenario: Charlie behavior copy
+    Given charlie setup
+    When charlie action
+    Then charlie result is stable
+"#,
+    ),
+    (
+        "givn/specs/delta/delta.feature",
+        r#"Feature: delta
+
+  Scenario: Delta behavior
+    Given delta setup
+    When delta action
+    Then delta result is stable
+
+  Scenario: Delta behavior copy
+    Given delta setup
+    When delta action
+    Then delta result is stable
+"#,
+    ),
+    (
+        "givn/specs/echo/echo.feature",
+        r#"Feature: echo
+
+  Scenario: Echo behavior
+    Given echo setup
+    When echo action
+    Then echo result is stable
+
+  Scenario: Echo behavior copy
+    Given echo setup
+    When echo action
+    Then echo result is stable
+"#,
+    ),
+    (
+        "givn/specs/foxtrot/foxtrot.feature",
+        r#"Feature: foxtrot
+
+  Scenario: Foxtrot behavior
+    Given foxtrot setup
+    When foxtrot action
+    Then foxtrot result is stable
+
+  Scenario: Foxtrot behavior copy
+    Given foxtrot setup
+    When foxtrot action
+    Then foxtrot result is stable
+"#,
+    ),
+];
+
+#[derive(Debug, PartialEq, Eq)]
+struct DuplicateAuditReport {
+    scanned_scenarios: usize,
+    candidate_count: usize,
+    candidates: Vec<DuplicateAuditCandidate>,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct DuplicateAuditCandidate {
+    rank: usize,
+    evidence: String,
+}
+
+#[given(
+    regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" has the assertion sequence of "([^"]+)" at "([^"]+)"$"##
+)]
+fn structural_subset_fixture(
+    world: &mut GivnWorld,
+    short_title: String,
+    short_file: String,
+    long_title: String,
+    long_file: String,
+) {
+    assert_eq!(short_title, "Short provider assertion");
+    assert_eq!(short_file, "givn/specs/a/a.feature");
+    assert_eq!(long_title, "Long provider assertion");
+    assert_eq!(long_file, "givn/specs/b/b.feature");
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/a/a.feature", SHORT_ASSERTION_FEATURE),
+            ("givn/specs/b/b.feature", LONG_ASSERTION_FEATURE),
+        ],
+    );
+}
+
+#[given("permanent scenarios share an assertion shape but have different facts")]
+fn structural_overlap_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/provider/provider.feature",
+            STRUCTURAL_OVERLAP_FEATURE,
+        )],
+    );
+}
+
+#[then("candidate rank 1 is classified as `structural_overlap`")]
+fn structural_overlap_kind(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("kind=structural_overlap"));
+}
+
+#[then("candidate rank 1 has relation `same_assertion_shape`")]
+fn structural_overlap_relation(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("relation=same_assertion_shape"));
+    assert!(line.contains(
+        r#"assertion_shape={"left":["the command exits * and output \"*\" \"*\""],"right":["the command exits * and output \"*\" \"*\""]}"#
+    ));
+}
+
+#[then(r#"candidate rank 1 has left fingerprint facts `{"exit_code":"0","contains_polarity":{"0":"positive"},"tables":{"provider":"aws"},"done":false,"tty":false}`"#)]
+fn structural_overlap_left_facts(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains(STRUCTURAL_FACTS));
+}
+
+#[then(r#"candidate rank 1 has right fingerprint facts `{"exit_code":"2","contains_polarity":{"0":"negative"},"tables":{"provider":"gcp"},"done":true,"tty":true}`"#)]
+fn structural_overlap_right_facts(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains(STRUCTURAL_FACTS));
+}
+
+#[then(r#"candidate rank 1 has distinguishing facts `[{"field":"exit_code","left":"0","right":"2"},{"field":"contains_polarity[0]","left":"positive","right":"negative"},{"field":"tables[provider]","left":"aws","right":"gcp"},{"field":"done","left":false,"right":true},{"field":"tty","left":false,"right":true}]`"#)]
+fn structural_overlap_distinguishing_facts(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains(
+        r#"distinguishing_facts=[{"field":"exit_code","left":"0","right":"2"},{"field":"contains_polarity[0]","left":"positive","right":"negative"},{"field":"tables[provider]","left":"aws","right":"gcp"},{"field":"done","left":false,"right":true},{"field":"tty","left":false,"right":true}]"#
+    ));
+}
+
+#[then("candidate rank 1 has fact contradiction `true`")]
+fn structural_overlap_contradiction(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("fact_contradiction=true"));
+}
+
+#[then("candidate rank 1 has no Given/When action-structure evidence")]
+fn structural_overlap_no_action_evidence(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(!line.contains("Given"));
+    assert!(!line.contains("When"));
+    assert!(!line.contains("action-structure"));
+}
+
+#[then("candidate rank 1 has relation `left_assertions_subset_of_right`")]
+fn structural_subset_relation(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("relation=left_assertions_subset_of_right"));
+}
+
+#[then(r#"candidate rank 1 has assertion shapes `{"left":["the command exits *"],"right":["the command exits *","the output contains *"]}`"#)]
+fn structural_subset_shapes(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains(
+        r#"assertion_shape={"left":["the command exits *"],"right":["the command exits *","the output contains *"]}"#
+    ));
+}
+
+#[given(
+    regex = r##"^the permanent scenario "([^"]+)" at "([^"]+)" and "([^"]+)" at "([^"]+)" describe closely related behaviour with different wording$"##
+)]
+fn semantic_candidate_fixture(
+    world: &mut GivnWorld,
+    left_title: String,
+    left_file: String,
+    right_title: String,
+    right_file: String,
+) {
+    assert_eq!(left_title, "Token is required");
+    assert_eq!(left_file, "givn/specs/auth/auth.feature");
+    assert_eq!(right_title, "Authentication needs a token");
+    assert_eq!(right_file, "givn/specs/token/token.feature");
+    permanent_project(
+        world,
+        &[
+            ("givn/specs/auth/auth.feature", SEMANTIC_AUTH_FEATURE),
+            ("givn/specs/token/token.feature", SEMANTIC_TOKEN_FEATURE),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(
+        "givn/specs/auth/auth.feature|Token is required::givn/specs/token/token.feature|Authentication needs a token=0.9600".to_string(),
+    );
+}
+
+#[given(
+    "permanent scenarios exercise inclusive semantic admission with no exact or structural relationship"
+)]
+fn inclusive_threshold_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/threshold/left.feature",
+                INCLUSIVE_THRESHOLD_LEFT_FEATURE,
+            ),
+            (
+                "givn/specs/threshold/right.feature",
+                INCLUSIVE_THRESHOLD_RIGHT_FEATURE,
+            ),
+        ],
+    );
+}
+
+#[given(
+    "permanent scenarios exercise below-boundary semantic exclusion with no exact or structural relationship"
+)]
+fn below_threshold_fixture(world: &mut GivnWorld) {
+    inclusive_threshold_fixture(world);
+}
+
+#[given("the normalized endpoint pair is assigned the inclusive admission score `0.9500`")]
+fn inclusive_threshold_score(world: &mut GivnWorld) {
+    set_threshold_score(world, "0.9500");
+}
+
+#[given("the normalized endpoint pair is assigned the exclusion score `0.9499`")]
+fn below_threshold_score(world: &mut GivnWorld) {
+    set_threshold_score(world, "0.9499");
+}
+
+fn set_threshold_score(world: &mut GivnWorld, score: &str) {
+    world.retrieval_duplicate_scores = Some(format!(
+        "givn/specs/threshold/left.feature|Left semantic boundary::givn/specs/threshold/right.feature|Right semantic boundary={score}"
+    ));
+}
+
+#[then("candidate rank 1 is classified as `semantic_candidate`")]
+fn semantic_candidate_kind(world: &mut GivnWorld) {
+    if stdout(world).trim_start().starts_with('{') {
+        let candidate = &json_candidates(world)[0];
+        assert_eq!(candidate["rank"], serde_json::json!(1));
+        assert_eq!(candidate["kind"], serde_json::json!("semantic_candidate"));
+    } else {
+        assert!(candidate_line(world).contains("kind=semantic_candidate"));
+    }
+}
+
+#[then("candidate rank 1 is admitted as a `semantic_candidate`")]
+fn semantic_candidate_admitted(world: &mut GivnWorld) {
+    semantic_candidate_kind(world);
+}
+
+#[then("candidate rank 1 has relation `semantic_similarity`")]
+fn semantic_candidate_relation(world: &mut GivnWorld) {
+    if stdout(world).trim_start().starts_with('{') {
+        assert_eq!(
+            json_candidates(world)[0]["evidence"]["relation"],
+            serde_json::json!("semantic_similarity")
+        );
+    } else {
+        assert!(candidate_line(world).contains("relation=semantic_similarity"));
+    }
+}
+
+#[then("candidate rank 1 has score `0.9600`")]
+fn semantic_candidate_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=0.9600"));
+}
+
+#[then("candidate rank 1 has score `0.9500`")]
+fn inclusive_threshold_score_output(world: &mut GivnWorld) {
+    assert_eq!(
+        json_candidates(world)[0]["evidence"]["score"],
+        serde_json::json!("0.9500")
+    );
+}
+
+#[then("the JSON report excludes all semantic candidates")]
+fn below_threshold_candidate_count(world: &mut GivnWorld) {
+    assert_eq!(
+        json_document(world)["candidate_count"],
+        serde_json::json!(0)
+    );
+}
+
+#[then("no candidate has score `0.9499`")]
+fn below_threshold_score_output(world: &mut GivnWorld) {
+    for candidate in json_candidates(world) {
+        assert_ne!(candidate["evidence"]["score"], serde_json::json!("0.9499"));
+    }
+}
+
+#[then("candidate rank 1 has null assertion shape and null fingerprint facts")]
+fn semantic_candidate_null_structural_evidence(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("assertion_shape=null facts=null"));
+}
+
+#[then("candidate rank 1 has empty distinguishing facts and fact contradiction `false`")]
+fn semantic_candidate_non_contradictory(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("distinguishing_facts=[] fact_contradiction=false"));
+}
+
+#[then("the semantic candidate is advisory and is not an automatic duplicate decision")]
+fn semantic_candidate_advisory(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(output.contains("kind=semantic_candidate"));
+    assert!(!output.contains("kind=exact_duplicate"));
+    assert!(!output.contains("kind=structural_overlap"));
+    assert!(!output.contains("automatic duplicate"));
+}
+
+#[given("a permanent scenario corpus with no duplicate or related behaviour")]
+fn no_candidate_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/unrelated/unrelated.feature",
+            NO_CANDIDATE_FEATURE,
+        )],
+    );
+}
+
+#[given("the active-change and archive trees are snapshotted before the read-only audit")]
+fn snapshot_active_change_and_archive(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    write_fixture_files(env, &ACTIVE_AUDIT_FILES);
+    write_fixture_files(env, &ARCHIVE_AUDIT_FILES);
+    world.active_change_snapshot = Some(snapshot_fixture_tree(env, ACTIVE_AUDIT_ROOT));
+    world.archive_snapshot = Some(snapshot_fixture_tree(env, ARCHIVE_AUDIT_ROOT));
+}
+
+#[then("active-change files are unchanged byte-for-byte")]
+fn active_change_files_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let out = output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        stdout(world).starts_with("Givn spec duplicates\n"),
+        "duplicate audit did not produce its report header: {}",
+        stdout(world)
+    );
+    let report = duplicate_audit_report(out);
+    assert_eq!(report.scanned_scenarios, 8);
+    assert_eq!(report.candidate_count, 4);
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .active_change_snapshot
+        .as_ref()
+        .expect("active change files were not snapshotted");
+    assert_fixture_tree_unchanged(env, ACTIVE_AUDIT_ROOT, before);
+}
+
+#[then("archive files are unchanged byte-for-byte")]
+fn archive_contents_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .archive_snapshot
+        .as_ref()
+        .expect("archive contents were not snapshotted");
+    assert_fixture_tree_unchanged(env, ARCHIVE_AUDIT_ROOT, before);
+}
+
+#[then(r#"the text report is exactly `Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n`"#)]
+fn empty_duplicate_text_report(world: &mut GivnWorld) {
+    let output = super::output(world);
+    assert_eq!(
+        output.stdout,
+        b"Givn spec duplicates\nScanned scenarios: 2\nCandidate count: 0\n"
+    );
+    assert_eq!(
+        duplicate_audit_report(output),
+        DuplicateAuditReport {
+            scanned_scenarios: 2,
+            candidate_count: 0,
+            candidates: Vec::new(),
+        }
+    );
+}
+
+#[then("the JSON report has scanned_scenarios 2, candidate_count 0, and an empty candidates array")]
+fn empty_duplicate_json_report(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("no-candidate fixture is required");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    );
+    assert!(
+        output.status.success(),
+        "empty duplicate JSON audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document = duplicate_json_document(&output);
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(2));
+    assert_eq!(document["candidate_count"], serde_json::json!(0));
+    assert_eq!(document["candidates"], serde_json::json!([]));
+}
+
+#[then("the JSON report has scanned_scenarios 0, candidate_count 0, and an empty candidates array")]
+fn missing_specs_json_report(world: &mut GivnWorld) {
+    let output = super::output(world);
+    assert!(
+        output.status.success(),
+        "missing specs JSON audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document = duplicate_json_document(output);
+    assert_eq!(document["schema_version"], serde_json::json!(1));
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(0));
+    assert_eq!(document["candidate_count"], serde_json::json!(0));
+    assert_eq!(document["candidates"], serde_json::json!([]));
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("missing specs fixture is required");
+    assert!(
+        !env.path("givn/specs").exists(),
+        "duplicate audit recreated the permanent specs directory"
+    );
+}
+
+#[given(
+    regex = r##"^the permanent feature file "([^"]+)" contains two separately named scenarios with the same canonical body$"##
+)]
+fn duplicate_feature(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, "givn/specs/provider/provider.feature");
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/provider/provider.feature",
+            EXACT_DUPLICATE_FEATURE,
+        )],
+    );
+}
+
+#[given("the corpus cardinality is one source file with two scenario nodes")]
+fn intra_file_duplicate_topology(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("duplicate fixture is required");
+    assert!(env.path("givn/specs/provider/provider.feature").is_file());
+    assert!(!env.path("givn/specs/auth/auth.feature").exists());
+    assert_eq!(
+        givn::gherkin::parse::collect_feature_files(&env.path("givn/specs")).len(),
+        1
+    );
+}
+
+#[given(
+    regex = r##"^the permanent feature files "([^"]+)" and "([^"]+)" each contain one separately named scenario with the same canonical body$"##
+)]
+fn duplicate_features(world: &mut GivnWorld, first: String, second: String) {
+    assert_eq!(first, "givn/specs/auth/auth.feature");
+    assert_eq!(second, "givn/specs/provider/provider.feature");
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/provider/provider.feature",
+                CROSS_FEATURE_PROVIDER,
+            ),
+            ("givn/specs/auth/auth.feature", CROSS_FEATURE_AUTH),
+        ],
+    );
+}
+
+#[given("the corpus cardinality is two source files with one scenario node per file")]
+fn inter_file_duplicate_topology(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("duplicate fixture is required");
+    assert!(env.path("givn/specs/provider/provider.feature").is_file());
+    assert!(env.path("givn/specs/auth/auth.feature").is_file());
+    assert_eq!(
+        givn::gherkin::parse::collect_feature_files(&env.path("givn/specs")).len(),
+        2
+    );
+}
+
+#[given("the permanent corpus contains more than five duplicate and related-scenario candidates")]
+fn many_duplicate_candidates_fixture(world: &mut GivnWorld) {
+    permanent_project(world, &MANY_DUPLICATE_FEATURES);
+}
+
+#[then("the audit includes the candidate at rank 6")]
+fn candidate_rank_six(world: &mut GivnWorld) {
+    assert!(
+        stdout(world)
+            .lines()
+            .any(|line| line.starts_with("rank 6: ")),
+        "duplicate audit rank 6 is missing:\n{}",
+        stdout(world)
+    );
+}
+
+#[then("candidate ranks are exactly `1,2,3,4,5,6`")]
+fn candidate_ranks_are_contiguous(world: &mut GivnWorld) {
+    assert_eq!(candidate_ranks(world), vec![1, 2, 3, 4, 5, 6]);
+}
+
+#[then("the highest rank equals the candidate count")]
+fn highest_rank_equals_candidate_count(world: &mut GivnWorld) {
+    let highest_rank = candidate_ranks(world)
+        .into_iter()
+        .max()
+        .expect("duplicate audit has no candidate ranks");
+    let candidate_count = stdout(world)
+        .lines()
+        .find_map(|line| line.strip_prefix("Candidate count: "))
+        .expect("duplicate audit candidate count is missing")
+        .parse::<usize>()
+        .expect("duplicate audit candidate count is not an integer");
+    assert_eq!(highest_rank, candidate_count);
+}
+
+fn candidate_ranks(world: &GivnWorld) -> Vec<usize> {
+    stdout(world)
+        .lines()
+        .filter_map(|line| {
+            line.strip_prefix("rank ")
+                .and_then(|line| line.split_once(':'))
+                .and_then(|(rank, _)| rank.parse::<usize>().ok())
+        })
+        .collect()
+}
+
+fn permanent_project(world: &mut GivnWorld, features: &[(&str, &str)]) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    if specs.exists() {
+        fs::remove_dir_all(&specs).expect("remove generated permanent specs");
+    }
+    for (path, content) in features {
+        let feature = env.path(path);
+        fs::create_dir_all(feature.parent().expect("duplicate feature parent"))
+            .expect("create permanent feature directory");
+        fs::write(feature, content).expect("write permanent fixture");
+    }
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+}
+
+fn write_fixture_files(env: &common::TestEnv, files: &[(&str, &str)]) {
+    for (relative, content) in files {
+        let path = env.path(relative);
+        fs::create_dir_all(path.parent().expect("fixture file parent"))
+            .expect("create fixture file directory");
+        fs::write(path, content).expect("write fixture file");
+    }
+}
+
+fn snapshot_fixture_tree(env: &common::TestEnv, relative_root: &str) -> Vec<(String, Vec<u8>)> {
+    let root = env.path(relative_root);
+    let project_root = env.root();
+    let mut snapshot = Vec::new();
+    collect_fixture_files(&root, &project_root, &mut snapshot);
+    snapshot.sort_by(|left, right| left.0.cmp(&right.0));
+    snapshot
+}
+
+fn collect_fixture_files(
+    directory: &Path,
+    project_root: &Path,
+    snapshot: &mut Vec<(String, Vec<u8>)>,
+) {
+    let entries = match fs::read_dir(directory) {
+        Ok(entries) => entries,
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return,
+        Err(error) => panic!("read fixture tree {}: {error}", directory.display()),
+    };
+    let mut paths = entries
+        .map(|entry| entry.expect("read fixture tree entry").path())
+        .collect::<Vec<_>>();
+    paths.sort();
+
+    for path in paths {
+        if path.is_dir() {
+            collect_fixture_files(&path, project_root, snapshot);
+            continue;
+        }
+        let relative = path
+            .strip_prefix(project_root)
+            .expect("fixture path under project root")
+            .to_string_lossy()
+            .replace('\\', "/");
+        let bytes = fs::read(&path)
+            .unwrap_or_else(|error| panic!("read fixture file {}: {error}", path.display()));
+        snapshot.push((relative, bytes));
+    }
+}
+
+fn assert_fixture_tree_unchanged(
+    env: &common::TestEnv,
+    relative_root: &str,
+    before: &[(String, Vec<u8>)],
+) {
+    let after = snapshot_fixture_tree(env, relative_root);
+    assert_eq!(
+        &after,
+        before,
+        "duplicate audit changed fixture tree rooted at {}",
+        env.path(relative_root).display()
+    );
+}
+
+#[given("a permanent scenario corpus with one related scenario")]
+fn permanent_related_scenario_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(PERMANENT_RELATED_FEATURE_PATH, EXACT_DUPLICATE_FEATURE)],
+    );
+}
+
+#[given("an active change contains another scenario with related behaviour")]
+fn active_related_scenario_fixture(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("permanent duplicate fixture is required");
+    let path = env.path(ACTIVE_CHANGE_FEATURE_PATH);
+    fs::create_dir_all(path.parent().expect("active feature parent"))
+        .expect("create active feature directory");
+    fs::write(path, ACTIVE_CHANGE_FEATURE).expect("write active feature fixture");
+}
+
+#[then("the audit reports only relationships between permanent scenarios")]
+fn permanent_only_audit(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let report = duplicate_audit_report(out);
+    assert_eq!(report.scanned_scenarios, 2);
+    assert_eq!(report.candidate_count, 1);
+    assert_eq!(report.candidates[0].rank, 1);
+    assert!(
+        report.candidates[0]
+            .evidence
+            .contains("kind=exact_duplicate")
+    );
+    assert_eq!(
+        candidate_endpoint_file(&report.candidates[0].evidence, "left"),
+        PERMANENT_RELATED_FEATURE_PATH
+    );
+    assert_eq!(
+        candidate_endpoint_file(&report.candidates[0].evidence, "right"),
+        PERMANENT_RELATED_FEATURE_PATH
+    );
+}
+
+#[then("the active change scenario identity is absent from every candidate")]
+fn active_identity_absent(world: &mut GivnWorld) {
+    let identity = format!(
+        "\"file\":\"{ACTIVE_CHANGE_FEATURE_PATH}\",\"title\":\"{ACTIVE_CHANGE_SCENARIO_TITLE}\""
+    );
+    assert!(
+        !stdout(world).contains(&identity),
+        "active change identity appeared in the audit: {}",
+        stdout(world)
+    );
+}
+
+#[given("a permanent corpus with one candidate")]
+fn archived_audit_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[(
+            "givn/specs/provider/provider.feature",
+            EXACT_DUPLICATE_FEATURE,
+        )],
+    );
+    let env = world
+        .env
+        .as_ref()
+        .expect("archived audit fixture is initialized");
+    let output = common::run_givn_with_envs(
+        env,
+        &["spec", "duplicates", "--format", "json"],
+        &[("GIVN_SPEC_EMBEDDER", "stub")],
+    );
+    assert!(
+        output.status.success(),
+        "baseline archived audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let document = duplicate_json_document(&output);
+    assert_eq!(document["candidate_count"], serde_json::json!(1));
+    world.previous_output = Some(output);
+}
+
+#[given(regex = r##"^the archive contains a matching scenario at \"([^\"]+)\"$"##)]
+fn archived_matching_scenario_fixture(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, ARCHIVE_MATCHING_FEATURE_PATH);
+    let env = world
+        .env
+        .as_ref()
+        .expect("archived audit fixture is initialized");
+    let feature_path = env.path(&path);
+    fs::create_dir_all(
+        feature_path
+            .parent()
+            .expect("archive matching feature parent"),
+    )
+    .expect("create archive matching feature directory");
+    fs::write(feature_path, ARCHIVE_MATCHING_FEATURE).expect("write archive matching feature");
+}
+
+#[then("every JSON candidate endpoint file starts with `givn/specs/`")]
+fn json_candidate_endpoints_are_permanent(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    assert!(
+        !candidates.is_empty(),
+        "archive audit produced no candidates"
+    );
+    for candidate in candidates {
+        for side in ["left", "right"] {
+            let file = candidate[side]["file"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint file is not a string"));
+            assert!(
+                file.starts_with("givn/specs/"),
+                "JSON {side} candidate endpoint is not permanent: {file}"
+            );
+        }
+    }
+}
+
+#[then(regex = r##"^no JSON candidate identity contains `([^`]+)`$"##)]
+fn no_json_candidate_archive_identity(world: &mut GivnWorld, path: String) {
+    assert_eq!(path, ARCHIVE_PATH_PREFIX);
+    for candidate in json_candidates(world) {
+        for side in ["left", "right"] {
+            let endpoint = &candidate[side];
+            let file = endpoint["file"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint file is not a string"));
+            let title = endpoint["title"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint title is not a string"));
+            assert!(
+                !file.contains(&path) && !title.contains(&path),
+                "JSON {side} candidate identity contains {path}: {file}::{title}"
+            );
+        }
+    }
+}
+
+#[then("the archived matching scenario does not change candidate_count")]
+fn archived_scenario_does_not_change_candidate_count(world: &mut GivnWorld) {
+    assert!(
+        output(world).status.success(),
+        "archived audit failed: {}",
+        stderr(world)
+    );
+    let before = world
+        .previous_output
+        .as_ref()
+        .expect("baseline archived audit output is missing");
+    let before_document = duplicate_json_document(before);
+    let after_document = json_document(world);
+    assert_eq!(before_document["candidate_count"], serde_json::json!(1));
+    assert_eq!(
+        after_document["candidate_count"],
+        before_document["candidate_count"]
+    );
+    assert_eq!(after_document["candidate_count"], serde_json::json!(1));
+}
+
+#[then("every candidate endpoint file starts with `givn/specs/`")]
+fn candidate_endpoints_are_permanent(world: &mut GivnWorld) {
+    let report = duplicate_audit_report(super::output(world));
+    for candidate in report.candidates {
+        for side in ["left", "right"] {
+            let file = candidate_endpoint_file(&candidate.evidence, side);
+            assert!(
+                file.starts_with("givn/specs/"),
+                "{side} candidate endpoint is not permanent: {file}"
+            );
+        }
+    }
+}
+
+fn candidate_endpoint_file<'a>(evidence: &'a str, side: &str) -> &'a str {
+    let marker = match side {
+        "left" => "left={\"file\":\"",
+        "right" => "right={\"file\":\"",
+        _ => panic!("unsupported duplicate candidate endpoint side: {side}"),
+    };
+    let start = evidence
+        .find(marker)
+        .map(|index| index + marker.len())
+        .unwrap_or_else(|| panic!("duplicate candidate is missing its {side} endpoint"));
+    evidence[start..]
+        .split_once("\",\"title\":\"")
+        .map(|(file, _)| file)
+        .expect("duplicate candidate endpoint has no title")
+}
+
+#[then(
+    regex = r"^(?:the (?:same-feature|cross-feature|intra-file|inter-file) audit|the audit) reports candidate count (\d+)$"
+)]
+fn candidate_count(world: &mut GivnWorld, count: String) {
+    assert!(stdout(world).contains(&format!("Candidate count: {count}\n")));
+}
+
+#[then(
+    regex = r"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 is classified as `exact_duplicate`$"
+)]
+fn exact_duplicate_kind(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("kind=exact_duplicate"));
+}
+
+#[then(
+    regex = r##"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has left identity \("([^\"]+)", "([^\"]+)"\)$"##
+)]
+fn exact_duplicate_left_identity(world: &mut GivnWorld, file: String, title: String) {
+    assert!(candidate_line(world).contains(&format!(
+        "left={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
+    )));
+}
+
+#[then(
+    regex = r##"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has right identity \("([^\"]+)", "([^\"]+)"\)$"##
+)]
+fn exact_duplicate_right_identity(world: &mut GivnWorld, file: String, title: String) {
+    assert!(candidate_line(world).contains(&format!(
+        "right={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
+    )));
+}
+
+#[then(
+    regex = r"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has relation `identical_behavior`$"
+)]
+fn exact_duplicate_relation(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("relation=identical_behavior"));
+}
+
+#[then("candidate rank 1 has an intra-file identity boundary")]
+fn intra_file_identity_boundary(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains(
+        r#"left={"file":"givn/specs/provider/provider.feature","title":"Provider is rejected"}"#
+    ));
+    assert!(line.contains(
+        r#"right={"file":"givn/specs/provider/provider.feature","title":"Unknown provider is rejected"}"#
+    ));
+}
+
+#[then("candidate rank 1 has an inter-file identity boundary")]
+fn inter_file_identity_boundary(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains(
+        r#"left={"file":"givn/specs/auth/auth.feature","title":"Unknown provider is rejected"}"#
+    ));
+    assert!(line.contains(
+        r#"right={"file":"givn/specs/provider/provider.feature","title":"Provider is rejected"}"#
+    ));
+}
+
+#[then("title-only variation is collapsed under one source-file identity")]
+fn exact_duplicate_endpoints_share_one_feature_path(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert_eq!(
+        line.matches("givn/specs/provider/provider.feature").count(),
+        2
+    );
+    assert!(!line.contains("givn/specs/auth/auth.feature"));
+}
+
+#[then("both scenario names remain distinct under that identity")]
+fn exact_duplicate_titles_are_distinct(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("Provider is rejected"));
+    assert!(line.contains("Unknown provider is rejected"));
+}
+
+#[then("source-file variation remains visible despite identical scenario bodies")]
+fn exact_duplicate_endpoints_use_two_feature_paths(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("givn/specs/auth/auth.feature"));
+    assert!(line.contains("givn/specs/provider/provider.feature"));
+}
+
+#[then("each source file supplies one named endpoint")]
+fn each_duplicate_feature_path_contributes_one_title(world: &mut GivnWorld) {
+    let line = candidate_line(world);
+    assert!(line.contains("Unknown provider is rejected"));
+    assert!(line.contains("Provider is rejected"));
+}
+
+#[then("sibling scenarios remain co-located after title normalization")]
+fn sibling_scenarios_remain_colocated(world: &mut GivnWorld) {
+    exact_duplicate_endpoints_share_one_feature_path(world);
+}
+
+#[then("disjoint source paths remain distinct after body normalization")]
+fn disjoint_source_paths_remain_distinct(world: &mut GivnWorld) {
+    exact_duplicate_endpoints_use_two_feature_paths(world);
+}
+
+#[then(
+    regex = r"^(?:(?:same-feature|cross-feature|intra-file|inter-file) )?candidate rank 1 has score `null`$"
+)]
+fn exact_duplicate_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=null"));
+}
+
+#[then("the one-file audit contains exactly one candidate")]
+fn one_file_audit_candidate_count(world: &mut GivnWorld) {
+    assert!(stdout(world).contains("Candidate count: 1\n"));
+}
+
+#[then("the two-file audit contains exactly one candidate")]
+fn two_file_audit_candidate_count(world: &mut GivnWorld) {
+    assert!(stdout(world).contains("Candidate count: 1\n"));
+}
+
+#[then(regex = r"^the (?:one-file|two-file) result is classified as `exact_duplicate`$")]
+fn exact_duplicate_result_kind(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("kind=exact_duplicate"));
+}
+
+#[then(
+    regex = r##"^the (?:one-file|two-file) result has left identity \("([^"]+)", "([^"]+)"\)$"##
+)]
+fn exact_duplicate_result_left_identity(world: &mut GivnWorld, file: String, title: String) {
+    assert!(candidate_line(world).contains(&format!(
+        "left={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
+    )));
+}
+
+#[then(
+    regex = r##"^the (?:one-file|two-file) result has right identity \("([^"]+)", "([^"]+)"\)$"##
+)]
+fn exact_duplicate_result_right_identity(world: &mut GivnWorld, file: String, title: String) {
+    assert!(candidate_line(world).contains(&format!(
+        "right={{\"file\":\"{file}\",\"title\":\"{title}\"}}"
+    )));
+}
+
+#[then(regex = r"^the (?:one-file|two-file) result has relation `identical_behavior`$")]
+fn exact_duplicate_result_relation(world: &mut GivnWorld) {
+    assert!(candidate_line(world).contains("relation=identical_behavior"));
+}
+
+#[then("the one-file result has score `null`")]
+fn one_file_result_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=null"));
+}
+
+#[then("the two-file result has score `null`")]
+fn two_file_result_score(world: &mut GivnWorld) {
+    assert!(candidate_line(world).ends_with("score=null"));
+}
+
+fn candidate_line(world: &GivnWorld) -> String {
+    stdout(world)
+        .lines()
+        .find(|line| line.starts_with("rank 1: "))
+        .expect("duplicate audit rank 1 is missing")
+        .to_string()
+}
+
+#[given("the permanent-specification audit corpus contains duplicate and related scenarios")]
+fn permanent_specification_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("the canonical permanent feature bytes are snapshotted before auditing")]
+fn snapshot_canonical_permanent_feature_bytes(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    world.permanent_spec_snapshot = Some(permanent_feature_snapshot(env));
+}
+
+#[given("the persistent-index audit corpus contains duplicate and related scenarios")]
+fn persistent_index_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("a permanent corpus is passed to a binary compiled without the spec-retrieval capability")]
+fn no_retrieval_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("a feature-enabled permanent corpus requires runtime E5 model loading")]
+fn feature_enabled_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("runtime E5 model loading fails before candidate scoring")]
+fn configured_e5_retrieval_model_unavailable(world: &mut GivnWorld) {
+    world.retrieval_embedder = Some("missing".to_string());
+}
+
+#[given("an audit corpus with an absent persistent-index file")]
+fn absent_persistent_index_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("an audit corpus with malformed persistent-index bytes")]
+fn malformed_persistent_index_audit_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("a permanent scenario corpus with duplicate and related-scenario candidates")]
+fn repeated_audit_fixture(world: &mut GivnWorld) {
+    permanent_project(
+        world,
+        &[
+            (
+                "givn/specs/provider/provider.feature",
+                EXACT_DUPLICATE_FEATURE,
+            ),
+            (
+                "givn/specs/overlap/overlap.feature",
+                STRUCTURAL_OVERLAP_FEATURE,
+            ),
+            ("givn/specs/auth/auth.feature", SEMANTIC_AUTH_FEATURE),
+            ("givn/specs/token/token.feature", SEMANTIC_TOKEN_FEATURE),
+            (
+                "givn/specs/account/account.feature",
+                SEMANTIC_ACCOUNT_FEATURE,
+            ),
+            (
+                "givn/specs/session/session.feature",
+                SEMANTIC_SESSION_FEATURE,
+            ),
+        ],
+    );
+    world.retrieval_duplicate_scores = Some(EQUAL_SEMANTIC_CANDIDATE_SCORE_OVERRIDES.to_string());
+}
+
+#[given(
+    "the audit has separate active-change and archive trees alongside permanent candidate specifications"
+)]
+fn audited_boundary_fixture(world: &mut GivnWorld) {
+    repeated_audit_fixture(world);
+}
+
+#[given("the persistent retrieval index file is absent before auditing")]
+fn no_persistent_retrieval_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let index = env.path(PERSISTENT_INDEX_PATH);
+    if index.exists() {
+        fs::remove_file(&index).expect("remove pre-existing persistent retrieval index");
+    }
+    assert!(
+        !index.exists(),
+        "persistent retrieval index unexpectedly exists before audit"
+    );
+}
+
+#[given("the persistent retrieval index file contains invalid JSON bytes \"not-json\"")]
+fn malformed_persistent_retrieval_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let index = env.path(PERSISTENT_INDEX_PATH);
+    fs::write(&index, MALFORMED_INDEX_BYTES).expect("write malformed persistent retrieval index");
+    let snapshot = fs::read(&index).expect("read malformed persistent retrieval index snapshot");
+    assert_eq!(
+        snapshot.as_slice(),
+        MALFORMED_INDEX_BYTES,
+        "malformed persistent retrieval index fixture changed before audit"
+    );
+    world.malformed_index_snapshot = Some(snapshot);
+}
+
+#[then("the audit uses current permanent files and transient embeddings")]
+fn audit_uses_current_permanent_files_and_transient_embeddings(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    let document = duplicate_json_document(out);
+    assert_eq!(document["schema_version"], serde_json::json!(1));
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(8));
+    assert_eq!(document["candidate_count"], serde_json::json!(4));
+
+    let candidates = document["candidates"]
+        .as_array()
+        .expect("duplicate audit candidates must be an array");
+    let kinds = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["kind"]
+                .as_str()
+                .expect("duplicate candidate kind must be a string")
+        })
+        .collect::<Vec<_>>();
+    assert_eq!(
+        kinds,
+        vec![
+            "exact_duplicate",
+            "structural_overlap",
+            "semantic_candidate",
+            "semantic_candidate",
+        ]
+    );
+    assert!(
+        candidates.iter().any(|candidate| {
+            candidate["evidence"]["relation"] == serde_json::json!("semantic_similarity")
+                && candidate["evidence"]["score"] == serde_json::json!("0.9600")
+        }),
+        "duplicate audit did not report a transient semantic candidate"
+    );
+    for candidate in candidates {
+        for side in ["left", "right"] {
+            let file = candidate[side]["file"]
+                .as_str()
+                .unwrap_or_else(|| panic!("JSON {side} endpoint file is not a string"));
+            assert!(
+                file.starts_with("givn/specs/"),
+                "JSON {side} candidate endpoint is not a current permanent file: {file}"
+            );
+        }
+    }
+}
+
+#[then("the audit report is valid JSON with the permanent candidates")]
+fn malformed_index_audit_report(world: &mut GivnWorld) {
+    audit_uses_current_permanent_files_and_transient_embeddings(world);
+}
+
+#[then("the malformed index bytes remain exactly \"not-json\"")]
+fn malformed_persistent_retrieval_index_is_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .malformed_index_snapshot
+        .as_ref()
+        .expect("malformed persistent retrieval index was not snapshotted");
+    assert_eq!(
+        before.as_slice(),
+        MALFORMED_INDEX_BYTES,
+        "malformed persistent retrieval index snapshot is not the required byte sequence"
+    );
+    let after = fs::read(env.path(PERSISTENT_INDEX_PATH))
+        .expect("read malformed persistent retrieval index after audit");
+    assert_eq!(
+        after.as_slice(),
+        before.as_slice(),
+        "duplicate audit changed the malformed persistent retrieval index"
+    );
+    assert_eq!(
+        after.as_slice(),
+        MALFORMED_INDEX_BYTES,
+        "persistent retrieval index was not left as the malformed byte sequence"
+    );
+}
+
+#[when("the user runs `givn spec duplicates` through a build without spec retrieval")]
+fn duplicates_without_retrieval_feature(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let manifest_path = format!("{}/Cargo.toml", env!("CARGO_MANIFEST_DIR"));
+    let target_dir = env.path(".cargo-target-no-spec-retrieval");
+    let output = Command::new("cargo")
+        .current_dir(env.root())
+        .args([
+            "run",
+            "--quiet",
+            "--manifest-path",
+            manifest_path.as_str(),
+            "--no-default-features",
+            "--bin",
+            "givn",
+            "--",
+            "spec",
+            "duplicates",
+        ])
+        .env("CARGO_TARGET_DIR", target_dir)
+        .stdin(Stdio::null())
+        .output()
+        .expect("run no-feature givn process");
+    world.last_output = Some(output);
+}
+
+#[given("the built `.spec-index.json` bytes are snapshotted before auditing")]
+fn build_and_snapshot_persistent_retrieval_index(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let output =
+        common::run_givn_with_envs(env, &["spec", "index"], &[("GIVN_SPEC_EMBEDDER", "stub")]);
+    assert!(
+        output.status.success(),
+        "persistent retrieval index build failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.permanent_index_snapshot = Some(persistent_index_bytes(env));
+}
+
+#[then("the built `.spec-index.json` bytes are unchanged byte-for-byte")]
+fn persistent_retrieval_index_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let output = super::output(world);
+    assert!(
+        output.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    let report = duplicate_audit_report(output);
+    assert_eq!(report.scanned_scenarios, 8);
+    assert_eq!(report.candidate_count, 4);
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .permanent_index_snapshot
+        .as_ref()
+        .expect("persistent retrieval index was not snapshotted");
+    let after = persistent_index_bytes(env);
+    assert_eq!(
+        &after, before,
+        "duplicate audit changed the persistent index"
+    );
+}
+
+fn persistent_index_bytes(env: &common::TestEnv) -> Vec<u8> {
+    fs::read(env.path(PERSISTENT_INDEX_PATH)).expect("read persistent retrieval index")
+}
+
+#[then("the persistent retrieval index remains absent")]
+fn persistent_retrieval_index_remains_absent(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("missing specs fixture is required");
+    assert!(
+        !env.path(PERSISTENT_INDEX_PATH).exists(),
+        "duplicate audit created the persistent retrieval index"
+    );
+}
+
+#[then("the persistent retrieval index remains nonexistent")]
+fn persistent_retrieval_index_remains_nonexistent(world: &mut GivnWorld) {
+    persistent_retrieval_index_remains_absent(world);
+}
+
+#[then("the canonical permanent feature bytes are unchanged byte-for-byte")]
+fn permanent_specs_unchanged_byte_for_byte(world: &mut GivnWorld) {
+    let out = super::output(world);
+    assert!(
+        out.status.success(),
+        "duplicate audit failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    assert!(
+        stdout(world).starts_with("Givn spec duplicates\n"),
+        "duplicate audit did not produce its report header: {}",
+        stdout(world)
+    );
+
+    let env = world
+        .env
+        .as_ref()
+        .expect("duplicate audit fixture is required");
+    let before = world
+        .permanent_spec_snapshot
+        .as_ref()
+        .expect("permanent specifications were not snapshotted");
+    let after = permanent_feature_snapshot(env);
+    assert_eq!(
+        &after, before,
+        "permanent feature bytes changed after duplicate audit"
+    );
+}
+
+fn permanent_feature_snapshot(env: &common::TestEnv) -> Vec<(String, Vec<u8>)> {
+    let specs = env.path("givn/specs");
+    givn::gherkin::parse::collect_feature_files(&specs)
+        .into_iter()
+        .map(|path| {
+            let relative = path
+                .strip_prefix(env.root())
+                .expect("permanent feature under project root")
+                .to_string_lossy()
+                .replace('\\', "/");
+            (
+                relative,
+                fs::read(path).expect("read permanent feature after audit"),
+            )
+        })
+        .collect()
+}
+
+#[when("the user runs `givn spec duplicates` twice without changing the corpus")]
+fn repeated_audit_runs(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("repeated audit fixture is required");
+    let score_overrides = world
+        .retrieval_duplicate_scores
+        .as_deref()
+        .expect("repeated audit score overrides are required");
+    let environments = [
+        ("GIVN_SPEC_EMBEDDER", "stub"),
+        ("GIVN_SPEC_DUPLICATES_TEST_SCORES", score_overrides),
+    ];
+    let first = common::run_givn_with_envs(env, &["spec", "duplicates"], &environments);
+    let second = common::run_givn_with_envs(env, &["spec", "duplicates"], &environments);
+    world.previous_output = Some(first);
+    world.last_output = Some(second);
+}
+
+#[then("both audit reports are byte-for-byte identical")]
+fn repeated_audit_bytes(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first duplicate audit output is missing");
+    let second = world
+        .last_output
+        .as_ref()
+        .expect("second duplicate audit output is missing");
+    assert!(
+        first.status.success(),
+        "first audit failed: {:?}",
+        first.status
+    );
+    assert!(
+        second.status.success(),
+        "second audit failed: {:?}",
+        second.status
+    );
+    assert_eq!(first.stdout, second.stdout);
+    assert_eq!(
+        duplicate_audit_report(first),
+        duplicate_audit_report(second)
+    );
+}
+
+#[then("both reports have the same scanned scenario count, candidate count, ranks, and evidence")]
+fn repeated_audit_evidence(world: &mut GivnWorld) {
+    let first = world
+        .previous_output
+        .as_ref()
+        .expect("first duplicate audit output is missing");
+    let second = world
+        .last_output
+        .as_ref()
+        .expect("second duplicate audit output is missing");
+    let first_report = duplicate_audit_report(first);
+    let second_report = duplicate_audit_report(second);
+
+    assert_eq!(
+        first_report.scanned_scenarios,
+        second_report.scanned_scenarios
+    );
+    assert_eq!(first_report.candidate_count, second_report.candidate_count);
+    assert_eq!(
+        first_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.rank)
+            .collect::<Vec<_>>(),
+        second_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.rank)
+            .collect::<Vec<_>>()
+    );
+    assert_eq!(
+        first_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.evidence.as_str())
+            .collect::<Vec<_>>(),
+        second_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.evidence.as_str())
+            .collect::<Vec<_>>()
+    );
+
+    assert_eq!(first_report.scanned_scenarios, 8);
+    assert_eq!(first_report.candidate_count, 4);
+    assert_eq!(
+        first_report
+            .candidates
+            .iter()
+            .map(|candidate| candidate.rank)
+            .collect::<Vec<_>>(),
+        vec![1, 2, 3, 4]
+    );
+    assert!(
+        first_report.candidates[0]
+            .evidence
+            .starts_with("kind=exact_duplicate")
+    );
+    assert!(first_report.candidates[0].evidence.ends_with("score=null"));
+    assert!(
+        first_report.candidates[1]
+            .evidence
+            .starts_with("kind=structural_overlap")
+    );
+    assert!(first_report.candidates[1].evidence.ends_with("score=null"));
+    assert!(first_report.candidates[2].evidence.starts_with(
+        "kind=semantic_candidate left={\"file\":\"givn/specs/account/account.feature\""
+    ));
+    assert!(
+        first_report.candidates[3]
+            .evidence
+            .starts_with("kind=semantic_candidate left={\"file\":\"givn/specs/auth/auth.feature\"")
+    );
+    assert!(
+        first_report.candidates[2]
+            .evidence
+            .ends_with("score=0.9600")
+    );
+    assert!(
+        first_report.candidates[3]
+            .evidence
+            .ends_with("score=0.9600")
+    );
+}
+
+fn duplicate_audit_report(output: &Output) -> DuplicateAuditReport {
+    let text = std::str::from_utf8(&output.stdout).expect("duplicate audit stdout is UTF-8");
+    assert!(!text.contains('\r'), "duplicate audit uses CRLF endings");
+    assert!(
+        text.ends_with('\n'),
+        "duplicate audit is missing its final newline"
+    );
+    assert!(
+        !text.ends_with("\n\n"),
+        "duplicate audit has multiple final newlines"
+    );
+
+    let lines: Vec<&str> = text.lines().collect();
+    assert_eq!(lines.first().copied(), Some("Givn spec duplicates"));
+    let scanned_scenarios = parse_report_count(lines.get(1), "Scanned scenarios: ");
+    let candidate_count = parse_report_count(lines.get(2), "Candidate count: ");
+    let candidates: Vec<DuplicateAuditCandidate> = lines
+        .iter()
+        .skip(3)
+        .map(|line| {
+            let value = line
+                .strip_prefix("rank ")
+                .expect("duplicate audit candidate line has rank prefix");
+            let (rank, evidence) = value
+                .split_once(": ")
+                .expect("duplicate audit candidate line has field separator");
+            DuplicateAuditCandidate {
+                rank: rank.parse().expect("duplicate audit rank is an integer"),
+                evidence: evidence.to_string(),
+            }
+        })
+        .collect();
+    assert_eq!(candidates.len(), candidate_count);
+
+    DuplicateAuditReport {
+        scanned_scenarios,
+        candidate_count,
+        candidates,
+    }
+}
+
+#[then("stdout is a valid JSON audit document")]
+fn json_audit_document(world: &mut GivnWorld) {
+    let document = json_document(world);
+    assert!(
+        document.is_object(),
+        "duplicate audit JSON must be an object"
+    );
+}
+
+#[then("the JSON schema_version is exactly 1")]
+fn json_schema_version(world: &mut GivnWorld) {
+    assert_eq!(json_document(world)["schema_version"], serde_json::json!(1));
+}
+
+#[then(
+    "the JSON top-level keys are exactly `schema_version,scanned_scenarios,candidate_count,candidates` in that order"
+)]
+fn json_top_level_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(
+        &stdout(world),
+        r#"{"schema_version":"#,
+        &[
+            "schema_version",
+            "scanned_scenarios",
+            "candidate_count",
+            "candidates",
+        ],
+    );
+}
+
+#[then("every JSON candidate has keys exactly `rank,kind,left,right,evidence` in that order")]
+fn json_candidate_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(
+        &stdout(world),
+        r#"{"rank":"#,
+        &["rank", "kind", "left", "right", "evidence"],
+    );
+}
+
+#[then("every JSON endpoint has keys exactly `file,title` in that order")]
+fn json_endpoint_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(&stdout(world), r#"{"file":"#, &["file", "title"]);
+}
+
+#[then(
+    "every JSON evidence object has keys exactly `relation,assertion_shape,facts,distinguishing_facts,fact_contradiction,score` in that order"
+)]
+fn json_evidence_keys(world: &mut GivnWorld) {
+    assert_json_object_key_order(
+        &stdout(world),
+        r#"{"relation":"#,
+        &[
+            "relation",
+            "assertion_shape",
+            "facts",
+            "distinguishing_facts",
+            "fact_contradiction",
+            "score",
+        ],
+    );
+}
+
+#[then(
+    "every JSON candidate has an exact classification, both scenario identities, a relation, and a rank"
+)]
+fn json_candidate_fields(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    let expected = [
+        (
+            1,
+            "exact_duplicate",
+            "givn/specs/provider/provider.feature",
+            "Provider is rejected",
+            "givn/specs/provider/provider.feature",
+            "Unknown provider is rejected",
+            "identical_behavior",
+        ),
+        (
+            2,
+            "structural_overlap",
+            "givn/specs/overlap/overlap.feature",
+            "Provider exits successfully",
+            "givn/specs/overlap/overlap.feature",
+            "Provider exits with a warning",
+            "same_assertion_shape",
+        ),
+        (
+            3,
+            "semantic_candidate",
+            "givn/specs/account/account.feature",
+            "Account access needs credentials",
+            "givn/specs/session/session.feature",
+            "Session credentials are needed",
+            "semantic_similarity",
+        ),
+        (
+            4,
+            "semantic_candidate",
+            "givn/specs/auth/auth.feature",
+            "Token is required",
+            "givn/specs/token/token.feature",
+            "Authentication needs a token",
+            "semantic_similarity",
+        ),
+    ];
+    assert_eq!(candidates.len(), expected.len());
+    for (candidate, (rank, kind, left_file, left_title, right_file, right_title, relation)) in
+        candidates.iter().zip(expected)
+    {
+        assert_eq!(candidate["rank"], serde_json::json!(rank));
+        assert_eq!(candidate["kind"], serde_json::json!(kind));
+        assert_eq!(candidate["left"]["file"], serde_json::json!(left_file));
+        assert_eq!(candidate["left"]["title"], serde_json::json!(left_title));
+        assert_eq!(candidate["right"]["file"], serde_json::json!(right_file));
+        assert_eq!(candidate["right"]["title"], serde_json::json!(right_title));
+        assert_eq!(
+            candidate["evidence"]["relation"],
+            serde_json::json!(relation)
+        );
+    }
+
+    let exact_evidence = &candidates[0]["evidence"];
+    assert_eq!(exact_evidence["assertion_shape"], serde_json::Value::Null);
+    assert_eq!(exact_evidence["facts"], serde_json::Value::Null);
+    assert_eq!(exact_evidence["score"], serde_json::Value::Null);
+
+    let structural_evidence = &candidates[1]["evidence"];
+    assert!(structural_evidence["assertion_shape"].is_object());
+    assert!(structural_evidence["facts"].is_object());
+    assert_eq!(structural_evidence["score"], serde_json::Value::Null);
+
+    for candidate in &candidates[2..] {
+        let evidence = &candidate["evidence"];
+        assert_eq!(evidence["assertion_shape"], serde_json::Value::Null);
+        assert_eq!(evidence["facts"], serde_json::Value::Null);
+        assert_eq!(evidence["distinguishing_facts"], serde_json::json!([]));
+        assert_eq!(evidence["fact_contradiction"], serde_json::json!(false));
+        assert_eq!(evidence["score"], serde_json::json!("0.9600"));
+    }
+}
+
+#[then("the JSON candidates follow the deterministic audit ordering")]
+fn json_candidate_order(world: &mut GivnWorld) {
+    let candidates = json_candidates(world);
+    let kinds: Vec<&str> = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["kind"]
+                .as_str()
+                .expect("candidate kind is a string")
+        })
+        .collect();
+    assert_eq!(
+        kinds,
+        vec![
+            "exact_duplicate",
+            "structural_overlap",
+            "semantic_candidate",
+            "semantic_candidate",
+        ]
+    );
+    assert_eq!(
+        (
+            candidates[2]["left"]["file"].as_str(),
+            candidates[2]["left"]["title"].as_str(),
+            candidates[2]["right"]["file"].as_str(),
+            candidates[2]["right"]["title"].as_str(),
+        ),
+        (
+            Some("givn/specs/account/account.feature"),
+            Some("Account access needs credentials"),
+            Some("givn/specs/session/session.feature"),
+            Some("Session credentials are needed"),
+        )
+    );
+    assert_eq!(
+        (
+            candidates[3]["left"]["file"].as_str(),
+            candidates[3]["left"]["title"].as_str(),
+            candidates[3]["right"]["file"].as_str(),
+            candidates[3]["right"]["title"].as_str(),
+        ),
+        (
+            Some("givn/specs/auth/auth.feature"),
+            Some("Token is required"),
+            Some("givn/specs/token/token.feature"),
+            Some("Authentication needs a token"),
+        )
+    );
+}
+
+#[then("JSON ranks are contiguous from 1 through candidate_count")]
+fn json_contiguous_ranks(world: &mut GivnWorld) {
+    let document = json_document(world);
+    let candidates = document["candidates"]
+        .as_array()
+        .expect("JSON candidates is an array");
+    assert_eq!(document["candidate_count"], serde_json::json!(4));
+    assert_eq!(
+        document["candidate_count"].as_u64(),
+        Some(candidates.len() as u64)
+    );
+    let ranks: Vec<u64> = candidates
+        .iter()
+        .map(|candidate| {
+            candidate["rank"]
+                .as_u64()
+                .expect("candidate rank is an integer")
+        })
+        .collect();
+    assert_eq!(ranks, (1..=candidates.len() as u64).collect::<Vec<_>>());
+}
+
+#[then("JSON scanned_scenarios equals the number of eligible non-removed permanent scenarios")]
+fn json_scanned_scenarios(world: &mut GivnWorld) {
+    let document = json_document(world);
+    assert_eq!(document["scanned_scenarios"], serde_json::json!(8));
+}
+
+fn json_document(world: &GivnWorld) -> serde_json::Value {
+    duplicate_json_document(super::output(world))
+}
+
+fn duplicate_json_document(output: &Output) -> serde_json::Value {
+    serde_json::from_slice(&output.stdout).expect("duplicate audit stdout must be valid JSON")
+}
+
+fn json_candidates(world: &GivnWorld) -> Vec<serde_json::Value> {
+    json_document(world)["candidates"]
+        .as_array()
+        .expect("JSON candidates is an array")
+        .clone()
+}
+
+fn assert_json_candidate_endpoints(
+    candidate: &serde_json::Value,
+    left_file: &str,
+    left_title: &str,
+    right_file: &str,
+    right_title: &str,
+) {
+    assert_eq!(candidate["left"]["file"].as_str(), Some(left_file));
+    assert_eq!(candidate["left"]["title"].as_str(), Some(left_title));
+    assert_eq!(candidate["right"]["file"].as_str(), Some(right_file));
+    assert_eq!(candidate["right"]["title"].as_str(), Some(right_title));
+}
+
+fn assert_json_object_key_order(raw: &str, marker: &str, expected: &[&str]) {
+    let starts: Vec<usize> = raw.match_indices(marker).map(|(index, _)| index).collect();
+    assert!(
+        !starts.is_empty(),
+        "JSON object marker `{marker}` is missing"
+    );
+    for start in starts {
+        let actual = json_object_keys(raw, start);
+        assert_eq!(
+            actual, expected,
+            "JSON object key order changed at byte {start}"
+        );
+    }
+}
+
+fn json_object_keys(raw: &str, start: usize) -> Vec<String> {
+    let bytes = raw.as_bytes();
+    assert_eq!(
+        bytes[start], b'{',
+        "JSON object marker must start with an object"
+    );
+    let end = json_container_end(raw, start);
+    let mut index = start + 1;
+    let mut keys = Vec::new();
+    while index < end {
+        index = skip_json_whitespace(bytes, index);
+        if index == end {
+            break;
+        }
+        let key_end = json_string_end(raw, index);
+        let key: String =
+            serde_json::from_str(&raw[index..=key_end]).expect("JSON key is a string");
+        keys.push(key);
+        index = skip_json_whitespace(bytes, key_end + 1);
+        assert_eq!(bytes[index], b':', "JSON object key is missing its colon");
+        index = skip_json_value(raw, index + 1);
+        index = skip_json_whitespace(bytes, index);
+        if index < end {
+            assert_eq!(
+                bytes[index], b',',
+                "JSON object member is missing its comma"
+            );
+            index += 1;
+        }
+    }
+    keys
+}
+
+fn json_container_end(raw: &str, start: usize) -> usize {
+    let bytes = raw.as_bytes();
+    let mut depth = 0usize;
+    let mut in_string = false;
+    let mut escaped = false;
+    for (index, byte) in bytes.iter().copied().enumerate().skip(start) {
+        if in_string {
+            if escaped {
+                escaped = false;
+            } else if byte == b'\\' {
+                escaped = true;
+            } else if byte == b'"' {
+                in_string = false;
+            }
+            continue;
+        }
+        match byte {
+            b'"' => in_string = true,
+            b'{' | b'[' => depth += 1,
+            b'}' | b']' => {
+                depth -= 1;
+                if depth == 0 {
+                    return index;
+                }
+            }
+            _ => {}
+        }
+    }
+    panic!("JSON container starting at byte {start} is not closed");
+}
+
+fn json_string_end(raw: &str, start: usize) -> usize {
+    let bytes = raw.as_bytes();
+    assert_eq!(bytes[start], b'"', "JSON key must start with a quote");
+    let mut escaped = false;
+    for (index, byte) in bytes.iter().copied().enumerate().skip(start + 1) {
+        if escaped {
+            escaped = false;
+        } else if byte == b'\\' {
+            escaped = true;
+        } else if byte == b'"' {
+            return index;
+        }
+    }
+    panic!("JSON string starting at byte {start} is not closed");
+}
+
+fn skip_json_value(raw: &str, start: usize) -> usize {
+    let bytes = raw.as_bytes();
+    let start = skip_json_whitespace(bytes, start);
+    match bytes[start] {
+        b'"' => json_string_end(raw, start) + 1,
+        b'{' | b'[' => json_container_end(raw, start) + 1,
+        _ => {
+            let mut index = start;
+            while index < bytes.len() && bytes[index] != b',' && bytes[index] != b'}' {
+                index += 1;
+            }
+            while index > start && bytes[index - 1].is_ascii_whitespace() {
+                index -= 1;
+            }
+            index
+        }
+    }
+}
+
+fn skip_json_whitespace(bytes: &[u8], mut index: usize) -> usize {
+    while index < bytes.len() && bytes[index].is_ascii_whitespace() {
+        index += 1;
+    }
+    index
+}
+
+fn parse_report_count(line: Option<&&str>, prefix: &str) -> usize {
+    line.and_then(|line| line.strip_prefix(prefix))
+        .unwrap_or_else(|| panic!("duplicate audit is missing `{prefix}`"))
+        .parse()
+        .expect("duplicate audit count is an integer")
+}

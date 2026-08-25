@@ -1,0 +1,397 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Givn — Change Lifecycle Workflow</title>
+<style>
+  :root{
+    --bg:#f1f5f9;
+    --card:#ffffff;
+    --ink:#0f172a;
+    --muted:#64748b;
+    --line:#cbd5e1;
+    --step-bg:linear-gradient(135deg,#1d4ed8,#3b82f6);
+    --artifact-border:#94a3b8;
+    --artifact-head:#334155;
+    --check-bg:#fef9c3;
+    --check-border:#ca8a04;
+    --check-ink:#713f12;
+    --advisory-bg:#fffbeb;
+    --advisory-border:#d97706;
+    --loop:#dc2626;
+    --panel:#ffffff;
+    --code:#475569;
+  }
+  @media (prefers-color-scheme:dark){
+    :root{
+      --bg:#0b1220;
+      --card:#111a2c;
+      --ink:#e2e8f0;
+      --muted:#94a3b8;
+      --line:#334155;
+      --step-bg:linear-gradient(135deg,#1e40af,#2563eb);
+      --artifact-border:#475569;
+      --artifact-head:#cbd5e1;
+      --check-bg:#3b3011;
+      --check-border:#a16207;
+      --check-ink:#fde68a;
+      --advisory-bg:#2a2410;
+      --advisory-border:#b45309;
+      --loop:#f87171;
+      --panel:#111a2c;
+      --code:#94a3b8;
+    }
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--ink);
+    font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    line-height:1.45;
+    padding:32px 16px 48px;
+  }
+  .wrap{max-width:1060px;margin:0 auto}
+
+  /* ---------- header ---------- */
+  header h1{
+    font-size:clamp(22px,3vw,30px);
+    letter-spacing:-.02em;
+    display:flex;align-items:center;gap:.5rem;
+  }
+  header h1 .brand{
+    background:var(--step-bg);
+    color:#fff;border-radius:10px;padding:2px 12px;font-weight:800;
+  }
+  header .subtitle{color:var(--muted);margin:.4rem 0 1rem;max-width:70ch}
+  .legend{
+    display:flex;flex-wrap:wrap;gap:.5rem .75rem;
+    font-size:.8rem;color:var(--muted);margin-bottom:28px;
+  }
+  .legend span{display:inline-flex;align-items:center;gap:.35rem}
+  .key{width:14px;height:14px;border-radius:4px;display:inline-block;flex:none}
+  .key.step{background:#2563eb}
+  .key.artifact{background:var(--card);border:1.5px solid var(--artifact-border)}
+  .key.check{background:var(--check-bg);border:1.5px solid var(--check-border)}
+  .key.advisory{background:var(--advisory-bg);border:1.5px dashed var(--advisory-border)}
+
+  /* ---------- chain layout ---------- */
+  .phase{
+    display:grid;
+    grid-template-columns:180px 64px minmax(230px,300px) 1fr;
+    align-items:center;
+  }
+  .vgap{
+    height:38px;width:180px;flex:none;
+    position:relative;
+  }
+  .vgap::before{
+    content:"";position:absolute;left:calc(50% - 1px);top:2px;bottom:2px;
+    width:0;border-left:2px solid var(--line);
+  }
+  .vgap::after{
+    content:"";position:absolute;left:50%;bottom:-1px;transform:translateX(-50%);
+    border:7px solid transparent;border-top:9px solid var(--line);border-bottom:0;
+  }
+
+  .step{
+    background:var(--step-bg);
+    color:#fff;border-radius:12px;
+    padding:12px 14px;text-align:center;
+    box-shadow:0 2px 6px rgb(15 23 42 / .18);
+  }
+  .step .num{
+    display:inline-flex;align-items:center;justify-content:center;
+    width:22px;height:22px;border-radius:50%;
+    background:rgb(255 255 255 / .22);font-size:.75rem;font-weight:700;
+    margin-bottom:4px;
+  }
+  .step b{display:block;font-size:.95rem;line-height:1.2}
+  .step small{display:block;font-weight:400;opacity:.85;font-size:.72rem;margin-top:2px}
+
+  .harrow{position:relative;height:2px;background:var(--line)}
+  .harrow::after{
+    content:"";position:absolute;right:-1px;top:-6px;
+    border:7px solid transparent;border-left:9px solid var(--line);border-right:0;
+  }
+
+  .artifact{
+    background:var(--card);
+    border:1.5px solid var(--artifact-border);
+    border-radius:12px;padding:12px 14px;
+    box-shadow:0 1px 3px rgb(15 23 42 / .08);
+  }
+  .artifact b{
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+    font-size:.92rem;color:var(--artifact-head);
+  }
+  .artifact small{display:block;color:var(--muted);font-size:.78rem;margin-top:4px}
+
+  .checks{display:flex;flex-direction:column;gap:10px;padding-left:18px}
+  .check{
+    background:var(--check-bg);
+    border:1.5px solid var(--check-border);
+    border-left-width:6px;border-radius:10px;
+    padding:9px 12px;font-size:.82rem;color:var(--check-ink);
+  }
+  .check b{font-size:.84rem}
+  .check small{display:block;margin-top:2px;opacity:.9}
+  .check.advisory{
+    background:var(--advisory-bg);
+    border:1.5px dashed var(--advisory-border);border-left-width:6px;
+    color:var(--check-ink);
+  }
+  .tag{
+    float:right;font-size:.66rem;font-weight:700;letter-spacing:.04em;
+    text-transform:uppercase;border-radius:99px;padding:1px 8px;margin-left:8px;
+  }
+  .tag.blocking{background:#b91c1c;color:#fff}
+  .tag.adv{background:var(--advisory-border);color:#fff}
+
+  .loopback{
+    margin-top:4px;font-size:.74rem;color:var(--loop);font-weight:600;
+  }
+  .loopback::before{content:"↩ ";}
+
+  /* ---------- panels ---------- */
+  aside.panel{
+    background:var(--panel);
+    border:1.5px solid var(--line);border-radius:14px;
+    padding:20px 22px;margin:36px 0 0;
+  }
+  aside.panel h2{font-size:1.05rem;margin-bottom:10px}
+  .models{display:flex;flex-wrap:wrap;align-items:stretch;gap:10px}
+  .model{
+    flex:1 1 240px;border:1.5px solid var(--line);border-radius:10px;
+    padding:10px 12px;font-size:.82rem;background:var(--bg);
+  }
+  .model b{display:block;font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;font-size:.8rem}
+  .model .role{color:var(--muted);font-size:.74rem;display:block;margin:2px 0 4px}
+  .model .thr{font-weight:700;color:var(--check-ink)}
+  .choke{
+    display:flex;flex-wrap:wrap;gap:8px;margin-top:14px;font-size:.78rem;
+  }
+  .choke span{
+    border:1.5px solid var(--line);border-radius:99px;padding:3px 12px;
+    font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;color:var(--code);
+  }
+  footer{
+    margin-top:28px;color:var(--muted);font-size:.82rem;
+    display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;
+  }
+  footer a{color:inherit}
+
+  /* ---------- responsive ---------- */
+  @media (max-width:720px){
+    .phase{grid-template-columns:1fr;gap:10px}
+    .harrow,.vgap{display:none}
+    .checks{padding-left:0}
+  }
+  @media print{
+    body{background:#fff;padding:0}
+    .step{box-shadow:none}
+    .artifact,.check{box-shadow:none}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <h1><span class="brand">givn</span> Change lifecycle — proposal to archive</h1>
+  <p class="subtitle">
+    One lane per artifact. Blue steps create what the grey card names; yellow
+    cards are the checks applied to that lane. Every check blocks except those
+    tagged <em>advisory</em>. Between gates the order is advisory only —
+    enforcement concentrates at the three chokepoints listed below.
+  </p>
+  <div class="legend">
+    <span><i class="key step"></i> action / step</span>
+    <span><i class="key artifact"></i> artifact created</span>
+    <span><i class="key check"></i> blocking check</span>
+    <span><i class="key advisory"></i> advisory check</span>
+  </div>
+</header>
+
+<main>
+
+  <section class="phase">
+    <div class="step"><span class="num">1</span><b>propose</b><small>skill /givn-propose</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>proposal.md</b>
+      <small>WHAT and WHY, domain language, no implementation detail</small>
+    </div>
+    <div></div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">2</span><b>spec</b><small>skill /givn-spec</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>specs/*.feature</b>
+      <small>@givn.delta scenarios — @added / @modified / @removed, @wip while unimplemented, ≥ 1 @e2e per capability</small>
+    </div>
+    <div class="checks">
+      <div class="check advisory">
+        <b>givn spec search / explore</b><span class="tag adv">advisory</span>
+        <small>E5 recall, optional BGE/NLI evidence — duplicate candidates surfaced while authoring</small>
+      </div>
+      <div class="check advisory">
+        <b>givn lint</b><span class="tag adv">advisory here</span>
+        <small>syntax · @wip tags · overlap warnings (severity-ranked exit code)</small>
+        <span class="loopback">runs again as a blocking built-in hook at every gate</span>
+      </div>
+    </div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">3</span><b>design</b><small>skill /givn-design</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>design.md</b>
+      <small>runner command, strict-mode config, step-definition locations, e2e infrastructure</small>
+    </div>
+    <div></div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">4</span><b>design-review</b><small>skill /givn-design-review</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>design-review.md</b>
+      <small>plan stress-tested one question at a time, then hardened</small>
+    </div>
+    <div class="checks">
+      <div class="check">
+        <b>sign-off marker gate</b><span class="tag blocking">blocking</span>
+        <small>file must end with “DESIGN-REVIEW: PASS” — otherwise the artifact counts as partial and blocks archiving; deviation from design.md un-gates this review</small>
+      </div>
+    </div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">5</span><b>tasks</b><small>skill /givn-tasks</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>tasks.md</b>
+      <small>setup task first, then RED / GREEN / REFACTOR / COMMIT per scenario — @e2e last</small>
+    </div>
+    <div class="checks">
+      <div class="check">
+        <b>givn check tasks</b><span class="tag blocking">blocking</span>
+        <small>@wip gate: no scenario may remain @wip · strict-runner proof recorded</small>
+      </div>
+    </div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">6</span><b>implement</b><small>skill /givn-implement</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>production code</b>
+      <small>one targeted TDD cycle per scenario, ending in exactly one atomic commit — hash recorded in tasks.md immediately</small>
+    </div>
+    <div class="checks">
+      <div class="check">
+        <b>per-scenario runner proof</b><span class="tag blocking">blocking</span>
+        <small>RED must exit non-zero (exit 0 = hard stop) · GREEN and REFACTOR must exit zero</small>
+      </div>
+    </div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">7</span><b>review</b><small>givn check review + skill /givn-review</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>review.md</b>&nbsp;+&nbsp;<b>semantic-review.md</b>
+      <small>coverage gap classification and fabrication audit; generated candidate worklist</small>
+    </div>
+    <div class="checks">
+      <div class="check">
+        <b>check review battery</b><span class="tag blocking">blocking</span>
+        <small>verify suite → verify-e2e anti-bypass → integrity (commit hashes, promised files) → overlap dispositions</small>
+      </div>
+      <div class="check">
+        <b>semantic duplicate review</b><span class="tag blocking">blocking</span>
+        <small>E5 similarity ≥ 0.95 admitted · BGE logit ≥ 3.0 · NLI entailment ≥ 0.5 — every candidate classified DUPLICATE / VARIANT / VALID-BOUNDARY, none UNCERTAIN</small>
+        <span class="loopback">unresolved ⇒ rewrite or delete the scenario, rerun</span>
+      </div>
+      <div class="check">
+        <b>coverage sign-off</b><span class="tag blocking">blocking</span>
+        <small>every uncovered line classified (dead code / missing test / justified) — file ends with “REVIEW: PASS”</small>
+      </div>
+    </div>
+  </section>
+  <div class="vgap"></div>
+
+  <section class="phase">
+    <div class="step"><span class="num">8</span><b>archive</b><small>givn archive --change &lt;id&gt;</small></div>
+    <div class="harrow"></div>
+    <div class="artifact">
+      <b>givn/specs/*.feature&nbsp;·&nbsp;givn/archive/&lt;id&gt;/</b>
+      <small>deltas merged into the permanent specs, @givn.* stripped, change moved to the archive</small>
+    </div>
+    <div class="checks">
+      <div class="check">
+        <b>archive gates</b><span class="tag blocking">blocking</span>
+        <small>required artifacts complete · PASS markers present · all required hooks green · fresh similarity gate re-run directly before the merge</small>
+      </div>
+      <div class="check">
+        <b>post-merge proof</b><span class="tag blocking">blocking</span>
+        <small>verify suite (+ e2e) against merged specs · coverage addon gate — any failure rolls specs and README back from the backup</small>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<aside class="panel">
+  <h2>Semantic duplicate pipeline (inside “check review”)</h2>
+  <div class="models">
+    <div class="model">
+      <b>E5 · intfloat/multilingual-e5-large</b>
+      <span class="role">recall — cosine over embedded scenarios vs delta candidates</span>
+      similarity <span class="thr">≥ 0.95</span> admits a candidate
+    </div>
+    <div class="model">
+      <b>BGE · rozgo/bge-reranker-v2-m3</b>
+      <span class="role">cross-encoder evidence on the top-5 pool</span>
+      symmetric logit <span class="thr">≥ 3.0</span> ⇒ BGE_RECOMMENDED
+    </div>
+    <div class="model">
+      <b>NLI · mDeBERTa-v3-base-xnli</b>
+      <span class="role">entailment evidence over the same pool</span>
+      symmetric entailment <span class="thr">≥ 0.5</span> ⇒ NLI_RECOMMENDED
+    </div>
+  </div>
+  <p style="margin-top:12px;font-size:.82rem;color:var(--muted)">
+    Evidence never replaces the E5 gate and never auto-classifies: recommendations intersect,
+    but the blocking decision requires human classification in <code>semantic-review.md</code>.
+    Pair budget default 2048 (<code>GIVN_SPEC_MAX_RERANK_PAIRS</code>), 512-token serialization
+    cap per stage; BGE/NLI are skipped when the E5 pool is empty; a feature-free build reports
+    retrieval unavailable instead of passing silently.
+  </p>
+  <div class="choke">
+    <span>chokepoint 1 · givn check tasks</span>
+    <span>chokepoint 2 · givn check review</span>
+    <span>chokepoint 3 · givn archive</span>
+  </div>
+</aside>
+
+<footer>
+  <a href="workflow.md">workflow.md — process in detail</a>
+  <a href="reference.md">reference.md — commands &amp; configuration</a>
+  <a href="retrieval-models.md">retrieval-models.md — model sources &amp; overrides</a>
+  <a href="../README.md">README.md</a>
+</footer>
+
+</div>
+</body>
+</html>

@@ -12,7 +12,7 @@ characterization tasks that make them executable.
 ## Context
 
 - Change: `givn/changes/<change-id>/`
-- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
+- Test runner: `./run-tests.sh`
 - Features path: `GIVN_FEATURES=givn/specs`
 
 ## Stance: descriptive, not prescriptive
@@ -76,5 +76,5 @@ When planning is complete, suggest:
 ## Verify command
 
 ```
-uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
+./run-tests.sh
 ```

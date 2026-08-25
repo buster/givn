@@ -8,11 +8,12 @@
 #    - Uncommented key/value lines are user-owned and are never touched by
 #      `givn upgrade`.
 #    - To override a setting: uncomment the relevant key and edit its value.
-#    - After `givn upgrade`: review changes via `git diff` and resolve there.
+#    - After `givn upgrade`: review the managed Git commit via `git show` and
+#      resolve project-specific migration work in the visible maintenance change.
 # ============================================================================
 
 # Managed by givn. Do not delete the next line.
-givn_config_version: "0.2.0"
+givn_config_version: "0.3.0"
 
 # --- Test runner -------------------------------------------------------------
 # The command givn invokes to run your test suite. Configured in
@@ -175,6 +176,15 @@ givn_config_version: "0.2.0"
 # `givn skills sync`. Toggle with: givn addons enable|disable grill_with_docs.
 #
 # grill_with_docs: false   # set to true to enable
+
+# --- Skill agent targets ------------------------------------------------------
+# Which agent targets receive the generated skills and commands.
+# `givn init` asks for this selection (default: opencode only); `givn skills
+# sync` installs to exactly the persisted targets. Toggle by editing the
+# list below (allowed values: opencode, agents, claude).
+#
+# skills:
+#   targets: [opencode]      # set to e.g. [opencode, agents, claude] for all
 
 # --- User overrides preserved from previous version ---
 addons:

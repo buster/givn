@@ -11,7 +11,7 @@ skill, not a standalone workflow — read by `/givn-implement` and
 
 ## Context
 
-- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
+- Test runner: `./run-tests.sh`
 - Features path: `GIVN_FEATURES=givn/specs`
 - Change: `givn/changes/<change-id>/`
 
@@ -47,9 +47,10 @@ giant all-in-one step file is a red flag: it hides empty/no-op stubs.
 - Node (`cucumber-js`): `features/steps/<capability>.steps.js`.
 - Java (`cucumber-jvm`): `src/test/java/.../steps/<Capability>Steps.java`.
 
-`@e2e` scenarios use separate step definitions (different infrastructure:
-browser driver, HTTP client), same one-file-per-capability rule, never
-mixed with non-e2e steps.
+`@e2e` scenarios use separate step definitions and the same one-file-per-
+capability rule. Read the canonical E2E policy with
+`givn instructions specs --change <change-id>`; do not restate its action
+scope or interface policy here.
 
 ## Rule: `@e2e` tags are immutable — never remove them
 
@@ -62,30 +63,18 @@ detected at review time (`givn check review`) and lint time (`givn lint
 `givn/config.yaml`, implement the e2e test infrastructure, and make the
 scenario pass.
 
-## Rule: `@e2e` asserts the real interface — not instead of it
+## Canonical E2E policy
 
-An `@e2e` scenario's Then steps assert PRIMARILY on what the real interface
-returned or displayed (page content, HTTP response, redirect, CLI output).
-Repository/database checks are allowed only as secondary, additional
-assertions — never the sole assertion. A `@e2e` scenario whose Then steps
-touch only the repository is an integration test wearing the wrong tag.
+Read `givn instructions specs --change <change-id>` for the real-interface
+assertion, driver-fidelity, and normalized action rules. This skill supplies
+step-writing mechanics and applies the resolved design's concrete driver; it
+does not define another policy.
 
-**The real interface is whichever one a real user/client uses, not whichever
-is easiest to automate.** For a browser-UI capability, the step definitions
-must drive the actual browser (click/type/navigate via a real driver) —
-never an HTTP request to the backend route, and never `fetch()`/
-`XMLHttpRequest` called from the page's own JS context. Both produce a
-scenario that never actually drove the browser, even if its assertion later
-checks page content. If the capability's real interface IS an API with no
-UI, an HTTP request against it genuinely is the real interface.
+## Black-Box-First policy
 
-If a technical obstacle blocks the real interface (browser session/cookie
-not persisting across steps, an auth redirect losing state, a flaky
-selector), that is a design gap, not a reason to test something weaker.
-Apply the fix design.md names in its Anticipated Interface Obstacles
-section. If none is named for this obstacle, STOP and report it as a
-blocker — do not substitute a repository-only assertion, or an HTTP/fetch()
-shortcut, and move on.
+Prefer reused real-interface steps. For an internal step or test that remains,
+record **which case this test covers that the E2E does not**; otherwise remove
+the duplicate and extend the E2E scenario.
 
 ## Step reuse
 
@@ -120,7 +109,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 1. Remove `@wip` from this scenario only.
 2. New steps use the stub above; reused steps kept as-is.
-3. Run targeting this scenario. Non-@e2e: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`. @e2e:
+3. Run targeting this scenario. Non-@e2e: `./run-tests.sh`. @e2e:
    `verify.e2e_command`. Capture output.
    - Non-zero exit → RED confirmed, proceed to GREEN.
    - Zero exit, all steps reused → legitimate immediate GREEN (record which
@@ -143,21 +132,15 @@ never infer from whole-suite output) and captures output verbatim as evidence.
      repository-only assertion.
 5. Run targeting this scenario → zero exit. Capture output.
 
-5a. Confirm the new code is covered. Coverage data is embedded in the
-    `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` output when the runner is configured with
-    coverage instrumentation (see config.yaml examples). Extract the
-    coverage summary: every new/modified production file must show
-    non-zero line/branch coverage.
+5a. Validate coverage measurement before evaluating gaps:
 
-    If coverage data is absent from the output (bare test runner with
-    no coverage instrumentation), state this explicitly as an unmeasured
-    gap — the verify.command does not produce coverage data, so this
-    scenario's coverage is estimated, not tool-measured.
-
-    If new code shows uncovered regions, this is a RED condition for
-    this scenario — the step assertions do not exercise the new
-    production code. Fix the step (add/adjust assertions) or add missing
-    step definitions, then re-run GREEN → COVERAGE. Capture output.
+    - Instrument every production process used by the scenario.
+    - Launch instrumented artifacts, not normal builds.
+    - Use collision-safe output; flush; merge all profiles.
+    - Verify one exercised production path is non-zero.
+    - Reject runner-only, test-only, absent, or zero-production coverage as
+      `COVERAGE MEASUREMENT: INVALID`; fix instrumentation and rerun.
+    - Only then treat uncovered production code as RED. Capture output.
 
 ### REFACTOR
 
@@ -186,7 +169,7 @@ never infer from whole-suite output) and captures output verbatim as evidence.
 
 ## Distinctions
 
-`givn lint`: static check, no tests. `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`: GREEN for
+`givn lint`: static check, no tests. `./run-tests.sh`: GREEN for
 non-@e2e, only once strict mode is proven. `verify.e2e_command`: GREEN for
 @e2e. Never conflate the three.
 
@@ -194,7 +177,7 @@ non-@e2e, only once strict mode is proven. `verify.e2e_command`: GREEN for
 
 Unit/integration:
 ```
-uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
+./run-tests.sh
 ```
 
 E2E smoke tests:

@@ -1,66 +1,52 @@
 # 9. Architecture Decisions
 
-<!-- Architecturally significant decisions recorded as MADR (Markdown Any Decision Records).
-     One ADR per decision. Use the template below for each new entry.
-     Status values: proposed | rejected | accepted | deprecated | superseded by ADR-NNNN -->
+This file is the chapter-09 register/index for architecture decisions. It is
+not an ADR body and not a container for multiple ADRs. One architecturally
+significant decision gets exactly one ADR, stored as a separate Markdown file
+under `docs/arc42/adr/ADR-NNNN-short-slug.md`.
 
-<!-- ─── ADR TEMPLATE ────────────────────────────────────────────────────────────
----
-status: proposed
-date: YYYY-MM-DD
-decision-makers: list everyone involved
-consulted: list subject-matter experts consulted
-informed: list everyone kept up-to-date
----
+The ADR directory has its own index at `docs/arc42/adr/README.md`. Create and
+maintain the directory, files, and index entries manually; this asset does not
+claim automatic scaffolding for individual ADRs. The current binary uses the
+fixed `docs/arc42/` root and does not implement an `arc42.output_dir` override.
 
-# Short title representative of solved problem and found solution
+## Register
 
-## Context and Problem Statement
+Maintain one row or link per ADR. Include the ADR ID, short title, current
+status, date, and a link to the individual file. Do not paste an ADR body or a
+second MADR section into this file.
 
-Describe the context and problem in two to three sentences, or as an illustrative
-story. Articulate the problem as a question where helpful. Make the scope explicit
-by pointing at structural elements (components, connectors, …).
+| ADR | Title | Status | Date | File |
+|---|---|---|---|---|
 
-## Decision Drivers
+## Individual ADR contract
 
-* desired software quality, constraint, or concern
-* …
+Before creating a file or adding a register entry, read and pass the complete
+qualification procedure from the resolved Arc42 addon instruction. This chapter
+records the register contract only; it does not duplicate the qualification
+formula, LLM verdict schema, or routing values. A failed candidate is routed
+exactly once to its canonical feature, design, Arc42, process,
+project-documentation, or code location. A refinement amends an existing ADR;
+it does not create a parallel file.
 
-## Considered Options
+Each individual file uses the complete MADR structure, including
+`## Qualification`, `## Context and Problem Statement`, `## Decision Drivers`,
+`## Considered Options`, `## Decision Outcome`, `### Consequences`,
+`### Confirmation`, `## Pros and Cons of the Options`, and
+`## More Information`, with real frontmatter and an `ADR-QUALIFICATION: PASS`
+verdict whose route-specific target fields are valid.
+Allowed statuses are `proposed`, `rejected`, `accepted`, `deprecated`, and
+`superseded by ADR-NNNN`. A superseded status must name a concrete existing
+replacement ID, such as `superseded by ADR-027` or `superseded by ADR-0042`;
+placeholders are invalid in completed ADRs. Keep `docs/arc42/adr/README.md` and
+this register linked to the current or historical file.
 
-* Option title 1
-* Option title 2
-* …
+## Archive
 
-## Decision Outcome
-
-Chosen option: "Option title N", because justification.
-
-### Consequences
-
-* Good, because positive consequence
-* Bad, because negative consequence
-* …
-
-### Confirmation
-
-How the implementation/compliance of this ADR can be confirmed — automated fitness
-function, design review, ArchUnit test, or similar.
-
-## Pros and Cons of the Options
-
-### Option title 1
-
-* Good, because argument
-* Neutral, because argument
-* Bad, because argument
-
-### Option title 2
-
-* Good, because argument
-* Bad, because argument
-
-## More Information
-
-Additional evidence, team agreement, links to related decisions or resources.
-─────────────────────────────────────────────────────────────────────────────── -->
+An archived historical ADR keeps its ID and filename and is moved to
+`docs/arc42/adr/archive/ADR-NNNN-short-slug.md`. Update both indexes when the
+path changes. Do not move ADRs into `givn/archive/<change>/`; that path is for
+change artifacts, not durable architecture decisions.
+Non-ADR material is not archived as an ADR. Move useful information once to its
+canonical feature, design, Arc42, process, project-documentation, or code
+location, and remove the redundant record.

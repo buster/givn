@@ -50,10 +50,12 @@ record both:
 - [ ] No row is "Match? = No" with the reviewer saying "Yes" and arc42.md
       saying "No" or omitting the row — any such row is a finding,
       not a note.
-- [ ] Every non-trivial architecture/technology decision in design.md has a
-      corresponding MADR entry in chapter 09.
+- [ ] Every qualified ADR candidate in design.md has a corresponding MADR entry
+      in chapter 09; non-qualifying decisions name exactly one canonical target.
 - [ ] Every MADR "Bad, because..." consequence has a counterpart entry in
       chapter 11 (risks-and-technical-debt).
+- [ ] Every ADR candidate records the structured qualification verdict and its
+      route-specific target; `Must be shared` is supporting evidence only.
 - [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
 
 ## Changes made during hardening

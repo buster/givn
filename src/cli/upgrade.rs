@@ -1,6 +1,6 @@
 use anyhow::{Result, bail};
 
-/// Re-render managed config scaffold, preserve user overrides, bump givn_config_version.
+/// Refresh managed project files and, when required, prepare the migration plan.
 ///
 /// Strategy (ADR-023):
 /// - Parse the existing givn/config.yaml into two regions:
@@ -9,8 +9,8 @@ use anyhow::{Result, bail};
 /// - Re-render the managed scaffold from the current binary's template.
 /// - Splice user-owned lines back in at the appropriate positions.
 /// - Bump givn_config_version.
-/// - Write the file in-place. User reviews via `git diff`.
-/// - Auto-enable any KNOWN_ADDONS not yet present in the config.
+/// - Synchronize generated agent integrations through the managed path.
+/// - Commit only the managed path; a declared migration is written separately.
 pub fn run() -> Result<()> {
     let project_root = std::env::current_dir()?;
     let config_path = project_root.join("givn/config.yaml");
@@ -20,39 +20,72 @@ pub fn run() -> Result<()> {
     }
 
     let existing = std::fs::read_to_string(&config_path)?;
-    let present_addons = crate::cli::addons::parse_enabled_addons(&existing);
+    let source_version = active_config_version(&existing);
+    let target_version = env!("CARGO_PKG_VERSION");
 
-    let new_content = upgrade_config(&existing, env!("CARGO_PKG_VERSION"))?;
-
-    let needs_write = existing != new_content;
-
-    if needs_write {
-        std::fs::write(&config_path, &new_content)?;
+    if let Some(change_id) = crate::cli::migration::pending_migration_change(&project_root) {
         println!(
-            "Updated givn/config.yaml to version {}.",
-            env!("CARGO_PKG_VERSION")
+            "Migration change '{change_id}' already exists; project is already prepared for migration."
         );
-        println!("Review changes with: git diff givn/config.yaml");
-        println!("Then run: givn skills sync");
-    } else {
-        println!("givn/config.yaml is already up to date (no changes).");
+        return Ok(());
     }
 
-    // Auto-enable new known addons not present in the existing config.
-    let mut new_addons_enabled = false;
-    for (name, _) in crate::cli::addons::KNOWN_ADDONS {
-        if !present_addons.contains_key(*name) {
-            println!("\nEnabling newly-available addon '{name}'...");
-            crate::cli::addons::run_enable(name)?;
-            new_addons_enabled = true;
+    if let Some(source) = source_version.as_deref() {
+        let bundles = crate::cli::migration::migration_path(source, target_version)?;
+        if !bundles.is_empty() {
+            let change_id = crate::cli::migration::aggregate_migration_id(source, target_version);
+            if crate::cli::migration::migration_exists(&project_root, &change_id) {
+                println!(
+                    "Migration change '{change_id}' already exists; project is already prepared for migration."
+                );
+                return Ok(());
+            }
+            return crate::cli::migration::prepare_legacy_upgrade(
+                &project_root,
+                &config_path,
+                &existing,
+                source,
+                target_version,
+                &bundles,
+            );
         }
     }
 
-    if new_addons_enabled {
-        println!("Run `givn skills sync` to regenerate skill files.");
+    let commit_message = format!(
+        "chore(givn): update managed files from {} to {target_version}",
+        source_version.as_deref().unwrap_or("unknown")
+    );
+    match crate::cli::migration::prepare_managed_upgrade(
+        &project_root,
+        &config_path,
+        &existing,
+        source_version.as_deref(),
+        target_version,
+        &commit_message,
+    )? {
+        Some(hash) => println!(
+            "Updated managed Givn files for {target_version} in commit {hash}; no migration change was required."
+        ),
+        None => {
+            println!("Managed Givn files are already up to date for {target_version} (no changes).")
+        }
     }
-
     Ok(())
+}
+
+/// Read the active version marker without interpreting commented scaffold
+/// examples as project configuration.
+pub(crate) fn active_config_version(content: &str) -> Option<String> {
+    content.lines().find_map(|line| {
+        let trimmed = line.trim();
+        if trimmed.starts_with('#') {
+            return None;
+        }
+        let value = trimmed.strip_prefix("givn_config_version:")?;
+        let value = value.split('#').next().unwrap_or(value).trim();
+        let value = value.trim_matches(['"', '\'']);
+        (!value.is_empty()).then(|| value.to_string())
+    })
 }
 
 /// Upgrade the config content:
@@ -250,5 +283,20 @@ mod tests {
         );
         assert!(upgraded.contains("./gradlew test"));
         assert!(upgraded.contains("arc42: true"));
+    }
+
+    #[test]
+    fn active_config_version_ignores_commented_examples() {
+        let config = "# givn_config_version: \"0.1.0\"\n\
+                       givn_config_version: \"0.2.0\" # managed\n";
+        assert_eq!(active_config_version(config).as_deref(), Some("0.2.0"));
+    }
+
+    #[test]
+    fn active_config_version_accepts_unquoted_values() {
+        assert_eq!(
+            active_config_version("givn_config_version: 0.2.0\n").as_deref(),
+            Some("0.2.0")
+        );
     }
 }

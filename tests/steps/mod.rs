@@ -10,21 +10,64 @@ use cucumber::{World, gherkin::Step, given, then, when};
 
 use crate::common;
 
+pub mod adr_qualification_gate_e2e_steps;
+pub mod adr_qualification_gate_steps;
 pub mod arc42_review_alignment_steps;
+pub mod bge_reranking_evidence_e2e_steps;
+pub mod bge_reranking_evidence_steps;
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
 pub mod choose_project_license_steps;
 pub mod coverage_readme_example_steps;
 pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
+pub mod cross_encoder_reranker_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
+pub mod enforce_spec_similarity_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod init_agent_target_selection_steps;
+pub mod instruction_integrity_e2e_steps;
+pub mod instruction_integrity_steps;
+pub mod nli_evidence_e2e_steps;
+pub mod nli_evidence_steps;
 pub mod preserve_docstrings_on_archive_steps;
+pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
+pub mod release_0_3_0_e2e_steps;
+pub mod release_0_3_0_steps;
 pub mod remove_dead_skip_list_code_steps;
+pub mod repository_ownership_fixtures_steps;
+pub mod repository_ownership_fixtures_support;
+pub mod review_disposition_gates_steps;
+pub mod search_evidence_e2e_steps;
+pub mod search_evidence_steps;
+pub mod semantic_compact_serialization_e2e_steps;
+pub mod semantic_compact_serialization_steps;
+pub mod semantic_e5_token_cap_e2e_steps;
+pub mod semantic_e5_token_cap_steps;
+pub mod semantic_model_download_e2e_steps;
+pub mod semantic_model_download_steps;
+pub mod semantic_remediation_e2e_steps;
+pub mod semantic_remediation_steps;
+pub mod semantic_reranker_budget_e2e_steps;
+pub mod semantic_reranker_budget_steps;
+pub mod semantic_review_e2e_steps;
+pub mod semantic_review_steps;
+pub mod semantic_token_cap_review_e2e_steps;
+pub mod semantic_token_cap_review_steps;
+pub mod skill_rewrites_steps;
+pub mod spec_duplicates_e2e_steps;
+pub mod spec_duplicates_steps;
+pub mod spec_explore_change_e2e_steps;
+pub mod spec_explore_change_steps;
+pub mod spec_explore_permanent_e2e_steps;
+pub mod spec_explore_permanent_steps;
+pub mod spec_overlap_gates_steps;
+pub mod spec_progress_output_e2e_steps;
+pub mod spec_progress_output_steps;
+pub mod spec_retrieval_steps;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
 pub mod workflow_enforcement_steps;
@@ -35,9 +78,13 @@ pub struct GivnWorld {
     env: Option<common::TestEnv>,
     /// Captured stdout/stderr/exit of the last `givn` invocation.
     last_output: Option<Output>,
+    /// Output from the previous command in a parity scenario.
+    pub(crate) previous_output: Option<Output>,
     /// The change id parsed from the last `givn new <id>` command, for steps
     /// that refer to "the proposal.md" without naming the path.
     last_change_id: Option<String>,
+    /// Snapshot used by the repository-ownership fixture rollback scenario.
+    pub(crate) ownership_before_tree: Option<Vec<(String, Vec<u8>)>>,
     /// Override content written by the override Given step, for the
     /// "equals the project override content byte for byte" step.
     override_content: Option<String>,
@@ -49,6 +96,70 @@ pub struct GivnWorld {
     project_root: Option<std::path::PathBuf>,
     /// License check state.
     license_state: choose_project_license_steps::LicenseState,
+    /// Combined output captured by a multi-command guidance scenario.
+    pub(crate) additional_output: Option<String>,
+    /// Optional retrieval backend override for the current subprocess.
+    pub(crate) retrieval_embedder: Option<String>,
+    /// Optional BGE backend override for the current subprocess.
+    pub(crate) retrieval_bge: Option<String>,
+    /// Explicit local BGE artifact directory for the current subprocess.
+    pub(crate) retrieval_bge_model_dir: Option<String>,
+    /// Optional maximum BGE/NLI pair budget for the current subprocess.
+    pub(crate) retrieval_max_rerank_pairs: Option<String>,
+    /// Deterministic E5 passage token-budget fixture selector.
+    pub(crate) retrieval_e5_token_budget: Option<String>,
+    /// Optional pair-reranker backend override for the current subprocess.
+    pub(crate) retrieval_reranker: Option<String>,
+    /// Optional deterministic semantic-report score overrides for fixtures.
+    pub(crate) retrieval_stub_scores: Option<String>,
+    /// Optional deterministic duplicate-audit score overrides for fixtures.
+    pub(crate) retrieval_duplicate_scores: Option<String>,
+    /// Optional deterministic directional BGE score overrides for fixtures.
+    pub(crate) retrieval_bge_scores: Option<String>,
+    /// Deterministic bounded-pool fixture selector for BGE scenarios.
+    pub(crate) retrieval_bge_test_pool: Option<String>,
+    /// Deterministic bounded-pool fixture selector for NLI scenarios.
+    pub(crate) retrieval_nli_test_pool: Option<String>,
+    /// Deterministic directional NLI logits for fixtures.
+    pub(crate) retrieval_nli_scores: Option<String>,
+    /// Deterministic BGE token-budget fixture selector.
+    pub(crate) retrieval_bge_token_budget: Option<String>,
+    /// Deterministic NLI token-budget fixture selector.
+    pub(crate) retrieval_nli_token_budget: Option<String>,
+    /// Use the deterministic stub behind the validated local-artifact seam.
+    pub(crate) retrieval_bge_local_stub: bool,
+    /// Use deterministic NLI scores after validating automatic artifacts.
+    pub(crate) retrieval_nli_local_stub: bool,
+    /// Guard that restores the unreadable-feature fixture after its subprocess
+    /// invocation, including when a scenario assertion panics.
+    pub(crate) unreadable_feature: Option<spec_duplicates_steps::UnreadableFeatureGuard>,
+    /// Snapshot of permanent feature files for non-mutation assertions.
+    pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the active-change fixture tree for read-only audit checks.
+    pub(crate) active_change_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the archive fixture tree for read-only audit checks.
+    pub(crate) archive_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the generated permanent retrieval index for non-mutation
+    /// assertions.
+    pub(crate) permanent_index_snapshot: Option<Vec<u8>>,
+    /// Snapshot of a change-local semantic review report.
+    pub(crate) semantic_report_snapshot: Option<Vec<u8>>,
+    /// Snapshot of active semantic-review files and dispositions.
+    pub(crate) semantic_active_snapshot: Option<Vec<(String, Vec<u8>)>>,
+    /// Snapshot of the semantic-review disposition file.
+    pub(crate) semantic_review_snapshot: Option<Vec<u8>>,
+    /// Bytes written before a malformed permanent index is rebuilt.
+    pub(crate) malformed_index_snapshot: Option<Vec<u8>>,
+    /// Classification mode for the semantic-remediation fixture.
+    pub(crate) semantic_remediation_mode: Option<String>,
+    /// Isolated XDG cache root used by semantic model-download fixtures.
+    pub(crate) xdg_cache_home: Option<std::path::PathBuf>,
+    /// Local HF-compatible artifact source for compiled-CLI scenarios.
+    pub(crate) artifact_server: Option<common::ArtifactFixtureServer>,
+    /// Explicit dead-end HF endpoint for unreachable-source scenarios.
+    pub(crate) hf_endpoint_override: Option<String>,
+    /// Event log path for resolver-order assertions.
+    pub(crate) download_event_path: Option<std::path::PathBuf>,
 }
 
 // --- helpers ---------------------------------------------------------------
@@ -216,6 +327,83 @@ fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
     std::fs::write(&file_path, content).expect("write .feature file");
 }
 
+/// Environment overrides for the current subprocess, assembled from the
+/// world's retrieval fixture fields. Used by every retrieval command step.
+pub(crate) fn world_envs(world: &GivnWorld) -> Vec<(&'static str, &str)> {
+    let mut environments = Vec::new();
+    if let Some(value) = world.retrieval_embedder.as_deref() {
+        environments.push(("GIVN_SPEC_EMBEDDER", value));
+    }
+    if let Some(value) = world.retrieval_bge.as_deref() {
+        environments.push(("GIVN_SPEC_BGE", value));
+    }
+    if let Some(value) = world.retrieval_bge_model_dir.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_MODEL_DIR", value));
+    }
+    if let Some(value) = world.retrieval_max_rerank_pairs.as_deref() {
+        environments.push(("GIVN_SPEC_MAX_RERANK_PAIRS", value));
+    }
+    if let Some(value) = world.retrieval_e5_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_E5_TOKEN_BUDGET", value));
+    }
+    if let Some(value) = world.retrieval_reranker.as_deref() {
+        environments.push(("GIVN_SPEC_RERANKER", value));
+    }
+    if let Some(value) = world.retrieval_stub_scores.as_deref() {
+        environments.push(("GIVN_SPEC_STUB_PAIR_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_duplicate_scores.as_deref() {
+        environments.push(("GIVN_SPEC_DUPLICATES_TEST_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_bge_scores.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_bge_test_pool.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TEST_POOL", value));
+    }
+    if let Some(value) = world.retrieval_nli_test_pool.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_TEST_POOL", value));
+    }
+    if let Some(value) = world.retrieval_nli_scores.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_DIRECTIONAL_SCORES", value));
+    }
+    if let Some(value) = world.retrieval_bge_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_BGE_TOKEN_BUDGET", value));
+    }
+    if let Some(value) = world.retrieval_nli_token_budget.as_deref() {
+        environments.push(("GIVN_SPEC_NLI_TOKEN_BUDGET", value));
+    }
+    if let Some(value) = world
+        .xdg_cache_home
+        .as_deref()
+        .and_then(|path| path.to_str())
+    {
+        environments.push(("XDG_CACHE_HOME", value));
+    }
+    if world.retrieval_bge_local_stub {
+        environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));
+    }
+    if world.retrieval_nli_local_stub {
+        environments.push(("GIVN_SPEC_NLI_LOCAL_STUB", "1"));
+    }
+    if let Some(server) = world.artifact_server.as_ref() {
+        environments.push(("HF_ENDPOINT", server.endpoint()));
+    }
+    if let Some(endpoint) = world.hf_endpoint_override.as_deref() {
+        environments.push(("HF_ENDPOINT", endpoint));
+    }
+    environments
+}
+
+/// Run the givn binary with the world's assembled retrieval environment.
+pub(crate) fn run_givn(
+    env: &common::TestEnv,
+    argv: &[&str],
+    world: &GivnWorld,
+) -> std::process::Output {
+    common::run_givn_with_envs(env, argv, &world_envs(world))
+}
+
 // --- When ------------------------------------------------------------------
 
 #[when(regex = r"^the user runs `([^`]+)`$")]
@@ -226,7 +414,8 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
         .as_ref()
         .expect("a project root is required first");
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
-    let out = common::run_givn(env, &argv);
+    let environments = world_envs(world);
+    let out = common::run_givn_with_envs(env, &argv, &environments);
     if let Some(id) = change_id_from_args(&args) {
         world.last_change_id = Some(id);
     }

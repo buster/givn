@@ -32,7 +32,10 @@ fn run_artifact(
 ) -> Result<()> {
     // Resolve change: use explicit --change, or auto-select single active.
     let _change = match change {
-        Some(id) => id.to_string(),
+        Some(id) => {
+            crate::state::resolve_change_dir(project_root, id)?;
+            id.to_string()
+        }
         None => {
             let manifest = load_effective()?;
             let changes = list_changes(project_root, &manifest);
@@ -45,20 +48,25 @@ fn run_artifact(
     };
     // --change is validated/resolved; artifact instructions are not change-specific.
     let manifest = load_effective()?;
-    if !manifest.artifacts.iter().any(|a| a.id == artifact) {
-        let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
-        bail!(
-            "unknown artifact '{}'. Known artifacts: {}",
-            artifact,
-            known.join(", ")
-        );
-    }
+    let artifact_definition = match manifest.artifacts.iter().find(|a| a.id == artifact) {
+        Some(definition) => definition,
+        None => {
+            let known: Vec<&str> = manifest.artifacts.iter().map(|a| a.id.as_str()).collect();
+            bail!(
+                "unknown artifact '{}'. Known artifacts: {}",
+                artifact,
+                known.join(", ")
+            );
+        }
+    };
 
     let content = crate::config::cascade::resolve_instruction(artifact)?;
 
     if json {
         let out = serde_json::json!({
-            "artifact": artifact,
+            "id": artifact_definition.id,
+            "generates": artifact_definition.generates,
+            "requires": artifact_definition.requires,
             "instruction": content,
         });
         println!("{}", serde_json::to_string_pretty(&out)?);

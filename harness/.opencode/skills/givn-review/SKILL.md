@@ -11,7 +11,7 @@ Complete the coverage review for change `<change-id>`.
 
 - Review file: `givn/changes/<change-id>/review.md`
 - Instructions: run `givn instructions review --change <change-id>`
-- Test runner: `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock`
+- Test runner: `./run-tests.sh`
 
 ## Step 0: fabrication audit (mandatory, before anything else)
 
@@ -47,10 +47,9 @@ stubs. Mechanical check, not a judgment call:
    `@e2e` step implementation of the same capability. Reviewing a weaker
    implementation while a stronger, real-interface one already exists
    elsewhere (committed or not) is itself a fabrication-audit finding.
-8. Check `@e2e` scope: confirm each capability has one `@e2e` scenario per
-   distinct happy-path action, not one per input variant/error case/enum
-   value. Flag excess `@e2e` scenarios on the same action for conversion to
-   regular scenarios.
+ 8. Read `givn instructions specs --change <change-id>` and apply its
+    canonical action normalization and E2E scope. Flag excess `@e2e`
+    scenarios on the same action for conversion to regular scenarios.
 9. Confirm the local run command (design.md's Local Runnability section)
    starts the full stack, including every digital twin, cleanly.
 10. Read `verify.command` and `verify.e2e_command` literally from
@@ -71,8 +70,8 @@ stubs. Mechanical check, not a judgment call:
     the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
     real-interface obstacle per design.md, never leaving a repository-only
     or HTTP/fetch() shortcut in place), before continuing.
-13. **Interaction coverage verification** — cross-reference the spec's
-    User Interaction Inventory against the design's Interaction Coverage
+13. **Interaction coverage verification** — cross-reference the canonical
+    specs policy's normalized inventory against the design's Interaction Coverage
     Matrix and the actual `.feature` file + step definitions:
     a. Read the spec `.feature` file and extract the `# User Interaction
        Inventory:` comment block. List every entry.
@@ -93,21 +92,58 @@ stubs. Mechanical check, not a judgment call:
        used a different driver than the reviewed design committed to.
     e. Record the full cross-reference as a table in the fabrication audit
        section of review.md.
-14. **Coverage instrumentation check.** Confirm that `verify.command` (or
-    `coverage.command` if the coverage addon is enabled) produces coverage
-    data. Inspect the test runner output for line/branch coverage metrics.
-    If no coverage data is present in the output, and `coverage.command`
-    is still the default sentinel `givn missing-coverage`, this is a
-    fabrication-audit finding — the review cannot proceed until coverage
-    is measurable. Set `coverage.command` to a coverage-instrumented
-    runner (e.g. `cargo llvm-cov --test features_runner --summary-only`
-    for Rust) and re-run `givn check coverage --change <change-id>` to
-    generate `coverage.md`. An uninstrumented test runner producing no
-    coverage data is indistinguishable from zero coverage — the gate
-    cannot close on that uncertainty.
+ 14. **Coverage measurement validity.** For `verify.command`, and for the
+     measurement plus merge commands when coverage is enabled:
+    a. Map the runner and every production process started by tests.
+     b. Confirm each process is instrumented, writes collision-safe output,
+        flushes on shutdown, and both source reports are passed to the configured
+        merge command.
+    c. Confirm one known exercised production path has non-zero coverage.
+    d. Reject runner-only, test-only, absent, or zero-production coverage.
+     e. Confirm the merged report is freshly produced by the merge command; a
+        stale or missing output is invalid.
+     f. If invalid, record `COVERAGE MEASUREMENT: INVALID` and stop before gap
+       classification. Fix instrumentation; do not classify it as missing test
+       coverage or hard-to-test code.
 
 Record the result (files scanned, findings, remediation) in review.md even
 when clean.
+
+<coverage-boundary-examples>
+  <example>
+    <bad>Instrument runner; spawn normal application; accept 0% application coverage.</bad>
+    <good>Spawn instrumented application; merge its profile; verify a known application path is non-zero.</good>
+  </example>
+  <example>
+    <bad>Share one profile across parallel processes; accept overwritten or unflushed data.</bad>
+    <good>Use per-process output; flush on shutdown; merge all profiles before export.</good>
+  </example>
+</coverage-boundary-examples>
+
+## Arc42 implementation conformance (conditional)
+
+If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled` in
+review.md. Otherwise, run this mandatory check before coverage classification.
+Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
+independently derive the affected chapters and architecture facts from the
+completed implementation, `design.md`, and `tasks.md`. For every chapter or
+fact named by either assessment, compare the durable source, Arc42 claim,
+design treatment, task mapping, and implementation evidence in review.md's
+**Arc42 implementation conformance** table.
+
+This check catches both stale Arc42 documentation and design, task, or
+implementation drift from documented facts. Every omission or contradiction is
+a finding. Fix the affected artifact and repeat the comparison; if design.md
+changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
+rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
+
+## Deterministic gate dispositions
+
+Before sign-off, inspect the deterministic overlap findings. Complete the
+**Overlap dispositions** table for every shape match, add a **split-or-keep**
+decision for every long scenario, and explain every removed+added pair as
+supersession or unrelated work. Do not use scores as a substitute for a human
+disposition.
 
 ## Coverage gate (completeness, not percentage)
 
@@ -128,36 +164,24 @@ Coverage is complete when every gap is classified and resolved (or justified).
 
 ## Steps
 
-1. Run `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` — confirm all non-@e2e tests pass.
+1. Run `./run-tests.sh` — confirm all non-@e2e tests pass.
    Coverage data is embedded in the output if the runner is configured
-   with coverage instrumentation. Extract the coverage summary from the
-   output — do not run a separate coverage tool.
+    with coverage instrumentation. Extract the summary from the merged report
+    produced by `coverage.measure_command` and `coverage.merge_command`.
 2. Run `verify.e2e_command` — confirm all @e2e tests pass.
-3. Extract uncovered regions from the coverage output. If the coverage
-   addon is enabled, read `givn/changes/<change-id>/coverage.md` —
-   this was generated by `givn check coverage` and contains the measured
-   coverage data. If it says `COVERAGE: NOT_CONFIGURED` or does not
-   exist, this is a fabrication-audit finding (see Step 0, check 14) —
-   go back and configure coverage instrumentation, then generate
-   `coverage.md`. If the coverage addon is not enabled, extract coverage
-   from the `uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock` output directly. Under no circumstances
-   may the review proceed without measured coverage data — do not write
-   "unmeasured" or "NOT_CONFIGURED" as a resolution. The three-bucket
-   classification requires tool-measured data to be meaningful.
+3. Run the configured measurement command and then merge command. Apply check
+   14 before extracting gaps.
+   Reject absent, runner-only, test-only, or zero-production coverage.
 4. Classify each gap (1, 2, or 3 above).
 5. Resolve each gap:
    - Dead code → delete.
    - Missing test → add scenario + RED/GREEN/REFACTOR/COMMIT.
    - Hard to test → write justification.
-6. Confirm every capability has exactly one `@e2e` smoke-test scenario per
-   distinct happy-path action, with a real-interface primary assertion
-   driven through the actual interface (real browser for a browser-UI
-   capability, never HTTP/fetch() standing in for it). Missing, downgraded,
-   or over-produced (one per variant) = classify as "missing test"/"needs
-   fixing" and add, fix, or convert accordingly — never as an exception
-   outside the three buckets. Before concluding a real driver is
-   unavailable, search the tree yourself (including untracked files, per
-   fabrication-audit step 7) — do not take an absence at face value.
+ 6. Read `givn instructions specs --change <change-id>` and verify its
+    normalized inventory, real-interface assertion, and driver-fidelity rules.
+    Missing, downgraded, or over-produced coverage is unfinished work. Before
+    concluding a real driver is unavailable, search the tree yourself,
+    including untracked files.
 7. Run interaction coverage verification (fabrication-audit step 13).
 8. Run both runners again — confirm still GREEN.
 9. Complete the sign-off checklist in review.md, including the fabrication
@@ -175,7 +199,7 @@ givn check review --change <change-id>
 
 Unit/integration:
 ```
-uv run behave tests/features/ --no-capture --tags=-wip --tags=-e2e --tags=-needs-sandlock
+./run-tests.sh
 ```
 
 E2E smoke tests:

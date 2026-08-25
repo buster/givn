@@ -144,9 +144,17 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
     let mut scenarios = Vec::new();
     let mut current_title: Option<String> = None;
     let mut current_lines: Vec<String> = Vec::new();
+    let mut pending_tags: Vec<String> = Vec::new();
 
     for line in text.lines() {
         let trimmed = line.trim();
+        if trimmed.starts_with("Feature:") {
+            pending_tags.clear();
+        }
+        if trimmed.starts_with('@') {
+            pending_tags.push(line.to_string());
+            continue;
+        }
         if trimmed.starts_with("Scenario:") || trimmed.starts_with("Scenario Outline:") {
             // Save previous scenario.
             if let Some(title) = current_title.take() {
@@ -164,6 +172,7 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
                 .trim()
                 .to_string();
             current_title = Some(title);
+            current_lines = std::mem::take(&mut pending_tags);
         }
         if current_title.is_some() {
             current_lines.push(line.to_string());
@@ -183,12 +192,22 @@ fn parse_scenarios_from_text(text: &str) -> Result<Vec<ScenarioText>> {
 /// Extract everything before the first Scenario: line (the feature header).
 fn extract_feature_header(text: &str) -> String {
     let mut header = Vec::new();
+    let mut feature_seen = false;
     for line in text.lines() {
         let trimmed = line.trim();
         if trimmed.starts_with("Scenario:") || trimmed.starts_with("Scenario Outline:") {
             break;
         }
+        // A tag after the Feature line belongs to the first scenario. Keep
+        // feature-level tags before Feature, but do not carry stale
+        // first-scenario tags into a modified merge target.
+        if feature_seen && trimmed.starts_with('@') {
+            continue;
+        }
         header.push(line);
+        if trimmed.starts_with("Feature:") {
+            feature_seen = true;
+        }
     }
     // Trim trailing blank lines from header.
     while header
@@ -244,6 +263,32 @@ fn render_scenario_stripped(scenario: &Scenario) -> String {
         if let Some(table) = step.table() {
             for row in &table.rows {
                 let cells: Vec<&str> = row.iter().map(|c| c.as_str()).collect();
+                out.push_str(&format!("      | {} |\n", cells.join(" | ")));
+            }
+        }
+    }
+
+    for examples in &scenario.examples {
+        let clean_tags = strip_givn_tags(&examples.tags);
+        if !clean_tags.is_empty() {
+            let tags: Vec<String> = clean_tags.iter().map(|tag| format!("@{tag}")).collect();
+            out.push_str(&format!("    {}\n", tags.join(" ")));
+        }
+        out.push_str("    Examples");
+        if let Some(name) = examples.name.as_deref().filter(|name| !name.is_empty()) {
+            out.push_str(&format!(": {name}"));
+        } else {
+            out.push(':');
+        }
+        out.push('\n');
+        if let Some(description) = examples.description.as_deref() {
+            for line in description.lines() {
+                out.push_str(&format!("      {line}\n"));
+            }
+        }
+        if let Some(table) = &examples.table {
+            for row in &table.rows {
+                let cells: Vec<&str> = row.iter().map(|cell| cell.as_str()).collect();
                 out.push_str(&format!("      | {} |\n", cells.join(" | ")));
             }
         }
@@ -318,6 +363,36 @@ Feature: Delta
         let result = apply_deltas(Some(PERMANENT), &[delta], "Delta").unwrap();
         assert!(result.contains("MFA"));
         assert!(result.contains("User logs in"));
+    }
+
+    #[test]
+    fn modified_first_scenario_drops_stale_target_tags() {
+        let permanent = r#"Feature: User auth
+
+  @wip
+  Scenario: User logs in
+    Given a registered user
+    When they provide valid credentials
+    Then they are authenticated
+"#;
+        let mod_feature_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.modified
+  Scenario: User logs in
+    Given a registered user
+    When they provide valid credentials and MFA
+    Then they are authenticated with MFA
+"#;
+        let feature = parse_str(mod_feature_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Modified,
+        };
+        let result = apply_deltas(Some(permanent), &[delta], "Delta").unwrap();
+        assert!(!result.contains("@wip"), "{result}");
+        assert!(result.contains("authenticated with MFA"), "{result}");
     }
 
     #[test]
@@ -574,5 +649,36 @@ Feature: Brand new capability
         assert!(result.starts_with("Feature: Brand new capability\n"));
         assert!(!result.contains("(merged)"));
         assert!(result.contains("First scenario"));
+    }
+
+    #[test]
+    fn added_scenario_keeps_outline_examples() {
+        let delta_text = r#"
+@givn.delta @user-auth
+Feature: Delta
+
+  @givn.added
+  Scenario Outline: User resets password
+    Given a user named <name>
+    When they request a reset
+    Then they receive a reset email
+
+    Examples: users
+      | name |
+      | Ada  |
+"#;
+        let feature = parse_str(delta_text).unwrap();
+        let delta = DeltaScenario {
+            scenario: &feature.scenarios[0],
+            op: DeltaOp::Added,
+        };
+        let result = apply_deltas(None, &[delta], "Delta").unwrap();
+        assert!(
+            result.contains("Scenario Outline: User resets password"),
+            "{result}"
+        );
+        assert!(result.contains("Examples: users"), "{result}");
+        assert!(result.contains("| name |"), "{result}");
+        assert!(result.contains("| Ada |"), "{result}");
     }
 }

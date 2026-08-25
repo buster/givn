@@ -9,7 +9,7 @@ use crate::skills::render::{
 /// - `.opencode/commands/<name>.md` when `opencode` is selected
 ///
 /// The target set comes from the `skills:` block of `givn/config.yaml`
-/// (default: `[opencode]`). See ADR-036.
+/// (default: `[opencode]`). See the agent-integration architecture documentation.
 ///
 /// `AGENTS.md` at the repo root is otherwise user-owned. The only exception:
 /// givn manages its own fenced `<!-- givn:begin:* -->` blocks inside it:
@@ -156,6 +156,52 @@ pub fn sync(project_root: &Path) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Return the project paths that `sync` may write for the current effective
+/// configuration. The upgrade migration uses this list as its Git staging
+/// allowlist; it must never stage an entire generated directory.
+pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::PathBuf>> {
+    let manifest = load_effective()?;
+    let targets = configured_targets(project_root)?;
+    let mut paths = vec![project_root.join("AGENTS.md")];
+
+    let mut skill_names = default_skill_names();
+    if manifest.addons.domain_modeling {
+        skill_names.push("givn-domain-modeling");
+    }
+    if manifest.addons.dev_principles {
+        skill_names.push("givn-dev-principles");
+    }
+
+    for target in &targets {
+        for name in &skill_names {
+            paths.push(
+                project_root
+                    .join(target.dir())
+                    .join("skills")
+                    .join(name)
+                    .join("SKILL.md"),
+            );
+        }
+    }
+
+    if targets.contains(&AgentTarget::Opencode) {
+        let mut command_names = default_command_names();
+        if manifest.addons.grill_me {
+            command_names.push("grill-me");
+        }
+        if manifest.addons.grill_with_docs {
+            command_names.push("grill-with-docs");
+        }
+        for name in command_names {
+            paths.push(project_root.join(format!(".opencode/commands/{name}.md")));
+        }
+    }
+
+    paths.sort();
+    paths.dedup();
+    Ok(paths)
 }
 
 /// Write a rendered SKILL.md to the configured skill target locations.

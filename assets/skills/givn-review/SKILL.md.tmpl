@@ -47,10 +47,9 @@ stubs. Mechanical check, not a judgment call:
    `@e2e` step implementation of the same capability. Reviewing a weaker
    implementation while a stronger, real-interface one already exists
    elsewhere (committed or not) is itself a fabrication-audit finding.
-8. Check `@e2e` scope: confirm each capability has one `@e2e` scenario per
-   distinct happy-path action, not one per input variant/error case/enum
-   value. Flag excess `@e2e` scenarios on the same action for conversion to
-   regular scenarios.
+ 8. Read `givn instructions specs --change {{CHANGE_ID}}` and apply its
+    canonical action normalization and E2E scope. Flag excess `@e2e`
+    scenarios on the same action for conversion to regular scenarios.
 9. Confirm the local run command (design.md's Local Runnability section)
    starts the full stack, including every digital twin, cleanly.
 10. Read `verify.command` and `verify.e2e_command` literally from
@@ -71,8 +70,8 @@ stubs. Mechanical check, not a judgment call:
     the task, redo RED→GREEN→REFACTOR→COMMIT for real (fixing the
     real-interface obstacle per design.md, never leaving a repository-only
     or HTTP/fetch() shortcut in place), before continuing.
-13. **Interaction coverage verification** — cross-reference the spec's
-    User Interaction Inventory against the design's Interaction Coverage
+13. **Interaction coverage verification** — cross-reference the canonical
+    specs policy's normalized inventory against the design's Interaction Coverage
     Matrix and the actual `.feature` file + step definitions:
     a. Read the spec `.feature` file and extract the `# User Interaction
        Inventory:` comment block. List every entry.
@@ -138,6 +137,14 @@ a finding. Fix the affected artifact and repeat the comparison; if design.md
 changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
 rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
 
+## Deterministic gate dispositions
+
+Before sign-off, inspect the deterministic overlap findings. Complete the
+**Overlap dispositions** table for every shape match, add a **split-or-keep**
+decision for every long scenario, and explain every removed+added pair as
+supersession or unrelated work. Do not use scores as a substitute for a human
+disposition.
+
 ## Coverage gate (completeness, not percentage)
 
 Classify every uncovered line/branch into exactly one bucket:
@@ -170,15 +177,11 @@ Coverage is complete when every gap is classified and resolved (or justified).
    - Dead code → delete.
    - Missing test → add scenario + RED/GREEN/REFACTOR/COMMIT.
    - Hard to test → write justification.
-6. Confirm every capability has exactly one `@e2e` smoke-test scenario per
-   distinct happy-path action, with a real-interface primary assertion
-   driven through the actual interface (real browser for a browser-UI
-   capability, never HTTP/fetch() standing in for it). Missing, downgraded,
-   or over-produced (one per variant) = classify as "missing test"/"needs
-   fixing" and add, fix, or convert accordingly — never as an exception
-   outside the three buckets. Before concluding a real driver is
-   unavailable, search the tree yourself (including untracked files, per
-   fabrication-audit step 7) — do not take an absence at face value.
+ 6. Read `givn instructions specs --change {{CHANGE_ID}}` and verify its
+    normalized inventory, real-interface assertion, and driver-fidelity rules.
+    Missing, downgraded, or over-produced coverage is unfinished work. Before
+    concluding a real driver is unavailable, search the tree yourself,
+    including untracked files.
 7. Run interaction coverage verification (fabrication-audit step 13).
 8. Run both runners again — confirm still GREEN.
 9. Complete the sign-off checklist in review.md, including the fabrication
