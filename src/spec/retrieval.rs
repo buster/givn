@@ -2918,6 +2918,12 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let report_path = change_dir.join("semantic-review.md");
     let semantic_set = semantic_candidates(root, &refresh.index, &delta)?;
     let mut candidates = semantic_set.candidates;
+    if std::env::var_os("GIVN_SPEC_DEBUG_CANDIDATES").is_some() {
+        eprintln!(
+            "DEBUG semantic candidates after collect: {}",
+            candidates.len()
+        );
+    }
     let e5_token_caps = semantic_set.e5_token_caps;
     #[cfg(feature = "cross-encoder-reranker")]
     let bge_run = apply_semantic_bge(root, &delta, &mut candidates)?;
@@ -2927,6 +2933,12 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let nli_run = apply_semantic_nli(root, &delta, &mut candidates)?;
     let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
+    if std::env::var_os("GIVN_SPEC_DEBUG_CANDIDATES").is_some() {
+        eprintln!(
+            "DEBUG before render: {} candidates, blocking filter next",
+            candidates.len()
+        );
+    }
     let remediation =
         verify_semantic_remediation(root, &refresh.index, &delta, &prior, &candidates);
     let report = render_semantic_report(
@@ -3039,6 +3051,12 @@ fn semantic_candidates(
                     },
                 });
             let score = semantic_score(&left, &right, cosine_similarity(vector, &entry.embedding))?;
+            if std::env::var_os("GIVN_SPEC_DEBUG_CANDIDATES").is_some() {
+                eprintln!(
+                    "DEBUG pair {} vs {} raw-ish score {:.4}",
+                    left.title, right.title, score
+                );
+            }
             if score < SEMANTIC_SIMILARITY_THRESHOLD {
                 continue;
             }
@@ -3134,6 +3152,25 @@ fn apply_semantic_bge(
             });
         }
         return Ok(Some(run));
+    }
+    if std::env::var_os("GIVN_SPEC_DEBUG_CANDIDATES").is_some() {
+        for candidate in candidates.iter().take(2) {
+            eprintln!(
+                "DEBUG bge candidate left=({},{}) right=({},{})",
+                candidate.left.file,
+                candidate.left.title,
+                candidate.right.file,
+                candidate.right.title
+            );
+        }
+        match bge_directional_overrides() {
+            Ok(Some(overrides)) => {
+                for (key, value) in overrides.iter().take(4) {
+                    eprintln!("DEBUG bge override ({:?}) -> {}", key, value);
+                }
+            }
+            _ => eprintln!("DEBUG bge overrides: none"),
+        }
     }
     let mut selected = candidates.to_vec();
     selected.sort_by(semantic_candidate_order);

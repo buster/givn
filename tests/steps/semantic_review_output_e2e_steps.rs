@@ -17,7 +17,11 @@ const PERMANENT_ENDPOINTS: [&str; 3] = [
     "givn/specs/provider.feature|Provider timeout is reported",
     "givn/specs/provider.feature|Provider warning is reported",
 ];
-const DELTA_BODY: &str = "    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n";
+/// The delta body differs from the permanent corpus so the deterministic
+/// exact-duplicate gate does not swallow the pairs; the stub pair scores
+/// lift them above the boundary instead.
+const PERMANENT_BODY: &str = "    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n";
+const DELTA_BODY: &str = "    Given a configured provider catalogue\n    When the user picks a known provider\n    Then the request is accepted\n";
 
 fn write_project(world: &mut GivnWorld) {
     let env = common::make_init_root();
@@ -27,7 +31,7 @@ fn write_project(world: &mut GivnWorld) {
     let mut permanent = String::from("Feature: provider\n");
     for endpoint in PERMANENT_ENDPOINTS {
         let title = endpoint.split('|').nth(1).expect("endpoint title");
-        permanent.push_str(&format!("\n  Scenario: {title}\n{DELTA_BODY}"));
+        permanent.push_str(&format!("\n  Scenario: {title}\n{PERMANENT_BODY}"));
     }
     fs::write(specs.join("provider.feature"), permanent).expect("write permanent corpus");
     let delta = env.path("givn/changes/running-change/specs/running.feature");
@@ -39,25 +43,42 @@ fn write_project(world: &mut GivnWorld) {
         ),
     )
     .expect("write active delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Provider request is accepted` | `Active provider request` | boundary |\n| `Provider timeout is reported` | `Active provider request` | boundary |\n| `Provider warning is reported` | `Active provider request` | boundary |\n",
+    )
+    .expect("write dispositions");
+    // Neutralise the project-owned verify hooks for the blocking surface.
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write stub commands");
     world.env = Some(env);
 }
 
 fn base_envs(_world: &GivnWorld) -> Vec<(String, String)> {
+    // The advisory pool keys the delta endpoint by its projected permanent
+    // identity; the blocking report keys it by the source file.
+    const DELTA_SOURCE: &str =
+        "givn/changes/running-change/specs/running.feature|Active provider request";
     let mut bge_scores = String::new();
     let mut nli_scores = String::new();
     let confidences = [
-        (PERMANENT_ENDPOINTS[0], "4.0", None),
+        (PERMANENT_ENDPOINTS[0], "4.0", Some("2.2,-0.2,0.1")),
         (PERMANENT_ENDPOINTS[1], "1.0", Some("-0.4,1.4,0.2")),
         (PERMANENT_ENDPOINTS[2], "1.0", Some("-0.4,1.4,0.2")),
     ];
     for (right, bge, nli) in confidences {
-        bge_scores.push_str(&format!(
-            "{DELTA_ENDPOINT}->{right}={bge};{right}->{DELTA_ENDPOINT}={bge};"
-        ));
-        if let Some(nli) = nli {
-            nli_scores.push_str(&format!(
-                "{DELTA_ENDPOINT}->{right}={nli};{right}->{DELTA_ENDPOINT}={nli};"
+        for delta_endpoint in [DELTA_ENDPOINT, DELTA_SOURCE] {
+            bge_scores.push_str(&format!(
+                "{delta_endpoint}->{right}={bge};{right}->{delta_endpoint}={bge};"
             ));
+            if let Some(nli) = nli {
+                nli_scores.push_str(&format!(
+                    "{delta_endpoint}->{right}={nli};{right}->{delta_endpoint}={nli};"
+                ));
+            }
         }
     }
     vec![
@@ -119,11 +140,22 @@ fn e2e_run_review_json(world: &mut GivnWorld) {
 }
 
 #[when(
-    "the end-to-end user runs blocking change review for \"running-change\" through the givn CLI"
+    "the end-to-end user runs the blocking workflow review for \"running-change\" through the givn CLI"
 )]
 fn e2e_run_blocking_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("e2e review project missing");
-    let envs = base_envs(world);
+    let mut envs = base_envs(world);
+    // The blocking report derives its E5 candidates from the deterministic
+    // semantic-report score fixture.
+    let mut stub_scores = String::new();
+    for right in PERMANENT_ENDPOINTS {
+        let title = right.split('|').nth(1).expect("title");
+        stub_scores.push_str(&format!("{title}|Active provider request=0.9600;"));
+    }
+    envs.push((
+        "GIVN_SPEC_STUB_PAIR_SCORES".to_string(),
+        stub_scores.trim_end_matches(';').to_string(),
+    ));
     let environments: Vec<(&str, &str)> = envs
         .iter()
         .map(|(key, value)| (key.as_str(), value.as_str()))
@@ -242,17 +274,38 @@ fn e2e_persisted_matches_stdout(world: &mut GivnWorld) {
     );
 }
 
+#[then("the command exits non-zero because the recommended candidate is unresolved")]
+fn e2e_blocking_exits_nonzero(world: &mut GivnWorld) {
+    assert!(
+        !super::output(world).status.success(),
+        "expected blocking failure, stdout: {}",
+        super::stdout(world)
+    );
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("semantic review blocked") || stderr.contains("semantic review flagged"),
+        "stderr: {stderr}"
+    );
+}
+
 #[then("stderr names the flagged recommendation failure")]
-fn e2e_stderr_flagged(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_stderr_flagged(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("semantic review flagged") || stderr.contains("semantic review blocked"),
+        "stderr: {stderr}"
+    );
 }
 
-#[then("the semantic review report exists")]
-fn e2e_report_exists(_world: &mut GivnWorld) {
-    unimplemented!()
-}
-
-#[then("the semantic review report status is \"BLOCKED\"")]
-fn e2e_report_blocked(_world: &mut GivnWorld) {
-    unimplemented!()
+#[then("the persisted semantic review report records the blocked status")]
+fn e2e_report_blocked(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("e2e review project missing");
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("report");
+    assert!(
+        report.contains("Status: BLOCKED"),
+        "expected blocked report, got:\n{}",
+        report.lines().take(8).collect::<Vec<_>>().join("\n")
+    );
 }

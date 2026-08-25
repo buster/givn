@@ -201,11 +201,11 @@ Feature: Semantic review output leads with decision-relevant evidence
     And givn/changes/running-change/review-findings.json exists beside the change
     And the persisted document matches the document emitted on stdout
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI blocking review flags recommendations through the workflow gate
     Given an end-to-end project whose second-stage evidence recommends at least one pair
-    When the end-to-end user runs blocking change review for "running-change" through the givn CLI
+    When the end-to-end user runs the blocking workflow review for "running-change" through the givn CLI
     Then the command exits non-zero because the recommended candidate is unresolved
     And the semantic review report exists
-    And the semantic review report status is "BLOCKED"
+    And the persisted semantic review report records the blocked status
     And no findings document exists under the change directory
