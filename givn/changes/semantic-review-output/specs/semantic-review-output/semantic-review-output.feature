@@ -80,7 +80,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stdout lists any unscored or token-capped pair with its admission status
     And no listing limit applies to any stage
 
-  @givn.added @wip
+  @givn.added
   Scenario: Default output collapses artifact resolution chatter to one line per stage
     Given a project prepared for semantic review whose stubbed stages emit repeated resolution notices
     When the user runs the advisory semantic review for "running-change"
