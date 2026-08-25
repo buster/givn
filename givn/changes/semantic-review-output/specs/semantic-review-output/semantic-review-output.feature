@@ -95,7 +95,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     Then the command exits non-zero
     And stderr contains the full repeated resolution lines for every participating stage
 
-  @givn.added @wip
+  @givn.added
   Scenario: The truncation disclaimer appears only for a truncated listing
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change"
