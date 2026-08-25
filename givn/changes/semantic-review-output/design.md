@@ -30,7 +30,7 @@ One policy governs every detail listing; row class decides visibility:
 | E5 similarity candidates (raw list) | no when both second-stage layers participate; byte-identical today's output in fallback mode | yes, unchanged format | array |
 | BGE/NLI rows with admission RECOMMENDED | yes, sorted by model confidence (NLI symmetric entailment desc / BGE symmetric raw desc) — this is the problem worklist | yes | array entries |
 | BGE/NLI rows FILTERED / UNSCORED | no | yes, embedding-score order | array entries with admissions |
-| Model artifact resolution chatter ("resolving … artifacts", stderr) | collapsed to one summary line per stage | current lines | absent |
+| Model artifact resolution chatter ("resolving … artifacts", stderr) | start and completion each collapsed to one line per stage | current lines | absent |
 
 ### Corroborated gating (union signal)
 
@@ -91,8 +91,8 @@ Implementation points:
 - `GIVN_SPEC_NLI_REPORT_LIMIT` stays parsed but ignored (deprecated
   alias); documented as such, no error, no warning line.
 - Resolution chatter: hoist repeated "resolving … artifacts" eprintln
-  sites behind a `verbose` flag; default emits one line per stage
-  summarizing prepared model and cache state. Download-event streaming
+  sites behind per-stage dedupe; default emits at most one start line
+  and one ready summary per stage. Download-event streaming
   (`GIVN_SPEC_DOWNLOAD_EVENTS`) is untouched.
 - JSON stdout purity: the index-refresh banner lines ("Indexed N
   permanent scenarios", "Reused M vectors", "E5 token-cap candidates:

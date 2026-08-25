@@ -32,6 +32,9 @@ Targeted command template:
   (`run_review_output`; existing nli groups exclude the tag).
   Counts: full suite after implementation `387+42+9+12+7+23 = 480
   scenarios, 480 passed`; e2e subset `6 scenarios` — strictly smaller.
+  Final verification: `./run-tests.sh` exit 0 (480 passed) and
+  `./run-tests.sh --e2e` exit 0 after the download-start dedupe
+  resolution (`bf2dd52` and the chatter-refinement commit).
 - [x] Named permanent-pin migration task (executed within the flipping
   commits): permanent scenarios and bindings at
   `givn/specs/bge-reranking-evidence/bge-reranking-evidence.feature`

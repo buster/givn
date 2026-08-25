@@ -1091,6 +1091,10 @@ fn review_chatter() -> bool {
 #[cfg(feature = "spec-retrieval")]
 static RESOLUTION_SUMMARIZED: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
 
+/// Stages whose collapsed resolution start line was already emitted once.
+#[cfg(feature = "spec-retrieval")]
+static RESOLUTION_STARTED: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
 #[cfg(feature = "spec-retrieval")]
 const RESOLUTION_STAGE_E5: u8 = 1;
 #[cfg(feature = "spec-retrieval")]
@@ -1104,10 +1108,25 @@ const RESOLUTION_STAGE_NLI: u8 = 4;
 /// silent here and reports once via [`resolve_stage_done`].
 #[cfg(feature = "spec-retrieval")]
 fn resolve_stage_start(stage: &'static str, detail: &str) {
+    let key = stage_key(stage);
     if !review_chatter() || reporting_verbose() {
         notice(format!("resolving {stage} into {detail}"));
+        return;
     }
-    let _ = stage_key(stage);
+    // Default review output keeps the first start line per stage so
+    // download progress remains observable, and drops the repeats.
+    let mask = match key {
+        Some(RESOLUTION_STAGE_E5) => RESOLUTION_STAGE_E5,
+        Some(RESOLUTION_STAGE_BGE) => RESOLUTION_STAGE_BGE,
+        Some(RESOLUTION_STAGE_NLI) => RESOLUTION_STAGE_NLI,
+        _ => {
+            notice(format!("resolving {stage} into {detail}"));
+            return;
+        }
+    };
+    if RESOLUTION_STARTED.fetch_or(mask, std::sync::atomic::Ordering::Relaxed) & mask == 0 {
+        notice(format!("resolving {stage} into {detail}"));
+    }
 }
 
 /// Report completed model artifact resolution for one stage.
