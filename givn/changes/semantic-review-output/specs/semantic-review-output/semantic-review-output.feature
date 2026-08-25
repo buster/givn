@@ -61,7 +61,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And the recommended BGE pairs are listed highest symmetric raw score first
     And neither listing follows embedding-score order
 
-  @givn.added @wip
+  @givn.added
   Scenario: Retained text lines keep their established wording
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change"
