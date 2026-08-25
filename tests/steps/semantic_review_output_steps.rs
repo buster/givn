@@ -740,6 +740,7 @@ fn normalized_lines(output: &str) -> Vec<&str> {
     output
         .lines()
         .filter(|line| !line.contains("runtime ms"))
+        .filter(|line| !line.contains("Reused "))
         .collect()
 }
 
@@ -764,4 +765,9 @@ fn nothing_names_deprecated_variable(world: &mut GivnWorld) {
         !stderr.contains("GIVN_SPEC_NLI_REPORT_LIMIT") && !stderr.contains("REPORT_LIMIT"),
         "stderr: {stderr}"
     );
+}
+
+#[then("every recommended second-stage pair is still listed")]
+fn recommended_still_listed(world: &mut GivnWorld) {
+    lists_recommended_once(world);
 }
