@@ -2,80 +2,119 @@
 
 ## 1.1 What is givn?
 
-`givn` (tagline: *"from Given to done"*) is a single-binary, Gherkin-first,
-spec-driven workflow tool. It manages a change lifecycle in which **the `.feature`
-file IS the specification** — simultaneously the delta document, the executable
-cucumber test, and the permanent archived record. There is no parallel `spec.md`.
+`givn` is a Rust, Gherkin-first workflow CLI. It manages a change lifecycle in
+which a `.feature` file is the behavior specification, the executable test input,
+and, after archive, the permanent record. It has no parallel `spec.md` format.
 
-It distills a proven Gherkin-first workflow (originally prototyped as a fork of
-OpenSpec) into a standalone, configurable, easily-installable Rust binary that is
-language- and test-runner-agnostic and aimed at the broader open-source community.
-This project is dual-licensed under MIT OR Apache-2.0 (see ADR-034).
-
-The lifecycle it manages:
+The default lifecycle graph is:
 
 ```mermaid
 flowchart LR
-    propose --> spec --> design --> design-review --> tasks --> implement --> review --> archive
+    proposal --> specs --> design --> design_review[design-review] --> tasks --> review --> archive
 ```
+
+The binary derives state from project files. Embedded assets provide defaults;
+project files under `givn/` override them. The initialized project also gets
+`givn/commands.yaml`, whose project-owned commands are applied after the main
+configuration overlay.
+
+`givn init` currently enables all registered addons by default, including the
+`arc42` addon, unless `--no-addons` is supplied. The embedded default manifest
+itself has addons disabled; initialization is the operation that writes the
+enabled addon settings and scaffolds durable Arc42 chapters.
 
 ## 1.2 Requirements Overview
 
 ### Functional requirements
 
 | ID | Requirement |
-| --- | --- |
-| FR-1 | Scaffold the workflow into a project directory (`givn init`). |
-| FR-2 | Create and track changes through the lifecycle (propose → archive). |
-| FR-3 | Treat `.feature` files as the single source of truth — no `spec.md`. |
-| FR-4 | Support delta tags (`@givn.delta`, `@givn.added/modified/removed`). |
-| FR-5 | Merge delta `.feature` files into permanent specs on archive, stripping tags. |
-| FR-6 | Lint `.feature` files (`givn lint`) with distinct exit codes (static check; runs no tests). |
-| FR-7 | Emit per-artifact instructions for AI agents (`givn instructions --json`). |
-| FR-8 | Drive a scenario-by-scenario RED/GREEN/REFACTOR TDD loop. |
-| FR-9 | Provide a completeness-based coverage review (not a percentage gate). |
-| FR-10 | Generate agent skills (`.agents/skills`, mirrors). `AGENTS.md` is user-owned and never written. |
-| FR-11 | Allow per-facet override of all defaults via a CSS-style cascade. |
-| FR-12 | Eject embedded defaults on demand (`givn eject`). |
-| FR-13 | Derive lifecycle state from the filesystem (no separate state file). |
-| FR-14 | Declare the test-runner command in the project manifest. |
-| FR-15 | Default test-runner command is a self-documenting sentinel that prints setup guidance and fails until configured. |
-| FR-16 | Generate `givn/config.yaml` fully commented, with documented defaults for every key. |
-| FR-17 | Version the project config (`givn_config_version`) and provide `givn upgrade` to refresh scaffolding while preserving user overrides. |
-| FR-18 | Allow projects to add, remove, reorder, and mark-optional lifecycle artifacts purely via config (e.g. drop review, add a refactor step). |
-| FR-19 | Keep specification artifacts (`proposal`, `.feature`) implementation-independent; carry implementation detail only in `design`/`tasks`. |
-| FR-20 | Provide an opt-in addon mechanism; ship an `arc42-docs` addon that creates and maintains durable project-level arc42 documentation (e.g. after `design`). |
-| FR-21 | Support per-artifact `post` hooks; run `verify.command` (tests) after `tasks` and `review` by default. Provide `givn check`; run required hooks as the archive gate, blocking on failure. |
+|---|---|
+| FR-1 | Scaffold `givn/` and the project-owned command file with `givn init`. |
+| FR-2 | Create and track changes through proposal, specs, design, design-review, tasks, review, and archive. |
+| FR-3 | Treat `.feature` files as the behavior source of truth. |
+| FR-4 | Support `@givn.delta`, `@givn.added`, `@givn.modified`, and `@givn.removed`. |
+| FR-5 | Merge deltas into permanent specs and strip `@givn.*` tags on archive. |
+| FR-6 | Run static Gherkin lint with distinct parse, duplicate-title, WIP, and clean outcomes. |
+| FR-7 | Emit resolved artifact instructions in human-readable and JSON forms. |
+| FR-8 | Support scenario-by-scenario RED/GREEN/REFACTOR guidance. |
+| FR-9 | Review coverage gaps by classification rather than a percentage threshold. |
+| FR-10 | Generate skills and commands to selected targets; preserve all `AGENTS.md` content outside givn-owned fenced blocks. |
+| FR-11 | Resolve templates and instructions through a project-overrides-first cascade. |
+| FR-12 | Materialize embedded defaults through `givn eject`. |
+| FR-13 | Derive lifecycle state from the effective manifest and filesystem. |
+| FR-14 | Declare test and coverage commands in `givn/commands.yaml`. |
+| FR-15 | Provide an explicit non-zero missing-runner sentinel as the embedded fallback. |
+| FR-16 | Generate a documented and versioned `givn/config.yaml` scaffold. |
+| FR-17 | Upgrade the scaffold while preserving user-owned values. |
+| FR-18 | Allow artifact graph add, remove, reorder, and optional behavior through overlay. |
+| FR-19 | Keep proposals and feature files implementation-independent except for observable requirements. |
+| FR-20 | Maintain durable Arc42 chapters through the bundled `arc42` addon and fixed `docs/arc42/` output. |
+| FR-21 | Run project commands at explicit gate points and keep binary mandatory checks non-deactivatable. |
+| FR-22 | Keep one normative interaction and E2E authoring policy. |
+| FR-23 | Provide local E5 retrieval over permanent scenarios. |
+| FR-24 | Enforce the fixed E5 similarity gate only in the `spec-similarity-gate` build. |
+| FR-25 | Provide optional BGE and NLI evidence without automatic Givn classification. |
+| FR-26 | Explore exactly one complete draft scenario against permanent scenarios. |
+| FR-27 | Optionally add active change scenarios to Explore request-locally. |
+| FR-28 | Generate a change-local semantic report from blocking `givn check review`. |
+| FR-29 | Verify classified semantic remediation against the projected tree. |
+| FR-30 | Audit the complete permanent corpus through `givn spec duplicates` without writing audit state. |
+| FR-31 | Use complete compact semantic input and actual-tokenizer cap evidence. |
+| FR-32 | Bound second-stage work through the proposed `GIVN_SPEC_MAX_RERANK_PAIRS` setting while retaining unscored tails. |
+| FR-33 | Publish version 0.3.0 with a complete changelog and an LLM-executable 0.2.0-to-0.3.0 migration guide. |
+| FR-34 | Prepare legacy projects through a visible, reviewable migration change without inventing product specifications. |
+| FR-35 | Refresh and commit Givn-owned files for migration-free upgrades without creating a migration change. |
+| FR-36 | Resolve multiple release-owned migration bundles into one ordered aggregate maintenance change. |
+| FR-37 | Enable every currently declared Cargo feature in the normal installation while preserving an explicit feature-free build. |
+| FR-38 | Acquire missing E5, BGE, and NLI model artifacts on explicit semantic use and reuse them from the user-level XDG cache. |
+| FR-39 | Give every semantic surface a consistent missing-index repair hint and actionable model-setup diagnostics. |
 
-### Non-functional requirements (top)
+### Non-functional requirements
 
 | ID | Requirement |
-| --- | --- |
-| NFR-1 | Install with no npm, no root/sudo, no language runtime. |
-| NFR-2 | Single static binary, broadly installable (release binary, brew, cargo, curl\|sh). |
-| NFR-3 | All project configuration lives in one visible `givn/` directory. |
-| NFR-4 | Binary updates must never clobber project-owned files. |
-| NFR-5 | Defaults shipped but nothing format/artifact-name hardcoded for the user. |
+|---|---|
+| NFR-1 | The default Cargo installation enables all declared retrieval capabilities; `--no-default-features` provides a native feature-free binary without npm, root, or language runtime requirements. |
+| NFR-2 | Defaults are embedded; project-owned files are not silently overwritten. |
+| NFR-3 | Project configuration and lifecycle state are visible under `givn/`. |
+| NFR-4 | Semantic evidence is deterministic in identity, ordering, hashes, and output format where the current contract specifies it. |
+| NFR-5 | Feature-free and feature-enabled behavior is explicit rather than silently falling back to a false pass. |
+| NFR-6 | Automatic migration commits are narrowly scoped, reproducible, and never mix uncommitted user work with Givn-owned files. |
+| NFR-7 | Large model artifacts are shared through an XDG user cache; project trees contain only project-specific retrieval state unless an explicit override is selected. |
+| NFR-8 | Model acquisition validates complete artifacts and fails with recovery instructions rather than accepting partial or corrupt cache state. |
 
 ## 1.3 Quality Goals
 
-Top three quality goals, in priority order (see chapter 10 for scenarios):
-
 | Priority | Quality goal | Motivation |
-| --- | --- | --- |
-| 1 | **Configurability without forking** | Prior tools required forking source to customise. Every workflow knob must be override-able from the project directory. |
-| 2 | **Installability** | Broad community adoption needs frictionless install: no npm, no root, single binary, many channels. |
-| 3 | **Upgradeability** | Updating the binary must never break or overwrite project config. Defaults live in the binary; project files always win. |
+|---|---|---|
+| 1 | **Configurability without forking** | Project overlays and facet overrides change workflow behavior without modifying the binary. |
+| 2 | **Installability** | The normal product boundary is one native executable with embedded defaults. |
+| 3 | **Upgradeability** | Project-owned values and files remain reviewable and are not clobbered by scaffold updates. |
+| 4 | **Architecture contract clarity** | The active ADR register contains only independent durable decisions; current facts and implementation details have one canonical home. |
 
-Secondary goals: correctness of the Gherkin merge (data integrity of the spec),
-and AI-agent ergonomics (standards-aligned skill/rule generation).
+Secondary goals are merge correctness, agent ergonomics, interface-fidelity in
+E2E evidence, deterministic semantic evidence, explicit token-cap safety, a
+permanent-only retrieval persistence boundary, and non-redundant architecture
+documentation.
+
+The current second-stage budget work is not yet a completed quality claim. Its
+open tasks and final verification are listed in the active change referenced by
+the [ADR register](adr/README.md).
 
 ## 1.4 Stakeholders
 
-| Stakeholder | Interest / expectation |
-| --- | --- |
-| Tool author (Sebastian) | Standalone tool extracted from the OpenSpec fork; owns roadmap. |
-| OSS developers (end users) | Easy install; customise workflow without forking; clear docs. |
-| AI coding agents | Consume `givn instructions` and generated skills. `AGENTS.md` (if present) is user-authored. |
-| Contributors | Readable Rust; clear architecture (this document). |
-| CI systems | Run `givn lint` (static) and the project test runner (`verify.command`) deterministically. |
+| Stakeholder | Interest |
+|---|---|
+| Tool maintainers | Own the CLI, embedded assets, release path, and architecture. |
+| OSS developers | Need a usable local workflow and project-owned customization. |
+| AI coding agents | Consume instructions, skills, semantic reports, and Arc42 evidence. |
+| Contributors | Need stable Rust modules, contracts, and review gates. |
+| CI systems | Need deterministic lint, test-runner, archive, and semantic outcomes. |
+| Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
+| Migrating project maintainers | Need a clean Git boundary and an explicit plan for project-specific 0.3.0 work. |
+
+## 1.5 Acceptance Ownership
+
+Givn's review, archive, and rollback behavior is accepted in this repository
+through temporary-project fixtures that invoke the compiled CLI. Consumer
+repositories retain their own domain specifications; they are not the hidden
+acceptance host for Givn's product contract.

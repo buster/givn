@@ -121,29 +121,11 @@ Do not substitute a simpler approach that happens to pass the test.
 8. Re-run targeting this scenario → still zero exit. Capture output verbatim.
 
 ## @e2e scenarios: same RED/GREEN/REFACTOR, with:
-- e2e step location, e2e runner (<verify.e2e_command>)
-- GREEN sets up test infrastructure (server/browser/DB, via the local run
-  command from design.md) and writes glue driving the real interface
-- **GREEN's Then steps assert PRIMARILY on the real interface's output**
-  (page content, HTTP response, redirect, CLI output). Repository/database
-  checks are allowed only as secondary, additional assertions alongside a
-  real-interface assertion — never as the only assertion.
-- **For a browser-UI capability, the glue itself must drive a real browser**
-  (click/type/navigate via the driver design.md names) — never an HTTP
-  request to the backend route, and never `fetch()`/`XMLHttpRequest` called
-  from the page's own JS context. Both only exercise the API, never proving
-  a user can use the UI, even when the assertion later checks page content.
-- **If a real-interface obstacle appears** (browser session/cookie not
-  persisting, auth redirect losing state, flaky selector): this is expected
-  and design.md's "Anticipated interface obstacles" section names the fix.
-  Apply that fix. If design.md has no fix for this specific obstacle, STOP
-  — do not substitute a repository-only assertion, or an HTTP/fetch()
-  shortcut, and continue. Report the blocker: "real-interface obstacle not
-  covered by design.md: <describe>." The orchestrator will get this fixed
-  in design.md before you continue. Silently downgrading to a repository
-  check or an HTTP/fetch() call is fabrication — it produces a GREEN
-  scenario that proves nothing about whether the feature actually works
-  through the interface a real user or client would use.
+- e2e step location and e2e runner (`<verify.e2e_command>`) from design.md
+- GREEN infrastructure and assertions applying the canonical policy from
+  `givn instructions specs --change <id>` and the concrete design decision
+- any real-interface obstacle resolved exactly as named in design.md; never
+  silently substitute a weaker interface
 
 ## Done
 9. One commit for RED+GREEN+REFACTOR: "feat(<capability>): <title>" (or

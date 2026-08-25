@@ -1,0 +1,123 @@
+parsed 223 active scenarios under $HOME/projects/watn/givn/specs
+
+== labeled pairs by embedding similarity ==
+label      sim    jac  title  note
+dup     0.9860  0.848      1  F1 identical title
+dup     0.9415  0.512      1  F2 identical title
+dup     0.9307  0.639      0  F4 bash widget subset
+dup     0.9158  0.815      0  F5 failed/empty output duplicate
+dup     0.8737  0.708      0  F6 empty search subset
+legit   0.8622  0.533      0  reasoning: request vs stderr channel
+legit   0.8340  0.638      0  transport: normal vs test-support
+dup     0.8129  0.593      0  F3 missing-config subset
+legit   0.7814  0.213      0  stale-result: regular vs PTY
+legit   0.7778  0.500      0  F7 debug vs release binary
+legit   0.7722  0.743      0  credential matrix: literal vs fallback
+legit   0.7692  0.583      0  streaming: reassembly vs malformed
+legit   0.7456  0.146      0  streaming: DONE vs EOF
+legit   0.7044  0.481      0  F10 unified vs streamlined flow
+legit   0.6778  0.500      0  credential matrix: fallback vs missing
+dup     0.6671  0.205      0  F12 unknown-reasoning duplicate
+legit   0.6573  0.313      0  transport: fallback vs readiness
+dup     0.5101  0.189      0  F12 persisted-reasoning duplicate
+
+== separation ==
+dup   sim: min=0.5101 median=0.9158 max=0.9860 n=8
+legit sim: min=0.6573 median=0.7722 max=0.8622 n=10
+overlap band (max legit - min dup): +0.3521  (OVERLAPS)
+best threshold sim>=0.8737: 3/18 misclassified
+best threshold jaccard>=0.5926: 5/18 misclassified
+exact-title match catches 2/8 dup pairs
+
+== near-duplicate zone (sim >= 0.9) ==
+   each pair must be classified: MERGE (duplicate / variant -> Examples row,
+   parameter, or delete) or KEEP-AS-BOUNDARY (different production boundary ->
+   rename so the wording looks different enough).
+   dup     0.9860  F1 identical title
+   dup     0.9415  F2 identical title
+   dup     0.9307  F4 bash widget subset
+   dup     0.9158  F5 failed/empty output duplicate
+   0/10 legit boundary pairs fall in the near-duplicate zone -> KEEP-AS-BOUNDARY candidates that must be reworded to look distinct
+
+== retrieval (hold-one-out): a new scenario vs all other active ==
+label  best marg>0  note
+dup       1   True  F1 identical title
+dup       1   True  F2 identical title
+dup       1   True  F4 bash widget subset
+dup       1   True  F5 failed/empty output duplicate
+dup       1   True  F6 empty search subset
+legit     1   True  reasoning: request vs stderr channel
+legit     1   True  transport: normal vs test-support
+dup       1   True  F3 missing-config subset
+legit     1   True  stale-result: regular vs PTY
+legit     1   True  F7 debug vs release binary
+legit     1   True  credential matrix: literal vs fallback
+legit     2  False  streaming: reassembly vs malformed
+legit     2  False  transport: fallback vs readiness
+legit     4  False  streaming: DONE vs EOF
+legit     4  False  F10 unified vs streamlined flow
+dup       5  False  F12 unknown-reasoning duplicate
+legit     8  False  credential matrix: fallback vs missing
+dup      22  False  F12 persisted-reasoning duplicate
+
+-- hit@k: partner surfaces among the top-k nearest neighbors --
+  dup    n= 8 hit@1= 6 hit@3= 6 hit@5= 7 partner-nearest-with-margin= 6
+  legit  n=10 hit@1= 5 hit@3= 7 hit@5= 9 partner-nearest-with-margin= 5
+
+  miss: query "Existing unknown reasoning remains active after rerunning setup" (streamlined-setup/streamlined-setup.feature:374)
+    partner rank=5 sim=0.6671; closest other = "Existing reasoning survives selection without a valid replacement" sim=0.7073
+
+  miss: query "Free-form reasoning survives persistence and request construction" (streamlined-setup/streamlined-setup.feature:366)
+    partner rank=22 sim=0.5101; closest other = "Existing reasoning survives selection without a valid replacement" sim=0.6888
+
+== top 25 most similar pairs (sim>=0.85) ==
+ 0.9860 DUP   provider-setup/provider-setup.feature:187 :: credential-sources/credential-sources.feature:17
+         "A literal saved credential is authoritative over environment fallback" <-> "A literal saved credential is authoritative over environment fallback"
+ 0.9549       ask/ask.feature:39 :: ask/ask.feature:46
+         "Execute flag prompts for confirmation" <-> "Execute flag with explicit "y" confirmation"
+ 0.9415 DUP   model-autosuggest/model-autosuggest.feature:28 :: search-concurrency/search-concurrency.feature:3
+         "The newest search result stays visible when an older result arrives later" <-> "The newest search result stays visible when an older result arrives later"
+ 0.9307 DUP   interactive-shell-shortcut/interactive-shell-shortcut.feature:13 :: interactive-shell-shortcut/interactive-shell-shortcut.feature:204
+         "The generated Bash widget runs through Bash without evaluating its result" <-> "The generated Bash widget keeps the request visible and does not evaluate the command"
+ 0.9158 DUP   interactive-shell-shortcut/interactive-shell-shortcut.feature:131 :: interactive-shell-shortcut/interactive-shell-shortcut.feature:188
+         "Failed or empty output preserves the original command line" <-> "Failed or empty generation preserves the original buffer"
+ 0.9129       provider-setup/provider-setup.feature:131 :: streamlined-setup/streamlined-setup.feature:89
+         "Rerunning provider setup preserves unrelated configuration" <-> "Provider setup preserves unrelated settings"
+ 0.9057       interactive-shell-shortcut/interactive-shell-shortcut.feature:111 :: interactive-shell-shortcut/interactive-shell-shortcut.feature:169
+         "A successful widget inserts one normalized command and moves the cursor to its end" <-> "A successful generation keeps the original request visible as a comment"
+ 0.9045       reasoning/reasoning.feature:23 :: reasoning/reasoning.feature:33
+         "Verbose flag with small tier prints reasoning if present" <-> "Small tier without verbose flag does not print reasoning"
+ 0.8962       ask/ask.feature:46 :: ask/ask.feature:53
+         "Execute flag with explicit "y" confirmation" <-> "Execute flag with "n" answer skips execution"
+ 0.8946       shell-completions/shell-completions.feature:3 :: shell-completions/shell-completions.feature:128
+         "Bash completion exposes the authoritative command tree" <-> "PowerShell completion exposes the authoritative command tree"
+ 0.8929       highlight-active-setup-input/highlight-active-setup-input.feature:25 :: highlight-active-setup-input/highlight-active-setup-input.feature:39
+         "The green border follows model focus" <-> "The green border follows optional shortcut focus"
+ 0.8826       provider-setup/provider-setup.feature:94 :: credential-sources/credential-sources.feature:28
+         "A missing saved environment reference fails authentication without a request" <-> "A missing saved environment credential fails before discovery"
+ 0.8823       ask/ask.feature:39 :: ask/ask.feature:53
+         "Execute flag prompts for confirmation" <-> "Execute flag with "n" answer skips execution"
+ 0.8787       shell-completions/shell-completions.feature:3 :: shell-completions/shell-completions.feature:41
+         "Bash completion exposes the authoritative command tree" <-> "Zsh completion exposes the authoritative command tree"
+ 0.8768       ask/ask.feature:15 :: ask/ask.feature:102
+         "Explicit tier -1 uses the small/fast model" <-> "Default model used when no tiers configured"
+ 0.8760       provider-setup/provider-setup.feature:4 :: streamlined-setup/streamlined-setup.feature:60
+         "Configure OpenRouter with an environment-backed credential" <-> "Provider setup configures an OpenAI provider with an environment credential"
+ 0.8746       reasoning/reasoning.feature:13 :: reasoning/reasoning.feature:57
+         "Thinking tier with verbose flag prints reasoning to stderr" <-> "Thinking tier with verbose and execute flags"
+ 0.8738       provider-setup/provider-setup.feature:4 :: provider-setup/provider-setup.feature:60
+         "Configure OpenRouter with an environment-backed credential" <-> "A recognized environment credential skips automatic provider setup"
+ 0.8737 DUP   model-autosuggest/model-autosuggest.feature:23 :: ratatui-model-picker/ratatui-model-picker.feature:59
+         "No matching model produces a clear empty state" <-> "Empty filter result produces a clear empty state"
+ 0.8696       streamlined-setup/streamlined-setup.feature:248 :: streamlined-setup/streamlined-setup.feature:256
+         "A successful edited catalog endpoint is promoted only at final confirmation" <-> "A failed edited catalog endpoint preserves the previous endpoint"
+ 0.8693       highlight-active-setup-input/highlight-active-setup-input.feature:12 :: highlight-active-setup-input/highlight-active-setup-input.feature:25
+         "The green border follows API key focus" <-> "The green border follows model focus"
+ 0.8665       ask/ask.feature:60 :: config/config.feature:35
+         "Cost is displayed when pricing is configured" <-> "Model pricing configured for cost display"
+ 0.8645       streamlined-setup/streamlined-setup.feature:342 :: streamlined-setup/streamlined-setup.feature:350
+         "Selected provider migration moves an arbitrary provider to custom" <-> "Provider migration preserves the destination default model on collision"
+ 0.8622 LEGIT reasoning/reasoning.feature:4 :: reasoning/reasoning.feature:13
+         "Thinking tier sends reasoning without printing it" <-> "Thinking tier with verbose flag prints reasoning to stderr"
+ 0.8614       reasoning/reasoning.feature:13 :: reasoning/reasoning.feature:33
+         "Thinking tier with verbose flag prints reasoning to stderr" <-> "Small tier without verbose flag does not print reasoning"

@@ -107,11 +107,10 @@
 
 ## E2E Smoke Test Infrastructure
 
-> **Interface type** (browser UI / CLI / API-only):
+> **Interface type** (Web UI / CLI / HTTP API / Library / Message bus):
 > ```
-> (e.g. "Browser UI — Playwright drives the rendered page." or
->  "API-only — no UI consumes this endpoint, an HTTP client is the real
->  interface.")
+> (e.g. "Web UI — Playwright drives the rendered page." or
+>  "HTTP API — an HTTP client is the public consumer interface.")
 > ```
 > **E2E runner command** (→ `verify.e2e_command`):
 > ```
@@ -143,8 +142,8 @@
 > shortcut only exercises the API, not the UI. For an API-only capability, a
 > real HTTP client genuinely is the real interface.
 >
-> **E2E scope:** one `@e2e` scenario per User Interaction Inventory entry
-> for this capability, not one per variant/error case.
+> **E2E scope:** read `givn instructions specs --change <id>` for the
+> canonical one-E2E-per-distinct-action policy; do not redefine it here.
 
 ## Architecture Impact
 

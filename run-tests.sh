@@ -1,8 +1,93 @@
 #!/bin/sh
 set -eu
 
-if [ "${1:-}" = "--e2e" ]; then
-    cargo test --test features_runner -- --tags @e2e
-else
-    cargo test --test features_runner -- --tags 'not @e2e'
-fi
+run_e5() {
+    env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+}
+
+run_bge() {
+    env -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub "$@"
+}
+
+run_bge_gate() {
+    env -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub "$@"
+}
+
+run_gate() {
+    env -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+}
+
+run_bge_disabled() {
+    env -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled "$@"
+}
+
+resolve_nli_features_path() {
+    if [ -n "${GIVN_FEATURES:-}" ]; then
+        printf '%s\n' "$GIVN_FEATURES"
+        return 0
+    fi
+    if [ -f givn/changes/nli-evidence/specs/nli-evidence/nli-evidence.feature ]; then
+        printf '%s\n' givn/changes/nli-evidence/specs
+    elif [ -f givn/specs/nli-evidence/nli-evidence.feature ]; then
+        printf '%s\n' givn/specs
+    else
+        return 1
+    fi
+}
+
+run_nli() {
+    features_path=$(resolve_nli_features_path) || {
+        printf '%s\n' 'NLI feature path could not be resolved' >&2
+        return 1
+    }
+    env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+}
+
+run_nli_disabled() {
+    features_path=$(resolve_nli_features_path) || {
+        printf '%s\n' 'NLI feature path could not be resolved' >&2
+        return 1
+    }
+    env -u GIVN_SPEC_BGE -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled "$@"
+}
+
+run_nli_combined() {
+    features_path=$(resolve_nli_features_path) || {
+        printf '%s\n' 'NLI feature path could not be resolved'
+        return 1
+    }
+    env -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES="$features_path" GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
+}
+
+case "${1:-}" in
+    --e2e)
+        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and @e2e'
+        run_bge cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge and not @gate-combination and @e2e'
+        run_nli cargo test --no-default-features --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and @e2e'
+        run_nli_combined cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and @e2e'
+        ;;
+    --non-e2e)
+        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @e2e'
+        run_bge cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '(@bge or @bge-approval) and not @gate-combination and not @e2e'
+        run_bge_gate cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,spec-similarity-gate --test features_runner -- --tags '@gate-combination'
+        run_gate cargo test --no-default-features --features spec-retrieval,spec-similarity-gate --test features_runner -- --tags '@gate-only'
+        run_bge_disabled cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge-disabled'
+        run_nli cargo test --no-default-features --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and not @nli-disabled and not @e2e'
+        run_nli_combined cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and not @e2e'
+        run_nli_disabled cargo test --no-default-features --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli-disabled and not @e2e'
+        ;;
+    "")
+        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined'
+        run_bge cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '(@bge or @bge-approval) and not @gate-combination'
+        run_bge_gate cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,spec-similarity-gate --test features_runner -- --tags '@gate-combination'
+        run_gate cargo test --no-default-features --features spec-retrieval,spec-similarity-gate --test features_runner -- --tags '@gate-only'
+        run_bge_disabled cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge-disabled'
+        run_nli cargo test --no-default-features --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli and not @nli-combined and not @nli-disabled and not @e2e'
+        run_nli_combined cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@nli-combined and not @e2e'
+        run_nli_disabled cargo test --no-default-features --features spec-retrieval,nli-evidence --test features_runner -- --tags '@nli-disabled and not @e2e'
+        ;;
+    *)
+        printf 'usage: %s [--e2e|--non-e2e]\n' "$0" >&2
+        exit 2
+        ;;
+esac

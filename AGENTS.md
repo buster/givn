@@ -6,6 +6,23 @@
 - Format via `cargo fmt` and lint with `cargo clippy` before committing.
 - Run tests with `cargo nextest run` or `cargo test <name> -- --nocapture`.
 
+## Self-dogfood after each change
+
+After archiving a change and before starting the next one, update the local
+tool from this checkout and regenerate the agent integrations:
+
+```sh
+cargo install --path . --locked --force
+givn skills sync
+givn instructions
+./run-tests.sh
+./run-tests.sh --e2e
+```
+
+The installed `$HOME/.cargo/bin/givn` must be the current checkout's
+binary. Do not start the next change with stale Givn skills or a stale local
+binary.
+
 ## Architecture & layout
 
 - Start with `README.md` when you need repo orientation or architectural context.
@@ -81,4 +98,3 @@ Communication policy for all work in this project.
 - Goal: restore independent, high-fidelity thinking. Success is the user
   needing this model less over time.
 <!-- givn:end:absolute-mode -->
-

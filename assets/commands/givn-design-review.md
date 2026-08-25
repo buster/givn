@@ -79,7 +79,10 @@ Check the `artifacts` array:
 givn instructions design-review --change <id>
 ```
 
-Capture `output` path, `template`, `instruction`, `dependencies`.
+When `--json` is supplied, capture `id`, `generates`, `requires`, and
+`instruction`. Use `generates` and `requires` to orient the review; the
+instruction text is the resolved policy. Without `--json`, capture the
+resolved instruction text only.
 
 ### 3. Spawn the grilling subagent
 
@@ -117,8 +120,8 @@ Read all of these in full before forming any questions:
   selection table (`givn instructions arc42-docs`) yourself against
   proposal.md/specs/design.md, and form your own Yes/No per row. Only after
   that, open `givn/changes/<id>/arc42.md` and every chapter file under
-  `docs/arc42/` (or the configured `arc42.output_dir`) that the marker file
-  claims to have touched. This is required input for the Architecture
+  fixed `docs/arc42/` path that the marker file claims to have touched. This is
+  required input for the Architecture
   documentation branch below — do not skip it because arc42.md says
   `STATUS: DONE`; that marker is a self-report from the same agent that
   wrote the docs, not verification.
@@ -139,13 +142,10 @@ as "no issue found" if genuinely clean):
   concrete strict-mode mechanism, not-implemented stub pattern, and
   single-scenario run command? Missing or vague on any of the three is a
   finding — this is the root cause of past fabricated changes.
-- **E2E fidelity** — for each capability, does design.md name the actual
-  interface type (browser UI / CLI / API-only) and a matching real driving
-  mechanism? For a browser-UI capability, is a real browser driver named —
-  not an HTTP client or in-page `fetch()` standing in for it? Is there
-  exactly one `@e2e` scenario per distinct happy-path action, not one per
-  variant/error case? Vague interface type, an HTTP/fetch()-based plan for
-  a browser UI, or more than one `@e2e` scenario per action is a
+- **E2E fidelity** — read `givn instructions specs --change <id>` and verify
+  that design.md applies its normalized action scope, real-interface rule, and
+  concrete driving mechanism. A silent redefinition, vague interface type,
+  HTTP/fetch plan for a browser UI, or duplicate coverage of one action is a
   finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
@@ -173,14 +173,16 @@ as "no issue found" if genuinely clean):
      content actually reflects design.md — not placeholder text, not a
      stale description that contradicts design.md's Architecture Impact or
      Technology Decisions sections. A contradiction is a finding.
-  4. For every non-trivial architecture/technology decision in design.md
-     (a real tradeoff was made, not a default/obvious choice): confirm
-     chapter 09 (architecture-decisions) has a corresponding MADR entry
-     (status/date/decision-makers, considered options, decision outcome,
-     consequences), and that its consequences are reflected in chapter 11
-     (risks-and-technical-debt). A non-trivial decision with no MADR entry,
-     or an MADR whose "Bad, because..." consequences have no counterpart in
-     chapter 11, is a finding.
+   4. For every ADR candidate in design.md, delegate qualification to the
+      canonical Arc42 ADR instruction and verify its structured verdict. Only
+      a candidate with all mandatory gates `PASS` requires a chapter-09 MADR
+      entry (status/date/decision-makers, considered options, decision outcome,
+      consequences), and its consequences must be reflected in chapter 11.
+      A non-qualifying choice must instead name exactly one canonical feature,
+      design, Arc42, process, project-documentation, or code destination. A
+      refinement must amend an existing ADR; a replacement must supersede it.
+      `Must be shared` is supporting evidence only. A missing MADR is a finding
+      only when a qualified candidate has no corresponding entry.
   5. A chapter file still containing only its scaffolded placeholder text,
 while `arc42.md` claims that chapter was "updated," is a
   finding — the same fabrication pattern as an empty step body reported
@@ -312,7 +314,7 @@ leave blank and do not only list the rows arc42.md claims:
 (one row per chapter, 1-12)
 - [ ] All 12 rows independently assessed against proposal.md/design.md before opening arc42.md.
 - [ ] No row where the subagent said "Yes" and arc42.md said "No"/omitted it (any such row is a blocker, listed in Open questions).
-- [ ] Every non-trivial architecture/technology decision in design.md has a MADR entry in chapter 09.
+- [ ] Every qualified ADR candidate in design.md has a MADR entry in chapter 09.
 - [ ] Every MADR "Bad, because..." consequence has a counterpart in chapter 11.
 - [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
 

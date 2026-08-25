@@ -132,17 +132,10 @@ For each artifact:
     Then an observable result is visible
   </example>
 - Scenarios assert observable behaviour in Given/When/Then domain language.
-- **Every capability MUST include at least one `@e2e` smoke-test scenario** that
-  exercises the real interaction surface (browser, CLI, API). Tag these
-  `@givn.added @e2e @wip`. They test the critical happy path through the real
-  external boundary — not unit-level or in-process behaviour.
-  <example caption="E2e scenario">
-  @givn.added @e2e @wip
-  Scenario: User completes the action through the real interface
-    Given a browser on the application page
-    When the user performs the action
-    Then the expected result is visible in the interface
-  </example>
+- Read `givn instructions specs --change <id>` for the canonical interaction
+  inventory and E2E policy before proposing scenarios. The spec phase owns the
+  exact inventory, tags, and real-interface scenarios; this command only
+  orchestrates the proposal-to-spec transition.
 - After writing, validate: run `givn lint --change <id>`
   Exit 0 or 2 = correct. Exit 1 = parse error — fix before continuing.
 - Think about: what are the key observable behaviours? What are the edge cases?
@@ -186,14 +179,9 @@ For each artifact:
   cookie persistence, auth redirects) named with its concrete fix.
   "The interface had a technical problem so we tested the database
   instead" is never acceptable — that obstacle must be designed away here.
-- **E2E smoke test infrastructure**: e2e runner command (→
-  `verify.e2e_command`), e2e step location (separate, one file per
-  capability), local test infrastructure (browser driver, server, test
-  DB/Testcontainers/fakes), framework choice + justification (Playwright
-  default for browser), strict-mode config for the e2e runner specifically.
-  **Real-interface assertion rule**: every `@e2e` scenario's primary
-  assertion is on what the real interface returned/displayed — repository
-  checks are secondary/additional only, never a replacement.
+- **E2E smoke test infrastructure**: read the canonical specs policy and
+  document its technical consequences in design.md (runner, step location,
+  infrastructure, driver, and matrix). Do not restate the policy here.
 - Think about: simplest architecture that delivers the proposal, tradeoffs,
   affected existing code, whether the runner can actually be forced to fail
   on an unimplemented step or whether step-body discipline must carry that

@@ -1,0 +1,11 @@
+[project]
+name = "embed-analysis"
+version = "0.1.0"
+description = "Embedding separation experiment for givn duplicate-scenario gating"
+requires-python = ">=3.10"
+dependencies = [
+    "fastembed>=0.8.0",
+]
+
+[tool.uv]
+package = false

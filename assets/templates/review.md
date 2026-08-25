@@ -33,10 +33,11 @@ re-run it now and paste the output -->
 ```
 
 **Downgraded e2e scenario scan** — every `@e2e` scenario's Then steps
-checked for a real-interface primary assertion (page content, HTTP
-response, redirect, CLI output), not repository-only; for a browser-UI
-capability, the step definitions checked for actually driving the browser
-(click/type/navigate), not an HTTP request or in-page `fetch()`:
+checked for a primary assertion on the observable output, return value,
+acknowledgement, or visible state of the interface named in design.md, not
+repository-only; for a browser-UI capability, the step definitions checked
+for actually driving the browser (click/type/navigate), not an HTTP request or
+in-page `fetch()`:
 
 | @e2e Scenario | Real-interface assertion present? | Driven via real browser (if UI)? | Downgraded? |
 |---|---|---|---|
@@ -180,6 +181,35 @@ from this output (if the runner is coverage-instrumented).
 **Result:** PASS / FAIL
 
 **Coverage measured:** YES / NO (YES = verify.command is coverage-instrumented and output contained coverage data)
+
+## Semantic Review and Remediation
+
+When `semantic-review.md` exists, record every candidate classification and its
+rationale:
+
+| Candidate | Classification | Rationale | Projected remediation | Score after remediation | Verified? |
+|---|---|---|---|---|---|
+| | `DUPLICATE` / `VARIANT` / `VALID-BOUNDARY` / `UNCERTAIN` | | | | |
+
+For each resolved classification, record the projected-tree evidence:
+
+- `DUPLICATE`: redundant endpoint absent, retained endpoint present.
+- `VARIANT`: one parameterized `Scenario Outline`, non-empty `Examples`, and
+  recomputed score `< 0.9500`.
+- `VALID-BOUNDARY`: both endpoints present, changed observable fact or
+  condition/outcome invariant, and recomputed score `< 0.9500`.
+
+Missing, stale, unmatched, or score-only remediation is blocking. Record the
+verifier receipt only after all rows pass:
+
+Token-cap candidates are not resolved classifications. Record their
+`BGE_TOKEN_CAP`/`NLI_TOKEN_CAP` evidence, exact tokenizer counts, and the
+shorten-or-split instruction; leave them unresolved until the scenarios are
+refactored and the report is regenerated.
+
+```text
+semantic remediation verified: <!-- count -->
+```
 
 ---
 

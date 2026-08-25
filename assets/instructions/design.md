@@ -73,20 +73,40 @@ that step-body discipline (never empty) is the enforcement mechanism, and
 name a mechanical check (grep script or review-time audit) that catches
 empty/no-op bodies before archive.
 
+## Canonical E2E policy
+
+Read `givn instructions specs --change <id>` before designing interaction
+coverage. That instruction is the only normative source for the user
+interaction inventory, one-E2E-per-action scope, real-interface assertions,
+and flag-variant classification. Design-specific infrastructure and matrix
+details belong here; the policy itself is not restated here.
+
 ## E2E smoke test infrastructure
 
-Every capability includes `@e2e` scenarios exercising the real interaction
-surface. Document:
+Every capability with `@e2e` scenarios MUST document:
 
-- **E2E runner command** (becomes `verify.e2e_command`), filtered to `@e2e`.
-- **E2E step location**, one file per capability, separate from
-  unit/integration steps.
-- **Local test infrastructure**: browser driver (Playwright default,
-  headless), CLI invocation, server start/stop/port, test database/seed
-  data/Testcontainers/fakes.
-- **Framework choice and justification.**
-- **Strict-mode config for the e2e runner** — proven separately from the
-  main runner.
+- **E2E runner command**: the exact `verify.e2e_command` value, filtered to
+  `@e2e` and distinct from `verify.command`.
+- **E2E step definition location**: separate from unit/integration steps, one
+  file per capability.
+- **Local test infrastructure**: browser driver, CLI invocation, server
+  startup/stop, port, test database/seed data, containers, and fake services
+  required for local execution.
+- **E2E framework choice and justification**: name the framework and why it
+  matches the named real interface.
+- **E2E strict-mode proof**: the exact configuration and independent proof
+  that undefined or pending E2E steps fail.
+
+These are design decisions, not a second interaction policy. Apply the
+resolved specs instruction for the user-facing inventory and real-interface
+fidelity.
+
+## Black-Box-First policy
+
+Prefer the real interface for every behavior. If an internal test is retained,
+the design must answer: **which case this test covers that the E2E does not**?
+If there is no concrete answer, use the E2E scenario instead. This policy
+prevents weaker duplicate scenarios from surviving under a new title.
 
 ## Local runnability & digital twins (mandatory)
 
@@ -120,18 +140,17 @@ not a reason to test something weaker instead.
   session cookies not persisting across Playwright navigation steps,
   redirects losing auth state, a websocket handshake that is hard to
   automate), the fix belongs here: name the concrete technical approach
-  (e.g. "reuse one browser context across all steps in a scenario," "the
-  e2e harness drives the same routes as the browser via a cookie-jar-aware
-  HTTP client configured identically to the browser's session," "run the
-  browser headed with a persistent user-data-dir in CI"). Do not defer this
+  (e.g. "reuse one browser context across all steps in a scenario," "run the
+  browser headed with a persistent user-data-dir in CI," or, for an API-only
+  capability, "use a cookie-jar-aware HTTP client against the public API"). Do not defer this
   decision to tasks.md or to the implementer discovering it mid-scenario —
   a scenario blocked on an undesigned interface problem is a design gap.
 
 ## Interaction Coverage Matrix (mandatory)
 
-The design MUST contain an Interaction Coverage Matrix that maps every entry
-from the spec's User Interaction Inventory to its matching `@e2e` scenario
-and driving mechanism. One row per inventory entry:
+After reading the canonical specs policy, the design MUST contain an
+Interaction Coverage Matrix that maps every normalized inventory entry to its
+matching `@e2e` scenario and driving mechanism. One row per entry:
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
@@ -148,44 +167,12 @@ driving mechanism.
 The matrix is proven at design time and verified at review time. If an
 inventory entry has no matching row, the design is incomplete.
 
-## Rule: an `@e2e` scenario asserts through the real interface — not instead
+## Real-interface design rule
 
-An `@e2e` scenario exists to prove the system works from the outside: a
-browser click, an HTTP request, a CLI invocation, a real login flow. Its
-`Then` steps assert on what that real interface produces (page content, an
-HTTP response, a redirect, a piece of UI state) as the PRIMARY assertion.
-Checking repository/database state is allowed ONLY as an additional,
-secondary assertion alongside a real-interface assertion — never as its
-replacement.
-
-**The real interface is whichever one an actual user or client uses — not
-whichever one is easiest to automate.** If the system has a browser-based
-UI, "the real interface" means the rendered browser: a real driver (e.g.
-Playwright) clicking buttons, typing into fields, navigating, and reading
-the rendered DOM. It does NOT mean an HTTP request to the page's backend
-route, and it does NOT mean calling `fetch()`/`XMLHttpRequest` from inside
-the page's own JavaScript context to hit an API endpoint directly — both are
-integration tests of the API layer wearing an `@e2e` tag; neither proves a
-user can actually use the UI. Conversely, if the system's real interface IS
-an API (no UI consumes it, or the UI is out of scope for this capability),
-then an HTTP request against that API genuinely is the real interface, and
-using a real browser would be theater, not more rigorous. State explicitly
-in this document which interface type this capability has (browser UI / CLI
-/ API-only) and name the concrete driving mechanism that matches it — never
-default to HTTP/fetch() for a browser-UI capability because it was easier to
-get green.
-
-A scenario whose `Then` steps assert only against the repository/database,
-with no assertion on what the browser/API/CLI actually returned or
-displayed, is not an e2e scenario. It is an integration test wearing an
-`@e2e` tag, and it does not prove the feature works end-to-end. This is a
-downgrade, and it happens most often when the real interface hits a
-technical obstacle mid-implementation (a browser cookie/session problem, a
-flaky selector, an auth redirect) and the path of least resistance is to
-assert on the database instead and move on. That obstacle is a defect in
-the Local Runnability & Digital Twins section above, or in this design's
-assumptions about the interface — fix it there before writing the
-scenario's steps. Never fix it by quietly weakening what the scenario proves.
+Apply the canonical specs policy for primary assertions, real-interface
+fidelity, and normalized action scope. This design must still name the
+concrete interface and driver for the capability and document any interface
+obstacle; it must not introduce a second wording of the policy.
 
 ## Executable-spec invariant
 
@@ -204,8 +191,5 @@ steps to code — never a parallel hand-maintained test file.
   setup task includes a proof-of-strictness check against this exact config.
 - No version number from memory — "latest"/"LTS" or a looked-up, noted
   version only (see Version Freshness above).
-- State the interface type (browser UI / CLI / API-only) for every
-  capability with `@e2e` scenarios, and name the driving mechanism that
-  actually matches it — never HTTP/fetch() for a browser-UI capability.
-- Exactly one `@e2e` scenario per distinct happy-path action per
-  capability — not one per variant, error case, or enum value.
+- State the interface type and driving mechanism for every capability with
+  `@e2e` scenarios, applying the canonical policy from the specs instruction.

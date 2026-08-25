@@ -1,104 +1,97 @@
 # 5. Building Block View
 
-## 5.1 Level 0 — System
+## 5.1 Level 0 - System
 
-`givn` is a single published binary crate. It reads embedded defaults and the
-project's `givn/` directory, and writes artifacts and agent files.
+`givn` is one Rust CLI crate. It reads embedded defaults and project-local
+configuration, changes lifecycle artifacts, invokes configured commands at gate
+points, and optionally uses local retrieval/model artifacts. Retrieval model
+artifacts are user-cache data by default; the semantic index remains project
+data.
 
-## 5.2 Level 1 — Crate structure
+## 5.2 Level 1 - Crate Structure
 
-```
-givn/  (single published binary crate)
-|
-+-- src/
-|   +-- main.rs                 # clap dispatch / entrypoint; inline completions handler
-|   +-- cli/                    # one module per subcommand
-|   |   +-- init.rs
-|   |   +-- new.rs
-|   |   +-- instructions.rs
-|   |   +-- lint.rs              # static .feature check (syntax/@wip/tags)
-|   |   +-- check.rs            # run an artifact's post hooks (e.g. verify.command)
-|   |   +-- status.rs
-|   |   +-- apply.rs
-|   |   +-- archive.rs
-|   |   +-- eject.rs
-|   |   +-- addons.rs           # `addons list/enable/disable`
-|   |   +-- skills.rs           # `skills sync`
-|   |   +-- upgrade.rs          # re-render managed config scaffold, bump version
-|   |   +-- coverage_gate.rs     # archive-level coverage pipeline (measure, merge, validate, README)
-|   |   +-- missing_testrunner.rs  # sentinel default verify.command
-|   +-- config/
-|   |   +-- embedded.rs         # access to baked-in assets (rust-embed)
-|   |   +-- manifest.rs         # serde types for the YAML manifest
-|   |   +-- overlay.rs          # merge project overlay onto embedded graph
-|   |   +-- cascade.rs          # per-facet resolution (project <- embedded)
-|   |   +-- render.rs           # render documented, versioned config.yaml scaffold
-|   +-- gherkin/
-|   |   +-- parse.rs            # wrap the `gherkin` crate
-|   |   +-- delta.rs            # tag detection, split feature/scenario
-|   |   +-- merge.rs            # added/modified/removed merge + tag stripping
-|   +-- skills/
-|   |   +-- render.rs           # template -> SKILL.md
-|   |   +-- targets.rs          # emit to .agents, .claude, .opencode
-|   +-- hooks.rs                # resolve & run artifact `post` hooks (verify/lint/shell)
-|   +-- state.rs                # derive lifecycle state from the filesystem
-|   +-- error.rs                # error types (thiserror) + exit-code mapping
-+-- assets/                     # embedded via rust-embed
-|   +-- default-manifest.yaml   # the default artifact graph
-|   +-- config.yaml.tmpl        # documented, versioned project config scaffold
-|   +-- templates/              # proposal.md, spec.feature, design.md, tasks.md, review.md
-|   +-- instructions/           # per-artifact instruction files (proposal, specs, design, tasks, review)
-|   +-- commands/               # opencode slash command templates (givn-propose ... givn-archive)
-|   +-- skills/                 # default SKILL.md.tmpl templates per workflow step
-|   +-- addons/                 # opt-in addons (pre-packaged artifacts)
-|       +-- arc42-docs/         # instruction, marker template, 12 chapter templates + index
-+-- tests/                      # integration tests
+```mermaid
+flowchart TD
+    G[givn CLI crate] --> CLI[cli modules]
+    G --> CFG[config modules]
+    G --> GH[gherkin modules]
+    G --> O[overlap modules]
+    G --> SPEC[spec retrieval modules]
+    G --> HOOK[hooks and integrity]
+    G --> STATE[state]
+    G --> ASSET[embedded assets]
+    G --> TEST[repository acceptance tests]
+    CLI --> CHECK[mandatory check and archive gates]
+    CFG --> GRAPH[manifest overlay and facet cascade]
+    GH --> MERGE[delta parsing and merge]
+    O --> FINGER[Fingerprint evidence]
+    SPEC --> E5[E5 index and semantic surfaces]
+    SPEC --> STAGE[BGE/NLI evidence stages]
 ```
 
-## 5.3 Module responsibilities
+## 5.3 Production Responsibilities
 
-| Module | Responsibility | Key collaborators |
-| --- | --- | --- |
-| `main.rs` | Parse args, dispatch to `cli::*`, map errors to exit codes. | `cli`, `error` |
-| `cli::init` | Scaffold `givn/`, write minimal `config.yaml`, prompt for the agent-target selection (default opencode) and persist it as the `skills:` block, generate skills to the selected targets. | `config`, `skills` |
-| `cli::new` | Create `givn/changes/<id>/` scaffold (proposal stub). Calls the shared `resolve_change_dir` helper to validate `<id>` (kebab-case) and construct the path before any filesystem write; resolves the proposal template via the cascade; writes only `proposal.md`. | `config::cascade`, `state` |
-| `cli::instructions` | Resolve an artifact's instruction (cascade) and emit (optionally `--json`). | `config::cascade`, `config::manifest` |
-| `cli::lint` | Statically check `.feature` files (syntax, `@wip`, delta tags); produce exit codes 0/1/2. Runs no tests. | `gherkin::parse` |
-| `cli::check` | Run an artifact's `post` hooks (e.g. `verify` → the test runner); block & exit non-zero on failure. | `hooks`, `config::manifest` |
-| `cli::status` | Report manifest-aware lifecycle state: artifact checklist, current stage, next required step, optional pending steps. `--json` for machine use by commands. | `state`, `config::overlay` |
-| `cli::apply` | Parse `tasks.md` checkboxes; report/track progress. | `state`, `config::manifest` |
-| `cli::archive` | Run hooks of all `apply.requires` artifacts as the gate; then merge deltas into `givn/specs/`, run post-merge verify and verify-e2e gates, optionally run the coverage gate, strip tags, move change to `archive/`. | `hooks`, `gherkin::merge`, `coverage_gate`, `config::manifest` |
-| `cli::coverage_gate` | Archive-level coverage pipeline: run the project measurement and merge commands, validate source and merged Cobertura XML, update README badges/summary, and restore all changed files on failure. | `cobertura`, `agents_block`, `config::manifest` |
-| `cli::eject` | Write an embedded default facet into the project `givn/`. Uses the effective manifest so addon artifacts (e.g. `arc42-docs`) are ejectable once enabled. | `config::embedded`, `config::cascade`, `config::overlay` |
-| `cli::addons` | List all known addons with enabled/disabled status; enable or disable an addon by writing the `addons:` key into `givn/config.yaml` (line-based edit, preserves comments). | `config::overlay` |
-| `cli::skills` | Regenerate skills + agent commands from current templates. | `skills` |
-| `cli::upgrade` | Re-render managed config scaffolding, preserve user overrides, bump `givn_config_version`. | `config::manifest`, `config::embedded` |
-| `cli::missing_testrunner` | Default sentinel `verify.command`: print per-language setup guidance, exit non-zero. | — |
-| `config::embedded` | Read-only access to compiled-in assets. | `rust-embed` |
-| `config::manifest` | Serde model of the manifest (artifacts incl. `optional`, `post` hooks, deps, apply, verify, and project-owned coverage commands); validates the effective graph (acyclic, no dangling `requires`). | `serde_yaml_ng` |
-| `config::overlay` | Apply the project overlay (add/deep-merge/`remove`) to the embedded default graph; reorder via `requires`; expand `addons:` (e.g. `arc42`) into their artifact definitions. Also exposes `load_skills_targets()` — reads the `skills:` block from `givn/config.yaml` (ignored by the manifest itself). | `manifest`, `embedded` |
-| `config::cascade` | For `(artifact, facet)`, return project file or embedded default. | `embedded`, project FS |
-| `config::render` | Render the fully-commented, versioned `givn/config.yaml`; merge-preserve user overrides on upgrade. | `embedded`, `manifest` |
-| `gherkin::parse` | Parse `.feature` into a typed AST; classify lint findings. | `gherkin` crate |
-| `gherkin::delta` | Detect `@givn.*` tags; split features/scenarios. | `parse` |
-| `gherkin::merge` | Apply added/modified/removed to permanent spec; strip tags. | `delta`, `parse` |
-| `skills::render` | Render templates with context into SKILL.md. | `config::cascade` |
-| `skills::targets` | Write rendered output to the configured skill locations (`skills.targets` in config; default opencode) + `.opencode/commands/` when opencode is selected. `AGENTS.md` is intentionally not touched (user-owned). | `render`, `config::overlay` |
-| `hooks` | Resolve `post` hook entries (built-in `verify`/`lint` or shell), execute them with `GIVN_FEATURES` set, stream output, map failures to gate-blocking exit codes (respecting `allow_failure`). Uses the shared `find_change_dir` from `state` for task cross-reference. | `config::manifest`, `cli::lint`, `state` |
-| `state` | Compute change state from which files exist. Also houses shared utilities: `validate_id` (kebab-case validation), `resolve_change_dir` (validated path construction), and `find_change_dir` (component-based change directory detection from a features path). | project FS, `manifest` |
-| `error` | Typed errors; map to process exit codes. | `thiserror` |
+| Building block | Responsibility |
+|---|---|
+| `main.rs` | Parse `clap` commands, dispatch, and map results to process exit. |
+| `cli::init` | Create `givn/{specs,changes,archive}`, write config and commands scaffolds, enable addons unless `--no-addons`, prompt agent targets, and sync outputs. |
+| `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
+| `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
+| `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs overlap/retrieval gates. |
+| `cli::archive` | Check archive prerequisites, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, run optional coverage, and copy/remove the change to archive. |
+| `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
+| `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
+| `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
+| `cli::skills` | Synchronize selected skill targets and opencode commands. |
+| `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, and dispatch the exact legacy migration preparation route. |
+| `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight Git state, calculate the managed-path allowlist, create managed/migration commits, and write the aggregate maintenance plan. |
+| `config::manifest` | Define artifact, apply, verify, coverage, addon, and hook data structures. |
+| `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
+| `config::cascade` | Resolve project override assets before embedded core or addon assets. |
+| `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
+| `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |
+| `gherkin::merge` | Validate all delta preconditions and merge text-level scenario blocks into permanent specs. |
+| `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
+| `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
+| `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
+| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, and coverage configuration. |
+| `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
+| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply evidence, generate semantic reports, and verify remediation. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. |
 
-## 5.4 Dependencies (crates)
+## 5.4 Retrieval Building Block
 
-| Crate | Use | Version (verified) |
-| --- | --- | --- |
-| `clap` | CLI parsing | 4.6 |
-| `clap_complete` | Shell completion script generation (bash/zsh/fish/…) | 4 |
-| `serde` + `serde_yaml_ng` | Manifest (de)serialisation | serde 1, serde_yaml_ng 0.10 |
-| `rust-embed` | Embed default assets | 8.11 |
-| `gherkin` | Parse `.feature` files | 0.16 |
-| `anyhow` | Application error context | 1.0 |
-| `thiserror` | Library error types | 2.0 |
-| `serde_json` | `--json` output | 1 |
+`spec::retrieval` has one persistent boundary: `.spec-index.json` contains
+permanent vector entries and additive E5 cap metadata. Active-delta vectors,
+audit-only evidence, classifications, and semantic report state are not
+persisted there.
 
-Versions are pinned in `Cargo.lock`. The dep-age policy (`scripts/check-dep-age.sh`) enforces that every locked dependency is ≥ 30 days old (TC-13).
+`givn spec duplicates` is an exception to ordinary index refresh: it reads the
+persistent index and reuses it only when every endpoint identity and complete
+content hash matches. Otherwise it embeds fitting current permanent scenarios
+transiently. It never writes the index as part of the audit.
+
+The current second-stage implementation is surface-aware. Duplicate Audit BGE
+uses its endpoint top-five union while Duplicate Audit NLI uses the full E5
+semantic candidate set. Blocking semantic review passes its complete report
+candidate list independently to BGE and NLI; it does not pass a Duplicate Audit
+top-five pool.
+
+## 5.5 Dependencies
+
+| Dependency | Use |
+|---|---|
+| `clap`, `clap_complete` | CLI parsing and shell completion |
+| `serde`, `serde_yaml_ng`, `serde_json` | Manifest, config, index, and machine-readable output |
+| `gherkin` | Feature parsing and AST access |
+| `anyhow`, `thiserror` | Application context and typed errors |
+| `rust-embed` | Embedded defaults and addon assets |
+| `quick-xml` | Cobertura coverage parsing |
+| `fastembed`, `hf-hub`, `ort`, `tokenizers`, `ndarray` | Optional local E5/BGE/NLI retrieval, artifact acquisition, and inference |
+
+## 5.6 Repository-Owned Acceptance Blocks
+
+The Cucumber test binary contains regular step modules and separate compiled-CLI
+E2E step modules. They invoke the public binary in temporary project roots.
+They are test building blocks, not production modules, and are intentionally
+owned by this repository.

@@ -1,79 +1,119 @@
 # 2. Architecture Constraints
 
-These constraints are fixed decisions from the design Q&A. They are not open for
-relitigation during implementation (see chapter 9 for rationale).
+These constraints describe the current checkout and its explicit product
+boundaries. Rationale and relationships are maintained in the [ADR
+register](adr/README.md).
 
 ## 2.1 Technical Constraints
 
-| ID | Constraint | Rationale (short) |
-| --- | --- | --- |
-| TC-1 | Implementation language is **Rust**. | Small static binaries, strong type safety for merge/state logic, author familiarity. |
-| TC-2 | Ships as a **single static binary**. | Frictionless distribution; no runtime dependency. |
-| TC-3 | **No npm**, **no root/sudo**, **no language runtime** required to install or run. | Direct fix of prior-tool pain points. |
-| TC-4 | Project configuration lives in **one visible `givn/` directory**. | "All config in one place"; discoverable. |
-| TC-5 | Defaults are **embedded in the binary**; project files override via cascade. | Upgrades never clobber user files. |
-| TC-6 | Manifest format is **YAML**, parsed with **`serde_yaml_ng`**. | `serde_yaml` is deprecated; `serde_yaml_ng` is the maintained drop-in fork. |
-| TC-7 | Gherkin parsing uses the **`gherkin` crate** (same parser cucumber-rs uses). | Proven on the gherkintest project; consistency with cucumber-rs runners. |
-| TC-8 | CLI built with **`clap`**. | De-facto standard, derive API, help/usage generation. |
-| TC-9 | Embedded assets via **`rust-embed`** (or `include_dir`). | Bake defaults into the binary. |
-| TC-10 | Lifecycle state is **derived from the filesystem**; no separate state file. | No drift, git-friendly, stateless. |
-| TC-11 | Delta tags use the `@givn.*` namespace. | Clean break from `@openspec.*`. |
-| TC-12 | `givn lint` exit codes: **0** clean, **1** parse error, **2** `@wip`/PENDING. | Static Gherkin check; preserved CI-friendly contract. Distinct from the test runner (`verify.command`). |
-| TC-13 | **Minimum dependency age:** every crate version in `Cargo.lock` (direct *and* transitive) must have been published on crates.io **≥ 30 days** ago. | Avoid brand-new releases that have had no time to surface bugs or supply-chain compromise. See 2.5. |
+| ID | Constraint | Current evidence |
+|---|---|---|
+| TC-1 | Production implementation is Rust. | `Cargo.toml`, `src/` |
+| TC-2 | The default product unit is one native binary with embedded assets. | `src/config/embedded.rs`, Cargo package |
+| TC-3 | The default Cargo install enables all declared retrieval features; a feature-free build remains explicitly available with `--no-default-features`. | `Cargo.toml` default feature list |
+| TC-4 | Project lifecycle/configuration data lives under visible `givn/`. | `src/cli/init.rs`, `src/state.rs` |
+| TC-5 | Embedded defaults are fallback; project facets and overlays win. | `src/config/cascade.rs`, `src/config/overlay.rs` |
+| TC-6 | Manifest/config parsing uses YAML through `serde_yaml_ng`. | `src/config/manifest.rs` |
+| TC-7 | Gherkin parsing uses the `gherkin` crate. | `src/gherkin/` |
+| TC-8 | CLI parsing uses `clap`; shell completions use `clap_complete`. | `src/main.rs` |
+| TC-9 | Lifecycle state is filesystem-derived; there is no state database. | `src/state.rs` |
+| TC-10 | Delta tags use the `@givn.*` namespace. | `src/gherkin/delta.rs`, `src/gherkin/merge.rs` |
+| TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
+| TC-12 | Retrieval, strict E5, BGE, and NLI are enabled by default for Cargo installation, while runtime selectors and a feature-free build remain explicit. | `Cargo.toml`, `src/spec/retrieval.rs` |
+| TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
+| TC-14 | E5 uses the binary-fixed similarity value `0.95` where the strict gate is compiled. | `src/spec/retrieval.rs` |
+| TC-15 | BGE is optional local evidence; its operating point is `3.0`, not a Givn classification. | `src/spec/retrieval.rs` |
+| TC-16 | NLI is optional local evidence selected independently from BGE. | `Cargo.toml`, `src/spec/retrieval.rs` |
+| TC-17 | Complete semantic serialization is the E5 content-hash boundary. | `src/spec/retrieval.rs` |
+| TC-18 | Actual model tokenizers preflight E5 passages and selected BGE/NLI pairs; `512` fits and `513` is over. | `src/spec/retrieval.rs` and token-cap features |
+| TC-19 | Over-cap E5 passages have no vector; fitting passages continue indexing. | `SpecIndex.e5_token_caps` and refresh path |
+| TC-20 | `GIVN_SPEC_MAX_RERANK_PAIRS` accepts positive decimal values and defaults to `2048` when unset. | Current PR #27 implementation; decision remains proposed |
+| TC-21 | Automatic managed upgrades and declared migrations require a Git repository with a clean worktree. | `src/cli/migration.rs`, migration E2E scenarios |
+| TC-22 | Ignored generated paths are force-staged only through the calculated Givn-owned allowlist. | `src/cli/migration.rs`, ignored-path migration E2E fixture |
+| TC-23 | Large E5, BGE, and NLI artifacts use `$XDG_CACHE_HOME/givn/<role>` or `$HOME/.cache/givn/<role>` by default; explicit model/cache overrides take precedence. | `src/spec/retrieval.rs`, semantic-model-download design |
+| TC-24 | Automatic model acquisition is triggered only by an explicit semantic operation and validates artifacts before inference; the persistent index remains project-local. | `src/spec/retrieval.rs`, semantic-model-download feature |
 
-## 2.2 Distribution Constraints
+## 2.2 Configuration and Gate Constraints
 
-| ID | Constraint |
-| --- | --- |
-| DC-1 | Must be installable via: GitHub release binary, `curl \| sh` installer, Homebrew tap, and `cargo install givn`. |
-| DC-2 | Target platforms: linux x64+arm64, macOS x64+arm64, windows x64. |
-| DC-3 | Crate/binary name is `givn` (verified available on crates.io and Homebrew). |
-| DC-4 | Release pipeline uses `cargo-dist` (or equivalent) for multi-platform artifacts. |
+The effective manifest is assembled in this order:
 
-## 2.3 Organisational Constraints
+1. Parse the embedded default manifest.
+2. Apply `givn/config.yaml` as a project overlay.
+3. If present, apply `givn/commands.yaml` as another manifest overlay. In the
+   current project this file is the source for `verify.command`,
+   `verify.e2e_command`, and coverage command/path values.
 
-| ID | Constraint |
-| --- | --- |
-| OC-1 | Repository lives at `~/projects/givn`, local `git init` only (no remote yet). |
-| OC-2 | Clean break from OpenSpec: no backward-compat read of `openspec/` dirs. A `givn migrate` command is a deferred nice-to-have. |
-| OC-3 | MVP scope includes the full stack: core engine + lifecycle + skills + install. |
-| OC-4 | Open source under dual MIT OR Apache-2.0 license (see ADR-034). |
+Artifact `post` lists are configurable additional hooks. They do not replace
+the binary's mandatory behavior:
 
-## 2.4 Conventions
+- `givn check tasks` runs WIP protection and `verify.command`.
+- `givn check review` runs `verify.command`, `verify-e2e`, `integrity`, and,
+  for a named change, overlap and retrieval checks.
+- Built-in hook names cannot be made best-effort with `allow_failure`.
+- `givn check` without an artifact runs only configured `post` hooks; it does
+  not call the artifact-specific mandatory path.
+- `givn archive` runs configured hooks for `apply.requires` and then its own
+  archive stages, including post-merge verification.
 
-| ID | Convention |
-| --- | --- |
-| CV-1 | `AGENTS.md` at repo root is user-owned; givn never writes or overwrites it. |
-| CV-2 | Agent skills emitted to neutral `.agents/skills/<name>/SKILL.md` (primary) with `.claude/skills` and `.opencode/skills` mirrors. |
-| CV-3 | Capability names use kebab-case (e.g. `user-auth`). |
-| CV-4 | Test-runner feature path overridable via `GIVN_FEATURES` env var, default `givn/specs`. |
-| CV-5 | Default `verify.command` is the sentinel `givn missing-testrunner` (prints setup guidance, exits non-zero) until the project sets a real runner. |
-| CV-6 | `givn/config.yaml` ships fully commented with documented defaults; every key is discoverable in-file. |
-| CV-7 | `givn/config.yaml` carries `givn_config_version`; `givn upgrade` provides a version-to-version upgrade path, with git as the diff/merge surface. |
-| CV-8 | Artifacts may declare `post` hooks (built-in `verify`/`lint` or shell). Defaults: `tasks.post: [verify]`, `review.post: [verify]`. `givn check` runs them; `givn archive` runs the hooks of `apply.requires` artifacts as the gate. Failing hooks block (unless `allow_failure`). |
+The embedded manifest has empty `post` lists for the standard `tasks` and
+`review` artifacts. Documentation in an older generated config may still show
+the former hook defaults; the source code and effective manifest above are the
+runtime contract.
 
-## 2.5 Dependency Age Policy (TC-13)
+## 2.3 Addon Constraint
 
-**Rule.** Every crate version pinned in `Cargo.lock` — direct *and* transitive —
-must have been published on crates.io at least **30 days** ago.
+The embedded manifest starts with addons disabled, but `givn init` currently
+enables all known addons unless `--no-addons` is passed. The `arc42` addon:
 
-**Why.** Cargo has **no native minimum-dependency-age feature** (no `--max-age`
-flag; `-Z minimal-versions` is about minimum *version*, not *age*). Brand-new
-releases are the highest-risk window for both ordinary regressions and
-supply-chain compromise. A 30-day soak requirement lets issues surface before we
-adopt a release.
+- expands to a required `arc42-docs` artifact after `design`;
+- adds `arc42-docs` to `apply.requires` and to `design-review` dependencies;
+- scaffolds missing chapters at the fixed `docs/arc42/` path;
+- does not implement `arc42.output_dir`, a chapter list, or a chapter-file
+  cascade; and
+- leaves existing Arc42 files when disabled.
 
-**Enforcement.** A checked-in script, [`scripts/check-dep-age.sh`](../../scripts/check-dep-age.sh),
-parses `Cargo.lock`, queries each crate version's `created_at` from the crates.io
-API, and fails (exit 1) if any registry dependency is younger than the threshold.
+## 2.4 Semantic Constraints
 
-- Threshold configurable via `MIN_AGE_DAYS` (default 30).
-- Local `path`/`git` dependencies and the workspace's own crates are skipped
-  (only `registry+…` sources are checked).
-- Rare, justified exceptions go in `GIVN_DEP_AGE_ALLOWLIST` (`name@version` list).
-- Intended to run as: (a) a CI gate, and (b) optionally a givn `post` hook on a
-  dev/release artifact. Failure blocks the gate.
+Second-stage candidate selection depends on the command surface:
 
-**Remediation when it fails.** Pin an older version
-(`cargo update -p <crate> --precise <older>`), wait until the release ages past
-the threshold, or allowlist with explicit justification.
+| Surface | Candidate rule |
+|---|---|
+| Duplicate Audit | Deterministic exact/structural findings first; E5 semantic candidates use the full in-memory E5 comparison. BGE uses the endpoint top-five union; NLI uses the full E5 semantic set. |
+| Explore | The command ranks permanent plus optional request-local candidates and retains at most five results before BGE/NLI selection. |
+| Advisory review | The existing retrieval path builds its own delta/permanent and projected candidate pool; BGE and NLI operate independently over that pool. |
+| Blocking semantic report | Active Added/Modified deltas are compared with permanent and other active delta endpoints at E5 `0.9500`; BGE/NLI receive those report candidates, not a universal top-five pool. |
+
+All second-stage layers retain raw E5 identity and distinguish recommended,
+filtered, unscored, token-cap, and unavailable states. They never classify or
+edit feature files.
+
+## 2.5 Acceptance Boundary
+
+Regular and E2E tests use deterministic stubs and test-only token-budget and
+artifact-source seams. Production retrieval uses validated model artifacts from
+the XDG user cache or explicit local paths. The current full and E2E verification
+state is not inferred from this document; it is read from
+`givn status --change semantic-reranker-budget` and the active change tasks.
+
+## 2.6 Architecture Documentation Constraints
+
+The architecture register is selective. The complete qualification procedure,
+including its mandatory dimensions and verdict schema, is owned by the resolved
+Arc42 addon instruction; this chapter does not duplicate it. One ADR records
+one independent durable boundary or trade-off. Refinements amend the governing
+ADR instead of creating parallel records. Observable behavior is owned by
+Gherkin specifications, current architecture facts by the relevant Arc42
+chapter, implementation details by code/design, and process rules by their own
+guidance. The qualification policy is authoring guidance and is not inferred or
+enforced by the runtime.
+
+## 2.7 Migration Ownership Constraint
+
+The automatic 0.2.0-to-0.3.0 route may write and commit only the config
+scaffold, generated agent integrations, Givn-owned fenced blocks, and its own
+migration plan. It may force-stage an ignored managed path only after the path
+has been calculated explicitly. It must refuse a dirty or non-Git project
+before writing and must never force-stage a directory or the complete worktree.
+Domain specs, source code, ejected facets, durable Arc42 content, and
+architecture decisions remain project-owned and are changed only through the
+LLM-guided maintenance change.

@@ -2,71 +2,83 @@
 
 ## 3.1 Business Context
 
-`givn` sits between a developer (often working with an AI coding agent) and a
-project's source tree. It manages spec-driven changes whose specifications are
-Gherkin `.feature` files.
+`givn` sits between a developer or AI coding agent and a project filesystem. It
+manages Gherkin specifications, change artifacts, generated guidance, and local
+review evidence.
 
 ```mermaid
-graph TB
-    CLI["givn (CLI)<br/>init · new · instructions · lint · check · status ·<br/>apply · archive · eject · skills sync"]
-    PROJECT["givn/ project config dir<br/>(specs, changes, archive, ...)"]
-    SKILLS["skills<br/>(.agents, .claude, .opencode)"]
-    EMBEDDED["embedded defaults<br/>(baked into the binary)"]
-
-    CLI -->|reads/writes| PROJECT
-    CLI -->|emits| SKILLS
-    CLI -->|reads| EMBEDDED
+flowchart LR
+    user[Developer or agent] --> cli[givn CLI]
+    cli --> project[Project filesystem]
+    cli --> defaults[Embedded defaults]
+    cli --> targets[Selected agent targets]
+    runner[Test runner] -->|reads GIVN_FEATURES| project
+    cli -->|runs configured commands at gates| runner
 ```
 
 ### External entities
 
 | Entity | Interaction |
-| --- | --- |
-| Developer | Runs `givn` commands from the terminal. On `givn init`, answers the agent-target selection prompt (default: opencode only). |
-| AI coding agent | Reads `givn instructions --json` and generated skills; `AGENTS.md` (user-authored, if present); edits artifacts and code. |
-| Project filesystem | Holds the `givn/` directory, source code, and generated agent files. |
-| Test runner (cargo/npm/pytest/…) | The `verify.command`; executes step definitions. Invoked by givn via `post` hooks (`givn check`, archive gate) and directly by the agent during the TDD loop. |
-| CI system | Runs `givn lint` (static) and `givn check`/`givn archive` (which run the test runner via hooks); relies on exit codes. |
+|---|---|
+| Developer | Runs lifecycle, lint, check, archive, retrieval, and addon commands. |
+| AI coding agent | Reads effective instructions, generated skills, review reports, and Arc42 docs; edits project artifacts and source. |
+| Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
+| Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and executes feature scenarios. |
+| CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
+| Model artifact source and XDG cache | Supply E5, BGE, or NLI artifacts on explicit semantic use and retain them in the user's cache. No hosted inference service is part of the boundary. |
 
-## 3.2 Technical Context — Interfaces
+`AGENTS.md` is user-owned except for named givn fenced blocks. Givn may create or
+replace the content between matching markers such as
+`<!-- givn:begin:givn-project -->` and `<!-- givn:end:givn-project -->`; it does
+not alter other content.
 
-| Interface | Direction | Format / contract |
-| --- | --- | --- |
-| CLI args | in | `clap`-parsed subcommands and flags. |
-| `givn/config.yaml` | in/out | YAML manifest overlay + `verify.command`; fully commented & documented; carries `givn_config_version`. Written by `init`, refreshed by `upgrade`. |
-| `givn/**` artifacts | in/out | Markdown + `.feature` files. |
-| `givn instructions --json` | out | JSON for AI agents (artifact id, instruction text, deps, generates). |
-| `*/skills/<name>/SKILL.md` | out | Markdown + YAML frontmatter. |
-| Exit codes | out | 0 clean / 1 parse error / 2 wip (for `givn lint`); standard 0/non-0 elsewhere. |
-| `GIVN_FEATURES` env var | in (to test runner) | Path to feature files; default `givn/specs`. |
-| Embedded assets | in | Compiled-in default manifest, templates, skill templates. |
+## 3.2 Technical Context - Interfaces
+
+| Interface | Direction | Contract |
+|---|---|---|
+| CLI arguments | in | `clap` subcommands, options, and exit status. |
+| `givn/config.yaml` | in/out | Project overlay, addon flags, version marker, and skill targets. |
+| `givn/commands.yaml` | in/out | Project-owned `verify`, E2E, and coverage commands/paths; applied as a later overlay. |
+| `givn/**` artifacts | in/out | Markdown and `.feature` lifecycle files, plus generated semantic reports. |
+| `GIVN_FEATURES` | in | Feature path exported to project command processes. |
+| `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
+| `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
+| `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence (explore, search with `--evidence`), and complete permanent audit. |
+| `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
+| `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
+| `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
+| `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
+| Agent target directories | out | Selected `.opencode`, `.agents`, and `.claude` skill paths; opencode commands use `.opencode/commands`. |
+| Durable Arc42 path | out | Fixed `docs/arc42/`; no effective output-dir setting exists. |
 
 ## 3.3 Scope
 
-### In scope (MVP)
+### In scope
 
-- Full lifecycle: propose → spec → design → design-review → tasks → implement → review → archive.
-- `.feature`-as-spec with delta tags and merge-on-archive.
-- Cascade configuration with per-facet override and `eject`.
-- YAML manifest overlay onto embedded default graph.
-- `givn lint` (static Gherkin check with exit codes; runs no tests).
-- Filesystem-derived state and task-progress tracking.
-- Skill generation (neutral + claude + opencode, configurable target selection at init). `AGENTS.md` is user-owned.
-- Fully-documented, versioned `givn/config.yaml` with a `givn upgrade` path.
-- Sentinel default `verify.command` (`givn missing-testrunner`) with setup guidance.
-- Per-artifact `post` hooks; givn runs `verify.command` at gates (`givn check`, archive).
-- Configurable artifacts (add/remove/reorder/optional) via overlay.
-- Opt-in addons; bundled `arc42-docs` addon maintaining durable arc42 docs.
-- Distribution: release binaries, curl\|sh, brew, cargo.
+- Gherkin-first change lifecycle and delta merge.
+- YAML manifest overlay and per-facet cascade.
+- Filesystem-derived state and visible skip markers.
+- Static lint and explicit project test-runner commands.
+- Mandatory task/review checks plus additional post hooks.
+- Addon management, including fixed-path durable Arc42 scaffolding and review.
+- Agent skill/command generation with selected targets and fenced-block ownership.
+- Local E5 retrieval, complete Explore, change-aware Explore, semantic report,
+  projected remediation, and permanent duplicate audit.
+- Optional BGE/NLI local evidence with actual-tokenizer cap handling.
+- Automatic validated model acquisition into the user-level XDG cache, with a project-local permanent index.
+- Repository-owned compiled-CLI acceptance fixtures.
+- Strict ADR qualification guidance and canonical routing of architecture rationale.
+- Version 0.3.0 release metadata and the 0.2.0-to-0.3.0 LLM migration path.
 
-### Out of scope (deferred / non-goals)
+### Out of scope
 
-| Item | Reason |
-| --- | --- |
-| `givn migrate` from `openspec/` | Deferred nice-to-have (OC-2). |
-| `spec.md` parallel format | Explicit non-goal — `.feature` is the spec. |
-| Telemetry / analytics | Dropped from the prototype's surface. |
-| Profiles / global config layers | "All config in one place" — single project dir. |
-| Workspace/multi-repo coordination | Out of scope for v1. |
-| Context stores / initiatives | Dropped weight from the prototype. |
-| Additional skill targets (cursor, gemini, …) | The built-in target set is fixed at opencode, .agents, .claude (selectable at init); other tools are achievable via `eject`; not shipped built-in in v1. |
+- Hosted model inference or a remote retrieval service.
+- Automatic classification, automatic feature edits, automatic chunking, or
+  automatic scenario splitting for token caps.
+- A configurable Arc42 output directory or chapter selection cascade.
+- OpenSpec backward-compatible reads or migrations from versions other than
+  the documented 0.2.0-to-0.3.0 route.
+- Multi-repository workflow coordination.
+- Release, Homebrew, and shell-installer infrastructure before it is implemented.
+- Treating BGE/NLI evidence as a domain classification.
+- Downloading model artifacts during installation, nonsemantic commands, or implicit background work.

@@ -86,34 +86,12 @@ a gate is a procedure violation.
 
 ## TDD loop — @e2e scenarios (after all non-@e2e are GREEN)
 
-Same loop, e2e runner (`verify.e2e_command`), e2e step location, e2e
-infrastructure setup (browser/server/DB via docker-compose, from design.md's
-Local Runnability section) in GREEN. Commit message: `test(e2e): <title>`.
-
-**Rule: assert through the real interface, not instead of it.** Each `@e2e`
-scenario's Then steps assert PRIMARILY on what the real interface produced
-(page content, HTTP response, redirect target, CLI output). Repository/
-database checks are allowed only as additional, secondary assertions. If
-implementing a step hits a technical obstacle (browser session/cookie
-issue, flaky navigation, auth redirect losing state), do NOT substitute a
-repository-only assertion and move on — that is a downgrade, not a fix.
-Fix the actual obstacle using the approach named in design.md's "Anticipated
-interface obstacles" section. If no fix was designed for this obstacle,
-STOP: this is a design gap. Update design.md with the fix, then continue.
-A GREEN e2e scenario whose Then steps never touch the real interface's
-output is fabricated GREEN — the same class of defect as an empty step body.
-
-**For a browser-UI capability, the same rule applies to HOW the interaction
-happens, not just what is asserted.** If design.md names a browser driver
-(e.g. Playwright), the step definitions MUST click, type, and navigate
-through the rendered page — never send an HTTP request to the backend
-route, and never call `fetch()`/`XMLHttpRequest` from inside the page's JS
-context to hit an API directly. Either shortcut produces a scenario that
-looks like it drove the browser but actually only drove the API, and it
-does not prove a user can use the UI. If driving the real browser hits an
-obstacle, fix it per design.md's "Anticipated interface obstacles" section
-(same as above) — do not quietly swap in an HTTP/fetch() call as the
-easier path.
+Same loop, e2e runner (`verify.e2e_command`), e2e step location, and e2e
+infrastructure setup from design.md in GREEN. Before writing or reviewing E2E
+steps, read the canonical policy with `givn instructions specs --change <id>`.
+It owns action normalization, real-interface assertions, and driver fidelity;
+tasks owns only the phase mechanics and evidence capture. Commit message:
+`test(e2e): <title>`.
 
 ## E2e setup task
 

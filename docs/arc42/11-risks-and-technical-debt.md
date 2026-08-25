@@ -1,46 +1,87 @@
 # 11. Risks and Technical Debt
 
+This chapter distinguishes implemented safeguards from open limitations. A
+historical measurement is not a current quality claim.
+
 ## 11.1 Risks
 
-| ID | Risk | Likelihood | Impact | Mitigation |
-| --- | --- | --- | --- | --- |
-| R-1 | The `gherkin` crate's AST does not expose enough position info to losslessly merge + strip tags while preserving formatting. | Medium | High | **Resolved (Phase 3):** merge operates on a line-based text model, not a full AST rewrite. This preserves formatting and comments correctly. |
-| R-2 | Overlay/patch semantics for the manifest become ambiguous (deep-merge edge cases). | Medium | Medium | **Resolved (Phase 2):** overlay rules specified and unit-tested for add/modify/remove/cycle/dangling-requires. |
-| R-3 | `serde_yaml_ng` diverges or is itself abandoned. | Low | Medium | Thin wrapper around (de)serialisation; `serde_norway` is a fallback fork. |
-| R-4 | Skill/agent conventions shift (the `.agents/skills` convention is emerging, not ratified). | Medium | Low | Templates are ejectable and targets are pluggable; adding/altering a target is cheap. |
-| R-5 | Cross-platform static linking (musl, Windows) causes build friction. | Medium | Medium | Use `cargo-dist`; pin toolchains; test in CI before first release. |
-| R-6 | Merge corrupts the permanent spec on a partial failure. | Low | High | All-or-nothing archive: validate every precondition before any write; write atomically. |
-| R-7 | Scope creep back toward OpenSpec's dropped features (profiles, context stores). | Medium | Medium | Chapter 3.3 non-goals are explicit; keep them out of v1. |
-| R-8 | Filesystem-derived state misreads partially-written or manually-edited dirs. | Low | Medium | Derive conservatively; treat ambiguous states as "in progress"; never auto-destroy on inference. |
-| R-9 | Path traversal in `--change` parameter (e.g. `--change "../etc"`). | Low | High | **Resolved:** every command that accepts `--change` now validates the id as kebab-case via the shared `resolve_change_dir` helper before constructing any filesystem path. Invalid ids are rejected with a clear error. |
-| R-10 | Durable Arc42 chapters become stale, or implementation silently diverges from documented architecture after design-review. | Medium | High | When the `arc42` addon is enabled, completion review independently cross-checks Arc42 facts and affected chapters against `design.md`, `tasks.md`, and implementation evidence; mismatches block sign-off. |
-| R-11 | The prompt-layer conformance review is completed superficially or omitted because the binary does not parse architecture facts. | Medium | High | Require `ARC42 CONFORMANCE: CLEAN` and a completed evidence table in the review assets; design-review and the review instructions state that any unresolved row prevents human sign-off. |
-| R-12 | Existing projects that previously synced all three agent targets silently narrow to opencode after upgrade, orphaning stale `.agents`/`.claude` files. | Medium | Low | Config default is opencode-only; projects wanting all three add `skills: { targets: [opencode, agents, claude] }`. Addon `disable` still cleans all three targets so stale files can be removed. |
-| R-13 | A project merge script succeeds without replacing an old merged report, publishing stale README values. | Medium | High | Archive removes the configured output before running `coverage.merge_command` and rejects a successful command that does not recreate it. |
-| R-14 | E2E and non-E2E reports use different scopes or a project script merges counters incorrectly, making badges look authoritative when they are not. | Medium | High | Scripts are project-owned and documented in the README; givn validates both source reports and the fresh merged report, while review maps every instrumented production process and classifies invalid measurement as a fabrication finding. |
-| R-15 | A zero branch denominator is rendered as `0%`, implying measured branch coverage where the tool emitted no branches. | High | Medium | Render `n/a` for `branches-valid=0` in the badge and summary, while preserving the raw `0/0` counters. |
-| R-16 | Coverage or README updates partially succeed before a later archive gate fails, leaving user content or reports changed. | Low | High | Back up README and configured coverage paths before measurement and restore them together with permanent specs on every coverage error. |
+| ID | Risk | Likelihood | Impact | Mitigation / current boundary |
+|---|---|---:|---:|---|
+| R-1 | Replaced scenarios cannot preserve every original docstring delimiter detail. | Medium | Medium | The text-level merge preserves content and tables but renders replacement docstrings from the parsed AST. |
+| R-2 | Overlay semantics are misunderstood. | Medium | High | Artifact patches deep-merge by id; top-level `verify`, `coverage`, and `apply` overlays replace blocks. Keep the effective-manifest order documented. |
+| R-3 | Static or feature-enabled native linking is not proven for every target. | Medium | High | Keep retrieval feature-gated and treat musl, Windows, and release artifacts as unverified until built. |
+| R-4 | Users assume Givn owns all of `AGENTS.md`. | Medium | High | Givn owns only its matching fenced blocks; all surrounding content is user-owned and must be preserved. |
+| R-5 | Archive failure could leave a changed permanent tree or README. | Low | Critical | Back up permanent specs and README, validate merge preconditions, and roll back post-merge verify, E2E, and coverage failures. |
+| R-6 | Arc42 documentation becomes stale or is treated as a generated copy. | Medium | High | Arc42 completion review compares durable chapters, change assessment, design, tasks, and implementation; integrity checks resolvable affected files against templates, while missing files remain a current helper gap. |
+| R-7 | Generated config comments describe old post-hook defaults or nonexistent Arc42 settings. | High | Medium | The runtime contract is the current embedded manifest and source: standard post lists are empty, mandatory checks are binary-owned, and Arc42 output is fixed. |
+| R-8 | E2E detection misses scenarios nested under `Rule:` because the current helper checks direct feature scenarios only. | Medium | High | Keep the limitation explicit in review and add coverage before treating nested E2E detection as complete. |
+| R-9 | The retrieval model or tokenizer is unavailable. | Medium | High | Explicit semantic use attempts validated acquisition in the XDG cache; feature-free retrieval still fails explicitly, and feature-enabled commands report setup failure rather than a semantic pass. |
+| R-10 | The persistent E5 index is stale or malformed. | Medium | High | Refresh validates model/version, identities, dimensions, and hashes and rebuilds permanent entries when necessary. |
+| R-11 | Complete semantic serialization increases token count and changes vector reuse. | Medium | High | Hash the exact serialization, preflight actual tokenizers, expose cap evidence, and re-embed on hash mismatch. |
+| R-12 | The complete Duplicate Audit is quadratic in permanent corpus size. | Medium | Medium | Embed each fitting scenario once and score remaining pairs in memory; measure runtime before introducing a bounded/indexed redesign. |
+| R-13 | E5 candidate generation misses a semantic duplicate. | Medium | Critical | Keep the `0.9500` gate and measure candidate recall against labeled evidence; E5 remains the recall boundary for BGE/NLI. |
+| R-14 | BGE filters a true duplicate or variant. | Medium | Critical | Preserve raw E5 evidence, keep benchmark approval separate from runtime activation, and treat the BGE operating point as non-classifying evidence. |
+| R-15 | NLI filters a true duplicate or variant. | Medium | Critical | Preserve raw E5 and directional NLI evidence, keep NLI independent and non-authoritative, and measure labeled admission quality. |
+| R-16 | BGE and NLI pool descriptions diverge from implementation by surface. | Medium | High | Duplicate Audit BGE uses its top-five endpoint union while Duplicate Audit NLI uses the full E5 semantic set; blocking review uses complete report candidates, not a universal top-five pool. |
+| R-17 | Benchmark approval is mistaken for runtime artifact integrity. | Medium | High | Runtime approval checks schema/model/threshold/top-k/budget/pipeline/pass fields; separate artifact preflight checks local files. The current runtime does not recheck benchmark file hashes. |
+| R-18 | Prior semantic classifications survive malformed or changed report state. | Medium | Critical | Current extraction requires recognized IDs, allowed classes, rationale, and matching endpoint evidence hashes, but it is line-oriented rather than a strict full grammar parser. Strengthen the parser before claiming strict rejection. |
+| R-19 | A classified `delta-to-delta` candidate cannot be verified by the current remediation scope check. | High | High | Treat it as an explicit limitation; the verifier currently requires `current-change` to `permanent` endpoint scopes. Do not document delta-to-delta remediation as supported. |
+| R-20 | Review refreshes the persistent index before parsing delta content. | Medium | High | `spec explore --change` validates before refresh, but advisory and blocking review refresh first. Preserve the distinction and add a transactional ordering fix in a future change. |
+| R-21 | The second-stage budget leaves lower-ranked candidates without model evidence. | Medium | High | Keep `*_UNSCORED` separate from `*_FILTERED`, retain E5 evidence, and require completion of the open `semantic-reranker-budget` change before accepting its ADR. |
+| R-22 | PR #27 measurements are mistaken for reproducible repository state. | Medium | Medium | The current report records `394/1274/795`, but it depends on local ephemeral raw JSON reports. Link the report and label all earlier measurements as historical. |
+| R-23 | Ordinary design, process, or implementation choices inflate the active ADR contract. | High | High | Apply the strict five-dimension AND gate, reject shared-guidance-only claims, and route each non-ADR decision to exactly one canonical artifact. |
+| R-24 | ADR consolidation loses unique rationale, relationships, or ownership. | Medium | High | Use the complete ID-by-ID disposition manifest, preserve only genuine superseded architecture history, and review every target link and canonical source before removing a record. |
+| R-25 | The qualification procedure drifts between the canonical addon instruction and derived design-review guidance. | Medium | High | Keep the complete procedure and MADR template in one source, make derived assets thin, and verify effective/generated guidance parity. |
+| R-26 | Authors treat the LLM verdict as machine-enforced architecture validation. | Medium | High | State the non-runtime boundary explicitly and require human/design-review evidence; the current integrity hooks do not infer architectural significance. |
+| R-27 | Automatic upgrade commits a generated file that a project has treated as user-owned. | Medium | High | Require a clean worktree, stage an explicit known-path allowlist, preserve ejected facets, and expose both commit diffs for review. |
+| R-28 | Commit A succeeds but Commit B fails, leaving the generated migration plan uncommitted. | Low | High | Never reset history; keep the plan visible, report the successful hash and remaining files, and make rerun behavior preserve the existing plan. |
+| R-29 | A project interprets `givn_config_version: 0.3.0` as proof that semantic migration is complete. | High | High | Create the visible maintenance change, record the distinction in its design, and require normal LLM review/archive completion. |
+| R-30 | A future migration catalog contains a broken edge or incomplete bundle and leaves a version gap unclear. | Medium | High | Validate schema, unique IDs, advancing versions, referenced assets, ordered paths, and fail explicitly once a declared route has started. |
+| R-31 | Multiple required bundle phases are treated as independent concurrent changes. | Medium | High | Materialize one aggregate maintenance change with `migration.yaml`, explicit sequence numbers, and prompts that require strict phase order. |
+| R-32 | Enabling all declared retrieval features by default increases native build cost or triggers large first-use downloads. | Medium | High | Keep features independently selectable, download only on explicit semantic use into the XDG cache, report missing artifacts explicitly, document `--no-default-features`, and retain the same non-silent unavailable behavior. |
+| R-33 | Force-staging an ignored managed path could accidentally include unrelated user content. | Medium | Critical | Resolve individual managed paths before staging, use `git add -f --` only for that allowlist, never stage directories, and retain the clean-worktree preflight. |
+| R-34 | A shared user cache can be corrupted or changed outside a project review. | Medium | High | Validate every required file before use, retain explicit local artifact overrides, and distinguish artifact integrity from BGE admission. |
+| R-35 | Automatic model acquisition consumes disk space or network bandwidth unexpectedly. | Medium | Medium | Trigger downloads only from explicit semantic commands, keep role-specific cache directories, reuse snapshots across projects, and report the resolved path. |
+| R-36 | The XDG environment is incomplete or nonconforming. | Low | Medium | Require an absolute `XDG_CACHE_HOME` or fall back to `$HOME/.cache`; fail with the required environment and explicit override when neither is usable. |
+| R-37 | Benchmark tooling reintroduces project-local or `/tmp` model defaults. | Medium | Medium | Derive E5, BGE, NLI, and flat-export defaults from the shared XDG cache and assert the shell helper's default output through its real subprocess path. |
+| R-38 | `spec search --evidence` incurs a second-stage model load per invocation and may be slow without artifacts. | Medium | Low | Keep the flag opt-in, reuse the shared XDG caches and existing unavailable fallback, and report an unchanged E5-only ranking when a layer cannot score. |
 
-## 11.2 Deliberate (planned) technical debt
+## 11.2 Deliberate Technical Debt
 
-| ID | Debt | Reason | Repayment |
-| --- | --- | --- | --- |
-| D-1 | No `givn migrate` from `openspec/`. | MVP focus; clean break. | Add as a later command (ADR-017). |
-| D-2 | Only `.agents` + claude + opencode skill targets shipped. | Cover the common cases first. | Users eject/retarget now; add built-ins later. |
-| D-3 | No CI/remote initially (local git only). | OC-1. | Wire up `cargo-dist` pipeline when a remote is added. |
-| D-4 | Overlay may start with replace-only (not deep-merge) for some fields. | Get a working MVP. | **Partially resolved:** field-level deep-merge implemented for artifacts. Richer nested merge can be added as needs surface. |
-| D-5 | `givn new` writes the proposal template verbatim with no `{{CHANGE_ID}}` substitution, so the scaffolded `proposal.md` keeps the literal placeholder text. | Discovered during reverse-engineering characterization of `new-command`; AS-IS behaviour is captured by spec, not fixed. | Future `@givn.modified` delta to substitute the id (or drop the placeholder from the embedded template). Tracked as BUG-1 in change `reverse-engineer-new-command`. |
-| D-6 | `givn new` checks "change already exists" before "givn/ not found"; the already-exists branch is unreachable when `givn/` is absent (its parent cannot exist). No wrong error today, but the ordering is brittle. | Discovered during characterization; AS-IS captured, not reordered. | Future `@givn.modified` delta to swap the check order. Tracked as SMELL-1. |
-| D-7 | `givn new -foo` (leading-hyphen id, natural invocation) is rejected by clap as an unexpected flag (exit 2) before the id validator runs; the dedicated "must not start or end with a hyphen" message is only reachable via `givn new -- -foo`. Split behaviour. | Discovered during characterization; both paths captured as AS-IS. | Future `@givn.modified` delta to unify the two paths. Tracked as SMELL-2. |
-| D-8 | `givn init` does not create `givn/artifacts/`, so project template overrides require manual directory setup. | Discovered during characterization; documented as AS-IS. | Future enhancement (e.g. `givn eject` guidance or init scaffold). Tracked as SMELL-3. |
-| D-9 | For `@givn.added`/`@givn.modified` scenarios the merge rebuilds the scenario text from the parsed AST (`render_scenario_stripped`), so a step docstring is re-emitted with `"""` delimiters and the original delimiter style (`` ``` ``) plus any content-type annotation are not preserved on replaced scenarios. | The `gherkin` crate stores only dedented docstring content — it does not retain the delimiter style or annotation; preserving them would require carrying source text for replaced blocks. | Keep the fix minimal (content and data tables preserved); carrying original docstring source text across a replaced scenario is a possible future delta. Impact bounded as of change `fix-archive-merge-docstrings`. |
+| ID | Debt | Current state | Repayment |
+|---|---|---|---|
+| D-1 | No `givn migrate` from OpenSpec. | Clean break is current. | Add an explicit reviewed migration command if demand justifies it. |
+| D-2 | Release binaries, Homebrew, shell installer, and target matrix are not wired in this checkout. | Distribution is planned. | Implement and verify the release pipeline before claiming those channels. |
+| D-3 | Generated config comments can lag the embedded runtime manifest. | `commands.yaml` and mandatory-check behavior moved ahead of older comments. | Update the asset template in a separate code change; durable Arc42 docs describe runtime behavior, not stale comments. |
+| D-4 | `givn new` writes the proposal template verbatim, including its literal placeholder. | Characterized behavior. | Add a reviewed delta to substitute or remove the placeholder. |
+| D-5 | `givn new` checks existing change before missing `givn/`, making one branch unreachable in practice. | Characterized behavior. | Reorder checks in a reviewed change if the error distinction matters. |
+| D-6 | Natural `givn new -foo` is rejected by `clap`, while `givn new -- -foo` reaches the id validator. | Characterized behavior. | Unify the two input paths if a consistent diagnostic is required. |
+| D-7 | `givn init` does not create `givn/artifacts/` proactively. | Eject can create needed parent paths, but the directory is absent initially. | Add explicit scaffolding or improve eject guidance. |
+| D-8 | Replaced scenario docstrings may lose delimiter/content-type formatting. | Content is retained; source delimiter style is not. | Carry source block formatting in a future merge change. |
+| D-9 | Rule-nested WIP/E2E checks use existing direct-scenario traversal limits. | Current parser helper limitation. | Extend traversal and add regression coverage. |
+| D-10 | Prior semantic report parsing is not strict and does not reject arbitrary unknown/reordered fields. | Current line-oriented implementation. | Implement a strict grammar parser before treating the wire format as enforced input validation. |
+| D-11 | Semantic remediation does not support prior `delta-to-delta` entries. | Scope precondition rejects them. | Add a deliberate projected-delta remediation design and tests. |
+| D-12 | The current second-stage budget change is unfinished. | `givn status --change semantic-reranker-budget` reports open tasks and final verification. | Complete RED/GREEN/REFACTOR, full/E2E tests, real-model evidence, and blocking review before accepting ADR-063. |
+| D-13 | ADR qualification is guidance-level and the register has no semantic validator. | The LLM/author and design review apply the policy; runtime integrity checks only verify mechanical file conditions. | Add a reviewed semantic register validator only if a future requirement justifies runtime enforcement; until then retain explicit review evidence. |
 
-## 11.3 Open questions — resolved
+## 11.3 Historical Measurements
 
-## 11.3 Open questions — resolved
+The following values came from earlier planning or corpus snapshots and are not
+the current baseline: `288/414?`, `385/100`, and `397/1311/803`.
 
-| Question | Resolution |
-| --- | --- |
-| Override path convention for facets | **`givn/artifacts/<id>/template.<ext>`** and **`givn/artifacts/<id>/instructions.md`** (Phase 2). |
-| Linux build target: musl vs gnu | Deferred to Phase 6 (distribution not yet implemented). |
-| `review.md` PASS detection: string marker vs structured field | **String marker `REVIEW: PASS`** anywhere in the file (Phase 4). Simple, git-diffable, human-readable. |
+The current PR #27 report records `394` permanent scenarios, `1274` E5 semantic
+candidates, and `795` BGE top-five-union pairs. It also records that BGE and NLI
+have different audit pools and that raw JSON reports were stored locally and
+ephemerally. Use the [current report](../semantic-duplicates-real-model-filter-report.md)
+for its scope and provenance; do not turn its counts into a permanent invariant.
+
+## 11.4 Resolved Boundaries
+
+- Active change ids are validated as lowercase ASCII kebab-case before the
+  shared change path is constructed.
+- E5, BGE, and NLI do not silently truncate over-cap inputs in production.
+- A capped E5 passage does not discard fitting vectors from the same refresh.
+- Duplicate Audit does not write `.spec-index.json`, active changes, archive
+  contents, or feature files.
+- BGE/NLI statuses do not assign Givn classifications or perform feature edits.
+- Givn does not overwrite user content outside its own `AGENTS.md` fenced blocks.

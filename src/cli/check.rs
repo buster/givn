@@ -12,7 +12,11 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     // Determine features_path: active change's features, or default specs.
     let features_path = if let Some(id) = change {
         let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
-        change_dir.join("specs").to_string_lossy().into_owned()
+        if crate::state::is_skipped("specs", &change_dir) {
+            manifest.verify.features_path.clone()
+        } else {
+            change_dir.join("specs").to_string_lossy().into_owned()
+        }
     } else {
         manifest.verify.features_path.clone()
     };
@@ -28,7 +32,13 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
             );
         }
         // Run mandatory checks first, then custom hooks.
-        run_mandatory_checks(artifact_id, &manifest, &features_path)?;
+        run_mandatory_checks(
+            artifact_id,
+            &manifest,
+            &features_path,
+            &project_root,
+            change,
+        )?;
         crate::hooks::run_artifact_hooks(artifact_id, &manifest, &features_path)
     } else {
         // Run hooks for all artifacts whose output exists.
@@ -69,6 +79,8 @@ fn run_mandatory_checks(
     artifact_id: &str,
     manifest: &crate::config::manifest::Manifest,
     features_path: &str,
+    project_root: &std::path::Path,
+    change: Option<&str>,
 ) -> anyhow::Result<()> {
     match artifact_id {
         "tasks" => {
@@ -106,10 +118,34 @@ fn run_mandatory_checks(
                 manifest.addons.coverage,
             )?;
             println!("  ✓ integrity passed");
+            if let Some(id) = change {
+                crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
+                run_retrieval_gate(project_root, id)?;
+            }
         }
         _ => {}
     }
     Ok(())
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow::Result<()> {
+    if !project_root
+        .join("givn/changes")
+        .join(change_id)
+        .join("specs")
+        .exists()
+    {
+        return Ok(());
+    }
+    crate::spec::retrieval::report_missing_index(project_root);
+    crate::spec::retrieval::semantic_review_without_index_notice(project_root, change_id)?;
+    crate::spec::retrieval::review_without_index_notice(project_root, change_id)
+}
+
+#[cfg(not(feature = "spec-retrieval"))]
+fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow::Result<()> {
+    crate::spec::retrieval::semantic_review(project_root, change_id)
 }
 
 /// Check if an artifact's output files exist in the change directory.
