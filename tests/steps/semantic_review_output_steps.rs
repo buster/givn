@@ -320,3 +320,35 @@ fn findings_file_exists(world: &mut GivnWorld) {
         "findings file missing"
     );
 }
+
+#[given(
+    "a project prepared for semantic review with a similar active delta and second-stage evidence disabled"
+)]
+fn review_second_stage_disabled(world: &mut GivnWorld) {
+    review_output_project(world);
+}
+
+#[when(
+    "the user runs the advisory semantic review for \"running-change\" with second-stage evidence disabled"
+)]
+fn run_review_disabled(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("review output project missing");
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["spec", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "disabled"),
+        ],
+    ));
+}
+
+#[then("stderr names the fixed-threshold gate failure")]
+fn stderr_threshold_failure(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("similarity gate failed:") && stderr.contains("fixed threshold 0.9500"),
+        "stderr: {stderr}"
+    );
+}
