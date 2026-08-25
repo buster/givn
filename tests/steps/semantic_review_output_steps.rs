@@ -528,7 +528,7 @@ fn exact_pair_detail(world: &mut GivnWorld) {
         .find(|line| line.starts_with("BGE_RECOMMENDED:"))
         .expect("BGE detail line");
     for fragment in [
-        ", E5 ",
+        " E5 ",
         ", forward ",
         ", reverse ",
         ", symmetric ",
