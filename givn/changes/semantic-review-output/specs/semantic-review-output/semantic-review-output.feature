@@ -18,7 +18,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And token-capped pairs keep their guidance lines visible with pair and limit token counts
     And the stage status lines, accounting counters, and label distributions remain printed
 
-  @givn.added @wip
+  @givn.added
   Scenario: The raw E5 list is verbose-only detail
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change"

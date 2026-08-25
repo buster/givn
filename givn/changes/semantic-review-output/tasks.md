@@ -40,14 +40,30 @@ Feature scope for this change:
 
 ## Scenario: Default output reports only recommended second-stage pairs
 
-- [ ] RED: remove this scenario's `@wip`; run targeted with stubs. Output: <paste>
-- [ ] GREEN: visibility filter on NLI detail loop
-  (`print_nli_results`) and BGE per-pair loop — default prints only
-  `*_RECOMMENDED` rows; token-cap guidance lines stay visible;
-  status/accounting/distribution lines unchanged. Production files:
-  <list>. Test files: <list>. Targeted output: <paste>
-- [ ] REFACTOR: fmt/clippy clean; rerun targeted. Output: <paste>
-- [ ] COMMIT: hash: <hash>
+- [x] RED: removed this scenario's `@wip`; ran targeted with the Then
+  bindings stubbed (`unimplemented!()`).
+  Command: `GIVN_FEATURES=givn/changes/semantic-review-output/specs cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence,spec-similarity-gate --test features_runner -- --name "Default output reports only recommended second-stage pairs"`
+  Output: `1 scenario (1 failed)`, `3 steps (2 passed, 1 failed)`,
+  `Step panicked. Captured output: not implemented`, exit 101.
+- [x] GREEN: visibility filter on NLI detail loop (`print_nli_results`)
+  and BGE per-pair loop — default prints only `*_RECOMMENDED` rows;
+  token-cap guidance lines stay visible; status/accounting/distribution
+  lines unchanged. Also carried this commit: `--verbose`/`--format`
+  flags, corroborated union gating, findings persistence option,
+  resolution-chatter scoping, JSON document builder, `@review-output`
+  runner group, and the named permanent-pin migrations.
+  Production files: `src/main.rs`, `src/cli/spec.rs`,
+  `src/spec/retrieval.rs`, `run-tests.sh`,
+  `tests/steps/mod.rs`, `tests/steps/semantic_review_output_steps.rs`,
+  `tests/steps/semantic_review_output_e2e_steps.rs`,
+  `tests/steps/bge_reranking_evidence_steps.rs`,
+  `tests/steps/bge_reranking_evidence_e2e_steps.rs`,
+  `tests/steps/nli_evidence_steps.rs`,
+  `givn/specs/bge-reranking-evidence/bge-reranking-evidence.feature`.
+  Targeted output: `1 scenario (1 passed)`, `7 steps (7 passed)`, exit 0.
+- [x] REFACTOR: `cargo fmt`, `cargo clippy --workspace --all-targets --
+  -D warnings` clean; reran targeted: `7 steps (7 passed)`.
+- [x] COMMIT: hash: `1d756bc`
 
 ## Scenario: The E5 candidate list remains the default gate evidence
 
