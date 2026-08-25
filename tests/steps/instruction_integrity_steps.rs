@@ -140,7 +140,7 @@ fn reviewer_completes_review_artifact(world: &mut GivnWorld) {
 #[then("the review records the remediation contract for each classification")]
 fn review_records_remediation_contracts(world: &mut GivnWorld) {
     let content = review_guidance(world);
-    for class in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY"] {
+    for class in ["DUPLICATE", "VARIANT", "VALID-BOUNDARY"] {
         assert!(
             content.contains(class),
             "review guidance missing {class} contract"

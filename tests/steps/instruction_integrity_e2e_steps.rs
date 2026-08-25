@@ -109,8 +109,8 @@ fn cli_contains_remediation_checks(world: &mut GivnWorld) {
     let output = stdout(world);
     for required in [
         "Semantic remediation verification",
-        "DUPLIKAT",
-        "VARIANTE",
+        "DUPLICATE",
+        "VARIANT",
         "VALID-BOUNDARY",
     ] {
         assert!(

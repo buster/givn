@@ -171,8 +171,8 @@ fn combined_admission_requires_both(world: &mut GivnWorld) {
 fn filtered_combined_candidates_are_non_classifying(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(output.contains("evidence is advisory"), "stdout: {output}");
-    assert!(!output.contains("DUPLIKAT"), "stdout: {output}");
-    assert!(!output.contains("VARIANTE"), "stdout: {output}");
+    assert!(!output.contains("DUPLICATE"), "stdout: {output}");
+    assert!(!output.contains("VARIANT"), "stdout: {output}");
 }
 
 #[given("a project with a semantic candidate that BGE recommends and NLI cannot score")]

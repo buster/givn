@@ -43,9 +43,9 @@
 | **Prior report extraction** | The current line-oriented carry-forward reader for candidate id, classification, rationale, and evidence hashes. It is not a complete strict wire-grammar parser. |
 | **Candidate identity** | A 16-character lowercase hexadecimal FNV-1a hash of scope and canonical endpoint scopes/files/titles. It excludes score, evidence hashes, and report schema. |
 | **Endpoint evidence hash** | A separate 16-character hash over canonical endpoint evidence and model/index/schema metadata. Both endpoint hashes must match for classification carry-forward. |
-| **Semantic classification** | Agent-owned `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or blocking `UNCERTAIN` value in the semantic report. |
+| **Semantic classification** | Agent-owned `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, or blocking `UNCERTAIN` value in the semantic report. |
 | **Projected remediation** | Read-only application of the active delta to an in-memory permanent view for verifying a previous classification. |
-| **Parameterized variant** | A projected `Scenario Outline` with a non-empty Examples table, required by the current `VARIANTE` verifier. |
+| **Parameterized variant** | A projected `Scenario Outline` with a non-empty Examples table, required by the current `VARIANT` verifier. |
 | **Observable distinction** | A changed Fingerprint assertion or fact, required by the current `VALID-BOUNDARY` verifier along with a score below `0.9500`. |
 | **Delta-to-delta remediation** | A prior semantic candidate whose endpoints are both current-change entries. The current verifier rejects this scope; it is a known unsupported path. |
 | **Permanent duplicate audit** | `givn spec duplicates`, a complete advisory scan of current `givn/specs/` excluding active changes and archive contents. |

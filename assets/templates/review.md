@@ -189,12 +189,12 @@ rationale:
 
 | Candidate | Classification | Rationale | Projected remediation | Score after remediation | Verified? |
 |---|---|---|---|---|---|
-| | `DUPLIKAT` / `VARIANTE` / `VALID-BOUNDARY` / `UNCERTAIN` | | | | |
+| | `DUPLICATE` / `VARIANT` / `VALID-BOUNDARY` / `UNCERTAIN` | | | | |
 
 For each resolved classification, record the projected-tree evidence:
 
-- `DUPLIKAT`: redundant endpoint absent, retained endpoint present.
-- `VARIANTE`: one parameterized `Scenario Outline`, non-empty `Examples`, and
+- `DUPLICATE`: redundant endpoint absent, retained endpoint present.
+- `VARIANT`: one parameterized `Scenario Outline`, non-empty `Examples`, and
   recomputed score `< 0.9500`.
 - `VALID-BOUNDARY`: both endpoints present, changed observable fact or
   condition/outcome invariant, and recomputed score `< 0.9500`.

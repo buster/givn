@@ -45,6 +45,11 @@ capabilities, the ADR qualification gate, and a restructured documentation set.
 
 ### Changed
 
+- The semantic classification vocabulary is now English: candidates are
+  classified as `DUPLICATE`, `VARIANT`, or `VALID-BOUNDARY` (previously
+  `DUPLIKAT` / `VARIANTE` / `VALID-BOUNDARY`). Renamed across the review
+  gate validator and remediation guidance, embedded instructions, templates,
+  skills, the executable specs, and the benchmark harness.
 - The README is reduced to essentials: what the tool is, installation,
   quickstart, and an embedded lifecycle diagram. Comparison tables, core-idea
   essays, CLI reference, skills/addons/extras lists, configuration details,
