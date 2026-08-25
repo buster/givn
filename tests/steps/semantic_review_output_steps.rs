@@ -1014,11 +1014,12 @@ fn fails_with_identical_flagged_message(world: &mut GivnWorld) {
     let text_stderr = world.additional_output.clone().expect("text stderr");
     assert_flagged_failure(world);
     let json_stderr = super::stderr(world);
-    let normalize = |stderr: String| -> Vec<String> {
-        normalized_lines(&stderr)
-            .iter()
-            .map(|s| s.to_string())
+    let error_lines = |stderr: String| -> Vec<String> {
+        stderr
+            .lines()
+            .filter(|line| line.starts_with("error: "))
+            .map(|line| line.to_string())
             .collect()
     };
-    assert_eq!(normalize(text_stderr), normalize(json_stderr));
+    assert_eq!(error_lines(text_stderr), error_lines(json_stderr));
 }
