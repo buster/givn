@@ -630,3 +630,61 @@ fn no_listing_limits(world: &mut GivnWorld) {
         "no truncation disclaimer"
     );
 }
+
+#[given(
+    "a project prepared for semantic review whose stubbed stages emit repeated resolution notices"
+)]
+fn review_resolution_seam(world: &mut GivnWorld) {
+    review_recommends_one_filters_many(world);
+    world
+        .retrieval_review_extra
+        .get_or_insert_with(Vec::new)
+        .push((
+            "GIVN_SPEC_RESOLUTION_NOTICES".to_string(),
+            "repeat".to_string(),
+        ));
+}
+
+#[then("stderr shows exactly one artifact resolution summary line per participating stage")]
+fn one_resolution_summary_per_stage(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    let summaries: Vec<&str> = stderr
+        .lines()
+        .filter(|line| line.contains(" ready ("))
+        .collect();
+    assert_eq!(summaries.len(), 3, "stderr: {stderr}");
+    assert!(
+        summaries
+            .iter()
+            .any(|l| l.contains("(E5)") && l.ends_with("/stub/e5-cache)")),
+        "E5 summary missing: {stderr}"
+    );
+    assert!(
+        summaries
+            .iter()
+            .any(|l| l.contains("(BGE)") && l.ends_with("/stub/bge-cache)")),
+        "BGE summary missing: {stderr}"
+    );
+    assert!(
+        summaries
+            .iter()
+            .any(|l| l.contains("NLI") && l.ends_with("/stub/nli-cache)")),
+        "NLI summary missing: {stderr}"
+    );
+}
+
+#[then("stderr contains no repeated resolution lines for the same stage")]
+fn no_repeated_resolution_lines(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    for stage in ["(E5)", "(BGE)", "NLI"] {
+        let count = stderr
+            .lines()
+            .filter(|line| line.contains(stage) && line.contains(" ready ("))
+            .count();
+        assert!(count <= 1, "{stage} summarized {count} times: {stderr}");
+    }
+    assert!(
+        !stderr.contains("resolving "),
+        "resolution start lines suppressed by default: {stderr}"
+    );
+}
