@@ -215,13 +215,32 @@ fn e2e_json_counter_parity(world: &mut GivnWorld) {
 }
 
 #[then("givn/changes/running-change/review-findings.json exists beside the change")]
-fn e2e_findings_exists(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_findings_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("e2e review project missing");
+    assert!(
+        env.path("givn/changes/running-change/review-findings.json")
+            .exists(),
+        "findings file missing"
+    );
 }
 
 #[then("the persisted document matches the document emitted on stdout")]
-fn e2e_persisted_matches_stdout(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_persisted_matches_stdout(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("e2e review project missing");
+    run_review(world, &["--format", "json"]);
+    let persisted: serde_json::Value = serde_json::from_str(
+        &std::fs::read_to_string(env.path("givn/changes/running-change/review-findings.json"))
+            .expect("findings"),
+    )
+    .expect("persisted parses");
+    let emitted: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("emitted parses");
+    assert_eq!(persisted["verdict"], emitted["verdict"]);
+    assert_eq!(persisted["candidates"], emitted["candidates"]);
+    assert_eq!(
+        persisted["combined_recommended_candidates"],
+        emitted["combined_recommended_candidates"]
+    );
 }
 
 #[then("stderr names the flagged recommendation failure")]
