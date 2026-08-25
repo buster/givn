@@ -771,3 +771,123 @@ fn nothing_names_deprecated_variable(world: &mut GivnWorld) {
 fn recommended_still_listed(world: &mut GivnWorld) {
     lists_recommended_once(world);
 }
+
+pub(crate) fn review_json_document(world: &GivnWorld) -> serde_json::Value {
+    serde_json::from_slice(&super::output(world).stdout).expect("valid review JSON document")
+}
+
+#[when(
+    "the user runs the advisory semantic review for \"running-change\" with structured JSON output"
+)]
+fn run_review_json(world: &mut GivnWorld) {
+    run_review_with(world, &["--format", "json"], &[]);
+}
+
+#[then("stdout parses as exactly one JSON document")]
+fn parses_one_document(world: &mut GivnWorld) {
+    let _ = review_json_document(world);
+}
+
+#[then("the document declares schema version 1 and the reviewed change id")]
+fn declares_schema_and_change(world: &mut GivnWorld) {
+    let document = review_json_document(world);
+    assert_eq!(document["schema_version"], 1);
+    assert_eq!(document["change"], "running-change");
+    assert_eq!(document["source"], "givn spec review");
+}
+
+#[then(
+    "the verdict records the flagged recommended pair count, whether the threshold fallback applied, the threshold, and the E5 candidate count"
+)]
+fn verdict_records_fields(world: &mut GivnWorld) {
+    let document = review_json_document(world);
+    let verdict = &document["verdict"];
+    assert_eq!(verdict["problem_flagged"], true);
+    assert_eq!(verdict["flagged_recommended_count"], 1);
+    assert_eq!(verdict["threshold_fallback"], false);
+    assert!(
+        (verdict["threshold"].as_f64().unwrap() - 0.95).abs() < 1e-6,
+        "threshold: {verdict}"
+    );
+    assert_eq!(verdict["e5_candidates"], 3);
+}
+
+#[then("the document records the index refresh outcome instead of printing banner lines")]
+fn index_recorded_not_printed(world: &mut GivnWorld) {
+    let stdout = String::from_utf8_lossy(&super::output(world).stdout);
+    assert!(
+        !stdout.contains("Indexed ") && !stdout.contains("Reused "),
+        "banner lines leaked into json stdout: {stdout}"
+    );
+    let index = &review_json_document(world)["index"];
+    assert_eq!(index["indexed"], 3);
+    assert!(index["reused"].is_number());
+    assert_eq!(index["e5_token_caps"], 0);
+}
+
+#[then(
+    "each participating stage summary records its status, model identity, pair counters, label distribution where applicable, and runtime"
+)]
+fn stage_summaries_complete(world: &mut GivnWorld) {
+    let document = review_json_document(world);
+    let bge = &document["bge_run"];
+    assert_eq!(bge["status"], "BGE_ENABLED");
+    assert_eq!(bge["model"], "rozgo/bge-reranker-v2-m3");
+    assert_eq!(bge["recommended_count"], 1);
+    assert_eq!(bge["filtered_count"], 2);
+    assert_eq!(bge["unscored_count"], 0);
+    assert!(bge["runtime_ms"].is_number());
+    let nli = &document["nli_run"];
+    assert_eq!(nli["status"], "NLI_ENABLED");
+    assert_eq!(
+        nli["model"],
+        "MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7"
+    );
+    assert_eq!(nli["distribution"]["entailment"], 1);
+    assert_eq!(nli["runtime_ms"].as_u64(), Some(0));
+}
+
+#[then(
+    "every candidate records both endpoint titles and files, the embedding score, the admission labels of every participating stage, and its evidence scores"
+)]
+fn candidates_complete(world: &mut GivnWorld) {
+    let candidates = review_json_document(world)["candidates"]
+        .as_array()
+        .expect("candidates array")
+        .clone();
+    assert!(!candidates.is_empty());
+    for candidate in &candidates {
+        assert!(candidate["left"]["title"].is_string());
+        assert!(candidate["left"]["file"].is_string());
+        assert!(candidate["right"]["title"].is_string());
+        assert!(candidate["right"]["file"].is_string());
+        assert!(candidate["embedding_score"].is_string());
+        assert!(candidate["admission"]["bge"].is_string());
+        assert!(candidate["admission"]["nli"].is_string());
+        assert!(
+            candidate["evidence"]["bge"].is_object() || candidate["evidence"]["nli"].is_object()
+        );
+    }
+}
+
+#[then("the document reports the combined recommendation total across participating stages")]
+fn combined_total_present(world: &mut GivnWorld) {
+    let document = review_json_document(world);
+    assert_eq!(document["combined_recommended_count"], 1);
+    assert_eq!(
+        document["combined_recommended_candidates"]
+            .as_array()
+            .expect("combined collection")
+            .len(),
+        1
+    );
+}
+
+#[then("the document contains no log lines outside the JSON document")]
+fn stdout_pure(world: &mut GivnWorld) {
+    let stdout = String::from_utf8_lossy(&super::output(world).stdout);
+    assert!(
+        stdout.trim_start().starts_with('{'),
+        "stdout does not start with a JSON document: {stdout}"
+    );
+}
