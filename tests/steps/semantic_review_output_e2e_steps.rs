@@ -157,13 +157,22 @@ fn e2e_hides_filtered(world: &mut GivnWorld) {
 }
 
 #[then("stdout shows the FILTERED detail rows")]
-fn e2e_verbose_shows_filtered(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_verbose_shows_filtered(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let filtered = output
+        .lines()
+        .filter(|line| line.starts_with("BGE_FILTERED:"))
+        .count();
+    assert_eq!(filtered, 2, "verbose filtered rows missing: {output}");
 }
 
 #[then("stdout shows no truncation disclaimer")]
-fn e2e_no_truncation_disclaimer(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_no_truncation_disclaimer(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        !output.contains("nli diagnostic: reported"),
+        "truncation disclaimer present: {output}"
+    );
 }
 
 #[then("stdout parses as a schema-version-1 review document")]
