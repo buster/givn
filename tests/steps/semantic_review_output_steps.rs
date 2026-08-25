@@ -181,3 +181,59 @@ fn status_lines_remain(world: &mut GivnWorld) {
     );
     assert!(output.contains("nli distribution:"), "stdout: {output}");
 }
+
+#[when(
+    "the user runs the advisory semantic review for \"running-change\" again with verbose output"
+)]
+fn run_review_verbose(world: &mut GivnWorld) {
+    run_review_with(world, &["--verbose"], &[]);
+}
+
+#[then("stdout contains no raw E5 similarity-candidate detail line")]
+fn hides_raw_e5_list(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        !output.contains("similarity candidate ["),
+        "raw E5 detail leaked into default output: {output}"
+    );
+}
+
+#[then("stdout still reports the E5 evaluated-pairs count")]
+fn reports_evaluated_count(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let evaluated = output
+        .lines()
+        .find(|line| line.contains("retrieval advisory: embedding similarity evaluated "))
+        .expect("evaluated-pairs line");
+    assert!(evaluated.ends_with("candidate pairs"), "{evaluated}");
+}
+
+#[then("stdout lists every E5 similarity candidate above the threshold in its established format")]
+fn lists_raw_e5_verbose(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let detail_lines = output
+        .lines()
+        .filter(|line| line.starts_with("similarity candidate ["))
+        .count();
+    assert!(detail_lines >= 1, "stdout: {output}");
+    for line in output
+        .lines()
+        .filter(|l| l.starts_with("similarity candidate ["))
+    {
+        assert!(line.contains(", threshold 0.9500; remediation:"), "{line}");
+    }
+    let evaluated = output
+        .lines()
+        .find(|line| line.contains("embedding similarity evaluated "))
+        .expect("evaluated-pairs line");
+    let count: usize = evaluated
+        .split("evaluated ")
+        .nth(1)
+        .and_then(|rest| rest.split(' ').next())
+        .and_then(|value| value.parse().ok())
+        .expect("evaluated count");
+    assert_eq!(
+        detail_lines, count,
+        "verbose lists every gate candidate: {output}"
+    );
+}
