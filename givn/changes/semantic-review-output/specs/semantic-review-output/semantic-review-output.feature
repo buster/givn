@@ -161,7 +161,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     Then the command exits 0
     And no findings document exists under the change directory
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unwritable findings location warns without masking the flagged failure
     Given a project prepared for semantic review whose second-stage evidence recommends at least one pair
     And the findings path cannot be written

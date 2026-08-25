@@ -1087,3 +1087,20 @@ fn no_findings_document(world: &mut GivnWorld) {
 fn review_recommends_nothing(world: &mut GivnWorld) {
     review_filters_everything(world);
 }
+
+#[given("the findings path cannot be written")]
+fn findings_path_unwritable(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project missing");
+    std::fs::create_dir_all(env.path("givn/changes/running-change/review-findings.json"))
+        .expect("create blocking directory");
+}
+
+#[then("stderr warns that the findings document could not be written and names the attempted path")]
+fn stderr_warns_findings_write(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("could not write review findings to")
+            && stderr.contains("review-findings.json"),
+        "stderr: {stderr}"
+    );
+}
