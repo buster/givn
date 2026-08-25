@@ -187,16 +187,16 @@ fn e2e_persisted_matches_stdout(_world: &mut GivnWorld) {
 }
 
 #[then("stderr names the flagged recommendation failure")]
-fn e2e_stderr_flagged(world: &mut GivnWorld) {
+fn e2e_stderr_flagged(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("the semantic review report exists")]
-fn e2e_report_exists(world: &mut GivnWorld) {
+fn e2e_report_exists(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("the semantic review report status is \"BLOCKED\"")]
-fn e2e_report_blocked(world: &mut GivnWorld) {
+fn e2e_report_blocked(_world: &mut GivnWorld) {
     unimplemented!()
 }
