@@ -352,3 +352,104 @@ fn stderr_threshold_failure(world: &mut GivnWorld) {
         "stderr: {stderr}"
     );
 }
+
+#[given(
+    "a project prepared for semantic review whose recommended pairs rank differently by confidence than by embedding score"
+)]
+fn review_confidence_order_fixture(world: &mut GivnWorld) {
+    review_output_project(world);
+    let mut bge_scores = String::new();
+    let mut nli_scores = String::new();
+    let confidences = [
+        (PERMANENT_ENDPOINTS[0], "3.5", "0.9,0,0"),
+        (PERMANENT_ENDPOINTS[1], "4.5", "1.6,0,0"),
+        (PERMANENT_ENDPOINTS[2], "6.5", "2.6,0,0"),
+    ];
+    for (right, bge, nli) in confidences {
+        bge_scores.push_str(&format!(
+            "{DELTA_ENDPOINT}->{right}={bge};{right}->{DELTA_ENDPOINT}={bge};"
+        ));
+        nli_scores.push_str(&format!(
+            "{DELTA_ENDPOINT}->{right}={nli};{right}->{DELTA_ENDPOINT}={nli};"
+        ));
+    }
+    world.retrieval_review_extra = Some(vec![
+        (
+            "GIVN_SPEC_BGE_DIRECTIONAL_SCORES".to_string(),
+            bge_scores.trim_end_matches(';').to_string(),
+        ),
+        (
+            "GIVN_SPEC_NLI_DIRECTIONAL_SCORES".to_string(),
+            nli_scores.trim_end_matches(';').to_string(),
+        ),
+    ]);
+}
+
+fn recommended_nli_entailments(world: &GivnWorld) -> Vec<f32> {
+    super::stdout(world)
+        .lines()
+        .filter_map(|line| {
+            if line.starts_with("nli candidate [") && line.contains("symmetric [entailment ") {
+                line.split("symmetric [entailment ")
+                    .nth(1)?
+                    .split(',')
+                    .next()?
+                    .trim()
+                    .parse::<f32>()
+                    .ok()
+                    .into()
+            } else {
+                None
+            }
+        })
+        .collect()
+}
+
+fn recommended_bge_raws(world: &GivnWorld) -> Vec<f32> {
+    super::stdout(world)
+        .lines()
+        .filter(|line| line.starts_with("BGE_RECOMMENDED:"))
+        .filter_map(|line| {
+            line.split("symmetric ")
+                .nth(1)?
+                .split(';')
+                .next()?
+                .trim()
+                .parse::<f32>()
+                .ok()
+                .into()
+        })
+        .collect()
+}
+
+#[then("the recommended NLI pairs are listed strongest symmetric entailment first")]
+fn nli_recommended_order(world: &mut GivnWorld) {
+    let values = recommended_nli_entailments(world);
+    assert!(values.len() >= 2, "stdout: {}", super::stdout(world));
+    let mut sorted = values.clone();
+    sorted.sort_by(|left, right| right.total_cmp(left));
+    assert_eq!(values, sorted, "stdout: {}", super::stdout(world));
+}
+
+#[then("the recommended BGE pairs are listed highest symmetric raw score first")]
+fn bge_recommended_order(world: &mut GivnWorld) {
+    let values = recommended_bge_raws(world);
+    assert!(values.len() >= 2, "stdout: {}", super::stdout(world));
+    let mut sorted = values.clone();
+    sorted.sort_by(|left, right| right.total_cmp(left));
+    assert_eq!(values, sorted, "stdout: {}", super::stdout(world));
+}
+
+#[then("neither listing follows embedding-score order")]
+fn listings_differ_from_embedding_order(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let first_bge_title = output
+        .lines()
+        .find(|line| line.starts_with("BGE_RECOMMENDED:"))
+        .and_then(|line| line.split('\'').nth(1))
+        .expect("first BGE recommended title");
+    assert_ne!(
+        first_bge_title, "Provider request is accepted",
+        "embedding-order title listed first: {output}"
+    );
+}
