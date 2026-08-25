@@ -44,10 +44,10 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stderr names the persisted findings path under the change directory
     And givn/changes/running-change/review-findings.json exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: Without participating second-stage layers the E5 threshold stays binding
     Given a project prepared for semantic review with a similar active delta and second-stage evidence disabled
-    When the user runs the advisory semantic review for "running-change"
+    When the user runs the advisory semantic review for "running-change" with second-stage evidence disabled
     Then the command exits non-zero
     And stdout lists every E5 similarity candidate above the threshold in its established format
     And stderr names the fixed-threshold gate failure

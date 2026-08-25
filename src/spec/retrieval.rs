@@ -5529,7 +5529,8 @@ fn review_enabled(
     #[cfg(feature = "spec-similarity-gate")]
     {
         let gate = run_embedding_review(root, &index, &delta, options, false)?;
-        let (flagged, corroborated, _) = review_problem_verdict(None);
+        let flagged = gate.candidates.len();
+        let corroborated = false;
         let gate_message = review_failure_message(flagged, corroborated, &gate);
         let document = render_review_document(
             change_id,
