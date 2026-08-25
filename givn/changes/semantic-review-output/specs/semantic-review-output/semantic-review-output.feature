@@ -28,7 +28,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     When the user runs the advisory semantic review for "running-change" again with verbose output
     Then stdout lists every E5 similarity candidate above the threshold in its established format
 
-  @givn.added @wip
+  @givn.added
   Scenario: E5-only hits without a recommendation are not problems
     Given a project prepared for semantic review whose second-stage evidence filters every candidate
     When the user runs the advisory semantic review for "running-change"

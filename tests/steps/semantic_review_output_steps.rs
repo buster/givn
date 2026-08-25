@@ -55,11 +55,18 @@ pub(crate) fn review_output_env(world: &GivnWorld) -> Vec<(String, String)> {
         ("GIVN_SPEC_EMBEDDER".to_string(), "stub".to_string()),
         ("GIVN_SPEC_BGE".to_string(), "stub".to_string()),
         ("GIVN_SPEC_RERANKER".to_string(), "nli-stub".to_string()),
-        (
+    ];
+    let bge_override = world.retrieval_review_extra.as_ref().is_some_and(|extra| {
+        extra
+            .iter()
+            .any(|(key, _)| key == "GIVN_SPEC_BGE_DIRECTIONAL_SCORES")
+    });
+    if !bge_override {
+        envs.push((
             "GIVN_SPEC_BGE_DIRECTIONAL_SCORES".to_string(),
             bge_scores.trim_end_matches(';').to_string(),
-        ),
-    ];
+        ));
+    }
     if let Some(nli_budget) = world.retrieval_nli_token_budget.as_deref() {
         envs.push((
             "GIVN_SPEC_NLI_TOKEN_BUDGET".to_string(),
@@ -235,5 +242,56 @@ fn lists_raw_e5_verbose(world: &mut GivnWorld) {
     assert_eq!(
         detail_lines, count,
         "verbose lists every gate candidate: {output}"
+    );
+}
+
+#[given(
+    "a project prepared for semantic review whose second-stage evidence filters every candidate"
+)]
+fn review_filters_everything(world: &mut GivnWorld) {
+    review_output_project(world);
+    let mut nli_scores = String::new();
+    for right in PERMANENT_ENDPOINTS {
+        nli_scores.push_str(&format!(
+            "{DELTA_ENDPOINT}->{right}=-0.4,1.4,0.2;{right}->{DELTA_ENDPOINT}=-0.4,1.4,0.2;"
+        ));
+    }
+    let mut bge_scores = String::new();
+    for right in PERMANENT_ENDPOINTS {
+        bge_scores.push_str(&format!(
+            "{DELTA_ENDPOINT}->{right}=1.0;{right}->{DELTA_ENDPOINT}=1.0;"
+        ));
+    }
+    world.retrieval_review_extra = Some(vec![
+        (
+            "GIVN_SPEC_NLI_DIRECTIONAL_SCORES".to_string(),
+            nli_scores.trim_end_matches(';').to_string(),
+        ),
+        (
+            "GIVN_SPEC_BGE_DIRECTIONAL_SCORES".to_string(),
+            bge_scores.trim_end_matches(';').to_string(),
+        ),
+    ]);
+}
+
+#[then("stdout reports the recommendation accounting for both stages with zero recommended pairs")]
+fn zero_recommended_accounting(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    for label in ["BGE candidate accounting:", "NLI candidate accounting:"] {
+        let line = output
+            .lines()
+            .find(|line| line.contains(label))
+            .unwrap_or_else(|| panic!("missing {label} in stdout: {output}"));
+        let recommended = line
+            .split("recommended ")
+            .nth(1)
+            .and_then(|value| value.split(',').next())
+            .and_then(|value| value.parse::<usize>().ok())
+            .expect("recommended count");
+        assert_eq!(recommended, 0, "{label}: {line}");
+    }
+    assert!(
+        output.contains("combined recommended 0 of 3 E5 candidates"),
+        "stdout: {output}"
     );
 }
