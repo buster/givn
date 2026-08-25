@@ -154,7 +154,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And the file parses as the same schema-version-1 document emitted on stdout
     And a stale findings document left by an earlier run is replaced
 
-  @givn.added @wip
+  @givn.added
   Scenario: Successful reviews write no findings document
     Given a project prepared for semantic review whose second-stage evidence recommends nothing and filters everything
     When the user runs the advisory semantic review for "running-change"

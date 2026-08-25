@@ -1070,3 +1070,12 @@ fn stale_findings_replaced(world: &mut GivnWorld) {
 fn failure_message_names_findings(world: &mut GivnWorld) {
     stderr_findings_path(world);
 }
+
+#[then("no findings document exists under the change directory")]
+fn no_findings_document(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project missing");
+    assert!(
+        !env.path("givn/changes/running-change/review-findings.json").exists(),
+        "findings document written on a successful review"
+    );
+}
