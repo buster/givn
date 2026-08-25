@@ -52,7 +52,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stdout lists every E5 similarity candidate above the threshold in its established format
     And stderr names the fixed-threshold gate failure
 
-  @givn.added @wip
+  @givn.added
   Scenario: Recommended pairs are ordered by model confidence before embedding score
     Given a project prepared for semantic review whose recommended pairs rank differently by confidence than by embedding score
     When the user runs the advisory semantic review for "running-change"
