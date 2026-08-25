@@ -42,7 +42,7 @@ fn write_project(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-fn base_envs(world: &GivnWorld) -> Vec<(String, String)> {
+fn base_envs(_world: &GivnWorld) -> Vec<(String, String)> {
     let mut bge_scores = String::new();
     let mut nli_scores = String::new();
     let confidences = [
@@ -157,32 +157,32 @@ fn e2e_hides_filtered(world: &mut GivnWorld) {
 }
 
 #[then("stdout shows the FILTERED detail rows")]
-fn e2e_verbose_shows_filtered(world: &mut GivnWorld) {
+fn e2e_verbose_shows_filtered(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("stdout shows no truncation disclaimer")]
-fn e2e_no_truncation_disclaimer(world: &mut GivnWorld) {
+fn e2e_no_truncation_disclaimer(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("stdout parses as a schema-version-1 review document")]
-fn e2e_json_parses(world: &mut GivnWorld) {
+fn e2e_json_parses(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("the JSON counters equal those of an equivalent text run")]
-fn e2e_json_counter_parity(world: &mut GivnWorld) {
+fn e2e_json_counter_parity(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("givn/changes/running-change/review-findings.json exists beside the change")]
-fn e2e_findings_exists(world: &mut GivnWorld) {
+fn e2e_findings_exists(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
 #[then("the persisted document matches the document emitted on stdout")]
-fn e2e_persisted_matches_stdout(world: &mut GivnWorld) {
+fn e2e_persisted_matches_stdout(_world: &mut GivnWorld) {
     unimplemented!()
 }
 
