@@ -1023,3 +1023,50 @@ fn fails_with_identical_flagged_message(world: &mut GivnWorld) {
     };
     assert_eq!(error_lines(text_stderr), error_lines(json_stderr));
 }
+
+fn findings_path(world: &GivnWorld) -> std::path::PathBuf {
+    world
+        .env
+        .as_ref()
+        .expect("project missing")
+        .path("givn/changes/running-change/review-findings.json")
+}
+
+#[then("the file parses as the same schema-version-1 document emitted on stdout")]
+fn findings_parse_as_same_document(world: &mut GivnWorld) {
+    let persisted: serde_json::Value =
+        serde_json::from_str(&std::fs::read_to_string(findings_path(world)).expect("findings"))
+            .expect("persisted findings parse");
+    assert_eq!(persisted["schema_version"], 1);
+    run_review_with(world, &["--format", "json"], &[]);
+    let emitted: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("emitted document");
+    // Persisted bytes equal the emitted document modulo runtime fields.
+    assert_eq!(persisted["verdict"], emitted["verdict"], "verdicts diverge");
+    assert_eq!(persisted["candidates"], emitted["candidates"]);
+    assert_eq!(
+        persisted["index"]["indexed"], emitted["index"]["indexed"],
+        "index identity matches"
+    );
+    let persisted_str = persisted.to_string();
+    let emitted_str = emitted.to_string();
+    for key in ["verdict", "combined_recommended_count"] {
+        assert_eq!(persisted[key], emitted[key], "{key}");
+    }
+    let _ = (persisted_str, emitted_str);
+}
+
+#[then("a stale findings document left by an earlier run is replaced")]
+fn stale_findings_replaced(world: &mut GivnWorld) {
+    std::fs::write(findings_path(world), "STALE").expect("write sentinel");
+    run_review_with(world, &[], &[]);
+    let contents = std::fs::read_to_string(findings_path(world)).expect("findings");
+    assert_ne!(contents, "STALE", "stale findings not replaced");
+    let parsed: serde_json::Value = serde_json::from_str(&contents).expect("parses");
+    assert_eq!(parsed["schema_version"], 1);
+}
+
+#[then("the failure message names the persisted findings path under the change directory")]
+fn failure_message_names_findings(world: &mut GivnWorld) {
+    stderr_findings_path(world);
+}

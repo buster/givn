@@ -144,7 +144,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     When the user runs the advisory semantic review for "running-change" with structured JSON output
     Then the command exits non-zero and stderr names the identical failure message unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: Flagged recommendations persist their findings beside the change
     Given a project prepared for semantic review whose second-stage evidence recommends at least one pair
     When the user runs the advisory semantic review for "running-change"
