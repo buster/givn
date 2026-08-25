@@ -35,7 +35,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     Then the command exits 0
     And stdout reports the recommendation accounting for both stages with zero recommended pairs
 
-  @givn.added @wip
+  @givn.added
   Scenario: A recommended pair from either stage is the problem signal
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change"

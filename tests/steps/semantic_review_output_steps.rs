@@ -295,3 +295,28 @@ fn zero_recommended_accounting(world: &mut GivnWorld) {
         "stdout: {output}"
     );
 }
+
+#[then("stderr names the flagged recommended pair count")]
+fn stderr_flagged_count(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("semantic review flagged 3 recommended candidate(s)"),
+        "stderr: {stderr}"
+    );
+}
+
+#[then("stderr names the persisted findings path under the change directory")]
+fn stderr_findings_path(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(stderr.contains("review-findings.json"), "stderr: {stderr}");
+}
+
+#[then("givn/changes/running-change/review-findings.json exists")]
+fn findings_file_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project missing");
+    assert!(
+        env.path("givn/changes/running-change/review-findings.json")
+            .exists(),
+        "findings file missing"
+    );
+}
