@@ -169,7 +169,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     Then the command exits non-zero and stderr names the flagged recommendation failure
     And stderr warns that the findings document could not be written and names the attempted path
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI review surfaces only recommended second-stage pairs
     Given an end-to-end project whose semantic review recommends one pair and filters many
     When the end-to-end user runs the advisory semantic review for "running-change" through the givn CLI
@@ -205,7 +205,7 @@ Feature: Semantic review output leads with decision-relevant evidence
   Scenario: Real CLI blocking review flags recommendations through the workflow gate
     Given an end-to-end project whose second-stage evidence recommends at least one pair
     When the end-to-end user runs blocking change review for "running-change" through the givn CLI
-    Then the command exits non-zero
-    And stderr names the flagged recommendation failure
+    Then the command exits non-zero because the recommended candidate is unresolved
     And the semantic review report exists
+    And the semantic review report status is "BLOCKED"
     And no findings document exists under the change directory

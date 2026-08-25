@@ -1,17 +1,202 @@
 //! Compiled-CLI subprocess steps for decision-first semantic review output.
+//!
+//! These bindings drive the real `givn` binary as a subprocess against a
+//! prepared project — the same interface an external client uses.
 
-use cucumber::{given, when};
+use std::fs;
+
+use cucumber::{given, then, when};
 
 use super::GivnWorld;
+use crate::common;
+
+const DELTA_ENDPOINT: &str =
+    "givn/specs/running-change/running-change.feature|Active provider request";
+const PERMANENT_ENDPOINTS: [&str; 3] = [
+    "givn/specs/provider.feature|Provider request is accepted",
+    "givn/specs/provider.feature|Provider timeout is reported",
+    "givn/specs/provider.feature|Provider warning is reported",
+];
+const DELTA_BODY: &str = "    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n";
+
+fn write_project(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    let mut permanent = String::from("Feature: provider\n");
+    for endpoint in PERMANENT_ENDPOINTS {
+        let title = endpoint.split('|').nth(1).expect("endpoint title");
+        permanent.push_str(&format!("\n  Scenario: {title}\n{DELTA_BODY}"));
+    }
+    fs::write(specs.join("provider.feature"), permanent).expect("write permanent corpus");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta dir");
+    fs::write(
+        &delta,
+        format!(
+            "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Active provider request\n{DELTA_BODY}"
+        ),
+    )
+    .expect("write active delta");
+    world.env = Some(env);
+}
+
+fn base_envs(world: &GivnWorld) -> Vec<(String, String)> {
+    let mut bge_scores = String::new();
+    let mut nli_scores = String::new();
+    let confidences = [
+        (PERMANENT_ENDPOINTS[0], "4.0", None),
+        (PERMANENT_ENDPOINTS[1], "1.0", Some("-0.4,1.4,0.2")),
+        (PERMANENT_ENDPOINTS[2], "1.0", Some("-0.4,1.4,0.2")),
+    ];
+    for (right, bge, nli) in confidences {
+        bge_scores.push_str(&format!(
+            "{DELTA_ENDPOINT}->{right}={bge};{right}->{DELTA_ENDPOINT}={bge};"
+        ));
+        if let Some(nli) = nli {
+            nli_scores.push_str(&format!(
+                "{DELTA_ENDPOINT}->{right}={nli};{right}->{DELTA_ENDPOINT}={nli};"
+            ));
+        }
+    }
+    vec![
+        ("GIVN_SPEC_EMBEDDER".to_string(), "stub".to_string()),
+        ("GIVN_SPEC_BGE".to_string(), "stub".to_string()),
+        ("GIVN_SPEC_RERANKER".to_string(), "nli-stub".to_string()),
+        (
+            "GIVN_SPEC_BGE_DIRECTIONAL_SCORES".to_string(),
+            bge_scores.trim_end_matches(';').to_string(),
+        ),
+        (
+            "GIVN_SPEC_NLI_DIRECTIONAL_SCORES".to_string(),
+            nli_scores.trim_end_matches(';').to_string(),
+        ),
+    ]
+}
+
+fn run_review(world: &mut GivnWorld, extra_args: &[&str]) {
+    let env = world.env.as_ref().expect("e2e review project missing");
+    let mut args: Vec<&str> = vec!["spec", "review", "--change", "running-change"];
+    args.extend_from_slice(extra_args);
+    let envs = base_envs(world);
+    let environments: Vec<(&str, &str)> = envs
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect();
+    world.last_output = Some(common::run_givn_with_envs(env, &args, &environments));
+}
 
 #[given("an end-to-end project whose semantic review recommends one pair and filters many")]
-fn e2e_review_output_project(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_review_output_project(world: &mut GivnWorld) {
+    write_project(world);
+}
+
+#[given("an end-to-end project whose second-stage evidence recommends at least one pair")]
+fn e2e_recommends_at_least_one(world: &mut GivnWorld) {
+    write_project(world);
 }
 
 #[when(
     "the end-to-end user runs the advisory semantic review for \"running-change\" through the givn CLI"
 )]
-fn e2e_run_review_default(_world: &mut GivnWorld) {
+fn e2e_run_review_default(world: &mut GivnWorld) {
+    run_review(world, &[]);
+}
+
+#[when(
+    "the end-to-end user runs the advisory semantic review with verbose output through the givn CLI"
+)]
+fn e2e_run_review_verbose(world: &mut GivnWorld) {
+    run_review(world, &["--verbose"]);
+}
+
+#[when(
+    "the end-to-end user runs the advisory semantic review with structured JSON output through the givn CLI"
+)]
+fn e2e_run_review_json(world: &mut GivnWorld) {
+    run_review(world, &["--format", "json"]);
+}
+
+#[when(
+    "the end-to-end user runs blocking change review for \"running-change\" through the givn CLI"
+)]
+fn e2e_run_blocking_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("e2e review project missing");
+    let envs = base_envs(world);
+    let environments: Vec<(&str, &str)> = envs
+        .iter()
+        .map(|(key, value)| (key.as_str(), value.as_str()))
+        .collect();
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
+
+#[then("stdout shows the recommended pair's detail line")]
+fn e2e_shows_recommended(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output
+            .lines()
+            .any(|line| line.starts_with("BGE_RECOMMENDED:")
+                && line.contains("Provider request is accepted")),
+        "recommended pair not shown: {output}"
+    );
+}
+
+#[then("stdout shows no FILTERED detail line")]
+fn e2e_hides_filtered(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        !output.lines().any(|line| line.starts_with("BGE_FILTERED:")),
+        "filtered detail leaked: {output}"
+    );
+}
+
+#[then("stdout shows the FILTERED detail rows")]
+fn e2e_verbose_shows_filtered(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("stdout shows no truncation disclaimer")]
+fn e2e_no_truncation_disclaimer(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("stdout parses as a schema-version-1 review document")]
+fn e2e_json_parses(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the JSON counters equal those of an equivalent text run")]
+fn e2e_json_counter_parity(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("givn/changes/running-change/review-findings.json exists beside the change")]
+fn e2e_findings_exists(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the persisted document matches the document emitted on stdout")]
+fn e2e_persisted_matches_stdout(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("stderr names the flagged recommendation failure")]
+fn e2e_stderr_flagged(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the semantic review report exists")]
+fn e2e_report_exists(world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[then("the semantic review report status is \"BLOCKED\"")]
+fn e2e_report_blocked(world: &mut GivnWorld) {
     unimplemented!()
 }
