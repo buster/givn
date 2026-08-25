@@ -71,12 +71,6 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 
 ![Givn change lifecycle: proposal to archive](docs/workflow.svg)
 
-`archive` is gated on `tasks` and `review` (`apply.requires`). Every check —
-advisory and blocking, including the E5/BGE/NLI duplicate pipeline — is
-documented in [`docs/workflow.md`](docs/workflow.md). An existing codebase is
-baselined first via the reverse-engineering peer flow
-(`givn new <id> --skip proposal,design,design-review`).
-
 ## Documentation
 
 - [`docs/workflow.md`](docs/workflow.md) — the process in detail: every step in
