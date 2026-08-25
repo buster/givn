@@ -451,3 +451,89 @@ fn listings_differ_from_embedding_order(world: &mut GivnWorld) {
         "embedding-order title listed first: {output}"
     );
 }
+
+#[then(
+    "stdout keeps the exact stage status line naming the model, pair budget, considered pairs, and diagnostic-only disclaimer"
+)]
+fn exact_stage_status_line(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output
+            .lines()
+            .any(|line| line.starts_with(
+                "nli: model MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7, top_k 5, considered 3 candidate pairs; evidence is diagnostic only"
+            )),
+        "stdout: {output}"
+    );
+    assert!(
+        output
+            .lines()
+            .any(|line| line.starts_with("BGE: model rozgo/bge-reranker-v2-m3, top_k 5,")),
+        "stdout: {output}"
+    );
+}
+
+#[then(
+    "stdout keeps the exact accounting line naming raw, maximum, recommended, filtered, and unscored counts"
+)]
+fn exact_accounting_line(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output.lines().any(|line| line.starts_with(
+            "NLI candidate accounting: raw 3, max pairs 2048, recommended 1, NLI filtered 0, unscored 2, bounded pool"
+        )),
+        "stdout: {output}"
+    );
+    assert!(
+        output.lines().any(|line| line.starts_with(
+            "BGE candidate accounting: recommended 1, BGE filtered 2, unscored 0, budget <= 2048"
+        )),
+        "stdout: {output}"
+    );
+}
+
+#[then(
+    "stdout keeps the exact distribution line naming entailment, neutral, and contradiction counts"
+)]
+fn exact_distribution_line(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output
+            .lines()
+            .any(|line| line == "nli distribution: entailment 1, neutral 0, contradiction 0"),
+        "stdout: {output}"
+    );
+}
+
+#[then(
+    "each reported pair keeps the exact established detail line including its advisory disclaimer"
+)]
+fn exact_pair_detail(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let detail = output
+        .lines()
+        .find(|line| line.starts_with("nli candidate ["))
+        .expect("NLI detail line");
+    for fragment in [
+        "; forward [entailment ",
+        "], reverse [entailment ",
+        "], symmetric [entailment ",
+        "strongest ",
+        "; evidence is advisory and no Givn classification is assigned",
+    ] {
+        assert!(detail.contains(fragment), "{detail}");
+    }
+    let bge_detail = output
+        .lines()
+        .find(|line| line.starts_with("BGE_RECOMMENDED:"))
+        .expect("BGE detail line");
+    for fragment in [
+        ", E5 ",
+        ", forward ",
+        ", reverse ",
+        ", symmetric ",
+        "; evidence is advisory and no Givn classification is assigned",
+    ] {
+        assert!(bge_detail.contains(fragment), "{bge_detail}");
+    }
+}
