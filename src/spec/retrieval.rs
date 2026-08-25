@@ -3419,7 +3419,7 @@ fn apply_prior_classifications(path: &Path, candidates: &mut [SemanticCandidate]
         };
         if matches!(
             classification.as_str(),
-            "DUPLIKAT" | "VARIANTE" | "VALID-BOUNDARY"
+            "DUPLICATE" | "VARIANT" | "VALID-BOUNDARY"
         ) && left == &candidate.left.evidence_hash
             && right == &candidate.right.evidence_hash
             && !rationale.is_empty()
@@ -3462,7 +3462,7 @@ fn prior_remediation_entry(fields: &BTreeMap<String, String>) -> Option<PriorRem
     let classification = fields.get("classification")?;
     if !matches!(
         classification.as_str(),
-        "DUPLIKAT" | "VARIANTE" | "VALID-BOUNDARY"
+        "DUPLICATE" | "VARIANT" | "VALID-BOUNDARY"
     ) {
         return None;
     }
@@ -3528,7 +3528,7 @@ fn verify_semantic_remediation(
         });
         let right = permanent.get(&(entry.right_file.clone(), entry.right_title.clone()));
         match entry.classification.as_str() {
-            "DUPLIKAT" => {
+            "DUPLICATE" => {
                 if let Some(left) = current_left {
                     let endpoint = semantic_delta_endpoint(left);
                     if endpoint.content_hash != entry.left_content_hash
@@ -3548,13 +3548,13 @@ fn verify_semantic_remediation(
                     })
                 {
                     bail!(
-                        "DUPLIKAT remediation requires removing the redundant scenario (candidate {})",
+                        "DUPLICATE remediation requires removing the redundant scenario (candidate {})",
                         entry.candidate_id
                     );
                 }
                 verified += 1;
             }
-            "VARIANTE" => {
+            "VARIANT" => {
                 let Some(left) = current_left else {
                     bail!(
                         "semantic classification is stale (candidate {})",
@@ -3578,7 +3578,7 @@ fn verify_semantic_remediation(
                     || score >= SEMANTIC_SIMILARITY_THRESHOLD
                 {
                     bail!(
-                        "VARIANTE remediation requires consolidation (candidate {})",
+                        "VARIANT remediation requires consolidation (candidate {})",
                         entry.candidate_id
                     );
                 }

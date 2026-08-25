@@ -12,7 +12,7 @@ PAIRS = [
     (
         "givn addons disable errors when givn/ is not initialised",
         "givn addons enable errors when givn/ is not initialised",
-        "VARIANTE",
+        "VARIANT",
     ),
     (
         "Integrity hook fails on unedited arc42 chapter",
@@ -27,7 +27,7 @@ PAIRS = [
     (
         "Path traversal id is rejected by check",
         "Path traversal id is rejected by status",
-        "VARIANTE",
+        "VARIANT",
     ),
     (
         "A modified scenario keeps its step docstring after archiving",
@@ -37,7 +37,7 @@ PAIRS = [
     (
         "Execute flag prompts for confirmation",
         "Execute flag with explicit \"y\" confirmation",
-        "VARIANTE",
+        "VARIANT",
     ),
     (
         "The green border follows model focus",
@@ -52,7 +52,7 @@ PAIRS = [
     (
         "Rerunning provider setup preserves unrelated configuration",
         "Provider setup preserves unrelated settings",
-        "DUPLIKAT",
+        "DUPLICATE",
     ),
     (
         "Model picker shows metadata when available",

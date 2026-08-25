@@ -120,7 +120,7 @@ Feature: BGE reranking evidence for bounded semantic search
     When  the user runs advisory change review with second-stage evidence enabled
     Then  the command exits 0
     And  the false positive is recorded as filtered from the recommended list
-    And  the false positive is not classified as `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN`
+    And  the false positive is not classified as `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, or `UNCERTAIN`
     And  the remaining recommended candidate retains its E5 and second-stage evidence
 
   @bge

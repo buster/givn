@@ -143,7 +143,7 @@ scenario edits, or verbosity inflation as a workaround.
 Sharpen the executable invariant and observable boundary facts rather than
 inflating scenario prose to avoid a semantic finding.
 
-Classify every admitted candidate as `DUPLIKAT`, `VARIANTE`, or
+Classify every admitted candidate as `DUPLICATE`, `VARIANT`, or
 `VALID-BOUNDARY`, with a written rationale; `UNCERTAIN` blocks the review. A
 `BGE_FILTERED` evidence entry is not an admitted candidate and is not a Givn
 classification. There is no `UNRELATED` escape classification for admitted

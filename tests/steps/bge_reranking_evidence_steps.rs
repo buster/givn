@@ -92,7 +92,7 @@ fn write_approval_benchmark(world: &mut GivnWorld) {
             {
                 "left_source": "givn", "left_file": "left.feature", "left_title": "Positive pair",
                 "right_source": "givn", "right_file": "left.feature", "right_title": "Positive twin",
-                "label": "DUPLIKAT", "split": "holdout", "deterministic": false
+                "label": "DUPLICATE", "split": "holdout", "deterministic": false
             },
             {
                 "left_source": "givn", "left_file": "right.feature", "left_title": "Boundary pair",
@@ -974,8 +974,8 @@ fn failed_bge_approval(world: &mut GivnWorld) {
 fn unavailable_advisory_is_non_classifying(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(output.contains("advisory"));
-    assert!(!output.contains("DUPLIKAT"));
-    assert!(!output.contains("VARIANTE"));
+    assert!(!output.contains("DUPLICATE"));
+    assert!(!output.contains("VARIANT"));
     assert!(!output.contains("VALID-BOUNDARY"));
 }
 
@@ -1000,11 +1000,11 @@ fn false_positive_is_filtered(world: &mut GivnWorld) {
 }
 
 #[then(
-    "the false positive is not classified as `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, or `UNCERTAIN`"
+    "the false positive is not classified as `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, or `UNCERTAIN`"
 )]
 fn filtered_candidate_has_no_classification(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    for classification in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY", "UNCERTAIN"] {
+    for classification in ["DUPLICATE", "VARIANT", "VALID-BOUNDARY", "UNCERTAIN"] {
         assert!(
             !output.contains(classification),
             "filtered output contains {classification}"

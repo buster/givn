@@ -254,7 +254,7 @@ of the scope and canonical endpoint scopes/files/titles. It does not include the
 score, endpoint evidence hashes, or report schema. Evidence hashes are a
 separate carry-forward condition.
 
-The allowed report classifications are `DUPLIKAT`, `VARIANTE`,
+The allowed report classifications are `DUPLICATE`, `VARIANT`,
 `VALID-BOUNDARY`, and `UNCERTAIN`. The first three require rationale; `UNCERTAIN`
 or missing rationale blocks. The current remediation verifier supports prior
 `current-change` to `permanent` entries. It does not successfully remediate
@@ -269,8 +269,8 @@ report boundary. The current contracts are:
 
 | Classification | Required projected result |
 |---|---|
-| `DUPLIKAT` | The redundant active endpoint is absent; the permanent endpoint remains unchanged. |
-| `VARIANTE` | The active endpoint is a `Scenario Outline` with a non-empty Examples table, its evidence changed, and the recomputed score is below `0.9500`. |
+| `DUPLICATE` | The redundant active endpoint is absent; the permanent endpoint remains unchanged. |
+| `VARIANT` | The active endpoint is a `Scenario Outline` with a non-empty Examples table, its evidence changed, and the recomputed score is below `0.9500`. |
 | `VALID-BOUNDARY` | Both endpoints remain, Fingerprint assertions or facts change, and the recomputed score is below `0.9500`. |
 
 Givn emits a verification receipt. It does not classify or edit feature files.

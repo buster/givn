@@ -124,7 +124,7 @@ embedded.
 - `givn check review` writes the change-local `semantic-review.md` worklist:
   fixed Markdown wire grammar, four-decimal scores, 16-hex hashes, no
   timestamps. Every admitted candidate must be classified by the agent/author
-  as `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` with rationale. Any candidate
+  as `DUPLICATE`, `VARIANT`, or `VALID-BOUNDARY` with rationale. Any candidate
   left `UNCERTAIN` or unrationaled blocks:
   *"semantic review blocked: N candidate(s) remain UNCERTAIN or lack
   rationale"*. A final score still ≥ 0.95 after remediation also blocks.

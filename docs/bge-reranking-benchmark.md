@@ -15,8 +15,8 @@ The label sample is checked in at
 `tools/approach-comparison/bge-reference-labels.json`. It contains the four
 required evaluation labels:
 
-- `DUPLIKAT`
-- `VARIANTE`
+- `DUPLICATE`
+- `VARIANT`
 - `VALID-BOUNDARY`
 - `UNRELATED`
 
@@ -89,7 +89,7 @@ For each label configuration report:
 - top-K recall before BGE admission;
 - E5 raw, BGE scored, recommended, filtered, and unscored counts;
 - BGE elapsed runtime and directional/symmetric score distribution;
-- precision and recall for `DUPLIKAT` plus `VARIANTE` admission;
+- precision and recall for `DUPLICATE` plus `VARIANT` admission;
 - false-positive and false-negative rates against `VALID-BOUNDARY` and
   `UNRELATED` negatives;
 - scenario character count, step count, assertion count, E5 score, and BGE
@@ -125,7 +125,7 @@ Givn class and remains subject to agent classification.
 The operating point is accepted only when the held-out measurement shows all of
 the following:
 
-1. at least `0.9000` recall for the combined `DUPLIKAT` and `VARIANTE` labels
+1. at least `0.9000` recall for the combined `DUPLICATE` and `VARIANT` labels
    among pairs present in the E5 top-K set;
 2. at least a 25 percent reduction in false-positive admissions compared with
    the E5-only recommended set;

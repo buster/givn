@@ -261,7 +261,7 @@ fn e2e_advisory_is_advisory(world: &mut GivnWorld) {
 #[then("stdout contains no automatic Givn classification")]
 fn e2e_advisory_has_no_classification(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    for classification in ["DUPLIKAT", "VARIANTE", "VALID-BOUNDARY", "UNCERTAIN"] {
+    for classification in ["DUPLICATE", "VARIANT", "VALID-BOUNDARY", "UNCERTAIN"] {
         assert!(!output.contains(classification), "stdout: {output}");
     }
 }

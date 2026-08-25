@@ -93,10 +93,10 @@ Feature: Generate the semantic review report
 
   Scenario: A complete classification allows change review and survives regeneration
     Given  the remediation case carries the distinguishing marker "modified permanent contract replacement mu archive bridge contract delta evidence fixture gateway history invariant journal keeper ledger merge namespace output projection"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -107,17 +107,17 @@ Feature: Generate the semantic review report
     Given  a project prepared for semantic review with a similar active delta
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT" without a rationale
+    When  the user classifies every semantic review candidate as "DUPLICATE" without a rationale
     And  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  stderr contains "rationale"
 
   Scenario: A regenerated classified report is byte-for-byte deterministic
     Given  the remediation case carries the distinguishing marker "regression deterministic report omega glacier harbor invariant matrix nonce ordered receipt stable"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -146,10 +146,10 @@ Feature: Generate the semantic review report
 
   Scenario: Changing a candidate scenario invalidates its previous classification
     Given  the remediation case carries the distinguishing marker "regression active candidate invalidation sigma texture vector antler birch comet dune ember fjord granite harbor island juniper kiln lagoon marble nebula olive prism quartz rocket sandal timber umber"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -157,10 +157,10 @@ Feature: Generate the semantic review report
 
   Scenario: Changing a permanent endpoint invalidates its prior classification
     Given  the remediation case carries the distinguishing marker "regression permanent endpoint invalidation tau unmodified baseline acorn beacon copper delta engine frost grove hickory iris jade kettle lemon mosaic nickel opal pebble ruby stone thistle"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -168,10 +168,10 @@ Feature: Generate the semantic review report
 
   Scenario: Any changed endpoint evidence or prior-report metadata invalidates carry-forward
     Given  the remediation case carries the distinguishing marker "regression evidence metadata invalidation upsilon version hash"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -179,10 +179,10 @@ Feature: Generate the semantic review report
 
   Scenario: Removed candidates disappear after classification
     Given  the remediation case carries the distinguishing marker "regression removed candidate disappearance phi projected state"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -274,24 +274,24 @@ Feature: Generate the semantic review report
     Then  the command exits 0
     And  stdout contains "retrieval advisory"
     And  the semantic review report does not exist
-  Scenario: A DUPLIKAT classification without removal remains blocked
+  Scenario: A DUPLICATE classification without removal remains blocked
     Given  the remediation case carries the distinguishing marker "duplicate removal blocking contract alpha crimson lantern meadow orbit quartz river summit velvet walnut xenon yellow zephyr atlas beacon cobalt delta ember"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    And  stderr contains "DUPLIKAT remediation requires removing the redundant scenario"
+    And  stderr contains "DUPLICATE remediation requires removing the redundant scenario"
     And  the semantic review report status is "BLOCKED"
 
-  Scenario: Removing a DUPLIKAT candidate verifies the projected remediation
+  Scenario: Removing a DUPLICATE candidate verifies the projected remediation
     Given  the remediation case carries the distinguishing marker "duplicate projected removal success beta canyon copper ivory juniper kelp mosaic nickel opal prairie ruby saffron topaz umber violet willow xylophone yarrow zenith"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     And  the permanent specifications are snapshotted
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the classified duplicate candidate is removed from the active delta
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
@@ -299,39 +299,39 @@ Feature: Generate the semantic review report
     And  the semantic review report status is "PASS"
     And  the permanent specifications are unchanged
 
-  Scenario: A VARIANTE classification without consolidation remains blocked
+  Scenario: A VARIANT classification without consolidation remains blocked
     Given  the remediation case carries the distinguishing marker "variant consolidation blocking contract gamma acorn birch cedar dune elm fern grove harbor iris jade kiln lagoon maple north oak pine quarry rose stone thistle"
-    Given  a project prepared for semantic remediation with a "VARIANTE" candidate
+    Given  a project prepared for semantic remediation with a "VARIANT" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "VARIANTE"
+    When  the user classifies every semantic review candidate as "VARIANT"
     And  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    And  stderr contains "VARIANTE remediation requires consolidation"
+    And  stderr contains "VARIANT remediation requires consolidation"
     And  the semantic review report status is "BLOCKED"
 
-  Scenario: Consolidating a VARIANTE candidate verifies the projected remediation
+  Scenario: Consolidating a VARIANT candidate verifies the projected remediation
     Given  the remediation case carries the distinguishing marker "variant parameterized examples success delta anchor blossom circuit drum engine flare glacier hinge island jacket kettle ladder marble nebula orange prism"
-    Given  a project prepared for semantic remediation with a "VARIANTE" candidate
+    Given  a project prepared for semantic remediation with a "VARIANT" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "VARIANTE"
+    When  the user classifies every semantic review candidate as "VARIANT"
     And  the active variant is consolidated with an explicit parameter
     And  the user runs `givn check review --change running-change`
     Then  the command exits 0
     And  stdout contains "semantic remediation verified"
     And  the semantic review report status is "PASS"
 
-  Scenario: A VARIANTE score below the boundary without consolidation remains blocked
+  Scenario: A VARIANT score below the boundary without consolidation remains blocked
     Given  the remediation case carries the distinguishing marker "variant score only independent contracts epsilon pebble plume pollen pumpkin raven sandal shell silver spruce stream thunder timber turbine valley vessel winter wren"
-    Given  a project prepared for semantic remediation with a "VARIANTE" candidate
+    Given  a project prepared for semantic remediation with a "VARIANT" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "VARIANTE"
+    When  the user classifies every semantic review candidate as "VARIANT"
     And  the active variant is rewritten below the boundary without consolidation
     And  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    And  stderr contains "VARIANTE remediation requires consolidation"
+    And  stderr contains "VARIANT remediation requires consolidation"
 
   Scenario: A VALID-BOUNDARY score below the boundary without distinction remains blocked
     Given  the remediation case carries the distinguishing marker "boundary score only missing invariant zeta ash basil cloud coral dahlia echo frost granite honey juniper lemon mist nutmeg olive pepper rain snow tulip"
@@ -380,10 +380,10 @@ Feature: Generate the semantic review report
 
   Scenario: Changing a classified endpoint before remediation makes the decision stale
     Given  the remediation case carries the distinguishing marker "stale endpoint identity changed kappa beacon breeze candle drizzle ember flame glow hearth incense kettle lantern moonlight nightfall"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the active classified endpoint changes without remediation
     And  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
@@ -391,15 +391,15 @@ Feature: Generate the semantic review report
 
   Scenario: Failed remediation verification does not mutate project evidence
     Given  the remediation case carries the distinguishing marker "mutation safety evidence preservation lambda archive backup checksum durable enclave fidelity guardian harbor immutable journal kernel ledger memory"
-    Given  a project prepared for semantic remediation with a "DUPLIKAT" candidate
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     And  the permanent specifications are snapshotted
     And  the active feature files, review dispositions, and index boundary are snapshotted
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    When  the user classifies every semantic review candidate as "DUPLIKAT"
+    When  the user classifies every semantic review candidate as "DUPLICATE"
     And  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    And  stderr contains "DUPLIKAT remediation requires removing the redundant scenario"
+    And  stderr contains "DUPLICATE remediation requires removing the redundant scenario"
     And  the active feature files are unchanged
     And  the permanent specifications are unchanged
     And  the review dispositions are unchanged

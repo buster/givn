@@ -13,12 +13,12 @@ PAIRS = [
     (
         "Integrity check detects a placeholder COMMIT hash in tasks.md and fails",
         "Integrity hook fails on placeholder commit hash",
-        "DUPLIKAT",
+        "DUPLICATE",
     ),
     (
         "Detail mode — skipped artifacts shown with skip marker",
         "givn status still reports skipped artifacts with the skip marker after dead code removal",
-        "DUPLIKAT",
+        "DUPLICATE",
     ),
     (
         "A parse error is reported on stderr and exits 1",
@@ -28,13 +28,13 @@ PAIRS = [
     (
         "Coverage-enabled project receives a complete README coverage example",
         "Coverage-enabled project is guided to place the coverage badge directly after the README title",
-        "DUPLIKAT",
+        "DUPLICATE",
     ),
-    ("Id with a dot is rejected", "Path traversal id is rejected by status", "VARIANTE"),
-    ("Id with a dot is rejected", "Path traversal id is rejected by instructions", "VARIANTE"),
-    ("Id with a dot is rejected", "Path traversal id is rejected by check", "VARIANTE"),
-    ("Id with non-ASCII letters is rejected", "Path traversal id is rejected by status", "VARIANTE"),
-    ("Id with spaces is rejected", "Path traversal id is rejected by instructions", "VARIANTE"),
+    ("Id with a dot is rejected", "Path traversal id is rejected by status", "VARIANT"),
+    ("Id with a dot is rejected", "Path traversal id is rejected by instructions", "VARIANT"),
+    ("Id with a dot is rejected", "Path traversal id is rejected by check", "VARIANT"),
+    ("Id with non-ASCII letters is rejected", "Path traversal id is rejected by status", "VARIANT"),
+    ("Id with spaces is rejected", "Path traversal id is rejected by instructions", "VARIANT"),
 ]
 
 

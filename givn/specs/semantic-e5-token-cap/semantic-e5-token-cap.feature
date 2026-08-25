@@ -62,7 +62,7 @@ Feature: E5 token-cap findings preserve usable retrieval
     And  the report's additive `e5_token_cap_candidates` collection contains an `E5_TOKEN_CAP` record with the active file and title
     And  that cap record has its complete content hash, token count 550, limit 512, E5 model and tokenizer provenance, and `refactoring_required: true`
     And  the report tells the author to shorten or split the scenario before rerunning review
-    And  the cap record has `classification: null` and `rationale: null` and no automatic `DUPLIKAT`, `VARIANTE`, or `VALID-BOUNDARY` classification
+    And  the cap record has `classification: null` and `rationale: null` and no automatic `DUPLICATE`, `VARIANT`, or `VALID-BOUNDARY` classification
 
   Scenario: Exactly 512 E5 passage tokens retain normal embedding behaviour
     Given  a permanent corpus with fitting semantic scenarios

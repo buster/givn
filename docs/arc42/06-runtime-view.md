@@ -277,11 +277,11 @@ absent values, and a final newline. It atomically replaces the report before a
 blocked result is returned. The current prior-state extraction is not a strict
 wire-grammar parser: it scans recognized prefixed lines for candidate id,
 classification, rationale, and evidence hashes. It accepts only
-`DUPLIKAT`, `VARIANTE`, and `VALID-BOUNDARY` for carry-forward, ignores missing
+`DUPLICATE`, `VARIANT`, and `VALID-BOUNDARY` for carry-forward, ignores missing
 fields, and disables carry-forward when duplicate candidate-id lines are found.
 Unknown or reordered fields are not generally rejected by that extraction path.
 
-The report's `DUPLIKAT`, `VARIANTE`, `VALID-BOUNDARY`, and `UNCERTAIN`
+The report's `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, and `UNCERTAIN`
 classifications remain agent-owned. Filtered second-stage evidence is outside
 the blocking classification set; unscored and token-cap findings remain
 blocking. `semantic-review.md` is retained when the existing archive copy/remove
