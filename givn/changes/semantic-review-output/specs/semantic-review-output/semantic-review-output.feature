@@ -104,7 +104,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     When the user runs the advisory semantic review for "running-change" again with verbose output
     Then stdout still contains no truncation disclaimer
 
-  @givn.added @wip
+  @givn.added
   Scenario: A deprecated report-limit setting is accepted silently without effect
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     And the deprecated report-limit environment variable is set to "1"
