@@ -5685,9 +5685,12 @@ fn render_review_document(
     corroborated: bool,
     union_recommended: usize,
 ) -> Result<String> {
-    let (candidates, considered) = match gate {
-        Some(gate) => (&gate.candidates, gate.considered),
-        None => (&Vec::new(), 0),
+    let (candidates, considered) = match second_stage {
+        Some(second) => (&second.candidates, second.considered),
+        None => match gate {
+            Some(gate) => (&gate.candidates, gate.considered),
+            None => (&Vec::new(), 0),
+        },
     };
     #[cfg(feature = "spec-similarity-gate")]
     let threshold = SIMILARITY_THRESHOLD;

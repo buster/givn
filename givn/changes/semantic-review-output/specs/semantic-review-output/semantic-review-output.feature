@@ -114,7 +114,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And every line except elapsed-runtime values matches the same run without the variable
     And no warning or error names the deprecated variable
 
-  @givn.added @wip
+  @givn.added
   Scenario: Structured JSON output is one complete review document
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     When the user runs the advisory semantic review for "running-change" with structured JSON output
