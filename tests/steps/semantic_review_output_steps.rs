@@ -1075,7 +1075,15 @@ fn failure_message_names_findings(world: &mut GivnWorld) {
 fn no_findings_document(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project missing");
     assert!(
-        !env.path("givn/changes/running-change/review-findings.json").exists(),
+        !env.path("givn/changes/running-change/review-findings.json")
+            .exists(),
         "findings document written on a successful review"
     );
+}
+
+#[given(
+    "a project prepared for semantic review whose second-stage evidence recommends nothing and filters everything"
+)]
+fn review_recommends_nothing(world: &mut GivnWorld) {
+    review_filters_everything(world);
 }
