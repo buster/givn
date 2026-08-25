@@ -176,13 +176,42 @@ fn e2e_no_truncation_disclaimer(world: &mut GivnWorld) {
 }
 
 #[then("stdout parses as a schema-version-1 review document")]
-fn e2e_json_parses(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_json_parses(world: &mut GivnWorld) {
+    let stdout = String::from_utf8_lossy(&super::output(world).stdout);
+    assert!(
+        stdout.trim_start().starts_with('{'),
+        "not a pure JSON document: {stdout}"
+    );
+    let document: serde_json::Value =
+        serde_json::from_slice(&super::output(world).stdout).expect("valid review JSON");
+    assert_eq!(document["schema_version"], 1);
 }
 
 #[then("the JSON counters equal those of an equivalent text run")]
-fn e2e_json_counter_parity(_world: &mut GivnWorld) {
-    unimplemented!()
+fn e2e_json_counter_parity(world: &mut GivnWorld) {
+    let json_stdout = super::stdout(world);
+    run_review(world, &[]);
+    let text = super::stdout(world);
+    let document: serde_json::Value = serde_json::from_str(&json_stdout).expect("review JSON");
+    for (label, field, key) in [
+        ("BGE candidate accounting:", "bge_run", "recommended"),
+        ("NLI candidate accounting:", "nli_run", "recommended"),
+    ] {
+        let expected: u64 = text
+            .lines()
+            .find(|line| line.contains(label))
+            .unwrap_or_else(|| panic!("missing {label}"))
+            .split(if key == "filtered" {
+                "filtered "
+            } else {
+                "recommended "
+            })
+            .nth(1)
+            .and_then(|value| value.split(',').next())
+            .and_then(|value| value.trim().parse().ok())
+            .unwrap_or_else(|| panic!("missing count in {label}"));
+        assert_eq!(document[field][format!("{key}_count")], expected);
+    }
 }
 
 #[then("givn/changes/running-change/review-findings.json exists beside the change")]
