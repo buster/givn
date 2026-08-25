@@ -727,3 +727,41 @@ fn no_truncation_disclaimer(world: &mut GivnWorld) {
 fn still_no_truncation_disclaimer(world: &mut GivnWorld) {
     no_truncation_disclaimer(world);
 }
+
+#[given("the deprecated report-limit environment variable is set to \"1\"")]
+fn deprecated_report_limit_set(world: &mut GivnWorld) {
+    world
+        .retrieval_review_extra
+        .get_or_insert_with(Vec::new)
+        .push(("GIVN_SPEC_NLI_REPORT_LIMIT".to_string(), "1".to_string()));
+}
+
+fn normalized_lines(output: &str) -> Vec<&str> {
+    output
+        .lines()
+        .filter(|line| !line.contains("runtime ms"))
+        .collect()
+}
+
+#[then("every line except elapsed-runtime values matches the same run without the variable")]
+fn output_matches_run_without_variable(world: &mut GivnWorld) {
+    let with_var = super::stdout(world);
+    let extra = world.retrieval_review_extra.as_mut().expect("extra envs");
+    extra.retain(|(key, _)| key != "GIVN_SPEC_NLI_REPORT_LIMIT");
+    run_review_with(world, &[], &[]);
+    let without_var = super::stdout(world);
+    assert_eq!(
+        normalized_lines(&with_var),
+        normalized_lines(&without_var),
+        "deprecated variable changed output"
+    );
+}
+
+#[then("no warning or error names the deprecated variable")]
+fn nothing_names_deprecated_variable(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        !stderr.contains("GIVN_SPEC_NLI_REPORT_LIMIT") && !stderr.contains("REPORT_LIMIT"),
+        "stderr: {stderr}"
+    );
+}
