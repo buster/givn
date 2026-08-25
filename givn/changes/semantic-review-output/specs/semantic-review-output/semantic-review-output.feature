@@ -185,7 +185,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stdout shows the FILTERED detail rows
     And stdout shows no truncation disclaimer
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI JSON review emits one structured document
     Given an end-to-end project whose semantic review recommends one pair and filters many
     When the end-to-end user runs the advisory semantic review with structured JSON output through the givn CLI
