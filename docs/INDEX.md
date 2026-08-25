@@ -22,6 +22,13 @@ Status values:
 - [Manual Semantic Evaluation](semantic-duplicates-manual-evaluation.md) - `current`; manual classifications for the current PR #27 BGE and NLI top-five outputs. This is a local evaluation record; its raw JSON inputs are intentionally unversioned and ephemeral.
 - [BGE Reranking Admission Benchmark](bge-reranking-benchmark.md) - `current`; BGE admission criteria and the current PR #27 run, with older measurements explicitly separated as historical.
 
+## Process and Reference
+
+- [Workflow in Detail](workflow.md) - `current`; ordered phases with artifacts and completion criteria, the scenario TDD loop, advisory versus blocking gates, semantic duplicate assurance, status semantics, and archive mechanics.
+- [Workflow Swimlane (SVG)](workflow.svg) - `current`; GitHub-safe swimlane rendering (pure shapes/text, no scripts or styles) of the full lifecycle with artifacts, checks, thresholds, and chokepoints. Regenerate via `python3 scripts/render-workflow-svg.py`.
+- [Workflow Swimlane (HTML)](workflow.html) - `current`; self-contained HTML swimlane view with one lane per artifact, creating actions, checking processes, semantic pipeline panel, and chokepoint summary. No JavaScript, no external assets, dark-mode aware.
+- [Reference](reference.md) - `current`; CLI command table, agent skills, addons, extras, configuration keys, generated project layout, repository development scripts.
+
 ## Project Planning
 
 - [Implementation Task Breakdown](TASKS.md) - `current`; phase-by-phase implementation tasks and completion markers.
