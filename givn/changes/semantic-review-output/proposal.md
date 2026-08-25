@@ -23,26 +23,38 @@ inconsistently and buries its own signal:
 Default output becomes decision-first: per-stage status lines,
 accounting counters, distributions — and only those pairs the models
 recommend, ordered by model confidence rather than embedding rank.
-Filtered, unscored, and token-capped detail moves behind `--verbose`,
-which lifts all listing limits and restores today's full per-pair
-output. Retained text lines keep their current wording byte-for-byte.
+The raw E5 candidate list drops out of the default output entirely
+(behind `--verbose`): an E5 score alone is not actionable signal, the
+recommendation worklists are. Retained text lines keep their current
+wording byte-for-byte.
+
+The problem signal moves from the E5 threshold to the second stage.
+When both evidence layers participate and scored every candidate, the
+review fails only for the union of BGE- or NLI-recommended pairs —
+E5-only hits above 0.95 that both models filter are noise, not
+problems, and no longer fail the run or mask the recommendation
+worklist. When either layer is missing, disabled, or unable to score,
+the E5 threshold stays binding (no silent pass). This applies to the
+authoring command and equally to the blocking workflow gates
+(`givn check review`, `givn archive`), whose report already exempts
+filtered pairs from the unresolved set; the corroboration rule becomes
+uniform across both surfaces.
 
 A `--format json` option emits the whole review as one structured
 document: verdict, per-stage summaries, and every candidate with its
 admission labels and evidence scores.
 
-When the similarity gate fails, givn additionally writes that same
-document to `givn/changes/<id>/review-findings.json` and names the path
-in the failure message, so the evidence survives without rerunning
-model inference. Repeated resolution chatter collapses to one status
-line per stage unless `--verbose` is given.
+When the review fails, givn additionally writes that same document to
+`givn/changes/<id>/review-findings.json` and names the path in the
+failure message, so the evidence survives without rerunning model
+inference. Repeated resolution chatter collapses to one status line
+per stage unless `--verbose` is given.
 
 ## Out of Scope
 
-- Gate verdict logic — the blocking decision stays E5-threshold-based;
-  making second-stage recommendations gate-relevant is a separate
-  future change.
-- Thresholds, admission rules, candidate selection, and pairing.
+- Thresholds, admission rules, candidate selection, pairing, and the
+  semantic-report wire grammar/classification contract (its
+  unresolved-set already exempts filtered pairs).
 - Performance work (thread budget, grouped batching) — separate active
   change.
 - `givn lint` / deterministic overlap output formats.
@@ -50,4 +62,6 @@ line per stage unless `--verbose` is given.
 ## Open Questions
 
 None. Flag surface follows the existing `spec explore` /
-`spec duplicates` conventions (`--format`, long flags).
+`spec duplicates` conventions (`--format`, long flags). Gate
+corroboration was resolved during design review: union signal, both
+surfaces, fail-safe fallback.

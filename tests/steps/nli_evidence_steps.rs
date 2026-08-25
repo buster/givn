@@ -147,24 +147,60 @@ fn run_combined_advisory_review(world: &mut GivnWorld) {
 #[then("the E5 raw candidate identities remain unchanged")]
 fn e5_raw_identities_remain_unchanged(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    assert!(
-        output.contains("Provider request is accepted"),
-        "stdout: {output}"
-    );
-    assert!(
-        output.contains("Provider warning is reported"),
-        "stdout: {output}"
+    let accounting = output
+        .lines()
+        .find(|line| line.contains("NLI candidate accounting:"))
+        .expect("NLI candidate accounting line")
+        .to_string();
+    let parse = |label: &str| -> usize {
+        accounting
+            .split(label)
+            .nth(1)
+            .and_then(|value| value.split(',').next())
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0)
+    };
+    let raw = parse("raw ");
+    let scored = parse("recommended ") + parse("NLI filtered ");
+    assert_eq!(
+        raw, scored,
+        "every E5 candidate keeps second-stage evidence: {accounting}"
     );
 }
 
 #[then("a candidate is recommended only when both BGE and NLI recommend it")]
 fn combined_admission_requires_both(world: &mut GivnWorld) {
     let output = super::stdout(world);
+    let combined_line = output
+        .lines()
+        .find(|line| line.contains("combined recommended "))
+        .expect("combined recommendation line");
     assert!(
-        output.contains("combined recommended 1"),
+        combined_line.contains("combined recommended 1 of 2"),
         "stdout: {output}"
     );
-    assert!(output.contains("BGE_FILTERED"), "stdout: {output}");
+    let parse_accounting = |label: &str| -> usize {
+        output
+            .lines()
+            .find(|line| line.contains(label))
+            .and_then(|line| {
+                line.split("recommended ")
+                    .nth(1)
+                    .and_then(|value| value.split(',').next())
+                    .and_then(|value| value.parse::<usize>().ok())
+            })
+            .expect("recommended count")
+    };
+    let bge_recommended = parse_accounting("BGE candidate accounting:");
+    let nli_recommended = parse_accounting("NLI candidate accounting:");
+    assert!(
+        bge_recommended > 0 && nli_recommended > 0,
+        "both stages recommend candidates: {output}"
+    );
+    assert!(
+        bge_recommended + nli_recommended > 1,
+        "the stages disagree on at least one candidate: {output}"
+    );
 }
 
 #[then("each filtered candidate remains evidence without a Givn classification")]

@@ -200,6 +200,12 @@ enum SpecCommands {
         /// Active change identifier.
         #[arg(long)]
         change: String,
+        /// List every scored second-stage pair instead of recommendations only.
+        #[arg(long)]
+        verbose: bool,
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
     },
     /// Report duplicate and related permanent scenarios.
     Duplicates {
@@ -277,7 +283,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 change.as_deref(),
                 matches!(format, SpecFormat::Json),
             ),
-            SpecCommands::Review { change } => cli::spec::run_review(&change),
+            SpecCommands::Review {
+                change,
+                verbose,
+                format,
+            } => cli::spec::run_review(&change, verbose, matches!(format, SpecFormat::Json)),
             SpecCommands::Duplicates { format } => {
                 cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
             }

@@ -225,11 +225,10 @@ fn e2e_change_excludes_query_identity(world: &mut GivnWorld) {
     );
 }
 
-#[then("stdout identifies the second-stage model, score, and elapsed runtime")]
+#[then("stdout identifies the second-stage model and elapsed runtime")]
 fn e2e_advisory_reports_bge_evidence(world: &mut GivnWorld) {
     let output = super::stdout(world);
     assert!(output.contains("BGE: model"), "stdout: {output}");
-    assert!(output.contains("symmetric"), "stdout: {output}");
     assert!(output.contains("runtime ms"), "stdout: {output}");
 }
 

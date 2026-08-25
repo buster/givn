@@ -1068,6 +1068,108 @@ fn notice(message: impl AsRef<str>) {
     eprintln!("{}", message.as_ref());
 }
 
+/// Whether the current advisory review runs with full detail output.
+#[cfg(feature = "spec-retrieval")]
+static REPORTING_VERBOSE: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+/// Whether resolution chatter is scoped to a decision-first review run.
+/// Every non-review command keeps today's per-attempt lines verbatim.
+#[cfg(feature = "spec-retrieval")]
+static REVIEW_CHATTER: std::sync::atomic::AtomicBool = std::sync::atomic::AtomicBool::new(false);
+
+#[cfg(feature = "spec-retrieval")]
+fn reporting_verbose() -> bool {
+    REPORTING_VERBOSE.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn review_chatter() -> bool {
+    REVIEW_CHATTER.load(std::sync::atomic::Ordering::Relaxed)
+}
+
+/// Stages whose collapsed resolution summary was already emitted once.
+#[cfg(feature = "spec-retrieval")]
+static RESOLUTION_SUMMARIZED: std::sync::atomic::AtomicU8 = std::sync::atomic::AtomicU8::new(0);
+
+#[cfg(feature = "spec-retrieval")]
+const RESOLUTION_STAGE_E5: u8 = 1;
+#[cfg(feature = "spec-retrieval")]
+const RESOLUTION_STAGE_BGE: u8 = 2;
+#[cfg(feature = "spec-retrieval")]
+const RESOLUTION_STAGE_NLI: u8 = 4;
+
+/// Announce the start of model artifact resolution for one stage.
+///
+/// Verbose output keeps today's per-attempt line; default output stays
+/// silent here and reports once via [`resolve_stage_done`].
+#[cfg(feature = "spec-retrieval")]
+fn resolve_stage_start(stage: &'static str, detail: &str) {
+    if !review_chatter() || reporting_verbose() {
+        notice(format!("resolving {stage} into {detail}"));
+    }
+    let _ = stage_key(stage);
+}
+
+/// Report completed model artifact resolution for one stage.
+///
+/// Verbose output keeps today's per-attempt line; default output emits
+/// exactly one summary line per stage regardless of how often resolution
+/// ran.
+#[cfg(feature = "spec-retrieval")]
+fn resolve_stage_done(stage: &'static str, detail: &str) {
+    let key = stage_key(stage);
+    if !review_chatter() {
+        notice(format!("{stage} resolved"));
+        return;
+    }
+    if reporting_verbose() {
+        notice(format!("{stage} resolved"));
+        return;
+    }
+    let mask = match key {
+        Some(RESOLUTION_STAGE_E5) => RESOLUTION_STAGE_E5,
+        Some(RESOLUTION_STAGE_BGE) => RESOLUTION_STAGE_BGE,
+        Some(RESOLUTION_STAGE_NLI) => RESOLUTION_STAGE_NLI,
+        _ => {
+            notice(format!("{stage} ready ({detail})"));
+            return;
+        }
+    };
+    if RESOLUTION_SUMMARIZED.fetch_or(mask, std::sync::atomic::Ordering::Relaxed) & mask == 0 {
+        notice(format!("{stage} ready ({detail})"));
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn stage_key(stage: &str) -> Option<u8> {
+    if stage.contains("(E5)") {
+        Some(RESOLUTION_STAGE_E5)
+    } else if stage.contains("(BGE)") {
+        Some(RESOLUTION_STAGE_BGE)
+    } else if stage.contains("NLI") {
+        Some(RESOLUTION_STAGE_NLI)
+    } else {
+        None
+    }
+}
+
+/// Deterministic test seam: emit repeated artifact-resolution notices for
+/// every stage so chatter gating is observable under stub backends.
+#[cfg(feature = "spec-retrieval")]
+fn stub_resolution_chatter() {
+    let stages = [
+        ("retrieval model artifacts (E5)", "/stub/e5-cache"),
+        ("reranker model artifacts (BGE)", "/stub/bge-cache"),
+        ("NLI model artifacts", "/stub/nli-cache"),
+    ];
+    for _ in 0..2 {
+        for (stage, detail) in stages {
+            resolve_stage_start(stage, detail);
+            resolve_stage_done(stage, detail);
+        }
+    }
+}
+
 /// stderr-based per-file download progress for hf-hub.
 ///
 /// hf-hub re-invokes `init` on every download attempt (including retries)
@@ -1340,10 +1442,10 @@ fn validate_required_files(files: &BTreeMap<String, std::path::PathBuf>) -> Resu
 #[cfg(feature = "spec-retrieval")]
 fn auto_e5_artifacts(root: &Path) -> Result<()> {
     let cache_root = e5_model_cache_dir(root)?;
-    notice(format!(
-        "resolving retrieval model artifacts (E5) into {}",
-        cache_root.display()
-    ));
+    resolve_stage_start(
+        "retrieval model artifacts (E5)",
+        &cache_root.display().to_string(),
+    );
     let files = [
         "model.onnx",
         "model.onnx_data",
@@ -1390,7 +1492,10 @@ fn auto_e5_artifacts(root: &Path) -> Result<()> {
         "main",
         &artifacts.files,
     )?;
-    notice("retrieval model artifacts (E5) resolved");
+    resolve_stage_done(
+        "retrieval model artifacts (E5)",
+        &cache_root.display().to_string(),
+    );
     record_download_event("artifact-resolved")?;
     Ok(())
 }
@@ -1400,10 +1505,10 @@ fn auto_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
     let cache_root = std::env::var_os("GIVN_SPEC_BGE_CACHE")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "bge")?);
-    notice(format!(
-        "resolving reranker model artifacts (BGE) into {}",
-        cache_root.display()
-    ));
+    resolve_stage_start(
+        "reranker model artifacts (BGE)",
+        &cache_root.display().to_string(),
+    );
     let files = [
         "model.onnx",
         "model.onnx.data",
@@ -1463,7 +1568,10 @@ fn auto_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
         BGE_MODEL_REVISION,
         &artifacts.files,
     )?;
-    notice("reranker model artifacts (BGE) resolved");
+    resolve_stage_done(
+        "reranker model artifacts (BGE)",
+        &cache_root.display().to_string(),
+    );
     Ok(artifacts.snapshot)
 }
 
@@ -1481,10 +1589,7 @@ fn auto_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
     let cache_root = std::env::var_os("GIVN_SPEC_NLI_CACHE")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "nli")?);
-    notice(format!(
-        "resolving NLI model artifacts into {}",
-        cache_root.display()
-    ));
+    resolve_stage_start("NLI model artifacts", &cache_root.display().to_string());
     let files = [
         "onnx/model.onnx",
         "config.json",
@@ -1528,7 +1633,7 @@ fn auto_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
         NLI_MODEL_REVISION,
         &artifacts.files,
     )?;
-    notice("NLI model artifacts resolved");
+    resolve_stage_done("NLI model artifacts", &cache_root.display().to_string());
     Ok(NliArtifacts {
         directory: artifacts.snapshot,
         model_path: artifacts.files.get("onnx/model.onnx").unwrap().clone(),
@@ -1600,16 +1705,33 @@ pub fn explore(
     }
 }
 
-pub fn review(root: &Path, change_id: &str) -> Result<()> {
+/// Reporting options for the advisory review surface.
+#[cfg(feature = "spec-retrieval")]
+#[derive(Clone, Copy, Debug, Default)]
+pub struct ReviewOptions {
+    /// Lift every detail-listing limit and restore full resolution chatter.
+    pub verbose: bool,
+    /// Emit one structured JSON document instead of text lines.
+    pub json: bool,
+    /// Persist flagged-review evidence beside the change. Only the
+    /// authoring command enables this; blocking surfaces keep their own
+    /// report artifacts.
+    pub findings: bool,
+}
+
+#[cfg(feature = "spec-retrieval")]
+pub fn review_with_options(root: &Path, change_id: &str, options: ReviewOptions) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
     {
+        REPORTING_VERBOSE.store(options.verbose, std::sync::atomic::Ordering::Relaxed);
+        REVIEW_CHATTER.store(true, std::sync::atomic::Ordering::Relaxed);
         report_missing_index(root);
-        review_enabled(root, change_id, true)
+        review_enabled(root, change_id, true, options)
     }
 
     #[cfg(not(feature = "spec-retrieval"))]
     {
-        let _ = (root, change_id);
+        let _ = (root, change_id, options);
         bail!(
             "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
         );
@@ -1618,12 +1740,12 @@ pub fn review(root: &Path, change_id: &str) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 pub fn review_without_download(root: &Path, change_id: &str) -> Result<()> {
-    review_enabled(root, change_id, false)
+    review_enabled(root, change_id, false, ReviewOptions::default())
 }
 
 #[cfg(feature = "spec-retrieval")]
 pub fn review_without_index_notice(root: &Path, change_id: &str) -> Result<()> {
-    review_enabled(root, change_id, true)
+    review_enabled(root, change_id, true, ReviewOptions::default())
 }
 
 #[allow(dead_code)]
@@ -5324,11 +5446,19 @@ fn print_explore_text(
 }
 
 #[cfg(feature = "spec-retrieval")]
-fn review_enabled(root: &Path, change_id: &str, allow_download: bool) -> Result<()> {
+fn review_enabled(
+    root: &Path,
+    change_id: &str,
+    allow_download: bool,
+    options: ReviewOptions,
+) -> Result<()> {
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
-    index_enabled(root, allow_download)?;
+    let index_summary = index_refresh_summary(root, allow_download, options)?;
     let index = read_index(&spec_index_path(root))?;
+    if !options.json && std::env::var("GIVN_SPEC_RESOLUTION_NOTICES").as_deref() == Ok("repeat") {
+        stub_resolution_chatter();
+    }
 
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let second_stage_selected = {
@@ -5350,33 +5480,412 @@ fn review_enabled(root: &Path, change_id: &str, allow_download: bool) -> Result<
             false
         }
     };
+    let findings_path = change_dir.join("review-findings.json");
+    #[cfg(all(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
+    let corroborated_printing = {
+        let both_selected = bge_backend(root)?.is_some() && nli_backend_selection(root)?.is_some();
+        both_selected && !options.json
+    };
+    #[cfg(not(all(feature = "cross-encoder-reranker", feature = "nli-evidence")))]
+    let corroborated_printing = false;
     if second_stage_selected {
-        let gate_result = {
-            #[cfg(feature = "spec-similarity-gate")]
-            {
-                run_embedding_review(root, &index, &delta)
-            }
-            #[cfg(not(feature = "spec-similarity-gate"))]
-            {
-                Ok(())
-            }
-        };
-        let second_stage_result = run_second_stage_advisory_review(root, &index, &delta);
-        return match (gate_result, second_stage_result) {
-            (Err(gate), Err(second_stage)) => bail!("{gate}; {second_stage}"),
-            (Err(gate), Ok(())) => Err(gate),
-            (Ok(()), Err(second_stage)) => Err(second_stage),
-            (Ok(()), Ok(())) => Ok(()),
-        };
-    }
-    if cfg!(feature = "spec-similarity-gate") {
         #[cfg(feature = "spec-similarity-gate")]
-        return run_embedding_review(root, &index, &delta);
+        let gate = run_embedding_review(root, &index, &delta, options, corroborated_printing)?;
+        #[cfg(not(feature = "spec-similarity-gate"))]
+        let gate = GateReport::default();
+        let second_stage_result = run_second_stage_advisory_review(root, &index, &delta, options);
+        let second_stage = match second_stage_result {
+            Ok(second) => second,
+            Err(second_err) => {
+                if gate.candidates.is_empty() {
+                    return Err(second_err);
+                }
+                #[cfg(feature = "spec-similarity-gate")]
+                {
+                    let gate_message = format!(
+                        "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
+                        gate.candidates.len()
+                    );
+                    return Err(anyhow::anyhow!("{gate_message}; {second_err}"));
+                }
+                #[cfg(not(feature = "spec-similarity-gate"))]
+                return Err(second_err);
+            }
+        };
+        let (flagged, corroborated, union_recommended) =
+            review_problem_verdict(Some(&second_stage));
+        let gate_message = review_failure_message(flagged, corroborated, &gate);
+        let document = render_review_document(
+            change_id,
+            &index_summary,
+            Some(&gate),
+            Some(&second_stage),
+            flagged,
+            corroborated,
+            union_recommended,
+        )?;
+        return finish_review_output(options, &findings_path, document, flagged > 0, gate_message);
     }
+    #[cfg(feature = "spec-similarity-gate")]
+    {
+        let gate = run_embedding_review(root, &index, &delta, options, false)?;
+        let (flagged, corroborated, _) = review_problem_verdict(None);
+        let gate_message = review_failure_message(flagged, corroborated, &gate);
+        let document = render_review_document(
+            change_id,
+            &index_summary,
+            Some(&gate),
+            None,
+            flagged,
+            corroborated,
+            0,
+        )?;
+        finish_review_output(options, &findings_path, document, flagged > 0, gate_message)
+    }
+    #[cfg(not(feature = "spec-similarity-gate"))]
     advisory_review(root, &index, &delta, &change_dir.join("review.md"))
 }
 
+/// Corroborated problem verdict: the union of BGE/NLI recommendations when
+/// both layers scored the pool; otherwise every E5 candidate via the
+/// threshold rule. Returns (problem count, corroborated mode, union size).
 #[cfg(feature = "spec-retrieval")]
+fn review_problem_verdict(second: Option<&SecondStageReport>) -> (usize, bool, usize) {
+    #[cfg(not(feature = "spec-similarity-gate"))]
+    {
+        let _ = second;
+        return (0, false, 0);
+    }
+    #[cfg(feature = "spec-similarity-gate")]
+    {
+        let Some(second) = second else {
+            return (0, false, 0);
+        };
+        #[cfg(feature = "cross-encoder-reranker")]
+        let bge_enabled = second
+            .bge_run
+            .as_ref()
+            .is_some_and(|run| run.status == "BGE_ENABLED");
+        #[cfg(not(feature = "cross-encoder-reranker"))]
+        let bge_enabled = false;
+        #[cfg(feature = "nli-evidence")]
+        let nli_enabled = second
+            .nli_run
+            .as_ref()
+            .is_some_and(|run| run.status == "NLI_ENABLED");
+        #[cfg(not(feature = "nli-evidence"))]
+        let nli_enabled = false;
+        if !bge_enabled || !nli_enabled || second.candidates.is_empty() {
+            // Fallback: threshold rule over the raw candidate set.
+            return (
+                second.candidates.len(),
+                false,
+                second
+                    .candidates
+                    .iter()
+                    .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
+                    .count(),
+            );
+        }
+        let mut flagged = 0usize;
+        let mut union_recommended = 0usize;
+        for candidate in &second.candidates {
+            let bge_rec = candidate.bge_admission == Some("BGE_RECOMMENDED");
+            let bge_scored = matches!(
+                candidate.bge_admission,
+                Some("BGE_RECOMMENDED") | Some("BGE_FILTERED")
+            );
+            #[cfg(feature = "nli-evidence")]
+            let nli_rec = candidate.nli_admission == Some("NLI_RECOMMENDED");
+            #[cfg(not(feature = "nli-evidence"))]
+            let nli_rec = false;
+            #[cfg(feature = "nli-evidence")]
+            let nli_scored = matches!(
+                candidate.nli_admission,
+                Some("NLI_RECOMMENDED") | Some("NLI_FILTERED")
+            );
+            #[cfg(not(feature = "nli-evidence"))]
+            let nli_scored = false;
+            if bge_rec || nli_rec {
+                union_recommended += 1;
+            }
+            if bge_rec || nli_rec || !bge_scored || !nli_scored {
+                flagged += 1;
+            }
+        }
+        (flagged, true, union_recommended)
+    }
+}
+
+/// Failure message for a flagged advisory review.
+#[cfg(feature = "spec-retrieval")]
+fn review_failure_message(flagged: usize, corroborated: bool, gate: &GateReport) -> Option<String> {
+    if flagged == 0 {
+        return None;
+    }
+    if corroborated {
+        Some(format!(
+            "semantic review flagged {flagged} recommended candidate(s); classify or rewrite them before proceeding"
+        ))
+    } else {
+        #[cfg(feature = "spec-similarity-gate")]
+        let threshold = SIMILARITY_THRESHOLD;
+        #[cfg(not(feature = "spec-similarity-gate"))]
+        let threshold = 0.95_f32;
+        Some(format!(
+            "similarity gate failed: {} candidate(s) are at or above the fixed threshold {threshold:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
+            gate.candidates.len()
+        ))
+    }
+}
+
+/// Persist the review findings on a failed gate and print the structured
+/// document in JSON mode. Text success runs leave no artifact.
+#[cfg(feature = "spec-retrieval")]
+fn finish_review_output(
+    options: ReviewOptions,
+    findings_path: &Path,
+    document: String,
+    flagged: bool,
+    mut gate_message: Option<String>,
+) -> Result<()> {
+    if flagged && options.findings {
+        match std::fs::write(findings_path, &document) {
+            Ok(()) => {
+                if let Some(message) = gate_message.as_mut() {
+                    message.push_str(&format!("; findings: {}", findings_path.display()));
+                }
+            }
+            Err(error) => notice(format!(
+                "warning: could not write review findings to {}: {error}",
+                findings_path.display()
+            )),
+        }
+    }
+    if options.json {
+        println!("{document}");
+    }
+    match gate_message {
+        Some(message) => Err(anyhow::anyhow!(message)),
+        None => Ok(()),
+    }
+}
+
+/// Build the schema-version-1 review document. It extends the
+/// duplicate-audit JSON contract with review-only sections.
+#[cfg(feature = "spec-retrieval")]
+#[allow(clippy::too_many_arguments)]
+fn render_review_document(
+    change_id: &str,
+    index_summary: &serde_json::Value,
+    gate: Option<&GateReport>,
+    second_stage: Option<&SecondStageReport>,
+    flagged: usize,
+    corroborated: bool,
+    union_recommended: usize,
+) -> Result<String> {
+    let (candidates, considered) = match gate {
+        Some(gate) => (&gate.candidates, gate.considered),
+        None => (&Vec::new(), 0),
+    };
+    #[cfg(feature = "spec-similarity-gate")]
+    let threshold = SIMILARITY_THRESHOLD;
+    #[cfg(not(feature = "spec-similarity-gate"))]
+    let threshold = 0.95_f32;
+    #[cfg(feature = "cross-encoder-reranker")]
+    let bge_run = second_stage.and_then(|second| second.bge_run.as_ref());
+    #[cfg(feature = "nli-evidence")]
+    let nli_run = second_stage.and_then(|second| second.nli_run.as_ref());
+
+    let candidate_values: Vec<serde_json::Value> =
+        candidates.iter().map(review_json_candidate).collect();
+    let bge_recommended = candidates
+        .iter()
+        .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
+        .count();
+    #[cfg(feature = "nli-evidence")]
+    let nli_recommended = candidates
+        .iter()
+        .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+        .count();
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_recommended = 0;
+    #[cfg(feature = "nli-evidence")]
+    let combined_recommended: Vec<serde_json::Value> = {
+        #[cfg(feature = "cross-encoder-reranker")]
+        let bge_participating = bge_run.is_some();
+        #[cfg(not(feature = "cross-encoder-reranker"))]
+        let bge_participating = false;
+        let nli_participating = nli_run.is_some();
+        candidates
+            .iter()
+            .filter(|candidate| {
+                (!bge_participating || candidate.bge_admission == Some("BGE_RECOMMENDED"))
+                    && (!nli_participating || candidate.nli_admission == Some("NLI_RECOMMENDED"))
+            })
+            .enumerate()
+            .map(|(index, candidate)| {
+                let mut value = review_json_candidate(candidate);
+                value["rank"] = serde_json::json!(index + 1);
+                value
+            })
+            .collect()
+    };
+    #[cfg(not(feature = "nli-evidence"))]
+    let combined_recommended: Vec<serde_json::Value> = Vec::new();
+
+    #[cfg(feature = "nli-evidence")]
+    let mut nli_distribution = [0usize; 3];
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_distribution = [0usize; 3];
+    #[cfg(feature = "nli-evidence")]
+    if let Some(second) = second_stage {
+        for candidate in &second.candidates {
+            if let Some(evidence) = candidate.nli {
+                let (index, _) = evidence
+                    .symmetric
+                    .iter()
+                    .copied()
+                    .enumerate()
+                    .max_by(|left, right| left.1.total_cmp(&right.1))
+                    .unwrap_or((1, 0.0));
+                nli_distribution[index] += 1;
+            }
+        }
+    }
+
+    #[cfg(feature = "cross-encoder-reranker")]
+    let bge_run_value = bge_run.map(|run| review_json_bge_run(run, bge_recommended));
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    let bge_run_value: Option<serde_json::Value> = None;
+    #[cfg(feature = "nli-evidence")]
+    let nli_run_value =
+        nli_run.map(|run| review_json_nli_run(run, nli_recommended, nli_distribution));
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_run_value: Option<serde_json::Value> = None;
+
+    let document = serde_json::json!({
+        "schema_version": 1,
+        "source": "givn spec review",
+        "change": change_id,
+        "index": index_summary,
+        "verdict": {
+            "problem_flagged": flagged > 0,
+            "flagged_recommended_count": union_recommended,
+            "threshold_fallback": !corroborated,
+            "e5_candidates": considered,
+            "threshold": threshold,
+        },
+        "bge_run": bge_run_value,
+        "nli_run": nli_run_value,
+        "candidates": candidate_values,
+        "combined_recommended_count": combined_recommended.len(),
+        "combined_recommended_candidates": combined_recommended,
+    });
+    Ok(serde_json::to_string_pretty(&document)?)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn review_json_candidate(candidate: &SimilarityCandidate) -> serde_json::Value {
+    let bge_evidence = candidate.bge.as_ref().map(|evidence| {
+        serde_json::json!({
+            "status": candidate.bge_admission.unwrap_or("BGE_RECOMMENDED"),
+            "forward_raw": evidence.forward_raw,
+            "reverse_raw": evidence.reverse_raw,
+            "symmetric_raw": evidence.symmetric_raw,
+        })
+    });
+    #[cfg(feature = "nli-evidence")]
+    let nli_admission = candidate.nli_admission;
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_admission: Option<&'static str> = None;
+    #[cfg(feature = "nli-evidence")]
+    let nli_evidence_value = candidate.nli.map(|evidence| {
+        serde_json::json!({
+            "status": nli_admission.unwrap_or("NLI_RECOMMENDED"),
+            "forward": evidence.forward,
+            "reverse": evidence.reverse,
+            "symmetric": evidence.symmetric,
+        })
+    });
+    #[cfg(not(feature = "nli-evidence"))]
+    let nli_evidence_value: Option<serde_json::Value> = None;
+    serde_json::json!({
+        "scope": candidate.scopes,
+        "left": {
+            "title": candidate.left.title,
+            "file": candidate.left.file,
+        },
+        "right": {
+            "title": candidate.right.title,
+            "file": candidate.right.file,
+        },
+        "embedding_score": format!("{:.4}", candidate.embedding_score),
+        "admission": {
+            "bge": candidate.bge_admission,
+            "nli": nli_admission,
+        },
+        "evidence": {
+            "bge": bge_evidence,
+            "nli": nli_evidence_value,
+        },
+    })
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
+fn review_json_bge_run(run: &BgeRun, recommended: usize) -> serde_json::Value {
+    serde_json::json!({
+        "status": run.status,
+        "reason": run.reason.map(BgeUnavailableReason::as_str),
+        "model": (run.status == "BGE_ENABLED").then_some(RERANKER_MODEL_ID),
+        "top_k": RERANKER_TOP_K,
+        "max_unique_pairs": run.max_unique_pairs,
+        "e5_candidates": run.e5_candidates,
+        "unique_pairs": run.evidence.len(),
+        "directional_calls": run.evidence.len() * 2,
+        "recommended_count": recommended,
+        "filtered_count": run
+            .e5_candidates
+            .saturating_sub(recommended)
+            .saturating_sub(run.unscored),
+        "unscored_count": run.unscored,
+        "model_load_attempts": run.model_load_attempts,
+        "runtime_ms": run.runtime_ms,
+    })
+}
+
+#[cfg(all(feature = "spec-retrieval", feature = "nli-evidence"))]
+fn review_json_nli_run(
+    run: &NliRun,
+    recommended: usize,
+    distribution: [usize; 3],
+) -> serde_json::Value {
+    serde_json::json!({
+        "status": run.status,
+        "reason": run.reason.map(NliUnavailableReason::as_str),
+        "model": (run.status == "NLI_ENABLED").then_some(NLI_MODEL_ID),
+        "top_k": RERANKER_TOP_K,
+        "max_unique_pairs": run.max_unique_pairs,
+        "e5_candidates": run.e5_candidates,
+        "unique_pairs": run.evidence.len(),
+        "directional_calls": run.evidence.len() * 2,
+        "recommended_count": recommended,
+        "filtered_count": run
+            .e5_candidates
+            .saturating_sub(recommended)
+            .saturating_sub(run.unscored),
+        "unscored_count": run.unscored,
+        "distribution": {
+            "entailment": distribution[0],
+            "neutral": distribution[1],
+            "contradiction": distribution[2],
+        },
+        "model_load_attempts": run.model_load_attempts,
+        "runtime_ms": run.runtime_ms,
+    })
+}
+
+#[cfg(all(feature = "spec-retrieval", not(feature = "spec-similarity-gate")))]
 fn advisory_review(
     root: &Path,
     index: &SpecIndex,
@@ -5437,43 +5946,104 @@ fn advisory_review(
     Ok(())
 }
 
+/// E5 similarity-gate evidence collected by the advisory review.
+#[cfg(feature = "spec-retrieval")]
+#[derive(Default)]
+struct GateReport {
+    candidates: Vec<SimilarityCandidate>,
+    considered: usize,
+}
+
+/// Refresh (or read) the permanent index and report its summary. Text mode
+/// prints the established banner lines; JSON mode captures them into the
+/// returned document section instead.
+#[cfg(feature = "spec-retrieval")]
+fn index_refresh_summary(
+    root: &Path,
+    allow_download: bool,
+    options: ReviewOptions,
+) -> Result<serde_json::Value> {
+    let refresh = refresh_index(root, allow_download)?;
+    if !options.json {
+        println!(
+            "Indexed {} permanent scenarios",
+            refresh.index.entries.len()
+        );
+        println!("Reused {} scenario vectors", refresh.reused);
+        println!(
+            "E5 token-cap candidates: {}",
+            refresh.index.e5_token_caps.len()
+        );
+        for cap in &refresh.index.e5_token_caps {
+            println!(
+                "E5_TOKEN_CAP: '{}' ({}) requires {} tokens (limit {}); model {}, tokenizer {}; refactoring_required: true; guidance: shorten or split the scenario and rerun semantic review",
+                cap.title, cap.file, cap.token_count, cap.limit, cap.model, cap.tokenizer,
+            );
+        }
+    }
+    Ok(serde_json::json!({
+        "indexed": refresh.index.entries.len(),
+        "reused": refresh.reused,
+        "e5_token_caps": refresh.index.e5_token_caps.len(),
+        "caps": refresh.index.e5_token_caps,
+    }))
+}
+
 #[cfg(all(feature = "spec-retrieval", feature = "spec-similarity-gate"))]
-fn run_embedding_review(root: &Path, index: &SpecIndex, delta: &[DeltaScenario]) -> Result<()> {
+fn run_embedding_review(
+    root: &Path,
+    index: &SpecIndex,
+    delta: &[DeltaScenario],
+    options: ReviewOptions,
+    corroborated_printing: bool,
+) -> Result<GateReport> {
     let (candidates, considered, e5_token_caps) =
         embedding_similarity_candidates(root, index, delta)?;
-    print_advisory_e5_token_caps(&e5_token_caps);
-    for candidate in &candidates {
-        println!(
-            "similarity candidate [{}]: '{}' ({}) resembles '{}' ({}) score {:.4}, threshold {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the threshold)",
-            candidate.scopes.join(","),
-            candidate.left.title,
-            candidate.left.file,
-            candidate.right.title,
-            candidate.right.file,
-            candidate.embedding_score,
-            SIMILARITY_THRESHOLD,
-        );
+    if !options.json {
+        print_advisory_e5_token_caps(&e5_token_caps);
+        let show_raw_list = !corroborated_printing || options.verbose;
+        if show_raw_list {
+            for candidate in &candidates {
+                println!(
+                    "similarity candidate [{}]: '{}' ({}) resembles '{}' ({}) score {:.4}, threshold {:.4}; remediation: MERGE (delete the true duplicate) or KEEP-AS-BOUNDARY (rewrite the retained scenario below the threshold)",
+                    candidate.scopes.join(","),
+                    candidate.left.title,
+                    candidate.left.file,
+                    candidate.right.title,
+                    candidate.right.file,
+                    candidate.embedding_score,
+                    SIMILARITY_THRESHOLD,
+                );
+            }
+        }
+        if !corroborated_printing {
+            println!(
+                "retrieval advisory: embedding similarity evaluated {} candidate pairs",
+                considered
+            );
+            if candidates.is_empty() {
+                println!(
+                    "similarity gate: no scenario pair at or above fixed threshold {:.4}",
+                    SIMILARITY_THRESHOLD
+                );
+            } else {
+                println!(
+                    "similarity gate failed: {} candidate(s) at or above fixed threshold {:.4}",
+                    candidates.len(),
+                    SIMILARITY_THRESHOLD
+                );
+            }
+        } else {
+            println!(
+                "retrieval advisory: embedding similarity evaluated {} candidate pairs",
+                considered
+            );
+        }
     }
-    println!(
-        "retrieval advisory: embedding similarity evaluated {} candidate pairs",
-        considered
-    );
-    if !candidates.is_empty() {
-        println!(
-            "similarity gate failed: {} candidate(s) at or above fixed threshold {:.4}",
-            candidates.len(),
-            SIMILARITY_THRESHOLD
-        );
-        bail!(
-            "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
-            candidates.len()
-        );
-    }
-    println!(
-        "similarity gate: no scenario pair at or above fixed threshold {:.4}",
-        SIMILARITY_THRESHOLD
-    );
-    Ok(())
+    Ok(GateReport {
+        candidates,
+        considered,
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -5494,19 +6064,38 @@ fn print_advisory_e5_token_caps(caps: &[E5TokenCap]) {
     }
 }
 
+/// Second-stage advisory review evidence and runs.
+#[cfg(feature = "spec-retrieval")]
+struct SecondStageReport {
+    candidates: Vec<SimilarityCandidate>,
+    #[allow(dead_code)]
+    considered: usize,
+    #[cfg(feature = "cross-encoder-reranker")]
+    bge_run: Option<BgeRun>,
+    #[cfg(not(feature = "cross-encoder-reranker"))]
+    bge_run: Option<()>,
+    #[cfg(feature = "nli-evidence")]
+    nli_run: Option<NliRun>,
+    #[cfg(not(feature = "nli-evidence"))]
+    nli_run: Option<()>,
+}
+
 #[cfg(feature = "spec-retrieval")]
 fn run_second_stage_advisory_review(
     root: &Path,
     index: &SpecIndex,
     delta: &[DeltaScenario],
-) -> Result<()> {
+    options: ReviewOptions,
+) -> Result<SecondStageReport> {
     #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
     let (mut candidates, considered, texts, e5_token_caps) =
         similarity_candidate_pool(root, index, delta)?;
     #[cfg(not(any(feature = "cross-encoder-reranker", feature = "nli-evidence")))]
     let (candidates, considered, _texts, e5_token_caps) =
         similarity_candidate_pool(root, index, delta)?;
-    print_advisory_e5_token_caps(&e5_token_caps);
+    if !options.json {
+        print_advisory_e5_token_caps(&e5_token_caps);
+    }
     #[cfg(feature = "cross-encoder-reranker")]
     let mut bge_enabled = false;
     #[cfg(not(feature = "cross-encoder-reranker"))]
@@ -5634,11 +6223,15 @@ fn run_second_stage_advisory_review(
                 candidate.nli_admission = Some("NLI_UNSCORED");
             }
         }
-        print_nli_results(&candidates, considered, max_unique_pairs);
+        if !options.json {
+            print_nli_results(&candidates, considered, max_unique_pairs, options.verbose);
+        }
         nli_run = Some(run);
     }
     #[cfg(feature = "nli-evidence")]
-    if let Some(run) = nli_run.as_ref() {
+    if !options.json
+        && let Some(run) = nli_run.as_ref()
+    {
         println!(
             "NLI status: {}{}, model {}, max pairs {}, unique pairs {}, directional calls {}, recommended {}, filtered {}, unscored {}, model load attempts {}, runtime ms {}",
             run.status,
@@ -5683,7 +6276,9 @@ fn run_second_stage_advisory_review(
         }
     }
 
-    if let Some(run) = bge_run.as_ref() {
+    if !options.json
+        && let Some(run) = bge_run.as_ref()
+    {
         let recommended = candidates
             .iter()
             .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
@@ -5717,7 +6312,21 @@ fn run_second_stage_advisory_review(
             "BGE candidate accounting: recommended {}, BGE filtered {}, unscored {}, budget <= {}",
             recommended, filtered, run.unscored, run.max_unique_pairs
         );
-        for candidate in &candidates {
+        let mut bge_rows: Vec<&SimilarityCandidate> = candidates
+            .iter()
+            .filter(|candidate| candidate.bge.is_some())
+            .collect();
+        if !options.verbose {
+            bge_rows.retain(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"));
+            bge_rows.sort_by(|left, right| {
+                let left_score = left.bge.as_ref().map(|evidence| evidence.symmetric_raw);
+                let right_score = right.bge.as_ref().map(|evidence| evidence.symmetric_raw);
+                right_score
+                    .unwrap_or(f32::NEG_INFINITY)
+                    .total_cmp(&left_score.unwrap_or(f32::NEG_INFINITY))
+            });
+        }
+        for candidate in bge_rows {
             let Some(evidence) = candidate.bge.as_ref() else {
                 continue;
             };
@@ -5765,11 +6374,36 @@ fn run_second_stage_advisory_review(
             }
         })
         .count();
-    println!(
-        "combined recommended {} of {} E5 candidates; evidence is advisory and no Givn classification is assigned",
-        recommended, considered
-    );
-    Ok(())
+    if !options.json {
+        println!(
+            "combined recommended {} of {} E5 candidates; evidence is advisory and no Givn classification is assigned",
+            recommended, considered
+        );
+    }
+    Ok(SecondStageReport {
+        candidates,
+        considered,
+        bge_run: {
+            #[cfg(feature = "cross-encoder-reranker")]
+            {
+                bge_run
+            }
+            #[cfg(not(feature = "cross-encoder-reranker"))]
+            {
+                None
+            }
+        },
+        nli_run: {
+            #[cfg(feature = "nli-evidence")]
+            {
+                nli_run
+            }
+            #[cfg(not(feature = "nli-evidence"))]
+            {
+                None
+            }
+        },
+    })
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -7206,6 +7840,7 @@ fn print_nli_results(
     candidates: &[SimilarityCandidate],
     considered: usize,
     max_unique_pairs: usize,
+    verbose: bool,
 ) {
     let mut label_counts = [0usize; 3];
     for candidate in candidates {
@@ -7220,7 +7855,8 @@ fn print_nli_results(
             label_counts[index] += 1;
         }
     }
-    let report_limit = nli_report_limit();
+    // Deprecated alias: parsed for compatibility but silently ignored.
+    let _deprecated_report_limit = nli_report_limit();
     println!(
         "nli: model {}, top_k {}, considered {} candidate pairs; evidence is diagnostic only",
         NLI_MODEL_ID, RERANKER_TOP_K, considered
@@ -7250,7 +7886,29 @@ fn print_nli_results(
         "nli distribution: entailment {}, neutral {}, contradiction {}",
         label_counts[0], label_counts[1], label_counts[2]
     );
-    for candidate in candidates.iter().take(report_limit) {
+    let scored_rows: Vec<&SimilarityCandidate> = candidates
+        .iter()
+        .filter(|candidate| candidate.nli.is_some())
+        .collect();
+    let rows: Vec<&SimilarityCandidate> = if verbose {
+        scored_rows.clone()
+    } else {
+        let mut recommended_rows: Vec<&SimilarityCandidate> = scored_rows
+            .iter()
+            .copied()
+            .filter(|candidate| candidate.nli_admission == Some("NLI_RECOMMENDED"))
+            .collect();
+        recommended_rows.sort_by(|left, right| {
+            let entailment = |candidate: &SimilarityCandidate| {
+                candidate.nli.map(|evidence| evidence.symmetric[0])
+            };
+            entailment(right)
+                .unwrap_or(f32::NEG_INFINITY)
+                .total_cmp(&entailment(left).unwrap_or(f32::NEG_INFINITY))
+        });
+        recommended_rows
+    };
+    for candidate in &rows {
         let Some(evidence) = candidate.nli else {
             continue;
         };
@@ -7278,10 +7936,13 @@ fn print_nli_results(
             candidate.nli_admission.unwrap_or("NLI_UNSCORED")
         );
     }
-    println!(
-        "nli diagnostic: reported at most {} candidates; NLI probabilities are not calibrated duplicate, variant, or boundary decisions",
-        report_limit
-    );
+    if rows.len() < scored_rows.len() {
+        println!(
+            "nli diagnostic: reported {} of {} scored candidates; NLI probabilities are not calibrated duplicate, variant, or boundary decisions",
+            rows.len(),
+            scored_rows.len()
+        );
+    }
 }
 
 #[cfg(feature = "nli-evidence")]

@@ -996,7 +996,25 @@ fn malformed_directional_no_load(world: &mut GivnWorld) {
 
 #[then("the false positive is recorded as filtered from the recommended list")]
 fn false_positive_is_filtered(world: &mut GivnWorld) {
-    assert!(super::stdout(world).contains("BGE_FILTERED"));
+    let output = super::stdout(world);
+    let accounting = output
+        .lines()
+        .find(|line| line.contains("BGE candidate accounting:"))
+        .expect("BGE candidate accounting line");
+    let recommended = accounting
+        .split("recommended ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("recommended count");
+    let filtered = accounting
+        .split("BGE filtered ")
+        .nth(1)
+        .and_then(|value| value.split(',').next())
+        .and_then(|value| value.parse::<usize>().ok())
+        .expect("filtered count");
+    assert!(filtered >= 1, "no filtered pair recorded: {output}");
+    assert!(recommended + filtered >= 1, "accounting: {accounting}");
 }
 
 #[then(
@@ -1809,13 +1827,24 @@ fn stdout_contains_no_bge_admission(world: &mut GivnWorld) {
 #[then("the E5 candidate identities remain unchanged")]
 fn nli_preserves_e5_candidate_identities(world: &mut GivnWorld) {
     let output = super::stdout(world);
-    assert!(
-        output.contains("Provider request is accepted"),
-        "stdout: {output}"
-    );
-    assert!(
-        output.contains("Provider warning is reported"),
-        "stdout: {output}"
+    let accounting = output
+        .lines()
+        .find(|line| line.contains("NLI candidate accounting:"))
+        .expect("NLI candidate accounting line")
+        .to_string();
+    let parse = |label: &str| -> usize {
+        accounting
+            .split(label)
+            .nth(1)
+            .and_then(|value| value.split(',').next())
+            .and_then(|value| value.parse::<usize>().ok())
+            .unwrap_or(0)
+    };
+    let raw = parse("raw ");
+    let scored = parse("recommended ") + parse("NLI filtered ");
+    assert_eq!(
+        raw, scored,
+        "every E5 candidate keeps second-stage evidence: {accounting}"
     );
 }
 

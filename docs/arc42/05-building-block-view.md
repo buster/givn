@@ -57,7 +57,7 @@ flowchart TD
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, and coverage configuration. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
-| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply evidence, generate semantic reports, and verify remediation. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. |
+| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply evidence, generate semantic reports, and verify remediation. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. Advisory review applies a decision-first reporting policy: default text lists only model-recommended second-stage pairs, `--verbose` lifts every listing limit, `--format json` emits one structured review document, and a failed gate persists that document as the change's findings file. |
 
 ## 5.4 Retrieval Building Block
 

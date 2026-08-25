@@ -29,7 +29,7 @@ Feature: BGE reranking evidence for bounded semantic search
     And  the local second-stage evidence is enabled
     When  the end-to-end user runs advisory change review for "running-change" through the givn CLI
     Then  the command exits 0
-    And  stdout identifies the second-stage model, score, and elapsed runtime
+    And  stdout identifies the second-stage model and elapsed runtime
     And  stdout reports fewer recommended candidates than E5 candidates
     And  stdout says that the evidence is advisory
     And  stdout contains no automatic Givn classification

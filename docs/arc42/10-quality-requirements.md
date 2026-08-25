@@ -100,6 +100,8 @@ graph TD
 | Q-62 | Cache ownership | A maintainer runs a benchmark export or comparison without an explicit model path. | E5, BGE, NLI, and flat-export model paths resolve under the XDG Givn cache; the generated comparison index remains project-local. |
 | Q-63 | Usability | A spec retrieval command downloads models or embeds scenarios. | Phase status and per-file download progress stream to stderr during the run; stdout formats remain byte-identical. |
 | Q-64 | Usability | A spec retrieval command runs with a warm validated cache. | No download announcements or per-file progress appear; embedding status still reports the pending count. |
+| Q-65 | Review evidence usability | Advisory review runs with second-stage evidence on a corpus where most pairs are filtered. | Default text lists only recommended pairs with unchanged status lines and counters; `--verbose` lists every scored pair without a listing limit; the E5 candidate list stays visible by default. |
+| Q-66 | Failed-review auditability | An advisory review fails the similarity gate. | The structured JSON review document is persisted beside the change and matches stdout, so the evidence survives without rerunning model inference. |
 
 ## 10.3 Verification Signals
 
