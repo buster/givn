@@ -554,12 +554,6 @@ fn filtered_after_recommended(world: &mut GivnWorld) {
             Some(title)
         })
         .collect();
-    let nli_positions: Vec<usize> = output
-        .lines()
-        .enumerate()
-        .filter(|(_, line)| *line == "NLI admission: NLI_RECOMMENDED")
-        .map(|(index, _)| index)
-        .collect();
     assert_eq!(bge_titles.len(), 3, "stdout: {output}");
     assert_eq!(
         bge_titles.first().map(String::as_str),
@@ -576,22 +570,21 @@ fn filtered_after_recommended(world: &mut GivnWorld) {
         ],
         "filtered in embedding order after recommended: {output}"
     );
-    let last_recommended = nli_positions.last().copied().unwrap_or(0);
-    let detail_lines_before = output
-        .lines()
-        .take(last_recommended + 1)
-        .filter(|line| line.starts_with("nli candidate ["))
-        .count();
-    let total_details = output
+    let nli_detail_lines: Vec<&str> = output
         .lines()
         .filter(|line| line.starts_with("nli candidate ["))
-        .count();
-    for (index, _) in output
+        .collect();
+    assert_eq!(nli_detail_lines.len(), 1, "stdout: {output}");
+    let caps = output
         .lines()
-        .enumerate()
-        .filter(|(_, line)| *line == "NLI admission: NLI_RECOMMENDED")
-    {}
-    let _ = (detail_lines_before, total_details);
+        .filter(|line| line.contains("token-cap: NLI_TOKEN_CAP"))
+        .count();
+    assert_eq!(caps, 2, "capped pairs listed as guidance: {output}");
+    let first_nli_title = nli_detail_lines[0].split('\u{27}').nth(1).expect("title");
+    assert_eq!(
+        first_nli_title, "Provider request is accepted",
+        "recommended NLI pair first: {output}"
+    );
 }
 
 #[then("stdout lists any unscored or token-capped pair with its admission status")]
