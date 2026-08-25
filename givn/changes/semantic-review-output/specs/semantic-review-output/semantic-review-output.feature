@@ -88,7 +88,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And stderr shows exactly one artifact resolution summary line per participating stage
     And stderr contains no repeated resolution lines for the same stage
 
-  @givn.added @wip
+  @givn.added
   Scenario: Verbose output restores full artifact resolution detail
     Given a project prepared for semantic review whose stubbed stages emit repeated resolution notices
     When the user runs the advisory semantic review for "running-change" with verbose output
