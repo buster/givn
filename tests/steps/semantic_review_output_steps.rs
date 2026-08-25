@@ -984,3 +984,41 @@ fn identities_and_admissions_match(world: &mut GivnWorld) {
         );
     }
 }
+
+#[when("the user runs the advisory semantic review for \"running-change\" as text")]
+fn run_review_text_only(world: &mut GivnWorld) {
+    run_review_with(world, &[], &[]);
+    world.additional_output = Some(super::stderr(world));
+}
+
+fn assert_flagged_failure(world: &GivnWorld) {
+    assert!(
+        !super::output(world).status.success(),
+        "expected failure, stdout: {}",
+        super::stdout(world)
+    );
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("semantic review flagged 3 recommended candidate(s)"),
+        "stderr: {stderr}"
+    );
+}
+
+#[then("the command exits non-zero and stderr names the flagged recommendation failure")]
+fn fails_with_flagged_message(world: &mut GivnWorld) {
+    assert_flagged_failure(world);
+}
+
+#[then("the command exits non-zero and stderr names the identical failure message unchanged")]
+fn fails_with_identical_flagged_message(world: &mut GivnWorld) {
+    let text_stderr = world.additional_output.clone().expect("text stderr");
+    assert_flagged_failure(world);
+    let json_stderr = super::stderr(world);
+    let normalize = |stderr: String| -> Vec<String> {
+        normalized_lines(&stderr)
+            .iter()
+            .map(|s| s.to_string())
+            .collect()
+    };
+    assert_eq!(normalize(text_stderr), normalize(json_stderr));
+}

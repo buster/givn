@@ -136,7 +136,7 @@ Feature: Semantic review output leads with decision-relevant evidence
     And every count printed by the text run has an equal field value in the JSON document
     And both runs agree on the candidate identities and their admission labels
 
-  @givn.added @wip
+  @givn.added
   Scenario: Structured JSON preserves exit codes and failure messages
     Given a project prepared for semantic review whose second-stage evidence recommends at least one pair
     When the user runs the advisory semantic review for "running-change" as text
