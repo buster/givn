@@ -15,7 +15,9 @@ shell installer remains planned work.
 The active change `semantic-reranker-budget` is not complete. `givn status
 --change semantic-reranker-budget` reports open implementation tasks and final
 verification. Therefore its ADR-063 is `proposed`, not an accepted current
-architecture contract.
+architecture contract. The active change `semantic-scoring-throughput` is
+between design and review; its ADR-064 (shared model thread budget) is likewise
+`proposed`.
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and

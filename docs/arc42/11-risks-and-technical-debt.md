@@ -46,6 +46,7 @@ historical measurement is not a current quality claim.
 | R-37 | Benchmark tooling reintroduces project-local or `/tmp` model defaults. | Medium | Medium | Derive E5, BGE, NLI, and flat-export defaults from the shared XDG cache and assert the shell helper's default output through its real subprocess path. |
 | R-38 | `spec search --evidence` incurs a second-stage model load per invocation and may be slow without artifacts. | Medium | Low | Keep the flag opt-in, reuse the shared XDG caches and existing unavailable fallback, and report an unchanged E5-only ranking when a layer cannot score. |
 | R-39 | A true duplicate above the E5 threshold that both second-stage models filter passes review unflagged under corroborated gating. | Low | High | Preserve raw E5 evidence in verbose output, JSON, and findings documents; keep benchmark approval separate from runtime activation; treat the union rule as fail-safe (any layer unable to score restores the binding threshold). |
+| R-40 | One shared thread budget forces per-stage tuning trades and can oversubscribe container quotas. | Medium | Medium | Default to quota-aware `available_parallelism()`, expose the resolved count in every stage status line, and document that any future inter-stage overlap must split the budget first. |
 
 ## 11.2 Deliberate Technical Debt
 
@@ -65,6 +66,7 @@ historical measurement is not a current quality claim.
 | D-11 | Semantic remediation does not support prior `delta-to-delta` entries. | Scope precondition rejects them. | Add a deliberate projected-delta remediation design and tests. |
 | D-12 | The current second-stage budget change is unfinished. | `givn status --change semantic-reranker-budget` reports open tasks and final verification. | Complete RED/GREEN/REFACTOR, full/E2E tests, real-model evidence, and blocking review before accepting ADR-063. |
 | D-13 | ADR qualification is guidance-level and the register has no semantic validator. | The LLM/author and design review apply the policy; runtime integrity checks only verify mechanical file conditions. | Add a reviewed semantic register validator only if a future requirement justifies runtime enforcement; until then retain explicit review evidence. |
+| D-15 | NLI batched-tensor inference is deferred. | `semantic-scoring-throughput` changes only the NLI session thread count; NLI keeps its per-sequence inference loop. | Implement the named follow-up change `semantic-nli-batched-inference` after measuring wall-time gains on a large corpus. |
 
 ## 11.3 Historical Measurements
 
