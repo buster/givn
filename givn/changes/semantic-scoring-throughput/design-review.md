@@ -77,4 +77,21 @@ status; 7 scenarios pending implementation in the next artifact).
 - The single `@e2e` scenario exercises the real compiled CLI with
   `GIVN_SPEC_THREADS=3` and asserts the stage status lines' thread count.
 
+## Post-Review Scope Revision (user-directed, applied during implementation)
+
+The design was narrowed during implementation by user decision, which does not
+undo this review's core finding (PASS on the shared-budget decision):
+
+- Status-line/thread-count reporting (`threads N`, embedder status line) was
+  dropped as untestable: thread counts are not observable through the stub
+  backends, and probing the real ONNX models is not viable. The scenarios
+  asserting it were removed (zero scenarios remain).
+- Grouped BGE batching was dropped; the rerank path changes only its thread
+  count. NLI batched inference stays deferred per the decision section.
+- The retained design — one `GIVN_SPEC_THREADS` setting defaulting to
+  `available_parallelism()`, by-name validation (eager on the review path),
+  applied at the three real-model sites, no fingerprint/attestation change,
+  Python tooling out of scope — is exactly the part this review validated as
+  low-risk and correct.
+
 DESIGN-REVIEW: PASS

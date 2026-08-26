@@ -58,6 +58,16 @@ run_review_output() {
         GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub "$@"
 }
 
+# A scope with no scenario lines (a code-only change) cannot be run by
+# cucumber; exit 0 instead of failing the gate with a zero-match run.
+case "${1:-}" in
+    --e2e|--non-e2e|"")
+        if ! grep -qrE '^\s*Scenario' -- "$FEATURES_PATH" 2>/dev/null; then
+            exit 0
+        fi
+        ;;
+esac
+
 case "${1:-}" in
     --e2e)
         run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and @e2e'

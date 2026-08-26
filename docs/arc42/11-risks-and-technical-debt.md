@@ -46,7 +46,7 @@ historical measurement is not a current quality claim.
 | R-37 | Benchmark tooling reintroduces project-local or `/tmp` model defaults. | Medium | Medium | Derive E5, BGE, NLI, and flat-export defaults from the shared XDG cache and assert the shell helper's default output through its real subprocess path. |
 | R-38 | `spec search --evidence` incurs a second-stage model load per invocation and may be slow without artifacts. | Medium | Low | Keep the flag opt-in, reuse the shared XDG caches and existing unavailable fallback, and report an unchanged E5-only ranking when a layer cannot score. |
 | R-39 | A true duplicate above the E5 threshold that both second-stage models filter passes review unflagged under corroborated gating. | Low | High | Preserve raw E5 evidence in verbose output, JSON, and findings documents; keep benchmark approval separate from runtime activation; treat the union rule as fail-safe (any layer unable to score restores the binding threshold). |
-| R-40 | One shared thread budget forces per-stage tuning trades and can oversubscribe container quotas. | Medium | Medium | Default to quota-aware `available_parallelism()`, expose the resolved count in every stage status line, and document that any future inter-stage overlap must split the budget first. |
+| R-40 | One shared thread budget forces per-stage tuning trades and can oversubscribe container quotas. | Medium | Medium | Default to quota-aware `available_parallelism()`, document that any future inter-stage overlap must split the budget first, and let operators cap compute with `GIVN_SPEC_THREADS`. |
 
 ## 11.2 Deliberate Technical Debt
 
