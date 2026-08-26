@@ -95,7 +95,7 @@ Feature: Strict qualification and canonical routing of architecture decisions
   Scenario: The migration removes non-ADRs and preserves independent architecture history
     Given  the consolidated ADR register and canonical sources are available
     When  a maintainer compares the register with the canonical sources
-    Then  the final register has 35 accepted decisions and one proposed decision
+    Then  the final register has 35 accepted decisions and two proposed decisions
     And  the change's migration manifest gives every assigned identifier exactly one disposition
     And  reserved identifiers `ADR-050` and `ADR-051` have no record
     And  non-ADR records are removed from the active register and ADR archive

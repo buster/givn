@@ -513,7 +513,7 @@ fn migration_ids(content: &str) -> HashSet<String> {
         .collect()
 }
 
-#[then("the final register has 35 accepted decisions and one proposed decision")]
+#[then("the final register has 35 accepted decisions and two proposed decisions")]
 fn final_register_has_expected_count(world: &mut GivnWorld) {
     let register = guidance(world);
     let accepted = register
@@ -525,7 +525,7 @@ fn final_register_has_expected_count(world: &mut GivnWorld) {
         .filter(|line| line.contains("| proposed |"))
         .count();
     assert_eq!(accepted, 35, "unexpected accepted ADR count");
-    assert_eq!(proposed, 1, "unexpected proposed ADR count");
+    assert_eq!(proposed, 2, "unexpected proposed ADR count");
 }
 
 #[then("the change's migration manifest gives every assigned identifier exactly one disposition")]
@@ -561,7 +561,7 @@ fn non_adr_records_are_removed(world: &mut GivnWorld) {
     for id in [
         "ADR-003", "ADR-006", "ADR-007", "ADR-012", "ADR-016", "ADR-018", "ADR-022", "ADR-029",
         "ADR-030", "ADR-031", "ADR-032", "ADR-033", "ADR-034", "ADR-035", "ADR-038", "ADR-040",
-        "ADR-043", "ADR-049", "ADR-064", "ADR-065",
+        "ADR-043", "ADR-049", "ADR-065",
     ] {
         assert!(
             !file_exists(&active_adr_path(id)),
