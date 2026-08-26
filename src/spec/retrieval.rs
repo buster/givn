@@ -2958,6 +2958,10 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
         nli_run.as_ref(),
     );
     write_semantic_report(&report_path, &report)?;
+    match std::fs::canonicalize(&report_path) {
+        Ok(absolute) => println!("semantic review report saved: {}", absolute.display()),
+        Err(_) => println!("semantic review report saved: {}", report_path.display()),
+    }
     let verified_remediations = match remediation {
         Ok(count) => count,
         Err(error) => bail!("{error}"),
@@ -5513,24 +5517,9 @@ fn review_enabled(
         #[cfg(not(feature = "spec-similarity-gate"))]
         let gate = GateReport::default();
         let second_stage_result = run_second_stage_advisory_review(root, &index, &delta, options);
-        let second_stage = match second_stage_result {
-            Ok(second) => second,
-            Err(second_err) => {
-                if gate.candidates.is_empty() {
-                    return Err(second_err);
-                }
-                #[cfg(feature = "spec-similarity-gate")]
-                {
-                    let gate_message = format!(
-                        "similarity gate failed: {} candidate(s) are at or above the fixed threshold {SIMILARITY_THRESHOLD:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
-                        gate.candidates.len()
-                    );
-                    return Err(anyhow::anyhow!("{gate_message}; {second_err}"));
-                }
-                #[cfg(not(feature = "spec-similarity-gate"))]
-                return Err(second_err);
-            }
-        };
+        // Second-stage failures propagate unchanged; E5 evidence never shapes
+        // or replaces the verdict.
+        let second_stage = second_stage_result?;
         let (flagged, corroborated, union_recommended) =
             review_problem_verdict(Some(&second_stage));
         let gate_message = review_failure_message(flagged, corroborated, &gate);
@@ -5547,28 +5536,28 @@ fn review_enabled(
     }
     #[cfg(feature = "spec-similarity-gate")]
     {
+        // E5-only run: threshold hits are advisory evidence, never blockers.
         let gate = run_embedding_review(root, &index, &delta, options, false)?;
-        let flagged = gate.candidates.len();
-        let corroborated = false;
-        let gate_message = review_failure_message(flagged, corroborated, &gate);
         let document = render_review_document(
             change_id,
             &index_summary,
             Some(&gate),
             None,
-            flagged,
-            corroborated,
+            0,
+            false,
             0,
         )?;
-        finish_review_output(options, &findings_path, document, flagged > 0, gate_message)
+        finish_review_output(options, &findings_path, document, false, None)
     }
     #[cfg(not(feature = "spec-similarity-gate"))]
     advisory_review(root, &index, &delta, &change_dir.join("review.md"))
 }
 
-/// Corroborated problem verdict: the union of BGE/NLI recommendations when
-/// both layers scored the pool; otherwise every E5 candidate via the
-/// threshold rule. Returns (problem count, corroborated mode, union size).
+/// Problem verdict: the union of participating stages' recommendations.
+/// E5 similarity never blocks — it only shortlists candidates for second-stage
+/// scoring. A pair is a problem when BGE recommends it, when NLI recommends
+/// it, or both; each stage flags independently of the other's participation.
+/// Returns (problem count, corroborated mode, union size).
 #[cfg(feature = "spec-retrieval")]
 fn review_problem_verdict(second: Option<&SecondStageReport>) -> (usize, bool, usize) {
     #[cfg(not(feature = "spec-similarity-gate"))]
@@ -5595,68 +5584,41 @@ fn review_problem_verdict(second: Option<&SecondStageReport>) -> (usize, bool, u
             .is_some_and(|run| run.status == "NLI_ENABLED");
         #[cfg(not(feature = "nli-evidence"))]
         let nli_enabled = false;
-        if !bge_enabled || !nli_enabled || second.candidates.is_empty() {
-            // Fallback: threshold rule over the raw candidate set.
-            return (
-                second.candidates.len(),
-                false,
-                second
-                    .candidates
-                    .iter()
-                    .filter(|candidate| candidate.bge_admission == Some("BGE_RECOMMENDED"))
-                    .count(),
-            );
+        if !bge_enabled && !nli_enabled {
+            return (0, false, 0);
         }
-        let mut flagged = 0usize;
         let mut union_recommended = 0usize;
         for candidate in &second.candidates {
-            let bge_rec = candidate.bge_admission == Some("BGE_RECOMMENDED");
-            let bge_scored = matches!(
-                candidate.bge_admission,
-                Some("BGE_RECOMMENDED") | Some("BGE_FILTERED")
-            );
+            #[cfg(feature = "cross-encoder-reranker")]
+            let bge_rec = bge_enabled && candidate.bge_admission == Some("BGE_RECOMMENDED");
+            #[cfg(not(feature = "cross-encoder-reranker"))]
+            let bge_rec = false;
             #[cfg(feature = "nli-evidence")]
-            let nli_rec = candidate.nli_admission == Some("NLI_RECOMMENDED");
+            let nli_rec = nli_enabled && candidate.nli_admission == Some("NLI_RECOMMENDED");
             #[cfg(not(feature = "nli-evidence"))]
             let nli_rec = false;
-            #[cfg(feature = "nli-evidence")]
-            let nli_scored = matches!(
-                candidate.nli_admission,
-                Some("NLI_RECOMMENDED") | Some("NLI_FILTERED")
-            );
-            #[cfg(not(feature = "nli-evidence"))]
-            let nli_scored = false;
             if bge_rec || nli_rec {
                 union_recommended += 1;
             }
-            if bge_rec || nli_rec || !bge_scored || !nli_scored {
-                flagged += 1;
-            }
         }
-        (flagged, true, union_recommended)
+        (union_recommended, true, union_recommended)
     }
 }
 
-/// Failure message for a flagged advisory review.
+/// Failure message for a flagged advisory review. Only second-stage
+/// recommendations produce it — E5 threshold hits are advisory evidence.
 #[cfg(feature = "spec-retrieval")]
-fn review_failure_message(flagged: usize, corroborated: bool, gate: &GateReport) -> Option<String> {
+fn review_failure_message(
+    flagged: usize,
+    _corroborated: bool,
+    _gate: &GateReport,
+) -> Option<String> {
     if flagged == 0 {
         return None;
     }
-    if corroborated {
-        Some(format!(
-            "semantic review flagged {flagged} recommended candidate(s); classify or rewrite them before proceeding"
-        ))
-    } else {
-        #[cfg(feature = "spec-similarity-gate")]
-        let threshold = SIMILARITY_THRESHOLD;
-        #[cfg(not(feature = "spec-similarity-gate"))]
-        let threshold = 0.95_f32;
-        Some(format!(
-            "similarity gate failed: {} candidate(s) are at or above the fixed threshold {threshold:.4}; delete true duplicates or rewrite valid boundaries until every score is below the threshold",
-            gate.candidates.len()
-        ))
-    }
+    Some(format!(
+        "semantic review flagged {flagged} recommended candidate(s); classify or rewrite them before proceeding"
+    ))
 }
 
 /// Persist the review findings on a failed gate and print the structured
@@ -6051,7 +6013,7 @@ fn run_embedding_review(
                 );
             } else {
                 println!(
-                    "similarity gate failed: {} candidate(s) at or above fixed threshold {:.4}",
+                    "similarity gate: {} candidate(s) at or above fixed threshold {:.4} shortlisted for second-stage evidence",
                     candidates.len(),
                     SIMILARITY_THRESHOLD
                 );
@@ -7472,6 +7434,10 @@ fn similarity_candidate_pool(
         .iter()
         .filter(|item| item.operation != crate::gherkin::delta::DeltaOp::Removed)
         .collect();
+    let active_delta_identities: BTreeSet<(String, String)> = active_delta
+        .iter()
+        .map(|item| (item.target_file.clone(), item.scenario.title.clone()))
+        .collect();
     let mut candidate_texts = permanent_texts.clone();
     for item in &active_delta {
         candidate_texts.insert(
@@ -7526,6 +7492,7 @@ fn similarity_candidate_pool(
 
     let projected = project_records(index, delta, &delta_batch.vectors, &active_delta)?;
     for (left, right) in projected.iter().enumerate() {
+        let right_identity = (right.endpoint.file.clone(), right.endpoint.title.clone());
         let mut neighbours: Vec<(f32, &ScenarioRecord)> = projected
             .iter()
             .enumerate()
@@ -7534,6 +7501,15 @@ fn similarity_candidate_pool(
             .collect();
         neighbours.sort_by(|left, right| right.0.total_cmp(&left.0));
         for (score, other) in neighbours.into_iter().take(RERANKER_TOP_K) {
+            // A change's review only judges candidates the change itself is
+            // part of. Permanent-permanent pairs that pre-date the change are
+            // corpus hygiene (givn spec duplicates), not this change's signal.
+            let other_identity = (other.endpoint.file.clone(), other.endpoint.title.clone());
+            if !active_delta_identities.contains(&right_identity)
+                && !active_delta_identities.contains(&other_identity)
+            {
+                continue;
+            }
             add_similarity_candidate(
                 &mut candidates,
                 "projected-permanent",

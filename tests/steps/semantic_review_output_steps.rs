@@ -305,7 +305,7 @@ fn zero_recommended_accounting(world: &mut GivnWorld) {
 fn stderr_flagged_count(world: &mut GivnWorld) {
     let stderr = super::stderr(world);
     assert!(
-        stderr.contains("semantic review flagged 3 recommended candidate(s)"),
+        stderr.contains("semantic review flagged 1 recommended candidate(s)"),
         "stderr: {stderr}"
     );
 }
@@ -349,11 +349,56 @@ fn run_review_disabled(world: &mut GivnWorld) {
     ));
 }
 
-#[then("stderr names the fixed-threshold gate failure")]
-fn stderr_threshold_failure(world: &mut GivnWorld) {
+#[then("stderr names no similarity gate failure")]
+fn stderr_no_gate_failure(world: &mut GivnWorld) {
     let stderr = super::stderr(world);
     assert!(
-        stderr.contains("similarity gate failed:") && stderr.contains("fixed threshold 0.9500"),
+        !stderr.contains("similarity gate failed"),
+        "stderr: {stderr}"
+    );
+}
+
+#[given(
+    "a project prepared for semantic review whose BGE evidence recommends one pair while NLI stays disabled"
+)]
+fn review_bge_only_recommends(world: &mut GivnWorld) {
+    review_output_project(world);
+    world.retrieval_review_extra = Some(vec![(
+        "GIVN_SPEC_RERANKER".to_string(),
+        "disabled".to_string(),
+    )]);
+}
+
+#[given(
+    "a project prepared for semantic review whose NLI evidence recommends one pair while BGE stays disabled"
+)]
+fn review_nli_only_recommends(world: &mut GivnWorld) {
+    review_output_project(world);
+    let mut nli_scores = String::new();
+    for right in PERMANENT_ENDPOINTS {
+        let value = if right == PERMANENT_ENDPOINTS[0] {
+            "0.9,0,0"
+        } else {
+            "-0.4,1.4,0.2"
+        };
+        nli_scores.push_str(&format!(
+            "{DELTA_ENDPOINT}->{right}={value};{right}->{DELTA_ENDPOINT}={value};"
+        ));
+    }
+    world.retrieval_review_extra = Some(vec![
+        ("GIVN_SPEC_BGE".to_string(), "disabled".to_string()),
+        (
+            "GIVN_SPEC_NLI_DIRECTIONAL_SCORES".to_string(),
+            nli_scores.trim_end_matches(';').to_string(),
+        ),
+    ]);
+}
+
+#[then("stderr names the single recommended candidate as the failure reason")]
+fn stderr_single_flagged(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains("semantic review flagged 1 recommended candidate(s)"),
         "stderr: {stderr}"
     );
 }
@@ -925,7 +970,7 @@ fn same_verdict(world: &mut GivnWorld) {
     let flagged = document["verdict"]["problem_flagged"].as_bool().unwrap();
     assert!(flagged, "json verdict: {document}");
     assert!(
-        super::stderr(world).contains("semantic review flagged 3 recommended candidate(s)"),
+        super::stderr(world).contains("semantic review flagged 1 recommended candidate(s)"),
         "stderr: {}",
         super::stderr(world)
     );
@@ -1005,7 +1050,7 @@ fn assert_flagged_failure(world: &GivnWorld) {
     );
     let stderr = super::stderr(world);
     assert!(
-        stderr.contains("semantic review flagged 3 recommended candidate(s)"),
+        stderr.contains("semantic review flagged 1 recommended candidate(s)"),
         "stderr: {stderr}"
     );
 }

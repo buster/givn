@@ -309,3 +309,23 @@ fn e2e_report_blocked(world: &mut GivnWorld) {
         report.lines().take(8).collect::<Vec<_>>().join("\n")
     );
 }
+
+#[then("the command stdout names the complete saved semantic-review report path")]
+fn e2e_stdout_report_path(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("e2e review project missing");
+    let expected_suffix = "givn/changes/running-change/semantic-review.md";
+    let output = super::stdout(world);
+    let line = output
+        .lines()
+        .find(|line| line.starts_with("semantic review report saved: "))
+        .unwrap_or_else(|| panic!("missing report-saved line in stdout: {output}"));
+    let path = line.trim_start_matches("semantic review report saved: ").trim();
+    assert!(
+        path.ends_with(expected_suffix),
+        "report path {path:?} does not end with {expected_suffix:?}"
+    );
+    assert!(
+        env.path("givn/changes/running-change/semantic-review.md").exists(),
+        "named report path does not exist on disk"
+    );
+}
