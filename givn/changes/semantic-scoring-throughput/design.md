@@ -18,11 +18,11 @@ One resolver replaces the three hardcoded sites:
   `GIVN_SPEC_MAX_RERANK_PAIRS` validation pattern).
 - Applied to:
   - E5 session options, replacing `with_intra_threads(1)`
-    (`src/spec/retrieval.rs:8139`),
+    (`src/spec/retrieval.rs:8808`),
   - BGE `RerankInitOptionsUserDefined`, replacing
-    `.with_intra_threads(4)` (`src/spec/retrieval.rs:5006`),
+    `.with_intra_threads(4)` (`src/spec/retrieval.rs:5151`),
   - NLI ort `Session::builder`, replacing `.with_intra_threads(4)`
-    (`src/spec/retrieval.rs:7371`).
+    (`src/spec/retrieval.rs:8040`).
 
 Stages run sequentially, so the full budget is never contended between
 models. If inter-stage overlap ever lands, the budget must be split;
@@ -57,16 +57,14 @@ count changes.
 
 ### Parity sync
 
-`tools/approach-comparison/compare.py` hardcodes
-`intra_op_num_threads = 4` (line ~432) and emits
-`"intra_op_threads"` into pipeline descriptors (~lines 514, 679). The
-Python side must resolve the same default/env logic or descriptors
-diverge from production runs. Because the descriptor feeds
-`pipeline_fingerprint`, the candidate-pipeline attestation version
-advances and approval fixtures regenerate — same procedure as the
-documented `rust-production-v2` bump from semantic-reranker-budget.
-`tools/embed-analysis/analyze.py` has no attestation contract and needs
-no change.
+No parity sync is required. The fingerprinted BGE candidate-pipeline
+descriptor has no thread field, so the thread budget is configuration- and
+attestation-independent: `pipeline_fingerprint` and the candidate-pipeline
+attestation version must not change, and no approval fixtures regenerate.
+The Python benchmark helpers (`tools/approach-comparison/compare.py`,
+`tools/approach-comparison/evaluate_bge_admission.py`) hardcode their own
+thread values but are legacy and no longer used; their sync is out of scope
+for this change and deliberately deferred.
 
 ## Architecture Impact
 
@@ -80,9 +78,6 @@ no change.
   setting.
 - `tests/steps/semantic_scoring_throughput_e2e_steps.rs`: separate
   compiled-CLI subprocess binding asserting `threads N` in stdout.
-- `tools/approach-comparison/compare.py`,
-  `evaluate_bge_admission.py`: mirror thread resolution; regenerate
-  parity/approval fixtures.
 - `docs/arc42/08-crosscutting-concepts.md`,
   `docs/arc42/09-architecture-decisions.md`: document the setting and a
   short ADR.
@@ -93,12 +88,16 @@ changes is ~1e-6; admission decisions separated by ≥0.04 cannot flip.
 
 ## Surface Contract
 
-Status lines gain the resolved budget: `BGE status: BGE_ENABLED,
-threads N`, the same for NLI, plus an equivalent for the E5 embedder.
-Everything else stays byte-identical: candidate identities, admission
-labels, accounting, distributions, JSON shapes, exit codes. An invalid
-`GIVN_SPEC_THREADS` fails with the setting named before any cache,
-download, or inference work.
+Status lines gain the resolved budget as `threads N`: the BGE and NLI stage
+status lines append `, threads N` (append-only, never mid-line, so existing
+`starts_with`/`contains` assertions on `BGE: model …`, `nli: model …`,
+`BGE status:`, and `NLI status:` stay valid), and the advisory review's
+non-JSON path prints an embedder status line `E5 status: E5_ENABLED,
+threads N` in every mode where the embedder participates, using the stub
+backend unchanged. Everything else stays byte-identical: candidate
+identities, admission labels, accounting, distributions, JSON shapes, exit
+codes. An invalid `GIVN_SPEC_THREADS` fails with the setting named before
+any cache, download, or inference work.
 
 ## Test Runner And Strictness
 
@@ -129,16 +128,23 @@ durations.
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| run review with `GIVN_SPEC_THREADS=3` and observe the budget in stage status output | Status lines report the configured thread budget | CLI / terminal | Cucumber E2E binding starts the compiled `givn spec review --change <id>` subprocess with the env set and asserts its stdout |
-| run review with malformed `GIVN_SPEC_THREADS` | An invalid thread setting is refused by name | CLI / terminal | Same subprocess binding; asserts stderr names the setting and exit status is non-zero |
+| run review with `GIVN_SPEC_THREADS=3` and observe the budget in stage status output | The real CLI reports the configured thread budget on its stage status lines | CLI / terminal | Cucumber E2E binding starts the compiled `givn spec review --change <id>` subprocess with the env set and asserts its stdout |
+
+Invalid-budget rejection is an error case of the same action, so it is a
+regular scenario (malformed and zero budgets refused by name before model
+work) and has no separate inventory entry or `@e2e` scenario, per the
+interaction-inventory normalization policy.
 
 ## Decisions
 
 - Default = `available_parallelism()` rather than physical-core
   estimation: std-only, quota-correct under CI containers;
   hyperthread oversubscription is acceptable and measurable later.
-- Grouping is invisible by construction (key-sorted evidence maps);
-  correctness scenarios assert pair-set equality against stub paths.
+- Grouping is invisible by construction (key-sorted evidence maps). The
+  executable spec guards thread-invariance: one scenario asserts identical
+  candidate identities, admission labels, accounting counters, and label
+  distributions across thread settings on the stub path. Grouped-batch
+  verification stays design-level by decision — no added real-model task.
 - NLI batched-tensor inference deferred to a named follow-up change
   (`semantic-nli-batched-inference`): it is the only item requiring new
   tensor code (pad/bucket/mask/chunk/unpad), its absolute win on
