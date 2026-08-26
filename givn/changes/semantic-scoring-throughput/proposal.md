@@ -46,3 +46,19 @@ gains can be measured before new tensor code is written.
 
 None. Thread resolution is uniform across stages; grouping is invisible
 by construction because evidence is collected into key-sorted maps.
+
+## Implementation Scope Revision
+
+During implementation, by user decision, this change was narrowed:
+
+- BGE grouped batching and the ratio-syncing of its paired calls were dropped;
+  the rerank path is unchanged apart from the thread count.
+- Status-line reporting of the resolved thread count (`threads N`) was dropped:
+  thread counts are not observably testable through the stub backends, and
+  probing the real ONNX models is not viable.
+- The change carries zero scenario tests by user decision.
+
+What remains: the `GIVN_SPEC_THREADS` setting resolving to the machine's
+available parallelism by default, applied to the E5, BGE, and NLI
+`with_intra_threads` sites in the real-model paths, with invalid values
+refused by name before model work. See design.md and tasks.md.

@@ -38,7 +38,7 @@ replacement_adr: null
 
 ## Context and Problem Statement
 
-The E5, BGE, and NLI scoring stages each carried a hardcoded thread budget (`1` for E5, `4` for BGE and NLI), so multicore machines ran model scoring with one core saturated and long wall times. Each stage resolved compute parallelism independently, and BGE scored every pair in isolation with no reuse across partners. The stages need one observable, user-tunable concurrency budget.
+The E5, BGE, and NLI scoring stages each carried a hardcoded thread budget (`1` for E5, `4` for BGE and NLI), so multicore machines ran model scoring with one core saturated and long wall times. Each stage resolved compute parallelism independently. The stages need one user-tunable concurrency budget.
 
 ## Decision Drivers
 
@@ -57,26 +57,30 @@ The E5, BGE, and NLI scoring stages each carried a hardcoded thread budget (`1` 
 
 ## Decision Outcome
 
-Chosen option: **One shared `GIVN_SPEC_THREADS` setting**, resolving to `std::thread::available_parallelism()` when unset, applied to the compute threads of E5, BGE, and NLI. Malformed, zero, or overflowing values are rejected before any model artifact is resolved, naming the setting. Status lines name the resolved count so the active budget is observable per stage. Because the stages run sequentially, the full budget is never contended; if inter-stage overlap is ever introduced, the budget must be split first, and that constraint is documented at the resolver.
+Chosen option: **One shared `GIVN_SPEC_THREADS` setting**, resolving to `std::thread::available_parallelism()` when unset, applied to the compute threads of E5, BGE, and NLI in the real-model paths. Malformed, zero, or overflowing values are rejected by name; the semantic-review command also validates the setting eagerly, before any index or model work. Because the stages run sequentially, the full budget is never contended; if inter-stage overlap is ever introduced, the budget must be split first, and that constraint is documented at the resolver.
 
 This record remains **proposed**: `givn status --change semantic-scoring-throughput` reports the change between design and review, so it is not yet an accepted architecture contract.
 
 ### Consequences
 
 - Good, because one documented setting controls all model compute, with a sensible default and a clear failure mode for invalid input.
-- Good, because the budget is observable in every stage's status output, making misconfiguration visible without wall-time assertions.
 - Bad, because a single shared budget trades per-stage tuning granularity; a user cannot limit one heavy stage without limiting the others.
 
 ### Confirmation
 
-The executable delta scenarios cover the default resolution, the per-stage status counts, by-name refusal of malformed and zero budgets before model work, and evidence identity across thread settings. Final `givn status`, full tests, E2E tests, and blocking review remain required before changing this ADR to `accepted`.
+The retained behaviour is verified at the code level (resolver semantics,
+real-model thread application) plus the full-suite and E2E smoke runs; the
+change carries no scenario tests by decision, because the only observably
+testable surface (the setting's action on model threads) is not reachable
+through the stub backends. Final `givn status`, full tests, E2E tests, and
+blocking review remain required before changing this ADR to `accepted`.
 
 ## Pros and Cons of the Options
 
 ### One shared setting with available-parallelism default
 
 - Good, because the default needs no configuration and remains quota-correct in containers.
-- Good, because one knob is easy to document, test, and observe.
+- Good, because one knob is easy to document, validate, and apply across all three stages.
 - Bad, because it cannot express a deliberately unbalanced mix of stage budgets.
 
 ### Hardcoded per-stage budgets

@@ -115,6 +115,30 @@ fn max_rerank_pairs() -> Result<usize> {
 }
 
 #[cfg(feature = "spec-retrieval")]
+const THREADS_ENV: &str = "GIVN_SPEC_THREADS";
+
+/// Resolve the compute-thread budget shared by every model stage. When
+/// `GIVN_SPEC_THREADS` is unset, the machine's available parallelism is
+/// used (quota-aware on Linux). Malformed or zero values are rejected here,
+/// naming the setting, before any model artifact is resolved. Stages run
+/// sequentially, so the full budget is never contended between them; if
+/// inter-stage overlap is ever introduced, this budget must be split.
+#[cfg(feature = "spec-retrieval")]
+fn resolve_thread_budget() -> Result<usize> {
+    let Some(raw) = std::env::var_os(THREADS_ENV) else {
+        return Ok(std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get));
+    };
+    let raw = raw
+        .into_string()
+        .map_err(|_| anyhow::anyhow!("{THREADS_ENV} is not valid UTF-8"))?;
+    let value = raw.parse::<usize>().with_context(|| {
+        format!("{THREADS_ENV} must be a positive decimal integer, got `{raw}`")
+    })?;
+    anyhow::ensure!(value > 0, "{THREADS_ENV} must be greater than zero");
+    Ok(value)
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn expose_e5_cap_contract(caps: &[E5TokenCap]) -> bool {
     !caps.is_empty() || std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET").is_some()
 }
@@ -5148,7 +5172,7 @@ fn score_bge_pairs(
                 );
                 let options = fastembed::RerankInitOptionsUserDefined::new()
                     .with_max_length(BGE_MAX_LENGTH)
-                    .with_intra_threads(4);
+                    .with_intra_threads(resolve_thread_budget()?);
                 let mut model = fastembed::TextRerank::try_new_from_user_defined(model, options)
                     .context("BGE model is unavailable; check the local BGE artifact set")?;
                 for (left, right) in pairs {
@@ -5475,6 +5499,7 @@ fn review_enabled(
     allow_download: bool,
     options: ReviewOptions,
 ) -> Result<()> {
+    resolve_thread_budget()?;
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
     let index_summary = index_refresh_summary(root, allow_download, options)?;
@@ -5538,15 +5563,8 @@ fn review_enabled(
     {
         // E5-only run: threshold hits are advisory evidence, never blockers.
         let gate = run_embedding_review(root, &index, &delta, options, false)?;
-        let document = render_review_document(
-            change_id,
-            &index_summary,
-            Some(&gate),
-            None,
-            0,
-            false,
-            0,
-        )?;
+        let document =
+            render_review_document(change_id, &index_summary, Some(&gate), None, 0, false, 0)?;
         finish_review_output(options, &findings_path, document, false, None)
     }
     #[cfg(not(feature = "spec-similarity-gate"))]
@@ -8037,7 +8055,7 @@ impl NliClassifier {
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
             .with_optimization_level(ort::session::builder::GraphOptimizationLevel::Level3)
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
-            .with_intra_threads(4)
+            .with_intra_threads(resolve_thread_budget()?)
             .map_err(|error| anyhow::anyhow!(error.to_string()))?
             .commit_from_file(&artifacts.model_path)
             .with_context(|| format!("load NLI ONNX model {}", artifacts.model_path.display()))?;
@@ -8805,7 +8823,7 @@ fn fastembed_model(root: &Path) -> Result<fastembed::TextEmbedding> {
     let options = fastembed::TextInitOptions::new(fastembed::EmbeddingModel::MultilingualE5Large)
         .with_cache_dir(cache_dir)
         .with_show_download_progress(false)
-        .with_intra_threads(1);
+        .with_intra_threads(resolve_thread_budget()?);
     fastembed::TextEmbedding::try_new(options).context(
         "retrieval model is unavailable; check the local E5 model cache, network, and GIVN_SPEC_MODEL_CACHE",
     )
