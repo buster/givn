@@ -195,6 +195,29 @@ Feature: Semantic review output leads with decision-relevant evidence
     Then the command exits non-zero and stderr names the flagged recommendation failure
     And stderr warns that the findings document could not be written and names the attempted path
 
+  @givn.added
+  Scenario: Token-capped BGE pairs keep their guidance lines visible
+    Given a project prepared for semantic review whose BGE evidence token-caps some pairs while the second stage advertises one recommendation
+    When the user runs the advisory semantic review for "running-change"
+    Then the command exits non-zero
+    And stdout shows the BGE token-cap guidance line naming the capped pair and its pair and limit token counts
+    And stdout still shows the NLI token-cap guidance line
+
+  @givn.added
+  Scenario: E5 token-cap evidence prints in the advisory review output
+    Given a project prepared for semantic review whose E5 evidence token-caps some scenarios in the advisory output
+    When the user runs the advisory semantic review for "running-change"
+    Then the command exits non-zero
+    And stdout shows the E5 token-cap advisory count and candidate lines
+
+  @givn.added
+  Scenario: A clean corpus below the threshold reports no problem in fallback mode
+    Given a project prepared for semantic review with a dissimilar active delta and second-stage evidence disabled
+    When the user runs the advisory semantic review for "running-change" with second-stage evidence disabled
+    Then the command exits 0
+    And stdout reports no scenario pair at or above the fixed threshold
+    And no findings document exists under the change directory
+
   @givn.added @e2e
   Scenario: Real CLI review surfaces only recommended second-stage pairs
     Given an end-to-end project whose semantic review recommends one pair and filters many

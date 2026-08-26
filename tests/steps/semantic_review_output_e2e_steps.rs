@@ -319,13 +319,16 @@ fn e2e_stdout_report_path(world: &mut GivnWorld) {
         .lines()
         .find(|line| line.starts_with("semantic review report saved: "))
         .unwrap_or_else(|| panic!("missing report-saved line in stdout: {output}"));
-    let path = line.trim_start_matches("semantic review report saved: ").trim();
+    let path = line
+        .trim_start_matches("semantic review report saved: ")
+        .trim();
     assert!(
         path.ends_with(expected_suffix),
         "report path {path:?} does not end with {expected_suffix:?}"
     );
     assert!(
-        env.path("givn/changes/running-change/semantic-review.md").exists(),
+        env.path("givn/changes/running-change/semantic-review.md")
+            .exists(),
         "named report path does not exist on disk"
     );
 }

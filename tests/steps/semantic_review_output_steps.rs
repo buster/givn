@@ -73,6 +73,18 @@ pub(crate) fn review_output_env(world: &GivnWorld) -> Vec<(String, String)> {
             nli_budget.to_string(),
         ));
     }
+    if let Some(bge_budget) = world.retrieval_bge_token_budget.as_deref() {
+        envs.push((
+            "GIVN_SPEC_BGE_TOKEN_BUDGET".to_string(),
+            bge_budget.to_string(),
+        ));
+    }
+    if let Some(e5_budget) = world.retrieval_e5_token_budget.as_deref() {
+        envs.push((
+            "GIVN_SPEC_E5_TOKEN_BUDGET".to_string(),
+            e5_budget.to_string(),
+        ));
+    }
     if let Some(extra) = world.retrieval_review_extra.as_ref() {
         for (key, value) in extra {
             envs.push((key.clone(), value.clone()));
@@ -96,6 +108,95 @@ pub(crate) fn run_review_with(
         .collect();
     environments.extend_from_slice(extra_envs);
     world.last_output = Some(common::run_givn_with_envs(env, &args, &environments));
+}
+
+#[given(
+    "a project prepared for semantic review whose BGE evidence token-caps some pairs while the second stage advertises one recommendation"
+)]
+fn review_bge_token_caps(world: &mut GivnWorld) {
+    review_recommends_one_filters_many(world);
+    world.retrieval_bge_token_budget = Some("partial-512-513".to_string());
+}
+
+#[given(
+    "a project prepared for semantic review whose E5 evidence token-caps some scenarios in the advisory output"
+)]
+fn review_e5_token_caps(world: &mut GivnWorld) {
+    review_recommends_one_filters_many(world);
+    world.retrieval_e5_token_budget = Some("partial-512-513".to_string());
+}
+
+#[then(
+    "stdout shows the BGE token-cap guidance line naming the capped pair and its pair and limit token counts"
+)]
+fn bge_token_cap_guidance_visible(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    let lines: Vec<&str> = output
+        .lines()
+        .filter(|line| line.contains("token-cap: BGE_TOKEN_CAP"))
+        .collect();
+    assert!(!lines.is_empty(), "BGE cap guidance missing: {output}");
+    for line in lines {
+        assert!(
+            line.contains("Active provider request")
+                && line.contains("requires 513 tokens (limit 512)"),
+            "BGE cap line without the capped pair and token counts: {line}"
+        );
+    }
+}
+
+#[then("stdout still shows the NLI token-cap guidance line")]
+fn nli_token_cap_guidance_still_visible(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output
+            .lines()
+            .any(|line| line.contains("token-cap: NLI_TOKEN_CAP")),
+        "NLI cap guidance missing: {output}"
+    );
+}
+
+#[then("stdout shows the E5 token-cap advisory count and candidate lines")]
+fn e5_token_cap_advisory_visible(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output
+            .lines()
+            .any(|line| line.starts_with("e5_token_cap_count:")),
+        "E5 token-cap count missing: {output}"
+    );
+    assert!(
+        output
+            .lines()
+            .any(|line| line.starts_with("E5_TOKEN_CAP: ")),
+        "E5 candidate cap line missing: {output}"
+    );
+}
+
+#[then("stdout reports no scenario pair at or above the fixed threshold")]
+fn reports_no_pair_above_threshold(world: &mut GivnWorld) {
+    let output = super::stdout(world);
+    assert!(
+        output
+            .lines()
+            .any(|line| line
+                .contains("similarity gate: no scenario pair at or above fixed threshold")),
+        "no-pair-above-threshold line missing: {output}"
+    );
+}
+
+#[given(
+    "a project prepared for semantic review with a dissimilar active delta and second-stage evidence disabled"
+)]
+fn review_dissimilar_delta_disabled(world: &mut GivnWorld) {
+    review_output_project(world);
+    let env = world.env.as_ref().expect("review output project missing");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    std::fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Billing reconciliation stays balanced\n    Given a ledger of accounting events\n    When the user reconciles the monthly export\n    Then the balances match\n",
+    )
+    .expect("write dissimilar delta");
 }
 
 #[given(
