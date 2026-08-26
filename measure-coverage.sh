@@ -5,12 +5,13 @@
 # every scenario observes the backend configuration its assertions expect.
 # A single llvm-cov invocation cannot reproduce those environments, so this
 # script replays the exact same groups with `cargo llvm-cov --no-report`
-# (profraws accumulate) and renders one Cobertura report at the end.
+# (profraws accumulate) and renders one Cobertura report for the non-e2e
+# groups and a second, distinct report for the e2e groups. The archive gate
+# requires the two reports to differ — duplicated output is rejected.
 set -eu
 
 non_e2e_path=${GIVN_COVERAGE_NON_E2E_PATH:-coverage/non-e2e-cobertura.xml}
 e2e_path=${GIVN_COVERAGE_E2E_PATH:-coverage/e2e-cobertura.xml}
-output_path=${GIVN_COVERAGE_OUTPUT_PATH:-coverage/cobertura-coverage.xml}
 features_path=${GIVN_FEATURES:-givn/specs}
 
 mkdir -p "$(dirname "$non_e2e_path")"
@@ -38,18 +39,18 @@ done
 # --- non-e2e groups (mirrors ./run-tests.sh, including its envs) ------------
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
-    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output'
+    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker" \
-    --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output'
+    --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker,spec-similarity-gate" \
-    --tags '@gate-combination'
+    --tags '@gate-combination and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval,spec-similarity-gate" \
-    --tags '@gate-only'
+    --tags '@gate-only and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled \
-    run_group "$features_path" "spec-retrieval,cross-encoder-reranker" --tags '@bge-disabled'
+    run_group "$features_path" "spec-retrieval,cross-encoder-reranker" --tags '@bge-disabled and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$features_path" "spec-retrieval,nli-evidence" \
     --tags '@nli and not @nli-combined and not @review-output and not @nli-disabled and not @e2e'
@@ -62,7 +63,10 @@ GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$review_output_features" "spec-retrieval,cross-encoder-reranker,nli-evidence,spec-similarity-gate" \
     --tags '@review-output and not @e2e'
 
+cargo llvm-cov report --cobertura --output-path "$non_e2e_path"
+
 # --- e2e groups (mirrors ./run-tests.sh --e2e) ------------------------------
+cargo llvm-cov clean --workspace
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
     --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and @e2e'
@@ -79,6 +83,4 @@ GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$review_output_features" "spec-retrieval,cross-encoder-reranker,nli-evidence,spec-similarity-gate" \
     --tags '@review-output and @e2e'
 
-cargo llvm-cov report --cobertura --output-path "$output_path"
-cp "$output_path" "$non_e2e_path"
-cp "$output_path" "$e2e_path"
+cargo llvm-cov report --cobertura --output-path "$e2e_path"
