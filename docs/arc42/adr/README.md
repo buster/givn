@@ -18,6 +18,10 @@ final-verification tasks. Its implementation is present in the checkout, but
 the decision is not presented as completed or accepted until that change passes
 its remaining gates.
 
+`ADR-064` is likewise `proposed`, owned by the open `semantic-scoring-throughput`
+change. It records the shared model thread-budget decision while that change is
+between design and review.
+
 ## Qualification Rule
 
 The complete qualification procedure, LLM verdict schema, routing values, and
@@ -33,8 +37,9 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-35 accepted records and the explicitly proposed `ADR-063` owned by the open
-`semantic-reranker-budget` change.
+35 accepted records and the explicitly proposed `ADR-063` and `ADR-064`, owned
+by the open `semantic-reranker-budget` and `semantic-scoring-throughput`
+changes.
 
 | ID | Status | Decision | Qualification basis |
 |---|---|---|---|
@@ -74,6 +79,7 @@ The active register contains only independent durable architecture decisions:
 | [ADR-060](ADR-060-actual-tokenizer-caps.md) | accepted | Preflight actual tokenizer limits | inference safety boundary |
 | [ADR-061](ADR-061-surface-specific-independent-pools.md) | accepted | Score BGE/NLI independently over each surface's E5 pool | candidate-pool boundary |
 | [ADR-063](ADR-063-reranker-pair-budget.md) | proposed | Bound second-stage inference with an E5-ranked budget | runtime/review decision in open verification |
+| [ADR-064](ADR-064-shared-model-thread-budget.md) | proposed | Share one thread budget across the semantic model stages | computing-resource config boundary in open change |
 
 ## Relationships
 
@@ -86,6 +92,7 @@ The active register contains only independent durable architecture decisions:
 | ADR-053 -> ADR-063 | ADR-063 supersedes fixed pair-cap refusal; ADR-063 is still proposed until its change is complete. |
 | ADR-054 -> ADR-058 | ADR-058 supersedes ADR-054's NLI deferral while ADR-054 remains the output-compatibility rule. |
 | ADR-061 -> ADR-063 | ADR-063 adds a configurable ordered budget to the surface-specific independent branches. |
+| ADR-063 -> ADR-064 | ADR-064 adds one shared thread budget controlling how many cores the bounded stage work may use. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
 | ADR-055 (amended by 0.3.0) | The independent semantic-capability decision now enables every declared Cargo feature in the normal installation while retaining `--no-default-features` as the explicit minimal path. |
 | ADR-057 (amended by semantic-model-download) | The validated BGE local-artifact boundary now permits explicit-operation acquisition into the shared XDG cache before the unchanged local loader. |

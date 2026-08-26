@@ -325,6 +325,35 @@ Production uses real tokenizers from the XDG cache or explicit local paths.
 Tests use deterministic token-budget and artifact-source seams and do not
 contact the live model service or construct multi-gigabyte model artifacts.
 
+### 8.5i Shared Model Compute Budget
+
+One `GIVN_SPEC_THREADS` environment setting controls how many compute threads
+every semantic model stage may use: the E5 embedder sessions, the BGE reranker
+init options, and the NLI ONNX session builder. When unset it resolves to the
+machine's available parallelism (`std::thread::available_parallelism()`,
+cgroup-quota aware on Linux). Malformed, zero, negative, or overflowing values
+fail before any model artifact is resolved or inferred, naming the setting, in
+the same validation pattern as `GIVN_SPEC_MAX_RERANK_PAIRS`.
+
+Status lines name the resolved count for each participating stage (the
+embedder and the BGE/NLI scorers) so the active budget is observable per stage
+without wall-time assertions. Because the stages run sequentially, the full
+budget is never contended between them; if inter-stage overlap is ever
+introduced, the budget must be split, and that constraint is documented at the
+resolver.
+
+BGE groups candidate pairs that share a query-side scenario and scores all
+partners in one rerank call, with the same grouping in the reverse direction.
+Evidence is collected into key-sorted maps, so grouping and thread configuration
+never change candidate identities, ordering, admission labels, accounting
+counters, label distributions, JSON shapes, or exit codes — only wall time.
+Stub and local-stub backends keep their per-pair loops; the grouping applies
+only to the real-model path.
+
+NLI keeps its per-sequence inference loop in this change and receives only the
+shared thread setting. True batched-tensor NLI inference is deferred to a named
+follow-up change (`semantic-nli-batched-inference`).
+
 ## 8.6 Filesystem-derived State
 
 There is no lifecycle state file. `state` walks the effective manifest graph and

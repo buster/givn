@@ -35,3 +35,9 @@ parallel ADR for this refinement.
 ADR-039 is amended by the same change. E5 model-cache ownership moves to the
 shared XDG user cache while the permanent index remains project-local; this is a
 retrieval-boundary refinement, not a new decision.
+
+ADR-063 is proposed by the open `semantic-reranker-budget` change (bounded
+second-stage work). ADR-064 is proposed by the open
+`semantic-scoring-throughput` change: one shared `GIVN_SPEC_THREADS` budget
+controls the compute threads of E5, BGE, and NLI. Both are listed as `proposed`
+in the register until their changes pass their remaining gates.

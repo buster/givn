@@ -68,6 +68,7 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-37 | Enable every currently declared Cargo feature in the normal installation while preserving an explicit feature-free build. |
 | FR-38 | Acquire missing E5, BGE, and NLI model artifacts on explicit semantic use and reuse them from the user-level XDG cache. |
 | FR-39 | Give every semantic surface a consistent missing-index repair hint and actionable model-setup diagnostics. |
+| FR-40 | Control the compute threads of every semantic model stage (E5, BGE, NLI) through one `GIVN_SPEC_THREADS` setting that defaults to the machine's available parallelism and refuses invalid values by name before any model work. |
 
 ### Non-functional requirements
 
