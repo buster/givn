@@ -204,7 +204,11 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
     }
 
     // For tasks: check if all checkboxes are done.
-    if artifact.generates.iter().any(|g| g.ends_with("tasks.md")) {
+    if artifact
+        .generates
+        .iter()
+        .any(|g| g == "tasks.md" || g.ends_with("/tasks.md"))
+    {
         let tasks_path = change_dir.join("tasks.md");
         if tasks_path.exists() {
             let progress = parse_tasks_progress(&tasks_path);
@@ -217,7 +221,11 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
     }
 
     // For review: check for REVIEW: PASS marker.
-    if artifact.generates.iter().any(|g| g.ends_with("review.md")) {
+    if artifact
+        .generates
+        .iter()
+        .any(|g| g == "review.md" || g.ends_with("/review.md"))
+    {
         let review_path = change_dir.join("review.md");
         if review_path.exists() {
             return if detect_review_pass(&review_path) {
@@ -232,7 +240,7 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
     if artifact
         .generates
         .iter()
-        .any(|g| g.ends_with("design-review.md"))
+        .any(|g| g == "design-review.md" || g.ends_with("/design-review.md"))
     {
         let dr_path = change_dir.join("design-review.md");
         if dr_path.exists() {
@@ -245,7 +253,11 @@ fn artifact_status(artifact: &Artifact, change_dir: &Path) -> ArtifactStatus {
     }
 
     // For arc42-docs: check for STATUS: DONE marker in the change-level arc42.md.
-    if artifact.generates.iter().any(|g| g.ends_with("arc42.md")) {
+    if artifact
+        .generates
+        .iter()
+        .any(|g| g == "arc42.md" || g.ends_with("/arc42.md"))
+    {
         let arc42_path = change_dir.join("arc42.md");
         if arc42_path.exists() {
             return if detect_arc42_done(&arc42_path) {
