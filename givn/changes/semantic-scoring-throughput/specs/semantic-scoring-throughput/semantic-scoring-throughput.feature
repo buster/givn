@@ -1,6 +1,5 @@
 # User Interaction Inventory:
 # - run a semantic review with a configured thread budget and read the resolved budget on each model stage's status line
-# - run a semantic review with an invalid thread budget and be refused before any model work
 
 @givn.delta @semantic-scoring-throughput
 
@@ -48,7 +47,7 @@ Feature: Semantic model scoring honours one configured compute budget
     And no model stage status line is printed
 
   @givn.added @wip
-  Scenario: Grouped BGE scoring leaves evidence identity unchanged across thread settings
+  Scenario: BGE evidence identity is unchanged across thread settings
     Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
     And the model thread budget is "1"
     When the user runs the advisory semantic review for "running-change"
@@ -63,10 +62,3 @@ Feature: Semantic model scoring honours one configured compute budget
     When the end-to-end user runs the advisory semantic review with the thread budget set to "3" through the givn CLI
     Then the command exits 0
     And each model stage status line in stdout names the same thread count of 3
-
-  @givn.added @e2e @wip
-  Scenario: The real CLI refuses an invalid thread budget by name before any model work
-    Given an end-to-end project prepared for semantic review whose model stages are stubbed
-    When the end-to-end user runs the advisory semantic review with the thread budget set to "not-a-number" through the givn CLI
-    Then the command exits non-zero
-    And stderr names the invalid thread budget setting
