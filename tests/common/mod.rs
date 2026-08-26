@@ -240,7 +240,10 @@ pub fn run_givn_with_envs(env: &TestEnv, args: &[&str], environments: &[(&str, &
     command
         .args(args)
         .current_dir(env.root())
-        .env_remove("GIVN_SPEC_MAX_RERANK_PAIRS");
+        // Runner-scoped variables describe the outer suite invocation and
+        // must never leak into fixture projects.
+        .env_remove("GIVN_SPEC_MAX_RERANK_PAIRS")
+        .env_remove("GIVN_FEATURES");
     for (key, value) in environments {
         command.env(key, value);
     }
@@ -268,6 +271,8 @@ pub fn run_givn_with_stdin_and_envs(
     let mut child = Command::new(bin)
         .args(args)
         .current_dir(env.root())
+        .env_remove("GIVN_SPEC_MAX_RERANK_PAIRS")
+        .env_remove("GIVN_FEATURES")
         .envs(environments.iter().copied())
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
