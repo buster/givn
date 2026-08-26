@@ -594,6 +594,7 @@ fn explore_enabled_with_legacy_nli_selector(world: &mut GivnWorld) {
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if world.retrieval_reranker.as_deref() == Some("unapproved") {
         environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+        environments.push(("GIVN_SPEC_RERANKER", "disabled"));
     }
     if world.retrieval_reranker.as_deref() == Some("nli-stub") {
         environments.push(("GIVN_SPEC_RERANKER", "nli-stub"));
@@ -613,6 +614,7 @@ fn run_nli_advisory_review(world: &mut GivnWorld) {
         &["spec", "review", "--change", "running-change"],
         &[
             ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_BGE", "disabled"),
             ("GIVN_SPEC_RERANKER", "nli-stub"),
         ],
     ));
@@ -943,6 +945,7 @@ fn run_advisory_bge_review(world: &mut GivnWorld) {
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if world.retrieval_reranker.as_deref() == Some("unapproved") {
         environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+        environments.push(("GIVN_SPEC_RERANKER", "disabled"));
     }
     if let Some(model_dir) = world.retrieval_bge_model_dir.as_deref() {
         environments.push(("GIVN_SPEC_BGE_MODEL_DIR", model_dir));
@@ -1138,6 +1141,7 @@ fn run_unavailable_change_exploration(world: &mut GivnWorld) {
     let mut environments = vec![("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_BGE", bge_mode)];
     if world.retrieval_reranker.as_deref() == Some("unapproved") {
         environments.push(("GIVN_SPEC_BGE_APPROVAL", "failed"));
+        environments.push(("GIVN_SPEC_RERANKER", "disabled"));
     }
     world.last_output = Some(common::run_givn_with_envs(
         env,
@@ -1316,6 +1320,7 @@ fn run_e5_only_blocking_review(world: &mut GivnWorld) {
         &[
             ("GIVN_SPEC_EMBEDDER", "stub"),
             ("GIVN_SPEC_BGE", "disabled"),
+            ("GIVN_SPEC_RERANKER", "disabled"),
         ],
     ));
 }
