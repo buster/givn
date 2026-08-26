@@ -577,6 +577,7 @@ fn validate_duplicate_score_overrides(world: &mut GivnWorld) {
         let output = command
             .args(["spec", "duplicates"])
             .current_dir(env.root())
+            .env_remove("GIVN_FEATURES")
             .env("GIVN_SPEC_EMBEDDER", "stub")
             .env("GIVN_SPEC_DUPLICATES_TEST_SCORES", value)
             .output()
