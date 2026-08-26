@@ -8,27 +8,27 @@ BGE reason: null
 BGE model: rozgo/bge-reranker-v2-m3
 BGE top_k: 5
 BGE max unique pairs: 2048
-BGE E5 raw count: 240
+BGE E5 raw count: 285
 BGE recommended count: 1
-BGE filtered count: 239
+BGE filtered count: 284
 BGE unscored count: 0
-BGE unique pair count: 240
-BGE directional call count: 480
+BGE unique pair count: 285
+BGE directional call count: 570
 BGE model load attempts: 1
-BGE runtime ms: 284483
+BGE runtime ms: 289367
 NLI status: NLI_ENABLED
 NLI reason: null
 NLI model: MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7
 NLI top_k: 5
 NLI max unique pairs: 2048
-NLI E5 raw count: 240
+NLI E5 raw count: 285
 NLI recommended count: 1
-NLI filtered count: 239
+NLI filtered count: 284
 NLI unscored count: 0
-NLI unique pair count: 240
-NLI directional call count: 480
+NLI unique pair count: 285
+NLI directional call count: 570
 NLI model load attempts: 1
-NLI runtime ms: 166608
+NLI runtime ms: 178179
 
 ## NLI Filtered Candidate
 - candidate_id: 973b3c7772393172
@@ -349,6 +349,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: fc304e4f0163f447
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9712
+- bge_forward_raw: 1.4941
+- bge_reverse_raw: 0.5637
+- bge_symmetric_raw: 1.0289
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 8eb1a272d6210d02
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "A recommended pair from either stage is the problem signal"
@@ -370,6 +382,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.3530
 - bge_reverse_raw: 0.9132
 - bge_symmetric_raw: 0.6331
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 2957bb740275d67e
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Without participating second-stage layers the review stays advisory"
+- embedding_score: 0.9707
+- bge_forward_raw: -0.1479
+- bge_reverse_raw: -0.0086
+- bge_symmetric_raw: -0.0783
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -565,6 +589,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 1cc0fbda493f1cfc
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Successful reviews write no findings document"
+- embedding_score: 0.9668
+- bge_forward_raw: 2.2772
+- bge_reverse_raw: 2.5335
+- bge_symmetric_raw: 2.4054
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 0e1ea8897fde430a
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "A recommended pair from either stage is the problem signal"
@@ -598,6 +634,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: -1.7385
 - bge_reverse_raw: 0.2577
 - bge_symmetric_raw: -0.7404
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 93cbce7aa3cfe6d0
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Default output reports only recommended second-stage pairs"
+- embedding_score: 0.9666
+- bge_forward_raw: -0.0524
+- bge_reverse_raw: -0.1878
+- bge_symmetric_raw: -0.1201
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -697,6 +745,30 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 9a2a215171ab054f
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A BGE-only recommendation flags the review without NLI participation"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9660
+- bge_forward_raw: 2.1750
+- bge_reverse_raw: 1.2171
+- bge_symmetric_raw: 1.6960
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 53a8265f554d4da1
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "E5-only hits without a recommendation are not problems"
+- embedding_score: 0.9658
+- bge_forward_raw: 1.9145
+- bge_reverse_raw: 1.4697
+- bge_symmetric_raw: 1.6921
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 0e0d883257563e2b
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "An unwritable findings location warns without masking the flagged failure"
@@ -757,6 +829,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: cd00411af43ad823
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Retained text lines keep their established wording"
+- embedding_score: 0.9642
+- bge_forward_raw: 1.2730
+- bge_reverse_raw: 0.3097
+- bge_symmetric_raw: 0.7914
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 5ef3a6ca8ddc7893
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Default output reports only recommended second-stage pairs"
@@ -781,6 +865,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 318065f04daecbcb
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "An NLI-only recommendation flags the review without BGE participation"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9640
+- bge_forward_raw: 2.5855
+- bge_reverse_raw: 1.6044
+- bge_symmetric_raw: 2.0950
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: ed1ab9f3c60dec3f
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Flagged recommendations persist their findings beside the change"
@@ -802,6 +898,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 1.6572
 - bge_reverse_raw: 2.4424
 - bge_symmetric_raw: 2.0498
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7afac10e7b908d9c
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Verbose output lists every scored second-stage pair"
+- embedding_score: 0.9636
+- bge_forward_raw: -0.2189
+- bge_reverse_raw: -0.6015
+- bge_symmetric_raw: -0.4102
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1021,6 +1129,30 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 6a6157da81dbdde5
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "An unwritable findings location warns without masking the flagged failure"
+- embedding_score: 0.9624
+- bge_forward_raw: 0.3789
+- bge_reverse_raw: 1.0360
+- bge_symmetric_raw: 0.7074
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 2c83873ab2f3acac
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Default output reports only recommended second-stage pairs"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9622
+- bge_forward_raw: -0.0570
+- bge_reverse_raw: 0.5446
+- bge_symmetric_raw: 0.2438
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 8426276921b0ef8b
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Flagged recommendations persist their findings beside the change"
@@ -1117,6 +1249,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: b91ea36910a0d010
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "The raw E5 list is verbose-only detail"
+- embedding_score: 0.9614
+- bge_forward_raw: 3.3803
+- bge_reverse_raw: -0.7122
+- bge_symmetric_raw: 1.3341
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: f7496e08cc99831c
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Real CLI persists findings beside the change after flagged recommendations"
@@ -1210,6 +1354,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.5903
 - bge_reverse_raw: 1.5444
 - bge_symmetric_raw: 1.0674
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 859fad33f18f76fb
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "A recommended pair from either stage is the problem signal"
+- embedding_score: 0.9602
+- bge_forward_raw: 0.0162
+- bge_reverse_raw: 0.3328
+- bge_symmetric_raw: 0.1745
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1342,6 +1498,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: -1.2170
 - bge_reverse_raw: -0.8802
 - bge_symmetric_raw: -1.0486
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7912087f1da57d28
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "E5-only hits without a recommendation are not problems"
+- embedding_score: 0.9594
+- bge_forward_raw: 0.8378
+- bge_reverse_raw: 1.2684
+- bge_symmetric_raw: 1.0531
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1513,6 +1681,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 6a9d680bdf475dd4
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Structured JSON verdict and stage summaries record run accounting"
+- embedding_score: 0.9583
+- bge_forward_raw: -0.2292
+- bge_reverse_raw: 0.1987
+- bge_symmetric_raw: -0.0153
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 2ec89a6726eaf166
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "A recommended pair from either stage is the problem signal"
@@ -1534,6 +1714,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 1.9265
 - bge_reverse_raw: 0.2708
 - bge_symmetric_raw: 1.0986
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 1aed8171cefde710
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Token-capped BGE pairs keep their guidance lines visible"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Verbose output lists every scored second-stage pair"
+- embedding_score: 0.9583
+- bge_forward_raw: -0.2075
+- bge_reverse_raw: 0.2044
+- bge_symmetric_raw: -0.0015
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1585,6 +1777,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 41bdadcefcd543bb
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Flagged recommendations persist their findings beside the change"
+- embedding_score: 0.9577
+- bge_forward_raw: 0.4609
+- bge_reverse_raw: 0.5103
+- bge_symmetric_raw: 0.4856
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 14655dc0684911ad
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Default output collapses artifact resolution chatter to one line per stage"
@@ -1606,6 +1810,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.0957
 - bge_reverse_raw: 0.1875
 - bge_symmetric_raw: 0.1416
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 969821fc07b562ab
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Verbose output lists every scored second-stage pair"
+- embedding_score: 0.9576
+- bge_forward_raw: 1.0450
+- bge_reverse_raw: -0.2564
+- bge_symmetric_raw: 0.3943
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1717,6 +1933,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 6caa83bee82754e9
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Structured JSON preserves exit codes and failure messages"
+- embedding_score: 0.9570
+- bge_forward_raw: -0.1856
+- bge_reverse_raw: 1.0138
+- bge_symmetric_raw: 0.4141
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 539ae080f5b40379
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "E5-only hits without a recommendation are not problems"
@@ -1726,6 +1954,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 1.8003
 - bge_reverse_raw: 0.0877
 - bge_symmetric_raw: 0.9440
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: c8f472e5c7a380d6
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Structured JSON output is one complete review document"
+- embedding_score: 0.9569
+- bge_forward_raw: 0.1504
+- bge_reverse_raw: 0.8317
+- bge_symmetric_raw: 0.4910
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1789,6 +2029,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: f4074a382dd7168d
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Default output reports only recommended second-stage pairs"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "E5 token-cap evidence prints in the advisory review output"
+- embedding_score: 0.9565
+- bge_forward_raw: -0.6996
+- bge_reverse_raw: 1.6311
+- bge_symmetric_raw: 0.4658
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 07290179417f7004
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "E5-only hits without a recommendation are not problems"
@@ -1810,6 +2062,30 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.6732
 - bge_reverse_raw: -0.0847
 - bge_symmetric_raw: 0.2942
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: af2a519165e382ff
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Real CLI review surfaces only recommended second-stage pairs"
+- embedding_score: 0.9563
+- bge_forward_raw: 0.6858
+- bge_reverse_raw: 1.1936
+- bge_symmetric_raw: 0.9397
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: ad3197e5964b211d
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Without participating second-stage layers the review stays advisory"
+- embedding_score: 0.9563
+- bge_forward_raw: 2.2741
+- bge_reverse_raw: 0.6142
+- bge_symmetric_raw: 1.4442
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1861,6 +2137,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 5827e6399a18a489
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "The truncation disclaimer appears only for a truncated listing"
+- embedding_score: 0.9559
+- bge_forward_raw: 0.0742
+- bge_reverse_raw: 0.3930
+- bge_symmetric_raw: 0.2336
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 27bc813561081733
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Retained text lines keep their established wording"
@@ -1870,6 +2158,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.4933
 - bge_reverse_raw: 2.1368
 - bge_symmetric_raw: 1.3151
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7e43021146b75a0b
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Retained text lines keep their established wording"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9559
+- bge_forward_raw: -0.4513
+- bge_reverse_raw: 0.8222
+- bge_symmetric_raw: 0.1855
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1897,6 +2197,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: c11fb68f9a6a6655
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "The raw E5 list is verbose-only detail"
+- embedding_score: 0.9557
+- bge_forward_raw: 0.5744
+- bge_reverse_raw: -1.1982
+- bge_symmetric_raw: -0.3119
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 73566a4ed96e1b13
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Real CLI review surfaces only recommended second-stage pairs"
@@ -1918,6 +2230,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 1.0423
 - bge_reverse_raw: 2.0364
 - bge_symmetric_raw: 1.5393
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7fc5dd54bdc6ca87
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Default output collapses artifact resolution chatter to one line per stage"
+- embedding_score: 0.9556
+- bge_forward_raw: 0.6867
+- bge_reverse_raw: 1.1632
+- bge_symmetric_raw: 0.9250
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -1966,6 +2290,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.2102
 - bge_reverse_raw: 0.4427
 - bge_symmetric_raw: 0.3265
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 75ca49cf76151603
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A recommended pair from either stage is the problem signal"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9553
+- bge_forward_raw: -0.0586
+- bge_reverse_raw: -1.1125
+- bge_symmetric_raw: -0.5856
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -2050,6 +2386,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 2.2180
 - bge_reverse_raw: 1.0992
 - bge_symmetric_raw: 1.6586
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: a46425ebcce044e2
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "A deprecated report-limit setting is accepted silently without effect"
+- embedding_score: 0.9549
+- bge_forward_raw: 0.3756
+- bge_reverse_raw: 0.0316
+- bge_symmetric_raw: 0.2036
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -2473,6 +2821,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 49e09897e5673527
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Real CLI review surfaces only recommended second-stage pairs"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9529
+- bge_forward_raw: 0.3141
+- bge_reverse_raw: 0.6157
+- bge_symmetric_raw: 0.4649
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 0292d25bc52dd78a
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "An unwritable findings location warns without masking the flagged failure"
@@ -2494,6 +2854,30 @@ NLI runtime ms: 166608
 - bge_forward_raw: 1.1133
 - bge_reverse_raw: 0.8142
 - bge_symmetric_raw: 0.9637
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 2f5153ff8ec738b3
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Recommended pairs are ordered by model confidence before embedding score"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9528
+- bge_forward_raw: 0.5913
+- bge_reverse_raw: 0.1346
+- bge_symmetric_raw: 0.3629
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: a51706df45d64f56
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Structured JSON candidates record endpoints, labels, and evidence totals"
+- embedding_score: 0.9527
+- bge_forward_raw: 0.7226
+- bge_reverse_raw: 0.8040
+- bge_symmetric_raw: 0.7633
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -2605,6 +2989,42 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: d9fff4781780f11f
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "E5 token-cap evidence prints in the advisory review output"
+- embedding_score: 0.9522
+- bge_forward_raw: 0.8816
+- bge_reverse_raw: 1.7880
+- bge_symmetric_raw: 1.3348
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 751a5fe898b79de6
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Retained text lines keep their established wording"
+- embedding_score: 0.9522
+- bge_forward_raw: 2.2295
+- bge_reverse_raw: -0.2806
+- bge_symmetric_raw: 0.9744
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 545e2af21269b973
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Structured JSON verdict and stage summaries record run accounting"
+- embedding_score: 0.9522
+- bge_forward_raw: 1.2864
+- bge_reverse_raw: 0.6033
+- bge_symmetric_raw: 0.9449
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: cfe2731fef0bf458
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "A BGE-only recommendation flags the review without NLI participation"
@@ -2617,6 +3037,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: c03d549c16626b58
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5-only hits without a recommendation are not problems"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9520
+- bge_forward_raw: 1.0958
+- bge_reverse_raw: 0.9890
+- bge_symmetric_raw: 1.0424
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 4f3a02e7c0947919
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Structured JSON verdict and stage summaries record run accounting"
@@ -2626,6 +3058,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.5194
 - bge_reverse_raw: -0.0765
 - bge_symmetric_raw: 0.2214
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: e0b3805811debbf0
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Real CLI persists findings beside the change after flagged recommendations"
+- embedding_score: 0.9519
+- bge_forward_raw: 0.4762
+- bge_reverse_raw: 0.7027
+- bge_symmetric_raw: 0.5894
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -2662,6 +3106,30 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.8654
 - bge_reverse_raw: -0.6605
 - bge_symmetric_raw: 0.1025
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: dde0e7370c39bfd6
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Real CLI blocking review flags recommendations through the workflow gate"
+- embedding_score: 0.9517
+- bge_forward_raw: 1.3016
+- bge_reverse_raw: 1.3807
+- bge_symmetric_raw: 1.3411
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 493feb423434aca0
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Verbose output restores full artifact resolution detail"
+- embedding_score: 0.9517
+- bge_forward_raw: 0.6129
+- bge_reverse_raw: 1.9163
+- bge_symmetric_raw: 1.2646
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
@@ -2761,6 +3229,42 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: 83ac5a56c2872452
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A recommended pair from either stage is the problem signal"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "E5 token-cap evidence prints in the advisory review output"
+- embedding_score: 0.9511
+- bge_forward_raw: -0.9545
+- bge_reverse_raw: 1.8104
+- bge_symmetric_raw: 0.4279
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: b6ce36bb76834f27
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "E5 token-cap evidence prints in the advisory review output"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Successful reviews write no findings document"
+- embedding_score: 0.9510
+- bge_forward_raw: 2.4421
+- bge_reverse_raw: 2.2757
+- bge_symmetric_raw: 2.3589
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: fa845f5f621ebe53
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Structured JSON preserves exit codes and failure messages"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9509
+- bge_forward_raw: 0.0948
+- bge_reverse_raw: -0.0306
+- bge_symmetric_raw: 0.0321
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 5ef8ab0a12a0fe1b
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "A recommended pair from either stage is the problem signal"
@@ -2797,6 +3301,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: c30f085765bae3b0
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "Real CLI persists findings beside the change after flagged recommendations"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Token-capped BGE pairs keep their guidance lines visible"
+- embedding_score: 0.9507
+- bge_forward_raw: 0.4066
+- bge_reverse_raw: 0.1034
+- bge_symmetric_raw: 0.2550
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 6d2ae318a186b1a7
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "The truncation disclaimer appears only for a truncated listing"
@@ -2821,6 +3337,18 @@ NLI runtime ms: 166608
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
+- candidate_id: a84bbe39b818e0ca
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "Real CLI verbose review lists all second-stage evidence"
+- embedding_score: 0.9505
+- bge_forward_raw: 0.8562
+- bge_reverse_raw: 0.9942
+- bge_symmetric_raw: 0.9252
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
 - candidate_id: 527d2019636b9abf
 - left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
 - left_title: "Real CLI persists findings beside the change after flagged recommendations"
@@ -2842,6 +3370,18 @@ NLI runtime ms: 166608
 - bge_forward_raw: 0.7748
 - bge_reverse_raw: 0.8428
 - bge_symmetric_raw: 0.8088
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: e075b3b7a6360a50
+- left_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- left_title: "A clean corpus below the threshold reports no problem in fallback mode"
+- right_file: "givn/changes/semantic-review-output/specs/semantic-review-output/semantic-review-output.feature"
+- right_title: "JSON counters match the text counters of the same run"
+- embedding_score: 0.9503
+- bge_forward_raw: -0.5902
+- bge_reverse_raw: 0.6967
+- bge_symmetric_raw: 0.0532
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
