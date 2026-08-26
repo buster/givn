@@ -45,12 +45,26 @@ Feature: Semantic review output leads with decision-relevant evidence
     And givn/changes/running-change/review-findings.json exists
 
   @givn.added
-  Scenario: Without participating second-stage layers the E5 threshold stays binding
+  Scenario: A BGE-only recommendation flags the review without NLI participation
+    Given a project prepared for semantic review whose BGE evidence recommends one pair while NLI stays disabled
+    When the user runs the advisory semantic review for "running-change"
+    Then the command exits non-zero
+    And stderr names the single recommended candidate as the failure reason
+
+  @givn.added
+  Scenario: An NLI-only recommendation flags the review without BGE participation
+    Given a project prepared for semantic review whose NLI evidence recommends one pair while BGE stays disabled
+    When the user runs the advisory semantic review for "running-change"
+    Then the command exits non-zero
+    And stderr names the single recommended candidate as the failure reason
+
+  @givn.added
+  Scenario: Without participating second-stage layers the review stays advisory
     Given a project prepared for semantic review with a similar active delta and second-stage evidence disabled
     When the user runs the advisory semantic review for "running-change" with second-stage evidence disabled
-    Then the command exits non-zero
+    Then the command exits 0
     And stdout lists every E5 similarity candidate above the threshold in its established format
-    And stderr names the fixed-threshold gate failure
+    And stderr names no similarity gate failure
 
   @givn.added
   Scenario: Recommended pairs are ordered by model confidence before embedding score
@@ -121,12 +135,24 @@ Feature: Semantic review output leads with decision-relevant evidence
     Then the command exits non-zero
     And stdout parses as exactly one JSON document
     And the document declares schema version 1 and the reviewed change id
+    And the document contains no log lines outside the JSON document
+
+  @givn.added
+  Scenario: Structured JSON verdict and stage summaries record run accounting
+    Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
+    When the user runs the advisory semantic review for "running-change" with structured JSON output
+    Then the command exits non-zero
     And the verdict records the flagged recommended pair count, whether the threshold fallback applied, the threshold, and the E5 candidate count
-    And the document records the index refresh outcome instead of printing banner lines
     And each participating stage summary records its status, model identity, pair counters, label distribution where applicable, and runtime
+
+  @givn.added
+  Scenario: Structured JSON candidates record endpoints, labels, and evidence totals
+    Given a project prepared for semantic review whose second-stage evidence recommends one pair and filters many
+    When the user runs the advisory semantic review for "running-change" with structured JSON output
+    Then the command exits non-zero
     And every candidate records both endpoint titles and files, the embedding score, the admission labels of every participating stage, and its evidence scores
     And the document reports the combined recommendation total across participating stages
-    And the document contains no log lines outside the JSON document
+    And the document records the index refresh outcome instead of printing banner lines
 
   @givn.added
   Scenario: JSON counters match the text counters of the same run
@@ -209,3 +235,4 @@ Feature: Semantic review output leads with decision-relevant evidence
     And the semantic review report exists
     And the persisted semantic review report records the blocked status
     And no findings document exists under the change directory
+    And the command stdout names the complete saved semantic-review report path
