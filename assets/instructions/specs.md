@@ -218,6 +218,15 @@ flag combinations of the same action are regular scenarios. Before adding a
 second `@e2e` scenario, ask whether it is a genuinely different action or only
 a variant. Under-covering and over-covering are both defects.
 
+**Non-e2e scenarios must differ from their action's `@e2e` scenario.** Every
+normalized inventory action has exactly one `@e2e` scenario. A regular
+(non-e2e) scenario must assert an invariant distinct from that `@e2e`
+scenario — a variant rule, edge precondition, or genuinely different end
+state. A regular scenario that only re-asserts the `@e2e` outcome (the same
+observable result asserted against the module instead of through the browser)
+is a duplicate: the layer is a driver, not an invariant. Semantic review flags
+it — distinguish it or delete it.
+
 **What an `@e2e` scenario is NOT:**
 - Not a unit test wrapped in Gherkin.
 - Not an in-process integration test.

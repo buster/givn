@@ -157,6 +157,16 @@ escape classification. A seemingly unrelated pair that remains above the
 active boundary requires sharper domain vocabulary and observable invariants,
 followed by a fresh review run.
 
+A layer difference is not an observable invariant. Two scenarios that assert
+the same outcome at different layers (a regular scenario and its action's
+`@e2e` scenario) are the same behaviour: classify `DUPLICATE`, keep the `@e2e`
+action proof, and remove the non-e2e twin (or fold its distinct invariant into
+the `@e2e` one). `VALID-BOUNDARY` requires a different precondition, causal
+action, or end state AND a recomputed score strictly `< 0.9500`; otherwise it
+is the same behaviour. Remediation is always a spec change plus a rerun of
+`givn check review` — a label alone never un-blocks. Full rules and worked
+examples: `givn instructions review`.
+
 Token-cap evidence is not a classification. `BGE_TOKEN_CAP` and
 `NLI_TOKEN_CAP` are per-candidate states for complete pairs that exceed the
 actual model-tokenizer limit; they remain visible, unresolved, outside filtered
