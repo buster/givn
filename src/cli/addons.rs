@@ -151,7 +151,7 @@ fn scaffold_arc42() -> Result<()> {
         } else {
             let content = Assets::get_str(path)
                 .ok_or_else(|| anyhow::anyhow!("embedded asset missing: {path}"))?;
-            // Nested chapter templates (e.g. adrs/adr-template.md) keep their
+            // Nested chapter templates (e.g. adr/adr-template.md) keep their
             // relative subdirectory under docs/arc42/.
             if let Some(parent) = dest.parent() {
                 std::fs::create_dir_all(parent)?;

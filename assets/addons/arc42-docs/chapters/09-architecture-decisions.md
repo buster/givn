@@ -30,8 +30,8 @@ project-documentation, or code location. A refinement amends an existing ADR;
 it does not create a parallel file.
 
 Each individual file is written and tailored from the ADR template at
-`docs/arc42/adrs/adr-template.md` (scaffolded from
-`addons/arc42-docs/chapters/adrs/adr-template.md`). That template is
+`docs/arc42/adr/adr-template.md` (scaffolded from
+`addons/arc42-docs/chapters/adr/adr-template.md`). That template is
 self-contained: it embeds the frontmatter contract, the Qualification gate, the
 LLM qualification verdict, the MADR checklist evidence, and every required MADR
 section, so it is authoritative at authoring time even when the resolved Arc42
