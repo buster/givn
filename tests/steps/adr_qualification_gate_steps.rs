@@ -375,7 +375,7 @@ fn guidance_does_not_require_adr_for_chapter(world: &mut GivnWorld) {
 
 #[given("the change-level Arc42 assessment template is available")]
 fn change_level_arc42_template_is_available(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string("assets/addons/arc42-docs/template.md")
+    let content = std::fs::read_to_string("assets/addons/arc42-docs/impact-assessment-template.md")
         .expect("read Arc42 impact template");
     world.additional_output = Some(content);
 }
@@ -665,7 +665,7 @@ fn proposed_budget_adr_remains_owned(world: &mut GivnWorld) {
 fn guidance_sources() -> String {
     let paths = [
         "assets/addons/arc42-docs/instructions.md",
-        "assets/addons/arc42-docs/template.md",
+        "assets/addons/arc42-docs/impact-assessment-template.md",
         "assets/addons/arc42-docs/chapters/README.md",
         "assets/addons/arc42-docs/chapters/09-architecture-decisions.md",
         "assets/instructions/design-review.md",
@@ -758,7 +758,7 @@ fn derived_sources_defer_to_canonical(world: &mut GivnWorld) {
     assert!(content.contains("canonical Arc42 addon instruction"));
     assert!(content.contains("must not duplicate the complete procedure"));
     for path in [
-        "assets/addons/arc42-docs/template.md",
+        "assets/addons/arc42-docs/impact-assessment-template.md",
         "assets/addons/arc42-docs/chapters/README.md",
         "assets/addons/arc42-docs/chapters/09-architecture-decisions.md",
         "assets/instructions/design-review.md",

@@ -283,7 +283,7 @@ fn arc42_artifact() -> Artifact {
         id: "arc42-docs".to_string(),
         generates: vec!["arc42.md".to_string()],
         requires: vec!["design".to_string()],
-        template: Some("template.md".to_string()),
+        template: Some("impact-assessment-template.md".to_string()),
         instruction: Some("arc42-docs".to_string()),
         optional: false,
         remove: false,
@@ -541,9 +541,10 @@ artifacts:
     #[test]
     fn addon_template_resolves_via_cascade() {
         // The embedded addon template must be findable via cascade.
-        // arc42-docs template name is "template.md".
+        // arc42-docs template name is "impact-assessment-template.md".
         let template =
-            crate::config::cascade::resolve_template("arc42-docs", "template.md").unwrap();
+            crate::config::cascade::resolve_template("arc42-docs", "impact-assessment-template.md")
+                .unwrap();
         assert!(
             template.contains("STATUS"),
             "arc42-docs template must contain STATUS marker"
