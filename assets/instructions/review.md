@@ -211,6 +211,68 @@ different behavior, sharpen the overloaded domain terms and observable
 invariants, then rerun the report. Do not use a score or an unexplained label
 to dismiss the candidate.
 
+**Dedup by observable outcome, not by layer.** Two scenarios that assert the
+same observable outcome at different layers — for example a regular scenario
+and its action's `@e2e` scenario — are the same behaviour. The browser is a
+driver, not an invariant: classifying a pair `VALID-BOUNDARY` because one
+endpoint is a browser scenario and the other is a module scenario is a
+category error, and the recomputed score stays `>= 0.9500`, keeping the gate
+blocked. Classify `DUPLICATE` and remove one endpoint. When a regular
+(non-e2e) scenario re-asserts the observable outcome of its action's `@e2e`
+scenario, **keep the `@e2e` action proof and remove the non-e2e twin**, or
+fold the twin's distinct invariant into the `@e2e` scenario. Do not delete the
+`@e2e` scenario — each normalized action owns exactly one `@e2e` proof.
+
+`VALID-BOUNDARY` requires a different observable invariant: a different
+precondition, causal action, or end state — never merely different phrasing or
+a different driver. After rewording, the recomputed score must be strictly
+`< 0.9500`; if it is `>= 0.9500` the pair still reads as the same outcome →
+`DUPLICATE` (or `VARIANT` when an honest input-parameterization exists).
+`VARIANT` covers distinct inputs to the same action: consolidate the pair into
+one `Scenario Outline` with a non-empty `Examples` table.
+
+### Worked examples
+
+A scored pair whose outcome is identical and whose only difference is the
+driver:
+
+```text
+non-e2e: The open list shows the current items
+         (Given the household list contains "Milk" and "Potatoes",
+          When the user opens the list,
+          Then the user sees "Milk" and "Potatoes")
+@e2e:    The user opens the list in the browser and sees the household items
+         (Given a browser open on the shared shopping list,
+          When the user opens the list,
+          Then the browser shows "Milk" and "Potatoes")
+```
+
+Classifying `VALID-BOUNDARY` here is wrong — the outcome is identical, only
+the driver differs; the recomputed score stays `~0.98` (`>= 0.9500`) and the
+gate stays blocked. Correct: `DUPLICATE`; remove the non-e2e twin and keep the
+`@e2e` action proof. The action is then asserted exactly once and the pair
+leaves the pool.
+
+Two genuinely different behaviours that share a surface ("an item disappears
+from the list"):
+
+```text
+non-e2e: A checked-off item disappears from the view
+         (Given the list contains "Milk",
+          When "Milk" is checked off,
+          Then "Milk" is hidden from the view and still retained in the list)
+non-e2e: A phone reconnects after an empty list and restores its copy
+         (Given a phone that was offline with a non-empty list,
+          When the server list is empty and the phone reconnects,
+          Then the phone's copy returns for the next trip)
+```
+
+Different preconditions (checked-off vs reconnect-with-empty-server) and
+different end states (hidden-but-retained vs restored-for-next-trip). Sharpen
+precisely those two axes, rerun, recomputed score `< 0.9500` →
+`VALID-BOUNDARY` verifies. If rewording cannot push the score below `0.9500`,
+the pair is not a boundary — reclassify.
+
 Token-cap evidence is not a classification. `BGE_TOKEN_CAP` and
 `NLI_TOKEN_CAP` are per-candidate states for complete pairs that exceed the
 actual model-tokenizer limit; they remain visible, unresolved, outside filtered
@@ -237,6 +299,31 @@ and success or failure result. Missing, stale, unmatched, or score-only
 remediation remains blocking. The blocking verifier emits `semantic
 remediation verified` only after every prior resolved classification satisfies
 its contract. Givn does not select classifications or edit feature files.
+
+Remediation always includes a spec change, then a rerun: for `DUPLICATE`
+delete the redundant endpoint (keep the `@e2e` action proof); for `VARIANT`
+consolidate into one `Scenario Outline` with a non-empty `Examples` table; for
+`VALID-BOUNDARY` reword preconditions and end-state invariants so the two
+scenarios no longer read as the same outcome. After the change, rerun
+`givn check review --change <id>`; the verifier recomputes every pair and
+checks its contract. A label alone never un-blocks — score-only edits stay
+blocked because the recomputed score remains `>= 0.9500` or the pair is still
+admitted.
+
+| Blocker | Cause | Fix |
+|---|---|---|
+| missing | candidate has no `classification` or no rationale | classify it in `semantic-review.md` |
+| stale | recorded classification no longer matches the recomputed evidence (endpoint content/evidence hashes changed) | apply the projected spec change and rerun |
+| unmatched | recorded candidate/endpoint is absent after rerun (scenario renamed or removed) | regenerate the report and reclassify |
+| score-only | label present but the recomputed score is still `>= 0.9500`, or the pair is still admitted | apply the projected spec change and rerun |
+
+For every resolved candidate, edit the scaffolded record in place
+(`candidate_id`, `classification`, `rationale`, and the endpoint identity and
+evidence hashes the report already wrote). Write the rationale so it names the
+discriminating precondition, causal action, and end state that differ, or the
+endpoint chosen for removal. A `projected_result: success | failure` line is
+an author note, not verification — the verifier derives the projected result
+itself and does not read it.
 
 ## Sign-off checklist
 

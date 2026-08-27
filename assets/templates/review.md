@@ -199,6 +199,12 @@ For each resolved classification, record the projected-tree evidence:
 - `VALID-BOUNDARY`: both endpoints present, changed observable fact or
   condition/outcome invariant, and recomputed score `< 0.9500`.
 
+A layer difference is not an observable invariant. A regular scenario that
+re-asserts its action's `@e2e` outcome is a `DUPLICATE`: keep the `@e2e`
+scenario, remove the non-e2e twin (or fold its distinct invariant into the
+`@e2e` one). A `VALID-BOUNDARY` requires a different precondition, causal
+action, or end state and a recomputed score `< 0.9500`.
+
 Missing, stale, unmatched, or score-only remediation is blocking. Record the
 verifier receipt only after all rows pass:
 

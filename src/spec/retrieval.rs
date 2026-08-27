@@ -3683,7 +3683,7 @@ fn verify_semantic_remediation(
             || entry.right_evidence_hash.is_empty()
         {
             bail!(
-                "semantic classification is stale (candidate {})",
+                "semantic classification is stale (candidate {}): prior record is incomplete — classification, rationale, or endpoint identity/evidence hashes are missing; reclassify the candidate in semantic-review.md",
                 entry.candidate_id
             );
         }
@@ -3704,20 +3704,32 @@ fn verify_semantic_remediation(
                         || endpoint.evidence_hash != entry.left_evidence_hash
                     {
                         bail!(
-                            "semantic classification is stale (candidate {})",
+                            "semantic classification is stale (candidate {}): the classified endpoint changed after classification — recorded content/evidence hashes no longer match; apply the projected spec change and rerun",
                             entry.candidate_id
                         );
                     }
                 }
-                if current_candidate.is_some()
-                    || current_left.is_some()
-                    || right.is_none_or(|endpoint| {
-                        endpoint.content_hash != entry.right_content_hash
-                            || endpoint.evidence_hash != entry.right_evidence_hash
-                    })
-                {
+                let right_mismatch = right.is_none_or(|endpoint| {
+                    endpoint.content_hash != entry.right_content_hash
+                        || endpoint.evidence_hash != entry.right_evidence_hash
+                });
+                if current_candidate.is_some() || current_left.is_some() || right_mismatch {
+                    let reason = if let Some(current) = current_candidate {
+                        format!(
+                            "the pair is still admitted at embedding score {:.4} (>= {:.4}) and the redundant endpoint is still present",
+                            current.score, SEMANTIC_SIMILARITY_THRESHOLD,
+                        )
+                    } else if current_left.is_some() {
+                        format!(
+                            "the redundant endpoint \"{}\" is still present in the active delta; remove it (or fold its distinct invariant into the retained endpoint)",
+                            entry.left_title
+                        )
+                    } else {
+                        "the retained permanent endpoint no longer matches the recorded evidence"
+                            .to_string()
+                    };
                     bail!(
-                        "DUPLICATE remediation requires removing the redundant scenario (candidate {})",
+                        "DUPLICATE remediation requires removing the redundant scenario (candidate {}): {reason}",
                         entry.candidate_id
                     );
                 }
@@ -3726,28 +3738,46 @@ fn verify_semantic_remediation(
             "VARIANT" => {
                 let Some(left) = current_left else {
                     bail!(
-                        "semantic classification is stale (candidate {})",
+                        "semantic classification is stale (candidate {}): the left endpoint no longer exists after rerun; regenerate the report and reclassify",
                         entry.candidate_id
                     );
                 };
                 let Some(right) = right else {
                     bail!(
-                        "semantic classification is stale (candidate {})",
+                        "semantic classification is stale (candidate {}): the permanent right endpoint no longer exists after rerun; regenerate the report and reclassify",
                         entry.candidate_id
                     );
                 };
                 let score = recompute_prior_pair_score(root, index, left, right)?;
+                let left_endpoint = semantic_delta_endpoint(left);
                 if current_candidate.is_some()
                     || !left.is_outline
                     || !left.has_examples
-                    || semantic_delta_endpoint(left).content_hash == entry.left_content_hash
-                    || semantic_delta_endpoint(left).evidence_hash == entry.left_evidence_hash
+                    || left_endpoint.content_hash == entry.left_content_hash
+                    || left_endpoint.evidence_hash == entry.left_evidence_hash
                     || right.content_hash != entry.right_content_hash
                     || right.evidence_hash != entry.right_evidence_hash
                     || score >= SEMANTIC_SIMILARITY_THRESHOLD
                 {
+                    let reason = if current_candidate.is_some() {
+                        format!(
+                            "the pair is still admitted (recomputed score {score:.4} >= {SEMANTIC_SIMILARITY_THRESHOLD:.4}); the variant is not consolidated"
+                        )
+                    } else if !left.is_outline || !left.has_examples {
+                        "the active scenario is not a parameterized Scenario Outline with a non-empty Examples table".to_string()
+                    } else if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+                        format!(
+                            "recomputed score {score:.4} is not strictly below {SEMANTIC_SIMILARITY_THRESHOLD:.4}"
+                        )
+                    } else if left_endpoint.content_hash == entry.left_content_hash
+                        || left_endpoint.evidence_hash == entry.left_evidence_hash
+                    {
+                        "the active endpoint was not consolidated — recorded content/evidence hashes are unchanged".to_string()
+                    } else {
+                        "the permanent endpoint changed after classification — the prior classification is stale".to_string()
+                    };
                     bail!(
-                        "VARIANT remediation requires consolidation (candidate {})",
+                        "VARIANT remediation requires consolidation (candidate {}): {reason}",
                         entry.candidate_id
                     );
                 }
@@ -3756,13 +3786,13 @@ fn verify_semantic_remediation(
             "VALID-BOUNDARY" => {
                 let Some(left) = current_left else {
                     bail!(
-                        "semantic classification is stale (candidate {})",
+                        "semantic classification is stale (candidate {}): the left endpoint no longer exists after rerun; regenerate the report and reclassify",
                         entry.candidate_id
                     );
                 };
                 let Some(right) = right else {
                     bail!(
-                        "semantic classification is stale (candidate {})",
+                        "semantic classification is stale (candidate {}): the permanent right endpoint no longer exists after rerun; regenerate the report and reclassify",
                         entry.candidate_id
                     );
                 };
@@ -3776,8 +3806,27 @@ fn verify_semantic_remediation(
                     || score >= SEMANTIC_SIMILARITY_THRESHOLD
                     || !observable_distinction(&left_endpoint, right)
                 {
+                    let reason = if current_candidate.is_some() {
+                        format!(
+                            "the pair is still admitted (recomputed score {score:.4} >= {SEMANTIC_SIMILARITY_THRESHOLD:.4}); sharpen a distinct precondition, causal action, or end state so it scores below"
+                        )
+                    } else if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+                        format!(
+                            "recomputed score {score:.4} is not strictly below {SEMANTIC_SIMILARITY_THRESHOLD:.4}"
+                        )
+                    } else if left_endpoint.content_hash == entry.left_content_hash
+                        || left_endpoint.evidence_hash == entry.left_evidence_hash
+                    {
+                        "the active endpoint was not reworded — recorded content/evidence hashes are unchanged".to_string()
+                    } else if right.content_hash != entry.right_content_hash
+                        || right.evidence_hash != entry.right_evidence_hash
+                    {
+                        "the permanent endpoint changed after classification — the prior classification is stale".to_string()
+                    } else {
+                        "the endpoints still read as the same observable outcome — a different driver or phrasing is not a boundary; name a distinct precondition, causal action, or end state".to_string()
+                    };
                     bail!(
-                        "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {})",
+                        "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {}): {reason}",
                         entry.candidate_id
                     );
                 }
