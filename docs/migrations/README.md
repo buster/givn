@@ -34,4 +34,6 @@ Bundle designs must be self-contained. They may use the
 `{{SOURCE_VERSION}}`, `{{TARGET_VERSION}}`, and `{{UPGRADE_COMMIT}}` placeholders
 for generated metadata. The current 0.2.0-to-0.3.0 bundle additionally uses
 `{{MIGRATION_GUIDE}}` to embed the public prompt pack; future bundles must carry
-their own complete prompts instead of relying on that guide.
+their own complete prompts instead of relying on that guide. The
+0.3.0-to-0.4.0 bundle ships in this release and carries its full verification
+prompts as a self-contained maintenance phase.
