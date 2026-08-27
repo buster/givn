@@ -53,6 +53,7 @@ jobs:
         shell: bash
         env:
           DISPATCH_REF: ${{ github.ref }}
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -62,7 +63,8 @@ jobs:
             exit 1
           fi
 
-          git fetch --no-tags origin \
+          auth_header="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 --wrap=0)"
+          git -c "http.extraheader=AUTHORIZATION: basic $auth_header" fetch --no-tags origin \
             "$PRIMARY_BRANCH:refs/remotes/origin/$PRIMARY_BRANCH"
           if [[ "$(git rev-parse HEAD)" != "$(git rev-parse "refs/remotes/origin/$PRIMARY_BRANCH")" ]]; then
             printf '%s changed while this workflow was starting; retry from a current checkout\n' \
@@ -77,6 +79,8 @@ jobs:
 
       - name: Validate release version
         shell: bash
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
 
@@ -103,7 +107,9 @@ jobs:
           fi
 
           release_tag="v$RELEASE_VERSION"
-          if git ls-remote --exit-code --tags origin "refs/tags/$release_tag" >/dev/null 2>&1; then
+          auth_header="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 --wrap=0)"
+          if git -c "http.extraheader=AUTHORIZATION: basic $auth_header" \
+            ls-remote --exit-code --tags origin "refs/tags/$release_tag" >/dev/null 2>&1; then
             printf 'release tag already exists: %s\n' "$release_tag" >&2
             exit 1
           fi

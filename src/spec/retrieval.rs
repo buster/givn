@@ -7761,7 +7761,7 @@ fn score_nli_pairs(
                     input_pairs.push((right_text.to_string(), left_text.to_string()));
                 }
                 let logits = classifier.score_pairs(&input_pairs)?;
-                for ((left, right), pair_logits) in pairs.iter().zip(logits.chunks_exact(2)) {
+                for ((left, right), pair_logits) in pairs.iter().zip(logits.as_chunks::<2>().0) {
                     evidence.insert(
                         canonical_pair_key(left.clone(), right.clone()),
                         nli_evidence(pair_logits[0], pair_logits[1]),
