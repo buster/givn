@@ -41,6 +41,7 @@ jobs:
         id: release_identity
         shell: bash
         env:
+          GITHUB_TOKEN: ${{ github.token }}
           RELEASE_SHA: ${{ github.event_name == 'push' && github.sha || '' }}
         run: |
           set -euo pipefail
@@ -56,7 +57,8 @@ jobs:
           fi
           release_version="${BASH_REMATCH[1]}"
 
-          git fetch --force --no-tags origin \
+          auth_header="$(printf 'x-access-token:%s' "$GITHUB_TOKEN" | base64 --wrap=0)"
+          git -c "http.extraheader=AUTHORIZATION: basic $auth_header" fetch --force --no-tags origin \
             "$PRIMARY_BRANCH:refs/remotes/origin/$PRIMARY_BRANCH" \
             "refs/tags/$RELEASE_TAG:refs/tags/$RELEASE_TAG"
 
