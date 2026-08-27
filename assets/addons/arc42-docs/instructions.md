@@ -281,7 +281,7 @@ such as `none` when a list is empty. A completed ADR contains no template
 placeholders, ellipses, generic option names, or unfilled prompts.
 
 Every individual ADR file is written and tailored from the self-contained
-template at `docs/arc42/adrs/adr-template.md`. The template embeds the
+template at `docs/arc42/adr/adr-template.md`. The template embeds the
 frontmatter block, the Qualification gate (`ADR-QUALIFICATION: PASS`), the LLM
 qualification verdict, the MADR checklist evidence, and every required MADR
 section, so it is authoritative at authoring time even when this instruction is
@@ -333,7 +333,7 @@ you can skip re-reading the table for each one.
 2. Update (or create) `docs/arc42/README.md` as the index.
 3. For an architectural decision, update the chapter-09 register and
    `docs/arc42/adr/README.md`, then create the individual ADR file at the
-   prescribed path by copying and tailoring `docs/arc42/adrs/adr-template.md`.
+   prescribed path by copying and tailoring `docs/arc42/adr/adr-template.md`.
    Do not paste its body into chapter 09. Use the fixed
    `docs/arc42/` output path used by the current binary.
 4. Write `arc42.md` in the change directory (`givn/changes/<id>/arc42.md`)
