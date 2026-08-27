@@ -145,16 +145,17 @@ fn scaffold_arc42() -> Result<()> {
         let Some(filename) = path.strip_prefix(prefix) else {
             continue;
         };
-        // Skip any nested directories (there are none, but be defensive).
-        if filename.contains('/') {
-            continue;
-        }
         let dest = out_dir.join(filename);
         if dest.exists() {
             skipped.push(filename.to_string());
         } else {
             let content = Assets::get_str(path)
                 .ok_or_else(|| anyhow::anyhow!("embedded asset missing: {path}"))?;
+            // Nested chapter templates (e.g. adrs/adr-template.md) keep their
+            // relative subdirectory under docs/arc42/.
+            if let Some(parent) = dest.parent() {
+                std::fs::create_dir_all(parent)?;
+            }
             std::fs::write(&dest, content)?;
             written.push(filename.to_string());
         }

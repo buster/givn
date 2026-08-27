@@ -29,10 +29,16 @@ exactly once to its canonical feature, design, Arc42, process,
 project-documentation, or code location. A refinement amends an existing ADR;
 it does not create a parallel file.
 
-Each individual file uses the complete MADR structure, including
-`## Qualification`, `## Context and Problem Statement`, `## Decision Drivers`,
-`## Considered Options`, `## Decision Outcome`, `### Consequences`,
-`### Confirmation`, `## Pros and Cons of the Options`, and
+Each individual file is written and tailored from the ADR template at
+`docs/arc42/adrs/adr-template.md` (scaffolded from
+`addons/arc42-docs/chapters/adrs/adr-template.md`). That template is
+self-contained: it embeds the frontmatter contract, the Qualification gate, the
+LLM qualification verdict, the MADR checklist evidence, and every required MADR
+section, so it is authoritative at authoring time even when the resolved Arc42
+instruction is not loaded. Use it to produce the complete MADR structure,
+including `## Qualification`, `## Context and Problem Statement`,
+`## Decision Drivers`, `## Considered Options`, `## Decision Outcome`,
+`### Consequences`, `### Confirmation`, `## Pros and Cons of the Options`, and
 `## More Information`, with real frontmatter and an `ADR-QUALIFICATION: PASS`
 verdict whose route-specific target fields are valid.
 Allowed statuses are `proposed`, `rejected`, `accepted`, `deprecated`, and

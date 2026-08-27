@@ -60,9 +60,9 @@ fn eject_template(project_root: &std::path::Path, artifact_id: &str, force: bool
 
     let template_name = artifact.template.as_deref().unwrap_or(artifact_id);
 
-    // Cascade: core templates/ then addons/<id>/template.md.
+    // Cascade: core templates/ then addons/<id>/<template_name>.
     let core_key = format!("templates/{template_name}");
-    let addon_key = format!("addons/{artifact_id}/template.md");
+    let addon_key = format!("addons/{artifact_id}/{template_name}");
     let content = Assets::get_str(&core_key)
         .or_else(|| Assets::get_str(&addon_key))
         .ok_or_else(|| {

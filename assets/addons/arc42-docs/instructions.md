@@ -280,108 +280,20 @@ decision-makers, consulted people, and informed people. Use an explicit value
 such as `none` when a list is empty. A completed ADR contains no template
 placeholders, ellipses, generic option names, or unfilled prompts.
 
-Use every MADR section below. Do not omit a section because the decision seems
-small:
-
-~~~markdown
----
-status: proposed
-date: YYYY-MM-DD
-decision-makers: list everyone involved
-consulted: list subject-matter experts consulted
-informed: list everyone kept up-to-date
----
-
-# Short title representative of solved problem and found solution
-
-## Qualification
-
-ADR-QUALIFICATION: PASS
-
-### Qualification verdict
-
-qualification: QUALIFIED
-alternatives: PASS
-architectural_impact: PASS
-durable_consequence: PASS
-lower_level_artifact: PASS
-existing_adr_check: PASS
-must_be_shared: SUPPORTING
-routing: NEW_ADR
-canonical_artifact: null
-target_adr: null
-replacement_adr: null
-
-Replace every value with the decision-specific verdict produced before drafting.
-The record is complete only when all mandatory values are supported by concrete
-evidence and the route-specific target fields are correct. This verdict is an
-authoring record; it is not evaluated by the Givn runtime.
-
-### MADR checklist evidence
-
-- [ ] **Hard to reverse** - Reverting later would cost significant effort
-  because: _specific reason_.
-- [ ] **Shapes quality attributes** - It materially affects [quality attribute]
-  because: _specific reason_.
-- [ ] **Structural** - It defines a boundary, contract, or dependency direction
-  because: _specific reason_.
-- [ ] **Must be shared** - Developers unfamiliar with it would systematically
-  violate the architecture because: _supporting reason, never a gate_.
-
-## Context and Problem Statement
-
-Describe the context and problem in 2-4 sentences. Make the scope explicit by
-pointing to structural elements such as components and connectors.
-
-## Decision Drivers
-
-- desired software quality, constraint, or concern
-- ...
-
-## Considered Options
-
-- Option title 1
-- Option title 2
-
-## Decision Outcome
-
-Chosen option: "Option title N", because justification.
-
-### Consequences
-
-- Good, because project-specific positive consequence
-- Bad, because project-specific negative consequence
-
-### Confirmation
-
-Name the concrete test type, fitness function, linting rule, or review
-checkpoint that confirms implementation and compliance.
-
-## Pros and Cons of the Options
-
-### Option title 1
-
-- Good, because argument
-- Neutral, because argument
-- Bad, because argument
-
-### Option title 2
-
-- Good, because argument
-- Bad, because argument
-
-## More Information
-
-Additional evidence, team agreement, links to related decisions, or resources.
-~~~
-
-The code block is a template only. Replace every prompt before completing an
-ADR. The Context and Problem Statement is 2-4 sentences, Considered Options
-lists real, distinct options rather than strawmen, Decision Outcome is brief
-and gives the chosen option plus its single most important reason, and
-Consequences contain only non-obvious or project-specific effects. Confirmation
-must be concrete: name an automated test, fitness function, lint rule, or
-specific review checkpoint, not merely "we will review it".
+Every individual ADR file is written and tailored from the self-contained
+template at `docs/arc42/adrs/adr-template.md`. The template embeds the
+frontmatter block, the Qualification gate (`ADR-QUALIFICATION: PASS`), the LLM
+qualification verdict, the MADR checklist evidence, and every required MADR
+section, so it is authoritative at authoring time even when this instruction is
+not loaded. Copy that template to
+`docs/arc42/adr/ADR-NNNN-short-slug.md` and tailor it to the decision. Use every
+MADR section; do not omit a section because the decision seems small. The
+Context and Problem Statement is 2-4 sentences, Considered Options lists real,
+distinct options rather than strawmen, Decision Outcome is brief and gives the
+chosen option plus its single most important reason, and Consequences contain
+only non-obvious or project-specific effects. Confirmation must be concrete:
+name an automated test, fitness function, lint rule, or specific review
+checkpoint, not merely "we will review it".
 
 ## Which chapters to touch
 
@@ -421,11 +333,13 @@ you can skip re-reading the table for each one.
 2. Update (or create) `docs/arc42/README.md` as the index.
 3. For an architectural decision, update the chapter-09 register and
    `docs/arc42/adr/README.md`, then create the individual ADR file at the
-   prescribed path. Do not paste its body into chapter 09. Use the fixed
+   prescribed path by copying and tailoring `docs/arc42/adrs/adr-template.md`.
+   Do not paste its body into chapter 09. Use the fixed
    `docs/arc42/` output path used by the current binary.
 4. Write `arc42.md` in the change directory (`givn/changes/<id>/arc42.md`)
    containing the **full 12-row assessment table** from the template
-   (`givn eject arc42-docs:template` to see it, or `docs/arc42/README.md`
+   (`givn eject arc42-docs:template` to see it, or
+   `docs/arc42/README.md`
    for the chapter list) — every row gets an explicit Yes/No and a one-line
    reason, not just the rows you decided to update. Rows marked "Yes" also
    get a one-line summary of what changed. This marker file is what givn
