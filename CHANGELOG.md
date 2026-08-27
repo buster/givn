@@ -1,10 +1,18 @@
 # Changelog
 
-All notable changes to Givn are documented here. Version 0.2.0 refers to the
-master branch that is the source baseline for this release. Version 0.3.0
-contains the complete stacked change set that follows that baseline. Version
-0.3.1 adds the search-evidence and configurable second-stage-budget
-capabilities, the ADR qualification gate, and a restructured documentation set.
+All notable changes to Givn are documented in this file.
+
+The release sections are generated with [git-cliff](https://git-cliff.org/).
+Versions are selected manually and use annotated `vX.Y.Z` Git tags.
+## [Unreleased]
+
+## [0.4.0] - 2026-08-27
+
+### Features
+
+- **ci:** Add release, CI, and security pipelines
+
+- **release:** Prepare 0.4.0 with a chained 0.3.0 to 0.4.0 migration
 
 ## [0.3.1] - 2026-08-25
 
