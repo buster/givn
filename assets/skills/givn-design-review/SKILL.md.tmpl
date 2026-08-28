@@ -70,8 +70,9 @@ Required branches:
    chapter 09 have a MADR entry for every qualified ADR candidate in design.md,
    and does chapter 11 reflect that decision's consequences? A non-qualifying
    design choice is complete when its canonical destination is recorded.
-  `arc42.md`'s `STATUS: DONE` is a self-report, not verification — treat any
-  mismatch, including a missing row, as a finding.
+   `arc42.md`'s `STATUS: DONE` is a self-report, not verification — treat any
+   mismatch, including a missing row, as a finding.
+- **Ubiquitous language** — confirm that the ubiquitous language is used consistently and recorded in the project's arc42 glossary before sign-off is mandatory: `docs/arc42/12-glossary.md` must already contain the design's agreed terms. If the design introduces a term the glossary does not hold, or reuses an existing term inconsistently, raise it as a question — do not sign off.
 
 If a question can be answered by exploring the codebase, the subagent does that
 and reports the finding instead of asking the user.
