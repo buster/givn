@@ -2,7 +2,7 @@
 
 ## Setup
 
-- [ ] Configure and prove the existing Gherkin runner for this change.
+- [x] Configure and prove the existing Gherkin runner for this change.
   - Runner: `GIVN_FEATURES=givn/changes/domain-modeling-glossary-enforcement/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled cargo test --no-default-features --features spec-retrieval --test features_runner`
   - E2E runner: `./run-tests.sh --e2e`
   - Strict mode: `GivnWorld::cucumber().fail_on_skipped()` (`tests/features_runner.rs`).
@@ -36,176 +36,217 @@
 
 ### The skill trigger names conversation states
 
-- [ ] RED: target `The skill trigger names conversation states`; paste
+- [x] RED: target `The skill trigger names conversation states`; paste
   non-zero runner output.
   ```text
-  (to fill)
+  Then the trigger loads while naming or discussing domain concepts  (passed)
+  And the trigger loads during every workflow step of a change  (failed)
+  Step panicked. Captured output: not implemented: trigger-loads-during-every-workflow-step
+  1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed)
   ```
-- [ ] GREEN: make the trigger description cover every workflow step of a
+- [x] GREEN: make the trigger description cover every workflow step of a
   change (keep the domain-concept and term-disagreement triggers); paste
   zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 5 steps (5 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 5 steps (5 passed)  (unchanged after edit)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `0fc7edd` - `fix(domain-modeling-glossary): Trigger the domain skill for every workflow step`
 
 ### The ubiquitous language is recorded in the project's arc42 glossary
 
-- [ ] RED: target `The ubiquitous language is recorded in the project's arc42
+- [x] RED: target `The ubiquitous language is recorded in the project's arc42
   glossary`; paste non-zero runner output.
   ```text
-  (to fill)
+  Then the body instructs maintaining the project's arc42 glossary  (failed)
+  Step panicked. Captured output: not implemented: body-instructs-maintaining-glossary
+  1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
   ```
-- [ ] GREEN: retarget the skill body from `domain.md` to
+- [x] GREEN: retarget the skill body from `domain.md` to
   `docs/arc42/12-glossary.md` (UL table, aggregates/invariants); paste
   zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 4 steps (4 passed)
+  Permanent 'The skill body is an active discipline' still 5/5 (template keeps
+  'Challenge generic or overloaded terms', 'Name aggregates with domain nouns',
+  inline-update discipline, 'the *domain's own*' + 'trip reset', no givn lifecycle).
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 4 steps (4 passed)  (unchanged)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `a732d01` - `feat(domain-modeling-glossary): Record the vocabulary in the project's arc42 glossary`
 
 ### The skill requires the arc42 glossary for domain modeling
 
-- [ ] RED: target `The skill requires the arc42 glossary for domain modeling`;
+- [x] RED: target `The skill requires the arc42 glossary for domain modeling`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  Then the body instructs enabling the arc42 addon first...  (failed)
+  Step panicked. Captured output: not implemented: body-instructs-enabling-arc42
+  1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
   ```
-- [ ] GREEN: add the "requires the arc42 addon; enable it first" instruction
+- [x] GREEN: add the "requires the arc42 addon; enable it first" instruction
   to the skill body; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `3ff1afd` - `feat(domain-modeling-glossary): Require the arc42 addon for domain modeling`
 
 ### The next-step guidance names the domain skill during later change phases
 
-- [ ] RED: target `The next-step guidance names the domain skill during later
+- [x] RED: target `The next-step guidance names the domain skill during later
   change phases`; paste non-zero runner output (fixture stages the change to
   awaiting-review; generic next-step currently stays silent at that stage).
   ```text
-  (to fill)
+  Given a Givn project with the domain model addon enabled and a change
+  awaiting review  (failed)
+  Step doesn't match any function
+  1 feature / 1 scenario (1 failed)
   ```
-- [ ] GREEN: change `domain_skill_to_load` to the
+- [x] GREEN: change `domain_skill_to_load` to the
   `(domain_modeling: bool, arc42: bool) -> Option<&'static str>` predicate
   (names the skill for any workflow step when both addons are on), widen
   `report_change` (new `arc42` parameter, 3 call sites in
   `run_generic`), update `run_artifact`, and update the `domain_skill_to_load`
   unit tests; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)
+  cargo test --lib instructions: 9 passed (old 2 unit tests replaced)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `e551484` - `feat(domain-modeling-glossary): Route the domain skill through every workflow step when the arc42 addon is enabled`
 
 ### A project without the arc42 glossary is not pointed at the domain skill
 
-- [ ] RED: target `A project without the arc42 glossary is not pointed at the
+- [x] RED: target `A project without the arc42 glossary is not pointed at the
   domain skill`; paste non-zero runner output (guard scenario; passes before
   and after the router change).
   ```text
-  (to fill)
+  Given a Givn project with the domain model addon enabled but no arc42
+  glossary and a change awaiting specs  (failed)
+  Step doesn't match any function
   ```
-- [ ] GREEN: assert the coupling contract (domain_modeling on, arc42 off →
+- [x] GREEN: assert the coupling contract (domain_modeling on, arc42 off →
   no skill pointer) with the already-wired predicate and the disable-arc42
   fixture; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `c58781b` - `feat(domain-modeling-glossary): Guard the domain skill behind the arc42 glossary`
 
 ### The design-review skill checks that the ubiquitous language is followed
 
-- [ ] RED: target `The design-review skill checks that the ubiquitous language
+- [x] RED: target `The design-review skill checks that the ubiquitous language
   is followed`; paste non-zero runner output.
   ```text
-  (to fill)
+  Then a check requires confirming the ubiquitous language is used
+  consistently and recorded in the arc42 glossary  (failed)
+  Step panicked. Captured output: not implemented: design-review-checks-ubiquitous-language
+  1 feature / 1 scenario (1 failed) / 3 steps (2 passed, 1 failed)
   ```
-- [ ] GREEN: add the mandatory ubiquitous-language check to the
+- [x] GREEN: add the mandatory ubiquitous-language check to the
   `givn-design-review` skill template; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 3 steps (3 passed)  (unchanged)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `eab4d44` - `feat(domain-modeling-glossary): Design-review checks the ubiquitous language against the arc42 glossary`
 
 ### The review skill checks that the ubiquitous language is followed
 
-- [ ] RED: target `The review skill checks that the ubiquitous language is
+- [x] RED: target `The review skill checks that the ubiquitous language is
   followed`; paste non-zero runner output.
   ```text
-  (to fill)
+  Then a check requires confirming the ubiquitous language is used
+  consistently everywhere and recorded in the arc42 glossary  (failed)
+  Step panicked. Captured output: not implemented: review-checks-ubiquitous-language
+  1 feature / 2 scenarios within filter (1 failed) / 6 steps (5 passed, 1 failed)
   ```
-- [ ] GREEN: add the mandatory ubiquitous-language check to the `givn-review`
+- [x] GREEN: add the mandatory ubiquitous-language check to the `givn-review`
   skill template; paste zero-exit targeted output.
   ```text
-  (to fill)
+  2 scenarios (design-review + review) / 6 steps (6 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  unchanged
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `162d200` - `feat(domain-modeling-glossary): Review checks the ubiquitous language against the arc42 glossary`
 
 ## E2E Scenarios
 
 ### An agent synchronizes skills and the domain skill is routed
 
-- [ ] RED: target `An agent synchronizes skills and the domain skill is
+- [x] RED: target `An agent synchronizes skills and the domain skill is
   routed`; paste non-zero runner output.
   ```text
-  (to fill)
+  And the generated skill loads during every workflow step of a change  (failed)
+  Step panicked. Captured output: not implemented: generated-skill-loads-during-every-workflow-step
+  1 feature / 1 scenario (1 failed) / 4 steps (3 passed, 1 failed)
   ```
-- [ ] GREEN: assert the generated skill loads during every workflow step and
+- [x] GREEN: assert the generated skill loads during every workflow step and
   instructs maintaining the project's arc42 glossary (e2e assertions on the
   file generated by `givn skills sync`); paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature / 1 scenario (1 passed) / 6 steps (6 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  unchanged
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-modeling-glossary): <title>`
+- [x] COMMIT: `173e27c` - `feat(domain-modeling-glossary): E2E asserts the generated skill covers every step and the glossary`
 
 ## Removed Scenarios
 
 ### The skill documents a per-change ubiquitous-language table
 
-- [ ] Superseded by `The ubiquitous language is recorded in the project's
+- [x] Superseded by `The ubiquitous language is recorded in the project's
   arc42 glossary` (same topic, durable-artifact upgrade). Merge removes the
   scenario by title; the delta placeholder step is covered by the shared
   `Given a placeholder removed scenario` step.
 
 ## Done
 
-- [ ] Full suite: `./run-tests.sh` exits 0 (change-scoped full
+- [x] Full suite: `./run-tests.sh` exits 0 (change-scoped full
   `GIVN_FEATURES=givn/changes/domain-modeling-glossary-enforcement/specs ./run-tests.sh`).
-- [ ] E2E suite: `./run-tests.sh --e2e` exits 0 (change-scoped e2e).
-- [ ] `givn lint --change domain-modeling-glossary-enforcement` exits 0 or 2.
-- [ ] Self-dogfood: `cargo install --path . --locked --force`, `givn skills sync`,
+  ```text
+  9 scenarios (9 passed) / 31 steps (31 passed)
+  ```
+- [x] E2E suite: `./run-tests.sh --e2e` exits 0 (change-scoped e2e).
+  ```text
+  1 scenario (1 passed) / 6 steps (6 passed)
+  ```
+- [x] `givn lint --change domain-modeling-glossary-enforcement` exits 0 or 2.
+  ```text
+  givn lint: 1 file(s) checked — clean (exit 0)
+  ```
+- [x] Self-dogfood: `cargo install --path . --locked --force`, `givn skills sync`,
       and the generated `.opencode/skills/givn-domain-modeling/SKILL.md` has the
       whole-lifecycle trigger, the arc42-glossary instruction, and no per-change
       `domain.md` requirement.
+  ```text
+  generated SKILL.md line 8: "during every workflow step of a change"
+  line 47: "Requires the arc42 addon - enable it first when the glossary is missing"
+  line 55: "maintaining the project's arc42 glossary inline ..."
+  no "domain.md" anywhere
+  live router: arc42 off -> no skill; arc42 on -> skill at specs and at review
+  ```
+  Also: `cargo test --lib` 166 passed; `cargo clippy --workspace --all-targets -D warnings` clean; `cargo fmt --all` clean.

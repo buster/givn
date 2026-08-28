@@ -79,13 +79,18 @@ fn addon_enabled_project_awaiting_review(world: &mut GivnWorld) {
     )
     .unwrap();
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
-    std::fs::write(change.join("design-review.md"), "# Design review\n\nDESIGN-REVIEW: PASS\n")
-        .unwrap();
+    std::fs::write(
+        change.join("design-review.md"),
+        "# Design review\n\nDESIGN-REVIEW: PASS\n",
+    )
+    .unwrap();
     std::fs::write(change.join("tasks.md"), "- [x] done\n").unwrap();
     world.env = Some(env);
 }
 
-#[given("a Givn project with the domain model addon enabled but no arc42 glossary and a change awaiting specs")]
+#[given(
+    "a Givn project with the domain model addon enabled but no arc42 glossary and a change awaiting specs"
+)]
 fn addon_enabled_without_arc42_project_with_change(world: &mut GivnWorld) {
     let env = crate::common::make_init_root();
     let disable = crate::common::run_givn(&env, &["addons", "disable", "arc42"]);
@@ -284,7 +289,12 @@ fn review_template_inspected(world: &mut GivnWorld) {
 
 #[given("a placeholder removed scenario")]
 fn placeholder_removed_scenario(_world: &mut GivnWorld) {
-    assert!(true, "removed-scenario placeholder step");
+    let template = std::fs::read_to_string("assets/skills/givn-domain-modeling/SKILL.md.tmpl")
+        .expect("domain-modeling skill template must exist for the placeholder step");
+    assert!(
+        template.contains("givn-domain-modeling"),
+        "skill template asset is not loadable"
+    );
 }
 
 #[when("an agent reads the check list")]
@@ -335,7 +345,9 @@ fn body_instructs_enabling_arc42(world: &mut GivnWorld) {
     );
 }
 
-#[then("a check requires confirming the ubiquitous language is used consistently and recorded in the arc42 glossary")]
+#[then(
+    "a check requires confirming the ubiquitous language is used consistently and recorded in the arc42 glossary"
+)]
 fn design_review_checks_ubiquitous_language(world: &mut GivnWorld) {
     let content = skill_template(world);
     assert!(
@@ -348,7 +360,9 @@ fn design_review_checks_ubiquitous_language(world: &mut GivnWorld) {
     );
 }
 
-#[then("a check requires confirming the ubiquitous language is used consistently everywhere and recorded in the arc42 glossary")]
+#[then(
+    "a check requires confirming the ubiquitous language is used consistently everywhere and recorded in the arc42 glossary"
+)]
 fn review_checks_ubiquitous_language(world: &mut GivnWorld) {
     let content = skill_template(world);
     assert!(
