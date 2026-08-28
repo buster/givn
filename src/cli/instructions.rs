@@ -294,10 +294,7 @@ fn report_change(
 /// the domain-modeling addon is enabled AND the project has the arc42
 /// glossary the skill maintains. When either is off, behaviour is identical to
 /// before.
-fn domain_skill_to_load(
-    domain_modeling: bool,
-    arc42: bool,
-) -> Option<&'static str> {
+fn domain_skill_to_load(domain_modeling: bool, arc42: bool) -> Option<&'static str> {
     if domain_modeling && arc42 {
         Some("givn-domain-modeling")
     } else {
