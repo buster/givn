@@ -77,21 +77,22 @@
 
 ### Lifecycle guidance describes the domain, not the givn change
 
-- [ ] RED: target `Lifecycle guidance describes the domain, not the givn change`;
+- [x] RED: target `Lifecycle guidance describes the domain, not the givn change`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: not implemented: lifecycle-describes-domain-states
   ```
-- [ ] GREEN: fix the lifecycle section in the skill template and step
+- [x] GREEN: fix the lifecycle section in the skill template and step
   assertions; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `18fce48` - `feat(domain-skill-trigger): Lifecycle guidance describes the domain, not the givn change`
 
 ### The skill documents a per-change ubiquitous-language table
 
