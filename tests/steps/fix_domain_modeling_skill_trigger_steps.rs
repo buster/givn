@@ -61,6 +61,30 @@ fn addon_disabled_project_with_change(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a Givn project with the domain model addon enabled and a change awaiting review")]
+fn addon_enabled_project_awaiting_review(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let enable = crate::common::run_givn(&env, &["addons", "enable", "domain_modeling"]);
+    assert!(
+        enable.status.success(),
+        "addons enable domain_modeling failed"
+    );
+    let created = crate::common::run_givn(&env, &["new", FIXTURE_CHANGE_ID]);
+    assert!(created.status.success(), "create fixture change failed");
+    let change = env.path(&format!("givn/changes/{FIXTURE_CHANGE_ID}"));
+    std::fs::create_dir_all(change.join("specs/domain-skill-trigger")).unwrap();
+    std::fs::write(
+        change.join("specs/domain-skill-trigger/example.feature"),
+        "Feature: fixture\n",
+    )
+    .unwrap();
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "# Design review\n\nDESIGN-REVIEW: PASS\n")
+        .unwrap();
+    std::fs::write(change.join("tasks.md"), "- [x] done\n").unwrap();
+    world.env = Some(env);
+}
+
 #[when("an agent reads the skill trigger text")]
 fn agent_reads_skill_trigger_text(world: &mut GivnWorld) {
     assert!(
