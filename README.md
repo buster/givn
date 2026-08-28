@@ -6,6 +6,7 @@
 
 
 
+
 ```
   ________  .__
  /  _____/  |__|__  __ ____
@@ -95,7 +96,7 @@ Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at y
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 77% (17234/22456)
+Line coverage: 77% (17255/22472)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
