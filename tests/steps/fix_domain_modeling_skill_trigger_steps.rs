@@ -155,8 +155,8 @@ fn body_names_aggregates_with_domain_nouns(world: &mut GivnWorld) {
 fn body_updated_inline(world: &mut GivnWorld) {
     let content = skill_template(world);
     assert!(
-        content.contains("Update `domain.md` inline"),
-        "body does not require inline domain.md updates"
+        content.contains("the glossary inline"),
+        "body does not require inline glossary updates"
     );
 }
 
@@ -267,14 +267,20 @@ fn trigger_loads_during_every_workflow_step(world: &mut GivnWorld) {
 
 #[then("the body instructs maintaining the project's arc42 glossary")]
 fn body_instructs_maintaining_glossary(world: &mut GivnWorld) {
-    unimplemented!("body-instructs-maintaining-glossary");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("maintaining the project's arc42 glossary"),
+        "body does not instruct maintaining the arc42 glossary"
+    );
 }
 
 #[then("the body does not require a per-change domain artifact")]
 fn body_does_not_require_domain_artifact(world: &mut GivnWorld) {
-    unimplemented!("body-does-not-require-domain-artifact");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        !content.contains("domain.md"),
+        "body still requires a per-change domain.md artifact"
+    );
 }
 
 #[then("the body instructs enabling the arc42 addon first when the glossary is missing")]
