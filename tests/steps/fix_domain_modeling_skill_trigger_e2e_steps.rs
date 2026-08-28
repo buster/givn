@@ -20,8 +20,12 @@ fn generated_skill(world: &GivnWorld) -> String {
 
 #[when("the agent synchronizes skills through the Givn CLI")]
 fn agent_synchronizes_skills(world: &mut GivnWorld) {
-    unimplemented!("agent-synchronizes-skills");
-    let _ = world;
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(env, &["skills", "sync"])
+    };
+    assert!(output.status.success(), "skills sync failed");
+    world.last_output = Some(output);
 }
 
 #[when("the agent requests the next-step guidance through the Givn CLI")]
@@ -38,18 +42,27 @@ fn agent_requests_design_instructions(world: &mut GivnWorld) {
 
 #[then("the generated domain skill names the domain-modeling skill")]
 fn generated_skill_names_domain_skill(world: &mut GivnWorld) {
-    unimplemented!("generated-skill-names-domain-skill");
-    let _ = world;
+    let content = generated_skill(world);
+    assert!(
+        content.contains("name: givn-domain-modeling"),
+        "generated skill is not the domain-modeling skill"
+    );
 }
 
 #[then("the generated skill loads before writing feature specs or the design")]
 fn generated_skill_loads_before_specs_or_design(world: &mut GivnWorld) {
-    unimplemented!("generated-skill-loads-before-specs-or-design");
-    let _ = world;
+    let content = generated_skill(world);
+    assert!(
+        content.contains("before writing .feature specs or design.md"),
+        "generated skill trigger does not cover the specs and design phases"
+    );
 }
 
 #[then("the generated skill does not describe the givn change lifecycle")]
 fn generated_skill_omits_givn_lifecycle(world: &mut GivnWorld) {
-    unimplemented!("generated-skill-omits-givn-lifecycle");
-    let _ = world;
+    let content = generated_skill(world);
+    assert!(
+        !content.contains("created -> planned -> implemented -> archived"),
+        "generated skill still describes the givn change lifecycle"
+    );
 }
