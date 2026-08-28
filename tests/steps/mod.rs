@@ -27,6 +27,8 @@ pub mod enforce_post_merge_e2e_gate_steps;
 pub mod enforce_spec_similarity_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_uppercase_checkbox_parsing_steps;
+pub mod fix_domain_modeling_skill_trigger_e2e_steps;
+pub mod fix_domain_modeling_skill_trigger_steps;
 pub mod init_agent_target_selection_steps;
 pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
