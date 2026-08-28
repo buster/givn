@@ -190,8 +190,11 @@ fn body_records_anti_terms(world: &mut GivnWorld) {
 
 #[then("the guidance says to load the domain-modeling skill now")]
 fn guidance_says_load_domain_skill(world: &mut GivnWorld) {
-    unimplemented!("guidance-says-load-domain-skill");
-    let _ = world;
+    let output = stdout(world);
+    assert!(
+        output.contains("Skill to load now: `givn-domain-modeling`"),
+        "guidance does not say to load the domain-modeling skill now: {output}"
+    );
 }
 
 #[then("the JSON response names the domain-modeling skill as the skill to load")]

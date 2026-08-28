@@ -158,21 +158,22 @@
 
 ### An agent synchronizes skills and the domain skill is routed
 
-- [ ] RED: target `An agent synchronizes skills and the domain skill is routed`;
+- [x] RED: target `An agent synchronizes skills and the domain skill is routed`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not implemented: agent-synchronizes-skills
   ```
-- [ ] GREEN: e2e steps enabling the addon, syncing skills, and asserting the
+- [x] GREEN: e2e steps enabling the addon, syncing skills, and asserting the
   generated skill; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `1f5b082` - `feat(domain-skill-trigger): An agent synchronizes skills and the domain skill is routed`
 
 ### An agent requests next-step guidance and is routed to the domain skill
 

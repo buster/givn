@@ -256,6 +256,9 @@ fn report_change(state: &ChangeState, domain_modeling: bool, json: bool) -> Resu
         println!("Change: {}  [{}]", state.id, state.stage_label());
         println!("Status: {summary}");
         println!();
+        if let Some(skill) = skill_to_load {
+            println!("Skill to load now: `{skill}`");
+        }
         println!("Next: run `{next_command}`");
         if let Some(skill) = next_skill {
             println!("  (as a skill in your AI agent: `/{skill}`)");

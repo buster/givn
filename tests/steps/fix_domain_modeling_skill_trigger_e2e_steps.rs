@@ -30,8 +30,11 @@ fn agent_synchronizes_skills(world: &mut GivnWorld) {
 
 #[when("the agent requests the next-step guidance through the Givn CLI")]
 fn agent_requests_next_step_guidance(world: &mut GivnWorld) {
-    unimplemented!("agent-requests-next-step-guidance");
-    let _ = world;
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(env, &["instructions"])
+    };
+    world.last_output = Some(output);
 }
 
 #[when("the agent requests the design instructions through the Givn CLI")]
