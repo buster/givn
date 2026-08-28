@@ -61,17 +61,24 @@ fn run_artifact(
     };
 
     let content = crate::config::cascade::resolve_instruction(artifact)?;
+    let skill_to_load = domain_skill_to_load(Some(artifact), manifest.addons.domain_modeling);
 
     if json {
-        let out = serde_json::json!({
+        let mut out = serde_json::json!({
             "id": artifact_definition.id,
             "generates": artifact_definition.generates,
             "requires": artifact_definition.requires,
             "instruction": content,
         });
+        if let Some(skill) = skill_to_load {
+            out["skill_to_load"] = serde_json::json!(skill);
+        }
         println!("{}", serde_json::to_string_pretty(&out)?);
     } else {
         println!("{content}");
+        if let Some(skill) = skill_to_load {
+            println!("Skill to load now: `{skill}`");
+        }
     }
 
     Ok(())
