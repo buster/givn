@@ -136,22 +136,23 @@
 
 ### A project without the addon is not routed to the domain skill
 
-- [ ] RED: target `A project without the addon is not routed to the domain skill`;
+- [x] RED: target `A project without the addon is not routed to the domain skill`;
   paste non-zero runner output (this is a regression-guard scenario; it
   passes before and after implementation).
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: not implemented: guidance-does-not-mention-domain-skill
   ```
-- [ ] GREEN: assert the addon-off contract with existing router behavior; paste
+- [x] GREEN: assert the addon-off contract with existing router behavior; paste
   zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `8758532` - `feat(domain-skill-trigger): A project without the addon is not routed to the domain skill`
 
 ## E2E Scenarios
 
