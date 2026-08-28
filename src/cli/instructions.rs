@@ -61,7 +61,8 @@ fn run_artifact(
     };
 
     let content = crate::config::cascade::resolve_instruction(artifact)?;
-    let skill_to_load = domain_skill_to_load(Some(artifact), manifest.addons.domain_modeling);
+    let skill_to_load =
+        domain_skill_to_load(manifest.addons.domain_modeling, manifest.addons.arc42);
 
     if json {
         let mut out = serde_json::json!({
@@ -105,7 +106,12 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
             bail!("change '{}' not found", id);
         }
         let state = ChangeState::from_manifest(&change_dir, &manifest);
-        return report_change(&state, manifest.addons.domain_modeling, json);
+        return report_change(
+            &state,
+            manifest.addons.domain_modeling,
+            manifest.addons.arc42,
+            json,
+        );
     }
 
     // No change named: derive from current project state.
@@ -114,7 +120,12 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
 
     match changes.len() {
         0 => report_no_active_changes(&archived, json),
-        1 => report_change(&changes[0], manifest.addons.domain_modeling, json),
+        1 => report_change(
+            &changes[0],
+            manifest.addons.domain_modeling,
+            manifest.addons.arc42,
+            json,
+        ),
         _ => report_multiple_changes(&changes, json),
     }
 }
@@ -233,11 +244,18 @@ fn report_archived_change(id: &str, json: bool) -> Result<()> {
     }
 }
 
-fn report_change(state: &ChangeState, domain_modeling: bool, json: bool) -> Result<()> {
+fn report_change(
+    state: &ChangeState,
+    domain_modeling: bool,
+    arc42: bool,
+    json: bool,
+) -> Result<()> {
     let (summary, next_command, next_skill) = describe_next_step(state);
-    let skill_to_load = state
-        .next_required()
-        .and_then(|a| domain_skill_to_load(Some(a.id.as_str()), domain_modeling));
+    let skill_to_load = if state.next_required().is_some() {
+        domain_skill_to_load(domain_modeling, arc42)
+    } else {
+        None
+    };
 
     if json {
         let mut out = serde_json::json!({
@@ -270,21 +288,20 @@ fn report_change(state: &ChangeState, domain_modeling: bool, json: bool) -> Resu
     Ok(())
 }
 
-/// The domain-modeling skill to route to at the given phase, if any.
+/// The domain-modeling skill to route to, if any.
 ///
-/// Routed only at the specs and design phases — the two artifacts the skill's
-/// trigger text names ("before writing .feature specs or design.md") — and
-/// only when the addon is enabled. When off, behaviour is identical to before.
+/// Routed during every workflow step of a change (any phase), and only when
+/// the domain-modeling addon is enabled AND the project has the arc42
+/// glossary the skill maintains. When either is off, behaviour is identical to
+/// before.
 fn domain_skill_to_load(
-    next_artifact_id: Option<&str>,
     domain_modeling: bool,
+    arc42: bool,
 ) -> Option<&'static str> {
-    if !domain_modeling {
-        return None;
-    }
-    match next_artifact_id {
-        Some("specs") | Some("design") => Some("givn-domain-modeling"),
-        _ => None,
+    if domain_modeling && arc42 {
+        Some("givn-domain-modeling")
+    } else {
+        None
     }
 }
 
@@ -412,23 +429,18 @@ mod tests {
     }
 
     #[test]
-    fn domain_skill_to_load_routes_specs_and_design_when_addon_enabled() {
+    fn domain_skill_to_load_routes_when_both_addons_enabled() {
         assert_eq!(
-            domain_skill_to_load(Some("specs"), true),
-            Some("givn-domain-modeling")
-        );
-        assert_eq!(
-            domain_skill_to_load(Some("design"), true),
+            domain_skill_to_load(true, true),
             Some("givn-domain-modeling")
         );
     }
 
     #[test]
-    fn domain_skill_to_load_is_empty_without_addon_or_other_phases() {
-        assert_eq!(domain_skill_to_load(Some("specs"), false), None);
-        assert_eq!(domain_skill_to_load(Some("review"), true), None);
-        assert_eq!(domain_skill_to_load(Some("tasks"), true), None);
-        assert_eq!(domain_skill_to_load(None, true), None);
+    fn domain_skill_to_load_is_empty_without_both_addons() {
+        assert_eq!(domain_skill_to_load(false, false), None);
+        assert_eq!(domain_skill_to_load(true, false), None);
+        assert_eq!(domain_skill_to_load(false, true), None);
     }
 
     #[test]
