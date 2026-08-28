@@ -115,21 +115,24 @@
 
 ### An agent requests next-step guidance as JSON and the skill route is machine-readable
 
-- [ ] RED: target `An agent requests next-step guidance as JSON and the skill route is machine-readable`;
+- [x] RED: target `An agent requests next-step guidance as JSON and the skill route is machine-readable`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: not implemented: json-response-names-domain-skill
   ```
-- [ ] GREEN: add `skill_to_load` to the generic JSON report in
+- [x] GREEN: add `skill_to_load` to the generic JSON report in
   `src/cli/instructions.rs`; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
+  Files: src/cli/instructions.rs,
+  tests/steps/fix_domain_modeling_skill_trigger_steps.rs
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `20f22d5` - `feat(domain-skill-trigger): An agent requests next-step guidance as JSON and the skill route is machine-readable`
 
 ### A project without the addon is not routed to the domain skill
 
