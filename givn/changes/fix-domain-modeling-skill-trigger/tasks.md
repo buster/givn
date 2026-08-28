@@ -58,21 +58,22 @@
 
 ### The skill body is an active discipline
 
-- [ ] RED: target `The skill body is an active discipline`; paste non-zero
+- [x] RED: target `The skill body is an active discipline`; paste non-zero
   runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: not implemented: body-challenges-generic-terms
   ```
-- [ ] GREEN: complete the skill body rework and step assertions; paste
+- [x] GREEN: complete the skill body rework and step assertions; paste
   zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `409728c` - `feat(domain-skill-trigger): The skill body is an active discipline`
 
 ### Lifecycle guidance describes the domain, not the givn change
 
