@@ -75,3 +75,21 @@ fn generated_skill_omits_givn_lifecycle(world: &mut GivnWorld) {
         "generated skill still describes the givn change lifecycle"
     );
 }
+
+#[then("the generated skill loads during every workflow step of a change")]
+fn generated_skill_loads_during_every_workflow_step(world: &mut GivnWorld) {
+    let content = generated_skill(world);
+    assert!(
+        content.contains("during every workflow step of a change"),
+        "generated skill trigger does not cover every workflow step"
+    );
+}
+
+#[then("the generated skill instructs maintaining the project's arc42 glossary")]
+fn generated_skill_instructs_maintaining_glossary(world: &mut GivnWorld) {
+    let content = generated_skill(world);
+    assert!(
+        content.contains("maintaining the project's arc42 glossary"),
+        "generated skill does not instruct maintaining the arc42 glossary"
+    );
+}
