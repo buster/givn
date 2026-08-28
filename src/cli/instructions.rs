@@ -98,7 +98,7 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
             bail!("change '{}' not found", id);
         }
         let state = ChangeState::from_manifest(&change_dir, &manifest);
-        return report_change(&state, json);
+        return report_change(&state, manifest.addons.domain_modeling, json);
     }
 
     // No change named: derive from current project state.
@@ -107,7 +107,11 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
 
     match changes.len() {
         0 => report_no_active_changes(&archived, json),
-        1 => report_change(&changes[0], json),
+        1 => report_change(
+            &changes[0],
+            manifest.addons.domain_modeling,
+            json,
+        ),
         _ => report_multiple_changes(&changes, json),
     }
 }
@@ -226,11 +230,14 @@ fn report_archived_change(id: &str, json: bool) -> Result<()> {
     }
 }
 
-fn report_change(state: &ChangeState, json: bool) -> Result<()> {
+fn report_change(state: &ChangeState, domain_modeling: bool, json: bool) -> Result<()> {
     let (summary, next_command, next_skill) = describe_next_step(state);
+    let skill_to_load = state
+        .next_required()
+        .and_then(|a| domain_skill_to_load(Some(a.id.as_str()), domain_modeling));
 
     if json {
-        let out = serde_json::json!({
+        let mut out = serde_json::json!({
             "status": "active-change",
             "id": state.id,
             "stage": state.stage_label(),
@@ -239,6 +246,9 @@ fn report_change(state: &ChangeState, json: bool) -> Result<()> {
             "next_skill": next_skill,
             "overview": generic_overview(),
         });
+        if let Some(skill) = skill_to_load {
+            out["skill_to_load"] = serde_json::json!(skill);
+        }
         println!("{}", serde_json::to_string_pretty(&out)?);
     } else {
         println!("{}", generic_overview());
@@ -252,6 +262,24 @@ fn report_change(state: &ChangeState, json: bool) -> Result<()> {
         }
     }
     Ok(())
+}
+
+/// The domain-modeling skill to route to at the given phase, if any.
+///
+/// Routed only at the specs and design phases — the two artifacts the skill's
+/// trigger text names ("before writing .feature specs or design.md") — and
+/// only when the addon is enabled. When off, behaviour is identical to before.
+fn domain_skill_to_load(
+    next_artifact_id: Option<&str>,
+    domain_modeling: bool,
+) -> Option<&'static str> {
+    if !domain_modeling {
+        return None;
+    }
+    match next_artifact_id {
+        Some("specs") | Some("design") => Some("givn-domain-modeling"),
+        _ => None,
+    }
 }
 
 /// Derive (summary, shell command, optional skill name) for the immediate
@@ -375,6 +403,26 @@ mod tests {
         assert!(overview.contains("propose"));
         assert!(overview.contains("archive"));
         assert!(overview.contains("givn status"));
+    }
+
+    #[test]
+    fn domain_skill_to_load_routes_specs_and_design_when_addon_enabled() {
+        assert_eq!(
+            domain_skill_to_load(Some("specs"), true),
+            Some("givn-domain-modeling")
+        );
+        assert_eq!(
+            domain_skill_to_load(Some("design"), true),
+            Some("givn-domain-modeling")
+        );
+    }
+
+    #[test]
+    fn domain_skill_to_load_is_empty_without_addon_or_other_phases() {
+        assert_eq!(domain_skill_to_load(Some("specs"), false), None);
+        assert_eq!(domain_skill_to_load(Some("review"), true), None);
+        assert_eq!(domain_skill_to_load(Some("tasks"), true), None);
+        assert_eq!(domain_skill_to_load(None, true), None);
     }
 
     #[test]

@@ -196,8 +196,17 @@ fn guidance_says_load_domain_skill(world: &mut GivnWorld) {
 
 #[then("the JSON response names the domain-modeling skill as the skill to load")]
 fn json_response_names_domain_skill(world: &mut GivnWorld) {
-    unimplemented!("json-response-names-domain-skill");
-    let _ = world;
+    let output = world
+        .last_output
+        .as_ref()
+        .expect("JSON next-step command was not run");
+    assert!(output.status.success(), "next-step JSON command failed");
+    let value: serde_json::Value =
+        serde_json::from_slice(&output.stdout).expect("next-step output is not JSON");
+    assert_eq!(
+        value["skill_to_load"], "givn-domain-modeling",
+        "JSON response does not name the skill to load"
+    );
 }
 
 #[then("the guidance does not mention the domain-modeling skill")]

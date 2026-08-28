@@ -96,21 +96,22 @@
 
 ### The skill documents a per-change ubiquitous-language table
 
-- [ ] RED: target `The skill documents a per-change ubiquitous-language table`;
+- [x] RED: target `The skill documents a per-change ubiquitous-language table`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: not implemented: body-requires-ul-table
   ```
-- [ ] GREEN: complete the domain.md / anti-term guidance in the skill template
+- [x] GREEN: complete the domain.md / anti-term guidance in the skill template
   and step assertions; paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 4 steps (4 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `046e382` - `feat(domain-skill-trigger): The skill documents a per-change ubiquitous-language table`
 
 ### An agent requests next-step guidance as JSON and the skill route is machine-readable
 
