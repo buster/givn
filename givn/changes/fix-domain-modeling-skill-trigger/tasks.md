@@ -248,9 +248,9 @@
 
 ## Done
 
-- [ ] Full suite: `./run-tests.sh` exits 0.
-- [ ] E2E suite: `./run-tests.sh --e2e` exits 0.
-- [ ] `givn lint --change fix-domain-modeling-skill-trigger` exits 0 or 2.
-- [ ] Self-dogfood: `cargo install --path . --locked --force`, `givn skills sync`,
+- [x] Full suite: `./run-tests.sh` exits 0.
+- [x] E2E suite: `./run-tests.sh --e2e` exits 0.
+- [x] `givn lint --change fix-domain-modeling-skill-trigger` exits 0 or 2.
+- [x] Self-dogfood: `cargo install --path . --locked --force`, `givn skills sync`,
       and the generated `.opencode/skills/givn-domain-modeling/SKILL.md` has the
       new trigger text and lifecycle section.
