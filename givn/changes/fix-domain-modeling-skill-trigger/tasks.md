@@ -177,21 +177,25 @@
 
 ### An agent requests next-step guidance and is routed to the domain skill
 
-- [ ] RED: target `An agent requests next-step guidance and is routed to the domain skill`;
+- [x] RED: target `An agent requests next-step guidance and is routed to the domain skill`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 2 steps (1 passed, 1 failed)
+  Step panicked. Captured output: not implemented: agent-requests-next-step-guidance
   ```
-- [ ] GREEN: emit the router line in `src/cli/instructions.rs` generic path;
+- [x] GREEN: emit the router line in `src/cli/instructions.rs` generic path;
   paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
+  Files: src/cli/instructions.rs,
+  tests/steps/fix_domain_modeling_skill_trigger_e2e_steps.rs,
+  tests/steps/fix_domain_modeling_skill_trigger_steps.rs
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `a3d3fed` - `feat(domain-skill-trigger): An agent requests next-step guidance and is routed to the domain skill`
 
 ### An agent requests the specs guidance and is routed to the domain skill
 
