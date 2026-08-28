@@ -6,8 +6,8 @@ Grill the current plan or design, grounding every challenge in the project's
 existing documentation and specs.
 
 Unlike `/grill-me`, this command **must cite a source** for each challenge: a
-line in the proposal, a spec scenario, the design doc, an arc42 chapter, or an
-ADR. If no source backs a concern, drop it.
+line in the proposal, a spec scenario, the design doc, an architecture chapter,
+or an ADR. If no source backs a concern, drop it.
 
 ## Steps
 
@@ -19,7 +19,9 @@ Gather the authoritative material:
 - `givn/changes/<id>/specs/**/*.feature`
 - `givn/changes/<id>/design.md`
 - `givn/changes/<id>/tasks.md`
+{{#if addons.arc42}}
 - `docs/arc42/` (if the arc42 addon is enabled)
+{{/if}}
 - Any ADRs under `docs/adr/` or the project's decisions log
 - `givn/config.yaml` (verify.command, features_path, addons, extras)
 

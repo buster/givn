@@ -120,10 +120,10 @@ when clean.
   </example>
 </coverage-boundary-examples>
 
-## Arc42 implementation conformance (conditional)
+{{#if addons.arc42}}
+## Arc42 implementation conformance
 
-If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled` in
-review.md. Otherwise, run this mandatory check before coverage classification.
+Run this mandatory check before coverage classification.
 Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
 independently derive the affected chapters and architecture facts from the
 completed implementation, `design.md`, and `tasks.md`. For every chapter or
@@ -136,17 +136,21 @@ implementation drift from documented facts. Every omission or contradiction is
 a finding. Fix the affected artifact and repeat the comparison; if design.md
 changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
 rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
+{{/if}}
 
-## Ubiquitous language conformance (conditional)
+{{#if addons.arc42}}
+{{#if addons.domain_modeling}}
+## Ubiquitous language conformance
 
-If `addons.domain_modeling` is disabled, record `N/A when the domain-modeling
-addon is disabled` in review.md. Otherwise, before sign-off, run this mandatory
+Before sign-off, run this mandatory
 check: confirm that the specs, design, and code reuse the durable glossary's
 exact terms — the ubiquitous language is used consistently everywhere and
 recorded in the project's arc42 glossary. Every spec or design term the
 glossary does not hold, or any inconsistent reuse, is a finding: fix the
 affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
 Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
+{{/if}}
+{{/if}}
 
 ## Deterministic gate dispositions
 
@@ -178,7 +182,8 @@ Coverage is complete when every gap is classified and resolved (or justified).
 1. Run `{{VERIFY_COMMAND}}` — confirm all non-@e2e tests pass.
    Coverage data is embedded in the output if the runner is configured
     with coverage instrumentation. Extract the summary from the merged report
-    produced by `coverage.measure_command` and `coverage.merge_command`.
+    produced by the measurement and merge commands configured in
+    `givn/commands.yaml`.
 2. Run `verify.e2e_command` — confirm all @e2e tests pass.
 3. Run the configured measurement command and then merge command. Apply check
    14 before extracting gaps.

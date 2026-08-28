@@ -121,8 +121,12 @@ Then move to the next @e2e scenario.
   reusing one step file design.md split into two, or pointing
   `verify.e2e_command` at the same string as `verify.command`), STOP —
   do not implement the shortcut. Update design.md with the corrected
-  decision, re-run design-review (and reassess arc42 chapters if
-  structural), then resume. A shortcut that never touches design.md is an
+  decision, re-run design-review, then resume.
+{{#if addons.arc42}}
+  When the design.md fix is structural, reassess the affected arc42 chapters
+  before resuming.
+{{/if}}
+  A shortcut that never touches design.md is an
   unreviewed design decision made by the wrong artifact, and review.md's
   fabrication audit is built to catch it.
 - Every scenario task ends in a COMMIT sub-task with a recorded hash. A
