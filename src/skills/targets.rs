@@ -1,7 +1,8 @@
 use crate::config::overlay::load_effective;
 use crate::skills::render::{
-    SkillContext, default_skill_names, render_skill, resolve_skill_template,
+    SkillContext, default_skill_names, render_template, resolve_skill_template,
 };
+use anyhow::{Context, Result};
 /// Write rendered skills and commands to the configured target locations:
 /// - `.opencode/skills/<name>/SKILL.md` when `opencode` is selected
 /// - `.agents/skills/<name>/SKILL.md` when `agents` is selected
@@ -17,7 +18,6 @@ use crate::skills::render::{
 /// - `absolute-mode` — present only when that addon is enabled.
 ///
 /// Both are kept current on every call to `sync`.
-use anyhow::Result;
 use std::path::Path;
 
 /// A canonical agent target for generated skills/commands.
@@ -101,8 +101,10 @@ pub fn sync(project_root: &Path) -> Result<()> {
     let version = env!("CARGO_PKG_VERSION");
     let targets = configured_targets(project_root)?;
 
+    let addons = addon_flags(&manifest);
+    let domain_skill = domain_modeling_present(&manifest);
     let mut skill_names = default_skill_names();
-    if manifest.addons.domain_modeling {
+    if domain_skill {
         skill_names.push("givn-domain-modeling");
     }
     if manifest.addons.dev_principles {
@@ -119,7 +121,8 @@ pub fn sync(project_root: &Path) -> Result<()> {
 
     for name in &skill_names {
         let template = resolve_skill_template_for(name)?;
-        let rendered = render_skill(&template, &ctx);
+        let rendered = render_template(&template, &ctx, &addons)
+            .with_context(|| format!("failed to render skill template for '{name}'"))?;
 
         // Validate frontmatter.
         validate_frontmatter(&rendered, name)?;
@@ -138,11 +141,17 @@ pub fn sync(project_root: &Path) -> Result<()> {
             command_names.push("grill-with-docs");
         }
         for name in &command_names {
-            let content = resolve_command_template_for(name)?;
+            let template = resolve_command_template_for(name)?;
+            let content = render_template(&template, &ctx, &addons)
+                .with_context(|| format!("failed to render command template for '{name}'"))?;
             write_opencode_command(project_root, name, &content)?;
             println!("  synced command: /{name}");
         }
     }
+
+    // Self-reconcile: remove managed generated files that are no longer valid
+    // for the current configuration.
+    reconcile_addon_artifacts(project_root, &manifest, &targets)?;
 
     // Always-on blocks: unconditional, refreshed every sync.
     crate::cli::project_hint::apply(project_root)?;
@@ -158,6 +167,68 @@ pub fn sync(project_root: &Path) -> Result<()> {
     Ok(())
 }
 
+/// Whether the domain-modeling skill should be generated. It requires the
+/// arc42 addon (the project's glossary), mirroring the router's coupling.
+fn domain_modeling_present(manifest: &crate::config::manifest::Manifest) -> bool {
+    manifest.addons.domain_modeling && manifest.addons.arc42
+}
+
+/// Build the addon-name/enabled map passed into the template renderer.
+fn addon_flags(manifest: &crate::config::manifest::Manifest) -> Vec<(&'static str, bool)> {
+    vec![
+        ("arc42", manifest.addons.arc42),
+        ("domain_modeling", manifest.addons.domain_modeling),
+        ("dev_principles", manifest.addons.dev_principles),
+        ("grill_me", manifest.addons.grill_me),
+        ("grill_with_docs", manifest.addons.grill_with_docs),
+        ("absolute_mode", manifest.addons.absolute_mode),
+        ("readme", manifest.addons.readme),
+        ("coverage", manifest.addons.coverage),
+    ]
+}
+
+/// Remove addon-conditional generated files whose addon is no longer enabled.
+/// Only skills/commands that givn itself manages are touched.
+fn reconcile_addon_artifacts(
+    project_root: &Path,
+    manifest: &crate::config::manifest::Manifest,
+    targets: &[AgentTarget],
+) -> Result<()> {
+    if !manifest.addons.domain_modeling || !manifest.addons.arc42 {
+        for target in targets {
+            let dir = project_root
+                .join(target.dir())
+                .join("skills/givn-domain-modeling");
+            if dir.exists() {
+                std::fs::remove_dir_all(&dir)?;
+            }
+        }
+    }
+    if !manifest.addons.dev_principles {
+        for target in targets {
+            let dir = project_root
+                .join(target.dir())
+                .join("skills/givn-dev-principles");
+            if dir.exists() {
+                std::fs::remove_dir_all(&dir)?;
+            }
+        }
+    }
+    if !manifest.addons.grill_me {
+        let file = project_root.join(".opencode/commands/grill-me.md");
+        if file.exists() {
+            std::fs::remove_file(&file)?;
+        }
+    }
+    if !manifest.addons.grill_with_docs {
+        let file = project_root.join(".opencode/commands/grill-with-docs.md");
+        if file.exists() {
+            std::fs::remove_file(&file)?;
+        }
+    }
+    Ok(())
+}
+
 /// Return the project paths that `sync` may write for the current effective
 /// configuration. The upgrade migration uses this list as its Git staging
 /// allowlist; it must never stage an entire generated directory.
@@ -167,7 +238,7 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
     let mut paths = vec![project_root.join("AGENTS.md")];
 
     let mut skill_names = default_skill_names();
-    if manifest.addons.domain_modeling {
+    if domain_modeling_present(&manifest) {
         skill_names.push("givn-domain-modeling");
     }
     if manifest.addons.dev_principles {

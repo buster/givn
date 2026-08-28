@@ -75,12 +75,13 @@ pub fn run(force: bool, no_addons: bool) -> Result<()> {
 
     // Enable every known addon (default) unless --no-addons. Each addon's
     // own scaffolding (arc42 docs, absolute_mode's AGENTS.md block) runs as
-    // part of `addons::run_enable`, so the effect is identical to running
-    // `givn addons enable <name>` manually for every addon.
+    // part of `addons::enable_scaffold`, so the effect is identical to running
+    // `givn addons enable <name>` manually for every addon (skills are
+    // generated once below instead of per addon).
     if !no_addons {
         println!("\nEnabling addons...\n");
         for (name, _) in crate::cli::addons::KNOWN_ADDONS {
-            crate::cli::addons::run_enable(name)?;
+            crate::cli::addons::enable_scaffold(name)?;
         }
     }
 

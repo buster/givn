@@ -76,9 +76,19 @@ pub fn run_list() -> Result<()> {
     Ok(())
 }
 
-/// `givn addons enable <name>` — set addon to true in givn/config.yaml
-/// and run any one-time scaffolding for that addon.
+/// `givn addons enable <name>` — set addon to true in givn/config.yaml, run
+/// any one-time scaffolding for that addon, then regenerate skills/commands so
+/// generated guidance always matches the new configuration.
 pub fn run_enable(name: &str) -> Result<()> {
+    enable_scaffold(name)?;
+    crate::skills::targets::sync(&std::env::current_dir()?)?;
+    Ok(())
+}
+
+/// The scaffolding half of enabling an addon (writes config, runs one-time
+/// materialization, but does NOT regenerate skills/commands). `givn init`
+/// uses this per addon and syncs once at the end.
+pub fn enable_scaffold(name: &str) -> Result<()> {
     validate_addon_name(name)?;
     set_addon(name, true)?;
     println!("enabled addon '{name}' in givn/config.yaml");
@@ -116,8 +126,6 @@ pub fn run_enable(name: &str) -> Result<()> {
         println!("Next steps:");
         println!("  Edit givn/commands.yaml to set coverage.measure_command");
         println!("  and coverage.merge_command to use your project scripts.");
-    } else if is_skill_addon(name) || is_command_addon(name) {
-        crate::skills::targets::sync(&std::env::current_dir()?)?;
     }
 
     Ok(())
@@ -178,8 +186,18 @@ fn scaffold_arc42() -> Result<()> {
     Ok(())
 }
 
-/// `givn addons disable <name>` — set addon to false in givn/config.yaml.
+/// `givn addons disable <name>` — set addon to false in givn/config.yaml,
+/// run any cleanup for that addon, then regenerate skills/commands so
+/// generated guidance matches the new configuration.
 pub fn run_disable(name: &str) -> Result<()> {
+    disable_scaffold(name)?;
+    crate::skills::targets::sync(&std::env::current_dir()?)?;
+    Ok(())
+}
+
+/// The scaffold/cleanup half of disabling an addon (writes config, removes
+/// addon-owned files, but does NOT regenerate skills/commands).
+pub fn disable_scaffold(name: &str) -> Result<()> {
     validate_addon_name(name)?;
     set_addon(name, false)?;
     println!("disabled addon '{name}' in givn/config.yaml");
