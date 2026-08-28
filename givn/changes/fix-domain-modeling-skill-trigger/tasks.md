@@ -137,22 +137,30 @@
 ### A project without the addon is not routed to the domain skill
 
 - [x] RED: target `A project without the addon is not routed to the domain skill`;
-  paste non-zero runner output (this is a regression-guard scenario; it
-  passes before and after implementation).
+  the guard first captured only `not implemented: guidance-does-not-mention-domain-skill`.
+  Once `run_artifact` shipped (scenario 8), the full suite caught a false green:
+  `make_init_root()` enables all addons, so the fixture still had
+  `domain_modeling: true` and the specs guidance legitimately named the
+  domain skill.
   ```text
   1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
-  Step panicked. Captured output: not implemented: guidance-does-not-mention-domain-skill
+  Step panicked. Captured output: guidance mentions the domain-modeling skill with the addon disabled
   ```
-- [x] GREEN: assert the addon-off contract with existing router behavior; paste
-  zero-exit targeted output.
+- [x] GREEN: disable the addon in the fixture (`givn addons disable
+  domain_modeling`) so the guard exercises a genuinely addon-free project;
+  paste zero-exit targeted output.
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
+  Files: tests/steps/fix_domain_modeling_skill_trigger_steps.rs (fixture),
+  src/cli/instructions.rs (run_artifact, see scenario 8)
   ```
 - [x] REFACTOR: paste zero-exit targeted output.
   ```text
   1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [x] COMMIT: `8758532` - `feat(domain-skill-trigger): A project without the addon is not routed to the domain skill`
+- [x] COMMIT: `c83042b` - `fix(domain-skill-trigger): Disable the addon in the addon-off fixture`
+  (constraint-commit; the original `8758532` pass was issued before `run_artifact`
+  routed on the addon flag)
 
 ## E2E Scenarios
 

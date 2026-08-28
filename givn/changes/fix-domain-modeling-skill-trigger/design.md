@@ -88,25 +88,28 @@ and tasks are deliberately not routed; the trigger description covers them.
 
 ## Step Definitions
 
-One file per capability, matching repo convention:
+One file per capability, matching repo convention. Both are registered under
+`pub mod` in `tests/steps/mod.rs`:
 
-- `tests/steps/fix_domain_modeling_skill_trigger_steps.rs` — regular steps.
-  They inspect the `assets/skills/givn-domain-modeling/SKILL.md.tmpl` source
-  asset for trigger-text, active-discipline, lifecycle, and anti-term content,
-  and drive the addon-off variant and the JSON variant through the CLI via
-  `crate::common::run_givn`.
-- `tests/steps/fix_domain_modeling_skill_trigger_e2e_steps.rs` — e2e steps.
-  They create a fixture project (`crate::common::make_init_root`), enable the
-  addon with `givn addons enable domain_modeling`, create a change awaiting
-  specs with `givn new <id>`, then invoke the real compiled `givn` binary as a
-  subprocess (`give skills sync`, `givn instructions`, `givn instructions
-  specs|design --change <id>`) and assert on stdout/JSON.
+| Capability | Step definition file |
+|---|---|
+| Domain-modeling skill is triggered and routed (regular) | tests/steps/fix_domain_modeling_skill_trigger_steps.rs |
+| Domain-modeling skill is triggered and routed (e2e) | tests/steps/fix_domain_modeling_skill_trigger_e2e_steps.rs |
 
-Register both modules under `pub mod` in `tests/steps/mod.rs`.
+The regular file inspects the `assets/skills/givn-domain-modeling/SKILL.md.tmpl`
+source asset for trigger-text, active-discipline, lifecycle, and anti-term
+content, and drives the addon-off variant and the JSON variant through the CLI
+via `crate::common::run_givn`. The e2e file creates a fixture project
+(`crate::common::make_init_root`), toggles the addon with
+`givn addons enable|disable domain_modeling`, creates a change awaiting specs
+with `givn new <id>`, then invokes the real compiled `givn` binary as a
+subprocess (`givn skills sync`, `givn instructions`, `givn instructions
+specs|design --change <id>`) and asserts on stdout/JSON.
 
 Fixture change id: `domain-skill-trigger`. Addon enable step:
 `run_givn(env, &["addons", "enable", "domain_modeling"])` must succeed before
-the routing assertions.
+the routing assertions; the addon-off variant must disable it explicitly
+(`make_init_root` enables every addon by default).
 
 ## Test Infrastructure
 

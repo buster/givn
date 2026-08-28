@@ -47,3 +47,15 @@ proposal needed. No `tasks.md` written (next artifact).
 All questions resolved. Proceed to tasks.
 
 DESIGN-REVIEW: PASS
+
+## Post-review refinement (folded in during implementation)
+
+The addon-off fixture's "skip the enable step" was refined to an explicit
+`givn addons disable domain_modeling`: `make_init_root()` runs `givn init`,
+which enables every addon by default, so the fixture inherits
+`domain_modeling: true` and the guard never exercised an addon-free project.
+No architecture or routing decision changed; only the fixture setup required a
+test-side correction. design.md Step Definitions updated to match. Verdict of
+this review is unaffected.
+
+DESIGN-REVIEW: PASS
