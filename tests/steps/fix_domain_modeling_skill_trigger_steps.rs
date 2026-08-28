@@ -172,14 +172,20 @@ fn lifecycle_does_not_describe_givn_cycle(world: &mut GivnWorld) {
 
 #[then("the body requires a per-change ubiquitous-language table")]
 fn body_requires_ul_table(world: &mut GivnWorld) {
-    unimplemented!("body-requires-ul-table");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("Ubiquitous language"),
+        "body does not require a ubiquitous-language table"
+    );
 }
 
 #[then("the body records rejected synonyms as anti-terms")]
 fn body_records_anti_terms(world: &mut GivnWorld) {
-    unimplemented!("body-records-anti-terms");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("Anti-terms"),
+        "body does not record rejected synonyms as anti-terms"
+    );
 }
 
 #[then("the guidance says to load the domain-modeling skill now")]
