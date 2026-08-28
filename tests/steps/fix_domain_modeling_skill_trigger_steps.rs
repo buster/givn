@@ -39,7 +39,10 @@ fn domain_modeling_template_inspected(world: &mut GivnWorld) {
 fn addon_enabled_project_with_change(world: &mut GivnWorld) {
     let env = crate::common::make_init_root();
     let enable = crate::common::run_givn(&env, &["addons", "enable", "domain_modeling"]);
-    assert!(enable.status.success(), "addons enable domain_modeling failed");
+    assert!(
+        enable.status.success(),
+        "addons enable domain_modeling failed"
+    );
     let created = crate::common::run_givn(&env, &["new", FIXTURE_CHANGE_ID]);
     assert!(created.status.success(), "create fixture change failed");
     world.env = Some(env);
@@ -48,6 +51,11 @@ fn addon_enabled_project_with_change(world: &mut GivnWorld) {
 #[given("a Givn project with the domain model addon disabled and a change awaiting specs")]
 fn addon_disabled_project_with_change(world: &mut GivnWorld) {
     let env = crate::common::make_init_root();
+    let disable = crate::common::run_givn(&env, &["addons", "disable", "domain_modeling"]);
+    assert!(
+        disable.status.success(),
+        "addons disable domain_modeling failed"
+    );
     let created = crate::common::run_givn(&env, &["new", FIXTURE_CHANGE_ID]);
     assert!(created.status.success(), "create fixture change failed");
     world.env = Some(env);

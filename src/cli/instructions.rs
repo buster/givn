@@ -114,11 +114,7 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
 
     match changes.len() {
         0 => report_no_active_changes(&archived, json),
-        1 => report_change(
-            &changes[0],
-            manifest.addons.domain_modeling,
-            json,
-        ),
+        1 => report_change(&changes[0], manifest.addons.domain_modeling, json),
         _ => report_multiple_changes(&changes, json),
     }
 }
