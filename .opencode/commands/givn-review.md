@@ -117,8 +117,8 @@ Mechanical check, before trusting anything else:
     re-running design-review is a fabrication-audit finding: an unreviewed
     design decision made silently by the tasks/implementation phase. Fix
     by conforming to design.md as reviewed, or by updating design.md and
-    re-running design-review (reassess arc42 chapters if structural)
-    before accepting the deviation.
+    re-running design-review before accepting the deviation.
+    Reassess the affected arc42 chapters when the design.md fix is structural.
 12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
     Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
     fixing the real-interface obstacle per design.md, never by leaving the
@@ -127,10 +127,9 @@ Mechanical check, before trusting anything else:
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
-### Arc42 implementation conformance (conditional)
-If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled`.
-If it is enabled, read the durable `docs/arc42/` chapters and the change-level
-`arc42.md`, independently derive the affected chapters and architecture facts,
+### Arc42 implementation conformance
+Read the durable `docs/arc42/` chapters and the change-level `arc42.md`,
+independently derive the affected chapters and architecture facts,
 and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
 evidence from the completed implementation. Fill review.md's **Arc42
 implementation conformance** table.

@@ -120,10 +120,9 @@ when clean.
   </example>
 </coverage-boundary-examples>
 
-## Arc42 implementation conformance (conditional)
+## Arc42 implementation conformance
 
-If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled` in
-review.md. Otherwise, run this mandatory check before coverage classification.
+Run this mandatory check before coverage classification.
 Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
 independently derive the affected chapters and architecture facts from the
 completed implementation, `design.md`, and `tasks.md`. For every chapter or
@@ -137,10 +136,9 @@ a finding. Fix the affected artifact and repeat the comparison; if design.md
 changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
 rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
 
-## Ubiquitous language conformance (conditional)
+## Ubiquitous language conformance
 
-If `addons.domain_modeling` is disabled, record `N/A when the domain-modeling
-addon is disabled` in review.md. Otherwise, before sign-off, run this mandatory
+Before sign-off, run this mandatory
 check: confirm that the specs, design, and code reuse the durable glossary's
 exact terms — the ubiquitous language is used consistently everywhere and
 recorded in the project's arc42 glossary. Every spec or design term the

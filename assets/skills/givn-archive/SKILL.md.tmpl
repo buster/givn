@@ -62,6 +62,7 @@ the current project state:
 1. **Project name**: If the README still contains `{{PROJECT_NAME}}`,
    replace it with the actual project name (from `Cargo.toml`,
    `package.json`, or the directory name).
+{{#if addons.coverage}}
 2. **Coverage badges**: The archive gate runs the configured
    `coverage.measure_command`, then `coverage.merge_command`. Place the two
    generated badges directly after the README title. Both badges must link to
@@ -108,6 +109,7 @@ The managed coverage marker blocks are generated automatically during archive
 and should not be manually edited. The examples above are a starting point;
 adapt the scripts to your project's test runner and coverage tool. The final
 report emitted by `merge_command` is the only source for the badges and totals.
+{{/if}}
 
 ## Verify command
 

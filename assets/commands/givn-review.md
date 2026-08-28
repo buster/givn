@@ -117,8 +117,10 @@ Mechanical check, before trusting anything else:
     re-running design-review is a fabrication-audit finding: an unreviewed
     design decision made silently by the tasks/implementation phase. Fix
     by conforming to design.md as reviewed, or by updating design.md and
-    re-running design-review (reassess arc42 chapters if structural)
-    before accepting the deviation.
+    re-running design-review before accepting the deviation.
+{{#if addons.arc42}}
+    Reassess the affected arc42 chapters when the design.md fix is structural.
+{{/if}}
 12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
     Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
     fixing the real-interface obstacle per design.md, never by leaving the
@@ -127,10 +129,10 @@ Mechanical check, before trusting anything else:
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
-### Arc42 implementation conformance (conditional)
-If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled`.
-If it is enabled, read the durable `docs/arc42/` chapters and the change-level
-`arc42.md`, independently derive the affected chapters and architecture facts,
+{{#if addons.arc42}}
+### Arc42 implementation conformance
+Read the durable `docs/arc42/` chapters and the change-level `arc42.md`,
+independently derive the affected chapters and architecture facts,
 and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
 evidence from the completed implementation. Fill review.md's **Arc42
 implementation conformance** table.
@@ -141,6 +143,7 @@ facts. Any omission or contradiction is a finding. Fix the affected artifact
 or implementation and repeat the comparison; if design.md changes, re-run
 design-review. Record `ARC42 CONFORMANCE: CLEAN` and continue only when every
 row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
+{{/if}}
 
 ### Deterministic gate dispositions
 
@@ -182,7 +185,7 @@ Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 (classify below). Never change production code to force a pass.
 
 ### 3. Measure and record coverage
-Run `coverage.measure_command`, then `coverage.merge_command` from
+Run the configured measurement command, then the merge command, from
 `givn/commands.yaml`. Record the merged line and branch percentages and raw
 report counters in review.md — a fact, not a threshold gate.
 

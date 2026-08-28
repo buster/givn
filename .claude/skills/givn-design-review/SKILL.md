@@ -58,11 +58,11 @@ Required branches:
   lower-level artifact; a refinement amends an existing ADR and a replacement
   supersedes it. `Must be shared` is supporting evidence only. This is guidance,
   not runtime enforcement.
-- **Architecture documentation (arc42)** — N/A if `addons.arc42` is not
-  enabled. Otherwise, independently re-derive the expected chapter set
-  before trusting `arc42.md`'s claim: walk all 12 rows of the arc42-docs
-  instruction's selection table yourself against proposal.md/design.md,
-  form your own Yes/No per row, then diff against `arc42.md`'s table. A row
+- **Architecture documentation (arc42)** — independently re-derive the
+  expected chapter set before trusting `arc42.md`'s claim: walk all 12 rows of
+  the arc42-docs instruction's selection table yourself against
+  proposal.md/design.md, form your own Yes/No per row, then diff against
+  `arc42.md`'s table. A row
   you mark "Yes" that `arc42.md` marks "No" or omits is a finding —
   omission is the failure mode that slips through, not just contradiction.
    For every "Yes" row (either party), confirm the chapter content actually
