@@ -1,35 +1,83 @@
 ---
 name: givn-domain-modeling
-description: Model a change's domain before designing — surface ubiquitous language, aggregates, and invariants that the specs and design must honour.
+description: >-
+  Establish and enforce one domain vocabulary for a givn change. Active from
+  the first domain noun: challenge generic or overloaded terms (e.g. "list",
+  "item"), name every aggregate with a domain noun, and maintain domain.md —
+  the ubiquitous-language table with term->spec-wording->code-symbol mappings —
+  so specs, design, and code never drift. Load this whenever you are naming or
+  discussing domain concepts, before writing .feature specs or design.md, or
+  when spec and code terms disagree.
 ---
 
 # givn-domain-modeling
 
-Model the domain for change `{{CHANGE_ID}}` before writing the design.
+Establish and enforce the domain language for change `{{CHANGE_ID}}`. This is an
+active discipline, not a one-shot step: challenge fuzzy terms the moment they
+appear and keep `domain.md` current as the language crystallises. The design
+and the specs must use exactly the vocabulary in `domain.md`.
 
 ## Context
 
 - Proposal: `givn/changes/{{CHANGE_ID}}/proposal.md`
 - Specs: `givn/changes/{{CHANGE_ID}}/specs/`
+- Domain model: `givn/changes/{{CHANGE_ID}}/domain.md` (produced here)
 - Design (next): `givn/changes/{{CHANGE_ID}}/design.md`
 
-## What to produce
+## Active discipline
 
-A short domain model that the design layer builds on:
+- **Challenge generic or overloaded terms.** When conversation or the specs use
+  a word that could mean many things ("list", "item", "user", "trip"), force a
+  precise domain noun. Propose it and justify it. Example utterance: "You
+  wrote 'list' - do you mean the shared shopping list, or the array backing
+  the store?"
+- **Name aggregates with domain nouns.** Every consistency boundary gets a
+  domain noun as its root (`ShoppingList`, not `List`). If the natural name is
+  a framework word, the naming is wrong.
+- **Probe edge-case scenarios.** Stress-test a term by inventing a concrete
+  scenario that forces the boundary explicit (offline add, two phones, trip
+  reset, reconnect).
+- **Cross-reference with code.** Where code names exist, check they match the
+  agreed terms. On disagreement, flag and resolve it here - do not leave spec
+  and code diverging.
+- **Update `domain.md` inline.** Capture a resolved term immediately, before
+  moving on. Do not batch it to the end.
 
-- **Ubiquitous language**: the nouns and verbs the user and code share. Define
-  each term in one sentence. Resolve ambiguities now, not in the design.
-- **Aggregates / boundaries**: which entities form a consistency boundary, and
-  which are independent. Name the root of each aggregate.
-- **Invariants**: the rules that must always hold (e.g. "a change id is unique
-  and kebab-case"). Mark where each is enforced (data model, command, gate).
-- **Lifecycle events**: the state transitions that matter to the user
-  (created -> planned -> implemented -> archived).
+## domain.md
+
+One real artifact per change, not a throwaway scaffold. End with the marker
+`DOMAIN: DONE` (matches the REVIEW: PASS / DESIGN-REVIEW: PASS convention so
+gates can detect it).
+
+Required sections:
+
+- **Ubiquitous language** - table with columns:
+  `Term | Definition (1 sentence) | Spec wording | Code symbol | Anti-terms`.
+  Every noun and verb that matters to the user and the code appears exactly
+  once.
+- **Aggregates / boundaries** - which entities form a consistency boundary,
+  the root of each, and which are independent.
+- **Invariants** - rules that must always hold, each marked with the
+  enforcement site (data model, command, gate).
+- **Lifecycle events** - the *domain's own* state transitions, what the user
+  observes. (Shopping list example: open / item added / item marked bought /
+  item hidden for this trip / trip reset.)
 
 ## Rules
 
-- Stay in domain language. No class names, DB schemas, or framework types yet.
-- Derive everything from the proposal and specs — do not invent new behaviour.
-- If a term is ambiguous, pick the interpretation the proposal supports and flag
-  it. Do not leave it open for the design to guess.
-- Keep it short. This is a scaffold for the design, not a separate artifact.
+- Stay in domain language. No class names, DB schemas, or framework types
+  (except inside the `Code symbol` column).
+- Derive everything from the proposal and specs; do not invent new behaviour.
+- If a term is ambiguous, pick the interpretation the proposal supports and
+  flag it. Do not leave it open for the design to guess.
+- No generic nouns where a domain noun exists. `List` is a framework word;
+  `ShoppingList`, `Entry` are domain words. Rename.
+- One verb per action. List the rejected synonyms explicitly in the
+  anti-terms column.
+- Keep it short - one page that the design, the lint gate, and the review all
+  build on.
+
+## Default anti-term list
+
+`list`, `item`, `data`, `record`, `entity`, `node`, `object`, `manager`,
+`service`, `handler`, `container`. Project can extend via the UL table.
