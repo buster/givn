@@ -211,6 +211,9 @@ fn json_response_names_domain_skill(world: &mut GivnWorld) {
 
 #[then("the guidance does not mention the domain-modeling skill")]
 fn guidance_does_not_mention_domain_skill(world: &mut GivnWorld) {
-    unimplemented!("guidance-does-not-mention-domain-skill");
-    let _ = world;
+    let output = stdout(world);
+    assert!(
+        !output.contains("Skill to load now"),
+        "guidance mentions the domain-modeling skill with the addon disabled: {output}"
+    );
 }
