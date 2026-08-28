@@ -85,6 +85,21 @@ fn addon_enabled_project_awaiting_review(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
+#[given("a Givn project with the domain model addon enabled but no arc42 glossary and a change awaiting specs")]
+fn addon_enabled_without_arc42_project_with_change(world: &mut GivnWorld) {
+    let env = crate::common::make_init_root();
+    let disable = crate::common::run_givn(&env, &["addons", "disable", "arc42"]);
+    assert!(disable.status.success(), "addons disable arc42 failed");
+    let enable = crate::common::run_givn(&env, &["addons", "enable", "domain_modeling"]);
+    assert!(
+        enable.status.success(),
+        "addons enable domain_modeling failed"
+    );
+    let created = crate::common::run_givn(&env, &["new", FIXTURE_CHANGE_ID]);
+    assert!(created.status.success(), "create fixture change failed");
+    world.env = Some(env);
+}
+
 #[when("an agent reads the skill trigger text")]
 fn agent_reads_skill_trigger_text(world: &mut GivnWorld) {
     assert!(
