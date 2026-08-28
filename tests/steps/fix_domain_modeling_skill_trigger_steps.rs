@@ -337,8 +337,15 @@ fn body_instructs_enabling_arc42(world: &mut GivnWorld) {
 
 #[then("a check requires confirming the ubiquitous language is used consistently and recorded in the arc42 glossary")]
 fn design_review_checks_ubiquitous_language(world: &mut GivnWorld) {
-    unimplemented!("design-review-checks-ubiquitous-language");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("ubiquitous language is used consistently"),
+        "design-review template has no ubiquitous-language check"
+    );
+    assert!(
+        content.contains("arc42 glossary"),
+        "design-review check does not reference the arc42 glossary"
+    );
 }
 
 #[then("a check requires confirming the ubiquitous language is used consistently everywhere and recorded in the arc42 glossary")]
