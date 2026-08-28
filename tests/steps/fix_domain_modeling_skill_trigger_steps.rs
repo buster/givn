@@ -228,3 +228,69 @@ fn guidance_does_not_mention_domain_skill(world: &mut GivnWorld) {
         "guidance mentions the domain-modeling skill with the addon disabled: {output}"
     );
 }
+
+#[given("the design-review skill template is inspected")]
+fn design_review_template_inspected(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string("assets/skills/givn-design-review/SKILL.md.tmpl")
+        .expect("read design-review skill template");
+    world.additional_output = Some(content);
+}
+
+#[given("the review skill template is inspected")]
+fn review_template_inspected(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string("assets/skills/givn-review/SKILL.md.tmpl")
+        .expect("read review skill template");
+    world.additional_output = Some(content);
+}
+
+#[given("a placeholder removed scenario")]
+fn placeholder_removed_scenario(_world: &mut GivnWorld) {
+    assert!(true, "removed-scenario placeholder step");
+}
+
+#[when("an agent reads the check list")]
+fn agent_reads_check_list(world: &mut GivnWorld) {
+    assert!(
+        !skill_template(world).is_empty(),
+        "skill template must not be empty"
+    );
+}
+
+#[then("the trigger loads during every workflow step of a change")]
+fn trigger_loads_during_every_workflow_step(world: &mut GivnWorld) {
+    let content = skill_template(world);
+    assert!(
+        content.contains("during every workflow step of a change"),
+        "trigger text does not say it loads for every workflow step"
+    );
+}
+
+#[then("the body instructs maintaining the project's arc42 glossary")]
+fn body_instructs_maintaining_glossary(world: &mut GivnWorld) {
+    unimplemented!("body-instructs-maintaining-glossary");
+    let _ = world;
+}
+
+#[then("the body does not require a per-change domain artifact")]
+fn body_does_not_require_domain_artifact(world: &mut GivnWorld) {
+    unimplemented!("body-does-not-require-domain-artifact");
+    let _ = world;
+}
+
+#[then("the body instructs enabling the arc42 addon first when the glossary is missing")]
+fn body_instructs_enabling_arc42(world: &mut GivnWorld) {
+    unimplemented!("body-instructs-enabling-arc42");
+    let _ = world;
+}
+
+#[then("a check requires confirming the ubiquitous language is used consistently and recorded in the arc42 glossary")]
+fn design_review_checks_ubiquitous_language(world: &mut GivnWorld) {
+    unimplemented!("design-review-checks-ubiquitous-language");
+    let _ = world;
+}
+
+#[then("a check requires confirming the ubiquitous language is used consistently everywhere and recorded in the arc42 glossary")]
+fn review_checks_ubiquitous_language(world: &mut GivnWorld) {
+    unimplemented!("review-checks-ubiquitous-language");
+    let _ = world;
+}
