@@ -154,14 +154,20 @@ fn body_updated_inline(world: &mut GivnWorld) {
 
 #[then("the lifecycle describes the domain's own observable states")]
 fn lifecycle_describes_domain_states(world: &mut GivnWorld) {
-    unimplemented!("lifecycle-describes-domain-states");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("the *domain's own*") && content.contains("trip reset"),
+        "lifecycle guidance does not describe a domain's own observable states"
+    );
 }
 
 #[then("the lifecycle does not describe the givn change lifecycle")]
 fn lifecycle_does_not_describe_givn_cycle(world: &mut GivnWorld) {
-    unimplemented!("lifecycle-omits-givn-cycle");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        !content.contains("created -> planned -> implemented -> archived"),
+        "lifecycle guidance still describes the givn change lifecycle"
+    );
 }
 
 #[then("the body requires a per-change ubiquitous-language table")]
