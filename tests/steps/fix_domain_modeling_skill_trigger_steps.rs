@@ -285,8 +285,15 @@ fn body_does_not_require_domain_artifact(world: &mut GivnWorld) {
 
 #[then("the body instructs enabling the arc42 addon first when the glossary is missing")]
 fn body_instructs_enabling_arc42(world: &mut GivnWorld) {
-    unimplemented!("body-instructs-enabling-arc42");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("Requires the arc42 addon"),
+        "body does not state the arc42 addon requirement"
+    );
+    assert!(
+        content.contains("enable it first when the glossary is missing"),
+        "body does not instruct enabling the arc42 addon first"
+    );
 }
 
 #[then("a check requires confirming the ubiquitous language is used consistently and recorded in the arc42 glossary")]
