@@ -127,20 +127,29 @@ fn trigger_loads_on_spec_code_disagreement(world: &mut GivnWorld) {
 
 #[then("the body challenges generic and overloaded terms")]
 fn body_challenges_generic_terms(world: &mut GivnWorld) {
-    unimplemented!("body-challenges-generic-terms");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("Challenge generic or overloaded terms"),
+        "body does not challenge generic or overloaded terms"
+    );
 }
 
 #[then("the body names aggregates with domain nouns")]
 fn body_names_aggregates_with_domain_nouns(world: &mut GivnWorld) {
-    unimplemented!("body-names-aggregates-with-domain-nouns");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("Name aggregates with domain nouns"),
+        "body does not name aggregates with domain nouns"
+    );
 }
 
 #[then("the body is updated inline as the vocabulary resolves")]
 fn body_updated_inline(world: &mut GivnWorld) {
-    unimplemented!("body-updated-inline");
-    let _ = world;
+    let content = skill_template(world);
+    assert!(
+        content.contains("Update `domain.md` inline"),
+        "body does not require inline domain.md updates"
+    );
 }
 
 #[then("the lifecycle describes the domain's own observable states")]

@@ -34,22 +34,27 @@
 
 ### The skill trigger names conversation states
 
-- [ ] RED: target `The skill trigger names conversation states`; paste
+- [x] RED: target `The skill trigger names conversation states`; paste
   non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: not implemented: trigger-loads-while-naming
   ```
-- [ ] GREEN: replace `assets/skills/givn-domain-modeling/SKILL.md.tmpl` frontmatter
+- [x] GREEN: replace `assets/skills/givn-domain-modeling/SKILL.md.tmpl` frontmatter
   description and step assertions; list files touched; paste zero-exit
   targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 5 steps (5 passed)
+  Files: assets/skills/givn-domain-modeling/SKILL.md.tmpl,
+  tests/steps/fix_domain_modeling_skill_trigger_steps.rs,
+  tests/steps/fix_domain_modeling_skill_trigger_e2e_steps.rs,
+  tests/steps/mod.rs, givn/changes/fix-domain-modeling-skill-trigger/*
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 5 steps (5 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `5f286e1` - `feat(domain-skill-trigger): The skill trigger names conversation states`
 
 ### The skill body is an active discipline
 
