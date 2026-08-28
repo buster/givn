@@ -137,6 +137,17 @@ a finding. Fix the affected artifact and repeat the comparison; if design.md
 changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
 rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
 
+## Ubiquitous language conformance (conditional)
+
+If `addons.domain_modeling` is disabled, record `N/A when the domain-modeling
+addon is disabled` in review.md. Otherwise, before sign-off, run this mandatory
+check: confirm that the specs, design, and code reuse the durable glossary's
+exact terms — the ubiquitous language is used consistently everywhere and
+recorded in the project's arc42 glossary. Every spec or design term the
+glossary does not hold, or any inconsistent reuse, is a finding: fix the
+affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
+Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
+
 ## Deterministic gate dispositions
 
 Before sign-off, inspect the deterministic overlap findings. Complete the
