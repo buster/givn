@@ -199,21 +199,23 @@
 
 ### An agent requests the specs guidance and is routed to the domain skill
 
-- [ ] RED: target `An agent requests the specs guidance and is routed to the domain skill`;
+- [x] RED: target `An agent requests the specs guidance and is routed to the domain skill`;
   paste non-zero runner output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 failed), 3 steps (2 passed, 1 failed)
+  Step panicked. Captured output: guidance does not say to load the domain-modeling skill now
   ```
-- [ ] GREEN: emit the router line in the artifact path for `specs`; paste
+- [x] GREEN: emit the router line in the artifact path for `specs`; paste
   zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
+  Files: src/cli/instructions.rs (run_artifact)
   ```
-- [ ] REFACTOR: paste zero-exit targeted output.
+- [x] REFACTOR: paste zero-exit targeted output.
   ```text
-  (to fill)
+  1 feature, 1 scenario (1 passed), 3 steps (3 passed)
   ```
-- [ ] COMMIT: `<hash>` - `feat(domain-skill-trigger): <title>`
+- [x] COMMIT: `b00c741` - `feat(domain-skill-trigger): An agent requests the specs guidance and is routed to the domain skill`
 
 ### An agent requests the design guidance and is routed to the domain skill
 

@@ -39,8 +39,14 @@ fn agent_requests_next_step_guidance(world: &mut GivnWorld) {
 
 #[when("the agent requests the design instructions through the Givn CLI")]
 fn agent_requests_design_instructions(world: &mut GivnWorld) {
-    unimplemented!("agent-requests-design-instructions");
-    let _ = world;
+    let output = {
+        let env = active_project(world);
+        crate::common::run_givn(
+            env,
+            &["instructions", "design", "--change", FIXTURE_CHANGE_ID],
+        )
+    };
+    world.last_output = Some(output);
 }
 
 #[then("the generated domain skill names the domain-modeling skill")]
