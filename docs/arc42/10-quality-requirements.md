@@ -102,6 +102,8 @@ graph TD
 | Q-64 | Usability | A spec retrieval command runs with a warm validated cache. | No download announcements or per-file progress appear; embedding status still reports the pending count. |
 | Q-65 | Review evidence usability | Advisory review runs with second-stage evidence on a corpus where most pairs are filtered. | Default text lists only recommended pairs with unchanged status lines and counters; `--verbose` lists every scored pair without a listing limit; the E5 candidate list stays visible by default. |
 | Q-66 | Failed-review auditability | An advisory review fails the similarity gate. | The structured JSON review document is persisted beside the change and matches stdout, so the evidence survives without rerunning model inference. |
+| Q-67 | Gate safety | A consumer installs givn and sets a fixture request (simulated output or a disabled evidence stage). | The installed build ignores the request, announces that it is ignored for installed builds, and still requires the real models. |
+| Q-68 | Model availability | A consumer installs givn and points it at a local or custom real-model location. | The installed build honours the model-location request and never treats it as a fixture request. |
 
 ## 10.3 Verification Signals
 

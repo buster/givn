@@ -77,6 +77,12 @@ semantic candidate set. Blocking semantic review passes its complete report
 candidate list independently to BGE and NLI; it does not pass a Duplicate Audit
 top-five pool.
 
+Every environment channel that selects model behavior is read through one
+gated accessor in this building block. In an installed (release) build the
+accessor refuses fixture requests and announces the refusal; model-location
+requests that still run the real models pass through. The development build
+passes every channel through unchanged.
+
 ## 5.5 Dependencies
 
 | Dependency | Use |

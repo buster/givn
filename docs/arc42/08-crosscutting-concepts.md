@@ -155,6 +155,14 @@ E5 model artifacts are resolved from the XDG user cache by default and are
 shared across projects; explicit model/cache variables may select another
 location.
 
+Model behavior is selected through two environment channel classes. A
+**model-location request** (custom cache or local artifact set) still runs the
+real model and is honoured in every build kind. A **fixture request** (simulated
+embedder/BGE/NLI output, disabling an evidence stage, test pools, canned
+scores, token-budget caps, report chatter) is a development-build capability:
+an installed (release) build ignores it, announces the refusal, and always runs
+the real models.
+
 `spec index` refreshes and writes this index. `spec search` reads it and returns
 at most five advisory results; the opt-in `--evidence` flag attaches BGE/NLI
 verdicts to those results without changing the ranking. Explicit semantic use

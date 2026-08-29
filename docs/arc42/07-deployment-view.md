@@ -32,7 +32,8 @@ loader preflights
 `config.json`, `special_tokens_map.json`, and `tokenizer_config.json` before
 using FastEmbed's user-defined loader. Benchmark approval is a separate
 evidence and release decision; it does not gate runtime BGE participation.
-Explicit `GIVN_SPEC_BGE=disabled` remains the runtime opt-out.
+`GIVN_SPEC_BGE=disabled` is a development-build opt-out and is ignored by an
+installed build, which always runs the real BGE model.
 
 `nli-evidence` adds local NLI evidence and is enabled by default. Its default artifact directory is
 `$XDG_CACHE_HOME/givn/nli` (or `$HOME/.cache/givn/nli`). Automatic Hub
@@ -52,6 +53,12 @@ artifacts are stored under `$XDG_CACHE_HOME/givn/nli-exported` or its
 Regular and E2E tests use deterministic stubs and do not download or construct
 multi-gigabyte model artifacts. Production model paths remain local and
 feature-gated.
+
+Installed (release) builds never substitute simulated model output and ignore
+every fixture request, announcing the refusal; they always require the real
+models. The deterministic-stub behaviour above applies to the development
+build only. Model-location requests (custom caches, local artifact sets) keep
+working in installed builds because they use the real models.
 
 ## 7.3 Target Environments
 

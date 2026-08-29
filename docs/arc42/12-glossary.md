@@ -110,3 +110,7 @@
 | **Missing-index diagnostic** | `spec index is missing at <path>; run \`givn spec index\` first`, emitted when a semantic surface has no persistent index. |
 | **Search evidence** | The opt-in `givn spec search --evidence` report: per-candidate `BGE_*`/`NLI_*` verdict lines over the five displayed results plus a layer-availability summary; it never changes the E5 ranking. |
 | **Benchmark export cache** | The XDG `givn/nli-exported` directory containing a flat NLI ONNX export for the external comparison tooling; it is separate from the product's `givn/nli` Hub snapshot. |
+| **Installed build** | A givn binary built for normal installation (the release profile used by `cargo install`). It always evaluates the semantic gates with the real models and ignores every fixture request. |
+| **Development build** | A givn binary built for development and testing (the debug profile used by `cargo test` and `cargo build`). It honours fixture requests so the fixture suite stays fast and offline. |
+| **Fixture request** | An environment-driven request to substitute simulated model output or to disable a model evidence stage. It is honoured only by a development build; an installed build ignores it, announces the refusal, and runs the real model. |
+| **Model-location request** | An environment-driven request that still runs the real models, but from a chosen local, offline, or custom cache location. It is honoured by both builds; it never substitutes simulated output. |
