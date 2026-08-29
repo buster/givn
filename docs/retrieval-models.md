@@ -84,6 +84,34 @@ The existing offline selectors retain their meaning:
 Benchmark approval remains a separate evidence and release decision; it does
 not gate runtime participation. NLI remains independent from BGE.
 
+## Installed Builds And Fixture Requests
+
+A development build (compiled with debug assertions, e.g. `cargo run` or
+`cargo test`) honours every override above, including the simulated and
+disabled-evidence selectors used by the test suite.
+
+An installed build — the binary produced by `cargo install`, `cargo build
+--release`, or CI artifacts — always evaluates the semantic gates with the
+real models. It ignores the gate-bypassing fixture requests:
+
+- `GIVN_SPEC_EMBEDDER` (any value),
+- `GIVN_SPEC_BGE=stub|disabled|missing`,
+- `GIVN_SPEC_RERANKER=stub|disabled|missing|nli-stub|nli-missing`,
+- `GIVN_SPEC_BGE_APPROVAL=failed`,
+- and the fixture-only channels (`*_LOCAL_STUB`, `*_TEST_POOL`,
+  `*_DIRECTIONAL_SCORES`, `STUB_PAIR_SCORES`, `DUPLICATES_TEST_SCORES`,
+  `*_TOKEN_BUDGET`, `NLI_REPORT_LIMIT`, `MAX_RERANK_PAIRS`,
+  `RESOLUTION_NOTICES`, `DOWNLOAD_EVENTS`).
+
+Blocked requests behave as if the variable were unset, so an installed build
+proceeds with automatic real-model acquisition; a one-shot stderr line names
+each ignored request (for example `GIVN_SPEC_BGE is ignored in installed
+builds; the real model output is always used`). The model-location requests
+(`GIVN_SPEC_BGE=auto|local`, `GIVN_SPEC_RERANKER=nli|nli-auto`,
+`*_MODEL_DIR`, `*_CACHE`, `GIVN_SPEC_MODEL_CACHE`, `GIVN_SPEC_E5_TOKENIZER`,
+`THREADS`) stay honoured, as do `HF_ENDPOINT`, `HF_HOME`, `XDG_CACHE_HOME`,
+and `HOME`.
+
 ## Offline And Failure Behavior
 
 After a successful setup, later commands reuse the validated snapshot without
