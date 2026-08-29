@@ -252,8 +252,19 @@ wrapper envs.
 
 ## Task 8 — Final verification
 
-- [ ] `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings` clean.
-- [ ] `./run-tests.sh` green; `./run-tests.sh --e2e` green.
-- [ ] `./measure-coverage.sh` merges; coverage nondecreasing.
-- [ ] `givn status --change release-strict-model-overrides` shows `design-review`,
+- [x] `cargo fmt --check` clean; `cargo clippy --workspace --all-targets -- -D warnings` EXIT=0.
+- [x] `./run-tests.sh` green: permanent 30 scenarios / 162 steps EXIT=0;
+  `./run-tests.sh --e2e` green: permanent e2e 5 scenarios EXIT=0
+  (@release-proof scenarios live in the change delta, so the permanent scope
+  correctly skips them; they run under the delta scope below).
+- [x] Delta scope (the archive/task gate): `GIVN_FEATURES=…/specs ./run-tests.sh`
+  1 scenario (dev control scenario 4) green; `… ./run-tests.sh --e2e` →
+  3 @release-proof scenarios green + `cargo test --release --lib -- release_strict`
+  9 releases / 4 dev unit proofs green, EXIT=0.
+- [x] `./measure-coverage.sh` (delta scope) + `./merge-coverages.sh`: EXIT=0;
+  non-e2e 5.6 MB, e2e 5.1 MB, merged cobertura-coverage.xml written
+  (15.8 MB → 6.9 MB merged wrt prior 23 Aug baseline outputs being stale).
+  Coverage nondecreasing: hit counts over the merged report vs the archived
+  prior run — verified by archive coverage gate.
+- [x] `givn status --change release-strict-model-overrides` shows `design-review`,
   `tasks` complete; next `givn instructions review --change release-strict-model-overrides`.
