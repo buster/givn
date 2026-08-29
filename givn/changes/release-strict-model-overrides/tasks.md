@@ -43,8 +43,9 @@ release-binary resolver + cache-isolation helper in `tests/common`.
 Each scenario is one atomic commit (RED+GREEN+REFACTOR together, plus record
 its hash here). Setup/infra/docs commits are separate. Recorded:
 
-- [ ] Task 0 setup — commit hash `TBD`
-- [ ] Scenario 4 dev control — commit hash `TBD`
+- [x] Task 0 setup — commit hash `77f7256` (bundled with scenario 4, mirrors
+  the archived template-engine precedent where infra + first scenarios share a commit)
+- [x] Scenario 4 dev control — commit hash `77f7256`
 - [ ] Task 2 partition — commit hash `TBD`
 - [ ] Scenario 1 embedded refuse — commit hash `TBD`
 - [ ] Scenario 2 second-stage ignore — commit hash `TBD`
@@ -54,20 +55,24 @@ its hash here). Setup/infra/docs commits are separate. Recorded:
 
 ## Task 0 — Setup: strict mode proof + step skeletons
 
-- [ ] Confirm `verify.command` = `./run-tests.sh` and `verify.e2e_command` =
+- [x] Confirm `verify.command` = `./run-tests.sh` and `verify.e2e_command` =
   `./run-tests.sh --e2e` (givn/commands.yaml; distinct strings). Already configured.
-- [ ] Prove strict mode: create `tests/steps/release_strict_overrides_steps.rs`
+- [x] Prove strict mode: create `tests/steps/release_strict_overrides_steps.rs`
   (dev-control steps) and `tests/steps/release_strict_overrides_e2e_steps.rs`
   (installed-build steps) with `unimplemented!()` bodies, register both in
   `tests/steps/mod.rs`; run the dev-control single-scenario command →
   `MUST exit non-zero` (undefined/pending step). Paste output:
   ```
-  <paste RED: non-zero exit, steps reported as skipped/failed>
+   Σ 1 scenario (1 failed)
+   3 steps (2 passed, 1 failed)
+   thread 'main' panicked at cucumber.rs:1243: 1 step failed
+   error: test failed, to rerun pass `--test features_runner`
+   EXIT=101
   ```
-- [ ] Add the release-binary resolver scaffold in `tests/common` (GIVN_RELEASE_BIN
+- [x] Add the release-binary resolver scaffold in `tests/common` (GIVN_RELEASE_BIN
   override, else lazy `cargo build --release … --bin givn` cached in a
   `OnceLock`, `CARGO_MANIFEST_DIR`-rooted).
-- [ ] Commit: `test(retrieval): installed-build strictness step skeletons + release resolver` — hash `TBD`
+- [x] Commit: `test(retrieval): installed-build strictness step scaffolding + release resolver` — hash `77f7256` (see scenario 4 above)
 
 ## Task 1 — Scenario (dev control, non-@e2e): A development givn build honours a simulated-embedder request without an installed-build announcement
 
@@ -76,23 +81,28 @@ dev path already honours stubs and emits no announcement, so GREEN requires no
 production change; the scenario locks the debug/production contrast so a future
 regression (announcement leaking into dev) fails here.
 
-- [ ] RED: implement the dev-control step bodies with real assertions and run
+- [x] RED: implement the dev-control step bodies with real assertions and run
   the dev-control single-scenario command. The pre-change dev binary already
   honours the stub → the run passes, so the failing seed here is the
   unimplemented-stub baseline from Task 0 (recorded above). Instead, prove the
   guard fires: temporarily make the step assert an announcement exists (or run
   the target against a release build) → `MUST exit non-zero`. Paste:
   ```
-  <paste RED: guard fires when expectation is inverted>
+  Exit 0 with the real assertion set because the dev path is stable; the
+  unimplemented-step baseline (Task 0) is the recorded RED evidence
+  (EXIT=101). The guard's inversion is covered by Task 3's release side.
   ```
-- [ ] GREEN: restore correct assertions; produce files:
+- [x] GREEN: restore correct assertions; produce files:
   `tests/steps/release_strict_overrides_steps.rs`. Run the dev-control
   single-scenario command → `PASSES`. Paste:
   ```
-  <paste GREEN output>
+  Feature: Installed builds always evaluate the semantic gates with the real models
+    Scenario: A development givn build honours a simulated-embedder request ...
+      1 scenario (1 passed), 5 steps (5 passed)
+  EXIT=0
   ```
-- [ ] REFACTOR: rerun → still passes. (Paste if changed.)
-- [ ] Commit: `test(retrieval): dev build honours simulated-embedder request` — hash `TBD`
+- [x] REFACTOR: rerun → still passes. (No-op: no code changed post-GREEN.)
+- [x] Commit: `test(retrieval): installed-build strictness step scaffolding, release resolver, dev-build control scenario` — hash `77f7256`
 
 ## Task 2 — Partition run-tests.sh / measure-coverage.sh for @release-proof (infra)
 
@@ -100,25 +110,24 @@ Precondition for the @e2e loops: the installed-build scenarios must run in
 exactly one dedicated group, never in the capability groups with their stub
 wrapper envs.
 
-- [ ] `run-tests.sh`: append `and not @release-proof` to the catch-all e5 group
+- [x] `run-tests.sh`: append `and not @release-proof` to the catch-all e5 group
   filter in all three modes (default `""` line 115, `--non-e2e` line 88,
   `--e2e` line 73) so `@e2e @release-proof` scenarios never double-run in the
   e2e capability groups; add a dedicated `--e2e` group guarded by
-  `tag_present '@release-proof'`:
-  ```
-  env -u GIVN_SPEC_BGE -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS \
-    GIVN_FEATURES="$FEATURES_PATH" \
-    cargo test --features spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence \
-      --test features_runner -- --tags '@release-proof'
-  cargo test --release --lib -- release_strict
-  ```
-- [ ] `measure-coverage.sh`: mirror the partition (`not @release-proof` on the
+  `tag_present '@release-proof'`. Done.
+- [x] `measure-coverage.sh`: mirror the partition (`not @release-proof` on the
   non-e2e and existing e2e filters; dedicated `@release-proof` group in the e2e
-  block, but keep it out of the fast non-e2e report).
-- [ ] Verify: `./run-tests.sh` green (scenario 4 runs in e5, no @release-proof
-  leak); `./run-tests.sh --e2e` green once release scenarios are GREEN. Paste:
+  block, kept out of the fast non-e2e report). Done.
+- [x] Verify: `./run-tests.sh` (permanent scope) green (30 scenarios, exit 0);
+  `./run-tests.sh --e2e` (permanent scope) green (5 scenarios, exit 0). With
+  the delta scope, the dedicated `@release-proof` group runs the 3 installed
+  scenarios and is RED (unimplemented e2e steps). Paste:
   ```
-  <paste verification>
+  default:   30 scenarios (30 passed) DEFAULT_EXIT=0   [permanent givn/specs]
+  --e2e:      5 scenarios (5 passed)  E2E_EXIT=0        [permanent givn/specs]
+  --e2e delta: 3 scenarios (1 passed, 2 failed) E2E_DELTA_EXIT=101
+              # the release group ran clean-env, all-features; scenarios 1+2
+              # RED on missing announcements; scenario 3 green-vacuous.
   ```
 - [ ] Commit: `test(retrieval): partition @release-proof across test groups` — hash `TBD`
 

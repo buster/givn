@@ -39,7 +39,7 @@ done
 # --- non-e2e groups (mirrors ./run-tests.sh, including its envs) ------------
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
-    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @e2e'
+    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker" \
     --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output and not @e2e'
@@ -69,7 +69,7 @@ cargo llvm-cov report --cobertura --output-path "$non_e2e_path"
 cargo llvm-cov clean --workspace
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
-    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and @e2e'
+    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker" \
     --tags '@bge and not @gate-combination and not @review-output and @e2e'
@@ -82,5 +82,11 @@ GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$review_output_features" "spec-retrieval,cross-encoder-reranker,nli-evidence,spec-similarity-gate" \
     --tags '@review-output and @e2e'
+
+# Installed-build scenarios (clean env, all features) mirror ./run-tests.sh --e2e.
+env -u GIVN_SPEC_BGE -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS \
+    GIVN_FEATURES="$features_path" \
+    cargo llvm-cov --no-report --features spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence \
+    --test features_runner -- --tags '@release-proof'
 
 cargo llvm-cov report --cobertura --output-path "$e2e_path"
