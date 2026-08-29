@@ -149,9 +149,30 @@ fn release_blocked(name: &str, value: &str) -> bool {
         // (`auto`/`local` for BGE, `nli`/`nli-auto` for NLI).
         "GIVN_SPEC_BGE" => matches!(value, "stub" | "disabled" | "missing"),
         "GIVN_SPEC_RERANKER" => {
-            matches!(value, "stub" | "disabled" | "missing" | "nli-stub" | "nli-missing")
+            matches!(
+                value,
+                "stub" | "disabled" | "missing" | "nli-stub" | "nli-missing"
+            )
         }
         "GIVN_SPEC_BGE_APPROVAL" => value == "failed",
+        // Fixture-only channels: any present value substitutes or re-sizes
+        // the model output, so they are blocked by name.
+        "GIVN_SPEC_BGE_LOCAL_STUB"
+        | "GIVN_SPEC_NLI_LOCAL_STUB"
+        | "GIVN_SPEC_BGE_TEST_POOL"
+        | "GIVN_SPEC_NLI_TEST_POOL"
+        | "GIVN_SPEC_BGE_DIRECTIONAL_SCORES"
+        | "GIVN_SPEC_NLI_DIRECTIONAL_SCORES"
+        | "GIVN_SPEC_STUB_PAIR_SCORES"
+        | "GIVN_SPEC_DUPLICATES_TEST_SCORES"
+        | "GIVN_SPEC_E5_TOKEN_BUDGET"
+        | "GIVN_SPEC_BGE_TOKEN_BUDGET"
+        | "GIVN_SPEC_NLI_TOKEN_BUDGET"
+        | "GIVN_SPEC_TOKEN_BUDGET"
+        | "GIVN_SPEC_NLI_REPORT_LIMIT"
+        | "GIVN_SPEC_MAX_RERANK_PAIRS"
+        | "GIVN_SPEC_RESOLUTION_NOTICES"
+        | "GIVN_SPEC_DOWNLOAD_EVENTS" => true,
         _ => false,
     }
 }
@@ -162,10 +183,11 @@ fn release_blocked(name: &str, value: &str) -> bool {
 #[cfg(feature = "spec-retrieval")]
 fn spec_env(name: &str) -> Option<std::ffi::OsString> {
     let raw = std::env::var_os(name)?;
-    if let Some(value) = raw.to_str() {
-        if release_blocked(name, value) {
-            return None;
-        }
+    if raw
+        .to_str()
+        .is_some_and(|value| release_blocked(name, value))
+    {
+        return None;
     }
     Some(raw)
 }
@@ -199,12 +221,13 @@ pub fn report_ignored_release_overrides() {
         return;
     }
     for name in REQUEST_CHANNELS {
-        if let Ok(value) = std::env::var(name) {
-            if release_blocked(name, &value) {
-                notice(format!(
-                    "{name} is ignored in installed builds; the real model output is always used"
-                ));
-            }
+        if std::env::var(name)
+            .ok()
+            .is_some_and(|value| release_blocked(name, &value))
+        {
+            notice(format!(
+                "{name} is ignored in installed builds; the real model output is always used"
+            ));
         }
     }
 }
@@ -9405,5 +9428,220 @@ fn nli_candidate_line(
         )
     } else {
         "NLI: NLI_UNSCORED".to_string()
+    }
+}
+
+#[cfg(all(test, feature = "spec-retrieval"))]
+mod release_strict_tests {
+    use super::{ALLOW_SPEC_OVERRIDES, release_blocked, spec_env, spec_env_var};
+    use std::env;
+
+    /// std::env mutation is process-global, so the env-mutating tests below
+    /// run serially against each other.
+    static ENV_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn set_var(name: &str, value: &str) {
+        // Rust 2024 marks the std::env mutators unsafe; the test owns the
+        // (single-threaded, serialized) process env for the variables it uses.
+        unsafe {
+            env::set_var(name, value);
+        }
+    }
+
+    fn remove_var(name: &str) {
+        unsafe {
+            env::remove_var(name);
+        }
+    }
+
+    /// A representative fixture request for every gated channel, exercised
+    /// against `release_blocked` on both profiles so the sweep list and the
+    /// taxonomy cannot drift from each other.
+    const REQUEST_REPRESENTATIVE: &[(&str, &str)] = &[
+        ("GIVN_SPEC_EMBEDDER", "stub"),
+        ("GIVN_SPEC_BGE", "stub"),
+        ("GIVN_SPEC_RERANKER", "nli-stub"),
+        ("GIVN_SPEC_BGE_APPROVAL", "failed"),
+        ("GIVN_SPEC_BGE_LOCAL_STUB", "1"),
+        ("GIVN_SPEC_NLI_LOCAL_STUB", "1"),
+        ("GIVN_SPEC_BGE_TEST_POOL", "pool"),
+        ("GIVN_SPEC_NLI_TEST_POOL", "pool"),
+        ("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", "scores"),
+        ("GIVN_SPEC_NLI_DIRECTIONAL_SCORES", "scores"),
+        ("GIVN_SPEC_STUB_PAIR_SCORES", "scores"),
+        ("GIVN_SPEC_DUPLICATES_TEST_SCORES", "scores"),
+        ("GIVN_SPEC_E5_TOKEN_BUDGET", "budget"),
+        ("GIVN_SPEC_BGE_TOKEN_BUDGET", "budget"),
+        ("GIVN_SPEC_NLI_TOKEN_BUDGET", "budget"),
+        ("GIVN_SPEC_TOKEN_BUDGET", "budget"),
+        ("GIVN_SPEC_NLI_REPORT_LIMIT", "5"),
+        ("GIVN_SPEC_MAX_RERANK_PAIRS", "64"),
+        ("GIVN_SPEC_RESOLUTION_NOTICES", "repeat"),
+        ("GIVN_SPEC_DOWNLOAD_EVENTS", "/events.log"),
+    ];
+
+    #[cfg(not(debug_assertions))]
+    mod release {
+        use super::*;
+        use std::env::{VarError, var};
+
+        #[test]
+        fn gates_only_disqualifying_selector_values() {
+            for (name, value) in [
+                ("GIVN_SPEC_BGE", "auto"),
+                ("GIVN_SPEC_BGE", "local"),
+                ("GIVN_SPEC_RERANKER", "nli"),
+                ("GIVN_SPEC_RERANKER", "nli-auto"),
+            ] {
+                assert!(
+                    !release_blocked(name, value),
+                    "{name}={value} must stay honoured"
+                );
+            }
+        }
+
+        #[test]
+        fn gates_every_fixture_request() {
+            for &(name, value) in REQUEST_REPRESENTATIVE {
+                assert!(
+                    release_blocked(name, value),
+                    "{name}={value} must be ignored in an installed build"
+                );
+            }
+        }
+
+        #[test]
+        fn location_channels_are_honoured() {
+            for (name, value) in [
+                ("GIVN_SPEC_MODEL_CACHE", "/models/e5"),
+                ("GIVN_SPEC_E5_TOKENIZER", "/models/tokenizer.json"),
+                ("GIVN_SPEC_BGE_CACHE", "/models/bge"),
+                ("GIVN_SPEC_BGE_MODEL_DIR", "/models/bge/dir"),
+                ("GIVN_SPEC_NLI_CACHE", "/models/nli"),
+                ("GIVN_SPEC_NLI_MODEL_DIR", "/models/nli/dir"),
+                ("GIVN_SPEC_THREADS", "4"),
+            ] {
+                assert!(
+                    !release_blocked(name, value),
+                    "{name}={value} is a model-location request and must be honoured"
+                );
+            }
+        }
+
+        #[test]
+        fn sweep_list_fully_gated() {
+            let mut channels: Vec<&str> = REQUEST_CHANNELS.iter().copied().collect();
+            channels.sort_unstable();
+            let mut representatives: Vec<&str> = REQUEST_REPRESENTATIVE
+                .iter()
+                .map(|(name, _)| *name)
+                .collect();
+            representatives.sort_unstable();
+            assert_eq!(
+                channels, representatives,
+                "REQUEST_CHANNELS and the test representative list must match"
+            );
+            for &(name, value) in REQUEST_REPRESENTATIVE {
+                assert!(release_blocked(name, value), "{name} must be gated");
+            }
+        }
+
+        #[test]
+        fn spec_env_maps_blocked_request_to_none() {
+            let _guard = ENV_LOCK.lock().unwrap();
+            set_var("GIVN_SPEC_EMBEDDER", "stub");
+            assert!(spec_env("GIVN_SPEC_EMBEDDER").is_none());
+            assert_eq!(
+                var("GIVN_SPEC_EMBEDDER").ok(),
+                Some("stub".to_string()),
+                "the raw variable is untouched"
+            );
+            remove_var("GIVN_SPEC_EMBEDDER");
+        }
+
+        #[test]
+        fn spec_env_var_maps_blocked_request_to_not_present() {
+            let _guard = ENV_LOCK.lock().unwrap();
+            set_var("GIVN_SPEC_BGE", "disabled");
+            assert_eq!(
+                spec_env_var("GIVN_SPEC_BGE"),
+                Err(VarError::NotPresent),
+                "a blocked request must resolve like an unset variable"
+            );
+            remove_var("GIVN_SPEC_BGE");
+        }
+
+        #[test]
+        fn spec_env_var_maps_location_request_to_value() {
+            let _guard = ENV_LOCK.lock().unwrap();
+            set_var("GIVN_SPEC_BGE", "auto");
+            assert_eq!(spec_env_var("GIVN_SPEC_BGE"), Ok("auto".to_string()));
+            remove_var("GIVN_SPEC_BGE");
+        }
+
+        #[test]
+        fn spec_env_var_unset_stays_not_present() {
+            let _guard = ENV_LOCK.lock().unwrap();
+            remove_var("GIVN_SPEC_RELEASE_STRICT_UNSET_PROBE");
+            assert_eq!(
+                spec_env_var("GIVN_SPEC_RELEASE_STRICT_UNSET_PROBE"),
+                Err(VarError::NotPresent)
+            );
+            assert!(spec_env("GIVN_SPEC_RELEASE_STRICT_UNSET_PROBE").is_none());
+        }
+
+        #[test]
+        #[allow(clippy::assertions_on_constants)]
+        fn release_profile_really_disallows_overrides() {
+            // A cfg-known value, asserted so a mis-configured runner that
+            // executes the release matrix under a debug profile fails loudly.
+            assert!(!ALLOW_SPEC_OVERRIDES);
+        }
+    }
+
+    #[cfg(debug_assertions)]
+    mod development {
+        use super::*;
+        use std::env::VarError;
+
+        #[test]
+        fn dev_profile_honours_every_fixture_request() {
+            for &(name, value) in REQUEST_REPRESENTATIVE {
+                assert!(
+                    !release_blocked(name, value),
+                    "{name}={value} must be honoured by a development build"
+                );
+            }
+        }
+
+        #[test]
+        fn spec_env_dev_passthrough() {
+            let _guard = ENV_LOCK.lock().unwrap();
+            set_var("GIVN_SPEC_EMBEDDER", "stub");
+            assert_eq!(spec_env_var("GIVN_SPEC_EMBEDDER"), Ok("stub".to_string()));
+            assert_eq!(
+                spec_env("GIVN_SPEC_EMBEDDER"),
+                Some(std::ffi::OsString::from("stub"))
+            );
+            remove_var("GIVN_SPEC_EMBEDDER");
+        }
+
+        #[test]
+        fn spec_env_dev_unset_returns_not_present() {
+            let _guard = ENV_LOCK.lock().unwrap();
+            remove_var("GIVN_SPEC_RELEASE_STRICT_UNSET_PROBE");
+            assert_eq!(
+                spec_env_var("GIVN_SPEC_RELEASE_STRICT_UNSET_PROBE"),
+                Err(VarError::NotPresent)
+            );
+        }
+
+        #[test]
+        #[allow(clippy::assertions_on_constants)]
+        fn dev_profile_allows_overrides() {
+            // A cfg-known value, asserted so a mis-configured runner that
+            // executes the dev passthrough under a release profile fails loudly.
+            assert!(ALLOW_SPEC_OVERRIDES);
+        }
     }
 }

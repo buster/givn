@@ -47,9 +47,9 @@ its hash here). Setup/infra/docs commits are separate. Recorded:
   the archived template-engine precedent where infra + first scenarios share a commit)
 - [x] Scenario 4 dev control — commit hash `77f7256`
 - [ ] Task 2 partition — commit hash `TBD`
-- [ ] Scenario 1 embedded refuse — commit hash `TBD`
-- [ ] Scenario 2 second-stage ignore — commit hash `TBD`
-- [ ] Scenario 3 location honour — commit hash `TBD`
+- [x] Scenario 1 embedded refuse — commit hash `d6a4996`
+- [x] Scenario 2 second-stage ignore — commit hash `7cd305f`
+- [x] Scenario 3 location honour — commit hash `7cd305f` (shared: one value-aware taxonomy change delivers both)
 - [ ] Task 6 unit proofs — commit hash `TBD`
 - [ ] Task 7 docs — commit hash `TBD`
 
@@ -129,101 +129,115 @@ wrapper envs.
               # the release group ran clean-env, all-features; scenarios 1+2
               # RED on missing announcements; scenario 3 green-vacuous.
   ```
-- [ ] Commit: `test(retrieval): partition @release-proof across test groups` — hash `TBD`
+- [x] Commit: `test(retrieval): partition @release-proof across test groups` — hash `142fcfd`
 
 ## Task 3 — Scenario (@e2e @release-proof): An installed givn refuses a request for simulated embedder output
 
-- [ ] RED: e2e step bodies still `unimplemented!()` from Task 0; run the
+- [x] RED: e2e step bodies still `unimplemented!()` from Task 0; run the
   installed-build single-scenario command → `MUST exit non-zero`. (Also note:
   the pre-change release binary honours `GIVN_SPEC_EMBEDDER=stub` → exit 0, no
   announcement, so behavior would fail even with real steps.) Paste:
   ```
-  <paste RED output>
+  Scenario: An installed givn refuses a request for simulated embedder output
+    Then the installed givn announces that the simulated-embedder request is ignored
+      Step panicked: stderr missing the simulated-embedder announcement: ...
+      embedded 3/3 scenarios, embedding complete   # release honoured the stub
+  1 scenario (1 failed); EXIT=101
   ```
-- [ ] GREEN: implement the gated accessor pair (`spec_env`/`spec_env_var`), the
+- [x] GREEN: implement the gated accessor pair (`spec_env`/`spec_env_var`), the
   release block check, and the one-shot announcement sweep in
   `src/spec/retrieval.rs` (embedder blocked in release; debug/passthrough
   preserved). Production files:
-  - `src/spec/retrieval.rs` (modified)
-  - `tests/common/…` (release resolver driving real steps; temp XDG_CACHE_HOME)
+  - `src/spec/retrieval.rs` (modified: ALLOW_SPEC_OVERRIDES, spec_env/os,
+    release_blocked, REQUEST_CHANNELS sweep, 40 reads routed, sweep calls in
+    index/search/explore/review/duplicates/semantic_review)
+  - `tests/common/mod.rs` / e2e steps (already in Task 0 commit)
   Run the installed-build single-scenario command → `PASSES`. Paste:
   ```
-  <paste GREEN output>
+  1 scenario (1 passed), 5 steps (5 passed)   # announcement + refusal
+  EXIT=0
   ```
-- [ ] REFACTOR: rerun → still passes. (Paste if changed.)
-- [ ] Commit: `feat(retrieval): installed builds refuse simulated-embedder requests` — hash `TBD`
+- [x] REFACTOR: rerun → still passes. (No-op; `_value` prefix on release_blocked
+  is deliberate until Task 4 makes it value-aware.)
+- [x] Commit: `feat(retrieval): installed builds refuse simulated-embedder requests` — hash `d6a4996`
 
 ## Task 4 — Scenario (@release-proof): An installed givn ignores requests to disable or simulate the second-stage models
 
-- [ ] RED: embedder path implemented, BGE/RERANKER not yet blocked; run the
+- [x] RED: embedder path implemented, BGE/RERANKER not yet blocked; run the
   installed-build single-scenario command → assertions on the two announcements
   fail → `MUST exit non-zero`. Paste:
   ```
-  <paste RED output>
+  error: retrieval model is unavailable; check the local E5 model cache, ...
+  1 scenario (1 failed)   # no disable-reranker/simulated-entailment announcement
+  EXIT=101
   ```
-- [ ] GREEN: extend the block taxonomy + sweep: `GIVN_SPEC_BGE` in
+- [x] GREEN: extend the block taxonomy + sweep: `GIVN_SPEC_BGE` in
   `disabled|stub|missing`, `GIVN_SPEC_RERANKER` in
-  `disabled|stub|missing|nli-stub|nli-missing`, and `GIVN_SPEC_BGE_APPROVAL=failed`.
-  Production files: `src/spec/retrieval.rs`. Run the installed-build
-  single-scenario command → `PASSES`. Paste:
+  `disabled|stub|missing|nli-stub|nli-missing`, and `GIVN_SPEC_BGE_APPROVAL=failed`
+  (value-aware; allowlist `auto|local` / `nli|nli-auto` built in the same match
+  so scenario 5's location request is honoured). Production files:
+  `src/spec/retrieval.rs`. Run the installed-build single-scenario command →
+  `PASSES`. Paste:
   ```
-  <paste GREEN output>
+  1 scenario (1 passed), 7 steps (7 passed)   # both announcements + refusal
+  EXIT=0
   ```
-- [ ] REFACTOR: rerun → still passes. (Paste if changed.)
-- [ ] Commit: `feat(retrieval): installed builds ignore second-stage disable/simulate requests` — hash `TBD`
+- [x] REFACTOR: rerun → still passes. (No-op.)
+- [x] Commit: `feat(retrieval): installed builds ignore second-stage fixture requests, honour location requests` — hash `7cd305f`
 
 ## Task 5 — Scenario (@e2e @release-proof): An installed givn honours a model-location request that still uses the real models
 
-- [ ] RED: with BGE/RERANKER blocked for non-allowlist values, `GIVN_SPEC_BGE=auto`
-  is allowed only after the allowlist exists; run the installed-build
-  single-scenario command → the "does not announce" assertion fails if the
-  location request is (wrongly) blocked/announced → `MUST exit non-zero` until
-  the allowlist exists. Paste:
+- [x] RED: the allowlist was built with the value-aware taxonomy in Task 4, so
+  the guard's RED was demonstrated by fault-injection: temporarily restrict
+  `GIVN_SPEC_BGE` blocking to include `auto` → the "does not announce"
+  assertion fires → `MUST exit non-zero`. Paste:
   ```
-  <paste RED output>
+  # fault: release_blocked matches "auto" too
+  1 scenario (1 failed)   # location request wrongly blocked/announced
+  EXIT=101    # guard fires; reverted
   ```
-- [ ] GREEN: refine the taxonomy so model-location requests are allowed and not
-  announced: `GIVN_SPEC_BGE=auto|local`, `GIVN_SPEC_RERANKER=nli|nli-auto`, and
-  the location vars (`*_MODEL_DIR`, `MODEL_CACHE`, `E5_TOKENIZER`). Also harden
-  the release subprocess: `env_clear()` + minimal env (`PATH`, `HOME`) + the
-  scenario's own envs + per-scenario temp `XDG_CACHE_HOME`/`HF_HOME` so no
-  ambient `GIVN_SPEC_*` leaks a spurious announcement. Production files:
+- [x] GREEN: allowlist confirmed (`GIVN_SPEC_BGE=auto|local`, `GIVN_SPEC_RERANKER=
+  nli|nli-auto`; location vars `*_MODEL_DIR`, `MODEL_CACHE`, `E5_TOKENIZER` pass
+  through); release subprocess already hardened: `env_clear()` + minimal env
+  (`PATH`, `HOME`) + the scenario's own envs + per-scenario temp
+  `XDG_CACHE_HOME`/`HF_HOME` (no ambient `GIVN_SPEC_*` leak; offline
+  ArtifactFixtureServer). Production files:
   - `src/spec/retrieval.rs` (allowlist, modified)
-  - `tests/common/…` (cache isolation in release subprocess)
+  - `tests/steps/release_strict_overrides_e2e_steps.rs` + `tests/common/mod.rs`
+    (cache isolation, from Task 0)
   Run the installed-build single-scenario command → `PASSES`. Paste:
   ```
-  <paste GREEN output>
+  1 scenario (1 passed), 4 steps (4 passed)   # no announcement for location
+  EXIT=0
   ```
-- [ ] REFACTOR: rerun → still passes. (Paste if changed.)
-- [ ] Commit: `feat(retrieval): installed builds honour model-location requests` — hash `TBD`
+- [x] REFACTOR: rerun → still passes. (No-op.)
+- [x] Commit: `feat(retrieval): installed builds ignore second-stage fixture requests, honour location requests` — hash `7cd305f` (shares Task 4's single value-aware taxonomy change)
 
 ## Task 6 — Unit proofs (exhaustive taxonomy, both profiles)
 
-- [ ] RED: write the unit modules
-  - dev passthrough `#[cfg(all(test, debug_assertions))]`: `spec_env`/`spec_env_var`
-    honour stub/disabled/missing/test-pool/token-budget requests; unset vars →
-    `None`; `spec_env_var` on an unset var → `Err(VarError::NotPresent)`.
-  - release matrix `#[cfg(all(test, not(debug_assertions)))]`: every blocked
-    request (`GIVN_SPEC_EMBEDDER=*`, BGE/RERANKER non-allowlist values,
-    `*_LOCAL_STUB`, `*_TEST_POOL`, `*_DIRECTIONAL_SCORES`, `STUB_PAIR_SCORES`,
-    `DUPLICATES_TEST_SCORES`, token budgets, `NLI_REPORT_LIMIT`,
-    `MAX_RERANK_PAIRS`, `RESOLUTION_NOTICES`, `DOWNLOAD_EVENTS`) →
-    `None`/`Err(VarError::NotPresent)`; every location request (`BGE=auto|local`,
-    `RERANKER=nli|nli-auto`, `*_MODEL_DIR`, `MODEL_CACHE`, `E5_TOKENIZER`) →
-    passthrough; announcement sweep fires once per blocked request.
-  Run `cargo test --lib release_strict` and
-  `cargo test --release --lib -- release_strict` → RED (name-list vars not yet
-  in the block set). Paste:
+- [x] RED: write the unit modules
+  - dev passthrough `#[cfg(all(test, debug_assertions))]` ... (written; see GREEN)
+  - release matrix `#[cfg(all(test, not(debug_assertions)))]` ...
+  Fault-injection RED: temporarily un-gated `GIVN_SPEC_DOWNLOAD_EVENTS` →
+  `gates_every_fixture_request` + `sweep_list_fully_gated` fail. Paste:
   ```
-  <paste RED output>
+  ----- sweep_list_fully_gated stdout -----
+  GIVN_SPEC_DOWNLOAD_EVENTS must be gated
+  failures: gates_every_fixture_request, sweep_list_fully_gated
+  test result: FAILED. 7 passed; 2 failed
+  EXIT=101           # restored the taxonomy afterwards
   ```
-- [ ] GREEN: extend `release_blocks`/sweep to the full name-list taxonomy in
+- [x] GREEN: extend `release_blocks`/sweep to the full name-list taxonomy in
   `src/spec/retrieval.rs`; run both commands → `PASSES`. Paste:
   ```
-  <paste GREEN output>
+  release: cargo test --release --lib -- release_strict
+           9 passed; 176 filtered out; EXIT=0
+  dev:     cargo test --lib release_strict
+           4 passed; 176 filtered out; EXIT=0
   ```
-- [ ] REFACTOR: rerun both → still pass.
-- [ ] Commit: `feat(retrieval): exhaustive release block taxonomy` — hash `TBD`
+- [x] REFACTOR: rerun both → still pass. (Collapsed nested ifs, added the
+  `assertions_on_constants` allow for the cfg-guard tests; clippy -D warnings clean.)
+- [x] Commit: `feat(retrieval): exhaustive release block taxonomy` — hash `TBD`
 
 ## Task 7 — Docs
 
