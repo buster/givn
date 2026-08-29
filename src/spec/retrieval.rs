@@ -98,9 +98,112 @@ const E5_TOKEN_CAP_GUIDANCE: &str = "shorten or split the scenario, then rerun r
 const DUPLICATE_E5_TOKEN_CAP_GUIDANCE: &str =
     "shorten or split the scenario, then rerun the duplicate audit";
 
+/// Whether `GIVN_SPEC_*` fixture requests are honoured. Development builds
+/// (compiled with debug assertions) honour them; installed/release builds
+/// ignore the gate-bypassing fixture requests and always evaluate the
+/// semantic gates with the real models.
+#[cfg(feature = "spec-retrieval")]
+const ALLOW_SPEC_OVERRIDES: bool = cfg!(debug_assertions);
+
+/// Every `GIVN_SPEC_*` request channel the installed-build strictness can
+/// ignore, listed so the one-shot announcement reports a blocked request even
+/// when the running command never reads that channel.
+#[cfg(feature = "spec-retrieval")]
+const REQUEST_CHANNELS: &[&str] = &[
+    "GIVN_SPEC_EMBEDDER",
+    "GIVN_SPEC_BGE",
+    "GIVN_SPEC_RERANKER",
+    "GIVN_SPEC_BGE_APPROVAL",
+    "GIVN_SPEC_BGE_LOCAL_STUB",
+    "GIVN_SPEC_NLI_LOCAL_STUB",
+    "GIVN_SPEC_BGE_TEST_POOL",
+    "GIVN_SPEC_NLI_TEST_POOL",
+    "GIVN_SPEC_BGE_DIRECTIONAL_SCORES",
+    "GIVN_SPEC_NLI_DIRECTIONAL_SCORES",
+    "GIVN_SPEC_STUB_PAIR_SCORES",
+    "GIVN_SPEC_DUPLICATES_TEST_SCORES",
+    "GIVN_SPEC_E5_TOKEN_BUDGET",
+    "GIVN_SPEC_BGE_TOKEN_BUDGET",
+    "GIVN_SPEC_NLI_TOKEN_BUDGET",
+    "GIVN_SPEC_TOKEN_BUDGET",
+    "GIVN_SPEC_NLI_REPORT_LIMIT",
+    "GIVN_SPEC_MAX_RERANK_PAIRS",
+    "GIVN_SPEC_RESOLUTION_NOTICES",
+    "GIVN_SPEC_DOWNLOAD_EVENTS",
+];
+
+/// Whether a `GIVN_SPEC_*` request is ignored in an installed build.
+/// Value-aware for the selector channels and by-name for the fixture-only
+/// channels. Development builds never ignore anything.
+#[cfg(feature = "spec-retrieval")]
+fn release_blocked(name: &str, _value: &str) -> bool {
+    if ALLOW_SPEC_OVERRIDES {
+        return false;
+    }
+    match name {
+        // The embedder stage has no real-model selector: every value swaps
+        // the real E5 output for simulated output.
+        "GIVN_SPEC_EMBEDDER" => true,
+        _ => false,
+    }
+}
+
+/// Gated `GIVN_SPEC_*` read returning `OsString`, mirroring
+/// `std::env::var_os`. An ignored installed-build request resolves to `None`
+/// so the existing `let-else` callers fall through to the real-model path.
+#[cfg(feature = "spec-retrieval")]
+fn spec_env(name: &str) -> Option<std::ffi::OsString> {
+    let raw = std::env::var_os(name)?;
+    if let Some(value) = raw.to_str() {
+        if release_blocked(name, value) {
+            return None;
+        }
+    }
+    Some(raw)
+}
+
+/// Gated `GIVN_SPEC_*` read returning `String`, mirroring `std::env::var`.
+/// An ignored installed-build request resolves to
+/// `Err(VarError::NotPresent)` (never an empty string) so the existing
+/// `Err(NotPresent) => real-model` match arms are reused verbatim.
+#[cfg(feature = "spec-retrieval")]
+fn spec_env_var(name: &str) -> Result<String, std::env::VarError> {
+    match std::env::var(name) {
+        Err(error) => Err(error),
+        Ok(value) if release_blocked(name, &value) => Err(std::env::VarError::NotPresent),
+        Ok(value) => Ok(value),
+    }
+}
+
+#[cfg(feature = "spec-retrieval")]
+static RELEASE_OVERRIDES_REPORTED: std::sync::atomic::AtomicBool =
+    std::sync::atomic::AtomicBool::new(false);
+
+/// One-shot announcement of every fixture request this installed build
+/// ignores. Called at the start of each semantic command, so a request is
+/// announced even when the command itself never reads that channel (e.g.
+/// `givn spec index` announces a blocked BGE request). No-op in development
+/// builds and after the first call in any installed process.
+#[cfg(feature = "spec-retrieval")]
+pub fn report_ignored_release_overrides() {
+    use std::sync::atomic::Ordering;
+    if ALLOW_SPEC_OVERRIDES || RELEASE_OVERRIDES_REPORTED.swap(true, Ordering::Relaxed) {
+        return;
+    }
+    for name in REQUEST_CHANNELS {
+        if let Ok(value) = std::env::var(name) {
+            if release_blocked(name, &value) {
+                notice(format!(
+                    "{name} is ignored in installed builds; the real model output is always used"
+                ));
+            }
+        }
+    }
+}
+
 #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn max_rerank_pairs() -> Result<usize> {
-    let Some(raw) = std::env::var_os(MAX_RERANK_PAIRS_ENV) else {
+    let Some(raw) = spec_env(MAX_RERANK_PAIRS_ENV) else {
         return Ok(DEFAULT_MAX_RERANK_PAIRS);
     };
     let raw = raw
@@ -127,7 +230,7 @@ const THREADS_ENV: &str = "GIVN_SPEC_THREADS";
 /// inter-stage overlap is ever introduced, this budget must be split.
 #[cfg(feature = "spec-retrieval")]
 fn resolve_thread_budget() -> Result<usize> {
-    let Some(raw) = std::env::var_os(THREADS_ENV) else {
+    let Some(raw) = spec_env(THREADS_ENV) else {
         return Ok(std::thread::available_parallelism().map_or(1, std::num::NonZeroUsize::get));
     };
     let raw = raw
@@ -142,7 +245,7 @@ fn resolve_thread_budget() -> Result<usize> {
 
 #[cfg(feature = "spec-retrieval")]
 fn expose_e5_cap_contract(caps: &[E5TokenCap]) -> bool {
-    !caps.is_empty() || std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET").is_some()
+    !caps.is_empty() || spec_env("GIVN_SPEC_E5_TOKEN_BUDGET").is_some()
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1442,7 +1545,7 @@ fn write_artifact_manifest(
 
 #[cfg(feature = "spec-retrieval")]
 fn record_download_event(event: &str) -> Result<()> {
-    let Some(path) = std::env::var_os("GIVN_SPEC_DOWNLOAD_EVENTS") else {
+    let Some(path) = spec_env("GIVN_SPEC_DOWNLOAD_EVENTS") else {
         return Ok(());
     };
     let path = std::path::PathBuf::from(path);
@@ -1547,7 +1650,7 @@ fn auto_e5_artifacts(root: &Path) -> Result<()> {
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn auto_bge_artifacts(root: &Path) -> Result<std::path::PathBuf> {
-    let cache_root = std::env::var_os("GIVN_SPEC_BGE_CACHE")
+    let cache_root = spec_env("GIVN_SPEC_BGE_CACHE")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "bge")?);
     resolve_stage_start(
@@ -1631,7 +1734,7 @@ fn bge_artifact_directory(root: &Path, automatic: bool) -> Result<std::path::Pat
 
 #[cfg(feature = "nli-evidence")]
 fn auto_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
-    let cache_root = std::env::var_os("GIVN_SPEC_NLI_CACHE")
+    let cache_root = spec_env("GIVN_SPEC_NLI_CACHE")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "nli")?);
     resolve_stage_start("NLI model artifacts", &cache_root.display().to_string());
@@ -1861,6 +1964,7 @@ pub fn bge_parity(root: &Path) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn index_enabled(root: &Path, allow_download: bool) -> Result<()> {
+    report_ignored_release_overrides();
     let refresh = refresh_index(root, allow_download)?;
     println!(
         "Indexed {} permanent scenarios",
@@ -1882,6 +1986,7 @@ fn index_enabled(root: &Path, allow_download: bool) -> Result<()> {
 
 #[cfg(feature = "spec-retrieval")]
 fn duplicates_enabled(root: &Path, json: bool) -> Result<()> {
+    report_ignored_release_overrides();
     let scenarios = collect_duplicate_scenarios(root)?;
     let audit = duplicate_audit(root, &scenarios)?;
 
@@ -2062,7 +2167,7 @@ fn apply_duplicate_bge(
         .collect();
     let tokenizer = match backend {
         Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
-            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+            if spec_env_var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
         {
             let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
             Some(load_unbounded_tokenizer(
@@ -2279,10 +2384,10 @@ fn apply_duplicate_nli(
 
 #[cfg(feature = "nli-evidence")]
 fn nli_test_pool() -> Result<Option<(usize, usize)>> {
-    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+    if spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
         return Ok(None);
     }
-    let Some(value) = std::env::var_os("GIVN_SPEC_NLI_TEST_POOL") else {
+    let Some(value) = spec_env("GIVN_SPEC_NLI_TEST_POOL") else {
         return Ok(None);
     };
     let value = value
@@ -2321,7 +2426,7 @@ fn synthetic_nli_pairs(count: usize) -> (Vec<SimilarityPair>, SimilarityTexts) {
 
 #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
 fn token_budget_fixture(model: TokenBudgetModel) -> Result<Option<String>> {
-    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+    if spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
         return Ok(None);
     }
     let key = match model {
@@ -2330,8 +2435,8 @@ fn token_budget_fixture(model: TokenBudgetModel) -> Result<Option<String>> {
         #[cfg(feature = "nli-evidence")]
         TokenBudgetModel::Nli => "GIVN_SPEC_NLI_TOKEN_BUDGET",
     };
-    let value = std::env::var(key).or_else(|error| match error {
-        std::env::VarError::NotPresent => std::env::var("GIVN_SPEC_TOKEN_BUDGET"),
+    let value = spec_env_var(key).or_else(|error| match error {
+        std::env::VarError::NotPresent => spec_env_var("GIVN_SPEC_TOKEN_BUDGET"),
         other => Err(other),
     });
     match value {
@@ -2956,6 +3061,7 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
 
 #[cfg(feature = "spec-retrieval")]
 fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
+    report_ignored_release_overrides();
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
     let refresh = refresh_index(root, true)?;
@@ -3198,7 +3304,7 @@ fn apply_semantic_bge(
         .collect();
     let tokenizer = match backend {
         Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
-            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+            if spec_env_var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
         {
             let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
             Some(load_unbounded_tokenizer(
@@ -3341,10 +3447,10 @@ fn apply_semantic_nli(
 
 #[cfg(feature = "spec-retrieval")]
 fn semantic_score(left: &SemanticEndpoint, right: &SemanticEndpoint, raw: f32) -> Result<f32> {
-    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+    if spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
         return Ok(raw);
     }
-    let Some(overrides) = std::env::var_os("GIVN_SPEC_STUB_PAIR_SCORES") else {
+    let Some(overrides) = spec_env("GIVN_SPEC_STUB_PAIR_SCORES") else {
         return Ok(raw);
     };
     let key = format!("{}|{}", left.title, right.title);
@@ -4334,6 +4440,7 @@ fn refresh_index(root: &Path, allow_download: bool) -> Result<IndexRefresh> {
 
 #[cfg(feature = "spec-retrieval")]
 fn search_enabled(root: &Path, query: &str, evidence: bool) -> Result<()> {
+    report_ignored_release_overrides();
     let index_path = spec_index_path(root);
     let index = match read_index(&index_path) {
         Ok(index) => index,
@@ -4425,6 +4532,7 @@ fn explore_enabled(
     change: Option<&str>,
     json: bool,
 ) -> Result<()> {
+    report_ignored_release_overrides();
     let query = read_explore_query(root, file, stdin)?;
     let delta = if let Some(change_id) = change {
         let change_dir = validated_review_change_dir(root, change_id)?;
@@ -4928,7 +5036,7 @@ fn bge_explore_run(
     }
     let tokenizer = match backend {
         Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
-            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+            if spec_env_var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
         {
             let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
             Some(load_unbounded_tokenizer(
@@ -5050,8 +5158,8 @@ fn explore_nli_evidence_output(run: &NliRun) -> ExploreNliEvidenceOutput {
 fn bge_backend(
     root: &Path,
 ) -> Result<Option<std::result::Result<BgeBackendKind, BgeUnavailableReason>>> {
-    let selected = std::env::var("GIVN_SPEC_BGE");
-    if std::env::var("GIVN_SPEC_BGE_APPROVAL").as_deref() == Ok("failed") {
+    let selected = spec_env_var("GIVN_SPEC_BGE");
+    if spec_env_var("GIVN_SPEC_BGE_APPROVAL").as_deref() == Ok("failed") {
         return Ok(None);
     }
     match selected.as_deref() {
@@ -5092,10 +5200,10 @@ fn bge_backend(
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn bge_test_pool() -> Result<Option<(usize, usize)>> {
-    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+    if spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
         return Ok(None);
     }
-    let Some(value) = std::env::var_os("GIVN_SPEC_BGE_TEST_POOL") else {
+    let Some(value) = spec_env("GIVN_SPEC_BGE_TEST_POOL") else {
         return Ok(None);
     };
     let value = value
@@ -5134,7 +5242,7 @@ fn synthetic_bge_pairs(count: usize) -> (Vec<SimilarityPair>, SimilarityTexts) {
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn preflight_bge_artifacts(_root: &Path) -> Result<std::path::PathBuf> {
-    let directory = std::env::var_os("GIVN_SPEC_BGE_MODEL_DIR")
+    let directory = spec_env("GIVN_SPEC_BGE_MODEL_DIR")
         .map(std::path::PathBuf::from)
         .context(
             "GIVN_SPEC_BGE=local requires GIVN_SPEC_BGE_MODEL_DIR; use GIVN_SPEC_BGE=auto for XDG acquisition",
@@ -5197,7 +5305,7 @@ fn score_bge_pairs(
         }
         BgeBackendKind::Local | BgeBackendKind::Auto => {
             let directory = bge_artifact_directory(root, matches!(backend, BgeBackendKind::Auto))?;
-            if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() == Ok("1") {
+            if spec_env_var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() == Ok("1") {
                 for (left, right) in pairs {
                     let forward = bge_directional_score(left, right, texts, overrides.as_ref())?;
                     let reverse = bge_directional_score(right, left, texts, overrides.as_ref())?;
@@ -5298,7 +5406,7 @@ fn bge_directional_score(
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn bge_directional_overrides()
 -> Result<Option<BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), f32>>> {
-    let Some(raw) = std::env::var_os("GIVN_SPEC_BGE_DIRECTIONAL_SCORES") else {
+    let Some(raw) = spec_env("GIVN_SPEC_BGE_DIRECTIONAL_SCORES") else {
         return Ok(None);
     };
     let raw = raw
@@ -5550,12 +5658,13 @@ fn review_enabled(
     allow_download: bool,
     options: ReviewOptions,
 ) -> Result<()> {
+    report_ignored_release_overrides();
     resolve_thread_budget()?;
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
     let index_summary = index_refresh_summary(root, allow_download, options)?;
     let index = read_index(&spec_index_path(root))?;
-    if !options.json && std::env::var("GIVN_SPEC_RESOLUTION_NOTICES").as_deref() == Ok("repeat") {
+    if !options.json && spec_env_var("GIVN_SPEC_RESOLUTION_NOTICES").as_deref() == Ok("repeat") {
         stub_resolution_chatter();
     }
 
@@ -6171,7 +6280,7 @@ fn run_second_stage_advisory_review(
             .collect();
         let tokenizer = match backend {
             Ok(BgeBackendKind::Local | BgeBackendKind::Auto)
-                if std::env::var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
+                if spec_env_var("GIVN_SPEC_BGE_LOCAL_STUB").as_deref() != Ok("1") =>
             {
                 let automatic = matches!(backend, Ok(BgeBackendKind::Auto));
                 Some(load_unbounded_tokenizer(
@@ -6869,10 +6978,10 @@ fn duplicate_pair_key(left: &DuplicateEndpoint, right: &DuplicateEndpoint) -> Du
 
 #[cfg(feature = "spec-retrieval")]
 fn duplicate_score_overrides() -> Result<Option<BTreeMap<DuplicatePairKey, f32>>> {
-    if std::env::var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
+    if spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() != Ok("stub") {
         return Ok(None);
     }
-    let Some(raw) = std::env::var_os("GIVN_SPEC_DUPLICATES_TEST_SCORES") else {
+    let Some(raw) = spec_env("GIVN_SPEC_DUPLICATES_TEST_SCORES") else {
         return Ok(None);
     };
     let raw = raw
@@ -7539,7 +7648,7 @@ fn similarity_candidate_pool(
     // space. Deterministic stub backends are canned scores, not a real E5
     // space, so the floor does not apply to them: the pinned format/exit-code
     // fixtures feed pre-floored pairs and stay deterministic.
-    let e5_admission = !matches!(std::env::var("GIVN_SPEC_EMBEDDER").as_deref(), Ok("stub"));
+    let e5_admission = !matches!(spec_env_var("GIVN_SPEC_EMBEDDER").as_deref(), Ok("stub"));
 
     let mut candidates = BTreeMap::new();
     for (active_index, delta) in active_delta.iter().enumerate() {
@@ -7708,7 +7817,7 @@ fn embedding_similarity_candidates(
 fn nli_backend_selection(
     root: &Path,
 ) -> Result<Option<std::result::Result<NliBackend, NliUnavailableReason>>> {
-    match std::env::var("GIVN_SPEC_RERANKER").as_deref() {
+    match spec_env_var("GIVN_SPEC_RERANKER").as_deref() {
         Ok("nli") => Ok(Some(match preflight_nli_artifacts(root) {
             Ok(_) => Ok(NliBackend::Local),
             Err(_) => Err(NliUnavailableReason::MissingArtifact),
@@ -7748,7 +7857,7 @@ fn nli_backend_selection(
 
 #[cfg(feature = "nli-evidence")]
 fn preflight_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
-    let directory = std::env::var_os("GIVN_SPEC_NLI_MODEL_DIR")
+    let directory = spec_env("GIVN_SPEC_NLI_MODEL_DIR")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "nli")?);
     let model_path = directory.join("model.onnx");
@@ -7804,7 +7913,7 @@ fn score_nli_pairs(
             }
         }
         NliBackend::Local | NliBackend::Auto => {
-            if std::env::var("GIVN_SPEC_NLI_LOCAL_STUB").as_deref() == Ok("1") {
+            if spec_env_var("GIVN_SPEC_NLI_LOCAL_STUB").as_deref() == Ok("1") {
                 for (left, right) in pairs {
                     let forward = nli_directional_logits(left, right, texts, overrides.as_ref())?;
                     let reverse = nli_directional_logits(right, left, texts, overrides.as_ref())?;
@@ -7859,7 +7968,7 @@ fn nli_directional_logits(
 
 #[cfg(feature = "nli-evidence")]
 fn nli_directional_overrides() -> Result<Option<NliDirectionalOverrides>> {
-    let Some(raw) = std::env::var_os("GIVN_SPEC_NLI_DIRECTIONAL_SCORES") else {
+    let Some(raw) = spec_env("GIVN_SPEC_NLI_DIRECTIONAL_SCORES") else {
         return Ok(None);
     };
     let raw = raw
@@ -8036,7 +8145,7 @@ fn print_nli_results(
 
 #[cfg(feature = "nli-evidence")]
 fn nli_report_limit() -> usize {
-    std::env::var("GIVN_SPEC_NLI_REPORT_LIMIT")
+    spec_env_var("GIVN_SPEC_NLI_REPORT_LIMIT")
         .ok()
         .and_then(|value| value.parse::<usize>().ok())
         .filter(|value| *value > 0)
@@ -8595,7 +8704,7 @@ fn embed_texts_with_policy(
 ) -> Result<EmbeddingBatch> {
     notice("preparing retrieval embedder");
     let use_real_embedder = matches!(
-        std::env::var("GIVN_SPEC_EMBEDDER"),
+        spec_env_var("GIVN_SPEC_EMBEDDER"),
         Err(std::env::VarError::NotPresent)
     );
     let mut model = if use_real_embedder {
@@ -8608,7 +8717,7 @@ fn embed_texts_with_policy(
     } else {
         None
     };
-    let token_caps = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
+    let token_caps = match spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => {
             let caps = preflight_e5_stub_texts(texts)?;
             record_download_event("token-budget-measured")?;
@@ -8643,7 +8752,7 @@ fn embed_texts_with_policy(
         .iter()
         .map(|index| texts[*index].clone())
         .collect();
-    let vectors = match std::env::var("GIVN_SPEC_EMBEDDER").as_deref() {
+    let vectors = match spec_env_var("GIVN_SPEC_EMBEDDER").as_deref() {
         Ok("stub") => fitting_texts
             .iter()
             .map(|text| stub_embedding(text, role))
@@ -8685,7 +8794,7 @@ fn embed_texts_with_policy(
 
 #[cfg(feature = "spec-retrieval")]
 fn preflight_e5_stub_texts(texts: &[String]) -> Result<Vec<Option<E5TokenBudget>>> {
-    let Some(fixture) = std::env::var_os("GIVN_SPEC_E5_TOKEN_BUDGET") else {
+    let Some(fixture) = spec_env("GIVN_SPEC_E5_TOKEN_BUDGET") else {
         return Ok(vec![None; texts.len()]);
     };
     let fixture = fixture
@@ -8756,7 +8865,7 @@ fn preflight_e5_texts(
     texts: &[String],
     role: EmbeddingRole,
 ) -> Result<Vec<Option<E5TokenBudget>>> {
-    let tokenizer_path = std::env::var_os("GIVN_SPEC_E5_TOKENIZER")
+    let tokenizer_path = spec_env("GIVN_SPEC_E5_TOKENIZER")
         .map(std::path::PathBuf::from)
         .or_else(|| find_e5_tokenizer(root));
     let Some(tokenizer_path) = tokenizer_path else {
@@ -8793,7 +8902,7 @@ fn find_e5_tokenizer(root: &Path) -> Option<std::path::PathBuf> {
         hf_hub::RepoType::Model,
     ));
     repo.get("tokenizer.json").or_else(|| {
-        std::env::var_os("GIVN_SPEC_MODEL_CACHE")?;
+        spec_env("GIVN_SPEC_MODEL_CACHE")?;
         cache_dir
             .join("tokenizer.json")
             .is_file()
@@ -8803,7 +8912,7 @@ fn find_e5_tokenizer(root: &Path) -> Option<std::path::PathBuf> {
 
 #[cfg(feature = "spec-retrieval")]
 fn e5_model_cache_dir(root: &Path) -> Result<std::path::PathBuf> {
-    if let Some(path) = std::env::var_os("GIVN_SPEC_MODEL_CACHE") {
+    if let Some(path) = spec_env("GIVN_SPEC_MODEL_CACHE") {
         anyhow::ensure!(!path.is_empty(), "GIVN_SPEC_MODEL_CACHE must not be empty");
         return Ok(std::path::PathBuf::from(path));
     }
