@@ -25,7 +25,7 @@ matching commit that touches production source (not just spec/stub files):
 | Plan artifacts incl. the 5 arc42 glossary rows | c719579 | Yes (docs/arc42/12-glossary.md + change artifacts) |
 | Review-phase consolidation: fold 8 overlapped scenarios into the @e2e proofs + honest install-extras contract | 643be36 | Yes (delta feature, steps, install-extras @givn.modified) |
 | E5 0.9 second-stage admission floor (real embedder) | a51fb85 | Yes (src/spec/retrieval.rs) |
-| Finalisation: review sign-off, coverage, task ticks | <C> | No (chore) |
+| Finalisation: review sign-off, coverage, task ticks | aa8f150 | No (chore) |
 
 **Strict-mode proof** — confirmed present in tests/features_runner.rs:
 
