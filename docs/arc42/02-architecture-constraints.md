@@ -87,6 +87,13 @@ All second-stage layers retain raw E5 identity and distinguish recommended,
 filtered, unscored, token-cap, and unavailable states. They never classify or
 edit feature files.
 
+Fixture requests (simulated model output and disabling an evidence stage) are a
+development-build capability. An installed (release) build ignores every
+fixture request and always evaluates the gates with the real models;
+model-location requests (real models from a local, offline, or custom-cache
+location) remain honoured in both build kinds. The split is fixed by the
+Cargo profile (`debug_assertions`), not by configuration.
+
 ## 2.5 Acceptance Boundary
 
 Regular and E2E tests use deterministic stubs and test-only token-budget and
