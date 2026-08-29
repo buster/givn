@@ -32,38 +32,40 @@ Production surface (design.md):
 
 ## Implementation (code-only, all done)
 
-- [ ] `Cargo.toml`: `[profile.dev] debug = "line-tables-only"` added below
+- [x] `Cargo.toml`: `[profile.dev] debug = "line-tables-only"` added below
       the existing `[profile.release]` block.
-- [ ] `.github/workflows/ci.yml`: `CARGO_INCREMENTAL=0` set at job level
+- [x] `.github/workflows/ci.yml`: `CARGO_INCREMENTAL=0` set at job level
       (`env:` on the `checks` job) so every cargo step skips incremental
       blobs.
-- [ ] `.github/workflows/ci.yml`: cache key appended with `-lt1`
+- [x] `.github/workflows/ci.yml`: cache key appended with `-lt1`
       (`givn-cargo-${{ runner.os }}-${{ runner.arch }}-lt1-${{
       hashFiles('Cargo.lock') }}`), a one-time transition marker so the
       first post-change push does not restore stale full-debug artifacts.
-- [ ] `cargo check --locked --all-targets` compiles.
-- [ ] `cargo clippy --locked --all-targets -- -D warnings` clean.
-- [ ] `cargo fmt --all -- --check` clean.
-- [ ] `git diff` reviewed: no other file touched; `src/` unchanged.
+      The restore-key prefix is likewise narrowed to `-lt1-` so the old
+      full-debug cache is not restored via prefix match.
+- [x] `cargo check --locked --all-targets` compiles.
+- [x] `cargo clippy --locked --all-targets -- -D warnings` clean.
+- [x] `cargo fmt --all -- --check` clean.
+- [x] `git diff` reviewed: no other file touched; `src/` unchanged.
 
 ## Gates
 
-- [ ] `./run-tests.sh` (full suite, dev profile) exits 0.
-- [ ] `./run-tests.sh --e2e` exits 0 (includes the release `@release-proof`
+- [x] `./run-tests.sh` (full suite, dev profile) exits 0.
+- [x] `./run-tests.sh --e2e` exits 0 (includes the release `@release-proof`
       path).
-- [ ] `measure-coverage.sh` produces line coverage (Cobertura report with
+- [x] `measure-coverage.sh` produces line coverage (Cobertura report with
       line data) under the new profile.
-- [ ] `givn lint` (all specs incl. permanent) passes.
-- [ ] `givn check tasks --change ci-debuginfo-optimization` passes.
-- [ ] `givn check review --change ci-debuginfo-optimization` passes.
-- [ ] `givn status --change ci-debuginfo-optimization` shows every
+- [x] `givn lint` (all specs incl. permanent) passes.
+- [x] `givn check tasks --change ci-debuginfo-optimization` passes.
+- [x] `givn check review --change ci-debuginfo-optimization` passes.
+- [x] `givn status --change ci-debuginfo-optimization` shows every
       apply.requires artifact complete.
 
 ## Commits
 
 Code-only change; one atomic implementation commit:
 
-- [ ] COMMIT: <HASH> -- implementation (dev profile line-tables-only,
+- [x] COMMIT: 621f698 -- implementation (dev profile line-tables-only,
   job-wide CARGO_INCREMENTAL=0, one-time cache-key bump in ci.yml). No
   per-scenario commits exist because the change carries zero scenarios by
   decision.
