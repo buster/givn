@@ -9483,6 +9483,7 @@ mod release_strict_tests {
     #[cfg(not(debug_assertions))]
     mod release {
         use super::*;
+        use crate::spec::retrieval::REQUEST_CHANNELS;
         use std::env::{VarError, var};
 
         #[test]
