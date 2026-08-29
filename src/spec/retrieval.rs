@@ -46,6 +46,8 @@ const SIMILARITY_THRESHOLD: f32 = 0.95;
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
 const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
+#[cfg(feature = "spec-retrieval")]
+const E5_ADMISSION_THRESHOLD: f32 = 0.9;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_PIPELINE_VERSION: &str = "rust-production-v2";
 #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
@@ -7533,6 +7535,12 @@ fn similarity_candidate_pool(
     }
     e5_token_caps.sort_by(e5_token_cap_order);
 
+    // The E5 admission floor is a property of the real embedder's semantic
+    // space. Deterministic stub backends are canned scores, not a real E5
+    // space, so the floor does not apply to them: the pinned format/exit-code
+    // fixtures feed pre-floored pairs and stay deterministic.
+    let e5_admission = !matches!(std::env::var("GIVN_SPEC_EMBEDDER").as_deref(), Ok("stub"));
+
     let mut candidates = BTreeMap::new();
     for (active_index, delta) in active_delta.iter().enumerate() {
         let Some(vector) = delta_batch.vectors[active_index].as_ref() else {
@@ -7546,7 +7554,10 @@ fn similarity_candidate_pool(
             .map(|entry| (cosine_similarity(vector, &entry.embedding), entry))
             .collect();
         neighbours.sort_by(|left, right| right.0.total_cmp(&left.0));
-        for (score, entry) in neighbours.into_iter().take(RERANKER_TOP_K) {
+        for (score, entry) in neighbours
+            .into_iter()
+            .take_while(|(score, _)| !e5_admission || *score >= E5_ADMISSION_THRESHOLD)
+        {
             add_similarity_candidate(
                 &mut candidates,
                 "delta-to-permanent",
@@ -7567,7 +7578,10 @@ fn similarity_candidate_pool(
             .map(|(_, other)| (cosine_similarity(&right.embedding, &other.embedding), other))
             .collect();
         neighbours.sort_by(|left, right| right.0.total_cmp(&left.0));
-        for (score, other) in neighbours.into_iter().take(RERANKER_TOP_K) {
+        for (score, other) in neighbours
+            .into_iter()
+            .take_while(|(score, _)| !e5_admission || *score >= E5_ADMISSION_THRESHOLD)
+        {
             // A change's review only judges candidates the change itself is
             // part of. Permanent-permanent pairs that pre-date the change are
             // corpus hygiene (givn spec duplicates), not this change's signal.
