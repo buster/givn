@@ -248,7 +248,7 @@ wrapper envs.
   retrieval knobs → no change needed.
 - [x] `README.md`: verify no behavior wording needs updating. Verified: install
   section and retrieval-models.md pointer already cover it → no change needed.
-- [x] Commit: `docs(retrieval): installed-build fixture-request behaviour` — hash `TBD`
+- [x] Commit: `docs(retrieval): installed-build fixture-request behaviour` — hash `7cd379a`
 
 ## Task 8 — Final verification
 
