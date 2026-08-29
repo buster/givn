@@ -181,7 +181,7 @@ Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 (classify below). Never change production code to force a pass.
 
 ### 3. Measure and record coverage
-Run `coverage.measure_command`, then `coverage.merge_command` from
+Run the configured measurement command, then the merge command, from
 `givn/commands.yaml`. Record the merged line and branch percentages and raw
 report counters in review.md — a fact, not a threshold gate.
 

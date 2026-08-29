@@ -176,7 +176,8 @@ Coverage is complete when every gap is classified and resolved (or justified).
 1. Run `./run-tests.sh` — confirm all non-@e2e tests pass.
    Coverage data is embedded in the output if the runner is configured
     with coverage instrumentation. Extract the summary from the merged report
-    produced by `coverage.measure_command` and `coverage.merge_command`.
+    produced by the measurement and merge commands configured in
+    `givn/commands.yaml`.
 2. Run `verify.e2e_command` — confirm all @e2e tests pass.
 3. Run the configured measurement command and then merge command. Apply check
    14 before extracting gaps.
