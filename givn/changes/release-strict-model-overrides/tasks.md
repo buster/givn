@@ -46,12 +46,12 @@ its hash here). Setup/infra/docs commits are separate. Recorded:
 - [x] Task 0 setup — commit hash `77f7256` (bundled with scenario 4, mirrors
   the archived template-engine precedent where infra + first scenarios share a commit)
 - [x] Scenario 4 dev control — commit hash `77f7256`
-- [ ] Task 2 partition — commit hash `TBD`
+- [x] Task 2 partition — commit hash `142fcfd`
 - [x] Scenario 1 embedded refuse — commit hash `d6a4996`
 - [x] Scenario 2 second-stage ignore — commit hash `7cd305f`
 - [x] Scenario 3 location honour — commit hash `7cd305f` (shared: one value-aware taxonomy change delivers both)
 - [x] Task 6 unit proofs — commit hash `4164b02`
-- [ ] Task 7 docs — commit hash `TBD`
+- [x] Task 7 docs — commit hash `7cd379a`
 
 ## Task 0 — Setup: strict mode proof + step skeletons
 
