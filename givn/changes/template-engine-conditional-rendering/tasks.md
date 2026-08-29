@@ -8,7 +8,8 @@ steps fail. Single-scenario run:
 env -u GIVN_SPEC_BGE -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS GIVN_FEATURES=givn/changes/template-engine-conditional-rendering/specs cargo test --test features_runner -- --name "<scenario title>"
 ```
 
-Spec: `specs/template-conditional-rendering/` (15 scenarios) +
+Spec: `specs/template-conditional-rendering/` (final: 4 + 3 @e2e after
+consolidation) + `specs/install-extras/` (1 @givn.modified) +
 `specs/arc42-review-alignment/` (1 modified permanent scenario).
 
 ## Commit tracking
@@ -24,6 +25,52 @@ with its single-scenario GREEN run recorded as evidence.
 - [x] COMMIT: 8def071 -- gate addon-owned guidance sections + spec step bindings
   (assets templates/commands, tests/steps, generated .opencode/.agents/.claude).
   Delivers: Scenarios 1, 2, 3, 4, 5, 6, 9, 16.
+- [x] COMMIT: a51fb85 -- E5 0.9 second-stage admission floor (src/spec/retrieval.rs):
+  the review gate no longer hands the nearest-E5 neighbours without an E5
+  floor to BGE/NLI; only pairs at E5 >= 0.9 are scored (real embedder; stub
+  backends are canned scores and stay deterministic).
+- [x] COMMIT: 643be36 -- review-phase consolidation (delta feature, steps,
+  install-extras @givn.modified): fold the 8 gate-flagged scenarios into the
+  @e2e proofs, add the honest install-extras enable contract.
+
+## Review-phase consolidation
+
+The semantic gate (real E5/BGE/NLI) flagged 8 delta scenarios against the
+"Generated review guidance stays aligned after skill sync" permanents. Per
+givn review rules (keep the @e2e action proof, remove the non-e2e twin;
+VARIANT -> Scenario Outline), the delta was consolidated:
+
+- DELETED (non-e2e twins): Review guidance includes the Arc42 section (2),
+  Review guidance omits the ubiquitous-language check (3), Review guidance
+  includes the ubiquitous-language check (4), Design-review guidance includes
+  Arc42 coverage (6), The domain-modeling skill is generated when both addons it
+  needs are enabled (8), No generated skill or command mentions a disabled
+  addon (9), Disabling the Arc42 addon removes an existing generated
+  domain-modeling skill (12), A consumer disables the domain-modeling addon and
+  the generated domain skill is removed (@e2e twin, 15).
+- The domain-modeling skill is NOT generated when the Arc42 addon it needs is
+  disabled (7) was already removed during review as a duplicate of the CLI
+  disable (12) and the @e2e sync proof.
+- ABSORBED into `@e2e` proofs (final delta: 7 added / 2 modified):
+  - sync umbrella "A consumer synchronizes skills and the generated guidance
+    omits disabled-addon sections" (arc42+domain_modeling+coverage off, no
+    Arc42/UBL sections, no domain skill, no disabled-addon mention);
+  - enable umbrella "A consumer enables the addons a generated section needs
+    and the guidance gains it" (Arc42 + UBL + design-review + domain skill);
+  - Scenario Outline "A consumer disables an addon the domain-modeling skill
+    needs and the generated domain skill is removed" (Examples: arc42,
+    domain-modeling).
+- Honest contract (user decision): with `arc42` off, `givn addons enable
+  domain_modeling` generates no domain skill (install-extras @givn.modified).
+- Token-cap advisory (enable umbrella vs permanent install-extras at
+  521/512) resolved by dropping the design-review command presence assertion;
+  gate now reports E5 token-cap candidates 0.
+- Subtending source fix: the two ~0.07 false-positive NLI flags exposed that
+  the second-stage pool had no E5 admission floor; fixed in a51fb85.
+
+Final delta gate (real models, no stubs): `givn check review` EXIT 0,
+combined recommended 0 of 13 E5 candidates (BGE 0, NLI 0).
+
 
 ## Task 0 — Setup: template engine + strict-mode proof
 
