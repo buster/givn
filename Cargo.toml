@@ -64,3 +64,9 @@ strip = true
 opt-level = "z"
 lto = true
 codegen-units = 1
+
+# Keep debug/installed build gating (`cfg!(debug_assertions)`) intact while
+# shrinking the dev/test artifact footprint: line tables alone are enough for
+# backtraces and for `cargo llvm-cov` source-based coverage.
+[profile.dev]
+debug = "line-tables-only"
