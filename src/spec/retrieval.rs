@@ -136,7 +136,7 @@ const REQUEST_CHANNELS: &[&str] = &[
 /// Value-aware for the selector channels and by-name for the fixture-only
 /// channels. Development builds never ignore anything.
 #[cfg(feature = "spec-retrieval")]
-fn release_blocked(name: &str, _value: &str) -> bool {
+fn release_blocked(name: &str, value: &str) -> bool {
     if ALLOW_SPEC_OVERRIDES {
         return false;
     }
@@ -144,6 +144,14 @@ fn release_blocked(name: &str, _value: &str) -> bool {
         // The embedder stage has no real-model selector: every value swaps
         // the real E5 output for simulated output.
         "GIVN_SPEC_EMBEDDER" => true,
+        // The second-stage selectors distinguish fixture requests
+        // (simulated/disabled output) from real-model location requests
+        // (`auto`/`local` for BGE, `nli`/`nli-auto` for NLI).
+        "GIVN_SPEC_BGE" => matches!(value, "stub" | "disabled" | "missing"),
+        "GIVN_SPEC_RERANKER" => {
+            matches!(value, "stub" | "disabled" | "missing" | "nli-stub" | "nli-missing")
+        }
+        "GIVN_SPEC_BGE_APPROVAL" => value == "failed",
         _ => false,
     }
 }
