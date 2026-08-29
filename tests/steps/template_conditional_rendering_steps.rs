@@ -47,6 +47,17 @@ fn givn_project_one_addon_enabled(world: &mut GivnWorld, addon: String) {
 }
 
 #[given(
+    regex = r"^a Givn project with the ([a-z0-9-]+) and ([a-z0-9-]+) addons disabled and the skills synchronized$"
+)]
+fn givn_project_two_addons_disabled(world: &mut GivnWorld, addon_a: String, addon_b: String) {
+    world.env = Some(common::make_init_root());
+    support::set_addon(world, &addon_a, false);
+    support::set_addon(world, &addon_b, false);
+    support::sync(world);
+    assert_synced_successfully(world);
+}
+
+#[given(
     regex = r"^a Givn project with the ([a-z0-9-]+) addon disabled and the skills synchronized$"
 )]
 fn givn_project_one_addon_disabled(world: &mut GivnWorld, addon: String) {
