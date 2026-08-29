@@ -39,6 +39,8 @@ pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
 pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
+pub mod release_strict_overrides_e2e_steps;
+pub mod release_strict_overrides_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
@@ -111,6 +113,8 @@ pub struct GivnWorld {
     pub(crate) retrieval_bge: Option<String>,
     /// Explicit local BGE artifact directory for the current subprocess.
     pub(crate) retrieval_bge_model_dir: Option<String>,
+    /// Chosen E5 model-cache location for the installed-build scenarios.
+    pub(crate) release_model_cache: Option<std::path::PathBuf>,
     /// Optional maximum BGE/NLI pair budget for the current subprocess.
     pub(crate) retrieval_max_rerank_pairs: Option<String>,
     /// Deterministic E5 passage token-budget fixture selector.
