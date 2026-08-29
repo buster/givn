@@ -72,7 +72,7 @@ its hash here). Setup/infra/docs commits are separate. Recorded:
 - [x] Add the release-binary resolver scaffold in `tests/common` (GIVN_RELEASE_BIN
   override, else lazy `cargo build --release … --bin givn` cached in a
   `OnceLock`, `CARGO_MANIFEST_DIR`-rooted).
-- [x] Commit: `test(retrieval): installed-build strictness step scaffolding + release resolver` — hash `77f7256` (see scenario 4 above)
+- [x] COMMIT: 77f7256 -- setup scaffolding (steps + release resolver) + development-build control scenario 4 (shared commit, mirrors the archived template-engine precedent)
 
 ## Task 1 — Scenario (dev control, non-@e2e): A development givn build honours a simulated-embedder request without an installed-build announcement
 
@@ -102,7 +102,10 @@ regression (announcement leaking into dev) fails here.
   EXIT=0
   ```
 - [x] REFACTOR: rerun → still passes. (No-op: no code changed post-GREEN.)
-- [x] Commit: `test(retrieval): installed-build strictness step scaffolding, release resolver, dev-build control scenario` — hash `77f7256`
+- [x] Scenario 4 shares the single scaffold commit above (hash `77f7256`); no
+  separate atomic commit needed — dev-control behaviour is pre-existing and the
+  announcement regression guard re-verified scenario 4 after every production
+  commit anyway.
 
 ## Task 2 — Partition run-tests.sh / measure-coverage.sh for @release-proof (infra)
 
@@ -129,7 +132,7 @@ wrapper envs.
               # the release group ran clean-env, all-features; scenarios 1+2
               # RED on missing announcements; scenario 3 green-vacuous.
   ```
-- [x] Commit: `test(retrieval): partition @release-proof across test groups` — hash `142fcfd`
+- [x] COMMIT: 142fcfd -- partition @release-proof across test groups
 
 ## Task 3 — Scenario (@e2e @release-proof): An installed givn refuses a request for simulated embedder output
 
@@ -159,7 +162,7 @@ wrapper envs.
   ```
 - [x] REFACTOR: rerun → still passes. (No-op; `_value` prefix on release_blocked
   is deliberate until Task 4 makes it value-aware.)
-- [x] Commit: `feat(retrieval): installed builds refuse simulated-embedder requests` — hash `d6a4996`
+- [x] COMMIT: d6a4996 -- installed builds refuse simulated-embedder requests
 
 ## Task 4 — Scenario (@release-proof): An installed givn ignores requests to disable or simulate the second-stage models
 
@@ -183,7 +186,7 @@ wrapper envs.
   EXIT=0
   ```
 - [x] REFACTOR: rerun → still passes. (No-op.)
-- [x] Commit: `feat(retrieval): installed builds ignore second-stage fixture requests, honour location requests` — hash `7cd305f`
+- [x] COMMIT: 7cd305f -- value-aware second-stage taxonomy (scenarios 2 and 3, one atomic change; recorded once)
 
 ## Task 5 — Scenario (@e2e @release-proof): An installed givn honours a model-location request that still uses the real models
 
@@ -211,7 +214,8 @@ wrapper envs.
   EXIT=0
   ```
 - [x] REFACTOR: rerun → still passes. (No-op.)
-- [x] Commit: `feat(retrieval): installed builds ignore second-stage fixture requests, honour location requests` — hash `7cd305f` (shares Task 4's single value-aware taxonomy change)
+- [x] Scenario 3 shares the single value-aware taxonomy commit above (hash
+  `7cd305f`); both scenarios verify one atomic change.
 
 ## Task 6 — Unit proofs (exhaustive taxonomy, both profiles)
 
@@ -237,7 +241,8 @@ wrapper envs.
   ```
 - [x] REFACTOR: rerun both → still pass. (Collapsed nested ifs, added the
   `assertions_on_constants` allow for the cfg-guard tests; clippy -D warnings clean.)
-- [x] Commit: `feat(retrieval): exhaustive release block taxonomy + dual-profile unit proofs` — hash `4164b02`
+- [x] COMMIT: 4164b02 -- exhaustive release block taxonomy + dual-profile unit proofs
+- [x] COMMIT: 86213cb -- fix: scope REQUEST_CHANNELS import to the release test module (repair within Task 6 GREEN)
 
 ## Task 7 — Docs
 
@@ -248,7 +253,7 @@ wrapper envs.
   retrieval knobs → no change needed.
 - [x] `README.md`: verify no behavior wording needs updating. Verified: install
   section and retrieval-models.md pointer already cover it → no change needed.
-- [x] Commit: `docs(retrieval): installed-build fixture-request behaviour` — hash `7cd379a`
+- [x] COMMIT: 7cd379a -- installed-build fixture-request behaviour docs
 
 ## Task 8 — Final verification
 
