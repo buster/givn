@@ -50,7 +50,7 @@ its hash here). Setup/infra/docs commits are separate. Recorded:
 - [x] Scenario 1 embedded refuse — commit hash `d6a4996`
 - [x] Scenario 2 second-stage ignore — commit hash `7cd305f`
 - [x] Scenario 3 location honour — commit hash `7cd305f` (shared: one value-aware taxonomy change delivers both)
-- [ ] Task 6 unit proofs — commit hash `TBD`
+- [x] Task 6 unit proofs — commit hash `4164b02`
 - [ ] Task 7 docs — commit hash `TBD`
 
 ## Task 0 — Setup: strict mode proof + step skeletons
@@ -237,15 +237,18 @@ wrapper envs.
   ```
 - [x] REFACTOR: rerun both → still pass. (Collapsed nested ifs, added the
   `assertions_on_constants` allow for the cfg-guard tests; clippy -D warnings clean.)
-- [x] Commit: `feat(retrieval): exhaustive release block taxonomy` — hash `TBD`
+- [x] Commit: `feat(retrieval): exhaustive release block taxonomy + dual-profile unit proofs` — hash `4164b02`
 
 ## Task 7 — Docs
 
-- [ ] `docs/retrieval-models.md`: overrides always honoured in dev; installed
+- [x] `docs/retrieval-models.md`: overrides always honoured in dev; installed
   builds ignore fixture requests and always use real models; offline-verify note.
-- [ ] `docs/reference.md`: installed-build strictness where applicable.
-- [ ] `README.md`: verify no behavior wording needs updating.
-- [ ] Commit: `docs(retrieval): installed-build fixture-request behaviour` — hash `TBD`
+- [x] `docs/reference.md`: installed-build strictness where applicable.
+  Verified: line 99-100 already defers to retrieval-models.md for semantic
+  retrieval knobs → no change needed.
+- [x] `README.md`: verify no behavior wording needs updating. Verified: install
+  section and retrieval-models.md pointer already cover it → no change needed.
+- [x] Commit: `docs(retrieval): installed-build fixture-request behaviour` — hash `TBD`
 
 ## Task 8 — Final verification
 
