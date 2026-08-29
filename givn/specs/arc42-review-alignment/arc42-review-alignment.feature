@@ -30,7 +30,6 @@ Feature: Arc42 completion conformance review
     When  the user runs `givn skills sync`
     Then  the command succeeds
     And  the generated review guidance contains "Arc42 implementation conformance"
-    And  the generated review guidance contains "N/A when the arc42 addon is disabled"
 
   Scenario: Arc42-disabled review instructions mark conformance as not applicable
     Given  a project root with givn/ initialised without addons
