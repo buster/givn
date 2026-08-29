@@ -298,3 +298,60 @@ pub fn write_override(env: &TestEnv, artifact: &str, file: &str, content: &str) 
     fs::create_dir_all(&dir).expect("create artifacts override dir");
     fs::write(dir.join(file), content).expect("write override file");
 }
+
+// --- Installed-build (release) binary ---------------------------------------
+
+/// Resolve the release givn binary used by the installed-build fixtures.
+///
+/// If `GIVN_RELEASE_BIN` is set (CI/operator prebuild), it is used verbatim.
+/// Otherwise the release binary is built once — `cargo build --release
+/// --features spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence
+/// --bin givn` — rooted at `CARGO_MANIFEST_DIR` and cached for the process.
+/// The repo's dogfood loop already performs a full release build, so this
+/// does not introduce a new kind of build.
+pub fn release_givn_binary() -> &'static std::path::Path {
+    static BINARY: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
+    BINARY.get_or_init(|| {
+        if let Some(path) = std::env::var_os("GIVN_RELEASE_BIN") {
+            return std::path::PathBuf::from(path);
+        }
+        let manifest_dir = env!("CARGO_MANIFEST_DIR");
+        let status = Command::new("cargo")
+            .arg("build")
+            .arg("--release")
+            .arg("--features")
+            .arg("spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence")
+            .arg("--bin")
+            .arg("givn")
+            .current_dir(manifest_dir)
+            .status()
+            .expect("spawn cargo release build");
+        assert!(
+            status.success(),
+            "cargo build --release --bin givn failed (status {status:?})"
+        );
+        std::path::Path::new(manifest_dir)
+            .join("target/release/givn")
+            .to_path_buf()
+    })
+}
+
+/// Invoke the release givn binary with `env`'s temp dir as current directory
+/// and exactly the given environment. The subprocess is clean-spawned
+/// (`env_clear()` plus `PATH`/`HOME`) so no ambient `GIVN_SPEC_*` from the
+/// outer suite can leak a spurious installed-build announcement, and the
+/// caller supplies the cache-location/envs the scenario owns.
+pub fn run_release_givn(env: &TestEnv, args: &[&str], environments: &[(&str, &str)]) -> Output {
+    let bin = release_givn_binary();
+    let mut command = Command::new(bin);
+    command
+        .args(args)
+        .current_dir(env.root())
+        .env_clear()
+        .env("PATH", std::env::var("PATH").unwrap_or_default())
+        .env("HOME", std::env::var("HOME").unwrap_or_default());
+    for (key, value) in environments {
+        command.env(key, value);
+    }
+    command.output().expect("spawn release givn subprocess")
+}
