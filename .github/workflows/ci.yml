@@ -15,6 +15,8 @@ permissions:
 jobs:
   checks:
     runs-on: ubuntu-24.04
+    env:
+      CARGO_INCREMENTAL: "0"
     steps:
       - name: Check out source
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -30,9 +32,9 @@ jobs:
             ~/.cargo/registry/cache/
             ~/.cargo/git/db/
             target/
-          key: givn-cargo-${{ runner.os }}-${{ runner.arch }}-${{ hashFiles('Cargo.lock') }}
+          key: givn-cargo-${{ runner.os }}-${{ runner.arch }}-lt1-${{ hashFiles('Cargo.lock') }}
           restore-keys: |
-            givn-cargo-${{ runner.os }}-${{ runner.arch }}-
+            givn-cargo-${{ runner.os }}-${{ runner.arch }}-lt1-
 
       - name: Check formatting
         run: cargo fmt --all -- --check
