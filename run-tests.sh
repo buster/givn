@@ -70,7 +70,7 @@ esac
 
 case "${1:-}" in
     --e2e)
-        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and @e2e'
+        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and @e2e'
         if tag_present '@bge' || tag_present '@bge-approval'; then
             run_bge cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '@bge and not @gate-combination and not @review-output and @e2e'
         fi
@@ -83,9 +83,15 @@ case "${1:-}" in
         if tag_present '@review-output'; then
             run_review_output cargo test --features spec-retrieval,cross-encoder-reranker,nli-evidence,spec-similarity-gate --test features_runner -- --tags '@review-output and @e2e'
         fi
+        if tag_present '@release-proof'; then
+            env -u GIVN_SPEC_BGE -u GIVN_SPEC_RERANKER -u GIVN_SPEC_MAX_RERANK_PAIRS \
+                GIVN_FEATURES="$FEATURES_PATH" \
+                cargo test --features spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@release-proof'
+            GIVN_FEATURES="$FEATURES_PATH" cargo test --release --lib -- release_strict
+        fi
         ;;
     --non-e2e)
-        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @e2e'
+        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and not @e2e'
         if tag_present '@bge' || tag_present '@bge-approval'; then
             run_bge cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output and not @e2e'
         fi
@@ -112,7 +118,7 @@ case "${1:-}" in
         fi
         ;;
     "")
-        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output'
+        run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof'
         if tag_present '@bge' || tag_present '@bge-approval'; then
             run_bge cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker --test features_runner -- --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output'
         fi
