@@ -74,5 +74,5 @@ Code-only change; one atomic implementation commit:
 
 ## Archive
 
-- [ ] `givn archive --change ci-debuginfo-optimization` succeeds with no
+- [x] `givn archive --change ci-debuginfo-optimization` succeeds with no
       remaining `@wip` and no unchecked boxes.
