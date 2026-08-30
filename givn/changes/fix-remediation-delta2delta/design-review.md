@@ -28,6 +28,8 @@ BGE/NLI second-stage evidence, and the advisory review path remain out of scope.
 
 ## Sign-off
 
-Design approved. The self-review semantic gate for this change stays blocked by
-a documented, measured limitation (same-flow regression scenarios are
-E5-inseparable below `0.9500`); this is not a defect in the verifier.
+Design approved. The self-review semantic gate for this change is green: the
+regression scenarios stage each fixture under a distinct change id with
+distinct long narrative markers, so their surfaces are E5-separable and the
+real-embedder run produces zero semantic candidates. Full regression coverage
+(10 scenarios) is retained.
