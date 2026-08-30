@@ -5,7 +5,7 @@ use std::process::Command;
 
 use cucumber::{given, then, when};
 
-use super::{GivnWorld, stderr};
+use super::{GivnWorld, remediation_change_dir, stderr};
 use crate::common;
 
 const PERMANENT_CORPUS: &str = "Feature: retrieval fixtures
@@ -184,8 +184,7 @@ fn classify_every_without_rationale(world: &mut GivnWorld, classification: Strin
 }
 
 fn update_semantic_classification(world: &mut GivnWorld, classification: &str, rationale: bool) {
-    let env = world.env.as_ref().expect("semantic project is required");
-    let path = env.path("givn/changes/running-change/semantic-review.md");
+    let path = remediation_change_dir(world).join("semantic-review.md");
     let mut report = fs::read_to_string(&path).expect("read semantic report");
     world.semantic_report_snapshot = Some(fs::read(&path).expect("snapshot prior semantic report"));
     report = report.replace(
@@ -1329,17 +1328,16 @@ fn report_contains_no_permanent_pair(_world: &mut GivnWorld) {
 
 #[then("the semantic review report exists")]
 fn semantic_report_exists(_world: &mut GivnWorld) {
-    let env = _world.env.as_ref().expect("semantic project is required");
     assert!(
-        env.path("givn/changes/running-change/semantic-review.md")
+        remediation_change_dir(_world)
+            .join("semantic-review.md")
             .is_file()
     );
 }
 
 #[then(regex = r#"^the semantic review report status is "([^"]+)"$"#)]
 fn semantic_report_status(_world: &mut GivnWorld, _status: String) {
-    let env = _world.env.as_ref().expect("semantic project is required");
-    let path = env.path("givn/changes/running-change/semantic-review.md");
+    let path = remediation_change_dir(_world).join("semantic-review.md");
     let report = fs::read_to_string(&path).expect("read semantic report");
     assert!(report.contains(&format!("Status: {}", _status)));
     if _status == "PASS" {
@@ -1349,8 +1347,7 @@ fn semantic_report_status(_world: &mut GivnWorld, _status: String) {
 
 #[then("the semantic review report candidate count is 0")]
 fn semantic_report_has_no_candidates(_world: &mut GivnWorld) {
-    let env = _world.env.as_ref().expect("semantic project is required");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+    let report = fs::read_to_string(remediation_change_dir(_world).join("semantic-review.md"))
         .expect("read semantic report");
     assert!(report.contains("Candidate count: 0"));
 }
@@ -1431,7 +1428,6 @@ fn report_contains_deterministic_facts(world: &mut GivnWorld) {
 }
 
 fn semantic_report(world: &GivnWorld) -> String {
-    let env = world.env.as_ref().expect("semantic project is required");
-    fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+    fs::read_to_string(remediation_change_dir(world).join("semantic-review.md"))
         .expect("read semantic report")
 }

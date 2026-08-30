@@ -237,6 +237,15 @@ fn change_id_from_args(args: &[String]) -> Option<String> {
     args.iter().skip(1).rfind(|a| a.as_str() != "--").cloned()
 }
 
+/// The directory of the change the current scenario is acting on, defaulting
+/// to the shared `running-change` fixture id when the scenario did not stage a
+/// custom change id.
+pub(crate) fn remediation_change_dir(world: &GivnWorld) -> std::path::PathBuf {
+    let env = world.env.as_ref().expect("project is required");
+    let id = world.last_change_id.as_deref().unwrap_or("running-change");
+    env.path(&format!("givn/changes/{id}"))
+}
+
 // --- Given -----------------------------------------------------------------
 
 #[given("a project root with givn/ initialised")]
