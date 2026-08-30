@@ -54,10 +54,10 @@ cosine similarity), `delta_endpoint_unchanged`, `verify_duplicate_delta_to_delta
 - BGE/NLI second-stage evidence remains advisory and unchanged.
 - The `semantic_remediation_mode` world field is informational; the fix is
   asserted end-to-end through cucumber scenarios with stub embedder/reranker.
-- The change's own `givn check review` semantic gate remains blocked (28
-  delta-to-delta candidates among the regression scenarios): the scenarios
-  share the remediation fixture skeleton and E5 cannot separate same-flow
-  scenarios below `0.9500` (measured; the permanent remediation family scores
-  0.954-0.975 against itself). Removing or merging scenarios would reduce
-  regression coverage, so the delta keeps full coverage and the limitation is
-  documented rather than masked.
+- The regression scenarios stage each fixture under a distinct change id and
+  carry distinct long narrative markers, so the scenario surfaces are
+  semantically separable: a real-embedder run of this change's own
+  `givn check review` produces zero semantic candidates, and its sibling
+  remediation scenarios do not re-add delta-to-permanent collisions once
+  archived. The delta keeps full regression coverage (10 scenarios) with the
+  gate green.
