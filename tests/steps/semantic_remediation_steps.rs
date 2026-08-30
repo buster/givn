@@ -4,7 +4,7 @@ use std::fs;
 
 use cucumber::{given, when};
 
-use super::GivnWorld;
+use super::{GivnWorld, remediation_change_dir};
 use crate::common;
 
 #[given(regex = r#"^the remediation case carries the distinguishing marker "([^"]+)"$"#)]
@@ -132,10 +132,33 @@ const DELTA_TO_DELTA_PAIR_SCORE_KEY: &str =
 
 /// A fresh repository with no committed specification history: the permanent
 /// spec directory is empty, so the only admitted pair is delta-to-delta.
+/// A scenario may stage the pair under a distinct change id so the review
+/// surface stays semantically separable.
 #[given(
     regex = r#"^a project prepared for semantic remediation with a delta-to-delta "(DUPLICATE|VARIANT|VALID-BOUNDARY)" candidate$"#
 )]
 pub(crate) fn remediation_delta_to_delta_project(world: &mut GivnWorld, classification: String) {
+    remediation_delta_to_delta_world(world, classification, None);
+}
+
+#[given(
+    regex = r#"^a project prepared for semantic remediation with a delta-to-delta "(DUPLICATE|VARIANT|VALID-BOUNDARY)" candidate on change "([^"]+)"$"#
+)]
+fn remediation_delta_to_delta_project_named(
+    world: &mut GivnWorld,
+    classification: String,
+    change_id: String,
+) {
+    remediation_delta_to_delta_world(world, classification, Some(change_id));
+}
+
+pub(crate) fn remediation_delta_to_delta_world(
+    world: &mut GivnWorld,
+    classification: String,
+    change_id: Option<String>,
+) {
+    let change_id = change_id.unwrap_or_else(|| "running-change".to_string());
+    world.last_change_id = Some(change_id.clone());
     let env = common::make_init_root();
     let permanent = env.path("givn/specs");
     if permanent.exists() {
@@ -147,15 +170,13 @@ pub(crate) fn remediation_delta_to_delta_project(world: &mut GivnWorld, classifi
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
     )
     .expect("write delta-to-delta remediation commands");
-    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    let delta = env.path(&format!("givn/changes/{change_id}/specs/running.feature"));
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta-to-delta delta");
+    let initial = "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n"
+        .replace("@running-change", &format!("@{change_id}"));
+    fs::write(&delta, initial).expect("write delta-to-delta remediation delta");
     fs::write(
-        &delta,
-        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
-    )
-    .expect("write delta-to-delta remediation delta");
-    fs::write(
-        env.path("givn/changes/running-change/review.md"),
+        env.path(&format!("givn/changes/{change_id}/review.md")),
         "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
     )
     .expect("write delta-to-delta remediation dispositions");
@@ -216,14 +237,10 @@ fn reword_delta_to_delta_boundary_without_distinction(world: &mut GivnWorld) {
 }
 
 pub(crate) fn write_delta_to_delta(world: &mut GivnWorld, content: &str, score: &str) {
-    let env = world
-        .env
-        .as_ref()
-        .expect("delta-to-delta remediation project is required");
-    fs::write(
-        env.path("givn/changes/running-change/specs/running.feature"),
-        content,
-    )
-    .expect("write delta-to-delta remediation delta");
+    let change_id = world.last_change_id.as_deref().unwrap_or("running-change");
+    let content = content.replace("@running-change", &format!("@{change_id}"));
+    let dir = remediation_change_dir(world);
+    fs::write(dir.join("specs/running.feature"), content)
+        .expect("write delta-to-delta remediation delta");
     world.retrieval_stub_scores = Some(format!("{DELTA_TO_DELTA_PAIR_SCORE_KEY}={score}"));
 }
