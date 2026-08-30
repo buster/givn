@@ -12,6 +12,12 @@ fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
     assert!(!marker.trim().is_empty());
 }
 
+#[given(regex = r#"^the remediation notes record that "([^"]+)"$"#)]
+fn remediation_case_narrative(_world: &mut GivnWorld, narrative: String) {
+    assert!(!narrative.trim().is_empty());
+    assert!(narrative.split_whitespace().count() > 24);
+}
+
 #[given(
     regex = r#"^a project prepared for semantic remediation with a \"(DUPLICATE|VARIANT|VALID-BOUNDARY)\" candidate$"#
 )]

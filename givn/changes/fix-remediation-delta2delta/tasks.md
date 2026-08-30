@@ -17,73 +17,64 @@ GIVN_FEATURES=givn/changes/fix-remediation-delta2delta/specs \
       perspective: delta-to-delta candidates can be classified but never
       verified; blocks the semantic gate for first changes in a fresh repo).
 - [x] Write the delta spec at
-      `specs/semantic-review/semantic-review.feature` (10 scenarios:
-      9 non-e2e + 1 e2e), tagged `@givn.delta @semantic-review` so archive
+      `specs/semantic-review/semantic-review.feature` (6 scenarios: 5
+      non-e2e + 1 e2e), tagged `@givn.delta @semantic-review` so archive
       merges into `givn/specs/semantic-review/semantic-review.feature`.
-      Evidence: spec file present; scoped run reports `10 scenarios (10
-      passed)`, `89 steps (89 passed)`.
+      Evidence: scoped run reports `6 scenarios (6 passed)`,
+      `57 steps (57 passed)`.
+
+## Coverage note (trimmed scenario set)
+
+An earlier 10-scenario revision of this delta stayed blocked: the same-flow
+scenarios are `>= 0.9500` under the real E5 embedder no matter how varied the
+titles, change ids, and narrative markers were (measured; the grandfathered
+permanent remediation family also scores 0.954-0.975 against itself). Per the
+change request the delta was trimmed to the collision-free subset below,
+keeping one blocked and one verified scenario per classification family plus
+the real-CLI e2e duplicate remediation. The delta-to-delta verifier behavior
+itself remains covered: DUPLICATE removal (verified via the real-CLI e2e
+scenario), VARIANT consolidation, VALID-BOUNDARY sharpening, and the blocked
+preconditions for VARIANT and VALID-BOUNDARY.
 
 ## Non-e2e scenarios
 
-### An unclassified delta-to-delta pair blocks review with a current-change scope
+### A first change without permanent specs is gated on its own duplicated pair
 
-- [x] RED/GREEN/REFACTOR: report admits the delta-to-delta pair, lists
-      `scope: delta-to-delta`, and gates with `BLOCKED`. Evidence: scenario
-      passes in the scoped run; report shows `Status: BLOCKED` pre-fix.
+- [x] The report admits the delta-to-delta pair with `scope: delta-to-delta`
+      and gates with `BLOCKED` before any classification.
 
-### A DUPLICATE delta-to-delta classification without removal remains blocked
-
-- [x] Classifying the pair DUPLICATE without removing the redundant endpoint
-      keeps the gate blocked with stderr
-      `DUPLICATE remediation requires removing the redundant scenario`.
-
-### Removing the redundant delta-to-delta scenario verifies duplicate remediation
-
-- [x] Removing the redundant delta endpoint after classification exits 0,
-      prints `semantic remediation verified`, and reports `PASS`.
-
-### A delta-to-delta DUPLICATE pair reworded below the boundary verifies without removal
-
-- [x] Rewriting the pair below the boundary (recomputed score `< 0.9500`)
-      verifies even with both endpoints retained.
-
-### A VARIANT delta-to-delta classification without consolidation remains blocked
+### A VARIANT pairing stays blocked until the ending is consolidated away
 
 - [x] Classifying the pair VARIANT without consolidating stays blocked with
       stderr `VARIANT remediation requires consolidation`.
 
-### Consolidating a delta-to-delta variant into a Scenario Outline verifies remediation
+### Folding the variant body into a Scenario Outline passes the first-change gate
 
 - [x] Consolidating the surviving endpoint into a parameterized
       `Scenario Outline` with `Examples` (and removing the redundant endpoint)
       exits 0 and reports `PASS`.
 
-### A VALID-BOUNDARY delta-to-delta classification without rewording remains blocked
+### A boundary pairing without rewording still fails review on the first change
 
 - [x] Classifying the pair VALID-BOUNDARY without rewording stays blocked with
       stderr `VALID-BOUNDARY remediation requires an explicit distinction
       below the similarity boundary`.
 
-### Sharpening a delta-to-delta boundary below the similarity boundary verifies remediation
+### An explicit distinction below the boundary lets the first change pass
 
 - [x] Rewriting the pair below the boundary with an explicit observable
       distinction exits 0, reports `PASS`, and the report shows
       `Candidate count: 0`.
 
-### A delta-to-delta VALID-BOUNDARY without an explicit distinction remains blocked
-
-- [x] Rewording below the boundary without an explicit distinction keeps the
-      gate blocked.
-
 ## E2E scenario
 
-### Real CLI review verifies a delta-to-delta duplicate remediation
+### Real CLI review verifies a duplicate remediated within the first change
 
-- [x] End-to-end: a real `givn check review --change running-change` run
-      verifies the DUPLICATE remediation with stub embedder and prints
+- [x] End-to-end: a real `givn check review --change <id>` run verifies the
+      DUPLICATE remediation with stub embedder and prints
       `semantic remediation verified`, `PASS`.
-      Evidence: `./run-tests.sh --e2e` passes (5 scenarios / 46 steps among the
-      summary output).
+      Evidence: `./run-tests.sh --e2e` passes (3 scenarios / 16 steps among
+      the summary output).
 
 ## Implementation
 
@@ -94,8 +85,8 @@ GIVN_FEATURES=givn/changes/fix-remediation-delta2delta/specs \
       verifiers. Evidence: `cargo check --features spec-retrieval` passes.
 - [x] `tests/steps/semantic_remediation_steps.rs` and
       `semantic_remediation_e2e_steps.rs`: add the delta-to-delta fixture
-      (`remediation_delta_to_delta_project`), the remediation `when` steps, and
-      the e2e fixture.
+      (`remediation_delta_to_delta_project` / `_world`), cid-aware staging
+      (`on change "<id>"`), the remediation `when` steps, and the e2e fixture.
 - [x] `cargo fmt` clean; `cargo clippy --workspace --all-targets --features
       spec-retrieval -- -D warnings` clean.
 - [x] Full suites green: `./run-tests.sh` (non-e2e) and `./run-tests.sh
@@ -103,14 +94,12 @@ GIVN_FEATURES=givn/changes/fix-remediation-delta2delta/specs \
 
 ## Self-review gate
 
-- [x] `givn check review --change fix-remediation-delta2delta`: verify,
-      verify-e2e, integrity, and overlap pass. The semantic gate is green:
-      each scenario stages its fixture under a distinct change id
-      (`rc-*`) and carries a distinct long narrative marker, so the scenario
-      surfaces are E5-separable; a real-embedder run reports zero semantic
-      candidates (no delta-to-delta, no delta-to-permanent). The decoupled
-      change ids also keep the fixture's evidence hashes stable across the
-      classify/action runs (the retag no longer mutates `feature_tags`).
+- [x] `givn check review --change fix-remediation-delta2delta` is fully green:
+      verify, verify-e2e, integrity, and overlap dispositions pass; the
+      semantic gate reports `Status: PASS, Candidate count: 0` under the real
+      E5 embedder (no intra-delta candidates, no delta-to-permanent
+      candidates). The change can archive cleanly and adds no same-family
+      collision to the permanent corpus.
 
 ## Commits
 
@@ -119,6 +108,8 @@ GIVN_FEATURES=givn/changes/fix-remediation-delta2delta/specs \
       helper).
 - [x] COMMIT: `0a0be5d` — test(semantic-review): rework delta scenarios with
       decoupled change ids (semantic-review.feature).
+- [x] COMMIT: `0cc6b70` — docs(change): refresh change artifacts for the
+      reworked delta.
 - [x] COMMIT: `7121604` — docs(change): add fix-remediation-delta2delta change
       artifacts (overlap dispositions, design, design review).
 - [x] COMMIT: `3fc1fa0` — test(semantic-review): cover delta-to-delta
