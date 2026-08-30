@@ -30,6 +30,9 @@ BGE/NLI second-stage evidence, and the advisory review path remain out of scope.
 
 Design approved. The self-review semantic gate for this change is green: the
 regression scenarios stage each fixture under a distinct change id with
-distinct long narrative markers, so their surfaces are E5-separable and the
-real-embedder run produces zero semantic candidates. Full regression coverage
-(10 scenarios) is retained.
+distinct long narrative markers, so their surfaces are E5-separable; a
+real-embedder run reports zero semantic candidates. The delta keeps the
+collision-free scenario subset (blocked + verified per class, plus the
+real-CLI e2e duplicate remediation); the redundant same-flow scenarios were
+trimmed because real E5 pins them at or above `0.9500` (the same behavior as
+the grandfathered permanent family).

@@ -56,8 +56,9 @@ cosine similarity), `delta_endpoint_unchanged`, `verify_duplicate_delta_to_delta
   asserted end-to-end through cucumber scenarios with stub embedder/reranker.
 - The regression scenarios stage each fixture under a distinct change id and
   carry distinct long narrative markers, so the scenario surfaces are
-  semantically separable: a real-embedder run of this change's own
-  `givn check review` produces zero semantic candidates, and its sibling
-  remediation scenarios do not re-add delta-to-permanent collisions once
-  archived. The delta keeps full regression coverage (10 scenarios) with the
-  gate green.
+  semantically separable. The delta keeps the collision-free subset (one
+  blocked and one verified scenario per classification family, plus the
+  real-CLI e2e duplicate remediation): a real-embedder run of this change's
+  own `givn check review` reports zero semantic candidates (no intra-delta, no
+  delta-to-permanent), so the change archives cleanly and adds no same-family
+  collision to the permanent corpus.
