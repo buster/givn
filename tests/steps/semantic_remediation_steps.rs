@@ -126,3 +126,104 @@ pub(crate) fn write_delta(world: &mut GivnWorld, content: &str, score: &str) {
         "Unknown provider is rejected|Provider name is unknown={score}"
     ));
 }
+
+const DELTA_TO_DELTA_PAIR_SCORE_KEY: &str =
+    "Unknown provider is rejected|Unknown provider selection is rejected";
+
+/// A fresh repository with no committed specification history: the permanent
+/// spec directory is empty, so the only admitted pair is delta-to-delta.
+#[given(
+    regex = r#"^a project prepared for semantic remediation with a delta-to-delta "(DUPLICATE|VARIANT|VALID-BOUNDARY)" candidate$"#
+)]
+pub(crate) fn remediation_delta_to_delta_project(world: &mut GivnWorld, classification: String) {
+    let env = common::make_init_root();
+    let permanent = env.path("givn/specs");
+    if permanent.exists() {
+        fs::remove_dir_all(&permanent).expect("remove generated specs");
+    }
+    fs::create_dir_all(&permanent).expect("create empty permanent specs");
+    fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write delta-to-delta remediation commands");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta-to-delta delta");
+    fs::write(
+        &delta,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write delta-to-delta remediation delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
+    )
+    .expect("write delta-to-delta remediation dispositions");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores = Some(format!("{DELTA_TO_DELTA_PAIR_SCORE_KEY}=0.9600"));
+    world.semantic_remediation_mode = Some(classification);
+}
+
+#[when("the delta-to-delta duplicate scenario is removed from the active change")]
+fn remove_delta_to_delta_duplicate(world: &mut GivnWorld) {
+    write_delta_to_delta(
+        world,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+        "0.9600",
+    );
+}
+
+#[when("the delta-to-delta duplicate pair is reworded below the boundary without removal")]
+fn reword_delta_to_delta_duplicate(world: &mut GivnWorld) {
+    write_delta_to_delta(
+        world,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a differently worded provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+        "0.9400",
+    );
+}
+
+#[when("the delta-to-delta variant is consolidated into a parameterized Scenario Outline")]
+fn consolidate_delta_to_delta_variant(world: &mut GivnWorld) {
+    write_delta_to_delta(
+        world,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario Outline: Unknown provider is rejected\n    Given a configured provider catalog for <provider>\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n    Examples: providers\n      | provider |\n      | default  |\n\n  @givn.removed\n  Scenario: Unknown provider selection is rejected\n    Given a removed scenario\n",
+        "0.9600",
+    );
+}
+
+#[when(
+    "the delta-to-delta valid boundary is sharpened with an explicit distinction below the similarity boundary"
+)]
+fn sharpen_delta_to_delta_boundary(world: &mut GivnWorld) {
+    write_delta_to_delta(
+        world,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command reports a distinct boundary result\n",
+        "0.9400",
+    );
+}
+
+#[when(
+    "the delta-to-delta valid boundary is reworded below the boundary without an explicit distinction"
+)]
+fn reword_delta_to_delta_boundary_without_distinction(world: &mut GivnWorld) {
+    write_delta_to_delta(
+        world,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a differently worded provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+        "0.9400",
+    );
+}
+
+pub(crate) fn write_delta_to_delta(world: &mut GivnWorld, content: &str, score: &str) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("delta-to-delta remediation project is required");
+    fs::write(
+        env.path("givn/changes/running-change/specs/running.feature"),
+        content,
+    )
+    .expect("write delta-to-delta remediation delta");
+    world.retrieval_stub_scores = Some(format!("{DELTA_TO_DELTA_PAIR_SCORE_KEY}={score}"));
+}

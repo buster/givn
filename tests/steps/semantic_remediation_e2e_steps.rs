@@ -39,6 +39,48 @@ fn e2e_duplicate_remediation_project(world: &mut GivnWorld) {
         .expect("remove duplicate delta for E2E");
 }
 
+#[given("an end-to-end project prepared for a delta-to-delta duplicate remediation")]
+fn e2e_delta2delta_duplicate_remediation_project(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_delta_to_delta_project(
+        world,
+        "DUPLICATE".to_string(),
+    );
+    let env = world
+        .env
+        .as_ref()
+        .expect("delta-to-delta project is required");
+    let output = common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            (
+                "GIVN_SPEC_STUB_PAIR_SCORES",
+                "Unknown provider is rejected|Unknown provider selection is rejected=0.9600",
+            ),
+        ],
+    );
+    assert!(
+        !output.status.success(),
+        "initial delta-to-delta remediation review passed"
+    );
+    let report_path = env.path("givn/changes/running-change/semantic-review.md");
+    let report = fs::read_to_string(&report_path).expect("read delta-to-delta report");
+    let report = report
+        .replace("- classification: UNCERTAIN", "- classification: DUPLICATE")
+        .replace(
+            "- rationale: null",
+            "- rationale: \"The duplicate is removed from the projected change\"",
+        );
+    fs::write(report_path, report).expect("classify delta-to-delta report");
+    // Remove the redundant delta scenario, retaining the other one.
+    fs::write(
+        env.path("givn/changes/running-change/specs/running.feature"),
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("remove delta-to-delta duplicate for E2E");
+}
+
 #[when(regex = r#"^the remediation E2E user runs change review for "([^"]+)"$"#)]
 fn e2e_run_change_review(world: &mut GivnWorld, change: String) {
     let env = world.env.as_ref().expect("remediation project is required");
