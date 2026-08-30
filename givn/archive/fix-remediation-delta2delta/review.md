@@ -87,3 +87,5 @@ remediation branch. See tasks.md for per-scenario commit evidence.
 | `Path traversal id is rejected by lint` | `Rewording below the boundary without a distinction keeps the gate closed` | boundary |
 | `Path traversal id is rejected by graph` | `Rewording below the boundary without a distinction keeps the gate closed` | boundary |
 | `Path traversal id is rejected by instructions` | `Rewording below the boundary without a distinction keeps the gate closed` | boundary |
+
+REVIEW: PASS
