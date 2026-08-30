@@ -3811,9 +3811,10 @@ fn verify_semantic_remediation(
     let permanent = permanent_semantic_endpoints(root)?;
     let mut verified = 0;
     for entry in prior {
+        let delta_to_delta = entry.right_scope == "current-change";
         if entry.rationale.is_empty()
             || entry.left_scope != "current-change"
-            || entry.right_scope != "permanent"
+            || !matches!(entry.right_scope.as_str(), "permanent" | "current-change")
             || entry.left_file.is_empty()
             || entry.left_title.is_empty()
             || entry.left_content_hash.is_empty()
@@ -3834,9 +3835,21 @@ fn verify_semantic_remediation(
                 && item.scenario.title == entry.left_title
                 && item.operation != crate::gherkin::delta::DeltaOp::Removed
         });
-        let right = permanent.get(&(entry.right_file.clone(), entry.right_title.clone()));
+        let current_right = delta.iter().find(|item| {
+            item.scenario.file == entry.right_file
+                && item.scenario.title == entry.right_title
+                && item.operation != crate::gherkin::delta::DeltaOp::Removed
+        });
+        let right = (!delta_to_delta)
+            .then(|| permanent.get(&(entry.right_file.clone(), entry.right_title.clone())))
+            .flatten();
         match entry.classification.as_str() {
             "DUPLICATE" => {
+                if delta_to_delta {
+                    verify_duplicate_delta_to_delta(root, entry, current_left, current_right)?;
+                    verified += 1;
+                    continue;
+                }
                 if let Some(left) = current_left {
                     let endpoint = semantic_delta_endpoint(left);
                     if endpoint.content_hash != entry.left_content_hash
@@ -3875,6 +3888,16 @@ fn verify_semantic_remediation(
                 verified += 1;
             }
             "VARIANT" => {
+                if delta_to_delta {
+                    verify_variant_delta_to_delta(
+                        entry,
+                        current_candidate,
+                        current_left,
+                        current_right,
+                    )?;
+                    verified += 1;
+                    continue;
+                }
                 let Some(left) = current_left else {
                     bail!(
                         "semantic classification is stale (candidate {}): the left endpoint no longer exists after rerun; regenerate the report and reclassify",
@@ -3923,6 +3946,17 @@ fn verify_semantic_remediation(
                 verified += 1;
             }
             "VALID-BOUNDARY" => {
+                if delta_to_delta {
+                    verify_boundary_delta_to_delta(
+                        root,
+                        entry,
+                        current_candidate,
+                        current_left,
+                        current_right,
+                    )?;
+                    verified += 1;
+                    continue;
+                }
                 let Some(left) = current_left else {
                     bail!(
                         "semantic classification is stale (candidate {}): the left endpoint no longer exists after rerun; regenerate the report and reclassify",
@@ -4001,6 +4035,205 @@ fn recompute_prior_pair_score(
     .context("retrieval embedder returned no remediation vector")?;
     let raw = cosine_similarity(&left_vector, &right_entry.embedding);
     semantic_score(&semantic_delta_endpoint(left), right, raw)
+}
+
+/// Recompute the pair similarity for a delta-to-delta prior entry: neither
+/// endpoint lives in the permanent index, so both are embedded fresh from the
+/// active delta and scored with the same pair-score policy as admission.
+#[cfg(feature = "spec-retrieval")]
+fn recompute_delta_pair_score(
+    root: &Path,
+    left: &DeltaScenario,
+    right: &DeltaScenario,
+) -> Result<f32> {
+    let batch = embed_texts(
+        root,
+        &[left.scenario.text.clone(), right.scenario.text.clone()],
+        EmbeddingRole::Passage,
+    )?;
+    let left_vector = batch.vectors[0]
+        .as_ref()
+        .context("retrieval embedder returned no left delta vector")?;
+    let right_vector = batch.vectors[1]
+        .as_ref()
+        .context("retrieval embedder returned no right delta vector")?;
+    let raw = cosine_similarity(left_vector, right_vector);
+    semantic_score(
+        &semantic_delta_endpoint(left),
+        &semantic_delta_endpoint(right),
+        raw,
+    )
+}
+
+/// True when the active delta endpoint still carries the recorded content and
+/// evidence hashes (i.e. it was not reworded after classification).
+#[cfg(feature = "spec-retrieval")]
+fn delta_endpoint_unchanged(item: &DeltaScenario, content_hash: &str, evidence_hash: &str) -> bool {
+    let endpoint = semantic_delta_endpoint(item);
+    endpoint.content_hash == content_hash && endpoint.evidence_hash == evidence_hash
+}
+
+/// Verify a classified delta-to-delta `DUPLICATE` prior entry. The redundant
+/// endpoint is removed from the active delta (either side may be the removed
+/// one, and the retained side must be unchanged), or the pair's recomputed
+/// score drops strictly below the similarity boundary so the pair is no longer
+/// admitted.
+#[cfg(feature = "spec-retrieval")]
+fn verify_duplicate_delta_to_delta(
+    root: &Path,
+    entry: &PriorRemediationEntry,
+    current_left: Option<&DeltaScenario>,
+    current_right: Option<&DeltaScenario>,
+) -> Result<()> {
+    match (current_left, current_right) {
+        (Some(left), Some(right)) => {
+            let score = recompute_delta_pair_score(root, left, right)?;
+            if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+                bail!(
+                    "DUPLICATE remediation requires removing the redundant scenario (candidate {}): the pair is still admitted at recomputed embedding score {score:.4} (>= {SEMANTIC_SIMILARITY_THRESHOLD:.4}) and both endpoints are still present in the active delta",
+                    entry.candidate_id
+                );
+            }
+            Ok(())
+        }
+        (retained, None) if retained.is_some() => {
+            let retained = retained.expect("retained delta endpoint");
+            if !delta_endpoint_unchanged(
+                retained,
+                &entry.left_content_hash,
+                &entry.left_evidence_hash,
+            ) {
+                bail!(
+                    "DUPLICATE remediation requires removing the redundant scenario (candidate {}): the retained endpoint \"{}\" changed after classification — remove the redundant scenario without altering the retained endpoint",
+                    entry.candidate_id,
+                    entry.left_title
+                );
+            }
+            Ok(())
+        }
+        (None, retained) if retained.is_some() => {
+            let retained = retained.expect("retained delta endpoint");
+            if !delta_endpoint_unchanged(
+                retained,
+                &entry.right_content_hash,
+                &entry.right_evidence_hash,
+            ) {
+                bail!(
+                    "DUPLICATE remediation requires removing the redundant scenario (candidate {}): the retained endpoint \"{}\" changed after classification — remove the redundant scenario without altering the retained endpoint",
+                    entry.candidate_id,
+                    entry.right_title
+                );
+            }
+            Ok(())
+        }
+        _ => Ok(()),
+    }
+}
+
+/// Verify a classified delta-to-delta `VARIANT` prior entry. The surviving
+/// endpoint is consolidated into a parameterized `Scenario Outline` with a
+/// non-empty `Examples` table (its recorded hashes changed), and the redundant
+/// endpoint is removed so the pair is no longer admitted.
+#[cfg(feature = "spec-retrieval")]
+fn verify_variant_delta_to_delta(
+    entry: &PriorRemediationEntry,
+    current_candidate: Option<&SemanticCandidate>,
+    current_left: Option<&DeltaScenario>,
+    current_right: Option<&DeltaScenario>,
+) -> Result<()> {
+    let left_consolidated = current_left.is_some_and(|left| {
+        left.is_outline
+            && left.has_examples
+            && !delta_endpoint_unchanged(left, &entry.left_content_hash, &entry.left_evidence_hash)
+    });
+    let right_consolidated = current_right.is_some_and(|right| {
+        right.is_outline
+            && right.has_examples
+            && !delta_endpoint_unchanged(
+                right,
+                &entry.right_content_hash,
+                &entry.right_evidence_hash,
+            )
+    });
+    let survivor_consolidated = matches!(
+        (
+            left_consolidated,
+            right_consolidated,
+            current_left.is_some(),
+            current_right.is_some()
+        ),
+        (true, false, true, false) | (false, true, false, true)
+    );
+    if current_candidate.is_some() || !survivor_consolidated {
+        let reason = if current_candidate.is_some() {
+            "the pair is still admitted; the redundant endpoint has not been removed and the variant is not consolidated into a single parameterized outline"
+                .to_string()
+        } else {
+            "the surviving endpoint must be a parameterized Scenario Outline with a non-empty Examples table whose recorded content changed, and the redundant endpoint must be removed"
+                .to_string()
+        };
+        bail!(
+            "VARIANT remediation requires consolidation (candidate {}): {reason}",
+            entry.candidate_id
+        );
+    }
+    Ok(())
+}
+
+/// Verify a classified delta-to-delta `VALID-BOUNDARY` prior entry. Both
+/// endpoints remain in the active delta; at least one is reworded, the pair's
+/// recomputed score is strictly below the similarity boundary, and the two
+/// endpoints describe observably distinct outcomes.
+#[cfg(feature = "spec-retrieval")]
+fn verify_boundary_delta_to_delta(
+    root: &Path,
+    entry: &PriorRemediationEntry,
+    current_candidate: Option<&SemanticCandidate>,
+    current_left: Option<&DeltaScenario>,
+    current_right: Option<&DeltaScenario>,
+) -> Result<()> {
+    let Some(left) = current_left else {
+        bail!(
+            "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {}): the left endpoint no longer exists in the active delta; regenerate the report and reclassify",
+            entry.candidate_id
+        );
+    };
+    let Some(right) = current_right else {
+        bail!(
+            "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {}): the right endpoint no longer exists in the active delta; regenerate the report and reclassify",
+            entry.candidate_id
+        );
+    };
+    let left_endpoint = semantic_delta_endpoint(left);
+    let right_endpoint = semantic_delta_endpoint(right);
+    let score = recompute_delta_pair_score(root, left, right)?;
+    let left_changed =
+        !delta_endpoint_unchanged(left, &entry.left_content_hash, &entry.left_evidence_hash);
+    let right_changed =
+        !delta_endpoint_unchanged(right, &entry.right_content_hash, &entry.right_evidence_hash);
+    if current_candidate.is_some()
+        || score >= SEMANTIC_SIMILARITY_THRESHOLD
+        || !(left_changed || right_changed)
+        || !observable_distinction(&left_endpoint, &right_endpoint)
+    {
+        let reason = if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+            format!(
+                "recomputed score {score:.4} is not strictly below {SEMANTIC_SIMILARITY_THRESHOLD:.4}"
+            )
+        } else if !(left_changed || right_changed) {
+            "neither endpoint was reworded — recorded content/evidence hashes are unchanged"
+                .to_string()
+        } else if !observable_distinction(&left_endpoint, &right_endpoint) {
+            "the endpoints still read as the same observable outcome — a different driver or phrasing is not a boundary; name a distinct precondition, causal action, or end state".to_string()
+        } else {
+            "the pair is still admitted; reword a distinct precondition, causal action, or end state so it scores below the boundary".to_string()
+        };
+        bail!(
+            "VALID-BOUNDARY remediation requires an explicit distinction below the similarity boundary (candidate {}): {reason}",
+            entry.candidate_id
+        );
+    }
+    Ok(())
 }
 
 #[cfg(feature = "spec-retrieval")]
