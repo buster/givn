@@ -64,9 +64,64 @@ fn scaffolded_readme(world: &mut GivnWorld) {
     write_readme(world, &scaffolded_readme_text());
 }
 
+/// The verbatim previous scaffold template (pre-marker style).
+pub(crate) fn legacy_readme_text() -> String {
+    "\
+# {{PROJECT_NAME}}
+
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: n/a](https://img.shields.io/badge/line%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
+
+<!-- One-paragraph description of what this project does and who it is for. -->
+
+## Quick start
+
+<!--
+```
+git clone <repo>
+cd <project>
+make setup
+```
+-->
+
+## Prerequisites
+
+<!-- List any required tools, languages, or runtimes. -->
+
+## Usage
+
+<!-- Brief example or `--help` output to show how to use the project. -->
+
+## Development
+
+Run the project-owned scripts used by `givn/commands.yaml`:
+
+```sh
+./run-tests.sh
+./run-tests.sh --e2e
+./measure-coverage.sh
+./merge-coverages.sh
+```
+
+## Contributing
+
+<!--
+PR guidelines, commit conventions (Conventional Commits), code style,
+review process.
+-->
+
+## License
+
+TBD
+"
+    .to_string()
+}
+
 #[given("a README with the previous scaffold style")]
 fn legacy_readme(world: &mut GivnWorld) {
-    unimplemented!("write the previous-scaffold-style README fixture")
+    write_readme(world, &legacy_readme_text());
 }
 
 #[given("a README with a broken development managed block")]

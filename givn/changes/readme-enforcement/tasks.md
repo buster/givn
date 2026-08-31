@@ -40,32 +40,39 @@ non-@e2e first, @e2e last).
 
 ## Scenario 1: README check reports every open placeholder and its expectation
 
-- [ ] RED — remove @wip from this scenario only, run:
+- [x] RED — remove @wip from this scenario only, run:
       `cargo test --test features_runner -- --name "README check reports every open placeholder and its expectation"`
 
   ```
-  (paste RED output)
+  $ GIVN_FEATURES=givn/changes/readme-enforcement/specs GIVN_SPEC_EMBEDDER=stub \
+    GIVN_SPEC_RERANKER=disabled cargo test --test features_runner -- \
+    --name "README check reports every open placeholder and its expectation"
+  EXIT=101 — 1 scenario (1 failed), unimplemented!() stub fired
   ```
 
-- [ ] GREEN — minimum code: checker + `givn readme check` dispatch.
+- [x] GREEN — minimum code: checker + `givn readme check` dispatch.
 
   Files:
-  - (paste production files)
+  - src/cli/readme.rs (checker: ReadmeFindingKind/ReadmeFinding, check_readme, run_check)
+  - src/main.rs (Commands::Readme + ReadmeCommands::Check dispatch)
+  - tests/steps/readme_enforcement_steps.rs (scaffolded README fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed). Coverage: exercised by the scenario; the
+  project's coverage instrumentation runs via measure-coverage.sh at archive,
+  not per targeted run.
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed). No cleanup needed beyond the initial shape.
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): README check reports every open placeholder and its expectation`
+- [x] COMMIT — `feat(readme-enforcement): README check reports every open placeholder and its expectation`
 
   ```
-  commit hash:
+  commit hash: c9f0971
   ```
 
 ## Scenario 2: README check reports a legacy scaffold README as needing migration
