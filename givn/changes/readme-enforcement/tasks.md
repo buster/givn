@@ -136,31 +136,31 @@ non-@e2e first, @e2e last).
 
 ## Scenario 4: README check reports a missing README
 
-- [ ] RED — `cargo test --test features_runner -- --name "README check reports a missing README"`
+- [x] RED — `cargo test --test features_runner -- --name "README check reports a missing README"`
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed), fixture step unimplemented
   ```
 
-- [ ] GREEN — `MissingReadme` finding kind.
+- [x] GREEN — `MissingReadme` finding kind.
 
   Files:
-  - (paste production files)
+  - tests/steps/readme_enforcement_steps.rs (remove-README fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed); stdout mentions "README.md is missing"
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): README check reports a missing README`
+- [x] COMMIT — `feat(readme-enforcement): README check reports a missing README`
 
   ```
-  commit hash:
+  commit hash: 84f7849
   ```
 
 ## Scenario 5: README check reports a hand-written README without givn markers as unmanaged

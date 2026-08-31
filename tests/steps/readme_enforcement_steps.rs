@@ -148,7 +148,10 @@ fn complete_readme(world: &mut GivnWorld) {
 
 #[given("a hand-written README without any givn markers")]
 fn hand_written_readme(world: &mut GivnWorld) {
-    unimplemented!("write a hand-written README without givn markers")
+    write_readme(
+        world,
+        "# my project\n\nJust some prose describing the project.\n",
+    );
 }
 
 #[given("a complete README whose only managed block is the coverage badge")]
