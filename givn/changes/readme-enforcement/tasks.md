@@ -535,17 +535,17 @@ non-@e2e first, @e2e last).
 
 ## Scenario 16: Consumer runs the README check on a complete README and it passes
 
-- [ ] RED/GREEN — regression guard for the check happy path (RED evidence is
+- [x] RED/GREEN — regression guard for the check happy path (RED evidence is
       scenario 1's paired refusal; this proves exit 0 end-to-end):
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed); all steps reused
   ```
 
-- [ ] COMMIT — `test(e2e): Consumer runs the README check on a complete README and it passes`
+- [x] COMMIT — `test(e2e): Consumer runs the README check on a complete README and it passes`
 
   ```
-  commit hash:
+  commit hash: 1846936
   ```
 
 ## Scenario 17: Consumer checks a review with a recorded README impact decision and it passes

@@ -166,7 +166,7 @@ Feature: README enforcement
     And the development managed block lists the current configured workflow commands
     And the directory givn/archive/readme-demo/ exists
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer checks a review with a recorded README impact decision and it passes
     Given a project root with givn/ initialised
     And the project's verify commands are no-ops
