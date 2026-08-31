@@ -1437,6 +1437,13 @@ fn report_contains_deterministic_facts(world: &mut GivnWorld) {
 }
 
 fn semantic_report(world: &GivnWorld) -> String {
-    fs::read_to_string(remediation_change_dir(world).join("semantic-review.md"))
-        .expect("read semantic report")
+    fs::read_to_string(remediation_change_dir(world).join("semantic-review.md")).unwrap_or_else(
+        |error| {
+            panic!(
+                "read semantic report: {error}; stdout={}\nstderr={}",
+                super::stdout(world),
+                super::stderr(world)
+            )
+        },
+    )
 }

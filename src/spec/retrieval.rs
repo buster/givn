@@ -40,8 +40,6 @@ const E5_MODEL_REPOSITORY: &str = "Qdrant/multilingual-e5-large-onnx";
 const E5_MAX_LENGTH: usize = 512;
 #[cfg(feature = "spec-retrieval")]
 const RERANKER_MODEL_ID: &str = "rozgo/bge-reranker-v2-m3";
-#[cfg(all(feature = "spec-retrieval", feature = "spec-similarity-gate"))]
-const SIMILARITY_THRESHOLD: f32 = 0.95;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
@@ -225,7 +223,6 @@ const SEMANTIC_FINGERPRINT_SCHEMA_VERSION: u32 = 1;
 const SEMANTIC_EVIDENCE_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 /// Single change-scoped E5 admission boundary (unified rulebook, ADR-066).
-const SEMANTIC_SIMILARITY_THRESHOLD: f32 = E5_ADMISSION_THRESHOLD;
 #[cfg(feature = "spec-retrieval")]
 const DUPLICATE_REPORT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
@@ -3384,7 +3381,7 @@ fn semantic_candidates(
                     },
                 });
             let score = semantic_score(&left, &right, cosine_similarity(vector, &entry.embedding))?;
-            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+            if score < E5_ADMISSION_THRESHOLD {
                 continue;
             }
             let candidate = semantic_candidate("delta-to-permanent", left, right, score);
@@ -3408,7 +3405,7 @@ fn semantic_candidates(
             };
             let score =
                 semantic_score(&left, &right, cosine_similarity(left_vector, right_vector))?;
-            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+            if score < E5_ADMISSION_THRESHOLD {
                 continue;
             }
             let candidate = semantic_candidate("delta-to-delta", left, right, score);
@@ -4255,7 +4252,7 @@ fn verify_semantic_remediation(
                     let reason = if let Some(current) = current_candidate {
                         format!(
                             "the pair is still admitted at embedding score {:.4} (>= {:.4}) and the redundant endpoint is still present",
-                            current.score, SEMANTIC_SIMILARITY_THRESHOLD,
+                            current.score, E5_ADMISSION_THRESHOLD,
                         )
                     } else if current_left.is_some() {
                         format!(
@@ -4305,17 +4302,17 @@ fn verify_semantic_remediation(
                     || left_endpoint.evidence_hash == entry.left_evidence_hash
                     || right.content_hash != entry.right_content_hash
                     || right.evidence_hash != entry.right_evidence_hash
-                    || score >= SEMANTIC_SIMILARITY_THRESHOLD
+                    || score >= E5_ADMISSION_THRESHOLD
                 {
                     let reason = if current_candidate.is_some() {
                         format!(
-                            "the pair is still admitted (recomputed score {score:.4} >= {SEMANTIC_SIMILARITY_THRESHOLD:.4}); the variant is not consolidated"
+                            "the pair is still admitted (recomputed score {score:.4} >= {E5_ADMISSION_THRESHOLD:.4}); the variant is not consolidated"
                         )
                     } else if !left.is_outline || !left.has_examples {
                         "the active scenario is not a parameterized Scenario Outline with a non-empty Examples table".to_string()
-                    } else if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+                    } else if score >= E5_ADMISSION_THRESHOLD {
                         format!(
-                            "recomputed score {score:.4} is not strictly below {SEMANTIC_SIMILARITY_THRESHOLD:.4}"
+                            "recomputed score {score:.4} is not strictly below {E5_ADMISSION_THRESHOLD:.4}"
                         )
                     } else if left_endpoint.content_hash == entry.left_content_hash
                         || left_endpoint.evidence_hash == entry.left_evidence_hash
@@ -4362,16 +4359,16 @@ fn verify_semantic_remediation(
                     || left_endpoint.evidence_hash == entry.left_evidence_hash
                     || right.content_hash != entry.right_content_hash
                     || right.evidence_hash != entry.right_evidence_hash
-                    || score >= SEMANTIC_SIMILARITY_THRESHOLD
+                    || score >= E5_ADMISSION_THRESHOLD
                     || !observable_distinction(&left_endpoint, right)
                 {
                     let reason = if current_candidate.is_some() {
                         format!(
-                            "the pair is still admitted (recomputed score {score:.4} >= {SEMANTIC_SIMILARITY_THRESHOLD:.4}); sharpen a distinct precondition, causal action, or end state so it scores below"
+                            "the pair is still admitted (recomputed score {score:.4} >= {E5_ADMISSION_THRESHOLD:.4}); sharpen a distinct precondition, causal action, or end state so it scores below"
                         )
-                    } else if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+                    } else if score >= E5_ADMISSION_THRESHOLD {
                         format!(
-                            "recomputed score {score:.4} is not strictly below {SEMANTIC_SIMILARITY_THRESHOLD:.4}"
+                            "recomputed score {score:.4} is not strictly below {E5_ADMISSION_THRESHOLD:.4}"
                         )
                     } else if left_endpoint.content_hash == entry.left_content_hash
                         || left_endpoint.evidence_hash == entry.left_evidence_hash
@@ -4474,9 +4471,9 @@ fn verify_duplicate_delta_to_delta(
     match (current_left, current_right) {
         (Some(left), Some(right)) => {
             let score = recompute_delta_pair_score(root, left, right)?;
-            if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+            if score >= E5_ADMISSION_THRESHOLD {
                 bail!(
-                    "DUPLICATE remediation requires removing the redundant scenario (candidate {}): the pair is still admitted at recomputed embedding score {score:.4} (>= {SEMANTIC_SIMILARITY_THRESHOLD:.4}) and both endpoints are still present in the active delta",
+                    "DUPLICATE remediation requires removing the redundant scenario (candidate {}): the pair is still admitted at recomputed embedding score {score:.4} (>= {E5_ADMISSION_THRESHOLD:.4}) and both endpoints are still present in the active delta",
                     entry.candidate_id
                 );
             }
@@ -4598,13 +4595,13 @@ fn verify_boundary_delta_to_delta(
     let right_changed =
         !delta_endpoint_unchanged(right, &entry.right_content_hash, &entry.right_evidence_hash);
     if current_candidate.is_some()
-        || score >= SEMANTIC_SIMILARITY_THRESHOLD
+        || score >= E5_ADMISSION_THRESHOLD
         || !(left_changed || right_changed)
         || !observable_distinction(&left_endpoint, &right_endpoint)
     {
-        let reason = if score >= SEMANTIC_SIMILARITY_THRESHOLD {
+        let reason = if score >= E5_ADMISSION_THRESHOLD {
             format!(
-                "recomputed score {score:.4} is not strictly below {SEMANTIC_SIMILARITY_THRESHOLD:.4}"
+                "recomputed score {score:.4} is not strictly below {E5_ADMISSION_THRESHOLD:.4}"
             )
         } else if !(left_changed || right_changed) {
             "neither endpoint was reworded — recorded content/evidence hashes are unchanged"
@@ -6505,7 +6502,7 @@ fn render_review_document(
         },
     };
     #[cfg(feature = "spec-similarity-gate")]
-    let threshold = SIMILARITY_THRESHOLD;
+    let threshold = E5_ADMISSION_THRESHOLD;
     #[cfg(not(feature = "spec-similarity-gate"))]
     let threshold = 0.95_f32;
     #[cfg(feature = "cross-encoder-reranker")]
@@ -6828,7 +6825,7 @@ fn run_embedding_review(
                     candidate.right.title,
                     candidate.right.file,
                     candidate.embedding_score,
-                    SIMILARITY_THRESHOLD,
+                    E5_ADMISSION_THRESHOLD,
                 );
             }
         }
@@ -6840,13 +6837,13 @@ fn run_embedding_review(
             if candidates.is_empty() {
                 println!(
                     "similarity gate: no scenario pair at or above fixed threshold {:.4}",
-                    SIMILARITY_THRESHOLD
+                    E5_ADMISSION_THRESHOLD
                 );
             } else {
                 println!(
                     "similarity gate: {} candidate(s) at or above fixed threshold {:.4} shortlisted for second-stage evidence",
                     candidates.len(),
-                    SIMILARITY_THRESHOLD
+                    E5_ADMISSION_THRESHOLD
                 );
             }
         } else {
@@ -7496,7 +7493,7 @@ fn duplicate_candidates(
                 })
                 .copied()
                 .unwrap_or(raw_score);
-            if score < SEMANTIC_SIMILARITY_THRESHOLD {
+            if score < E5_ADMISSION_THRESHOLD {
                 continue;
             }
             candidates.push(DuplicateCandidate {
@@ -8415,7 +8412,7 @@ fn embedding_similarity_candidates(
                 continue;
             }
             let score = cosine_similarity(vector, &entry.embedding);
-            if score >= SIMILARITY_THRESHOLD {
+            if score >= E5_ADMISSION_THRESHOLD {
                 add_similarity_candidate(
                     &mut candidates,
                     "delta-to-permanent",
@@ -8438,7 +8435,7 @@ fn embedding_similarity_candidates(
                 continue;
             }
             let score = cosine_similarity(&right.embedding, &other.embedding);
-            if score >= SIMILARITY_THRESHOLD {
+            if score >= E5_ADMISSION_THRESHOLD {
                 add_similarity_candidate(
                     &mut candidates,
                     if left_is_delta && right_is_delta {
@@ -9956,7 +9953,7 @@ mod tests {
             let score = cosine_similarity(&vectors[left], &vectors[right]);
             println!("{left_title} <> {right_title}: {score:.4}");
             assert!(
-                score < SEMANTIC_SIMILARITY_THRESHOLD,
+                score < E5_ADMISSION_THRESHOLD,
                 "boundary pair remained above threshold: {left_title} <> {right_title} = {score:.4}"
             );
         }

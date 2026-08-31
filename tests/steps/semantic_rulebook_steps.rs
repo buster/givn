@@ -206,13 +206,18 @@ pub(crate) fn two_deltas_unrelated_corpus(world: &mut GivnWorld) {
     let delta_dir = env.path("givn/changes/running-change/specs");
     std::fs::create_dir_all(&delta_dir).expect("create delta specs");
     std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write rulebook commands");
+    std::fs::write(
         delta_dir.join("delta.feature"),
         "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
     )
     .expect("write active delta");
     std::fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n| `Unknown provider is rejected` | `Recipe ledger stores amounts` | related |\n| `Unknown provider selection is rejected` | `Recipe ledger stores amounts` | related |\n",
     )
     .expect("write overlap dispositions");
     world.env = Some(env);

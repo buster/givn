@@ -48,7 +48,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the archive gate output reports the pair cache accounting
     And  the archived semantic review report is retained
 
-  @givn.added @rulebook @e2e @wip
+  @givn.added @rulebook @e2e
   Scenario: Consumer review keeps a duplicate pair born inside the delta
     Given  a rulebook review project with two similar active deltas and an unrelated permanent corpus
     When  the user runs `givn check review --change running-change`

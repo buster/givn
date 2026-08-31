@@ -333,7 +333,7 @@ fn lists_raw_e5_verbose(world: &mut GivnWorld) {
         .lines()
         .filter(|l| l.starts_with("similarity candidate ["))
     {
-        assert!(line.contains(", threshold 0.9500; remediation:"), "{line}");
+        assert!(line.contains(", threshold 0.9000; remediation:"), "{line}");
     }
     let evaluated = output
         .lines()
@@ -958,7 +958,7 @@ fn verdict_records_fields(world: &mut GivnWorld) {
     assert_eq!(verdict["flagged_recommended_count"], 1);
     assert_eq!(verdict["threshold_fallback"], false);
     assert!(
-        (verdict["threshold"].as_f64().unwrap() - 0.95).abs() < 1e-6,
+        (verdict["threshold"].as_f64().unwrap() - 0.9).abs() < 1e-6,
         "threshold: {verdict}"
     );
     assert_eq!(verdict["e5_candidates"], 3);

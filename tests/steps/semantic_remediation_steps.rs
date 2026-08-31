@@ -70,7 +70,7 @@ fn consolidate_active_variant(world: &mut GivnWorld) {
     write_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario Outline: Unknown provider is rejected\n    Given a configured provider catalog for <provider>\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n    Examples: providers\n      | provider |\n      | default  |\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
@@ -79,7 +79,7 @@ fn rewrite_variant_without_consolidation(world: &mut GivnWorld) {
     write_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a differently worded provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
@@ -90,7 +90,7 @@ fn rewrite_valid_boundary_below_threshold(world: &mut GivnWorld) {
     write_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command reports a distinct boundary result\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
@@ -99,7 +99,7 @@ fn rewrite_valid_boundary_without_distinction(world: &mut GivnWorld) {
     write_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a differently worded provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
@@ -108,7 +108,7 @@ fn rewrite_valid_boundary_at_threshold(world: &mut GivnWorld) {
     write_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command reports a distinct boundary result\n",
-        "0.9500",
+        "0.9000",
     );
 }
 
@@ -207,7 +207,7 @@ fn reword_delta_to_delta_duplicate(world: &mut GivnWorld) {
     write_delta_to_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a differently worded provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
@@ -227,7 +227,7 @@ fn sharpen_delta_to_delta_boundary(world: &mut GivnWorld) {
     write_delta_to_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command reports a distinct boundary result\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
@@ -238,7 +238,7 @@ fn reword_delta_to_delta_boundary_without_distinction(world: &mut GivnWorld) {
     write_delta_to_delta(
         world,
         "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a differently worded provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
-        "0.9400",
+        "0.8900",
     );
 }
 
