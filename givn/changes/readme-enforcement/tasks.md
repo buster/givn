@@ -232,31 +232,34 @@ non-@e2e first, @e2e last).
 
 ## Scenario 7: Review accepts an updated README impact decision naming the sections
 
-- [ ] RED — `cargo test --test features_runner -- --name "Review accepts an updated README impact decision naming the sections"`
+- [x] RED — legitimate immediate GREEN: every step is a reused definition
+      (`a project root with givn/ initialised`, `the project's verify commands
+      are no-ops`, `a reviewable change`, the impact-decision fixture,
+      `the command exits 0`); the acceptance logic shipped with scenario 6.
 
   ```
-  (paste RED output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] GREEN — accept `README-IMPACT: updated - <sections>` form.
+- [x] GREEN — reuse only (see RED note).
 
   Files:
-  - (paste production files)
+  - (no production files — pure step reuse of scenario 6's implementation)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Review accepts an updated README impact decision naming the sections`
+- [x] COMMIT — `feat(readme-enforcement): Review accepts an updated README impact decision naming the sections`
 
   ```
-  commit hash:
+  commit hash: a0d2ffd
   ```
 
 ## Scenario 8: A project without the readme addon needs no README impact decision
