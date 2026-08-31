@@ -305,6 +305,24 @@ fn semantic_report_no_nli_unscored(world: &mut GivnWorld) {
     );
 }
 
+#[then("the unscored candidates remain blocking with their scored neighbours")]
+fn unscored_candidates_remain_blocking(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let report = std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .unwrap_or_else(|error| {
+            panic!(
+                "read semantic review report: {error}; stderr={}",
+                super::stderr(world)
+            )
+        });
+    // The 20 selected pairs all stay blocking: 10 scored within the budget,
+    // 10 recorded as BGE_UNSCORED and NLI_UNSCORED beyond it.
+    assert!(report.contains("Status: BLOCKED"), "report:\n{report}");
+    assert!(report.contains("Candidate count: 20"), "report:\n{report}");
+    assert!(report.contains("BGE_UNSCORED"), "report:\n{report}");
+    assert!(report.contains("NLI_UNSCORED"), "report:\n{report}");
+}
+
 /// Snapshot the current semantic report so a later rerun can be compared
 /// candidate-by-candidate.
 #[when("the semantic review report is snapshotted")]
