@@ -362,7 +362,7 @@ The current code does not use one universal top-five pool:
 | Explore | The at-most-five ranked Explore results; then budget. | The same at-most-five results; independent scoring and budget. |
 | E5-only advisory review | At most five index-ranked entries per active delta; no semantic self-identity filter. | No NLI branch. |
 | Second-stage advisory review | The existing delta/permanent and projected retrieval pool, with top-five neighbor selection and its projected same-file filter; then budget. | The same advisory pool, independently scored and budgeted. |
-| Blocking review | All generated semantic-report candidates at E5 `0.9500`; then budget. | The same report candidate list, independently budgeted. It is not a Duplicate Audit top-five union. |
+| Blocking review | The rulebook-selected pairs at E5 `0.9000`; then budget. | The same selected pairs, independently budgeted. It is not a Duplicate Audit top-five union. |
 
 BGE scores both directions and averages raw logits. NLI scores both directions,
 reports directional probabilities, and computes a symmetric probability vector

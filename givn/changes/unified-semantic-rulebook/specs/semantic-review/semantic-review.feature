@@ -7,11 +7,11 @@ Feature: semantic-review
 
   @givn.modified
   Scenario: Change review generates a complete report for a semantic candidate
-    Given  a project prepared for semantic review with a similar active delta
+    Given  a project prepared for semantic review with a single admitted candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report exists
-    And  the semantic review report status is "FAIL"
+    And  the semantic review report status is "BLOCKED"
     And  the semantic review report candidate count is 1
     And  the candidate embedding score has exactly four decimals in the range "0.9000" through "1.0000"
     And  the semantic review report contains deterministic facts
@@ -21,8 +21,8 @@ Feature: semantic-review
     Given  a project prepared for semantic review with two similar active deltas
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    And  the semantic review report contains scope "permanent"
-    And  the semantic review report contains scope "current-change"
+    And  the semantic review report contains scope "delta-to-permanent"
+    And  the semantic review report contains scope "delta-to-delta"
     And  all candidate scores have exactly four decimals and are at least "0.9000"
 
   @givn.modified

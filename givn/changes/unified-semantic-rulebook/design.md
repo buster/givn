@@ -32,12 +32,15 @@ module is deliberately not part of this change. Surfaces:
 1. embed: permanent scenarios from the index (content-hash reuse),
    delta scenarios freshly (EmbeddingRole::Passage)
 2. compare: delta↔permanent and delta↔delta
-   (permanent↔permanent excluded — duplicate audit's domain)
+   (permanent↔permanent excluded — duplicate audit's domain);
+   report scopes keep the names delta-to-permanent / delta-to-delta
+   (candidate_id and carry-forward stability, ADR-046 unchanged);
+   the Modified-delta's own projected target stays excluded, exactly as today
 3. cut: pairs below E5_ADMISSION_THRESHOLD (0.90) dropped;
    oversized scenarios reported as E5 token caps (unchanged behaviour)
-4. select: per delta scenario keep the NEIGHBOURS_PER_SCENARIO highest-
-   scored neighbours, then cap the union at PAIR_CAP pairs,
-   ordered by E5 score descending
+4. select (hybrid): per delta scenario keep the NEIGHBOURS_PER_SCENARIO
+   highest-scored neighbours, then cap the union at PAIR_CAP pairs,
+   ordered by E5 score descending, deterministic endpoint tie order
 5. judge: BGE and NLI run on the selected pairs only; each pair both
    directions (symmetry retained); each model recommends independently
    (BGE_ADMISSION_THRESHOLD / NLI_ADMISSION_THRESHOLD unchanged)
@@ -48,23 +51,34 @@ module is deliberately not part of this change. Surfaces:
    UNSCORED) keep their meaning
 ```
 
-Selection consequence recorded explicitly: pairs beyond `PAIR_CAP` are not
-candidates (not `UNSCORED`) — selection is deterministic by E5 score, so
-verdicts are reproducible; recall beyond the cap is accepted and lands in
-arc42 ch. 11 next to R-21.
+### Strict-gate absorption
+
+`SIMILARITY_THRESHOLD` (0.95) is deleted together with
+`SEMANTIC_SIMILARITY_THRESHOLD`: the `spec-similarity-gate` feature's strict
+boundary becomes the rulebook admission. The `@gate-only` and
+`@gate-combination` scenarios are rewritten to pin the rulebook's selection
+and admission behaviour instead of a separate 0.95 gate; TC-14 and the
+glossary's "Strict E5 gate" entry are updated; ADR-041 is revised to the
+single 0.90 boundary (register already records this relationship).
+
+Selection consequence recorded explicitly: pairs beyond the neighbour count
+or `PAIR_CAP` are **unselected pairs** — not candidates, not `UNSCORED`.
+The emergency budget (`GIVN_SPEC_MAX_RERANK_PAIRS`) truncating the selected
+set still produces `*_UNSCORED` candidates, visible and blocking (scenario
+pinned). Deterministic cap tie order is pinned by a scenario.
 
 ### Constants
 
 | Constant | Value | Replaces / relation |
 |---|---|---|
-| `E5_ADMISSION_THRESHOLD` | 0.90 | single threshold; `SEMANTIC_SIMILARITY_THRESHOLD` (0.95) is deleted, including its message use in remediation verification |
-| `NEIGHBOURS_PER_SCENARIO` | 5 | new (advisory's top-5 selection becomes the rulebook's stage 4a) |
+| `E5_ADMISSION_THRESHOLD` | 0.90 | single threshold; `SEMANTIC_SIMILARITY_THRESHOLD` and `SIMILARITY_THRESHOLD` (0.95) are deleted, including remediation-verification message use |
+| `NEIGHBOURS_PER_SCENARIO` | 5 | new (wholely new stage; today's advisory pool has no per-scenario cut) |
 | `PAIR_CAP` | 20 | new; bounds the judged union globally |
 | `GIVN_SPEC_MAX_RERANK_PAIRS` | 2048 | stays as the hard emergency ceiling above selection (ADR-063 reconciled: selection first, budget still truncates + flags `*_UNSCORED`) |
 
-Fixture overrides for the two new constants are registered in
-`REQUEST_CHANNELS` + the representative table from day one (refused in
-installed builds — release-override-hardening's net).
+The two new constants are **not** environment-tunable (proposal decision) —
+no fixture channels, no `REQUEST_CHANNELS` entries; the cap scenarios drive
+real admitted pairs through stub scores.
 
 ### Pair-score cache
 
@@ -73,16 +87,23 @@ installed builds — release-override-hardening's net).
 - Entry key: `(stage, model_id, left_file, left_title, left_content_hash,
   left_evidence_hash, right_file, right_title, right_content_hash,
   right_evidence_hash)`; value: the stage's evidence plus admission-relevant
-  raw scores. Schema version field like the spec index.
+  raw scores. Schema version field like the spec index. Stub stages record
+  their stub identifier as `model_id`, so stub and real-model entries can
+  never alias.
+- Accounting unit: one pair. A pair is `reused` only when every stage entry
+  for it hits the cache; otherwise it is `computed`. Per stage the cache is
+  still keyed separately.
 - Semantics: hash-identical endpoints hit the cache; any endpoint change
-  misses and re-judges. The cache never changes verdicts — it only skips
-  recomputation of evidence for unchanged pairs. The report gains one
-  counter line in both output documents: `pair cache: N reused, M computed`.
-- Lifecycle: `check review` and `givn archive` both read/write it; archive
-  re-evaluates against the current permanent tree, so stale sign-offs still
-  cannot pass, but previously judged unchanged pairs are reused.
-- No pruning policy in this change (bounded by change lifetime; the archive
-  step may keep the file for audit — decided in specs if contentious).
+  (delta or permanent side) misses and re-judges. The cache never changes
+  verdicts — it only skips recomputation of evidence for unchanged pairs.
+- **Accounting surface (decision):** one stdout line per rulebook run for
+  every consumer — `pair cache: N reused, M computed` — plus the same
+  counters inside `semantic-review.md` and `review-findings.json`. Stdout is
+  the only observable surface on the archive success path (no findings file
+  is written on success).
+- Cache validity caveat: the key excludes fixture channels, so stub-score
+  fixtures must keep their overrides constant across the runs of one
+  scenario (they do).
 
 ### Consumer wiring
 
@@ -95,16 +116,21 @@ installed builds — release-override-hardening's net).
   (`surface = Archive`) instead of `review_without_download`; blocking
   semantics = unclassified/recommended candidates block, carried
   classifications via `apply_prior_classifications` (existing machinery).
+  The archive surface renders gate stdout only — it never writes
+  `semantic-review.md`; the worklist stays owned by `check review`
+  (protects the report-retention scenarios).
 - `givn spec review`: same run, advisory rendering (decision-first text,
-  JSON findings) — ADR-054 output contract unchanged.
+  JSON findings) — ADR-054 output contract unchanged. Its surface value is
+  `ChangeReview` (advisory rendering), so the enum stays
+  `{ChangeReview, Archive}`.
 
 ### ADR work
 
 | ADR | Action |
 |---|---|
 | new | One change-scoped semantic rulebook + pair-score cache (MADR) |
-| ADR-061 (surface-specific independent pools) | superseded by the new ADR for the change-scoped surfaces; explore/search/audit keep their pools |
-| ADR-041 (0.95 binary E5 boundary) | revised: single 0.90 threshold + deterministic selection bound the gate |
+| ADR-061 (surface-specific independent pools) | amended: change-scoped review surfaces join the unified rulebook; explore/search/audit keep their pools |
+| ADR-041 (0.95 binary E5 boundary) | revised: single 0.90 admission; the separate strict gate is absorbed |
 | ADR-052 / ADR-058 | revised pool assignment: change-scoped surfaces share the rulebook pool; surface independence retained for the other surfaces |
 | ADR-063 (pair budget) | reconciled: selection before budget; budget remains the emergency ceiling |
 | ADR-046 / ADR-054 | unchanged (output contracts) |
@@ -117,11 +143,10 @@ flowchart LR
         E[embed + index] --> C[compare 0.90] --> S[hybrid selection] --> J[BGE + NLI] --> K[(pair-score cache)]
     end
     CR["check review<br/>(ChangeReview)"] --> R1[rulebook]
-    AR["givn archive<br/>(Archive)"] --> R2[rulebook]
+    AR["givn archive<br/>(Archive, gate stdout only)"] --> R2[rulebook]
     SR["givn spec review<br/>(advisory)"] --> R3[rulebook]
     R1 --> W[semantic-review.md worklist]
     R1 --> F[review-findings.json]
-    R2 --> W
     R3 --> F
 ```
 
@@ -138,10 +163,12 @@ fixtures reuse `common::TestEnv` with stub backends (offline, debug builds).
 
 ## Test runner
 
-- verify.command: `./run-tests.sh` (unchanged). New tag groups (e.g.
-  `@rulebook-cached`) follow the existing `tag_present` pattern in
-  `run-tests.sh` — script gains matching case branches only if a group
-  needs a different stub configuration than the existing ones.
+- verify.command: `./run-tests.sh` (unchanged). A new `@rulebook` tag group
+  is REQUIRED in `run-tests.sh`: `BGE=stub` + `RERANKER=nli-stub` with full
+  features (the `run_review_output` configuration), excluded from the
+  `run_e5`/default tag filters in `--e2e`, `--non-e2e`, and the default case
+  — the @rulebook scenarios assert both stages enabled, which no existing
+  group provides.
 - verify.e2e_command: `./run-tests.sh --e2e` (unchanged).
 - Strict mode: cucumber-rs `.fail_on_skipped()` (proven); stub pattern
   `unimplemented!()`.
@@ -160,13 +187,24 @@ twice and assert the second run's `pair cache: N reused, M computed` line.
 
 ## Specs to rewrite (specs step)
 
-- `semantic-review/` — threshold, candidate set, classification, remediation
-  scenarios (0.95 → 0.90 + selection).
-- `bge-reranking-evidence/`, NLI evidence features — pool becomes the
-  rulebook selection; `*_UNSCORED` semantics re-pinned.
-- E5 admission / advisory review output features — single floor, decision-
-  first rendering unchanged.
-- New: cache reuse, hybrid cap, delta↔delta retention, archive-same-rules.
+- `semantic-review/` — three modified scenarios (single-candidate report,
+  scopes, exact boundary) move to the 0.9000 boundary; new fixtures:
+  a single admitted pair on a disjoint corpus, the boundary pair at 0.9000.
+- `bge-reranking-evidence/` — the bounded-pool-overflow scenario is removed
+  (replaced by unselected-pair semantics and the pinned budget-truncation
+  scenario); the `@gate-only`/`@gate-combination` scenarios are rewritten
+  for the absorbed gate.
+- Remediation scenarios keep their texts; their step bindings move the
+  fixture scores from 0.9400/0.9500 to 0.8900/0.9000 (below/at the new
+  boundary) — binding-only change, recorded here, no delta entries.
+- Advisory output bindings that hardcode `0.9500` (text line and JSON
+  verdict threshold) are re-pointed to 0.9000 — binding-only change.
+- New in the rulebook capability: cache reuse/invalidation (delta and
+  permanent endpoint sides), hybrid neighbour cut, budget truncation above
+  selection, deterministic cap tie order, zero-candidate cache accounting.
+
+NLI-evidence feature files need no delta: verified no change-scoped NLI
+scenario pins full-pool semantics.
 
 ## E2E smoke test infrastructure
 

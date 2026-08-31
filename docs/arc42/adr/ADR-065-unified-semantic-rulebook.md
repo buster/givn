@@ -99,6 +99,29 @@ remains the emergency ceiling above selection (ADR-063 reconciled).
 
 ADR-QUALIFICATION: PASS
 
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: NEW_ADR + AMEND_ADR-061 + AMEND_ADR-041
+canonical_artifact: null
+target_adr: null
+replacement_adr: null
+
+- [x] **Hard to reverse** - candidate identity, selection, admission boundary,
+      and the persisted pair-evidence store affect all three review surfaces
+      and their reports.
+- [x] **Shapes quality attributes** - deterministic selection bounds model
+      work; the cache bounds repeated inference; both control CPU cost and
+      recall.
+- [x] **Structural** - one rulebook function behind three consumers, one
+      new persistent boundary, one threshold.
+
 - **alternatives** — three materially different options recorded above.
 - **architectural_impact** — fixes the shared rulebook boundary, one
   persistent evidence store, and the threshold/selection contract for all
@@ -108,6 +131,8 @@ ADR-QUALIFICATION: PASS
 - **lower_level_artifact** — executable specs pin the observable sequence;
   the cross-surface consistency and cache contract are not fully owned by
   any single feature file.
-- **existing_adr_check** — supersedes ADR-061's change-scoped portion;
-  revises ADR-041 (boundary), ADR-052/058 (pool assignment); ADR-063 and
+- **existing_adr_check** — ADR-061 is amended (change-scoped review surfaces
+  join the rulebook; explore/search/audit keep their pools); ADR-041 is
+  amended (the separate `0.95` boundary is absorbed into the `0.90`
+  admission); ADR-052/058 pool assignments follow the amendment; ADR-063 and
   ADR-064 remain in force; ADR-046/054 untouched.

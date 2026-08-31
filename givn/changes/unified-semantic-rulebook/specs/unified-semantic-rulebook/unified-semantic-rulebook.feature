@@ -44,7 +44,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     Given  a completed semantic review change with a generated report and archive prerequisites
     When  the user runs `givn archive --change running-change`
     Then  the command exits 0
-    And  the change is archived
+    And  the archived change directory exists
     And  the archive gate output reports the pair cache accounting
     And  the archived semantic review report is retained
 
@@ -53,7 +53,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     Given  a project prepared for semantic review with two similar active deltas and an unrelated permanent corpus
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
-    And  the semantic review report contains scope "current-change"
+    And  the semantic review report contains scope "delta-to-delta"
     And  the candidate content and evidence hashes are exactly 16 lowercase hexadecimal characters
 
   @givn.added @rulebook @wip
@@ -64,3 +64,44 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     When  the active semantic candidate is changed
     And  the user runs `givn check review --change running-change` again without edits
     Then  the pair cache accounting reports "0" reused and "1" computed
+
+  @givn.added @rulebook @wip
+  Scenario: A changed permanent endpoint re-judges its recorded pair
+    Given  a project prepared for semantic review with two similar active deltas
+    When  the user runs `givn check review --change running-change`
+    Then  the pair cache accounting reports "0" reused and "1" computed
+    When  the permanent semantic endpoint is changed
+    And  the user runs `givn check review --change running-change` again without edits
+    Then  the pair cache accounting reports "0" reused and "1" computed
+
+  @givn.added @rulebook @wip
+  Scenario: The neighbour count cuts per-scenario pairs before the pair cap
+    Given  a project prepared for semantic review with one active delta and more neighbours than the neighbour count
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    And  the semantic review report candidate count is 5
+    And  the semantic review report records no candidate as `BGE_UNSCORED`
+
+  @givn.added @rulebook @wip
+  Scenario: Emergency budget truncation keeps outside candidates unscored and blocking
+    Given  a project prepared for semantic review with more candidate pairs than the pair cap
+    And  an emergency pair budget below the selected pair count
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    And  the semantic review report records the outside candidates as `BGE_UNSCORED`
+    And  those candidates remain blocking E5 candidates
+
+  @givn.added @rulebook @wip
+  Scenario: The pair cap fills deterministically when scores tie
+    Given  a project prepared for semantic review with more candidate pairs than the pair cap
+    When  the user runs `givn check review --change running-change`
+    And  the user runs `givn check review --change running-change` again without edits
+    Then  the semantic review report candidate count is 20
+    And  both reports contain the same candidate ids in the same order
+
+  @givn.added @rulebook @wip
+  Scenario: A change without candidates reports empty cache accounting
+    Given  a project prepared for semantic review with active deltas below the similarity boundary
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  the pair cache accounting reports "0" reused and "0" computed

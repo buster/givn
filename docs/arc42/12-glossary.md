@@ -45,11 +45,12 @@
 | **E5 token-cap candidate** | A complete passage over the E5 limit. It has no vector or E5 semantic score and is visible as `E5_TOKEN_CAP` metadata. |
 | **BGE token-cap evidence** | Selected BGE pair evidence whose complete actual-tokenizer encoding exceeds 512. It has no score, remains visible and blocking, and is not filtered. |
 | **NLI token-cap evidence** | Selected NLI pair evidence whose complete actual-tokenizer encoding exceeds 512. It has no probabilities, remains visible and blocking, and is not filtered. |
-| **Second-stage pair budget** | The proposed positive `GIVN_SPEC_MAX_RERANK_PAIRS` setting. Unset means 2048 in the current implementation; candidates after the selected E5-ranked prefix are unscored. ADR-063 remains proposed until its change is complete. |
+| **Second-stage pair budget** | The positive `GIVN_SPEC_MAX_RERANK_PAIRS` setting. Unset means 2048; it truncates only the rulebook-selected set as an emergency ceiling — candidates after the truncated prefix are unscored. |
 | **Unified rulebook** | The single change-scoped comparison sequence: embed, compare (delta↔permanent and delta↔delta), cut at the E5 admission threshold, select, judge, report. All three change-scoped consumers (`givn spec review`, `givn check review`, the archive gate) apply it. Anti-terms: pipeline, pool. |
 | **Pair cap** | The fixed maximum number of pairs the rulebook selects for second-stage judgement in one run (20). Pairs beyond the cap are not candidates. |
 | **Neighbour count** | The fixed maximum number of highest-scored neighbours per delta scenario the rulebook keeps before the pair cap (5). |
 | **Pair-score cache** | The persisted store of per-pair BGE/NLI evidence keyed by endpoint content and evidence hashes. Unchanged endpoints reuse recorded judgements; the run reports reused versus computed counts. Anti-terms: memo, result cache. |
+| **Hybrid selection** | The rulebook's two-stage selection: per-scenario neighbour count first, then one shared pair cap by E5 score with deterministic tie order. |
 | **Unselected pair** | A rulebook pair beyond the neighbour count or the pair cap. It is not a candidate: no evidence, no report entry, no blocking state. Anti-term: unscored candidate (reserved for budget truncation only). |
 | **E5 candidate** | A semantic pair produced at or above the single E5 `0.9000` admission boundary after rulebook selection, before optional BGE/NLI evidence. |
 | **Semantic review candidate** | A blocking-report pair involving an active Added/Modified delta in either `delta-to-permanent` or `delta-to-delta` scope. Removed and permanent-permanent pairs are excluded. |
@@ -63,7 +64,7 @@
 | **Semantic classification** | Agent-owned `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, or blocking `UNCERTAIN` value in the semantic report. |
 | **Projected remediation** | Read-only application of the active delta to an in-memory permanent view for verifying a previous classification. |
 | **Parameterized variant** | A projected `Scenario Outline` with a non-empty Examples table, required by the current `VARIANT` verifier. |
-| **Observable distinction** | A changed Fingerprint assertion or fact, required by the current `VALID-BOUNDARY` verifier along with a score below `0.9500`. |
+| **Observable distinction** | A changed Fingerprint assertion or fact, required by the current `VALID-BOUNDARY` verifier along with a score below `0.9000`. |
 | **Delta-to-delta remediation** | A prior semantic candidate whose endpoints are both current-change entries. The current verifier rejects this scope; it is a known unsupported path. |
 | **Permanent duplicate audit** | `givn spec duplicates`, a complete advisory scan of current `givn/specs/` excluding active changes and archive contents. |
 | **Audit index reuse** | Duplicate Audit reads `.spec-index.json` and reuses vectors/cap metadata only when every current identity and complete hash matches. It does not write or refresh the index. |
@@ -91,7 +92,7 @@
 | **Combined recommendation** | Intersection of participating BGE and NLI recommended states. Filtered, capped, unscored, and unavailable evidence is not silently resolved. |
 | **Permanent-only index boundary** | The persisted index contains permanent entries and E5 cap metadata, not active delta vectors, audit state, classifications, or semantic report state. |
 | **Retrieval feature** | Cargo feature `spec-retrieval`, which provides local E5/index behavior and is required for blocking semantic report generation. |
-| **Strict E5 gate** | The E5 `0.95` comparison enabled by Cargo feature `spec-similarity-gate`; it is independent of BGE and NLI evidence. |
+| **Strict E5 gate** | Retired by ADR-065: the separate `0.95` boundary was absorbed into the unified rulebook's `0.90` admission; `spec-similarity-gate` still controls whether the E5 layer blocks. |
 | **Arc42 implementation conformance** | Human evidence review of durable Arc42 chapters and change assessment against design, tasks, and implementation, supplemented by affected-file integrity checks. |
 | **ADR** | Architecture Decision Record. Active records live in `adr/`; historical records live in `adr/archive/`. |
 | **Current architecture contract** | Only an ADR with `status: accepted` and no supersession relationship. Proposed and archived records do not bind the current system. |
