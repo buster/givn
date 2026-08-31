@@ -195,32 +195,39 @@ non-@e2e first, @e2e last).
 
 ## Scenario 6: Review refuses sign-off without a recorded README impact decision
 
-- [ ] RED — `cargo test --test features_runner -- --name "Review refuses sign-off without a recorded README impact decision"`
+- [x] RED — `cargo test --test features_runner -- --name "Review refuses sign-off without a recorded README impact decision"`
 
   ```
-  (paste RED output)
+  First run: compile error (fixture signature) — fixed.
+  Second run: EXIT=101 — fixture step unimplemented.
+  Third run: exit-0 against the current binary — the missing-impact
+  behaviour genuinely does not exist (correct assertion RED).
   ```
 
-- [ ] GREEN — `README-IMPACT` parsing in the integrity hook, readme flag
+- [x] GREEN — `README-IMPACT` parsing in the integrity hook, readme flag
       threaded through `hooks.rs` and `check.rs`.
 
   Files:
-  - (paste production files)
+  - src/integrity_hook.rs (check_readme_impact, new readme_enabled parameter)
+  - src/hooks.rs (integrity call site)
+  - src/cli/check.rs (integrity call site)
+  - tests/steps/readme_enforcement_steps.rs (reviewable-change fixture,
+    impact-decision fixture, no-op verify commands fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed); stderr contains "README impact decision"
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Review refuses sign-off without a recorded README impact decision`
+- [x] COMMIT — `feat(readme-enforcement): Review refuses sign-off without a recorded README impact decision`
 
   ```
-  commit hash:
+  commit hash: 4789df2
   ```
 
 ## Scenario 7: Review accepts an updated README impact decision naming the sections
