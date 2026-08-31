@@ -199,10 +199,66 @@ pub fn scaffold_readme() -> Result<usize> {
         .context("failed to resolve readme template from embedded assets")?;
 
     let project_name = detect_project_name(&project_root);
-    let rendered = template.replace("{{PROJECT_NAME}}", &project_name);
+    let development_block = render_development_block();
+    let rendered = template
+        .replace("{{PROJECT_NAME}}", &project_name)
+        .replace("{{DEVELOPMENT_BLOCK}}", &development_block);
 
     std::fs::write(&dest, rendered)?;
     Ok(1)
+}
+
+/// Render the development managed block from the effective command file.
+///
+/// `givn init` writes `givn/commands.yaml` before addon scaffolding runs, so
+/// init renders the real file. Standalone `givn addons enable readme` in a
+/// project without a command file falls back to the embedded defaults.
+pub(crate) fn render_development_block() -> String {
+    let body = match crate::config::overlay::load_effective() {
+        Ok(manifest) => development_block_body(
+            &manifest.verify.command,
+            &manifest.verify.e2e_command,
+            manifest.addons.coverage,
+            &manifest.coverage.measure_command,
+            &manifest.coverage.merge_command,
+        ),
+        Err(_) => development_block_body(
+            "givn missing-testrunner",
+            "",
+            false,
+            "",
+            "",
+        ),
+    };
+    format!("<!-- givn:begin:development -->\n{body}<!-- givn:end:development -->\n")
+}
+
+fn development_block_body(
+    verify_command: &str,
+    e2e_command: &str,
+    coverage_enabled: bool,
+    measure_command: &str,
+    merge_command: &str,
+) -> String {
+    let mut out = String::from("## Development\n\n");
+    out.push_str("Run the project-owned scripts configured in `givn/commands.yaml`:\n\n");
+    out.push_str("```sh\n");
+    out.push_str(verify_command);
+    out.push('\n');
+    if !e2e_command.is_empty() && e2e_command != verify_command {
+        out.push_str(e2e_command);
+        out.push('\n');
+    }
+    out.push_str("```\n\n");
+    if coverage_enabled && !measure_command.is_empty() && !merge_command.is_empty() {
+        out.push_str(&format!(
+            "`{measure_command}` writes the non-E2E and E2E Cobertura reports.\n\
+             `{merge_command}` combines them into the merged report linked by the\n\
+             badges above.\n\n"
+        ));
+    }
+    out.push_str("Add lint, build, and other project commands alongside these scripts.\n\n");
+    out
 }
 
 /// Detect the project name from package metadata or fall back to the

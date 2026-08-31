@@ -9,7 +9,7 @@
 
 Feature: README enforcement
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer scaffolds a project and the README marks its unfilled sections
     Given a project root without a givn/ directory
     When the user runs `givn init`
