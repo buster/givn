@@ -163,6 +163,28 @@ scores, token-budget caps, report chatter) is a development-build capability:
 an installed (release) build ignores it, announces the refusal, and always runs
 the real models.
 
+The refusal policy is mechanically complete: every environment channel the
+semantic review reads is either registered in the fixture-request policy or on
+an explicit exemption list (the compute-thread budget and the honoured
+model-location channels, including the download mirror — the documented
+accepted exception: artifact location and source are trusted, identity is not
+verified, and an unusable set fails the run instead of faking a verdict). A source-derived test
+proves both directions — a channel read without a policy entry, and a
+registered channel no longer read — on both build profiles. A refused fixture
+request resolves to "unset" for every reader, and each semantic command
+announces every refused request by name once, even channels the running
+command itself never reads.
+
+| Request class | Installed build | Development build |
+|---|---|---|
+| Simulated embedder output (any value) | refused + announced | honoured |
+| Disable/simulate second-stage selectors | refused + announced | honoured |
+| Score injection, token budgets, test pools, pair-budget resizes | refused + announced | honoured |
+| Model-location requests (`auto`/`local`/`nli`, caches, tokenizer) | honoured | honoured |
+| Thread budget | honoured | honoured |
+| Primary model artifacts missing | fail-safe: the gate refuses (exit non-zero); it never passes silently | same |
+| Second-stage evidence missing | fail-safe: the E5 admission verdict stands — a missing layer neither passes nor disproves a candidate (pinned by the permanent second-stage unavailability scenarios) | same |
+
 `spec index` refreshes and writes this index. `spec search` reads it and returns
 at most five advisory results; the opt-in `--evidence` flag attaches BGE/NLI
 verdicts to those results without changing the ranking. Explicit semantic use

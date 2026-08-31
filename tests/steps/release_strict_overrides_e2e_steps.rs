@@ -57,6 +57,9 @@ fn run_index_installed_build(world: &mut GivnWorld) {
     if let Some(value) = world.retrieval_reranker.as_deref() {
         environments.push(("GIVN_SPEC_RERANKER", value));
     }
+    if let Some(value) = world.retrieval_max_rerank_pairs.as_deref() {
+        environments.push(("GIVN_SPEC_MAX_RERANK_PAIRS", value));
+    }
     if let Some(path) = world.release_model_cache.as_deref() {
         environments.push((
             "GIVN_SPEC_MODEL_CACHE",
@@ -144,4 +147,89 @@ fn does_not_announce_any_ignored(world: &mut GivnWorld) {
         "stderr unexpectedly announced an ignored model request: {}",
         stderr,
     );
+}
+
+#[given("a request to resize the second-stage pair budget")]
+fn request_resize_pair_budget(world: &mut GivnWorld) {
+    world.retrieval_max_rerank_pairs = Some("64".to_string());
+}
+
+#[then("the installed givn announces that the pair-budget request is ignored")]
+fn announces_pair_budget_ignored(world: &mut GivnWorld) {
+    let stderr = super::stderr(world);
+    assert!(
+        stderr.contains(&announcement_for("GIVN_SPEC_MAX_RERANK_PAIRS")),
+        "stderr missing the pair-budget announcement: {}",
+        stderr,
+    );
+}
+
+/// A minimal change the review gate can evaluate: sign-off markers, commit
+/// evidence, one delta scenario, and no-op workflow commands so the only
+/// possible failure is the missing real model evidence.
+#[given("a change whose review the gate must evaluate")]
+fn change_for_review_gate(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project prepared for semantic indexing is required first");
+    std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
+    )
+    .expect("write release gate commands");
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read fixture config");
+    let disabled = config
+        .lines()
+        .map(|line| {
+            if line.starts_with("  ") && line.ends_with(": true") {
+                format!("{}: false", line.trim_end_matches(": true"))
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    std::fs::write(config_path, disabled).expect("disable fixture addons");
+    let change = env.path("givn/changes/running-change");
+    std::fs::create_dir_all(change.join("specs")).expect("create change specs");
+    std::fs::write(
+        change.join("specs/one.feature"),
+        "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Release gate evidence\n    Given a release gate ledger\n    When the release gate audit runs\n    Then the release gate ledger answers\n",
+    )
+    .expect("write change delta");
+    std::fs::write(
+        change.join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+    )
+    .expect("write change review");
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: 0123456789abcdef0123456789abcdef01234567 -- release gate fixture\n",
+    )
+    .expect("write change tasks");
+}
+
+#[when("a consumer runs the change review gate with an installed givn build")]
+fn run_review_gate_installed_build(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project prepared for semantic indexing is required first");
+    let xdg = env.path(".release-xdg-cache");
+    let mut environments: Vec<(&str, &str)> = Vec::new();
+    environments.push(("XDG_CACHE_HOME", xdg.to_str().expect("XDG path is UTF-8")));
+    environments.push(("HF_HOME", xdg.to_str().expect("XDG path is UTF-8")));
+    if world.artifact_server.is_none() {
+        world.artifact_server = Some(common::ArtifactFixtureServer::start());
+    }
+    if let Some(server) = world.artifact_server.as_ref() {
+        environments.push(("HF_ENDPOINT", server.endpoint()));
+    }
+    world.last_output = Some(common::run_release_givn(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &environments,
+    ));
 }

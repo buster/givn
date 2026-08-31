@@ -127,6 +127,7 @@ case "${1:-}" in
         if tag_present '@rulebook'; then
             run_rulebook cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@rulebook and not @e2e'
         fi
+        GIVN_FEATURES="$FEATURES_PATH" cargo test --lib -- release_strict
         ;;
     "")
         run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and not @rulebook'
@@ -157,6 +158,7 @@ case "${1:-}" in
         if tag_present '@rulebook'; then
             run_rulebook cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --tags '@rulebook'
         fi
+        GIVN_FEATURES="$FEATURES_PATH" cargo test --lib -- release_strict
         ;;
     *)
         printf 'usage: %s [--e2e|--non-e2e]\n' "$0" >&2
