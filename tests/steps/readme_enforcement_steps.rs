@@ -185,7 +185,21 @@ fn badge_only_readme(world: &mut GivnWorld) {
 
 #[given("a complete README whose development managed block is stale")]
 fn stale_block_readme(world: &mut GivnWorld) {
-    unimplemented!("write a complete README with a stale development managed block")
+    let text = scaffolded_readme_text()
+        .replace(
+            "<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->",
+            "A small command-line tool that prints greetings.",
+        )
+        .replace("<!-- givn:todo: Exact commands to clone, build, and run the project. -->", "cargo install this-project")
+        .replace("<!-- givn:todo: Required tools, languages, or runtimes. -->", "Rust 1.97.1")
+        .replace("<!-- givn:todo: A brief example or --help output showing how to use the project. -->", "this-project --help")
+        .replace("<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->", "Conventional Commits.")
+        .replace("<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->", "MIT")
+        .replace(
+            "Run the project-owned scripts used by `givn/commands.yaml`:\n\n```sh\n./run-tests.sh\n./run-tests.sh --e2e\n```",
+            "Run the project-owned scripts:\n\n```sh\nstale-command-listing\n```",
+        );
+    write_readme(world, &text);
 }
 
 #[given("the README is missing")]

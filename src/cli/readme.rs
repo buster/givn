@@ -261,6 +261,36 @@ fn development_block_body(
     out
 }
 
+/// Replace the development managed block content in an existing README.
+///
+/// Refresh happens only when both block markers are present: a missing block
+/// is left alone (the README stays managed through its other markers and the
+/// block is not re-inserted), and exactly one marker present is reported by
+/// the checker as damaged. Returns whether the README was rewritten.
+pub(crate) fn refresh_development_block(project_root: &std::path::Path) -> Result<bool> {
+    let path = project_root.join("README.md");
+    if !path.exists() {
+        return Ok(false);
+    }
+    let content = std::fs::read_to_string(&path)?;
+    let Some(begin) = content.find(DEV_BLOCK_BEGIN) else {
+        return Ok(false);
+    };
+    let Some(end_marker) = content.find(DEV_BLOCK_END) else {
+        return Ok(false);
+    };
+    let after_end = end_marker + DEV_BLOCK_END.len();
+    let new_block = render_development_block();
+    let updated = format!(
+        "{}{}{}",
+        &content[..begin],
+        new_block,
+        &content[after_end..]
+    );
+    std::fs::write(&path, updated)?;
+    Ok(true)
+}
+
 /// Detect the project name from package metadata or fall back to the
 /// directory name.
 fn detect_project_name(project_root: &std::path::Path) -> String {

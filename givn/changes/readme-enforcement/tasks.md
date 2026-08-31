@@ -550,17 +550,17 @@ non-@e2e first, @e2e last).
 
 ## Scenario 17: Consumer checks a review with a recorded README impact decision and it passes
 
-- [ ] RED/GREEN — regression guard for the review happy path (RED evidence is
+- [x] RED/GREEN — regression guard for the review happy path (RED evidence is
       scenario 6's paired refusal):
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed); all steps reused
   ```
 
-- [ ] COMMIT — `test(e2e): Consumer checks a review with a recorded README impact decision and it passes`
+- [x] COMMIT — `test(e2e): Consumer checks a review with a recorded README impact decision and it passes`
 
   ```
-  commit hash:
+  commit hash: 92ba8af
   ```
 
 ## Scenario 18: Consumer archives a change and the development managed block refreshes
