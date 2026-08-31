@@ -5909,6 +5909,9 @@ fn synthetic_bge_pairs(count: usize) -> (Vec<SimilarityPair>, SimilarityTexts) {
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 fn preflight_bge_artifacts(_root: &Path) -> Result<std::path::PathBuf> {
+    // Model-location request: honoured in every build kind. The artifact
+    // set is structure-validated; its identity is not verified — the
+    // accepted exception documented in arc42 ch. 08 § 8.5a.
     let directory = spec_env("GIVN_SPEC_BGE_MODEL_DIR")
         .map(std::path::PathBuf::from)
         .context(
@@ -8524,6 +8527,8 @@ fn nli_backend_selection(
 
 #[cfg(feature = "nli-evidence")]
 fn preflight_nli_artifacts(root: &Path) -> Result<NliArtifacts> {
+    // Model-location request: honoured in every build kind — accepted
+    // exception, see arc42 ch. 08 § 8.5a (identity not verified).
     let directory = spec_env("GIVN_SPEC_NLI_MODEL_DIR")
         .map(std::path::PathBuf::from)
         .unwrap_or(model_cache_dir(root, "nli")?);
@@ -10064,6 +10069,91 @@ fn nli_candidate_line(
         )
     } else {
         "NLI: NLI_UNSCORED".to_string()
+    }
+}
+
+#[cfg(all(test, feature = "spec-retrieval"))]
+mod release_strict_channel_completeness {
+    use super::REQUEST_CHANNELS;
+    use std::collections::BTreeSet;
+
+    /// Channels the semantic review reads outside the fixture-request policy:
+    /// the compute-thread budget (no verdict influence) and the model-location
+    /// requests that stay honoured for air-gapped `local` mode — the
+    /// documented accepted exception. An unusable artifact set fails the run;
+    /// it never fakes a verdict.
+    const EXEMPT_CHANNELS: &[&str] = &[
+        "GIVN_SPEC_THREADS",
+        "GIVN_SPEC_MODEL_CACHE",
+        "GIVN_SPEC_E5_TOKENIZER",
+        "GIVN_SPEC_BGE_MODEL_DIR",
+        "GIVN_SPEC_BGE_CACHE",
+        "GIVN_SPEC_NLI_MODEL_DIR",
+        "GIVN_SPEC_NLI_CACHE",
+        // Test-only probe of the gated read helpers; never a real channel.
+        "GIVN_SPEC_RELEASE_STRICT_UNSET_PROBE",
+    ];
+
+    /// Extract every `GIVN_SPEC_*` string literal from one source file.
+    fn scan_source(source: &str, channels: &mut BTreeSet<String>) {
+        let mut rest = source;
+        while let Some(position) = rest.find("GIVN_SPEC_") {
+            let tail = &rest[position..];
+            let end = tail
+                .find(|c: char| !(c.is_ascii_uppercase() || c.is_ascii_digit() || c == '_'))
+                .unwrap_or(tail.len());
+            // A bare prefix (e.g. inside prose like "the GIVN_SPEC_* channels")
+            // names no channel.
+            if end > "GIVN_SPEC_".len() {
+                channels.insert(tail[..end].to_string());
+            }
+            rest = &tail[end..];
+        }
+    }
+
+    /// Walk every Rust source file under `src/` so the net covers channels
+    /// read outside this module too — the registry must be complete over the
+    /// whole binary, not over one file.
+    fn source_channels() -> BTreeSet<String> {
+        let mut channels = BTreeSet::new();
+        let src = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("src");
+        visit_sources(&src, &mut channels);
+        channels
+    }
+
+    fn visit_sources(dir: &std::path::Path, channels: &mut BTreeSet<String>) {
+        for entry in std::fs::read_dir(dir).expect("walk src directory") {
+            let path = entry.expect("src directory entry").path();
+            if path.is_dir() {
+                visit_sources(&path, channels);
+            } else if path.extension().is_some_and(|ext| ext == "rs") {
+                let source = std::fs::read_to_string(&path)
+                    .unwrap_or_else(|error| panic!("read {}: {error}", path.display()));
+                scan_source(&source, channels);
+            }
+        }
+    }
+
+    /// The drift net: every environment channel the semantic review reads is
+    /// either policy-governed (`REQUEST_CHANNELS`) or explicitly exempt. A
+    /// new channel without a policy entry fails this test on both profiles.
+    #[test]
+    fn every_read_channel_is_registered_or_exempt() {
+        let channels = source_channels();
+        let registered: BTreeSet<&str> = REQUEST_CHANNELS.iter().copied().collect();
+        let exempt: BTreeSet<&str> = EXEMPT_CHANNELS.iter().copied().collect();
+        for channel in &channels {
+            assert!(
+                registered.contains(channel.as_str()) || exempt.contains(channel.as_str()),
+                "channel {channel} is read in the source but is neither in REQUEST_CHANNELS nor EXEMPT_CHANNELS — an installed build could read it ungated"
+            );
+        }
+        for name in &registered {
+            assert!(
+                channels.contains(*name),
+                "channel {name} is registered in REQUEST_CHANNELS but no longer read in the source — drop it from the registry"
+            );
+        }
     }
 }
 

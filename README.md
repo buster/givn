@@ -97,6 +97,20 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 - [`CHANGELOG.md`](CHANGELOG.md) · [`docs/migrations/README.md`](docs/migrations/README.md) —
   release history and upgrade guides.
 
+## Enforcement note for agents
+
+A givn build that ships with the semantic capability always evaluates the
+semantic gates with the real models. Requests for simulated output, disabled
+evidence stages, resized model work, or injected scores are refused and
+announced by name in installed builds; they are honored only in development
+builds for the offline test fixtures. Environment manipulation cannot
+substitute simulated output, disable an evidence stage, or silence a refusal.
+Missing primary model artifacts fail the gate explicitly — never a silent
+pass; missing second-stage evidence leaves the embedding-admission verdict
+standing. See
+[`docs/arc42/08-crosscutting-concepts.md`](docs/arc42/08-crosscutting-concepts.md)
+(§ 8.5a) for the full policy.
+
 ## License
 
 Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at your option.
