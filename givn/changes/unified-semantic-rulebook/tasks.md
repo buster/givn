@@ -134,14 +134,13 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       `semantic_review_without_index_notice` + `review_without_index_notice`);
       advisory evidence stays available via `givn spec review`.
       Files: src/cli/check.rs, feature file spec-retrieval delta.
-      Commit with S19.
 - [x] S18 `Consumer archive applies the rulebook to the current permanent
       tree` (@e2e): archive gate = rulebook (Archive surface), stdout
       accounting, no worklist write, carried classifications.
       RED: archive failed without cache accounting. GREEN: exit 0 with
       `pair cache:` line and retained report. Files: src/spec/retrieval.rs
       (semantic_review_archive_gate), src/cli/archive.rs,
-      tests/steps/semantic_rulebook_e2e_steps.rs. Commit with S19.
+      tests/steps/semantic_rulebook_e2e_steps.rs.
 
 ## Standing-suite reconciliation (S19)
 
@@ -154,7 +153,24 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       and green there); `./run-tests.sh --e2e` → exit 0 (94 scenarios);
       delta suite → 17/17 green.
 
+
+## Commit evidence
+
+One atomic commit per scenario batch, hashes unique:
+
+- [x] COMMIT: 55fbbc9 -- S1 (semantic report, single-candidate fixture)
+- [x] COMMIT: 54e50e9 -- S2 (scopes, boundary binding parameterized)
+- [x] COMMIT: 07472c9 -- S3 (E5 boundary 0.9000, constants unified)
+- [x] COMMIT: 8f2f6ad -- S4+S5 (hybrid selection + pair cap e2e)
+- [x] COMMIT: 2d67b66 -- S6 (deterministic tie order)
+- [x] COMMIT: fb41ff9 -- S7+S8+S9+S10+S11 (pair-score cache + reuse/invalidation/zero scenarios)
+- [x] COMMIT: 2ab3918 -- S12+S13 (budget truncation + advisory two-stage)
+- [x] COMMIT: 6154f7d -- S14+S15+S16 (gate absorption, remediation bindings, delta-to-delta e2e)
+- [x] COMMIT: 0c9f106 -- S17+S18 (one rulebook run in check review, archive gate rulebook)
+
 ## Review
 
-- [ ] `givn check review --change unified-semantic-rulebook` passes
+- [x] `givn check review --change unified-semantic-rulebook` passes
       (real models, no stubs); review.md written; REVIEW: PASS.
+      Evidence: pair cache: 0 reused, 20 computed; report Status PASS,
+      0 unresolved candidates; overlap dispositions 2/2 (KEEP-AS-BOUNDARY).
