@@ -7,7 +7,7 @@ Feature: semantic-review
 
   @givn.modified
   Scenario: Change review generates a complete report for a semantic candidate
-    Given  a project prepared for semantic review with a single admitted candidate
+    Given  a rulebook review project with a single admitted candidate
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report exists
@@ -18,7 +18,7 @@ Feature: semantic-review
 
   @givn.modified
   Scenario: The report distinguishes permanent and current-change candidate scopes
-    Given  a project prepared for semantic review with two similar active deltas
+    Given  a rulebook review project with two similar active deltas
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains scope "delta-to-permanent"

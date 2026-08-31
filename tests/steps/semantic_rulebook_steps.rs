@@ -39,6 +39,11 @@ pub(crate) fn rulebook_project(
     admitted: &[(usize, usize, &str)],
 ) {
     let env = common::make_init_root();
+    std::fs::write(
+        env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    )
+    .expect("write rulebook commands");
     let specs = env.path("givn/specs");
     if specs.exists() {
         std::fs::remove_dir_all(&specs).expect("remove generated specs");
@@ -77,9 +82,27 @@ pub(crate) fn rulebook_project(
         .iter()
         .map(|(d, p, score)| format!("{}|{}={}", delta_titles[*d], permanent_titles[*p], score))
         .collect();
+    // Deterministic second-stage evidence: every admitted pair is
+    // BGE_RECOMMENDED (score 5 >= 3.0) and NLI_RECOMMENDED (entailment logit
+    // 5 -> probability ~1 >= 0.5) in both directions, so the candidates stay
+    // blocking regardless of the stub backends' lexical fallbacks.
+    const DELTA_PREFIX: &str = "givn/changes/running-change/specs/delta.feature|";
+    const CORPUS_PREFIX: &str = "givn/specs/corpus.feature|";
+    let mut bge_scores: Vec<String> = Vec::new();
+    let mut nli_scores: Vec<String> = Vec::new();
+    for (d, p, _) in admitted {
+        let left = format!("{DELTA_PREFIX}{}", delta_titles[*d]);
+        let right = format!("{CORPUS_PREFIX}{}", permanent_titles[*p]);
+        bge_scores.push(format!("{left}->{right}=5.0000"));
+        bge_scores.push(format!("{right}->{left}=5.0000"));
+        nli_scores.push(format!("{left}->{right}=5,0,0"));
+        nli_scores.push(format!("{right}->{left}=5,0,0"));
+    }
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_stub_scores = Some(scores.join(";"));
+    world.retrieval_bge_scores = Some(bge_scores.join(";"));
+    world.retrieval_nli_scores = Some(nli_scores.join(";"));
 }
 
 /// The two-delta fixture from the semantic-review capability, reconfigured
@@ -97,6 +120,14 @@ pub(crate) fn single_admitted_candidate(world: &mut GivnWorld) {
         &["Corpus supplies one"],
         &[(0, 0, "0.9600")],
     );
+    reconfigure_combined_stubs(world);
+}
+
+#[given("a rulebook review project with two similar active deltas")]
+pub(crate) fn two_similar_active_deltas_rulebook(world: &mut GivnWorld) {
+    // Reuse the proven fixture from the semantic-review capability; the
+    // rulebook scenarios only add combined second-stage stubs.
+    super::semantic_review_steps::two_similar_active_deltas(world);
     reconfigure_combined_stubs(world);
 }
 
@@ -158,6 +189,12 @@ pub(crate) fn two_deltas_unrelated_corpus(world: &mut GivnWorld) {
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_stub_scores =
         Some("Unknown provider is rejected|Unknown provider selection is rejected=0.9600".to_string());
+    world.retrieval_bge_scores = Some(
+        "givn/changes/running-change/specs/delta.feature|Unknown provider is rejected->givn/changes/running-change/specs/delta.feature|Unknown provider selection is rejected=5.0000;givn/changes/running-change/specs/delta.feature|Unknown provider selection is rejected->givn/changes/running-change/specs/delta.feature|Unknown provider is rejected=5.0000".to_string(),
+    );
+    world.retrieval_nli_scores = Some(
+        "givn/changes/running-change/specs/delta.feature|Unknown provider is rejected->givn/changes/running-change/specs/delta.feature|Unknown provider selection is rejected=5,0,0;givn/changes/running-change/specs/delta.feature|Unknown provider selection is rejected->givn/changes/running-change/specs/delta.feature|Unknown provider is rejected=5,0,0".to_string(),
+    );
     reconfigure_combined_stubs(world);
 }
 
