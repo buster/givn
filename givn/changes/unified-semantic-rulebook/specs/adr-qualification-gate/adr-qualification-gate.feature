@@ -7,7 +7,7 @@ Feature: adr-qualification-gate
 
   @givn.removed
   Scenario: The migration removes non-ADRs and preserves independent architecture history
-    Given  the register count assertion moves to its successor below
+    Given  a project root with givn/ initialised
 
   @givn.added
   Scenario: The migration preserves independent architecture history across three proposed decisions

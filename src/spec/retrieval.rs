@@ -47,6 +47,11 @@ const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
 const E5_ADMISSION_THRESHOLD: f32 = 0.9;
 
+/// The permanent↔permanent duplicate audit keeps its own binary-fixed
+/// 0.95 boundary (out of scope for the unified change-scoped rulebook).
+#[cfg(feature = "spec-retrieval")]
+const SEMANTIC_AUDIT_THRESHOLD: f32 = 0.95;
+
 /// Unified rulebook selection: at most this many highest-scored neighbours
 /// per delta scenario survive the per-scenario cut (ADR-066).
 const NEIGHBOURS_PER_SCENARIO: usize = 5;
@@ -55,13 +60,16 @@ const NEIGHBOURS_PER_SCENARIO: usize = 5;
 /// (ADR-066). Pairs beyond the cap are unselected, not candidates.
 const PAIR_CAP: usize = 20;
 
+#[cfg(feature = "spec-retrieval")]
 /// Schema version of the persisted pair-score cache.
 const PAIR_CACHE_VERSION: u32 = 1;
 
+#[cfg(feature = "spec-retrieval")]
 /// Stub stages record this as their cache model id so stub and real-model
 /// entries can never alias.
 const PAIR_CACHE_STUB_MODEL: &str = "stub";
 
+#[cfg(feature = "spec-retrieval")]
 /// Per-run pair-judgement accounting (one pair is reused only when every
 /// participating stage hit the cache for it).
 #[derive(Debug, Default, Clone, Copy)]
@@ -70,6 +78,7 @@ struct PairCacheAccounting {
     computed: usize,
 }
 
+#[cfg(feature = "spec-retrieval")]
 impl PairCacheAccounting {
     fn record(&mut self, reused: bool) {
         if reused {
@@ -80,6 +89,7 @@ impl PairCacheAccounting {
     }
 }
 
+#[cfg(feature = "spec-retrieval")]
 /// Persisted per-pair model evidence keyed by stage, model, and both
 /// endpoints' content/evidence hashes (ADR-066). Lives next to the spec
 /// index; hash-identical pairs reuse recorded judgements.
@@ -89,6 +99,7 @@ struct PairScoreCache {
     entries: BTreeMap<String, serde_json::Value>,
 }
 
+#[cfg(feature = "spec-retrieval")]
 impl PairScoreCache {
     fn load(root: &Path) -> Self {
         let path = pair_cache_path(root);
@@ -131,10 +142,12 @@ impl PairScoreCache {
     }
 }
 
+#[cfg(feature = "spec-retrieval")]
 fn pair_cache_path(root: &Path) -> std::path::PathBuf {
     root.join("givn/.spec-pair-cache.json")
 }
 
+#[cfg(feature = "spec-retrieval")]
 /// Combine the per-stage pair hit markers into per-pair accounting: a pair
 /// is reused only when every participating stage hit the cache for it.
 fn combine_pair_cache_accounting(
@@ -165,6 +178,7 @@ fn combine_pair_cache_accounting(
     accounting
 }
 
+#[cfg(feature = "spec-retrieval")]
 /// Cache key over stage, model identity, and both endpoints' content and
 /// evidence hashes. Any endpoint change misses and re-judges.
 fn pair_cache_key(
@@ -3239,6 +3253,19 @@ fn render_duplicate_candidate(rank: usize, candidate: &DuplicateCandidate) -> St
 
 #[cfg(feature = "spec-retrieval")]
 fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
+    semantic_review_core(root, change_id, true)
+}
+
+/// The archive similarity gate: the same unified rulebook evaluated against
+/// the current permanent tree, carrying earlier classifications, with
+/// stdout-only rendering — the archive never writes the worklist.
+#[cfg(feature = "spec-retrieval")]
+pub fn semantic_review_archive_gate(root: &Path, change_id: &str) -> Result<()> {
+    semantic_review_core(root, change_id, false)
+}
+
+#[cfg(feature = "spec-retrieval")]
+fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Result<()> {
     report_ignored_release_overrides();
     let change_dir = validated_review_change_dir(root, change_id)?;
     let delta_root = delta_specs_path(&change_dir, change_id)?;
@@ -3256,7 +3283,10 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let nli_run = apply_semantic_nli(root, &delta, &mut candidates)?;
     let pair_cache_accounting = combine_pair_cache_accounting(
         bge_run.as_ref().map(|run| &run.pair_cache_hits),
+        #[cfg(feature = "nli-evidence")]
         nli_run.as_ref().map(|run| &run.pair_cache_hits),
+        #[cfg(not(feature = "nli-evidence"))]
+        None,
     );
     println!(
         "pair cache: {} reused, {} computed",
@@ -3276,10 +3306,14 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
         nli_run.as_ref(),
         pair_cache_accounting,
     );
-    write_semantic_report(&report_path, &report)?;
-    match std::fs::canonicalize(&report_path) {
-        Ok(absolute) => println!("semantic review report saved: {}", absolute.display()),
-        Err(_) => println!("semantic review report saved: {}", report_path.display()),
+    if write_report {
+        write_semantic_report(&report_path, &report)?;
+    }
+    if write_report {
+        match std::fs::canonicalize(&report_path) {
+            Ok(absolute) => println!("semantic review report saved: {}", absolute.display()),
+            Err(_) => println!("semantic review report saved: {}", report_path.display()),
+        }
     }
     let verified_remediations = match remediation {
         Ok(count) => count,
@@ -3437,6 +3471,7 @@ fn semantic_candidates(
 /// `PAIR_CAP` pairs by score with deterministic endpoint tie order. Pairs
 /// dropped here are unselected — they are not candidates and carry no
 /// blocking state.
+#[cfg(feature = "spec-retrieval")]
 fn apply_hybrid_selection(candidates: Vec<SemanticCandidate>) -> Vec<SemanticCandidate> {
     let mut by_scenario: BTreeMap<(String, String, String), Vec<&SemanticCandidate>> =
         BTreeMap::new();
@@ -7493,7 +7528,7 @@ fn duplicate_candidates(
                 })
                 .copied()
                 .unwrap_or(raw_score);
-            if score < E5_ADMISSION_THRESHOLD {
+            if score < SEMANTIC_AUDIT_THRESHOLD {
                 continue;
             }
             candidates.push(DuplicateCandidate {
@@ -9062,7 +9097,7 @@ fn endpoint(file: &str, title: &str) -> SimilarityEndpoint {
     }
 }
 
-#[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
+#[cfg(feature = "spec-retrieval")]
 fn semantic_candidate_order(
     left: &SemanticCandidate,
     right: &SemanticCandidate,

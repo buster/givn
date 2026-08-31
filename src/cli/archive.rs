@@ -285,7 +285,7 @@ fn run_similarity_gate(project_root: &std::path::Path, change_id: &str) -> Resul
     if crate::state::is_skipped("specs", &change_dir) {
         return Ok(());
     }
-    crate::spec::retrieval::review_without_download(project_root, change_id)
+    crate::spec::retrieval::semantic_review_archive_gate(project_root, change_id)
 }
 
 #[cfg(not(feature = "spec-retrieval"))]

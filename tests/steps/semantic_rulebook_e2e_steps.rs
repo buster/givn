@@ -77,6 +77,19 @@ fn pair_cache_accounting(world: &mut GivnWorld, reused: String, computed: String
     );
 }
 
+#[then("the archived rulebook change directory exists")]
+fn archived_rulebook_change_directory(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    assert!(
+        env.path("givn/archive/running-change").is_dir(),
+        "the change must have been moved to givn/archive/running-change/"
+    );
+    assert!(
+        !env.path("givn/changes/running-change").exists(),
+        "the active change directory must be gone after archiving"
+    );
+}
+
 #[then("the archive gate output reports the pair cache accounting")]
 fn archive_gate_reports_cache_accounting(world: &mut GivnWorld) {
     let stdout = last_stdout(world);
