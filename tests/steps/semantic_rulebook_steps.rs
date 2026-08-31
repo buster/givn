@@ -315,3 +315,14 @@ pub(crate) fn snapshot_semantic_report(world: &mut GivnWorld) {
             .expect("read semantic review report");
     world.semantic_report_snapshot = Some(report);
 }
+
+#[when("the rulebook user reruns change review without edits")]
+pub(crate) fn rulebook_rerun(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let environments = super::world_envs(world);
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &environments,
+    ));
+}
