@@ -28,7 +28,7 @@ Feature: README enforcement
     And stdout mentions "License"
     And stdout mentions "Exact commands to clone"
 
-  @givn.added @wip
+  @givn.added
   Scenario: README check reports a legacy scaffold README as needing migration
     Given a project root with givn/ initialised
     And a README with the previous scaffold style
