@@ -77,31 +77,31 @@ non-@e2e first, @e2e last).
 
 ## Scenario 2: README check reports a legacy scaffold README as needing migration
 
-- [ ] RED — `cargo test --test features_runner -- --name "README check reports a legacy scaffold README as needing migration"`
+- [x] RED — `cargo test --test features_runner -- --name "README check reports a legacy scaffold README as needing migration"`
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed), fixture step unimplemented
   ```
 
-- [ ] GREEN — legacy matcher list in the checker.
+- [x] GREEN — legacy matcher list in the checker.
 
   Files:
-  - (paste production files)
+  - tests/steps/readme_enforcement_steps.rs (verbatim previous-scaffold fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed); stdout mentions "migration"
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): README check reports a legacy scaffold README as needing migration`
+- [x] COMMIT — `feat(readme-enforcement): README check reports a legacy scaffold README as needing migration`
 
   ```
-  commit hash:
+  commit hash: 5f670f9
   ```
 
 ## Scenario 3: README check reports a damaged managed block

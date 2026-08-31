@@ -36,7 +36,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And stdout mentions "migration"
 
-  @givn.added @wip
+  @givn.added
   Scenario: README check reports a damaged managed block
     Given a project root with givn/ initialised
     And a README with a broken development managed block

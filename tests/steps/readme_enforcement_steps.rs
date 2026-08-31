@@ -126,7 +126,19 @@ fn legacy_readme(world: &mut GivnWorld) {
 
 #[given("a README with a broken development managed block")]
 fn broken_block_readme(world: &mut GivnWorld) {
-    unimplemented!("write a README whose development managed block has one marker only")
+    // Complete prose, but the development managed block lost its end marker.
+    let text = scaffolded_readme_text()
+        .replace(
+            "<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->",
+            "A small command-line tool that prints greetings.",
+        )
+        .replace("<!-- givn:todo: Exact commands to clone, build, and run the project. -->", "cargo install this-project")
+        .replace("<!-- givn:todo: Required tools, languages, or runtimes. -->", "Rust 1.97.1")
+        .replace("<!-- givn:todo: A brief example or --help output showing how to use the project. -->", "this-project --help")
+        .replace("<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->", "Conventional Commits.")
+        .replace("<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->", "MIT")
+        .replace("<!-- givn:end:development -->\n", "");
+    write_readme(world, &text);
 }
 
 #[given("a complete README with the development managed block")]
