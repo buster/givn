@@ -427,31 +427,34 @@ non-@e2e first, @e2e last).
 
 ## Scenario 13: Archive does not re-insert a deleted development managed block while the README stays managed
 
-- [ ] RED — `cargo test --test features_runner -- --name "Archive does not re-insert a deleted development managed block while the README stays managed"`
+- [x] RED — `cargo test --test features_runner -- --name "Archive does not re-insert a deleted development managed block while the README stays managed"`
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed): fixture steps unimplemented
   ```
 
-- [ ] GREEN — refresh-if-present semantics in the archive refresh path.
+- [x] GREEN — refresh-if-present semantics pinned: the archive's refresh does
+      not exist yet, so the archive leaves the README byte-identical (the
+      no-reinsert behaviour is trivially true pre-implementation and becomes
+      load-bearing once refresh lands in scenario 18).
 
   Files:
-  - (paste production files)
+  - tests/steps/readme_enforcement_steps.rs (badge-only fixture, no-dev-block Then)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Archive does not re-insert a deleted development managed block while the README stays managed`
+- [x] COMMIT — `feat(readme-enforcement): Archive does not re-insert a deleted development managed block while the README stays managed`
 
   ```
-  commit hash:
+  commit hash: d4b0fb7
   ```
 
 ## Scenario 14: Instructions stay silent about the README when it is complete
