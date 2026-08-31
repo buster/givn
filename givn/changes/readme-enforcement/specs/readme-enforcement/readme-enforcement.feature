@@ -52,7 +52,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And stdout mentions "README.md is missing"
 
-  @givn.added @wip
+  @givn.added
   Scenario: README check reports a hand-written README without givn markers as unmanaged
     Given a project root with givn/ initialised
     And a hand-written README without any givn markers
