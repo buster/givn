@@ -24,7 +24,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the pair cache accounting reports "0" reused and "1" computed
-    When  the user runs `givn check review --change running-change` again without edits
+    When  the rulebook user reruns change review without edits
     Then  the command exits non-zero
     And  the pair cache accounting reports "1" reused and "0" computed
     And  the semantic review report contains a candidate
@@ -62,7 +62,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     When  the user runs `givn check review --change running-change`
     Then  the pair cache accounting reports "0" reused and "1" computed
     When  the active semantic candidate is changed
-    And  the user runs `givn check review --change running-change` again without edits
+    And  the rulebook user reruns change review without edits
     Then  the pair cache accounting reports "0" reused and "1" computed
 
   @givn.added @rulebook @wip
@@ -71,7 +71,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     When  the user runs `givn check review --change running-change`
     Then  the pair cache accounting reports "0" reused and "1" computed
     When  the permanent semantic endpoint is changed
-    And  the user runs `givn check review --change running-change` again without edits
+    And  the rulebook user reruns change review without edits
     Then  the pair cache accounting reports "0" reused and "1" computed
 
   @givn.added @rulebook
@@ -91,12 +91,12 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the semantic review report records the outside candidates as `BGE_UNSCORED`
     And  those candidates remain blocking E5 candidates
 
-  @givn.added @rulebook @wip
+  @givn.added @rulebook
   Scenario: The pair cap fills deterministically when scores tie
     Given  a rulebook review project with more candidate pairs than the pair cap
     When  the user runs `givn check review --change running-change`
     And  the semantic review report is snapshotted
-    When  the user runs `givn check review --change running-change` again without edits
+    When  the rulebook user reruns change review without edits
     Then  the semantic review report candidate count is 20
     And  both reports contain the same candidate ids in the same order
 

@@ -63,11 +63,19 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
 
 ## Rulebook core (S4–S7: selection + cache)
 
-- [ ] S4 `The neighbour count cuts per-scenario pairs before the pair cap`:
+- [x] S4 `The neighbour count cuts per-scenario pairs before the pair cap`:
       hybrid selection (5 neighbours/scenario, cap 20, deterministic tie
       order), unselected pairs are not candidates.
-- [ ] S5 `Consumer review caps the judged pairs at the pair cap` (@e2e):
+      RED (setup proof): count 7 vs expected 5, exit 101. GREEN: exit 0.
+      Files: src/spec/retrieval.rs (NEIGHBOURS_PER_SCENARIO, PAIR_CAP,
+      apply_hybrid_selection), tests/steps/semantic_rulebook_steps.rs
+      (disjoint-corpus fixtures with structural shape-match dispositions).
+      Commit in the S4/S5 pair.
+- [x] S5 `Consumer review caps the judged pairs at the pair cap` (@e2e):
       25 admitted stub pairs → exactly 20 judged, no `*_UNSCORED`.
+      RED: overlap dispositions missing (fixture families) + report reads.
+      GREEN: exit 0. Files: tests/steps/semantic_rulebook_steps.rs,
+      tests/steps/semantic_rulebook_e2e_steps.rs, feature file.
 - [ ] S6 `The pair cap fills deterministically when scores tie`: two runs,
       identical candidate ids and order.
 - [ ] S7 Pair-score cache: `givn/.spec-pair-cache.json`, key
