@@ -1571,10 +1571,7 @@ fn report_records_embedding(world: &mut GivnWorld) {
     let report =
         std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
             .expect("read semantic review report");
-    assert!(
-        report.contains("- embedding_score:"),
-        "report:\n{report}"
-    );
+    assert!(report.contains("- embedding_score:"), "report:\n{report}");
     assert!(
         report.contains("- bge_admission: BGE_UNSCORED"),
         "BGE is disabled in this run; the pair must be unscored:\n{report}"

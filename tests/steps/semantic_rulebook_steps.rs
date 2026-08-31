@@ -153,14 +153,12 @@ pub(crate) fn more_pairs_than_cap(world: &mut GivnWorld) {
     let permanent_titles: Vec<String> = (0..5).map(|i| format!("Corpus supplies {i}")).collect();
     let delta_refs: Vec<&str> = delta_titles.iter().map(String::as_str).collect();
     let permanent_refs: Vec<&str> = permanent_titles.iter().map(String::as_str).collect();
-    let mut admitted: Vec<(usize, usize, &str)> = (0..5)
+    let admitted: Vec<(usize, usize, &str)> = (0..5)
         .flat_map(|d| (0..5).map(move |p| (d, p, "0.9600")))
         .collect();
     let extra_dispositions: Vec<(String, String)> = (0..5)
         .flat_map(|a| {
-            (a + 1..5).map(move |b| {
-                (format!("Delta needed {a}"), format!("Delta needed {b}"))
-            })
+            (a + 1..5).map(move |b| (format!("Delta needed {a}"), format!("Delta needed {b}")))
         })
         .collect();
     rulebook_project(world, &delta_refs, &permanent_refs, &admitted);
@@ -176,7 +174,9 @@ pub(crate) fn more_pairs_than_cap(world: &mut GivnWorld) {
     reconfigure_combined_stubs(world);
 }
 
-#[given("a rulebook review project with one active delta and more neighbours than the neighbour count")]
+#[given(
+    "a rulebook review project with one active delta and more neighbours than the neighbour count"
+)]
 pub(crate) fn one_delta_more_neighbours(world: &mut GivnWorld) {
     let permanent_titles: Vec<String> = (0..7)
         .map(|i| format!("Corpus supplies neighbour {i}"))
@@ -187,7 +187,9 @@ pub(crate) fn one_delta_more_neighbours(world: &mut GivnWorld) {
     reconfigure_combined_stubs(world);
 }
 
-#[given("a rulebook review project with two similar active deltas and an unrelated permanent corpus")]
+#[given(
+    "a rulebook review project with two similar active deltas and an unrelated permanent corpus"
+)]
 pub(crate) fn two_deltas_unrelated_corpus(world: &mut GivnWorld) {
     // Two near-identical delta scenarios over a lexically unrelated corpus:
     // only the delta-to-delta pair admits (override), matching the stub
@@ -222,8 +224,9 @@ pub(crate) fn two_deltas_unrelated_corpus(world: &mut GivnWorld) {
     .expect("write overlap dispositions");
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
-    world.retrieval_stub_scores =
-        Some("Unknown provider is rejected|Unknown provider selection is rejected=0.9600".to_string());
+    world.retrieval_stub_scores = Some(
+        "Unknown provider is rejected|Unknown provider selection is rejected=0.9600".to_string(),
+    );
     world.retrieval_bge_scores = Some(
         "givn/changes/running-change/specs/delta.feature|Unknown provider is rejected->givn/changes/running-change/specs/delta.feature|Unknown provider selection is rejected=5.0000;givn/changes/running-change/specs/delta.feature|Unknown provider selection is rejected->givn/changes/running-change/specs/delta.feature|Unknown provider is rejected=5.0000".to_string(),
     );
@@ -238,16 +241,19 @@ pub(crate) fn emergency_budget(world: &mut GivnWorld) {
     world.retrieval_max_rerank_pairs = Some("10".to_string());
 }
 
-#[then(regex = r#"^the semantic review report records exactly ([0-9]+) unique pairs and ([0-9]+) directional calls per stage$"#)]
+#[then(
+    regex = r#"^the semantic review report records exactly ([0-9]+) unique pairs and ([0-9]+) directional calls per stage$"#
+)]
 fn semantic_report_records_pair_counts(world: &mut GivnWorld, pairs: usize, calls: usize) {
     let env = world.env.as_ref().expect("project root is required");
-    let report = std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .unwrap_or_else(|error| {
-            panic!(
-                "read semantic review report: {error}; stderr={}",
-                super::stderr(world)
-            )
-        });
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "read semantic review report: {error}; stderr={}",
+                    super::stderr(world)
+                )
+            });
     for stage in ["BGE", "NLI"] {
         let pair_line = format!("{stage} unique pair count: {pairs}");
         let call_line = format!("{stage} directional call count: {calls}");
@@ -265,13 +271,14 @@ fn semantic_report_records_pair_counts(world: &mut GivnWorld, pairs: usize, call
 #[then(regex = r#"^the semantic review report candidate count is ([1-9][0-9]*)$"#)]
 fn semantic_report_candidate_count(world: &mut GivnWorld, count: usize) {
     let env = world.env.as_ref().expect("project root is required");
-    let report = std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .unwrap_or_else(|error| {
-            panic!(
-                "read semantic review report: {error}; stderr={}",
-                super::stderr(world)
-            )
-        });
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "read semantic review report: {error}; stderr={}",
+                    super::stderr(world)
+                )
+            });
     assert!(
         report.contains(&format!("Candidate count: {count}")),
         "expected candidate count {count} in report:\n{report}"
@@ -281,13 +288,14 @@ fn semantic_report_candidate_count(world: &mut GivnWorld, count: usize) {
 #[then("the semantic review report records no candidate as `BGE_UNSCORED`")]
 fn semantic_report_no_bge_unscored(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root is required");
-    let report = std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .unwrap_or_else(|error| {
-            panic!(
-                "read semantic review report: {error}; stderr={}",
-                super::stderr(world)
-            )
-        });
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "read semantic review report: {error}; stderr={}",
+                    super::stderr(world)
+                )
+            });
     assert!(
         !report.contains("BGE_UNSCORED"),
         "no BGE_UNSCORED expected in report:\n{report}"
@@ -297,13 +305,14 @@ fn semantic_report_no_bge_unscored(world: &mut GivnWorld) {
 #[then("the semantic review report records no candidate as `NLI_UNSCORED`")]
 fn semantic_report_no_nli_unscored(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root is required");
-    let report = std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .unwrap_or_else(|error| {
-            panic!(
-                "read semantic review report: {error}; stderr={}",
-                super::stderr(world)
-            )
-        });
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "read semantic review report: {error}; stderr={}",
+                    super::stderr(world)
+                )
+            });
     assert!(
         !report.contains("NLI_UNSCORED"),
         "no NLI_UNSCORED expected in report:\n{report}"
@@ -313,13 +322,14 @@ fn semantic_report_no_nli_unscored(world: &mut GivnWorld) {
 #[then("the unscored candidates remain blocking with their scored neighbours")]
 fn unscored_candidates_remain_blocking(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root is required");
-    let report = std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .unwrap_or_else(|error| {
-            panic!(
-                "read semantic review report: {error}; stderr={}",
-                super::stderr(world)
-            )
-        });
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .unwrap_or_else(|error| {
+                panic!(
+                    "read semantic review report: {error}; stderr={}",
+                    super::stderr(world)
+                )
+            });
     // The 20 selected pairs all stay blocking: 10 scored within the budget,
     // 10 recorded as BGE_UNSCORED and NLI_UNSCORED beyond it.
     assert!(report.contains("Status: BLOCKED"), "report:\n{report}");
@@ -333,9 +343,8 @@ fn unscored_candidates_remain_blocking(world: &mut GivnWorld) {
 #[when("the semantic review report is snapshotted")]
 pub(crate) fn snapshot_semantic_report(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root is required");
-    let report =
-        std::fs::read(env.path("givn/changes/running-change/semantic-review.md"))
-            .expect("read semantic review report");
+    let report = std::fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic review report");
     world.semantic_report_snapshot = Some(report);
 }
 

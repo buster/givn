@@ -19,7 +19,6 @@ pub enum ReadmeFindingKind {
 pub struct ReadmeFinding {
     pub kind: ReadmeFindingKind,
     /// Nearest preceding `## ` heading, or the document root.
-    pub section: String,
     pub message: String,
 }
 
@@ -44,7 +43,6 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
     if !path.exists() {
         return vec![ReadmeFinding {
             kind: ReadmeFindingKind::MissingReadme,
-            section: String::new(),
             message: "README.md is missing — run `givn init` or `givn addons enable readme` to scaffold it."
                 .to_string(),
         }];
@@ -52,7 +50,6 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
     let Ok(content) = std::fs::read_to_string(&path) else {
         return vec![ReadmeFinding {
             kind: ReadmeFindingKind::MissingReadme,
-            section: String::new(),
             message: "README.md is unreadable — restore or scaffold it.".to_string(),
         }];
     };
@@ -71,9 +68,9 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
     if !has_begin_marker && !has_todo_marker && legacy_hit_count == 0 {
         findings.push(ReadmeFinding {
             kind: ReadmeFindingKind::Unmanaged,
-            section: String::new(),
-            message: "README.md carries no givn markers — adapt the README or disable the readme addon."
-                .to_string(),
+            message:
+                "README.md carries no givn markers — adapt the README or disable the readme addon."
+                    .to_string(),
         });
     }
 
@@ -90,7 +87,6 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
         {
             findings.push(ReadmeFinding {
                 kind: ReadmeFindingKind::OpenPlaceholder,
-                section: current_section.clone(),
                 message: format!(
                     "open placeholder in {section} — {expectation}",
                     section = section_label(&current_section),
@@ -103,7 +99,6 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
             if trimmed.contains(text) {
                 findings.push(ReadmeFinding {
                     kind: ReadmeFindingKind::OpenPlaceholder,
-                    section: current_section.clone(),
                     message: format!(
                         "legacy scaffold placeholder in {section} — run the README migration \
                          (rewrite with the current template, preserving real content)",
@@ -116,17 +111,17 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
         if trimmed == "TBD" {
             findings.push(ReadmeFinding {
                 kind: ReadmeFindingKind::Remnant,
-                section: current_section.clone(),
-                message: "the license line says \"TBD\" — replace it with the project's actual license."
-                    .to_string(),
+                message:
+                    "the license line says \"TBD\" — replace it with the project's actual license."
+                        .to_string(),
             });
         }
         if trimmed.contains("{{PROJECT_NAME}}") {
             findings.push(ReadmeFinding {
                 kind: ReadmeFindingKind::Remnant,
-                section: current_section.clone(),
-                message: "the README still contains {{PROJECT_NAME}} — replace it with the project name."
-                    .to_string(),
+                message:
+                    "the README still contains {{PROJECT_NAME}} — replace it with the project name."
+                        .to_string(),
             });
         }
     }
@@ -137,7 +132,6 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
     if (begins == 0) != (ends == 0) {
         findings.push(ReadmeFinding {
             kind: ReadmeFindingKind::DamagedBlock,
-            section: "Development".to_string(),
             message: "the development managed block is damaged — exactly one of the \
                       begin/end markers is present; restore the marker pair."
                 .to_string(),
@@ -223,8 +217,7 @@ pub(crate) fn render_development_block() -> String {
             // already lists the project's scripts.
             let measure = &manifest.coverage.measure_command;
             let merge = &manifest.coverage.merge_command;
-            let coverage_configured =
-                measure != COVERAGE_SENTINEL && merge != COVERAGE_SENTINEL;
+            let coverage_configured = measure != COVERAGE_SENTINEL && merge != COVERAGE_SENTINEL;
             development_block_body(
                 &manifest.verify.command,
                 &manifest.verify.e2e_command,

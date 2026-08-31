@@ -217,11 +217,8 @@ pub fn make_init_root() -> TestEnv {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr),
     );
-    std::fs::write(
-        env.path("README.md"),
-        complete_readme_fixture(),
-    )
-    .expect("write complete README fixture");
+    std::fs::write(env.path("README.md"), complete_readme_fixture())
+        .expect("write complete README fixture");
     env
 }
 

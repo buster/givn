@@ -39,8 +39,6 @@ pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
 pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
-pub mod semantic_rulebook_e2e_steps;
-pub mod semantic_rulebook_steps;
 pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
 pub mod release_strict_overrides_e2e_steps;
@@ -65,6 +63,8 @@ pub mod semantic_review_e2e_steps;
 pub mod semantic_review_output_e2e_steps;
 pub mod semantic_review_output_steps;
 pub mod semantic_review_steps;
+pub mod semantic_rulebook_e2e_steps;
+pub mod semantic_rulebook_steps;
 pub mod semantic_token_cap_review_e2e_steps;
 pub mod semantic_token_cap_review_steps;
 pub mod skill_rewrites_steps;
@@ -1050,7 +1050,11 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     // Write all-checked tasks.md.
     std::fs::write(change_dir.join("tasks.md"), "- [x] done\n").unwrap();
     // Write REVIEW: PASS marker.
-    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: none").unwrap();
+    std::fs::write(
+        change_dir.join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none",
+    )
+    .unwrap();
     // Create specs dir + feature for specs artifact Done status.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");
