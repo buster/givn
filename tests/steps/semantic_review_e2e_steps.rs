@@ -104,6 +104,26 @@ fn e2e_candidate_score_is_fixed(world: &mut GivnWorld) {
     }));
 }
 
+#[then(regex = r#"^the candidate embedding score has exactly four decimals in the range "([^"]+)" through "([^"]+)"$"#)]
+fn e2e_candidate_score_is_in_range(world: &mut GivnWorld, low: String, high: String) {
+    let report = e2e_report(world);
+    let scores: Vec<&str> = report
+        .lines()
+        .filter_map(|line| line.strip_prefix("- embedding_score: "))
+        .collect();
+    assert!(!scores.is_empty());
+    let low = low.parse::<f32>().expect("range lower bound");
+    let high = high.parse::<f32>().expect("range upper bound");
+    assert!(scores.iter().all(|score| {
+        score.len() == 6
+            && score.as_bytes()[1] == b'.'
+            && score[2..]
+                .chars()
+                .all(|character| character.is_ascii_digit())
+            && (low..=high).contains(&score.parse::<f32>().expect("score"))
+    }));
+}
+
 #[then("the candidate contains the concrete fact \"fact_contradiction: false\"")]
 fn e2e_candidate_contains_fact(world: &mut GivnWorld) {
     assert!(e2e_report(world).contains("- fact_contradiction: false"));
