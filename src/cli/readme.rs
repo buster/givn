@@ -214,21 +214,26 @@ pub fn scaffold_readme() -> Result<usize> {
 /// init renders the real file. Standalone `givn addons enable readme` in a
 /// project without a command file falls back to the embedded defaults.
 pub(crate) fn render_development_block() -> String {
+    const COVERAGE_SENTINEL: &str = "givn missing-coverage";
     let body = match crate::config::overlay::load_effective() {
-        Ok(manifest) => development_block_body(
-            &manifest.verify.command,
-            &manifest.verify.e2e_command,
-            manifest.addons.coverage,
-            &manifest.coverage.measure_command,
-            &manifest.coverage.merge_command,
-        ),
-        Err(_) => development_block_body(
-            "givn missing-testrunner",
-            "",
-            false,
-            "",
-            "",
-        ),
+        Ok(manifest) => {
+            // Coverage commands are rendered when configured, independent of
+            // the addon flag: during `givn init` the readme scaffold runs
+            // before the coverage addon is enabled, but the command file
+            // already lists the project's scripts.
+            let measure = &manifest.coverage.measure_command;
+            let merge = &manifest.coverage.merge_command;
+            let coverage_configured =
+                measure != COVERAGE_SENTINEL && merge != COVERAGE_SENTINEL;
+            development_block_body(
+                &manifest.verify.command,
+                &manifest.verify.e2e_command,
+                coverage_configured,
+                measure,
+                merge,
+            )
+        }
+        Err(_) => development_block_body("givn missing-testrunner", "", false, "", ""),
     };
     format!("<!-- givn:begin:development -->\n{body}<!-- givn:end:development -->\n")
 }
