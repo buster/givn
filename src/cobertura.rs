@@ -69,17 +69,22 @@ pub fn validate(report: &CoberturaReport) -> Result<()> {
 /// Check that two coverage reports are structurally different — i.e. not the
 /// same instrumentation run copied to both paths. E2e coverage must come from
 /// running the instrumented server, not from duplicating the non-e2e output.
-/// Two reports are considered identical when all four counters match exactly
-/// (lines_covered, lines_valid, branches_covered, branches_valid).
+/// Two reports are considered identical when all four aggregate counters match
+/// AND the per-file line distribution matches. Aggregate counters alone are
+/// insufficient: two genuine runs over disjoint test subsets can coincide on
+/// totals while covering different lines, so a totals-only comparison would
+/// reject honest runs.
 pub fn assert_distinct(a: &CoberturaReport, b: &CoberturaReport) -> Result<()> {
     if a.lines_covered == b.lines_covered
         && a.lines_valid == b.lines_valid
         && a.branches_covered == b.branches_covered
         && a.branches_valid == b.branches_valid
+        && a.file_lines == b.file_lines
     {
         bail!(
             "e2e and non-e2e coverage reports are identical (lines_covered={}, \
-             lines_valid={}, branches_covered={}, branches_valid={}). \
+             lines_valid={}, branches_covered={}, branches_valid={}, identical \
+             per-file line distribution). \
              E2e coverage must come from an instrumented server run, not from \
              copying the non-e2e coverage output. Configure \
              coverage.measure_command to run both test subsets against instrumented \
@@ -116,6 +121,7 @@ pub(crate) fn merge_legacy_reports(a: &CoberturaReport, b: &CoberturaReport) -> 
         lines_valid,
         branches_covered,
         branches_valid,
+        file_lines: std::collections::BTreeMap::new(),
     }
 }
 
@@ -208,6 +214,65 @@ struct CoberturaXml {
     branches_covered: u64,
     #[serde(rename = "@branches-valid")]
     branches_valid: u64,
+    #[serde(default, rename = "packages")]
+    packages: CoberturaPackages,
+}
+
+#[derive(Debug, Default, serde::Deserialize)]
+struct CoberturaPackages {
+    #[serde(default, rename = "package")]
+    package: Vec<CoberturaPackage>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CoberturaPackage {
+    #[serde(rename = "classes")]
+    classes: CoberturaClasses,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CoberturaClasses {
+    #[serde(rename = "class")]
+    class: Vec<CoberturaClass>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CoberturaClass {
+    #[serde(rename = "@filename")]
+    filename: String,
+    #[serde(rename = "lines")]
+    lines: CoberturaLines,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CoberturaLines {
+    #[serde(rename = "line")]
+    line: Vec<CoberturaLine>,
+}
+
+#[derive(Debug, serde::Deserialize)]
+struct CoberturaLine {
+    #[serde(rename = "@hits")]
+    hits: u64,
+}
+
+impl CoberturaXml {
+    /// Aggregate per-file (lines hit, lines valid) across all classes.
+    fn file_lines(&self) -> std::collections::BTreeMap<String, (u64, u64)> {
+        let mut map = std::collections::BTreeMap::new();
+        for package in &self.packages.package {
+            for class in &package.classes.class {
+                let entry = map.entry(class.filename.clone()).or_insert((0, 0));
+                for line in &class.lines.line {
+                    entry.1 += 1;
+                    if line.hits > 0 {
+                        entry.0 += 1;
+                    }
+                }
+            }
+        }
+        map
+    }
 }
 
 #[cfg(test)]
@@ -274,6 +339,7 @@ mod tests {
             lines_valid: 10,
             branches_covered: 1,
             branches_valid: 2,
+            ..Default::default()
         };
         assert!(validate(&report).is_err());
     }
@@ -287,6 +353,7 @@ mod tests {
             lines_valid: 400,
             branches_covered: 36,
             branches_valid: 50,
+            ..Default::default()
         };
         let b = CoberturaReport {
             line_rate: 0.85,
@@ -295,6 +362,7 @@ mod tests {
             lines_valid: 400,
             branches_covered: 36,
             branches_valid: 50,
+            ..Default::default()
         };
         assert!(assert_distinct(&a, &b).is_err());
     }
@@ -308,6 +376,7 @@ mod tests {
             lines_valid: 400,
             branches_covered: 36,
             branches_valid: 50,
+            ..Default::default()
         };
         let b = CoberturaReport {
             line_rate: 0.9,
@@ -316,6 +385,7 @@ mod tests {
             lines_valid: 400,
             branches_covered: 40,
             branches_valid: 50,
+            ..Default::default()
         };
         assert!(assert_distinct(&a, &b).is_ok());
     }
@@ -329,6 +399,7 @@ mod tests {
             lines_valid: 400,
             branches_covered: 36,
             branches_valid: 50,
+            ..Default::default()
         };
         let b = CoberturaReport {
             line_rate: 0.0,
@@ -337,8 +408,111 @@ mod tests {
             lines_valid: 0,
             branches_covered: 36,
             branches_valid: 50,
+            ..Default::default()
         };
         assert!(assert_distinct(&a, &b).is_ok());
+    }
+
+    #[test]
+    fn assert_distinct_passes_when_aggregates_match_but_distribution_differs() {
+        // Two genuine runs over disjoint test subsets can coincide on all four
+        // aggregate counters while covering different lines — this must pass.
+        let a = CoberturaReport {
+            lines_covered: 596,
+            lines_valid: 856,
+            branches_covered: 0,
+            branches_valid: 0,
+            file_lines: [
+                ("src/main.rs".to_string(), (0, 88)),
+                ("src/git.rs".to_string(), (86, 90)),
+            ]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
+        let b = CoberturaReport {
+            lines_covered: 596,
+            lines_valid: 856,
+            branches_covered: 0,
+            branches_valid: 0,
+            file_lines: [
+                ("src/main.rs".to_string(), (64, 88)),
+                ("src/git.rs".to_string(), (83, 90)),
+            ]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
+        assert!(assert_distinct(&a, &b).is_ok());
+    }
+
+    #[test]
+    fn assert_distinct_rejects_copied_reports_with_identical_distribution() {
+        // A copied report matches on counters AND per-file distribution.
+        let file_lines: std::collections::BTreeMap<String, (u64, u64)> =
+            [("src/agent.rs".to_string(), (41, 51))]
+                .into_iter()
+                .collect();
+        let a = CoberturaReport {
+            lines_covered: 596,
+            lines_valid: 856,
+            branches_covered: 0,
+            branches_valid: 0,
+            file_lines: file_lines.clone(),
+            ..Default::default()
+        };
+        let b = CoberturaReport {
+            lines_covered: 596,
+            lines_valid: 856,
+            branches_covered: 0,
+            branches_valid: 0,
+            file_lines,
+            ..Default::default()
+        };
+        assert!(assert_distinct(&a, &b).is_err());
+    }
+
+    #[test]
+    fn parse_extracts_per_file_distribution() {
+        let dir = std::env::temp_dir().join("givn_cobertura_test_files");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("cobertura.xml");
+        let xml = r#"<?xml version="1.0"?>
+<coverage line-rate="0.8" branch-rate="0.0" lines-covered="4" lines-valid="5" branches-covered="0" branches-valid="0" timestamp="0" version="1">
+  <packages>
+    <package name="pkg">
+      <classes>
+        <class name="A" filename="src/agent.rs">
+          <lines>
+            <line number="1" hits="3" branch="false"/>
+            <line number="2" hits="0" branch="false"/>
+            <line number="3" hits="1" branch="false"/>
+          </lines>
+        </class>
+        <class name="B" filename="src/git.rs">
+          <lines>
+            <line number="10" hits="0" branch="false"/>
+            <line number="11" hits="2" branch="false"/>
+          </lines>
+        </class>
+      </classes>
+    </package>
+  </packages>
+</coverage>"#;
+        std::fs::write(&path, xml).unwrap();
+        let report = parse(&path).unwrap();
+        assert_eq!(report.file_lines.get("src/agent.rs"), Some(&(2, 3)));
+        assert_eq!(report.file_lines.get("src/git.rs"), Some(&(1, 2)));
+    }
+
+    #[test]
+    fn parse_tolerates_packages_without_classes() {
+        let dir = std::env::temp_dir().join("givn_cobertura_test_empty");
+        std::fs::create_dir_all(&dir).unwrap();
+        let path = dir.join("cobertura.xml");
+        write_cobertura(&path, 0.85, 0.72, 340, 400, 36, 50);
+        let report = parse(&path).unwrap();
+        assert!(report.file_lines.is_empty());
     }
 
     #[test]
@@ -350,6 +524,7 @@ mod tests {
             lines_valid: 400,
             branches_covered: 36,
             branches_valid: 50,
+            ..Default::default()
         };
         let md = render_markdown(&report);
         assert!(md.contains("85%"));
@@ -367,6 +542,7 @@ mod tests {
             lines_valid: 2,
             branches_covered: 0,
             branches_valid: 0,
+            ..Default::default()
         };
         let md = render_markdown(&report);
         assert!(md.contains("Branch coverage: n/a (0/0)"));
@@ -381,6 +557,7 @@ mod tests {
             lines_valid: 100,
             branches_covered: 9,
             branches_valid: 10,
+            ..Default::default()
         };
         let badges = render_badges(&report, "coverage/cobertura-coverage.xml");
         assert!(badges.contains("Line Coverage: 95%"));
@@ -397,6 +574,7 @@ mod tests {
             lines_valid: 100,
             branches_covered: 9,
             branches_valid: 10,
+            ..Default::default()
         };
         let summary = render_readme_summary(
             &report,
