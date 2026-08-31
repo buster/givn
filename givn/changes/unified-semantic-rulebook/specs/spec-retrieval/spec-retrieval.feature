@@ -7,7 +7,7 @@ Feature: spec-retrieval
 
   @givn.removed
   Scenario: Review gate keeps retrieval advisory
-    Given  the unified rulebook replaces the advisory-gate echo inside check review
+    Given  a project root with givn/ initialised
 
   @givn.added
   Scenario: Review gate runs the unified rulebook and stays green without candidates
