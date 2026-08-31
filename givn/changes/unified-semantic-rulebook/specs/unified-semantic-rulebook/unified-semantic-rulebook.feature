@@ -18,7 +18,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the review output records both second stages enabled
     And  the review output records no unscored candidates
 
-  @givn.added @rulebook @e2e @wip
+  @givn.added @rulebook @e2e
   Scenario: Consumer rerun reuses recorded pair judgements
     Given  a rulebook review project with a single admitted candidate
     When  the user runs `givn check review --change running-change`
@@ -39,12 +39,12 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the semantic review report records no candidate as `BGE_UNSCORED`
     And  the semantic review report records no candidate as `NLI_UNSCORED`
 
-  @givn.added @rulebook @e2e @wip
+  @givn.added @rulebook @e2e
   Scenario: Consumer archive applies the rulebook to the current permanent tree
     Given  a completed semantic review change with a generated report and archive prerequisites
     When  the user runs `givn archive --change running-change`
     Then  the command exits 0
-    And  the archived change directory exists
+    And  the archived rulebook change directory exists
     And  the archive gate output reports the pair cache accounting
     And  the archived semantic review report is retained
 

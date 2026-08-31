@@ -68,7 +68,47 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
         .replace(
             "Then the command exits 0",
             "Then the semantic fixture records distinct audit evidence",
+        )
+        .replace(
+            "Given a project root with givn/ initialised",
+            "Given the zephyr quorum registry is provisioned",
+        )
+        .replace(
+            "When the user runs `givn lint`",
+            "When the zephyr quorum audit is invoked",
         );
+    // The two rewritten scenarios must also stop resembling each other:
+    // the unified rulebook compares delta-to-delta at 0.90, so give each
+    // scenario its own vocabulary.
+    let (head, tail) = delta
+        .split_once("Reviewed shape one distinct audit alpha")
+        .expect("split disposition delta at scenario one");
+    let (mid, tail2) = tail
+        .split_once("Reviewed shape two distinct audit beta")
+        .expect("split disposition delta at scenario two");
+    let mid = mid
+        .replacen(
+            "Given the zephyr quorum registry is provisioned",
+            "Given the zephyr quorum registry is provisioned",
+            1,
+        )
+        .replacen(
+            "When the zephyr quorum audit is invoked",
+            "When the zephyr quorum audit is invoked",
+            1,
+        );
+    let tail2 = tail2
+        .replacen(
+            "Given the zephyr quorum registry is provisioned",
+            "Given the cobalt meridian archive is provisioned",
+            1,
+        )
+        .replacen(
+            "When the zephyr quorum audit is invoked",
+            "When the cobalt meridian audit is invoked",
+            1,
+        );
+    let delta = format!("{head}Reviewed shape one distinct audit alpha{mid}Reviewed shape two distinct audit beta{tail2}");
     std::fs::write(delta_path, delta).expect("rewrite disposition delta");
     let updated_review = std::fs::read_to_string(&path)
         .expect("read disposition review")

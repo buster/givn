@@ -32,7 +32,7 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
     );
     write_feature(
         &change.join("specs/fixture-retained/fixture-retained.feature"),
-        "@givn.delta @fixture-retained\nFeature: Retained fixture\n\n  @givn.added\n  Scenario: Canonical retained behavior\n    Given a fixture behavior\n    When the old behavior runs\n    Then the old result appears\n",
+        "@givn.delta @fixture-retained\nFeature: Retained fixture\n\n  @givn.added\n  Scenario: Canonical retained behavior\n    Given a consolidated canonical behavior\n    When the consolidated canonical flow runs\n    Then the consolidated canonical result appears\n",
     );
 
     fs::write(change.join("proposal.md"), "# fixture\n").expect("write proposal");

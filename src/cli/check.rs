@@ -140,8 +140,9 @@ fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow
         return Ok(());
     }
     crate::spec::retrieval::report_missing_index(project_root);
-    crate::spec::retrieval::semantic_review_without_index_notice(project_root, change_id)?;
-    crate::spec::retrieval::review_without_index_notice(project_root, change_id)
+    // One unified rulebook run: comparison, selection, judgement, and the
+    // blocking classification worklist come from the same evaluation.
+    crate::spec::retrieval::semantic_review_without_index_notice(project_root, change_id)
 }
 
 #[cfg(not(feature = "spec-retrieval"))]
