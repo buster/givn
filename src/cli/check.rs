@@ -116,6 +116,7 @@ fn run_mandatory_checks(
                 features_path,
                 manifest.addons.arc42,
                 manifest.addons.coverage,
+                manifest.addons.readme,
             )?;
             println!("  ✓ integrity passed");
             if let Some(id) = change {

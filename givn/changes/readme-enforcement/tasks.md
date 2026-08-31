@@ -165,31 +165,32 @@ non-@e2e first, @e2e last).
 
 ## Scenario 5: README check reports a hand-written README without givn markers as unmanaged
 
-- [ ] RED — `cargo test --test features_runner -- --name "README check reports a hand-written README without givn markers as unmanaged"`
+- [x] RED — `cargo test --test features_runner -- --name "README check reports a hand-written README without givn markers as unmanaged"`
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed), fixture step unimplemented
   ```
 
-- [ ] GREEN — management-marker rule + `Unmanaged` finding kind.
+- [x] GREEN — management-marker rule + `Unmanaged` finding kind (checker
+      already emits both from scenario 1's implementation; the fixture pins it).
 
   Files:
-  - (paste production files)
+  - tests/steps/readme_enforcement_steps.rs (hand-written fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed); stdout mentions "adapt the README or disable the readme addon"
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): README check reports a hand-written README without givn markers as unmanaged`
+- [x] COMMIT — `feat(readme-enforcement): README check reports a hand-written README without givn markers as unmanaged`
 
   ```
-  commit hash:
+  commit hash: 070e2a4
   ```
 
 ## Scenario 6: Review refuses sign-off without a recorded README impact decision

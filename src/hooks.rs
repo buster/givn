@@ -55,6 +55,7 @@ pub fn run_artifact_hooks(
                 features_path,
                 manifest.addons.arc42,
                 manifest.addons.coverage,
+                manifest.addons.readme,
             ),
             other => run_shell_command(other, features_path),
         };

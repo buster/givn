@@ -176,16 +176,68 @@ fn readme_missing(world: &mut GivnWorld) {
     }
 }
 
+#[given("the project's verify commands are no-ops")]
+fn verify_commands_noops(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let yaml = "\
+verify:
+  command: \"true\"
+  e2e_command: \"true\"
+coverage:
+  measure_command: \"true\"
+  merge_command: \"true\"
+  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
+  e2e_path: \"coverage/e2e-cobertura.xml\"
+  output_path: \"coverage/cobertura-coverage.xml\"
+";
+    std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
+}
+
 // --- Change fixtures ---------------------------------------------------------
+
+/// Write a change directory with every artifact complete and no delta specs,
+/// so `givn check review` exercises the mandatory checks without the
+/// retrieval/overlap gates.
+pub(crate) fn write_reviewable_change(world: &mut GivnWorld, id: &str) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change_dir = env.path(&format!("givn/changes/{id}"));
+    std::fs::create_dir_all(&change_dir).expect("create change dir");
+    std::fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write proposal");
+    std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
+    std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write design-review");
+    std::fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- all scenarios done\n",
+    )
+    .expect("write tasks");
+    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").expect("write review");
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n")
+        .expect("write arc42");
+    world.last_change_id = Some(id.to_string());
+}
 
 #[given(regex = r#"^a reviewable change "([^"]+)"$"#)]
 fn reviewable_change(world: &mut GivnWorld, id: String) {
-    unimplemented!("create a change with all artifacts and no delta specs")
+    write_reviewable_change(world, &id);
 }
 
 #[given(regex = r#"^the review of change "([^"]+)" records the README impact decision "(.*)"$"#)]
 fn review_impact_decision(world: &mut GivnWorld, id: String, decision: String) {
-    unimplemented!("append the README-IMPACT line to the change's review.md")
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path(&format!("givn/changes/{id}/review.md"));
+    let existing = std::fs::read_to_string(&path).expect("read review.md");
+    std::fs::write(&path, format!("{existing}README-IMPACT: {decision}\n"))
+        .expect("write README-IMPACT line");
 }
 
 // --- Then --------------------------------------------------------------------
