@@ -140,7 +140,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And the directory givn/changes/readme-demo/ exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive does not re-insert a deleted development managed block while the README stays managed
     Given a project root with givn/ initialised
     And a complete README whose only managed block is the coverage badge
