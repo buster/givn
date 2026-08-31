@@ -45,6 +45,7 @@ not alter other content.
 | `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
 | `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence (explore, search with `--evidence`), complete permanent audit, and advisory change review with decision-first text, verbose, or structured JSON output. |
 | `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
+| `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development managed block damage, unmanaged or missing README; exit status reflects findings. |
 | `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
@@ -60,6 +61,9 @@ not alter other content.
 - Filesystem-derived state and visible skip markers.
 - Static lint and explicit project test-runner commands.
 - Mandatory task/review checks plus additional post hooks.
+- README enforcement when the readme addon is enabled: marked scaffolding, the
+  deterministic README check, the archive completeness gate, the review-level
+  README impact decision, and managed development-block refresh.
 - Addon management, including fixed-path durable Arc42 scaffolding and review.
 - Agent skill/command generation with selected targets and fenced-block ownership.
 - Local E5 retrieval, complete Explore, change-aware Explore, semantic report,

@@ -434,6 +434,35 @@ and merged reports, updates only its named README blocks, and restores specs,
 README, and coverage files if the pipeline fails. A zero branch denominator is
 rendered as `n/a`, not as a measured zero percent.
 
+## 8.9a README Completeness Gate and the Development Managed Block
+
+When the readme addon is enabled, the README is a givn-managed document:
+
+- The scaffold template marks every request-for-content section with a
+  `<!-- givn:todo: <expectation> -->` open placeholder line and embeds the
+  development managed block (`<!-- givn:begin:development -->` /
+  `<!-- givn:end:development -->`) rendered from the effective command file.
+- A README counts as managed when it carries at least one management marker:
+  any `<!-- givn:begin:` line, any `<!-- givn:todo:` line, or a legacy
+  scaffold text. Enabling the addon on a hand-written README therefore blocks
+  the archive until the README is adapted or the addon is disabled.
+- The previous scaffold style's placeholder sentences are matched as an exact
+  string list (`git clone <repo>` is deliberately excluded — real quick-starts
+  contain it). Legacy findings report the README migration as remediation.
+- `givn readme check` reports open placeholders, remnants (`TBD` license line,
+  `{{PROJECT_NAME}}`), damaged or unmanaged/missing state, and development
+  managed block damage (exactly one begin/end marker present). It exits
+  non-zero while any finding remains.
+- The archive completeness gate runs the same check before any mutation and
+  blocks with a per-finding report. The development managed block is refreshed
+  from the effective command file after the post-merge verify gates and before
+  the coverage gate; refresh happens only when both markers are present, and a
+  failure restores the README from the pre-archive backup.
+- The review artifact records a machine-checkable README impact decision:
+  `README-IMPACT: none` or `README-IMPACT: updated - <sections>`. The
+  integrity check refuses review sign-off without it while the readme addon is
+  enabled.
+
 ## 8.10 Configuration Versioning and Command Files
 
 `givn/config.yaml` is the structural, documented scaffold. It contains the

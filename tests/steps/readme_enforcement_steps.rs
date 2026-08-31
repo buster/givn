@@ -1,0 +1,119 @@
+//! Unit-level step definitions for the README enforcement capability.
+//!
+//! Fixtures construct deterministic README states on an initialised project
+//! root; assertions reuse the shared subprocess harness (`tests/common`).
+
+use cucumber::{given, then};
+
+use super::GivnWorld;
+
+// --- README state fixtures ---------------------------------------------------
+
+/// The new-style scaffold shape: open placeholder markers plus an intact
+/// development managed block.
+pub(crate) fn scaffolded_readme_text() -> String {
+    "\
+# readme-demo-project
+
+<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->
+
+## Quick start
+
+<!-- givn:todo: Exact commands to clone, build, and run the project. -->
+
+## Prerequisites
+
+<!-- givn:todo: Required tools, languages, or runtimes. -->
+
+## Usage
+
+<!-- givn:todo: A brief example or --help output showing how to use the project. -->
+
+## Contributing
+
+<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->
+
+## License
+
+<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->
+
+<!-- givn:begin:development -->
+## Development
+
+Run the project-owned scripts used by `givn/commands.yaml`:
+
+```sh
+./run-tests.sh
+./run-tests.sh --e2e
+```
+<!-- givn:end:development -->
+"
+    .to_string()
+}
+
+fn write_readme(world: &mut GivnWorld, content: &str) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    std::fs::write(env.path("README.md"), content).expect("write README.md");
+}
+
+#[given("a scaffolded README with open placeholders")]
+fn scaffolded_readme(world: &mut GivnWorld) {
+    write_readme(world, &scaffolded_readme_text());
+}
+
+#[given("a README with the previous scaffold style")]
+fn legacy_readme(world: &mut GivnWorld) {
+    unimplemented!("write the previous-scaffold-style README fixture")
+}
+
+#[given("a README with a broken development managed block")]
+fn broken_block_readme(world: &mut GivnWorld) {
+    unimplemented!("write a README whose development managed block has one marker only")
+}
+
+#[given("a complete README with the development managed block")]
+fn complete_readme(world: &mut GivnWorld) {
+    unimplemented!("write a complete README with an intact development managed block")
+}
+
+#[given("a hand-written README without any givn markers")]
+fn hand_written_readme(world: &mut GivnWorld) {
+    unimplemented!("write a hand-written README without givn markers")
+}
+
+#[given("a complete README whose only managed block is the coverage badge")]
+fn badge_only_readme(world: &mut GivnWorld) {
+    unimplemented!("write a complete README keeping only the coverage badge managed block")
+}
+
+#[given("a complete README whose development managed block is stale")]
+fn stale_block_readme(world: &mut GivnWorld) {
+    unimplemented!("write a complete README with a stale development managed block")
+}
+
+#[given("the README is missing")]
+fn readme_missing(world: &mut GivnWorld) {
+    unimplemented!("remove README.md from the project root")
+}
+
+// --- Change fixtures ---------------------------------------------------------
+
+#[given(regex = r#"^a reviewable change "([^"]+)"$"#)]
+fn reviewable_change(world: &mut GivnWorld, id: String) {
+    unimplemented!("create a change with all artifacts and no delta specs")
+}
+
+#[given(regex = r#"^the review of change "([^"]+)" records the README impact decision "(.*)"$"#)]
+fn review_impact_decision(world: &mut GivnWorld, id: String, decision: String) {
+    unimplemented!("append the README-IMPACT line to the change's review.md")
+}
+
+// --- Then --------------------------------------------------------------------
+
+#[then("the README still has no development managed block")]
+fn readme_has_no_dev_block(world: &mut GivnWorld) {
+    unimplemented!("assert the README has no development managed block markers")
+}
