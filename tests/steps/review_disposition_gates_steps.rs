@@ -86,17 +86,6 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
     let (mid, tail2) = tail
         .split_once("Reviewed shape two distinct audit beta")
         .expect("split disposition delta at scenario two");
-    let mid = mid
-        .replacen(
-            "Given the zephyr quorum registry is provisioned",
-            "Given the zephyr quorum registry is provisioned",
-            1,
-        )
-        .replacen(
-            "When the zephyr quorum audit is invoked",
-            "When the zephyr quorum audit is invoked",
-            1,
-        );
     let tail2 = tail2
         .replacen(
             "Given the zephyr quorum registry is provisioned",
@@ -108,7 +97,9 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
             "When the cobalt meridian audit is invoked",
             1,
         );
-    let delta = format!("{head}Reviewed shape one distinct audit alpha{mid}Reviewed shape two distinct audit beta{tail2}");
+    let delta = format!(
+        "{head}Reviewed shape one distinct audit alpha{mid}Reviewed shape two distinct audit beta{tail2}"
+    );
     std::fs::write(delta_path, delta).expect("rewrite disposition delta");
     let updated_review = std::fs::read_to_string(&path)
         .expect("read disposition review")
@@ -124,14 +115,18 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
 #[given(regex = r#"^the change's review\.md contains a split-or-keep row for "([^"]+)"$"#)]
 fn review_md_split_or_keep_row(world: &mut GivnWorld, title: String) {
     let path = change_dir(world).join("review.md");
-    let content =
-        format!("REVIEW: PASS\nREADME-IMPACT: none\n\n## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n");
+    let content = format!(
+        "REVIEW: PASS\nREADME-IMPACT: none\n\n## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `{title}` | keep |\n"
+    );
     std::fs::write(&path, content).expect("write review.md split-or-keep row");
 }
 
 #[given("the change's review.md has no disposition entries")]
 fn review_md_no_dispositions(world: &mut GivnWorld) {
     let path = change_dir(world).join("review.md");
-    std::fs::write(&path, "REVIEW: PASS\nREADME-IMPACT: none\n\n# Review\n\nNo overlap dispositions recorded.\n")
-        .expect("write review.md without dispositions");
+    std::fs::write(
+        &path,
+        "REVIEW: PASS\nREADME-IMPACT: none\n\n# Review\n\nNo overlap dispositions recorded.\n",
+    )
+    .expect("write review.md without dispositions");
 }

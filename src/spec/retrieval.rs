@@ -2078,16 +2078,6 @@ pub fn review_with_options(root: &Path, change_id: &str, options: ReviewOptions)
     }
 }
 
-#[cfg(feature = "spec-retrieval")]
-pub fn review_without_download(root: &Path, change_id: &str) -> Result<()> {
-    review_enabled(root, change_id, false, ReviewOptions::default())
-}
-
-#[cfg(feature = "spec-retrieval")]
-pub fn review_without_index_notice(root: &Path, change_id: &str) -> Result<()> {
-    review_enabled(root, change_id, true, ReviewOptions::default())
-}
-
 #[allow(dead_code)]
 pub fn semantic_review(root: &Path, change_id: &str) -> Result<()> {
     #[cfg(feature = "spec-retrieval")]
@@ -3584,12 +3574,10 @@ fn apply_semantic_bge(
     let mut miss_indices: Vec<usize> = Vec::new();
     let mut miss_pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = Vec::new();
     for (index, candidate) in selected.iter().enumerate() {
-        let capped = partition
-            .capped
-            .contains_key(&canonical_pair_key(
-                endpoint(&candidate.left.file, &candidate.left.title),
-                endpoint(&candidate.right.file, &candidate.right.title),
-            ));
+        let capped = partition.capped.contains_key(&canonical_pair_key(
+            endpoint(&candidate.left.file, &candidate.left.title),
+            endpoint(&candidate.right.file, &candidate.right.title),
+        ));
         let cache_key = pair_cache_key("bge", model_id, &candidate.left, &candidate.right);
         let hit = (!capped)
             .then(|| cache.get_raw(&cache_key))
@@ -3759,10 +3747,8 @@ fn apply_semantic_nli(
         Err(_) => NLI_MODEL_ID,
     };
     let mut cache = PairScoreCache::load(root);
-    let mut cached_nli_evidence: BTreeMap<
-        (SimilarityEndpoint, SimilarityEndpoint),
-        NliEvidence,
-    > = BTreeMap::new();
+    let mut cached_nli_evidence: BTreeMap<(SimilarityEndpoint, SimilarityEndpoint), NliEvidence> =
+        BTreeMap::new();
     let mut pair_cache_hits: Vec<(String, bool)> = Vec::with_capacity(selected.len());
     let mut miss_indices: Vec<usize> = Vec::new();
     let mut miss_pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = Vec::new();
@@ -3835,9 +3821,7 @@ fn apply_semantic_nli(
             runtime_ms: Some(0),
             pair_cache_hits: Vec::new(),
         },
-        Ok(backend) => {
-            score_nli_pairs(root, &miss_pairs, &texts, backend, max_unique_pairs)?
-        }
+        Ok(backend) => score_nli_pairs(root, &miss_pairs, &texts, backend, max_unique_pairs)?,
         Err(reason) => NliRun::unavailable(reason, candidates.len(), max_unique_pairs),
     };
     if !miss_pairs.is_empty() {
@@ -4635,9 +4619,7 @@ fn verify_boundary_delta_to_delta(
         || !observable_distinction(&left_endpoint, &right_endpoint)
     {
         let reason = if score >= E5_ADMISSION_THRESHOLD {
-            format!(
-                "recomputed score {score:.4} is not strictly below {E5_ADMISSION_THRESHOLD:.4}"
-            )
+            format!("recomputed score {score:.4} is not strictly below {E5_ADMISSION_THRESHOLD:.4}")
         } else if !(left_changed || right_changed) {
             "neither endpoint was reworded — recorded content/evidence hashes are unchanged"
                 .to_string()

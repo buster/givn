@@ -332,8 +332,7 @@ fn readme_has_no_dev_block(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let content =
-        std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    let content = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
     assert!(
         !content.contains("<!-- givn:begin:development -->")
             && !content.contains("<!-- givn:end:development -->"),

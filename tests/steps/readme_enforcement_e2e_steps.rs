@@ -17,10 +17,7 @@ fn workflow_scripts_project(world: &mut GivnWorld) {
         .as_ref()
         .expect("a project root is required first");
     let scripts = [
-        (
-            "run-tests.sh",
-            "#!/bin/sh\nexit 0\n",
-        ),
+        ("run-tests.sh", "#!/bin/sh\nexit 0\n"),
         (
             "measure-coverage.sh",
             "#!/bin/sh\nmkdir -p coverage\nprintf '<?xml version=\"1.0\"?>\n<coverage line-rate=\"0.80\" branch-rate=\"0\" lines-covered=\"80\" lines-valid=\"100\" branches-covered=\"0\" branches-valid=\"0\" timestamp=\"0\" version=\"1\">\n  <packages />\n</coverage>\n' > coverage/non-e2e-cobertura.xml\nprintf '<?xml version=\"1.0\"?>\n<coverage line-rate=\"0.90\" branch-rate=\"0\" lines-covered=\"90\" lines-valid=\"100\" branches-covered=\"0\" branches-valid=\"0\" timestamp=\"0\" version=\"1\">\n  <packages />\n</coverage>\n' > coverage/e2e-cobertura.xml\nexit 0\n",
@@ -48,8 +45,7 @@ fn readme_has_description_placeholder(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let readme =
-        std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
     assert!(
         readme.contains("<!-- givn:todo: One-paragraph description"),
         "README must carry the description open placeholder:\n{readme}"
@@ -62,8 +58,7 @@ fn readme_has_license_placeholder(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let readme =
-        std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
     assert!(
         readme.contains("<!-- givn:todo: The project's license"),
         "README must carry the license open placeholder:\n{readme}"
@@ -76,8 +71,7 @@ fn readme_has_dev_block(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let readme =
-        std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
     assert!(
         readme.contains("<!-- givn:begin:development -->")
             && readme.contains("<!-- givn:end:development -->"),
@@ -95,8 +89,7 @@ fn dev_block_lists_commands(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
-    let readme =
-        std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
     let start = readme
         .find("<!-- givn:begin:development -->")
         .expect("development managed block begin marker");

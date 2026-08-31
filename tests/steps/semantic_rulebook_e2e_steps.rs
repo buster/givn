@@ -19,7 +19,9 @@ fn report_for(world: &GivnWorld) -> String {
         .expect("semantic review report exists")
 }
 
-#[then(regex = r#"^the review output records exactly ([0-9]+) unique pairs? and ([0-9]+) directional calls per stage$"#)]
+#[then(
+    regex = r#"^the review output records exactly ([0-9]+) unique pairs? and ([0-9]+) directional calls per stage$"#
+)]
 fn review_records_pair_counts(world: &mut GivnWorld, pairs: usize, calls: usize) {
     let stdout = last_stdout(world);
     // Both stage lines record the counts: BGE and NLI.
@@ -103,8 +105,7 @@ fn archive_gate_reports_cache_accounting(world: &mut GivnWorld) {
 fn archived_report_retained(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("project root is required");
     assert!(
-        env
-            .path("givn/archive/running-change/semantic-review.md")
+        env.path("givn/archive/running-change/semantic-review.md")
             .is_file(),
         "archived change must retain the semantic review report"
     );

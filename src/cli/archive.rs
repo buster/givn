@@ -101,7 +101,9 @@ pub fn run(change: &str) -> Result<()> {
             for finding in &findings {
                 println!("  [{}] {}", finding_label(finding.kind), finding.message);
             }
-            bail!("archive blocked: finish the README before archiving — see the README check report above");
+            bail!(
+                "archive blocked: finish the README before archiving — see the README check report above"
+            );
         }
         println!("✓ README completeness gate passed");
     }

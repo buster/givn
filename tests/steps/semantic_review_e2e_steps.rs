@@ -104,7 +104,9 @@ fn e2e_candidate_score_is_fixed(world: &mut GivnWorld) {
     }));
 }
 
-#[then(regex = r#"^the candidate embedding score has exactly four decimals in the range "([^"]+)" through "([^"]+)"$"#)]
+#[then(
+    regex = r#"^the candidate embedding score has exactly four decimals in the range "([^"]+)" through "([^"]+)"$"#
+)]
 fn e2e_candidate_score_is_in_range(world: &mut GivnWorld, low: String, high: String) {
     let report = e2e_report(world);
     let scores: Vec<&str> = report
