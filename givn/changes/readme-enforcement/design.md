@@ -221,7 +221,10 @@ GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
 cargo test --test features_runner -- --name "<scenario title>"
 ```
 
-For the e2e tag filter, add `--tags '@e2e'` to the same invocation.
+For a targeted e2e run, use `--name` alone — in cucumber-rs 0.23 `--tags` and
+`--name` are mutually exclusive; the `GIVN_FEATURES` scope plus the unique
+scenario title is the precise filter. The standing e2e gate remains
+`./run-tests.sh --e2e` (its own tag expressions handle `@e2e`).
 
 ## E2E smoke test infrastructure
 
