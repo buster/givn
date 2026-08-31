@@ -182,16 +182,19 @@ twice and assert the second run's `pair cache: N reused, M computed` line.
 
 ## Interaction Coverage Matrix
 
-Inventory finalised in the specs step (scaffold order decided by the product
-owner). Planned rows:
+Inventory finalised with the specs (titles below are the shipped scenario
+titles in the delta feature):
 
-| Inventory entry | @e2e scenario title (planned) | Real interface | Driving mechanism |
+| Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
 |---|---|---|---|
-| run `givn spec review --change <id>` under the unified rulebook | Consumer reviews a change and both evidence models judge the selected pairs | CLI | subprocess: `givn spec review --change <id>` with stub backends; assert report lines and exit code |
-| re-run review without endpoint changes | Consumer reruns the review and every pair judgement is reused | CLI | subprocess: run twice in one scenario; assert `pair cache: N reused, M computed` |
-| pair selection at the cap | Consumer reviews a change with more candidates than the cap and only the capped set is judged | CLI | subprocess: stub scores admitting >20 pairs; assert judged-pair count and deterministic order |
-| archive re-check under the same rules | Consumer archives a change and the archive gate applies the rulebook to the current permanent tree | CLI | subprocess: `givn archive --change <id>`; assert gate lines, carried classifications, exit 0 |
-| delta↔delta duplicates stay caught | Consumer reviews a change whose two new scenarios duplicate each other | CLI | subprocess: delta fixture with internal duplicate; assert recommended pair within the delta |
+| run `givn spec review --change <id>` under the unified rulebook | Consumer review judges the selected pairs with both evidence models | CLI | subprocess: `givn spec review --change running-change` with stub backends; assert per-stage pair/directional counts and enabled stages |
+| rerun `givn check review --change <id>` without endpoint changes | Consumer rerun reuses recorded pair judgements | CLI | subprocess: run twice in one scenario; assert `pair cache` reused/computed accounting flips from `0/1` to `1/0` |
+| run `givn check review --change <id>` with more candidates than the pair cap | Consumer review caps the judged pairs at the pair cap | CLI | subprocess: stub scores admitting 25 pairs; assert candidate count 20, 40 directional calls, no `*_UNSCORED` |
+| run `givn archive --change <id>` on a completed change | Consumer archive applies the rulebook to the current permanent tree | CLI | subprocess: `givn archive --change running-change`; assert exit 0, cache accounting in gate output, retained report |
+| run `givn check review --change <id>` with an internal duplicate | Consumer review keeps a duplicate pair born inside the delta | CLI | subprocess: delta fixture with internal duplicate; assert `current-change` scope candidate |
+
+The regular scenario `A changed endpoint re-judges its recorded pair` has no
+inventory row (same user action as the rerun entry, different data condition).
 
 ## Black-Box-First
 
