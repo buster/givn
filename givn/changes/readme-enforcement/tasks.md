@@ -601,31 +601,32 @@ non-@e2e first, @e2e last).
 
 ## Scenario 19: Consumer asks for instructions and the unfinished README is surfaced
 
-- [ ] RED — `cargo test --test features_runner -- --tags '@e2e' --name "Consumer asks for instructions and the unfinished README is surfaced"`
+- [x] RED — targeted e2e run:
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed): "instructions must name `givn readme check`"
   ```
 
-- [ ] GREEN — instructions nudge in both report paths.
+- [x] GREEN — instructions nudge in both report paths.
 
   Files:
-  - (paste production files)
+  - src/cli/instructions.rs (readme_nudge helper; report_no_active_changes and
+    report_change print the text-only line; JSON untouched)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `test(e2e): Consumer asks for instructions and the unfinished README is surfaced`
+- [x] COMMIT — `test(e2e): Consumer asks for instructions and the unfinished README is surfaced`
 
   ```
-  commit hash:
+  commit hash: 4ec0040
   ```
 
 ## Final verification
