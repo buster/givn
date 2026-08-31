@@ -106,32 +106,32 @@ non-@e2e first, @e2e last).
 
 ## Scenario 3: README check reports a damaged managed block
 
-- [ ] RED — `cargo test --test features_runner -- --name "README check reports a damaged managed block"`
+- [x] RED — `cargo test --test features_runner -- --name "README check reports a damaged managed block"`
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed), fixture step unimplemented
   ```
 
-- [ ] GREEN — development managed block damage detection (reuse
-      `agents_block` marker primitives).
+- [x] GREEN — development managed block damage detection (marker-count
+      mismatch in the checker; begin/end pair rule from the design).
 
   Files:
-  - (paste production files)
+  - tests/steps/readme_enforcement_steps.rs (broken-block fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed); stdout mentions "development managed block"
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed); no behaviour change
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): README check reports a damaged managed block`
+- [x] COMMIT — `feat(readme-enforcement): README check reports a damaged managed block`
 
   ```
-  commit hash:
+  commit hash: f900edd
   ```
 
 ## Scenario 4: README check reports a missing README

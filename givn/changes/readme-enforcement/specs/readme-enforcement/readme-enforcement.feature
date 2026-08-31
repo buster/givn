@@ -44,7 +44,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And stdout mentions "development managed block"
 
-  @givn.added @wip
+  @givn.added
   Scenario: README check reports a missing README
     Given a project root with givn/ initialised
     And the README is missing
