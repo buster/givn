@@ -92,19 +92,6 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And  current architecture facts are owned by Arc42 or the implementation
     And  an ADR retains rationale and links instead of duplicating current facts
 
-  Scenario: The migration removes non-ADRs and preserves independent architecture history
-    Given  the consolidated ADR register and canonical sources are available
-    When  a maintainer compares the register with the canonical sources
-    Then  the final register has 35 accepted decisions and two proposed decisions
-    And  the change's migration manifest gives every assigned identifier exactly one disposition
-    And  reserved identifiers `ADR-050` and `ADR-051` have no record
-    And  non-ADR records are removed from the active register and ADR archive
-    And  absorbed records are absent and their refinements are in the target ADRs
-    And  superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links
-    And  `ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications
-    And  independent architecture decisions remain separate
-    And  `ADR-063` remains proposed and owned by its active change
-
   Scenario: All effective guidance sources use the same ADR policy
     Given  the canonical Arc42 qualification procedure and design-review guidance are available
     When  an author compares the effective and generated guidance sources
@@ -140,3 +127,15 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And  the CLI output requires every mandatory qualification dimension to pass
     And  the CLI output requires the existing-ADR and duplicate check
     And  the CLI output says that qualification policy is guidance rather than runtime enforcement
+  Scenario: The migration preserves independent architecture history across three proposed decisions
+    Given  the consolidated ADR register and canonical sources are available
+    When  a maintainer compares the register with the canonical sources
+    Then  the final register has 35 accepted decisions and three proposed decisions
+    And  the change's migration manifest gives every assigned identifier exactly one disposition
+    And  reserved identifiers `ADR-050` and `ADR-051` have no record
+    And  non-ADR records are removed from the active register and ADR archive
+    And  absorbed records are absent and their refinements are in the target ADRs
+    And  superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links
+    And  `ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications
+    And  independent architecture decisions remain separate
+    And  `ADR-063` remains proposed and owned by its active change
