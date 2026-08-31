@@ -29,13 +29,13 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the pair cache accounting reports "1" reused and "0" computed
     And  the semantic review report contains a candidate
 
-  @givn.added @rulebook @e2e @wip
+  @givn.added @rulebook @e2e
   Scenario: Consumer review caps the judged pairs at the pair cap
     Given  a rulebook review project with more candidate pairs than the pair cap
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report candidate count is 20
-    And  the review output records exactly 20 unique pairs and 40 directional calls per stage
+    And  the semantic review report records exactly 20 unique pairs and 40 directional calls per stage
     And  the semantic review report records no candidate as `BGE_UNSCORED`
     And  the semantic review report records no candidate as `NLI_UNSCORED`
 
