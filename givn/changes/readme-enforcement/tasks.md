@@ -396,31 +396,33 @@ non-@e2e first, @e2e last).
 
 ## Scenario 12: Archive blocks for a hand-written README without givn markers
 
-- [ ] RED — `cargo test --test features_runner -- --name "Archive blocks for a hand-written README without givn markers"`
+- [x] RED — legitimate immediate GREEN: all steps reused; the `Unmanaged`
+      branch ships in the checker (scenario 5) and the gate call in
+      scenario 10.
 
   ```
-  (paste RED output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] GREEN — unmanaged branch in the completeness gate (reuses checker).
+- [x] GREEN — reuse only (unmanaged branch pinned through the archive path).
 
   Files:
-  - (paste production files)
+  - (no production files — pure step reuse)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Archive blocks for a hand-written README without givn markers`
+- [x] COMMIT — `feat(readme-enforcement): Archive blocks for a hand-written README without givn markers`
 
   ```
-  commit hash:
+  commit hash: 89aa21d
   ```
 
 ## Scenario 13: Archive does not re-insert a deleted development managed block while the README stays managed

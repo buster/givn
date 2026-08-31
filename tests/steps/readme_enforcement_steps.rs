@@ -156,7 +156,21 @@ fn hand_written_readme(world: &mut GivnWorld) {
 
 #[given("a complete README whose only managed block is the coverage badge")]
 fn badge_only_readme(world: &mut GivnWorld) {
-    unimplemented!("write a complete README keeping only the coverage badge managed block")
+    let text = scaffolded_readme_text()
+        .replace(
+            "<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->",
+            "A small command-line tool that prints greetings.",
+        )
+        .replace("<!-- givn:todo: Exact commands to clone, build, and run the project. -->", "cargo install this-project")
+        .replace("<!-- givn:todo: Required tools, languages, or runtimes. -->", "Rust 1.97.1")
+        .replace("<!-- givn:todo: A brief example or --help output showing how to use the project. -->", "this-project --help")
+        .replace("<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->", "Conventional Commits.")
+        .replace("<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->", "MIT")
+        .replace(
+            "<!-- givn:begin:development -->\n## Development\n\nRun the project-owned scripts used by `givn/commands.yaml`:\n\n```sh\n./run-tests.sh\n./run-tests.sh --e2e\n```\n<!-- givn:end:development -->\n",
+            "<!-- givn:begin:coverage-badge -->\n[![Line Coverage: n/a](https://img.shields.io/badge/line%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)\n[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)\n<!-- givn:end:coverage-badge -->\n",
+        );
+    write_readme(world, &text);
 }
 
 #[given("a complete README whose development managed block is stale")]
@@ -254,5 +268,15 @@ fn review_impact_decision(world: &mut GivnWorld, id: String, decision: String) {
 
 #[then("the README still has no development managed block")]
 fn readme_has_no_dev_block(world: &mut GivnWorld) {
-    unimplemented!("assert the README has no development managed block markers")
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content =
+        std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    assert!(
+        !content.contains("<!-- givn:begin:development -->")
+            && !content.contains("<!-- givn:end:development -->"),
+        "README unexpectedly contains development managed block markers"
+    );
 }
