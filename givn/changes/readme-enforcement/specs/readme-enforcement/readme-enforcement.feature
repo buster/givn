@@ -182,7 +182,7 @@ Feature: README enforcement
     When the user invokes `givn instructions`
     Then the instructions mention the unfinished README and `givn readme check`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Instructions stay silent about the README when it is complete
     Given a project root with givn/ initialised
     And a complete README with the development managed block

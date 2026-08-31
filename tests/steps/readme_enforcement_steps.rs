@@ -143,7 +143,17 @@ fn broken_block_readme(world: &mut GivnWorld) {
 
 #[given("a complete README with the development managed block")]
 fn complete_readme(world: &mut GivnWorld) {
-    unimplemented!("write a complete README with an intact development managed block")
+    let text = scaffolded_readme_text()
+        .replace(
+            "<!-- givn:todo: One-paragraph description of what this project does and who it is for. -->",
+            "A small command-line tool that prints greetings.",
+        )
+        .replace("<!-- givn:todo: Exact commands to clone, build, and run the project. -->", "cargo install this-project")
+        .replace("<!-- givn:todo: Required tools, languages, or runtimes. -->", "Rust 1.97.1")
+        .replace("<!-- givn:todo: A brief example or --help output showing how to use the project. -->", "this-project --help")
+        .replace("<!-- givn:todo: PR guidelines, commit conventions, code style, review process. -->", "Conventional Commits.")
+        .replace("<!-- givn:todo: The project's license (SPDX identifier) — not TBD. -->", "MIT");
+    write_readme(world, &text);
 }
 
 #[given("a hand-written README without any givn markers")]
