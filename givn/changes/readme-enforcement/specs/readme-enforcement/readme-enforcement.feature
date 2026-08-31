@@ -85,7 +85,7 @@ Feature: README enforcement
     When the user runs `givn check review --change readme-demo`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project without the readme addon needs no README impact decision
     Given a project root with givn/ initialised
     And givn addon "readme" is "false"
