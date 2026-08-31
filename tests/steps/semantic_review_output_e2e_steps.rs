@@ -45,7 +45,7 @@ fn write_project(world: &mut GivnWorld) {
     .expect("write active delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Provider request is accepted` | `Active provider request` | boundary |\n| `Provider timeout is reported` | `Active provider request` | boundary |\n| `Provider warning is reported` | `Active provider request` | boundary |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Provider request is accepted` | `Active provider request` | boundary |\n| `Provider timeout is reported` | `Active provider request` | boundary |\n| `Provider warning is reported` | `Active provider request` | boundary |\n",
     )
     .expect("write dispositions");
     // Neutralise the project-owned verify hooks for the blocking surface.

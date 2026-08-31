@@ -1052,7 +1052,7 @@ fn filtered_blocking_project(world: &mut GivnWorld) {
     .expect("write blocking commands");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n| `Active provider request` | `Provider warning is reported` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n| `Active provider request` | `Provider warning is reported` | related |\n",
     )
     .expect("write blocking review disposition");
     world.retrieval_bge_scores = Some(

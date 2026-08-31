@@ -77,7 +77,7 @@ fn complete_change_with_delta(
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS").ok();
+            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
         } else if *file == "tasks.md" {
             writeln!(f, "- [x] all done").ok();
         }

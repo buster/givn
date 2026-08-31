@@ -75,7 +75,7 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS").ok();
+            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
         } else if *file == "tasks.md" {
             writeln!(f, "- [x] all done").ok();
         }
@@ -264,7 +264,7 @@ fn completed_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS").ok();
+            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
         } else if *file == "tasks.md" {
             writeln!(f, "- [x] all done").ok();
         }
@@ -307,7 +307,7 @@ fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS").ok();
+            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
         } else if *file == "tasks.md" {
             writeln!(f, "- [x] all done").ok();
         }

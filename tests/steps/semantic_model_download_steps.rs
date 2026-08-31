@@ -517,7 +517,7 @@ fn completed_change_without_model_artifacts(world: &mut GivnWorld) {
         "- [x] COMMIT: 0000000000000000000000000000000000000000 -- archive\n",
     )
     .expect("write archive tasks");
-    fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").expect("write archive review");
+    fs::write(change_dir.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: none").expect("write archive review");
     fs::write(
         env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\naddons:\n  arc42: false\n  coverage: false\n",
