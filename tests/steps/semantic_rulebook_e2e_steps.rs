@@ -19,14 +19,30 @@ fn report_for(world: &GivnWorld) -> String {
         .expect("semantic review report exists")
 }
 
-#[then(regex = r#"^the review output records exactly ([0-9]+) unique pairs and ([0-9]+) directional calls per stage$"#)]
+#[then(regex = r#"^the review output records exactly ([0-9]+) unique pairs? and ([0-9]+) directional calls per stage$"#)]
 fn review_records_pair_counts(world: &mut GivnWorld, pairs: usize, calls: usize) {
     let stdout = last_stdout(world);
-    let expected = format!("unique pairs {pairs}, directional calls {calls}");
-    assert!(
-        stdout.matches(&expected).count() >= 2,
-        "both stage lines must record `{expected}`:\n{stdout}"
-    );
+    // Both stage lines record the counts: BGE and NLI.
+    let expected_pair = format!("unique pairs {pairs},");
+    let expected_calls = format!("directional calls {calls},");
+    let bge_line = stdout
+        .lines()
+        .find(|line| line.starts_with("BGE: model"))
+        .unwrap_or_else(|| panic!("no BGE stage line:\n{stdout}"));
+    let nli_line = stdout
+        .lines()
+        .find(|line| line.starts_with("NLI status:"))
+        .unwrap_or_else(|| panic!("no NLI stage line:\n{stdout}"));
+    for line in [bge_line, nli_line] {
+        assert!(
+            line.contains(&expected_pair),
+            "expected `{expected_pair}` in `{line}`"
+        );
+        assert!(
+            line.contains(&expected_calls),
+            "expected `{expected_calls}` in `{line}`"
+        );
+    }
 }
 
 #[then("the review output records both second stages enabled")]

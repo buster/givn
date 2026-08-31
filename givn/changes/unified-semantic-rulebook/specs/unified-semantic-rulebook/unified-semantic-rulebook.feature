@@ -9,7 +9,7 @@
 
 Feature: The unified semantic rulebook compares, selects, and judges pairs once per change
 
-  @givn.added @rulebook @e2e @wip
+  @givn.added @rulebook @e2e
   Scenario: Consumer review judges the selected pairs with both evidence models
     Given  a rulebook review project with a single admitted candidate
     When  the user runs the advisory semantic review command
@@ -82,14 +82,14 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the semantic review report candidate count is 5
     And  the semantic review report records no candidate as `BGE_UNSCORED`
 
-  @givn.added @rulebook @wip
+  @givn.added @rulebook
   Scenario: Emergency budget truncation keeps outside candidates unscored and blocking
     Given  a rulebook review project with more candidate pairs than the pair cap
     And  an emergency pair budget below the selected pair count
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report records the outside candidates as `BGE_UNSCORED`
-    And  those candidates remain blocking E5 candidates
+    And  the unscored candidates remain blocking with their scored neighbours
 
   @givn.added @rulebook
   Scenario: The pair cap fills deterministically when scores tie
