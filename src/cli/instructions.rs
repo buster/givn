@@ -106,28 +106,51 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
             bail!("change '{}' not found", id);
         }
         let state = ChangeState::from_manifest(&change_dir, &manifest);
+        let readme_hint = readme_nudge(&project_root, &manifest);
         return report_change(
             &state,
             manifest.addons.domain_modeling,
             manifest.addons.arc42,
             json,
+            readme_hint,
         );
     }
 
     // No change named: derive from current project state.
     let changes = list_changes(&project_root, &manifest);
     let archived = list_archived(&project_root);
+    let readme_hint = readme_nudge(&project_root, &manifest);
 
     match changes.len() {
-        0 => report_no_active_changes(&archived, json),
+        0 => report_no_active_changes(&archived, json, readme_hint),
         1 => report_change(
             &changes[0],
             manifest.addons.domain_modeling,
             manifest.addons.arc42,
             json,
+            readme_hint,
         ),
         _ => report_multiple_changes(&changes, json),
     }
+}
+
+/// The README advisory line, when the readme addon is enabled and the README
+/// check reports findings. Text-only: the JSON report shape is unchanged.
+fn readme_nudge(
+    project_root: &std::path::Path,
+    manifest: &crate::config::manifest::Manifest,
+) -> Option<String> {
+    if !manifest.addons.readme {
+        return None;
+    }
+    let findings = crate::cli::readme::check_readme(project_root);
+    if findings.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "README: {} finding(s) — run `givn readme check` to see them.",
+        findings.len()
+    ))
 }
 
 // ─── Report builders ────────────────────────────────────────────────────────
@@ -154,7 +177,11 @@ fn report_not_initialised(json: bool) -> Result<()> {
     }
 }
 
-fn report_no_active_changes(archived: &[String], json: bool) -> Result<()> {
+fn report_no_active_changes(
+    archived: &[String],
+    json: bool,
+    readme_hint: Option<String>,
+) -> Result<()> {
     let next_command = "givn new <change-id>".to_string();
     let summary = if archived.is_empty() {
         "No changes exist yet.".to_string()
@@ -179,6 +206,10 @@ fn report_no_active_changes(archived: &[String], json: bool) -> Result<()> {
         println!();
         println!("Status: {summary}");
         println!();
+        if let Some(hint) = readme_hint {
+            println!("{hint}");
+            println!();
+        }
         println!("Next: run `{next_command}` to start one, or `/givn-propose <description>`");
         println!("(as a skill) to plan and scaffold it in one pass.");
         Ok(())
@@ -249,6 +280,7 @@ fn report_change(
     domain_modeling: bool,
     arc42: bool,
     json: bool,
+    readme_hint: Option<String>,
 ) -> Result<()> {
     let (summary, next_command, next_skill) = describe_next_step(state);
     let skill_to_load = if state.next_required().is_some() {
@@ -277,6 +309,10 @@ fn report_change(
         println!("Change: {}  [{}]", state.id, state.stage_label());
         println!("Status: {summary}");
         println!();
+        if let Some(hint) = readme_hint {
+            println!("{hint}");
+            println!();
+        }
         if let Some(skill) = skill_to_load {
             println!("Skill to load now: `{skill}`");
         }

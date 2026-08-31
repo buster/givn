@@ -175,7 +175,7 @@ Feature: README enforcement
     When the user invokes `givn check review --change readme-demo`
     Then the command succeeds
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer asks for instructions and the unfinished README is surfaced
     Given a project root with givn/ initialised
     And a scaffolded README with open placeholders

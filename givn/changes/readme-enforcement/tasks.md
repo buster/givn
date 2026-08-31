@@ -565,31 +565,38 @@ non-@e2e first, @e2e last).
 
 ## Scenario 18: Consumer archives a change and the development managed block refreshes
 
-- [ ] RED — `cargo test --test features_runner -- --tags '@e2e' --name "Consumer archives a change and the development managed block refreshes"`
+- [x] RED — targeted e2e run:
 
   ```
-  (paste RED output)
+  First run: EXIT=101 — stale-block fixture unimplemented.
+  Second run: EXIT=101 — "refreshed block must list the configured workflow
+  commands": the block kept the stale listing (refresh did not exist).
   ```
 
-- [ ] GREEN — archive-time refresh of the development managed block.
+- [x] GREEN — archive-time refresh of the development managed block.
 
   Files:
-  - (paste production files)
+  - src/cli/readme.rs (refresh_development_block)
+  - src/cli/archive.rs (refresh call between post-merge e2e and coverage gate,
+    README rollback on failure)
+  - src/cli/coverage_gate.rs (rollback_readme visibility)
+  - tests/steps/readme_enforcement_steps.rs (stale-block fixture)
+  - tests/steps/readme_enforcement_e2e_steps.rs (refresh + archive-dir assertions)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `test(e2e): Consumer archives a change and the development managed block refreshes`
+- [x] COMMIT — `test(e2e): Consumer archives a change and the development managed block refreshes`
 
   ```
-  commit hash:
+  commit hash: 675fe58
   ```
 
 ## Scenario 19: Consumer asks for instructions and the unfinished README is surfaced
