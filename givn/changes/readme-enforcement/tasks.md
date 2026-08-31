@@ -325,31 +325,41 @@ non-@e2e first, @e2e last).
 
 ## Scenario 10: Archive blocks while the README has open placeholders
 
-- [ ] RED — `cargo test --test features_runner -- --name "Archive blocks while the README has open placeholders"`
+- [x] RED — `cargo test --test features_runner -- --name "Archive blocks while the README has open placeholders"`
 
   ```
-  (paste RED output)
+  Intermediate iterations: parse-error fix (fixture line placement),
+  120 s timeout (subprocess downloaded BGE artifacts — fixed via the
+  offline semantic-gate fixture: E5 stub, BGE stub, reranker disabled),
+  wrong-reason block (coverage gate; fixed via `givn addon "coverage"
+  is "false"`), stdout-vs-stderr report fix.
+  Final RED: EXIT=101 — "expected failure, got exit Some(0)":
+  the archive succeeded because the completeness gate did not exist.
   ```
 
-- [ ] GREEN — completeness gate call in `archive.rs` before backup/merge.
+- [x] GREEN — completeness gate call in `archive.rs` before backup/merge;
+      report printed on stdout before bailing.
 
   Files:
-  - (paste production files)
+  - src/cli/archive.rs (gate block + finding_label import)
+  - src/cli/readme.rs (finding_label visibility)
+  - tests/steps/readme_enforcement_steps.rs (offline semantic-gate fixture)
+  - specs/readme-enforcement/readme-enforcement.feature (offline + coverage-off Givens)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed) (unfiltered run, permanent specs scope)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Archive blocks while the README has open placeholders`
+- [x] COMMIT — `feat(readme-enforcement): Archive blocks while the README has open placeholders`
 
   ```
-  commit hash:
+  commit hash: 421ea6f
   ```
 
 ## Scenario 11: Archive blocks when the README is missing
