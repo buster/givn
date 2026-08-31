@@ -42,8 +42,10 @@
 
 ## S5: verification
 
-- [ ] Full suite + e2e green; clippy/fmt clean; real-model review; archive.
+- [x] Full suite + e2e green; clippy/fmt clean; real-model review; archive.
+      Evidence: ./run-tests.sh exit 0 (549 scenarios), ./run-tests.sh --e2e
+      exit 0 (104 scenarios), clippy -D warnings clean, fmt clean.
 
 ## Commit evidence
 
-- [x] COMMIT: (recorded after the scenario commits) -- S1+S2+S3+S4
+- [x] COMMIT: ce02d87 -- S1+S2+S3+S4
