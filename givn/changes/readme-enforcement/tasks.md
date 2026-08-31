@@ -497,32 +497,40 @@ non-@e2e first, @e2e last).
 
 ## Scenario 15: Consumer scaffolds a project and the README marks its unfilled sections
 
-- [ ] RED — `cargo test --test features_runner -- --tags '@e2e' --name "Consumer scaffolds a project and the README marks its unfilled sections"`
+- [x] RED — targeted e2e run (note: in cucumber-rs 0.23 `--tags` and `--name`
+      are mutually exclusive — design.md corrected; `--name` alone scopes the
+      delta precisely):
 
   ```
-  (paste RED output)
+  $ GIVN_FEATURES=givn/changes/readme-enforcement/specs GIVN_SPEC_EMBEDDER=stub \
+    GIVN_SPEC_RERANKER=disabled cargo test --no-default-features \
+    --features spec-retrieval --test features_runner -- \
+    --name "Consumer scaffolds a project and the README marks its unfilled sections"
+  EXIT=101 — 1 scenario (1 failed): assertion steps unimplemented
   ```
 
-- [ ] GREEN — template rewritten with `givn:todo` markers + development
+- [x] GREEN — template rewritten with `givn:todo` markers + development
       managed block rendered from commands.yaml; scaffold renders the block.
 
   Files:
-  - (paste production files)
+  - assets/addons/readme/README.md.tmpl (markers + {{DEVELOPMENT_BLOCK}})
+  - src/cli/readme.rs (render_development_block + scaffold token replacement)
+  - tests/steps/readme_enforcement_e2e_steps.rs (assertions + scripts fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `test(e2e): Consumer scaffolds a project and the README marks its unfilled sections`
+- [x] COMMIT — `test(e2e): Consumer scaffolds a project and the README marks its unfilled sections`
 
   ```
-  commit hash:
+  commit hash: a5eb61f
   ```
 
 ## Scenario 16: Consumer runs the README check on a complete README and it passes

@@ -60,7 +60,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And stdout mentions "adapt the README or disable the readme addon"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer runs the README check on a complete README and it passes
     Given a project root with givn/ initialised
     And a complete README with the development managed block
