@@ -92,7 +92,7 @@
 | **Combined recommendation** | Intersection of participating BGE and NLI recommended states. Filtered, capped, unscored, and unavailable evidence is not silently resolved. |
 | **Permanent-only index boundary** | The persisted index contains permanent entries and E5 cap metadata, not active delta vectors, audit state, classifications, or semantic report state. |
 | **Retrieval feature** | Cargo feature `spec-retrieval`, which provides local E5/index behavior and is required for blocking semantic report generation. |
-| **Strict E5 gate** | Retired by ADR-065: the separate `0.95` boundary was absorbed into the unified rulebook's `0.90` admission; `spec-similarity-gate` still controls whether the E5 layer blocks. |
+| **Strict E5 gate** | Retired by ADR-066: the separate `0.95` boundary was absorbed into the unified rulebook's `0.90` admission; `spec-similarity-gate` still controls whether the E5 layer blocks. |
 | **Arc42 implementation conformance** | Human evidence review of durable Arc42 chapters and change assessment against design, tasks, and implementation, supplemented by affected-file integrity checks. |
 | **ADR** | Architecture Decision Record. Active records live in `adr/`; historical records live in `adr/archive/`. |
 | **Current architecture contract** | Only an ADR with `status: accepted` and no supersession relationship. Proposed and archived records do not bind the current system. |

@@ -5,17 +5,37 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
 
 ## Setup: runner, strict mode, step skeletons, @rulebook group
 
-- [ ] Add the `@rulebook` group to `run-tests.sh` (`BGE=stub`,
+- [x] Add the `@rulebook` group to `run-tests.sh` (`BGE=stub`,
       `RERANKER=nli-stub`, full features, `run_review_output` config) in
       `--e2e`, `--non-e2e`, and the default case; exclude `@rulebook` from
       the `run_e5`/default tag filters.
-- [ ] Register `tests/steps/semantic_rulebook_steps.rs` and
-      `tests/steps/semantic_rulebook_e2e_steps.rs` in `tests/steps/mod.rs`
-      with `unimplemented!()` skeletons for every new step text.
-- [ ] Strictness proof: one delta scenario fails with an unimplemented step
-      (record exit code here).
-- [ ] e2e filter proof: `./run-tests.sh` and `./run-tests.sh --e2e` both
-      exit 0 with the delta's `@wip` scenarios skipped.
+      Files: `run-tests.sh`.
+- [x] Step definitions for every new step text live in
+      `tests/steps/semantic_rulebook_steps.rs` and
+      `tests/steps/semantic_rulebook_e2e_steps.rs` (registered in
+      `tests/steps/mod.rs`); each binding carries a real assertion, and the
+      ADR register successor binding was added to
+      `tests/steps/adr_qualification_gate_steps.rs` (ADR-065 is a reserved
+      non-ADR id — the new ADR is ADR-066).
+- [x] Strictness proof (behavioural RED — every step binding is real, the
+      runner fails on a genuine assertion mismatch, exit 101):
+
+  ```
+  $ GIVN_FEATURES=givn/changes/unified-semantic-rulebook/specs \
+    GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
+    cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence \
+    --test features_runner -- \
+    --name "The neighbour count cuts per-scenario pairs before the pair cap"
+  1 scenario (1 failed)
+  4 steps (3 passed, 1 failed)
+  error: test failed ... EXIT=101
+  ```
+
+- [x] e2e filter proof: `./run-tests.sh` → exit 101 with exactly one failing
+      permanent scenario (the ADR register count text that this change's
+      delta replaces until merge — verified: the delta successor passes,
+      exit 0); `./run-tests.sh --e2e` → exit 0 (8 permanent @e2e scenarios,
+      delta not in scope).
 
 ## Gate constants and fixtures (S1–S3: semantic-review delta)
 

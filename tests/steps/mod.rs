@@ -39,6 +39,8 @@ pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
 pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
+pub mod semantic_rulebook_e2e_steps;
+pub mod semantic_rulebook_steps;
 pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
 pub mod release_strict_overrides_e2e_steps;

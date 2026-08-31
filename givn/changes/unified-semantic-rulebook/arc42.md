@@ -10,7 +10,7 @@
 | 06 Runtime View | Yes | Advisory review (6.8.4), archive stage 4 (6.7), and the blocking report flow (6.9) now describe the rulebook sequence. |
 | 07 Deployment View | No | No deployment boundary changes; cache file is project-local state like the index. |
 | 08 Cross-Cutting Concepts | Yes | 8.5d report flow, classification table boundary values, and the unscored-vs-unselected distinction updated. |
-| 09 Architecture Decisions | Yes | New ADR-065 (unified rulebook + pair-score cache); register and ADR index updated. |
+| 09 Architecture Decisions | Yes | New ADR-066 (unified rulebook + pair-score cache); register and ADR index updated. |
 | 10 Quality Requirements | Yes | Remediation boundary values updated from `0.9500` to `0.9000`. |
 | 11 Risks & Technical Debt | Yes | R-13 reworded to the selection-boundary recall position; R-21 rewritten from budget tail to selection tail. |
 | 12 Glossary | Yes | New terms: Unified rulebook, Pair cap, Neighbour count, Pair-score cache, Unselected pair; E5 candidate redefined. |

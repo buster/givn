@@ -51,7 +51,7 @@ is new; the archive gate writes no findings file on success.
   ch. 06 stale 0.95 rows updated; ch. 10 Q-37 boundary fixed; glossary
   "Observable distinction" and "Strict E5 gate" updated, "Second-stage pair
   budget" de-proposed, "Hybrid selection" recorded.
-- ADR-065: structured qualification verdict block added with
+- ADR-066: structured qualification verdict block added with
   `routing: NEW_ADR + AMEND_ADR-061 + AMEND_ADR-041` (partial supersession
   reworded as amendment); strict-gate fate stated.
 
