@@ -94,7 +94,7 @@ Feature: README enforcement
     When the user runs `givn check review --change no-addon`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown README impact value is refused
     Given a project root with givn/ initialised
     And the project's verify commands are no-ops
