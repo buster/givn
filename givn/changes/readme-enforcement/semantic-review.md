@@ -8,1212 +8,1260 @@ BGE reason: null
 BGE model: rozgo/bge-reranker-v2-m3
 BGE top_k: 5
 BGE max unique pairs: 2048
-BGE E5 raw count: 99
+BGE E5 raw count: 103
 BGE recommended count: 0
-BGE filtered count: 99
+BGE filtered count: 103
 BGE unscored count: 0
-BGE unique pair count: 99
-BGE directional call count: 198
+BGE unique pair count: 103
+BGE directional call count: 206
 BGE model load attempts: 1
-BGE runtime ms: 100834
+BGE runtime ms: 90480
 NLI status: NLI_ENABLED
 NLI reason: null
 NLI model: MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7
 NLI top_k: 5
 NLI max unique pairs: 2048
-NLI E5 raw count: 99
+NLI E5 raw count: 103
 NLI recommended count: 5
-NLI filtered count: 94
+NLI filtered count: 98
 NLI unscored count: 0
-NLI unique pair count: 99
-NLI directional call count: 198
+NLI unique pair count: 103
+NLI directional call count: 206
 NLI model load attempts: 1
-NLI runtime ms: 63596
+NLI runtime ms: 53690
 
 ## BGE Filtered Candidate
-- candidate_id: f4fe3c596893e9d7
+- candidate_id: 5b1f2336f182a634
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
+- left_title: "A missing README blocks the archive"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks when the README is missing"
-- embedding_score: 0.9929
-- bge_forward_raw: 1.1830
-- bge_reverse_raw: 0.8430
-- bge_symmetric_raw: 1.0130
+- right_title: "An unmanaged README blocks the archive"
+- embedding_score: 0.9939
+- bge_forward_raw: 1.2417
+- bge_reverse_raw: 0.9746
+- bge_symmetric_raw: 1.1082
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: cb4f916163293808
+- candidate_id: ea75a0e2593a7946
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
+- left_title: "A recorded impact decision passes the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9888
-- bge_forward_raw: 1.3974
-- bge_reverse_raw: 1.4186
-- bge_symmetric_raw: 1.4080
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9932
+- bge_forward_raw: 1.5196
+- bge_reverse_raw: 2.3934
+- bge_symmetric_raw: 1.9565
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 37dacd7ee92b14f6
+- candidate_id: 08ae9c2cf276909f
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
+- left_title: "A recorded impact decision passes the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9885
-- bge_forward_raw: 0.6490
-- bge_reverse_raw: 0.7082
-- bge_symmetric_raw: 0.6786
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9875
+- bge_forward_raw: 1.4784
+- bge_reverse_raw: 1.4825
+- bge_symmetric_raw: 1.4804
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: ed780b174626ddbe
+- candidate_id: e66cef1e1d8f0c79
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer checks a review with a recorded README impact decision and it passes"
+- left_title: "A recorded impact decision passes the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
+- right_title: "An unknown impact value is refused"
 - embedding_score: 0.9874
-- bge_forward_raw: 1.2672
-- bge_reverse_raw: 0.6689
-- bge_symmetric_raw: 0.9681
+- bge_forward_raw: 1.0552
+- bge_reverse_raw: 1.1240
+- bge_symmetric_raw: 1.0896
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: fc8c30107f74e89d
+- candidate_id: 451f2a21cca05b34
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
+- left_title: "An unknown impact value is refused"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks while the README has open placeholders"
-- embedding_score: 0.9863
-- bge_forward_raw: 1.2103
-- bge_reverse_raw: 0.2551
-- bge_symmetric_raw: 0.7327
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9855
+- bge_forward_raw: 0.8105
+- bge_reverse_raw: 2.0350
+- bge_symmetric_raw: 1.4227
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 6842d715c7f94d30
+- candidate_id: 2dbf381a0c59fc4f
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
+- left_title: "An unknown impact value is refused"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks while the README has open placeholders"
-- embedding_score: 0.9859
-- bge_forward_raw: 0.7999
-- bge_reverse_raw: 0.1535
-- bge_symmetric_raw: 0.4767
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9855
+- bge_forward_raw: 0.8344
+- bge_reverse_raw: 1.3269
+- bge_symmetric_raw: 1.0806
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: c1717f20cd02c148
+- candidate_id: 718de8105bc8c221
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
+- left_title: "A deleted development block is not re-inserted"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- embedding_score: 0.9826
-- bge_forward_raw: 0.8712
-- bge_reverse_raw: 0.2202
-- bge_symmetric_raw: 0.5457
+- right_title: "A missing README blocks the archive"
+- embedding_score: 0.9852
+- bge_forward_raw: 0.0784
+- bge_reverse_raw: 0.4297
+- bge_symmetric_raw: 0.2540
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: a71752735ccabc95
+- candidate_id: 67c8c404e85e039d
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
+- left_title: "Missing impact decision refuses the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9846
+- bge_forward_raw: 0.8687
+- bge_reverse_raw: 0.4904
+- bge_symmetric_raw: 0.6795
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: d6161db52bf2c0d8
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9840
+- bge_forward_raw: 1.5688
+- bge_reverse_raw: 1.1350
+- bge_symmetric_raw: 1.3519
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: b7803e21f154ef83
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unmanaged README blocks the archive"
 - embedding_score: 0.9820
-- bge_forward_raw: 0.9704
-- bge_reverse_raw: 0.4259
-- bge_symmetric_raw: 0.6981
+- bge_forward_raw: 0.3910
+- bge_reverse_raw: 0.3097
+- bge_symmetric_raw: 0.3503
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 94bf6dde7784ba1f
+- candidate_id: 7b9cff6d4173d01a
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
+- left_title: "An unmanaged README blocks the archive"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review refuses sign-off without a recorded README impact decision"
-- embedding_score: 0.9786
-- bge_forward_raw: 1.0217
-- bge_reverse_raw: 2.0453
-- bge_symmetric_raw: 1.5335
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9820
+- bge_forward_raw: 1.0356
+- bge_reverse_raw: 1.4516
+- bge_symmetric_raw: 1.2436
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: abd0b70cbcd81951
+- candidate_id: b72943d9712d0821
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
+- left_title: "A deleted development block is not re-inserted"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- embedding_score: 0.9772
-- bge_forward_raw: 0.6588
-- bge_reverse_raw: -0.0885
-- bge_symmetric_raw: 0.2851
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9767
+- bge_forward_raw: 0.4715
+- bge_reverse_raw: 0.3064
+- bge_symmetric_raw: 0.3890
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 5857dd7f0e3e80db
+- candidate_id: 272ddc703d8f4223
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Review accepts an updated README impact decision naming the sections"
+- left_title: "A missing README blocks the archive"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review refuses sign-off without a recorded README impact decision"
-- embedding_score: 0.9770
-- bge_forward_raw: -0.4504
-- bge_reverse_raw: 1.2181
-- bge_symmetric_raw: 0.3838
+- right_title: "Archiving refreshes the development block"
+- embedding_score: 0.9754
+- bge_forward_raw: 0.5266
+- bge_reverse_raw: 0.6314
+- bge_symmetric_raw: 0.5790
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 41f76e7869689627
+- candidate_id: 690477042be51225
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer checks a review with a recorded README impact decision and it passes"
+- left_title: "An unmanaged README blocks the archive"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review refuses sign-off without a recorded README impact decision"
-- embedding_score: 0.9760
-- bge_forward_raw: 0.8434
-- bge_reverse_raw: 1.5671
-- bge_symmetric_raw: 1.2052
+- right_title: "Archiving refreshes the development block"
+- embedding_score: 0.9744
+- bge_forward_raw: 0.4637
+- bge_reverse_raw: 0.6717
+- bge_symmetric_raw: 0.5677
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 8adf586c1cc8f973
+- candidate_id: 3887b7d23e78b672
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
+- left_title: "A marker-less README is unmanaged"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer archives a change and the development managed block refreshes"
-- embedding_score: 0.9739
-- bge_forward_raw: 0.5706
-- bge_reverse_raw: 0.9224
-- bge_symmetric_raw: 0.7465
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9738
+- bge_forward_raw: 0.2480
+- bge_reverse_raw: 1.0747
+- bge_symmetric_raw: 0.6614
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 49b831aef1485a26
+- candidate_id: 882e551bc5a2363d
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
+- left_title: "Instructions stay silent on a complete README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer archives a change and the development managed block refreshes"
-- embedding_score: 0.9736
-- bge_forward_raw: 0.0838
-- bge_reverse_raw: 0.3855
-- bge_symmetric_raw: 0.2346
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9734
+- bge_forward_raw: 1.6366
+- bge_reverse_raw: 0.0844
+- bge_symmetric_raw: 0.8605
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 28c7fbaaa76d261d
+- candidate_id: 1b19fa61f35cf6e2
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
+- left_title: "The check passes on a complete README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer archives a change and the development managed block refreshes"
-- embedding_score: 0.9731
-- bge_forward_raw: 0.0213
-- bge_reverse_raw: 0.5187
-- bge_symmetric_raw: 0.2700
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9733
+- bge_forward_raw: 1.1446
+- bge_reverse_raw: 1.4329
+- bge_symmetric_raw: 1.2888
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 1cbd37faa75d16d0
+- candidate_id: 30dc2e901c444887
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
+- left_title: "Open placeholders block the archive"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Instructions stay silent about the README when it is complete"
-- embedding_score: 0.9729
-- bge_forward_raw: 0.5742
-- bge_reverse_raw: 1.0134
-- bge_symmetric_raw: 0.7938
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9727
+- bge_forward_raw: 0.3450
+- bge_reverse_raw: 1.0422
+- bge_symmetric_raw: 0.6936
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 4fd988c7d3acedb9
+- candidate_id: 7dd9137a027c7ed0
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a damaged managed block"
+- left_title: "The check names a damaged managed block"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
-- embedding_score: 0.9722
-- bge_forward_raw: 0.8309
-- bge_reverse_raw: 0.5086
-- bge_symmetric_raw: 0.6697
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9714
+- bge_forward_raw: 1.1267
+- bge_reverse_raw: 0.7316
+- bge_symmetric_raw: 0.9292
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: da455ee6a8551c1b
+- candidate_id: b83a6e605323fa81
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
+- left_title: "Archiving refreshes the development block"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer runs the README check on a complete README and it passes"
-- embedding_score: 0.9719
-- bge_forward_raw: 2.2183
-- bge_reverse_raw: 1.4840
-- bge_symmetric_raw: 1.8511
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9711
+- bge_forward_raw: 0.0876
+- bge_reverse_raw: 0.2306
+- bge_symmetric_raw: 0.1591
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 00dfb008bebb8d7d
+- candidate_id: 020cbd61ac6a74f6
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
+- left_title: "A deleted development block is not re-inserted"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "An unknown README impact value is refused"
-- embedding_score: 0.9713
-- bge_forward_raw: 0.5313
-- bge_reverse_raw: 0.6444
-- bge_symmetric_raw: 0.5878
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 571767450ab5aa91
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9713
-- bge_forward_raw: 1.0708
-- bge_reverse_raw: 0.9968
-- bge_symmetric_raw: 1.0338
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 9275510d75a20f0e
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a hand-written README without givn markers as unmanaged"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
+- right_title: "Archiving refreshes the development block"
 - embedding_score: 0.9708
-- bge_forward_raw: 0.3664
-- bge_reverse_raw: 1.0575
-- bge_symmetric_raw: 0.7120
+- bge_forward_raw: 0.5385
+- bge_reverse_raw: 0.8213
+- bge_symmetric_raw: 0.6799
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: b6d1f907bbc1fc57
+- candidate_id: d8b0bdb53fb7c606
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
+- left_title: "A disabled addon needs no impact decision"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
-- embedding_score: 0.9705
-- bge_forward_raw: 0.6866
-- bge_reverse_raw: 0.8986
-- bge_symmetric_raw: 0.7926
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 9c4263c18e7987d2
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer archives a change and the development managed block refreshes"
-- embedding_score: 0.9699
-- bge_forward_raw: 0.3005
-- bge_reverse_raw: 0.8062
-- bge_symmetric_raw: 0.5533
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 2262928bbd4aeff4
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer scaffolds a project and the README marks its unfilled sections"
+- right_title: "A recorded impact decision passes the review"
 - embedding_score: 0.9696
-- bge_forward_raw: 0.8287
-- bge_reverse_raw: -0.6673
-- bge_symmetric_raw: 0.0807
+- bge_forward_raw: 0.0879
+- bge_reverse_raw: 0.4544
+- bge_symmetric_raw: 0.2711
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: e938069f481c22f9
+- candidate_id: cc5fcce2ed375ae6
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Instructions stay silent about the README when it is complete"
+- left_title: "A disabled addon needs no impact decision"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
-- embedding_score: 0.9692
-- bge_forward_raw: 0.3346
-- bge_reverse_raw: 0.3785
-- bge_symmetric_raw: 0.3566
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9686
+- bge_forward_raw: 1.0385
+- bge_reverse_raw: 1.5868
+- bge_symmetric_raw: 1.3126
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: c085acc07e2aea09
+- candidate_id: 26720840cd2b3fa5
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
+- left_title: "Instructions surface an unfinished README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9680
-- bge_forward_raw: 0.6408
-- bge_reverse_raw: 0.6916
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9678
+- bge_forward_raw: 2.2708
+- bge_reverse_raw: 0.8566
+- bge_symmetric_raw: 1.5637
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: bdd5d75e50839026
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Instructions surface an unfinished README"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Scaffolding marks the unfilled sections"
+- embedding_score: 0.9666
+- bge_forward_raw: 0.5849
+- bge_reverse_raw: -0.1591
+- bge_symmetric_raw: 0.2129
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 4bf3af0ad69fe073
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Instructions stay silent on a complete README"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9664
+- bge_forward_raw: 1.7876
+- bge_reverse_raw: 1.0801
+- bge_symmetric_raw: 1.4339
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 958bc0534daa830c
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9655
+- bge_forward_raw: -0.2928
+- bge_reverse_raw: 0.6763
+- bge_symmetric_raw: 0.1917
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 73ef4982d4c69cbf
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A disabled addon needs no impact decision"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9654
+- bge_forward_raw: 1.7500
+- bge_reverse_raw: 2.0418
+- bge_symmetric_raw: 1.8959
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: fff48ac1a16fc107
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Scaffolding marks the unfilled sections"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9648
+- bge_forward_raw: 0.6437
+- bge_reverse_raw: 0.5435
+- bge_symmetric_raw: 0.5936
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7c761dc7b9ac5799
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A disabled addon needs no impact decision"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unknown impact value is refused"
+- embedding_score: 0.9645
+- bge_forward_raw: 0.4038
+- bge_reverse_raw: 0.3568
+- bge_symmetric_raw: 0.3803
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: c11d72b83ddffb1f
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Missing impact decision refuses the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9640
+- bge_forward_raw: 1.5127
+- bge_reverse_raw: 1.1941
+- bge_symmetric_raw: 1.3534
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 2c51808392581eee
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9635
+- bge_forward_raw: 0.8158
+- bge_reverse_raw: 0.6191
+- bge_symmetric_raw: 0.7175
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 86f00b6e0298404e
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "A recorded impact decision passes the review"
+- embedding_score: 0.9633
+- bge_forward_raw: -0.9635
+- bge_reverse_raw: -1.0480
+- bge_symmetric_raw: -1.0058
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: d92c4d881600f7ae
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9632
+- bge_forward_raw: -0.2217
+- bge_reverse_raw: 1.2232
+- bge_symmetric_raw: 0.5007
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 8d6a20cef761faf9
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "A recorded impact decision passes the review"
+- embedding_score: 0.9632
+- bge_forward_raw: -1.0344
+- bge_reverse_raw: -0.7773
+- bge_symmetric_raw: -0.9059
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7f3993fb8f4f8976
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unknown impact value is refused"
+- embedding_score: 0.9628
+- bge_forward_raw: 0.5535
+- bge_reverse_raw: 0.1947
+- bge_symmetric_raw: 0.3741
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: e9626df444862096
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A recorded impact decision passes the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9626
+- bge_forward_raw: 1.6945
+- bge_reverse_raw: 0.8965
+- bge_symmetric_raw: 1.2955
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 63da93a585e757dc
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "The check names every open placeholder"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9625
+- bge_forward_raw: -0.2071
+- bge_reverse_raw: 0.3362
+- bge_symmetric_raw: 0.0645
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 888235a27d0f74d4
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "An unknown impact value is refused"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unmanaged README blocks the archive"
+- embedding_score: 0.9621
+- bge_forward_raw: 0.2023
+- bge_reverse_raw: -0.0818
+- bge_symmetric_raw: 0.0602
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: da6282afc583222f
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9619
+- bge_forward_raw: 0.3513
+- bge_reverse_raw: 0.8555
+- bge_symmetric_raw: 0.6034
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: e845b86d7bf61343
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Instructions stay silent on a complete README"
+- embedding_score: 0.9618
+- bge_forward_raw: 0.8706
+- bge_reverse_raw: 0.6873
+- bge_symmetric_raw: 0.7789
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 58c7c05090949ab6
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "A disabled addon needs no impact decision"
+- embedding_score: 0.9617
+- bge_forward_raw: -0.8525
+- bge_reverse_raw: -0.5846
+- bge_symmetric_raw: -0.7186
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: f9099945b6066bb4
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "The check names a damaged managed block"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9615
+- bge_forward_raw: 1.2840
+- bge_reverse_raw: 0.0483
 - bge_symmetric_raw: 0.6662
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 52c260d6675957e8
+- candidate_id: 38f9ec3fad05f294
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
+- left_title: "A missing README blocks the archive"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a damaged managed block"
-- embedding_score: 0.9677
-- bge_forward_raw: 1.7018
-- bge_reverse_raw: 1.1754
-- bge_symmetric_raw: 1.4386
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: b65723d57f1c3db0
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9674
-- bge_forward_raw: -0.5802
-- bge_reverse_raw: -0.2292
-- bge_symmetric_raw: -0.4047
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 9a5846d169cd464b
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9669
-- bge_forward_raw: 0.9286
-- bge_reverse_raw: 0.9302
-- bge_symmetric_raw: 0.9294
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 12cf7cc38f4b1cf4
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer archives a change and the development managed block refreshes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- embedding_score: 0.9663
-- bge_forward_raw: 0.6081
-- bge_reverse_raw: -0.1139
-- bge_symmetric_raw: 0.2471
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 20723879176bad45
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Instructions stay silent about the README when it is complete"
-- embedding_score: 0.9661
-- bge_forward_raw: 1.6192
-- bge_reverse_raw: 0.8639
-- bge_symmetric_raw: 1.2416
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: e6bc38efc3a66048
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9653
-- bge_forward_raw: -0.5072
-- bge_reverse_raw: -0.6119
-- bge_symmetric_raw: -0.5596
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: bafbc0322ad027ef
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a damaged managed block"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9650
-- bge_forward_raw: 0.4504
-- bge_reverse_raw: -0.4667
-- bge_symmetric_raw: -0.0082
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: a6af7ffde2e3beb5
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9641
-- bge_forward_raw: 0.7014
-- bge_reverse_raw: 0.2444
-- bge_symmetric_raw: 0.4729
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 53aa0cfc46c270c2
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9634
-- bge_forward_raw: 0.6046
-- bge_reverse_raw: 1.3409
-- bge_symmetric_raw: 0.9727
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 2a5b2db3fc26df80
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9632
-- bge_forward_raw: 0.9017
-- bge_reverse_raw: 0.7783
-- bge_symmetric_raw: 0.8400
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: da024f456540683a
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
-- embedding_score: 0.9628
-- bge_forward_raw: 1.5790
-- bge_reverse_raw: 1.2079
-- bge_symmetric_raw: 1.3934
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: d075f41bde0aa0f1
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- embedding_score: 0.9625
-- bge_forward_raw: 0.7310
-- bge_reverse_raw: 0.1465
-- bge_symmetric_raw: 0.4387
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 7efd18c40d28f62f
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Instructions stay silent about the README when it is complete"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9622
-- bge_forward_raw: 0.4999
-- bge_reverse_raw: 0.7432
-- bge_symmetric_raw: 0.6215
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 84a317be44f86086
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review refuses sign-off without a recorded README impact decision"
-- embedding_score: 0.9617
-- bge_forward_raw: 0.7001
-- bge_reverse_raw: 1.2085
-- bge_symmetric_raw: 0.9543
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 19d0c1cd3e123c16
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks for a hand-written README without givn markers"
+- right_title: "Missing impact decision refuses the review"
 - embedding_score: 0.9612
-- bge_forward_raw: 1.1503
-- bge_reverse_raw: 0.9982
-- bge_symmetric_raw: 1.0742
+- bge_forward_raw: 0.7885
+- bge_reverse_raw: 1.4176
+- bge_symmetric_raw: 1.1030
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: b53c403d941a9d86
+- candidate_id: 1d79ae4bae0646e9
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Instructions stay silent about the README when it is complete"
+- left_title: "A disabled addon needs no impact decision"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a damaged managed block"
+- right_title: "A missing README blocks the archive"
 - embedding_score: 0.9610
-- bge_forward_raw: 0.8878
-- bge_reverse_raw: 0.7521
-- bge_symmetric_raw: 0.8199
+- bge_forward_raw: -0.4380
+- bge_reverse_raw: -0.5756
+- bge_symmetric_raw: -0.5068
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: f8def2b98659a081
+- candidate_id: 931ccfa9f4060f5b
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a hand-written README without givn markers as unmanaged"
+- left_title: "A recorded impact decision passes the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review refuses sign-off without a recorded README impact decision"
-- embedding_score: 0.9604
-- bge_forward_raw: -0.4873
-- bge_reverse_raw: -0.1170
-- bge_symmetric_raw: -0.3022
+- right_title: "An unmanaged README blocks the archive"
+- embedding_score: 0.9610
+- bge_forward_raw: 0.2323
+- bge_reverse_raw: -0.4323
+- bge_symmetric_raw: -0.1000
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: db39224111689af1
+- candidate_id: aaa2d5dc440f827c
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
+- left_title: "Instructions stay silent on a complete README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks when the README is missing"
-- embedding_score: 0.9602
-- bge_forward_raw: 0.8115
-- bge_reverse_raw: 0.5608
-- bge_symmetric_raw: 0.6861
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: daac574ce78e0df2
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
-- embedding_score: 0.9599
-- bge_forward_raw: -0.4428
-- bge_reverse_raw: 0.4272
-- bge_symmetric_raw: -0.0078
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 9eef5692ee0134f9
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a legacy scaffold README as needing migration"
-- embedding_score: 0.9595
-- bge_forward_raw: 0.6493
-- bge_reverse_raw: 0.3317
-- bge_symmetric_raw: 0.4905
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: db5f6d131d28101d
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer runs the README check on a complete README and it passes"
-- embedding_score: 0.9594
-- bge_forward_raw: 0.7306
-- bge_reverse_raw: 0.9916
-- bge_symmetric_raw: 0.8611
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 815f1ee92b6b40b0
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9593
-- bge_forward_raw: 1.2655
-- bge_reverse_raw: 0.0798
-- bge_symmetric_raw: 0.6727
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 65292843dbbbbc76
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9592
-- bge_forward_raw: -1.1003
-- bge_reverse_raw: -0.8427
-- bge_symmetric_raw: -0.9715
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 34cff7a50acd1284
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a hand-written README without givn markers as unmanaged"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9589
-- bge_forward_raw: -0.0375
-- bge_reverse_raw: -0.8112
-- bge_symmetric_raw: -0.4243
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: f1de6e2de05c0b3c
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9588
-- bge_forward_raw: -0.4368
-- bge_reverse_raw: -0.4987
-- bge_symmetric_raw: -0.4678
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: b488508980ebe24a
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9587
-- bge_forward_raw: -0.7110
-- bge_reverse_raw: 0.0936
-- bge_symmetric_raw: -0.3087
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: b8b944e9ebf94fbe
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9587
-- bge_forward_raw: 1.3660
-- bge_reverse_raw: 0.2922
-- bge_symmetric_raw: 0.8291
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: fcde687d37677284
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks when the README is missing"
-- embedding_score: 0.9583
-- bge_forward_raw: 0.3694
-- bge_reverse_raw: 0.0490
-- bge_symmetric_raw: 0.2092
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: a6d0af453c8b5a5e
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer archives a change and the development managed block refreshes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9582
-- bge_forward_raw: -0.1469
-- bge_reverse_raw: 0.1552
-- bge_symmetric_raw: 0.0042
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 214203687b684df4
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a damaged managed block"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a legacy scaffold README as needing migration"
-- embedding_score: 0.9579
-- bge_forward_raw: -0.3286
-- bge_reverse_raw: -0.5518
-- bge_symmetric_raw: -0.4402
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: b75da71bccd5d183
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks for a hand-written README without givn markers"
-- embedding_score: 0.9578
-- bge_forward_raw: 0.2511
-- bge_reverse_raw: 0.2088
-- bge_symmetric_raw: 0.2300
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: eda5d7f6160cbff3
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a legacy scaffold README as needing migration"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
-- embedding_score: 0.9577
-- bge_forward_raw: -0.2158
-- bge_reverse_raw: 0.3185
-- bge_symmetric_raw: 0.0513
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 9596429f2c5bec39
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9576
-- bge_forward_raw: -0.4923
-- bge_reverse_raw: 0.2708
-- bge_symmetric_raw: -0.1107
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: f9b21a66d6feb11b
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer archives a change and the development managed block refreshes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer runs the README check on a complete README and it passes"
-- embedding_score: 0.9575
-- bge_forward_raw: 0.3582
-- bge_reverse_raw: 0.8061
-- bge_symmetric_raw: 0.5821
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 98fe4ad7a26b8577
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9571
-- bge_forward_raw: -0.7331
-- bge_reverse_raw: 0.0492
-- bge_symmetric_raw: -0.3420
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 2eecc6976522259b
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9568
-- bge_forward_raw: -0.6553
-- bge_reverse_raw: -0.6081
-- bge_symmetric_raw: -0.6317
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: b53c8b49475d4818
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9567
-- bge_forward_raw: -0.1639
-- bge_reverse_raw: -0.4909
-- bge_symmetric_raw: -0.3274
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 987eacb44593f1f5
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a hand-written README without givn markers as unmanaged"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a legacy scaffold README as needing migration"
-- embedding_score: 0.9565
-- bge_forward_raw: -0.2349
-- bge_reverse_raw: -0.1829
-- bge_symmetric_raw: -0.2089
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 6692c3993311d2f4
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a hand-written README without givn markers as unmanaged"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9564
-- bge_forward_raw: 0.1085
-- bge_reverse_raw: -0.4312
-- bge_symmetric_raw: -0.1614
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 6eee5f117e9fe3f1
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9562
-- bge_forward_raw: 0.9200
-- bge_reverse_raw: 0.0450
-- bge_symmetric_raw: 0.4825
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 5983d95694ce1796
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9561
-- bge_forward_raw: 1.2899
-- bge_reverse_raw: 0.4064
-- bge_symmetric_raw: 0.8482
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 0ce767d5a4031cb6
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks while the README has open placeholders"
-- embedding_score: 0.9560
-- bge_forward_raw: 1.0453
-- bge_reverse_raw: 1.1228
-- bge_symmetric_raw: 1.0840
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 808c1e99da5f3557
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- embedding_score: 0.9558
-- bge_forward_raw: 1.0194
-- bge_reverse_raw: 1.6632
-- bge_symmetric_raw: 1.3413
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 6a58e412875f1203
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9554
-- bge_forward_raw: 0.3000
-- bge_reverse_raw: 0.6555
-- bge_symmetric_raw: 0.4778
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 251a81333618a63f
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer asks for instructions and the unfinished README is surfaced"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a damaged managed block"
-- embedding_score: 0.9554
-- bge_forward_raw: 1.3159
-- bge_reverse_raw: 1.3046
-- bge_symmetric_raw: 1.3102
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: e1eba27cf8c93270
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9553
-- bge_forward_raw: -0.4630
-- bge_reverse_raw: -0.3095
-- bge_symmetric_raw: -0.3863
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 13927651e33d8cf4
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- embedding_score: 0.9551
-- bge_forward_raw: -0.4394
-- bge_reverse_raw: -0.0236
-- bge_symmetric_raw: -0.2315
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 65b0fe990c5f86d2
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a missing README"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9547
-- bge_forward_raw: 0.2163
-- bge_reverse_raw: -1.2044
-- bge_symmetric_raw: -0.4941
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 0b0cadcee0264a5e
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9540
-- bge_forward_raw: -0.5245
-- bge_reverse_raw: 0.2003
-- bge_symmetric_raw: -0.1621
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 3e6cf09650533e52
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a legacy scaffold README as needing migration"
-- embedding_score: 0.9539
-- bge_forward_raw: 0.1619
-- bge_reverse_raw: -0.0096
-- bge_symmetric_raw: 0.0762
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 71be61cfe87490ed
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9538
-- bge_forward_raw: -0.1339
-- bge_reverse_raw: -0.1964
-- bge_symmetric_raw: -0.1652
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 7d4ba86beb4c68f9
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- embedding_score: 0.9537
-- bge_forward_raw: 0.7987
-- bge_reverse_raw: 0.3667
-- bge_symmetric_raw: 0.5827
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 1a0561078b5657e9
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks for a hand-written README without givn markers"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review refuses sign-off without a recorded README impact decision"
-- embedding_score: 0.9536
-- bge_forward_raw: -1.0581
-- bge_reverse_raw: -0.2098
-- bge_symmetric_raw: -0.6339
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: b65a92424ebfad28
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer archives a change and the development managed block refreshes"
-- embedding_score: 0.9535
-- bge_forward_raw: 0.0625
-- bge_reverse_raw: 0.3677
-- bge_symmetric_raw: 0.2151
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 667176a429c182b5
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer runs the README check on a complete README and it passes"
-- embedding_score: 0.9533
-- bge_forward_raw: 1.4176
-- bge_reverse_raw: 1.4304
-- bge_symmetric_raw: 1.4240
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: ee4054c880ce06be
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks while the README has open placeholders"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9533
-- bge_forward_raw: -0.1988
-- bge_reverse_raw: 0.5215
-- bge_symmetric_raw: 0.1614
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 2b2d811c58058723
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- embedding_score: 0.9533
-- bge_forward_raw: 0.7931
-- bge_reverse_raw: 0.7281
-- bge_symmetric_raw: 0.7606
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 11724d8f1fb1e270
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer archives a change and the development managed block refreshes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9532
-- bge_forward_raw: -0.2267
-- bge_reverse_raw: -1.0115
-- bge_symmetric_raw: -0.6191
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: f261d99e4aeda60e
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer checks a review with a recorded README impact decision and it passes"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9531
-- bge_forward_raw: 0.0074
-- bge_reverse_raw: -0.5242
-- bge_symmetric_raw: -0.2584
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 86480341bb6009e9
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports a legacy scaffold README as needing migration"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
-- embedding_score: 0.9531
-- bge_forward_raw: -0.4605
-- bge_reverse_raw: -1.1781
-- bge_symmetric_raw: -0.8193
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: a293590a41690c17
-- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a damaged managed block"
-- embedding_score: 0.9530
-- bge_forward_raw: 0.0601
+- right_title: "Instructions surface an unfinished README"
+- embedding_score: 0.9609
+- bge_forward_raw: 0.5088
 - bge_reverse_raw: 0.5519
-- bge_symmetric_raw: 0.3060
+- bge_symmetric_raw: 0.5304
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 571853ec70cb90cf
+- candidate_id: 3c3e57914cc842be
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer runs the README check on a complete README and it passes"
+- left_title: "The check passes on a complete README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9527
-- bge_forward_raw: 1.2795
-- bge_reverse_raw: 0.5291
-- bge_symmetric_raw: 0.9043
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9608
+- bge_forward_raw: 0.6009
+- bge_reverse_raw: 1.6185
+- bge_symmetric_raw: 1.1097
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: abee6627c68f5e14
+- candidate_id: 289807995d678739
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "README check reports every open placeholder and its expectation"
+- left_title: "A legacy README is reported for migration"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Review accepts an updated README impact decision naming the sections"
-- embedding_score: 0.9527
-- bge_forward_raw: -0.1584
-- bge_reverse_raw: -0.3343
-- bge_symmetric_raw: -0.2464
+- right_title: "A marker-less README is unmanaged"
+- embedding_score: 0.9607
+- bge_forward_raw: 0.5167
+- bge_reverse_raw: -0.0914
+- bge_symmetric_raw: 0.2127
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: ee0232ea794ad9bd
+- candidate_id: 3882bf5a0c5ea643
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer scaffolds a project and the README marks its unfilled sections"
+- left_title: "A legacy README is reported for migration"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Instructions stay silent about the README when it is complete"
-- embedding_score: 0.9526
-- bge_forward_raw: 0.4769
-- bge_reverse_raw: -0.1123
-- bge_symmetric_raw: 0.1823
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9605
+- bge_forward_raw: 0.9219
+- bge_reverse_raw: 1.0321
+- bge_symmetric_raw: 0.9770
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: a1b9e7c37ffe4545
+- candidate_id: af6466ba43a834fb
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
+- left_title: "A legacy README is reported for migration"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Consumer scaffolds a project and the README marks its unfilled sections"
-- embedding_score: 0.9522
-- bge_forward_raw: -0.5996
-- bge_reverse_raw: -0.2208
-- bge_symmetric_raw: -0.4102
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9600
+- bge_forward_raw: 0.5310
+- bge_reverse_raw: 0.5640
+- bge_symmetric_raw: 0.5475
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: d640fe5d67021281
+- candidate_id: 37d60ff6e706fa71
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer scaffolds a project and the README marks its unfilled sections"
+- left_title: "A deleted development block is not re-inserted"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a legacy scaffold README as needing migration"
-- embedding_score: 0.9518
-- bge_forward_raw: -1.2002
-- bge_reverse_raw: -1.0894
-- bge_symmetric_raw: -1.1448
+- right_title: "An unknown impact value is refused"
+- embedding_score: 0.9599
+- bge_forward_raw: -0.8768
+- bge_reverse_raw: 0.0904
+- bge_symmetric_raw: -0.3932
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: d3bfe67c6d4a0be7
+- candidate_id: 83587488e00a974b
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
+- left_title: "Instructions surface an unfinished README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive blocks while the README has open placeholders"
-- embedding_score: 0.9516
-- bge_forward_raw: 0.3429
-- bge_reverse_raw: -0.1641
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9599
+- bge_forward_raw: 1.6885
+- bge_reverse_raw: 1.7543
+- bge_symmetric_raw: 1.7214
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 78672b23ab1a01c1
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "An unmanaged README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9598
+- bge_forward_raw: -0.2096
+- bge_reverse_raw: 1.0905
+- bge_symmetric_raw: 0.4405
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 97f5a3f5ac22bb43
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Instructions surface an unfinished README"
+- embedding_score: 0.9597
+- bge_forward_raw: 0.6223
+- bge_reverse_raw: 0.8358
+- bge_symmetric_raw: 0.7290
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 5537aa0d14d5cd0d
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A legacy README is reported for migration"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9585
+- bge_forward_raw: 1.2871
+- bge_reverse_raw: 1.1385
+- bge_symmetric_raw: 1.2128
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 4a30c2929e48291c
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Open placeholders block the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Scaffolding marks the unfilled sections"
+- embedding_score: 0.9585
+- bge_forward_raw: 0.0339
+- bge_reverse_raw: 0.0928
+- bge_symmetric_raw: 0.0634
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: fbced72950749317
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9584
+- bge_forward_raw: 0.3147
+- bge_reverse_raw: 0.8220
+- bge_symmetric_raw: 0.5683
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 1dc18e391aa1ba59
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A recorded impact decision passes the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9584
+- bge_forward_raw: 1.1294
+- bge_reverse_raw: 0.1039
+- bge_symmetric_raw: 0.6167
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 1156914d3473a5cc
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A legacy README is reported for migration"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Instructions surface an unfinished README"
+- embedding_score: 0.9578
+- bge_forward_raw: 0.7845
+- bge_reverse_raw: 1.1893
+- bge_symmetric_raw: 0.9869
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 94a2e62e30b49589
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Missing impact decision refuses the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9576
+- bge_forward_raw: 1.0805
+- bge_reverse_raw: 0.2278
+- bge_symmetric_raw: 0.6542
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 4aee58fccb2f3521
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Scaffolding marks the unfilled sections"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9576
+- bge_forward_raw: 0.8179
+- bge_reverse_raw: 1.4575
+- bge_symmetric_raw: 1.1377
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 2ae7372a23c7e8f7
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9575
+- bge_forward_raw: -0.3026
+- bge_reverse_raw: 1.1254
+- bge_symmetric_raw: 0.4114
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 1af77f9c925d1078
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "An unknown impact value is refused"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9575
+- bge_forward_raw: 0.9101
+- bge_reverse_raw: 0.1724
+- bge_symmetric_raw: 0.5413
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 428af3df77a82dff
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Open placeholders block the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9575
+- bge_forward_raw: -0.3062
+- bge_reverse_raw: 0.6447
+- bge_symmetric_raw: 0.1693
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: ecfc339c598e30fb
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A disabled addon needs no impact decision"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unmanaged README blocks the archive"
+- embedding_score: 0.9564
+- bge_forward_raw: 0.3070
+- bge_reverse_raw: 0.0003
+- bge_symmetric_raw: 0.1536
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: b5b215c8912154b6
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "An unmanaged README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9560
+- bge_forward_raw: 0.2949
+- bge_reverse_raw: 1.1297
+- bge_symmetric_raw: 0.7123
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: a39353fed3db47f3
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "An unknown impact value is refused"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9555
+- bge_forward_raw: 0.4261
+- bge_reverse_raw: 0.6816
+- bge_symmetric_raw: 0.5539
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: d86ad90900351d28
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "The check names every open placeholder"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9554
+- bge_forward_raw: -0.3370
+- bge_reverse_raw: 0.5377
+- bge_symmetric_raw: 0.1004
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: ecba99934934ebcc
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9544
+- bge_forward_raw: 0.2559
+- bge_reverse_raw: 0.6164
+- bge_symmetric_raw: 0.4362
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 28da8f232bcb1774
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A recorded impact decision passes the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9543
+- bge_forward_raw: 0.7280
+- bge_reverse_raw: -0.0248
+- bge_symmetric_raw: 0.3516
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: dd81007e86786836
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A disabled addon needs no impact decision"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "A marker-less README is unmanaged"
+- embedding_score: 0.9540
+- bge_forward_raw: -0.2501
+- bge_reverse_raw: -0.1779
+- bge_symmetric_raw: -0.2140
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 35d2e0bc566260f9
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A disabled addon needs no impact decision"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9539
+- bge_forward_raw: 0.9035
+- bge_reverse_raw: 0.3056
+- bge_symmetric_raw: 0.6046
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 98113973d384e397
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9538
+- bge_forward_raw: 0.6833
+- bge_reverse_raw: -0.3862
+- bge_symmetric_raw: 0.1486
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 77a502b01d0e7a8e
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Archiving refreshes the development block"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9538
+- bge_forward_raw: -1.4265
+- bge_reverse_raw: -1.0652
+- bge_symmetric_raw: -1.2458
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 026ca734fedb7ea3
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unmanaged README blocks the archive"
+- embedding_score: 0.9537
+- bge_forward_raw: 0.4192
+- bge_reverse_raw: 0.7045
+- bge_symmetric_raw: 0.5619
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 1a842bb44ff5a191
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "An unknown impact value is refused"
+- embedding_score: 0.9535
+- bge_forward_raw: -0.4996
+- bge_reverse_raw: -0.2368
+- bge_symmetric_raw: -0.3682
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: bcdc58555881316e
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "A recorded impact decision passes the review"
+- embedding_score: 0.9534
+- bge_forward_raw: -0.5875
+- bge_reverse_raw: -0.5700
+- bge_symmetric_raw: -0.5787
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: fc442223ade4a119
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Instructions surface an unfinished README"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9532
+- bge_forward_raw: 0.9208
+- bge_reverse_raw: 0.8956
+- bge_symmetric_raw: 0.9082
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 6247dfc13169dace
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Missing impact decision refuses the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Open placeholders block the archive"
+- embedding_score: 0.9531
+- bge_forward_raw: 0.9303
+- bge_reverse_raw: -0.3762
+- bge_symmetric_raw: 0.2770
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: bda900cbd37d04b7
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "An unknown impact value is refused"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9530
+- bge_forward_raw: -0.1057
+- bge_reverse_raw: 0.4565
+- bge_symmetric_raw: 0.1754
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: bcc03db83b57cee1
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Scaffolding marks the unfilled sections"
+- embedding_score: 0.9529
+- bge_forward_raw: -0.1801
+- bge_reverse_raw: 0.3589
 - bge_symmetric_raw: 0.0894
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: b1fff0126e188d3f
+- candidate_id: d94f8f7c30d07117
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer archives a change and the development managed block refreshes"
+- left_title: "Missing impact decision refuses the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a damaged managed block"
-- embedding_score: 0.9514
-- bge_forward_raw: 0.7769
-- bge_reverse_raw: 0.6283
-- bge_symmetric_raw: 0.7026
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9529
+- bge_forward_raw: 0.1933
+- bge_reverse_raw: 0.4543
+- bge_symmetric_raw: 0.3238
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 86853b7b17acb6be
+- candidate_id: c7d84df02cf6f0ca
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Consumer archives a change and the development managed block refreshes"
+- left_title: "A recorded impact decision passes the review"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a hand-written README without givn markers as unmanaged"
-- embedding_score: 0.9514
-- bge_forward_raw: -0.6255
-- bge_reverse_raw: -1.0347
-- bge_symmetric_raw: -0.8301
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9528
+- bge_forward_raw: 0.7339
+- bge_reverse_raw: 0.6428
+- bge_symmetric_raw: 0.6884
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 183206f4e8b3a916
+- candidate_id: 9c347a96afd4f44e
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "A project without the readme addon needs no README impact decision"
+- left_title: "A deleted development block is not re-inserted"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9524
+- bge_forward_raw: 0.7587
+- bge_reverse_raw: 0.9635
+- bge_symmetric_raw: 0.8611
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 8b0343b316ec6aec
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9518
+- bge_forward_raw: 0.5211
+- bge_reverse_raw: 1.1116
+- bge_symmetric_raw: 0.8164
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: bacdffb8d1a2b9d3
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9518
+- bge_forward_raw: 0.8196
+- bge_reverse_raw: 0.9799
+- bge_symmetric_raw: 0.8997
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 19bd6968b60aa1dc
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "The check names every open placeholder"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9515
+- bge_forward_raw: 0.3165
+- bge_reverse_raw: 0.8468
+- bge_symmetric_raw: 0.5817
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 37e40e01cecb0301
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A legacy README is reported for migration"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
+- embedding_score: 0.9514
+- bge_forward_raw: 0.5682
+- bge_reverse_raw: 0.5946
+- bge_symmetric_raw: 0.5814
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 3d7eb70ba5030e5e
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A recorded impact decision passes the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Archiving refreshes the development block"
 - embedding_score: 0.9513
-- bge_forward_raw: 0.1885
-- bge_reverse_raw: 1.0334
-- bge_symmetric_raw: 0.6110
+- bge_forward_raw: -0.4939
+- bge_reverse_raw: -0.2585
+- bge_symmetric_raw: -0.3762
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 9387e03aa11a1562
+- candidate_id: 0b62cb859caed711
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive does not re-insert a deleted development managed block while the README stays managed"
+- left_title: "Instructions stay silent on a complete README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a damaged managed block"
+- right_title: "The check names every open placeholder"
 - embedding_score: 0.9512
-- bge_forward_raw: 1.0013
-- bge_reverse_raw: 1.7234
-- bge_symmetric_raw: 1.3623
+- bge_forward_raw: 0.8793
+- bge_reverse_raw: 0.6733
+- bge_symmetric_raw: 0.7763
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 88efc3d4495b1699
+- candidate_id: 315f68c1ee436993
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "Archive blocks when the README is missing"
+- left_title: "Instructions surface an unfinished README"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports every open placeholder and its expectation"
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9512
+- bge_forward_raw: 0.9460
+- bge_reverse_raw: 1.1521
+- bge_symmetric_raw: 1.0491
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 0b44b572be551a4c
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Scaffolding marks the unfilled sections"
+- embedding_score: 0.9510
+- bge_forward_raw: 1.1091
+- bge_reverse_raw: 1.2607
+- bge_symmetric_raw: 1.1849
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 56ab094402b034d6
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Instructions stay silent on a complete README"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Missing impact decision refuses the review"
+- embedding_score: 0.9508
+- bge_forward_raw: -0.1343
+- bge_reverse_raw: 0.8349
+- bge_symmetric_raw: 0.3503
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 5f4eeffcf128b594
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A recorded impact decision passes the review"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9507
+- bge_forward_raw: -0.0539
+- bge_reverse_raw: 0.5603
+- bge_symmetric_raw: 0.2532
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 8236bdb49ed19eb5
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Scaffolding marks the unfilled sections"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names a damaged managed block"
+- embedding_score: 0.9507
+- bge_forward_raw: 1.6313
+- bge_reverse_raw: 1.3688
+- bge_symmetric_raw: 1.5000
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 7f10c9eafdfecbec
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check names every open placeholder"
 - embedding_score: 0.9506
-- bge_forward_raw: -1.2526
-- bge_reverse_raw: -0.6195
-- bge_symmetric_raw: -0.9361
+- bge_forward_raw: -0.0718
+- bge_reverse_raw: 0.2205
+- bge_symmetric_raw: 0.0744
 - bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
-- candidate_id: 1e24cd32af4c0614
+- candidate_id: e3e9bb35558c7331
 - left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- left_title: "An unknown README impact value is refused"
+- left_title: "An unknown impact value is refused"
 - right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
-- right_title: "README check reports a missing README"
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9506
+- bge_forward_raw: 0.1291
+- bge_reverse_raw: 0.8451
+- bge_symmetric_raw: 0.4871
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: d68bf5d562f223c1
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "A missing README blocks the archive"
+- embedding_score: 0.9505
+- bge_forward_raw: -0.0228
+- bge_reverse_raw: 0.0947
+- bge_symmetric_raw: 0.0359
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: d8b6b6aff9210cce
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A marker-less README is unmanaged"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Updated impact decision passes the review"
+- embedding_score: 0.9504
+- bge_forward_raw: 0.1470
+- bge_reverse_raw: 0.9477
+- bge_symmetric_raw: 0.5474
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: da9a6fee9eb24341
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A deleted development block is not re-inserted"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "Scaffolding marks the unfilled sections"
 - embedding_score: 0.9503
-- bge_forward_raw: 1.3691
-- bge_reverse_raw: 1.2162
-- bge_symmetric_raw: 1.2927
+- bge_forward_raw: 0.8729
+- bge_reverse_raw: 2.1142
+- bge_symmetric_raw: 1.4935
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 0652b9dd2ce8d991
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "A missing README blocks the archive"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check reports a missing README"
+- embedding_score: 0.9502
+- bge_forward_raw: 1.2440
+- bge_reverse_raw: 2.1873
+- bge_symmetric_raw: 1.7156
+- bge_admission: BGE_FILTERED
+
+## BGE Filtered Candidate
+- candidate_id: 4c88b704cf859823
+- left_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- left_title: "Scaffolding marks the unfilled sections"
+- right_file: "givn/changes/readme-enforcement/specs/readme-enforcement/readme-enforcement.feature"
+- right_title: "The check passes on a complete README"
+- embedding_score: 0.9502
+- bge_forward_raw: 1.2320
+- bge_reverse_raw: 0.4936
+- bge_symmetric_raw: 0.8628
 - bge_admission: BGE_FILTERED
