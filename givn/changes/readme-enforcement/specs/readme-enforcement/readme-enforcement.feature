@@ -128,7 +128,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And the directory givn/changes/readme-demo/ exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive blocks for a hand-written README without givn markers
     Given a project root with givn/ initialised
     And a hand-written README without any givn markers
