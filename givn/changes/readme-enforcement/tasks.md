@@ -364,31 +364,34 @@ non-@e2e first, @e2e last).
 
 ## Scenario 11: Archive blocks when the README is missing
 
-- [ ] RED — `cargo test --test features_runner -- --name "Archive blocks when the README is missing"`
+- [x] RED — legitimate immediate GREEN: all steps reused; the gate reuses the
+      checker whose `MissingReadme` branch shipped with scenario 4 and the
+      gate call shipped with scenario 10.
 
   ```
-  (paste RED output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] GREEN — missing-README branch in the completeness gate.
+- [x] GREEN — reuse only (checker + gate; missing-README branch pinned
+      through the archive path).
 
   Files:
-  - (paste production files)
+  - (no production files — pure step reuse)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Archive blocks when the README is missing`
+- [x] COMMIT — `feat(readme-enforcement): Archive blocks when the README is missing`
 
   ```
-  commit hash:
+  commit hash: f4c8bc5
   ```
 
 ## Scenario 12: Archive blocks for a hand-written README without givn markers
