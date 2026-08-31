@@ -1,5 +1,6 @@
 /// Cobertura XML parsing, merging, and report generation.
 use anyhow::{Context, Result, bail};
+use std::collections::BTreeMap;
 use std::path::Path;
 
 /// Coverage summary extracted from a Cobertura XML report.
@@ -11,6 +12,11 @@ pub struct CoberturaReport {
     pub lines_valid: u64,
     pub branches_covered: u64,
     pub branches_valid: u64,
+    /// Per-source-file (lines hit, lines valid) distribution. Two runs over
+    /// disjoint test subsets produce different distributions even when the
+    /// aggregate totals coincide; an aggregate match alone is not evidence of
+    /// a copied report.
+    pub file_lines: BTreeMap<String, (u64, u64)>,
 }
 
 /// Parse a Cobertura XML file and extract coverage statistics.
@@ -26,6 +32,7 @@ pub fn parse(path: &Path) -> Result<CoberturaReport> {
             lines_valid: r.lines_valid,
             branches_covered: r.branches_covered,
             branches_valid: r.branches_valid,
+            file_lines: r.file_lines(),
         })
         .with_context(|| format!("failed to parse Cobertura XML: {}", path.display()))
 }
