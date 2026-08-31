@@ -1008,7 +1008,13 @@ fn exact_boundary_semantic_project(world: &mut GivnWorld) {
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_reranker = Some("stub".to_string());
     world.retrieval_stub_scores =
-        Some("Exact boundary delta|Exact boundary permanent=0.9500".to_string());
+        Some("Exact boundary delta|Exact boundary permanent=0.9000".to_string());
+    world.retrieval_bge_scores = Some(
+        "givn/changes/running-change/specs/running.feature|Exact boundary delta->givn/specs/boundary.feature|Exact boundary permanent=5.0000;givn/specs/boundary.feature|Exact boundary permanent->givn/changes/running-change/specs/running.feature|Exact boundary delta=5.0000".to_string(),
+    );
+    world.retrieval_nli_scores = Some(
+        "givn/changes/running-change/specs/running.feature|Exact boundary delta->givn/specs/boundary.feature|Exact boundary permanent=5,0,0;givn/specs/boundary.feature|Exact boundary permanent->givn/changes/running-change/specs/running.feature|Exact boundary delta=5,0,0".to_string(),
+    );
 }
 
 #[then(regex = r#"^the candidate embedding score is exactly "([^"]+)"$"#)]

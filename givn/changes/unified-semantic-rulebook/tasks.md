@@ -45,7 +45,15 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
       RED: undefined range step -> exit 101. GREEN: exit 0. Files:
       tests/steps/semantic_rulebook_steps.rs (fixtures + coverage commands),
       tests/steps/semantic_review_e2e_steps.rs (parameterized range binding),
-      specs/semantic-review/semantic-review.feature. Commit a822685..
+      specs/semantic-review/semantic-review.feature. Commit 55fbbc9.
+- [x] S2 `The report distinguishes permanent and current-change candidate
+      scopes` (modified): score-boundary binding uses its parameter (0.9000);
+      two-similar rulebook fixture gains deterministic BGE/NLI recommended
+      overrides for all three pairs.
+      RED: scope line missing under stub-filtered pairs -> exit 101.
+      GREEN: exit 0. Files: tests/steps/semantic_review_steps.rs (boundary
+      binding), tests/steps/semantic_rulebook_steps.rs (overrides).
+      Commit for S2:
 - [ ] S2 `The report distinguishes permanent and current-change candidate
       scopes` (modified): score-boundary binding uses its parameter (0.9000).
 - [ ] S3 `A candidate at the exact E5 boundary is included` (modified):
