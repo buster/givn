@@ -85,7 +85,8 @@ const SEMANTIC_FINGERPRINT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
 const SEMANTIC_EVIDENCE_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
-const SEMANTIC_SIMILARITY_THRESHOLD: f32 = 0.95;
+/// Single change-scoped E5 admission boundary (unified rulebook, ADR-066).
+const SEMANTIC_SIMILARITY_THRESHOLD: f32 = E5_ADMISSION_THRESHOLD;
 #[cfg(feature = "spec-retrieval")]
 const DUPLICATE_REPORT_SCHEMA_VERSION: u32 = 1;
 #[cfg(feature = "spec-retrieval")]
