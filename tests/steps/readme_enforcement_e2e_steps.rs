@@ -114,6 +114,18 @@ fn dev_block_lists_commands(world: &mut GivnWorld) {
     );
 }
 
+#[then("the archived change directory exists")]
+fn archived_change_dir_exists(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(
+        env.path("givn/archive/readme-demo").is_dir(),
+        "the change must have been moved to givn/archive/readme-demo/"
+    );
+}
+
 #[then(regex = r#"^the instructions mention the unfinished README and \`givn readme check\`$"#)]
 fn instructions_mention_readme(world: &mut GivnWorld) {
     let out = super::output(world);

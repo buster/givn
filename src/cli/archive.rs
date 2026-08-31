@@ -234,6 +234,24 @@ pub fn run(change: &str) -> Result<()> {
         }
     }
 
+    // Development managed block refresh (readme addon enabled): the block
+    // content is rewritten from the effective command file after the
+    // post-merge gates and before the coverage gate. A failure restores the
+    // README from the pre-archive backup.
+    if manifest.addons.readme {
+        match crate::cli::readme::refresh_development_block(&project_root) {
+            Ok(true) => println!("✓ development managed block refreshed"),
+            Ok(false) => {}
+            Err(e) => {
+                let _ = crate::cli::coverage_gate::rollback_readme(&project_root, &backup_dir);
+                bail!(
+                    "archive blocked: development managed block refresh failed: {e:#}. \
+                     README has been restored to its pre-archive state."
+                );
+            }
+        }
+    }
+
     // === Coverage gate (archive-level, only if addon enabled) ===
 
     if manifest.addons.coverage {

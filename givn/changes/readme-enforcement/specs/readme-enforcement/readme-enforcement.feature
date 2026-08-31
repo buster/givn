@@ -154,7 +154,7 @@ Feature: README enforcement
     Then the command exits 0
     And the README still has no development managed block
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer archives a change and the development managed block refreshes
     Given a project root with givn/ initialised
     And a complete README whose development managed block is stale
@@ -164,7 +164,7 @@ Feature: README enforcement
     When the user invokes `givn archive --change readme-demo`
     Then the command succeeds
     And the development managed block lists the current configured workflow commands
-    And the directory givn/archive/readme-demo/ exists
+    And the archived change directory exists
 
   @givn.added @e2e
   Scenario: Consumer checks a review with a recorded README impact decision and it passes

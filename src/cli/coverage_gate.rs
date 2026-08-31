@@ -313,7 +313,7 @@ fn rollback_specs_and_readme(project_root: &Path, backup_dir: &Path) -> Result<(
 }
 
 /// Restore the README bytes that existed before the archive transaction.
-fn rollback_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
+pub(crate) fn rollback_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
     let readme_path = project_root.join("README.md");
     let backup_readme = backup_dir.join("README.md");
     if backup_readme.exists() {
