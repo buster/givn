@@ -116,7 +116,7 @@ Feature: README enforcement
     And stdout mentions "Quick start"
     And the directory givn/changes/readme-demo/ exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive blocks when the README is missing
     Given a project root with givn/ initialised
     And the README is missing
