@@ -163,7 +163,14 @@ fn stale_block_readme(world: &mut GivnWorld) {
 
 #[given("the README is missing")]
 fn readme_missing(world: &mut GivnWorld) {
-    unimplemented!("remove README.md from the project root")
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let path = env.path("README.md");
+    if path.exists() {
+        std::fs::remove_file(&path).expect("remove README.md");
+    }
 }
 
 // --- Change fixtures ---------------------------------------------------------
