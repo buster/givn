@@ -126,9 +126,21 @@ pub(crate) fn single_admitted_candidate(world: &mut GivnWorld) {
 #[given("a rulebook review project with two similar active deltas")]
 pub(crate) fn two_similar_active_deltas_rulebook(world: &mut GivnWorld) {
     // Reuse the proven fixture from the semantic-review capability; the
-    // rulebook scenarios only add combined second-stage stubs.
+    // rulebook scenarios only add combined second-stage stubs plus
+    // deterministic recommended-directional evidence for all three pairs
+    // (two delta-to-permanent, one delta-to-delta).
     super::semantic_review_steps::two_similar_active_deltas(world);
     reconfigure_combined_stubs(world);
+    const D1: &str = "givn/changes/running-change/specs/first.feature|Unknown provider is rejected";
+    const D2: &str =
+        "givn/changes/running-change/specs/second.feature|Unknown provider selection is rejected";
+    const P: &str = "givn/specs/retrieval.feature|Provider name is unknown";
+    world.retrieval_bge_scores = Some(format!(
+        "{D1}->{P}=5.0000;{P}->{D1}=5.0000;{D2}->{P}=5.0000;{P}->{D2}=5.0000;{D1}->{D2}=5.0000;{D2}->{D1}=5.0000"
+    ));
+    world.retrieval_nli_scores = Some(format!(
+        "{D1}->{P}=5,0,0;{P}->{D1}=5,0,0;{D2}->{P}=5,0,0;{P}->{D2}=5,0,0;{D1}->{D2}=5,0,0;{D2}->{D1}=5,0,0"
+    ));
 }
 
 #[given("a rulebook review project with more candidate pairs than the pair cap")]

@@ -1396,14 +1396,17 @@ fn report_names_exact_endpoint_titles(world: &mut GivnWorld) {
 }
 
 #[then(regex = r#"^all candidate scores have exactly four decimals and are at least "([^"]+)"$"#)]
-fn report_scores_have_boundary(world: &mut GivnWorld, _boundary: String) {
+fn report_scores_have_boundary(world: &mut GivnWorld, boundary: String) {
+    let boundary = boundary
+        .parse::<f32>()
+        .expect("boundary is a decimal number");
     for line in semantic_report(world)
         .lines()
         .filter(|line| line.starts_with("- embedding_score:"))
     {
         let score = line.split_once(':').expect("score field").1.trim();
         assert_eq!(score.len(), 6);
-        assert!(score.parse::<f32>().expect("score number") >= 0.95);
+        assert!(score.parse::<f32>().expect("score number") >= boundary);
     }
 }
 

@@ -39,9 +39,13 @@ files. Rulebook mechanics first (non-@e2e), then the @e2e consumer flows.
 
 ## Gate constants and fixtures (S1–S3: semantic-review delta)
 
-- [ ] S1 `Change review generates a complete report for a semantic candidate`
+- [x] S1 `Change review generates a complete report for a semantic candidate`
       (modified): new `single admitted candidate` fixture (disjoint corpus),
       parameterized four-decimals range binding, `BLOCKED` status.
+      RED: undefined range step -> exit 101. GREEN: exit 0. Files:
+      tests/steps/semantic_rulebook_steps.rs (fixtures + coverage commands),
+      tests/steps/semantic_review_e2e_steps.rs (parameterized range binding),
+      specs/semantic-review/semantic-review.feature. Commit a822685..
 - [ ] S2 `The report distinguishes permanent and current-change candidate
       scopes` (modified): score-boundary binding uses its parameter (0.9000).
 - [ ] S3 `A candidate at the exact E5 boundary is included` (modified):
