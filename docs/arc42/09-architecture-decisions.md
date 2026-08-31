@@ -39,5 +39,8 @@ retrieval-boundary refinement, not a new decision.
 ADR-063 is proposed by the open `semantic-reranker-budget` change (bounded
 second-stage work). ADR-064 is proposed by the open
 `semantic-scoring-throughput` change: one shared `GIVN_SPEC_THREADS` budget
-controls the compute threads of E5, BGE, and NLI. Both are listed as `proposed`
+controls the compute threads of E5, BGE, and NLI. ADR-065 is proposed by the
+open `unified-semantic-rulebook` change: one change-scoped comparison sequence
+(single `0.9000` admission, hybrid selection, pair-score cache) behind all
+three review surfaces. All three are listed as `proposed`
 in the register until their changes pass their remaining gates.

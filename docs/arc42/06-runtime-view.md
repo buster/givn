@@ -150,7 +150,10 @@ The archive command executes the following stages:
 2. Load the effective manifest and ensure every `apply.requires` artifact is
    complete or skipped.
 3. Run configured post hooks for each `apply.requires` artifact.
-4. Run retrieval review when `spec-retrieval` is compiled. The strict E5 gate is
+4. Run the unified rulebook as the similarity gate when `spec-retrieval` is
+   compiled: the same comparison, selection, and judgement rules as
+   `givn check review`, evaluated against the current permanent tree with
+   cached pair-judgement reuse and carried classifications. The strict gate is
    active only when `spec-similarity-gate` is compiled; otherwise this path is
    advisory. A feature-free build skips this retrieval review stage.
 5. When the readme addon is enabled, run the README completeness gate before any
@@ -235,10 +238,9 @@ attaches to the five retained results and remains advisory.
 ### 6.8.4 Advisory `givn spec review --change`
 
 The advisory review path first refreshes the permanent index, reads it, and then
-collects delta scenarios. In E5-only mode it reports at most five ranked
-advisory matches per active delta. If BGE or NLI is selected, the existing
-surface-specific retrieval pool is passed independently to each layer. This
-command does not create `semantic-review.md`.
+collects delta scenarios. It runs the unified rulebook (single `0.9000`
+admission, hybrid selection, cached pair judgement) and renders its evidence
+decision-first. This command does not create `semantic-review.md`.
 
 The same-file rules depend on that mode. E5-only advisory review ranks index
 entries without the semantic self-identity filter. The second-stage advisory
@@ -302,8 +304,12 @@ to today, including the raw E5 candidate list.
 ## 6.9 Blocking Semantic Review Report
 
 Only `givn check review --change <id>` invokes the dedicated semantic report
-entrypoint. It compares active Added/Modified delta scenarios at E5 `0.9500` in
-two scopes:
+entrypoint. It runs the unified rulebook: active Added/Modified delta scenarios
+are compared against permanent indexed entries and against each other at the
+single E5 `0.9000` admission, the surviving pairs are hybrid-selected
+(neighbour count per delta scenario, then the pair cap), and the selected pairs
+are judged independently by BGE and NLI with cached judgement reuse. Two
+scopes remain:
 
 - `delta-to-permanent`: each active delta against permanent indexed entries;
 - `delta-to-delta`: each distinct active pair in the same change, emitted once

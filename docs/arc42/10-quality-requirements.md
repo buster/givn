@@ -71,7 +71,7 @@ graph TD
 | Q-33 | Report freshness | An endpoint changes after classification. | The evidence hash changes and the classification is not carried forward. |
 | Q-34 | Report parser | A prior report contains unknown or reordered fields. | The current extraction path is line-oriented, not a complete strict grammar parser; unsupported fields are not generally rejected. This is a known risk, not a claimed guarantee. |
 | Q-35 | Remediation | A duplicate classification is applied. | The redundant endpoint must disappear from the projected tree. |
-| Q-36 | Remediation | A variant classification is applied. | The projected delta must be one parameterized outline with a non-empty Examples table and a recomputed score below `0.9500`. |
+| Q-36 | Remediation | A variant classification is applied. | The projected delta must be one parameterized outline with a non-empty Examples table and a recomputed score below `0.9000`. |
 | Q-37 | Remediation | A valid-boundary classification is applied. | Both endpoints remain, Fingerprint assertions or facts change, and the recomputed score is below `0.9500`. |
 | Q-38 | Remediation | A prior delta-to-delta entry is classified. | Current remediation scope validation rejects it; it is not a supported successful remediation path. |
 | Q-39 | Historical evidence | A generated semantic report is archived with a change. | The existing copy/remove archive retains it under `givn/archive/<id>/` as historical evidence, not as a permanent spec. |

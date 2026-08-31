@@ -238,9 +238,11 @@ ranked results. Both forms are advisory and do not edit feature files.
 ### 8.5d Blocking Semantic Review Report
 
 Only blocking `givn check review --change <id>` writes
-`givn/changes/<id>/semantic-review.md`. It compares active Added/Modified delta
-scenarios at E5 `0.9500` in `delta-to-permanent` and `delta-to-delta` scopes.
-Removed and permanent-permanent pairs are excluded. A Modified scenario excludes
+`givn/changes/<id>/semantic-review.md`. It runs the unified rulebook: active
+Added/Modified delta scenarios are compared at the single E5 `0.9000` admission
+in `delta-to-permanent` and `delta-to-delta` scopes, the surviving pairs are
+hybrid-selected, and only selected pairs become candidates. Removed and
+permanent-permanent pairs are excluded. A Modified scenario excludes
 only its own projected target endpoint, not every scenario in that target file.
 
 The current runtime order is important: the report entrypoint checks that the
@@ -278,8 +280,8 @@ report boundary. The current contracts are:
 | Classification | Required projected result |
 |---|---|
 | `DUPLICATE` | The redundant active endpoint is absent; the permanent endpoint remains unchanged. |
-| `VARIANT` | The active endpoint is a `Scenario Outline` with a non-empty Examples table, its evidence changed, and the recomputed score is below `0.9500`. |
-| `VALID-BOUNDARY` | Both endpoints remain, Fingerprint assertions or facts change, and the recomputed score is below `0.9500`. |
+| `VARIANT` | The active endpoint is a `Scenario Outline` with a non-empty Examples table, its evidence changed, and the recomputed score is below `0.9000`. |
+| `VALID-BOUNDARY` | Both endpoints remain, Fingerprint assertions or facts change, and the recomputed score is below `0.9000`. |
 
 Givn emits a verification receipt. It does not classify or edit feature files.
 
@@ -326,8 +328,10 @@ For a selected BGE or NLI pair, an over-cap complete encoding receives
 `BGE_TOKEN_CAP` or `NLI_TOKEN_CAP` with left, right, pair, and limit counts and
 null score/probability. A partial run scores fitting pairs and remains enabled;
 only an all-over-cap layer is run-level `*_UNAVAILABLE` with reason `token-cap`.
-The pair-budget tail is separate: a candidate omitted before model tokenization
-is `BGE_UNSCORED` or `NLI_UNSCORED`.
+The pair-budget tail is separate: a candidate omitted because the emergency
+budget truncates the rulebook selection is `BGE_UNSCORED` or `NLI_UNSCORED`;
+pairs dropped by the rulebook selection itself (neighbour count or pair cap)
+are unselected pairs, not candidates.
 
 Production uses real tokenizers from the XDG cache or explicit local paths.
 Tests use deterministic token-budget and artifact-source seams and do not

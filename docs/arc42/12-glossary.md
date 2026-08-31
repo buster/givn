@@ -46,7 +46,12 @@
 | **BGE token-cap evidence** | Selected BGE pair evidence whose complete actual-tokenizer encoding exceeds 512. It has no score, remains visible and blocking, and is not filtered. |
 | **NLI token-cap evidence** | Selected NLI pair evidence whose complete actual-tokenizer encoding exceeds 512. It has no probabilities, remains visible and blocking, and is not filtered. |
 | **Second-stage pair budget** | The proposed positive `GIVN_SPEC_MAX_RERANK_PAIRS` setting. Unset means 2048 in the current implementation; candidates after the selected E5-ranked prefix are unscored. ADR-063 remains proposed until its change is complete. |
-| **E5 candidate** | A semantic pair produced at or above the binary-fixed E5 `0.9500` boundary, before optional BGE/NLI evidence. |
+| **Unified rulebook** | The single change-scoped comparison sequence: embed, compare (delta↔permanent and delta↔delta), cut at the E5 admission threshold, select, judge, report. All three change-scoped consumers (`givn spec review`, `givn check review`, the archive gate) apply it. Anti-terms: pipeline, pool. |
+| **Pair cap** | The fixed maximum number of pairs the rulebook selects for second-stage judgement in one run (20). Pairs beyond the cap are not candidates. |
+| **Neighbour count** | The fixed maximum number of highest-scored neighbours per delta scenario the rulebook keeps before the pair cap (5). |
+| **Pair-score cache** | The persisted store of per-pair BGE/NLI evidence keyed by endpoint content and evidence hashes. Unchanged endpoints reuse recorded judgements; the run reports reused versus computed counts. Anti-terms: memo, result cache. |
+| **Unselected pair** | A rulebook pair beyond the neighbour count or the pair cap. It is not a candidate: no evidence, no report entry, no blocking state. Anti-term: unscored candidate (reserved for budget truncation only). |
+| **E5 candidate** | A semantic pair produced at or above the single E5 `0.9000` admission boundary after rulebook selection, before optional BGE/NLI evidence. |
 | **Semantic review candidate** | A blocking-report pair involving an active Added/Modified delta in either `delta-to-permanent` or `delta-to-delta` scope. Removed and permanent-permanent pairs are excluded. |
 | **Semantic report** | `givn/changes/<id>/semantic-review.md`, generated only by blocking `givn check review --change <id>` and retained under archive as historical evidence. |
 | **Semantic report writer** | The code that emits fixed report headers/fields, compact JSON values, `null` absence, and atomic replacement. |

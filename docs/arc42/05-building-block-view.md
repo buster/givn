@@ -58,25 +58,28 @@ flowchart TD
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
-| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply evidence, generate semantic reports, and verify remediation. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. Advisory review applies a decision-first reporting policy: default text lists only model-recommended second-stage pairs, `--verbose` lifts every listing limit, `--format json` emits one structured review document, and a failed gate persists that document as the change's findings file. |
+| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run the unified change-scoped rulebook behind all review surfaces plus Explore/audit, apply evidence, generate semantic reports, and verify remediation. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. Advisory review applies a decision-first reporting policy: default text lists only model-recommended second-stage pairs, `--verbose` lifts every listing limit, `--format json` emits one structured review document, and a failed gate persists that document as the change's findings file. |
 
 ## 5.4 Retrieval Building Block
 
-`spec::retrieval` has one persistent boundary: `.spec-index.json` contains
-permanent vector entries and additive E5 cap metadata. Active-delta vectors,
-audit-only evidence, classifications, and semantic report state are not
-persisted there.
+`spec::retrieval` has two persistent boundaries: `.spec-index.json` contains
+permanent vector entries and additive E5 cap metadata; `.spec-pair-cache.json`
+contains recorded per-pair BGE/NLI evidence keyed by endpoint content and
+evidence hashes. Active-delta vectors, classifications, and semantic report
+state are not persisted in either.
 
 `givn spec duplicates` is an exception to ordinary index refresh: it reads the
 persistent index and reuses it only when every endpoint identity and complete
 content hash matches. Otherwise it embeds fitting current permanent scenarios
 transiently. It never writes the index as part of the audit.
 
-The current second-stage implementation is surface-aware. Duplicate Audit BGE
-uses its endpoint top-five union while Duplicate Audit NLI uses the full E5
-semantic candidate set. Blocking semantic review passes its complete report
-candidate list independently to BGE and NLI; it does not pass a Duplicate Audit
-top-five pool.
+The change-scoped review surfaces (`givn spec review`, `givn check review`,
+the archive similarity gate) share one unified rulebook: single E5 admission
+at `0.9000`, hybrid selection (neighbour count per delta scenario, then one
+pair cap), and independent BGE/NLI judgement of the selected pairs. The
+remaining surfaces stay surface-aware: Duplicate Audit BGE uses its endpoint
+top-five union while Duplicate Audit NLI uses the full E5 semantic candidate
+set, and Explore keeps its at-most-five ranked results.
 
 Every environment channel that selects model behavior is read through one
 gated accessor in this building block. In an installed (release) build the

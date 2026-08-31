@@ -19,8 +19,8 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Arc42 | `givn init` enables addons by default unless `--no-addons`; Arc42 chapters are scaffolded at fixed `docs/arc42/`. |
 | Structural overlap | Deterministic Fingerprint evidence and disposition gate. |
 | Semantic retrieval | Opt-in E5 vectors and permanent content-hash index. |
-| Semantic strictness | E5 `0.95` strict gate only with `spec-similarity-gate`; report and second-stage evidence are separate. |
-| BGE/NLI | Optional local, bidirectional evidence; surface-specific E5 pools, explicit statuses, no automatic Givn classification. |
+| Semantic strictness | One unified change-scoped rulebook (single E5 `0.90` admission, hybrid selection, per-pair judgement cache) drives advisory review, blocking review, and the archive gate. |
+| BGE/NLI | Optional local, bidirectional evidence; the change-scoped rulebook pool for review surfaces, surface-specific pools elsewhere, explicit statuses, no automatic Givn classification. |
 | Model availability | Explicit semantic commands resolve and validate missing artifacts in the XDG user cache; project-local index state remains separate. |
 | Second-stage budget | Current checkout implements the proposed positive `GIVN_SPEC_MAX_RERANK_PAIRS` budget; ADR-063 remains proposed while its change is incomplete. |
 | Release migration | A clean 0.2.0 project receives a managed two-commit preparation and a visible maintenance change; project semantics remain LLM-reviewed. |
