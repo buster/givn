@@ -6,6 +6,7 @@
 use cucumber::{given, then};
 
 use super::GivnWorld;
+use crate::common;
 
 // --- README state fixtures ---------------------------------------------------
 
@@ -59,7 +60,7 @@ fn write_readme(world: &mut GivnWorld, content: &str) {
     std::fs::write(env.path("README.md"), content).expect("write README.md");
 }
 
-#[given("a scaffolded README with open placeholders")]
+#[given("a scaffolded README")]
 fn scaffolded_readme(world: &mut GivnWorld) {
     write_readme(world, &scaffolded_readme_text());
 }
@@ -119,7 +120,7 @@ TBD
     .to_string()
 }
 
-#[given("a README with the previous scaffold style")]
+#[given("a legacy scaffold README")]
 fn legacy_readme(world: &mut GivnWorld) {
     write_readme(world, &legacy_readme_text());
 }
@@ -141,7 +142,7 @@ fn broken_block_readme(world: &mut GivnWorld) {
     write_readme(world, &text);
 }
 
-#[given("a complete README with the development managed block")]
+#[given("a complete README")]
 fn complete_readme(world: &mut GivnWorld) {
     let text = scaffolded_readme_text()
         .replace(
@@ -156,7 +157,7 @@ fn complete_readme(world: &mut GivnWorld) {
     write_readme(world, &text);
 }
 
-#[given("a hand-written README without any givn markers")]
+#[given("a hand-written README")]
 fn hand_written_readme(world: &mut GivnWorld) {
     write_readme(
         world,
@@ -164,7 +165,7 @@ fn hand_written_readme(world: &mut GivnWorld) {
     );
 }
 
-#[given("a complete README whose only managed block is the coverage badge")]
+#[given("a badge-only README")]
 fn badge_only_readme(world: &mut GivnWorld) {
     let text = scaffolded_readme_text()
         .replace(
@@ -183,7 +184,7 @@ fn badge_only_readme(world: &mut GivnWorld) {
     write_readme(world, &text);
 }
 
-#[given("a complete README whose development managed block is stale")]
+#[given("a stale development managed block")]
 fn stale_block_readme(world: &mut GivnWorld) {
     let text = scaffolded_readme_text()
         .replace(
@@ -214,7 +215,7 @@ fn readme_missing(world: &mut GivnWorld) {
     }
 }
 
-#[given("the project's verify commands are no-ops")]
+#[given("verify commands are no-ops")]
 fn verify_commands_noops(world: &mut GivnWorld) {
     let env = world
         .env
@@ -234,7 +235,7 @@ coverage:
     std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
 }
 
-#[given("the semantic gate fixtures are offline")]
+#[given("the semantic gate is offline")]
 fn semantic_gate_offline(world: &mut GivnWorld) {
     // The subprocess drives the blocking semantic gate during archive; these
     // world fields flow into `world_envs` so the gate runs stubbed and
@@ -276,12 +277,47 @@ fn reviewable_change(world: &mut GivnWorld, id: String) {
     write_reviewable_change(world, &id);
 }
 
-#[given(regex = r#"^the review of change "([^"]+)" records the README impact decision "(.*)"$"#)]
-fn review_impact_decision(world: &mut GivnWorld, id: String, decision: String) {
+#[given(regex = r#"^a completed change "([^"]+)"$"#)]
+fn completed_change_short(world: &mut GivnWorld, id: String) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
+    let change_dir = env.path(&format!("givn/changes/{id}"));
+    let out = common::run_givn(env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {id} failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    std::fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write proposal");
+    std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
+    std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write design-review");
+    std::fs::write(change_dir.join("tasks.md"), "- [x] all done\n").expect("write tasks");
+    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").expect("write review");
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n")
+        .expect("write arc42");
+    let specs_dir = change_dir.join("specs").join("example");
+    std::fs::create_dir_all(&specs_dir).expect("create specs dir");
+    std::fs::write(
+        specs_dir.join("example.feature"),
+        "@givn.delta\nFeature: example\n  Scenario: stub\n    Given a placeholder step\n",
+    )
+    .expect("write delta spec");
+    world.last_change_id = Some(id);
+}
+
+#[given(regex = r#"^its review records the impact "(.*)"$"#)]
+fn review_records_impact(world: &mut GivnWorld, decision: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let id = world
+        .last_change_id
+        .as_deref()
+        .expect("a change id is required first");
     let path = env.path(&format!("givn/changes/{id}/review.md"));
     let existing = std::fs::read_to_string(&path).expect("read review.md");
     std::fs::write(&path, format!("{existing}README-IMPACT: {decision}\n"))
@@ -290,7 +326,7 @@ fn review_impact_decision(world: &mut GivnWorld, id: String, decision: String) {
 
 // --- Then --------------------------------------------------------------------
 
-#[then("the README still has no development managed block")]
+#[then("the development block stays deleted")]
 fn readme_has_no_dev_block(world: &mut GivnWorld) {
     let env = world
         .env

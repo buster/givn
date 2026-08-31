@@ -10,18 +10,18 @@
 Feature: README enforcement
 
   @givn.added @e2e
-  Scenario: Consumer scaffolds a project and the README marks its unfilled sections
+  Scenario: Scaffolding marks the unfilled sections
     Given a project root without a givn/ directory
     When the user runs `givn init`
     Then the file "README.md" exists
-    And the README contains an open placeholder for the description
-    And the README contains an open placeholder for the license
-    And the README contains the development managed block naming the configured workflow commands
+    And the README has the description open placeholder
+    And the README has the license open placeholder
+    And the README has the development managed block
 
   @givn.added
-  Scenario: README check reports every open placeholder and its expectation
+  Scenario: The check names every open placeholder
     Given a project root with givn/ initialised
-    And a scaffolded README with open placeholders
+    And a scaffolded README
     When the user runs `givn readme check`
     Then the command exits non-zero
     And stdout mentions "Quick start"
@@ -29,15 +29,15 @@ Feature: README enforcement
     And stdout mentions "Exact commands to clone"
 
   @givn.added
-  Scenario: README check reports a legacy scaffold README as needing migration
+  Scenario: A legacy README is reported for migration
     Given a project root with givn/ initialised
-    And a README with the previous scaffold style
+    And a legacy scaffold README
     When the user runs `givn readme check`
     Then the command exits non-zero
     And stdout mentions "migration"
 
   @givn.added
-  Scenario: README check reports a damaged managed block
+  Scenario: The check names a damaged managed block
     Given a project root with givn/ initialised
     And a README with a broken development managed block
     When the user runs `givn readme check`
@@ -45,7 +45,7 @@ Feature: README enforcement
     And stdout mentions "development managed block"
 
   @givn.added
-  Scenario: README check reports a missing README
+  Scenario: The check reports a missing README
     Given a project root with givn/ initialised
     And the README is missing
     When the user runs `givn readme check`
@@ -53,138 +53,138 @@ Feature: README enforcement
     And stdout mentions "README.md is missing"
 
   @givn.added
-  Scenario: README check reports a hand-written README without givn markers as unmanaged
+  Scenario: A marker-less README is unmanaged
     Given a project root with givn/ initialised
-    And a hand-written README without any givn markers
+    And a hand-written README
     When the user runs `givn readme check`
     Then the command exits non-zero
     And stdout mentions "adapt the README or disable the readme addon"
 
   @givn.added @e2e
-  Scenario: Consumer runs the README check on a complete README and it passes
+  Scenario: The check passes on a complete README
     Given a project root with givn/ initialised
-    And a complete README with the development managed block
+    And a complete README
     When the user invokes `givn readme check`
     Then the command exits 0
 
   @givn.added
-  Scenario: Review refuses sign-off without a recorded README impact decision
+  Scenario: Missing impact decision refuses the review
     Given a project root with givn/ initialised
-    And the project's verify commands are no-ops
+    And verify commands are no-ops
     And a reviewable change "readme-demo"
     When the user runs `givn check review --change readme-demo`
     Then the command exits non-zero
     And stderr contains "README impact decision"
 
   @givn.added
-  Scenario: Review accepts an updated README impact decision naming the sections
+  Scenario: Updated impact decision passes the review
     Given a project root with givn/ initialised
-    And the project's verify commands are no-ops
+    And verify commands are no-ops
     And a reviewable change "readme-demo"
-    And the review of change "readme-demo" records the README impact decision "updated - Usage"
+    And its review records the impact "updated - Usage"
     When the user runs `givn check review --change readme-demo`
     Then the command exits 0
 
   @givn.added
-  Scenario: A project without the readme addon needs no README impact decision
+  Scenario: A disabled addon needs no impact decision
     Given a project root with givn/ initialised
     And givn addon "readme" is "false"
-    And the project's verify commands are no-ops
+    And verify commands are no-ops
     And a reviewable change "no-addon"
     When the user runs `givn check review --change no-addon`
     Then the command exits 0
 
   @givn.added
-  Scenario: An unknown README impact value is refused
+  Scenario: An unknown impact value is refused
     Given a project root with givn/ initialised
-    And the project's verify commands are no-ops
+    And verify commands are no-ops
     And a reviewable change "readme-demo"
-    And the review of change "readme-demo" records the README impact decision "maybe"
+    And its review records the impact "maybe"
     When the user runs `givn check review --change readme-demo`
     Then the command exits non-zero
 
   @givn.added
-  Scenario: Archive blocks while the README has open placeholders
+  Scenario: Open placeholders block the archive
     Given a project root with givn/ initialised
-    And a scaffolded README with open placeholders
-    And the project's verify commands are no-ops
+    And a scaffolded README
+    And verify commands are no-ops
     And givn addon "coverage" is "false"
-    And a completed change "readme-demo" with all required artifacts
-    And the semantic gate fixtures are offline
+    And a completed change "readme-demo"
+    And the semantic gate is offline
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
     And stdout mentions "Quick start"
     And the directory givn/changes/readme-demo/ exists
 
   @givn.added
-  Scenario: Archive blocks when the README is missing
+  Scenario: A missing README blocks the archive
     Given a project root with givn/ initialised
     And the README is missing
-    And the project's verify commands are no-ops
+    And verify commands are no-ops
     And givn addon "coverage" is "false"
-    And a completed change "readme-demo" with all required artifacts
-    And the semantic gate fixtures are offline
+    And a completed change "readme-demo"
+    And the semantic gate is offline
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
     And the directory givn/changes/readme-demo/ exists
 
   @givn.added
-  Scenario: Archive blocks for a hand-written README without givn markers
+  Scenario: An unmanaged README blocks the archive
     Given a project root with givn/ initialised
-    And a hand-written README without any givn markers
-    And the project's verify commands are no-ops
+    And a hand-written README
+    And verify commands are no-ops
     And givn addon "coverage" is "false"
-    And a completed change "readme-demo" with all required artifacts
-    And the semantic gate fixtures are offline
+    And a completed change "readme-demo"
+    And the semantic gate is offline
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
     And the directory givn/changes/readme-demo/ exists
 
   @givn.added
-  Scenario: Archive does not re-insert a deleted development managed block while the README stays managed
+  Scenario: A deleted development block is not re-inserted
     Given a project root with givn/ initialised
-    And a complete README whose only managed block is the coverage badge
+    And a badge-only README
+    And verify commands are no-ops
     And givn addon "coverage" is "false"
-    And the project's verify commands are no-ops
-    And a completed change "readme-demo" with all required artifacts
-    And the semantic gate fixtures are offline
+    And a completed change "readme-demo"
+    And the semantic gate is offline
     When the user runs `givn readme check`
     Then the command exits 0
     When the user runs `givn archive --change readme-demo`
     Then the command exits 0
-    And the README still has no development managed block
+    And the development block stays deleted
 
   @givn.added @e2e
-  Scenario: Consumer archives a change and the development managed block refreshes
+  Scenario: Archiving refreshes the development block
     Given a project root with givn/ initialised
-    And a complete README whose development managed block is stale
+    And a stale development managed block
     And a givn project providing its own workflow scripts
-    And a completed change "readme-demo" with all required artifacts
-    And the semantic gate fixtures are offline
+    And a completed change "readme-demo"
+    And the semantic gate is offline
     When the user invokes `givn archive --change readme-demo`
     Then the command succeeds
-    And the development managed block lists the current configured workflow commands
+    And the development block lists the configured commands
     And the archived change directory exists
 
   @givn.added @e2e
-  Scenario: Consumer checks a review with a recorded README impact decision and it passes
+  Scenario: A recorded impact decision passes the review
     Given a project root with givn/ initialised
-    And the project's verify commands are no-ops
+    And verify commands are no-ops
     And a reviewable change "readme-demo"
-    And the review of change "readme-demo" records the README impact decision "none"
+    And its review records the impact "none"
     When the user invokes `givn check review --change readme-demo`
-    Then the command succeeds
+    Then the command exits 0
 
   @givn.added @e2e
-  Scenario: Consumer asks for instructions and the unfinished README is surfaced
+  Scenario: Instructions surface an unfinished README
     Given a project root with givn/ initialised
-    And a scaffolded README with open placeholders
+    And a scaffolded README
     When the user invokes `givn instructions`
-    Then the instructions mention the unfinished README and `givn readme check`
+    Then the instructions mention the unfinished README
 
   @givn.added
-  Scenario: Instructions stay silent about the README when it is complete
+  Scenario: Instructions stay silent on a complete README
     Given a project root with givn/ initialised
-    And a complete README with the development managed block
+    And a complete README
     When the user runs `givn instructions`
     Then stdout does not contain "givn readme check"

@@ -37,9 +37,13 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   The runner's strict mode is proven up front so an empty step definition can
   never report GREEN.
 - **Blocking gates.** Artifact post hooks (`verify`, `verify-e2e`, `lint`),
-  integrity checks (commit hashes, promised files), overlap dispositions, and
-  a semantic duplicate review: E5 recall at ≥ 0.95 similarity, BGE reranker
-  logit ≥ 3.0 and NLI entailment ≥ 0.5 as evidence, human-classified worklist.
+  integrity checks (commit hashes, promised files), overlap dispositions, a
+  semantic duplicate review (E5 recall at ≥ 0.95 similarity, BGE reranker
+  logit ≥ 3.0 and NLI entailment ≥ 0.5 as evidence, human-classified
+  worklist), and a README completeness gate: `givn readme check` reports open
+  scaffold placeholders and managed-block damage, the review records a
+  machine-checkable README impact decision, and the archive refuses an
+  unfinished README.
 - **Runner-agnostic.** A standalone Rust binary driving any Cucumber-family
   runner (cucumber-rs, behave, cucumber-js, …); it does not replace it. Skills
   are emitted for AI agents in neutral plus Claude/opencode formats.
