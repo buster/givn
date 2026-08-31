@@ -196,6 +196,16 @@ coverage:
     std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
 }
 
+#[given("the semantic gate fixtures are offline")]
+fn semantic_gate_offline(world: &mut GivnWorld) {
+    // The subprocess drives the blocking semantic gate during archive; these
+    // world fields flow into `world_envs` so the gate runs stubbed and
+    // offline instead of downloading model artifacts.
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_bge = Some("stub".to_string());
+    world.retrieval_reranker = Some("disabled".to_string());
+}
+
 // --- Change fixtures ---------------------------------------------------------
 
 /// Write a change directory with every artifact complete and no delta specs,

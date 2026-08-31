@@ -295,31 +295,32 @@ non-@e2e first, @e2e last).
 
 ## Scenario 9: An unknown README impact value is refused
 
-- [ ] RED — `cargo test --test features_runner -- --name "An unknown README impact value is refused"`
+- [x] RED — legitimate immediate GREEN: all steps reused; the strict value
+      validation shipped with scenario 6's `check_readme_impact`.
 
   ```
-  (paste RED output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] GREEN — strict value validation in the integrity check.
+- [x] GREEN — reuse only (strict `README-IMPACT` value validation).
 
   Files:
-  - (paste production files)
+  - (no production files — pure step reuse)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): An unknown README impact value is refused`
+- [x] COMMIT — `feat(readme-enforcement): An unknown README impact value is refused`
 
   ```
-  commit hash:
+  commit hash: c8533d5
   ```
 
 ## Scenario 10: Archive blocks while the README has open placeholders

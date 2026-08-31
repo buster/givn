@@ -174,7 +174,7 @@ pub fn run_check() -> Result<i32> {
     Ok(1)
 }
 
-fn finding_label(kind: ReadmeFindingKind) -> &'static str {
+pub(crate) fn finding_label(kind: ReadmeFindingKind) -> &'static str {
     match kind {
         ReadmeFindingKind::OpenPlaceholder => "OPEN ",
         ReadmeFindingKind::Remnant => "REMN ",

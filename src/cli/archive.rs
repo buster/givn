@@ -88,6 +88,24 @@ pub fn run(change: &str) -> Result<()> {
     run_similarity_gate(&project_root, change)?;
     println!("✓ Similarity gate passed");
 
+    // README completeness gate (readme addon enabled): no open placeholders,
+    // no remnants, no managed-block damage, an existing managed README. Runs
+    // before any mutation, so a blocked archive needs no rollback.
+    if manifest.addons.readme {
+        let findings = crate::cli::readme::check_readme(&project_root);
+        if !findings.is_empty() {
+            println!(
+                "archive blocked: README check found {} finding(s):",
+                findings.len()
+            );
+            for finding in &findings {
+                println!("  [{}] {}", finding_label(finding.kind), finding.message);
+            }
+            bail!("archive blocked: finish the README before archiving — see the README check report above");
+        }
+        println!("✓ README completeness gate passed");
+    }
+
     // Backup permanent specs and README before merge/coverage.
     // Always create a backup marker even if specs_dir doesn't exist yet,
     // so rollback can distinguish "nothing to restore" from "merge created
@@ -310,6 +328,9 @@ pub(crate) fn rollback_specs(
     eprintln!("[archive] rolled back specs from backup");
     Ok(())
 }
+
+/// Re-export the checker's finding labels for the archive gate report.
+use crate::cli::readme::finding_label;
 
 /// Recursively copy a directory tree.
 fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<()> {
