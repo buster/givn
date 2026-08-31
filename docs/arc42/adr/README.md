@@ -80,7 +80,7 @@ changes.
 | [ADR-061](ADR-061-surface-specific-independent-pools.md) | accepted | Score BGE/NLI independently over each surface's E5 pool | candidate-pool boundary |
 | [ADR-063](ADR-063-reranker-pair-budget.md) | proposed | Bound second-stage inference with an E5-ranked budget | runtime/review decision in open verification |
 | [ADR-064](ADR-064-shared-model-thread-budget.md) | proposed | Share one thread budget across the semantic model stages | computing-resource config boundary in open change |
-| [ADR-065](ADR-065-unified-semantic-rulebook.md) | proposed | Run change-scoped semantic review as one unified rulebook with a pair-score cache | change-scoped review verdict and cache boundary |
+| [ADR-066](ADR-066-unified-semantic-rulebook.md) | proposed | Run change-scoped semantic review as one unified rulebook with a pair-score cache | change-scoped review verdict and cache boundary |
 
 ## Relationships
 
@@ -94,9 +94,9 @@ changes.
 | ADR-054 -> ADR-058 | ADR-058 supersedes ADR-054's NLI deferral while ADR-054 remains the output-compatibility rule. |
 | ADR-061 -> ADR-063 | ADR-063 adds a configurable ordered budget to the surface-specific independent branches. |
 | ADR-063 -> ADR-064 | ADR-064 adds one shared thread budget controlling how many cores the bounded stage work may use. |
-| ADR-061 -> ADR-065 | ADR-065 supersedes the change-scoped surface pools with one unified rulebook; explore/search/audit keep ADR-061. |
-| ADR-041 -> ADR-065 | ADR-065 revises the strict boundary: one `0.9000` admission with deterministic hybrid selection. |
-| ADR-063 -> ADR-065 | ADR-065 reconciles the budget as the emergency ceiling above rulebook selection. |
+| ADR-061 -> ADR-066 | ADR-066 supersedes the change-scoped surface pools with one unified rulebook; explore/search/audit keep ADR-061. |
+| ADR-041 -> ADR-066 | ADR-066 revises the strict boundary: one `0.9000` admission with deterministic hybrid selection. |
+| ADR-063 -> ADR-066 | ADR-066 reconciles the budget as the emergency ceiling above rulebook selection. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
 | ADR-055 (amended by 0.3.0) | The independent semantic-capability decision now enables every declared Cargo feature in the normal installation while retaining `--no-default-features` as the explicit minimal path. |
 | ADR-057 (amended by semantic-model-download) | The validated BGE local-artifact boundary now permits explicit-operation acquisition into the shared XDG cache before the unchanged local loader. |
