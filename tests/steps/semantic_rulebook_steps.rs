@@ -326,3 +326,23 @@ pub(crate) fn rulebook_rerun(world: &mut GivnWorld) {
         &environments,
     ));
 }
+
+#[when("the rulebook user changes the active candidate")]
+pub(crate) fn rulebook_change_active_candidate(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let path = env.path("givn/changes/running-change/specs/delta.feature");
+    let content = std::fs::read_to_string(&path).expect("read rulebook active candidate");
+    let changed = content.replace("ledger", "register");
+    assert_ne!(content, changed, "rulebook delta fixture did not change");
+    std::fs::write(path, changed).expect("change rulebook active candidate");
+}
+
+#[when("the rulebook user changes the permanent endpoint")]
+pub(crate) fn rulebook_change_permanent_endpoint(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let path = env.path("givn/specs/corpus.feature");
+    let content = std::fs::read_to_string(&path).expect("read rulebook permanent endpoint");
+    let changed = content.replace("ledger", "register");
+    assert_ne!(content, changed, "rulebook corpus fixture did not change");
+    std::fs::write(path, changed).expect("change rulebook permanent endpoint");
+}

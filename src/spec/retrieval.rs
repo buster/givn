@@ -56,6 +56,137 @@ const NEIGHBOURS_PER_SCENARIO: usize = 5;
 /// Unified rulebook selection: the shared cap on judged pairs per run
 /// (ADR-066). Pairs beyond the cap are unselected, not candidates.
 const PAIR_CAP: usize = 20;
+
+/// Schema version of the persisted pair-score cache.
+const PAIR_CACHE_VERSION: u32 = 1;
+
+/// Stub stages record this as their cache model id so stub and real-model
+/// entries can never alias.
+const PAIR_CACHE_STUB_MODEL: &str = "stub";
+
+/// Per-run pair-judgement accounting (one pair is reused only when every
+/// participating stage hit the cache for it).
+#[derive(Debug, Default, Clone, Copy)]
+struct PairCacheAccounting {
+    reused: usize,
+    computed: usize,
+}
+
+impl PairCacheAccounting {
+    fn record(&mut self, reused: bool) {
+        if reused {
+            self.reused += 1;
+        } else {
+            self.computed += 1;
+        }
+    }
+}
+
+/// Persisted per-pair model evidence keyed by stage, model, and both
+/// endpoints' content/evidence hashes (ADR-066). Lives next to the spec
+/// index; hash-identical pairs reuse recorded judgements.
+#[derive(Debug, Serialize, Deserialize)]
+struct PairScoreCache {
+    version: u32,
+    entries: BTreeMap<String, serde_json::Value>,
+}
+
+impl PairScoreCache {
+    fn load(root: &Path) -> Self {
+        let path = pair_cache_path(root);
+        let Ok(raw) = std::fs::read(&path) else {
+            return Self::default_cache();
+        };
+        match serde_json::from_slice::<PairScoreCache>(&raw) {
+            Ok(cache) if cache.version == PAIR_CACHE_VERSION => cache,
+            _ => {
+                // Fail safe: an unreadable or outdated cache is rebuilt; it
+                // never changes verdicts, only re-judges.
+                Self::default_cache()
+            }
+        }
+    }
+
+    fn default_cache() -> Self {
+        Self {
+            version: PAIR_CACHE_VERSION,
+            entries: BTreeMap::new(),
+        }
+    }
+
+    fn get_raw(&self, key: &str) -> Option<&serde_json::Value> {
+        self.entries.get(key)
+    }
+
+    fn put_raw(&mut self, key: String, value: serde_json::Value) {
+        self.entries.insert(key, value);
+    }
+
+    fn store(&self, root: &Path) -> Result<()> {
+        let path = pair_cache_path(root);
+        if let Some(parent) = path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        let body = serde_json::to_vec(self)?;
+        std::fs::write(&path, body)?;
+        Ok(())
+    }
+}
+
+fn pair_cache_path(root: &Path) -> std::path::PathBuf {
+    root.join("givn/.spec-pair-cache.json")
+}
+
+/// Combine the per-stage pair hit markers into per-pair accounting: a pair
+/// is reused only when every participating stage hit the cache for it.
+fn combine_pair_cache_accounting(
+    bge_hits: Option<&Vec<(String, bool)>>,
+    nli_hits: Option<&Vec<(String, bool)>>,
+) -> PairCacheAccounting {
+    let mut by_candidate: BTreeMap<String, (bool, bool)> = BTreeMap::new();
+    if let Some(hits) = bge_hits {
+        for (candidate_id, hit) in hits {
+            by_candidate
+                .entry(candidate_id.clone())
+                .or_insert((false, false))
+                .0 = *hit;
+        }
+    }
+    if let Some(hits) = nli_hits {
+        for (candidate_id, hit) in hits {
+            by_candidate
+                .entry(candidate_id.clone())
+                .or_insert((false, false))
+                .1 = *hit;
+        }
+    }
+    let mut accounting = PairCacheAccounting::default();
+    for (_, (bge_hit, nli_hit)) in by_candidate {
+        accounting.record(bge_hit && nli_hit);
+    }
+    accounting
+}
+
+/// Cache key over stage, model identity, and both endpoints' content and
+/// evidence hashes. Any endpoint change misses and re-judges.
+fn pair_cache_key(
+    stage: &str,
+    model_id: &str,
+    left: &SemanticEndpoint,
+    right: &SemanticEndpoint,
+) -> String {
+    format!(
+        "{stage}|{model_id}|{}|{}|{}|{}|{}|{}|{}|{}",
+        left.file,
+        left.title,
+        left.content_hash,
+        left.evidence_hash,
+        right.file,
+        right.title,
+        right.content_hash,
+        right.evidence_hash,
+    )
+}
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_PIPELINE_VERSION: &str = "rust-production-v2";
 #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
@@ -897,6 +1028,9 @@ struct NliRun {
     max_unique_pairs: usize,
     model_load_attempts: usize,
     runtime_ms: Option<u128>,
+    /// Per judged pair: (candidate id, cache hit). Filled by the rulebook's
+    /// NLI application; empty on non-rulebook paths.
+    pair_cache_hits: Vec<(String, bool)>,
 }
 
 #[cfg(feature = "nli-evidence")]
@@ -917,6 +1051,7 @@ impl NliRun {
             model_load_attempts: 1,
             max_unique_pairs,
             runtime_ms: Some(runtime_ms),
+            pair_cache_hits: Vec::new(),
         }
     }
 
@@ -935,6 +1070,7 @@ impl NliRun {
             max_unique_pairs,
             model_load_attempts: 0,
             runtime_ms: None,
+            pair_cache_hits: Vec::new(),
         }
     }
 }
@@ -1019,6 +1155,9 @@ struct BgeRun {
     max_unique_pairs: usize,
     model_load_attempts: usize,
     runtime_ms: Option<u128>,
+    /// Per judged pair: (candidate id, cache hit). Filled by the rulebook's
+    /// BGE application; empty on non-rulebook paths.
+    pair_cache_hits: Vec<(String, bool)>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -1040,6 +1179,7 @@ impl BgeRun {
             model_load_attempts: 1,
             max_unique_pairs,
             runtime_ms: Some(runtime_ms),
+            pair_cache_hits: Vec::new(),
         }
     }
 
@@ -1059,6 +1199,7 @@ impl BgeRun {
             max_unique_pairs,
             model_load_attempts: 0,
             runtime_ms: None,
+            pair_cache_hits: Vec::new(),
         }
     }
 }
@@ -3116,6 +3257,14 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
     let bge_run: Option<BgeRun> = None;
     #[cfg(feature = "nli-evidence")]
     let nli_run = apply_semantic_nli(root, &delta, &mut candidates)?;
+    let pair_cache_accounting = combine_pair_cache_accounting(
+        bge_run.as_ref().map(|run| &run.pair_cache_hits),
+        nli_run.as_ref().map(|run| &run.pair_cache_hits),
+    );
+    println!(
+        "pair cache: {} reused, {} computed",
+        pair_cache_accounting.reused, pair_cache_accounting.computed
+    );
     let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
     let remediation =
@@ -3128,6 +3277,7 @@ fn semantic_review_enabled(root: &Path, change_id: &str) -> Result<()> {
         bge_run.as_ref(),
         #[cfg(feature = "nli-evidence")]
         nli_run.as_ref(),
+        pair_cache_accounting,
     );
     write_semantic_report(&report_path, &report)?;
     match std::fs::canonicalize(&report_path) {
@@ -3388,6 +3538,59 @@ fn apply_semantic_bge(
     };
     let partition =
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Bge, tokenizer.as_ref())?;
+    let model_id = match &backend {
+        Ok(BgeBackendKind::Stub) => PAIR_CACHE_STUB_MODEL,
+        Ok(_) => RERANKER_MODEL_ID,
+        Err(_) => RERANKER_MODEL_ID,
+    };
+    let mut cache = PairScoreCache::load(root);
+    let mut cached_bge_evidence: BTreeMap<
+        (SimilarityEndpoint, SimilarityEndpoint),
+        BgePairEvidence,
+    > = BTreeMap::new();
+    let mut pair_cache_hits: Vec<(String, bool)> = Vec::with_capacity(selected.len());
+    let mut miss_indices: Vec<usize> = Vec::new();
+    let mut miss_pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = Vec::new();
+    for (index, candidate) in selected.iter().enumerate() {
+        let capped = partition
+            .capped
+            .contains_key(&canonical_pair_key(
+                endpoint(&candidate.left.file, &candidate.left.title),
+                endpoint(&candidate.right.file, &candidate.right.title),
+            ));
+        let cache_key = pair_cache_key("bge", model_id, &candidate.left, &candidate.right);
+        let hit = (!capped)
+            .then(|| cache.get_raw(&cache_key))
+            .flatten()
+            .and_then(|value| {
+                let forward_raw = value.get("forward_raw")?.as_f64()? as f32;
+                let reverse_raw = value.get("reverse_raw")?.as_f64()? as f32;
+                Some(BgePairEvidence {
+                    forward_raw,
+                    reverse_raw,
+                    symmetric_raw: (forward_raw + reverse_raw) / 2.0,
+                })
+            });
+        match hit {
+            Some(evidence) => {
+                pair_cache_hits.push((candidate.candidate_id.clone(), true));
+                // Reused evidence joins the run through its canonical pair
+                // key, so admission assignment below stays uniform.
+                cached_bge_evidence.insert(
+                    canonical_pair_key(
+                        endpoint(&candidate.left.file, &candidate.left.title),
+                        endpoint(&candidate.right.file, &candidate.right.title),
+                    ),
+                    evidence,
+                );
+            }
+            None => {
+                pair_cache_hits.push((candidate.candidate_id.clone(), false));
+                miss_indices.push(index);
+                miss_pairs.push(pairs[index].clone());
+            }
+        }
+    }
     let mut run = match backend {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
             BgeRun::unavailable(
@@ -3396,9 +3599,50 @@ fn apply_semantic_bge(
                 max_unique_pairs,
             )
         }
-        Ok(kind) => score_bge_pairs(root, &partition.fitting, &texts, kind, max_unique_pairs)?,
+        Ok(_) if miss_pairs.is_empty() => BgeRun {
+            status: "BGE_ENABLED",
+            reason: None,
+            evidence: cached_bge_evidence.clone(),
+            token_caps: BTreeMap::new(),
+            e5_candidates: candidates.len(),
+            unscored: 0,
+            max_unique_pairs,
+            model_load_attempts: 0,
+            runtime_ms: Some(0),
+            pair_cache_hits: Vec::new(),
+        },
+        Ok(kind) => score_bge_pairs(root, &miss_pairs, &texts, kind, max_unique_pairs)?,
         Err(reason) => BgeRun::unavailable(reason, candidates.len(), max_unique_pairs),
     };
+    if !miss_pairs.is_empty() {
+        // Persist freshly computed evidence so reruns reuse it.
+        for (position, index) in miss_indices.iter().enumerate() {
+            let candidate = &selected[*index];
+            let (left, right) = &miss_pairs[position];
+            if let Some(evidence) = run
+                .evidence
+                .get(&canonical_pair_key(left.clone(), right.clone()))
+            {
+                cache.put_raw(
+                    pair_cache_key("bge", model_id, &candidate.left, &candidate.right),
+                    serde_json::json!({
+                        "forward_raw": evidence.forward_raw,
+                        "reverse_raw": evidence.reverse_raw,
+                    }),
+                );
+            }
+        }
+        if cache.store(root).is_err() {
+            // The cache never changes verdicts; a write failure only means
+            // the next run re-judges. Keep going.
+        }
+    }
+    // Cached entries join the run evidence so admission assignment stays
+    // uniform across cached and freshly computed pairs.
+    for (key, evidence) in &cached_bge_evidence {
+        run.evidence.entry(key.clone()).or_insert(evidence.clone());
+    }
+    run.pair_cache_hits = pair_cache_hits;
     run.e5_candidates = candidates.len();
     run.unscored = candidates.len().saturating_sub(run.evidence.len());
     run.token_caps = partition.capped.clone();
@@ -3477,6 +3721,68 @@ fn apply_semantic_nli(
     };
     let partition =
         preflight_pair_budgets(&pairs, &texts, TokenBudgetModel::Nli, tokenizer.as_ref())?;
+    let model_id = match &selection {
+        Ok(NliBackend::Stub) => PAIR_CACHE_STUB_MODEL,
+        Ok(_) => NLI_MODEL_ID,
+        Err(_) => NLI_MODEL_ID,
+    };
+    let mut cache = PairScoreCache::load(root);
+    let mut cached_nli_evidence: BTreeMap<
+        (SimilarityEndpoint, SimilarityEndpoint),
+        NliEvidence,
+    > = BTreeMap::new();
+    let mut pair_cache_hits: Vec<(String, bool)> = Vec::with_capacity(selected.len());
+    let mut miss_indices: Vec<usize> = Vec::new();
+    let mut miss_pairs: Vec<(SimilarityEndpoint, SimilarityEndpoint)> = Vec::new();
+    for (index, candidate) in selected.iter().enumerate() {
+        let capped = partition.capped.contains_key(&canonical_pair_key(
+            endpoint(&candidate.left.file, &candidate.left.title),
+            endpoint(&candidate.right.file, &candidate.right.title),
+        ));
+        let cache_key = pair_cache_key("nli", model_id, &candidate.left, &candidate.right);
+        let hit = (!capped)
+            .then(|| cache.get_raw(&cache_key))
+            .flatten()
+            .and_then(|value| {
+                let forward: Vec<f32> = value
+                    .get("forward")?
+                    .as_array()?
+                    .iter()
+                    .map(|item| item.as_f64().map(|number| number as f32))
+                    .collect::<Option<Vec<_>>>()?;
+                let reverse: Vec<f32> = value
+                    .get("reverse")?
+                    .as_array()?
+                    .iter()
+                    .map(|item| item.as_f64().map(|number| number as f32))
+                    .collect::<Option<Vec<_>>>()?;
+                if forward.len() != 3 || reverse.len() != 3 {
+                    return None;
+                }
+                Some((
+                    [forward[0], forward[1], forward[2]],
+                    [reverse[0], reverse[1], reverse[2]],
+                ))
+            })
+            .map(|(forward_logits, reverse_logits)| nli_evidence(forward_logits, reverse_logits));
+        match hit {
+            Some(evidence) => {
+                pair_cache_hits.push((candidate.candidate_id.clone(), true));
+                cached_nli_evidence.insert(
+                    canonical_pair_key(
+                        endpoint(&candidate.left.file, &candidate.left.title),
+                        endpoint(&candidate.right.file, &candidate.right.title),
+                    ),
+                    evidence,
+                );
+            }
+            None => {
+                pair_cache_hits.push((candidate.candidate_id.clone(), false));
+                miss_indices.push(index);
+                miss_pairs.push(pairs[index].clone());
+            }
+        }
+    }
     let mut run = match selection {
         Ok(_) if partition.fitting.is_empty() && !partition.capped.is_empty() => {
             NliRun::unavailable(
@@ -3485,11 +3791,49 @@ fn apply_semantic_nli(
                 max_unique_pairs,
             )
         }
+        Ok(_) if miss_pairs.is_empty() => NliRun {
+            status: "NLI_ENABLED",
+            reason: None,
+            evidence: cached_nli_evidence.clone(),
+            token_caps: BTreeMap::new(),
+            e5_candidates: candidates.len(),
+            unscored: 0,
+            max_unique_pairs,
+            model_load_attempts: 0,
+            runtime_ms: Some(0),
+            pair_cache_hits: Vec::new(),
+        },
         Ok(backend) => {
-            score_nli_pairs(root, &partition.fitting, &texts, backend, max_unique_pairs)?
+            score_nli_pairs(root, &miss_pairs, &texts, backend, max_unique_pairs)?
         }
         Err(reason) => NliRun::unavailable(reason, candidates.len(), max_unique_pairs),
     };
+    if !miss_pairs.is_empty() {
+        // Persist freshly computed evidence so reruns reuse it.
+        for (position, index) in miss_indices.iter().enumerate() {
+            let candidate = &selected[*index];
+            let (left, right) = &miss_pairs[position];
+            if let Some(evidence) = run
+                .evidence
+                .get(&canonical_pair_key(left.clone(), right.clone()))
+            {
+                cache.put_raw(
+                    pair_cache_key("nli", model_id, &candidate.left, &candidate.right),
+                    serde_json::json!({
+                        "forward": [evidence.forward[0], evidence.forward[1], evidence.forward[2]],
+                        "reverse": [evidence.reverse[0], evidence.reverse[1], evidence.reverse[2]],
+                    }),
+                );
+            }
+        }
+        if cache.store(root).is_err() {
+            // A write failure only means the next run re-judges.
+        }
+    }
+    for (key, evidence) in &cached_nli_evidence {
+        run.evidence.entry(key.clone()).or_insert(*evidence);
+    }
+    run.pair_cache_hits = pair_cache_hits;
     run.e5_candidates = candidates.len();
     run.unscored = candidates.len().saturating_sub(run.evidence.len());
     run.token_caps = partition.capped.clone();
@@ -4291,6 +4635,7 @@ fn render_semantic_report(
     remediation_blocked: bool,
     bge_run: Option<&BgeRun>,
     #[cfg(feature = "nli-evidence")] nli_run: Option<&NliRun>,
+    pair_cache_accounting: PairCacheAccounting,
 ) -> String {
     let blocking = candidates
         .iter()
@@ -4344,9 +4689,11 @@ fn render_semantic_report(
     .or_else(|| bge_run.map(|_| SEMANTIC_BGE_REPORT_SCHEMA_VERSION))
     .unwrap_or(SEMANTIC_REPORT_SCHEMA_VERSION);
     let mut report = format!(
-        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\n",
+        "# Semantic Review\nReport schema version: {}\nChange: \"{change_id}\"\nStatus: {status}\nCandidate count: {}\nPair cache: {} reused, {} computed\n",
         report_schema_version,
         blocking.len(),
+        pair_cache_accounting.reused,
+        pair_cache_accounting.computed,
     );
     if expose_e5_cap_contract(e5_token_caps) {
         report.push_str(&format!(

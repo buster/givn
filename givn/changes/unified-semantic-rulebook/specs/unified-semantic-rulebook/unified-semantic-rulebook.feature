@@ -56,21 +56,21 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     And  the semantic review report contains scope "delta-to-delta"
     And  the candidate content and evidence hashes are exactly 16 lowercase hexadecimal characters
 
-  @givn.added @rulebook @wip
+  @givn.added @rulebook
   Scenario: A changed endpoint re-judges its recorded pair
-    Given  a project prepared for semantic review with two similar active deltas
+    Given  a rulebook review project with a single admitted candidate
     When  the user runs `givn check review --change running-change`
     Then  the pair cache accounting reports "0" reused and "1" computed
-    When  the active semantic candidate is changed
+    When  the rulebook user changes the active candidate
     And  the rulebook user reruns change review without edits
     Then  the pair cache accounting reports "0" reused and "1" computed
 
-  @givn.added @rulebook @wip
+  @givn.added @rulebook
   Scenario: A changed permanent endpoint re-judges its recorded pair
-    Given  a project prepared for semantic review with two similar active deltas
+    Given  a rulebook review project with a single admitted candidate
     When  the user runs `givn check review --change running-change`
     Then  the pair cache accounting reports "0" reused and "1" computed
-    When  the permanent semantic endpoint is changed
+    When  the rulebook user changes the permanent endpoint
     And  the rulebook user reruns change review without edits
     Then  the pair cache accounting reports "0" reused and "1" computed
 
@@ -100,7 +100,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
     Then  the semantic review report candidate count is 20
     And  both reports contain the same candidate ids in the same order
 
-  @givn.added @rulebook @wip
+  @givn.added @rulebook
   Scenario: A change without candidates reports empty cache accounting
     Given  a project prepared for semantic review with active deltas below the similarity boundary
     When  the user runs `givn check review --change running-change`
