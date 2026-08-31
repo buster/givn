@@ -76,7 +76,7 @@ Feature: README enforcement
     Then the command exits non-zero
     And stderr contains "README impact decision"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review accepts an updated README impact decision naming the sections
     Given a project root with givn/ initialised
     And the project's verify commands are no-ops
