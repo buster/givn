@@ -154,6 +154,24 @@ decision for every long scenario, and explain every removed+added pair as
 supersession or unrelated work. Do not use scores as a substitute for a human
 disposition.
 
+## README impact decision (readme addon enabled)
+
+When the readme addon is enabled, review.md must record the machine-checkable
+README impact decision — the review gate refuses sign-off without it:
+
+- `README-IMPACT: none` — this change did not touch the project's public face.
+- `README-IMPACT: updated - <comma-separated sections>` — the named README
+  sections (Description, Quick start, Prerequisites, Usage, Configuration,
+  Contributing, License) were refreshed to match this change.
+
+Make the decision consciously before sign-off: if the change introduced,
+changed, or removed anything a consumer observes (commands, flags, config,
+output), the corresponding README sections belong in the updated list, and the
+README must actually be edited — not just declared updated. An open
+placeholder in the README blocks the archive gate regardless of this line, so
+filling the scaffold sections during the change that made the project usable
+is the cheap path.
+
 ## Coverage gate (completeness, not percentage)
 
 Classify every uncovered line/branch into exactly one bucket:
