@@ -54,7 +54,10 @@ and prints either the text or one JSON object containing `id`, `generates`,
 `--change` is given; multiple active changes require an explicit id.
 
 Without an artifact id, the command reports context-aware generic guidance from
-the project state. It does not create lifecycle artifacts.
+the project state. It does not create lifecycle artifacts. When the readme
+addon is enabled and the README check reports findings, both report paths
+append one text-only status line naming `givn readme check` and the finding
+count; the JSON report shape is unchanged.
 
 ## 6.4 `givn lint`
 
@@ -150,20 +153,27 @@ The archive command executes the following stages:
 4. Run retrieval review when `spec-retrieval` is compiled. The strict E5 gate is
    active only when `spec-similarity-gate` is compiled; otherwise this path is
    advisory. A feature-free build skips this retrieval review stage.
-5. Back up `givn/specs/` and `README.md` as needed.
-6. Parse each delta feature, reject WIP, and merge Added/Modified/Removed
+5. When the readme addon is enabled, run the README completeness gate before any
+   mutation: open placeholders, legacy scaffold texts, an unmanaged or missing
+   README, or development managed block damage block the archive with a
+   per-finding report. No backup is needed at this stage.
+6. Back up `givn/specs/` and `README.md` as needed.
+7. Parse each delta feature, reject WIP, and merge Added/Modified/Removed
    scenarios into `givn/specs/<capability>/<capability>.feature`.
-7. Run `verify.command` against `givn/specs/`. A failure rolls permanent specs
+8. Run `verify.command` against `givn/specs/`. A failure rolls permanent specs
    back from the backup.
-8. Run post-merge E2E only when merged permanent specs contain direct `@e2e`
+9. Run post-merge E2E only when merged permanent specs contain direct `@e2e`
    scenarios. An empty or sentinel E2E command blocks in that case; a configured
    command must pass.
-9. If coverage is enabled, run the project measurement/merge pipeline, validate
-   Cobertura reports, update managed README blocks, and roll back specs,
-   README, and coverage files on failure.
-10. Copy the complete change directory to `givn/archive/<id>/`, then remove the
+10. When the readme addon is enabled and both development managed block markers
+    are present, refresh the block content from the effective command file; a
+    failure restores the README from the backup.
+11. If coverage is enabled, run the project measurement/merge pipeline, validate
+    Cobertura reports, update managed README blocks, and roll back specs,
+    README, and coverage files on failure.
+12. Copy the complete change directory to `givn/archive/<id>/`, then remove the
     active directory.
-11. With retrieval enabled, refresh the permanent index as a best-effort step
+13. With retrieval enabled, refresh the permanent index as a best-effort step
     after archive success; this maintenance refresh reuses existing model
     artifacts and does not initiate a new model download. A refresh failure is
     reported as a warning.

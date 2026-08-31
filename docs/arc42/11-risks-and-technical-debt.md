@@ -68,6 +68,7 @@ historical measurement is not a current quality claim.
 | D-13 | ADR qualification is guidance-level and the register has no semantic validator. | The LLM/author and design review apply the policy; runtime integrity checks only verify mechanical file conditions. | Add a reviewed semantic register validator only if a future requirement justifies runtime enforcement; until then retain explicit review evidence. |
 | D-15 | NLI batched-tensor inference is deferred. | `semantic-scoring-throughput` changes only the NLI session thread count; NLI keeps its per-sequence inference loop. | Implement the named follow-up change `semantic-nli-batched-inference` after measuring wall-time gains on a large corpus. |
 | D-16 | The release-only branches of the model-channel gate (`spec_env`/`release_blocks`) execute only inside the release givn binary. | Coverage instruments the debug harness, so those branches show as uncovered in Cobertura while the `@release-proof` e2e group exercises them through a real release binary. | Keep the release-proof e2e group green; revisit a release-instrumented coverage pass only if the line-coverage delta ever becomes material. |
+| D-17 | The README legacy-matcher list hard-codes the previous scaffold's placeholder sentences. | Detection is exact-text with no false positives, but a future scaffold-text change must keep the list in sync. | Update the matcher list whenever the scaffold template's wording changes, verified by the readme-enforcement scenarios. |
 
 ## 11.3 Historical Measurements
 

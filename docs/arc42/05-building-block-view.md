@@ -39,9 +39,10 @@ flowchart TD
 | `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs overlap/retrieval gates. |
-| `cli::archive` | Check archive prerequisites, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, run optional coverage, and copy/remove the change to archive. |
+| `cli::archive` | Check archive prerequisites, run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, refresh the development managed block, run optional coverage, and copy/remove the change to archive. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
+| `cli::readme` | Scaffold the README from the marked template with the development managed block, run the deterministic completeness check behind `givn readme check`, and refresh the development managed block from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
 | `cli::skills` | Synchronize selected skill targets and opencode commands. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, and dispatch the exact legacy migration preparation route. |
@@ -55,7 +56,7 @@ flowchart TD
 | `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
-| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, and coverage configuration. |
+| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
 | `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run Explore/review/audit surfaces, apply evidence, generate semantic reports, and verify remediation. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. Advisory review applies a decision-first reporting policy: default text lists only model-recommended second-stage pairs, `--verbose` lifts every listing limit, `--format json` emits one structured review document, and a failed gate persists that document as the change's findings file. |
 

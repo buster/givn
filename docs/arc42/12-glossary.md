@@ -31,6 +31,12 @@
 | **`verify.e2e_command`** | The command used for E2E scenarios. The current project command file uses `./run-tests.sh --e2e`. |
 | **Lint (`givn lint`)** | Static feature parsing and overlap checking. It runs no project tests; exit precedence is parse `1`, duplicate title `3`, WIP `2`, clean `0`. |
 | **Coverage gate** | Optional archive-level validation of project-owned measurement and merge commands and Cobertura output. It is operational/test governance, not an active ADR. |
+| **Managed block** | A README region Givn owns and rewrites wholesale between its own fenced markers (coverage badges, coverage summary, development commands). User content outside managed blocks is never touched. |
+| **Open placeholder** | A machine-recognizable request-for-content left in a README section by scaffolding (`givn:todo` marker text). A README without open placeholders is complete. Anti-term: "todo comment". |
+| **README check** | `givn readme check` — deterministic report of every open placeholder by section plus damage to the development managed block; exits non-zero while any remains. |
+| **README completeness gate** | Archive-level blocking validation that the README contains no open placeholders and its managed blocks are intact, enabled by the readme addon. It mirrors the coverage gate. |
+| **README impact decision** | The machine-checkable review line recording that the README needed no update (`none`) or was updated, naming the sections. Required for review sign-off when the readme addon is enabled. Anti-term: "docs impact". |
+| **README migration** | One-time agent-executed rewrite of a legacy-scaffolded or hand-written README into the marked form while preserving all real content; accepted only when the README check passes. Anti-term: "rescaffold". |
 | **Complete semantic serialization** | Compact deterministic model text containing non-empty parsed Feature/Rule context, backgrounds, scenario data, resolved step roles, tables, docstrings, outline template, and examples. |
 | **Semantic content hash** | Hash of the exact complete E5 passage. A vector is reused only when endpoint identity and this hash match. |
 | **Actual-tokenizer preflight** | Measuring an untruncated, unpadded input with the tokenizer of the model that will consume it before construction or inference. |

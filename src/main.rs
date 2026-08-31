@@ -117,6 +117,11 @@ enum Commands {
         #[command(subcommand)]
         command: AddonsCommands,
     },
+    /// README enforcement: deterministic completeness check.
+    Readme {
+        #[command(subcommand)]
+        command: ReadmeCommands,
+    },
     /// Regenerate skills and agent commands.
     Skills {
         #[command(subcommand)]
@@ -166,6 +171,13 @@ enum AddonsCommands {
 enum SkillsCommands {
     /// Regenerate skills and agent commands from current templates.
     Sync,
+}
+
+#[derive(Subcommand)]
+enum ReadmeCommands {
+    /// Report open placeholders, remnants, and managed-block damage; exit 1
+    /// while findings remain.
+    Check,
 }
 
 #[derive(Subcommand)]
@@ -266,6 +278,15 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             AddonsCommands::Enable { name } => cli::addons::run_enable(&name),
             AddonsCommands::Disable { name } => cli::addons::run_disable(&name),
         },
+        Commands::Readme {
+            command: ReadmeCommands::Check,
+        } => {
+            let code = cli::readme::run_check()?;
+            if code != 0 {
+                std::process::exit(code);
+            }
+            Ok(())
+        }
         Commands::Skills {
             command: SkillsCommands::Sync,
         } => cli::skills::run_sync(),
