@@ -103,12 +103,14 @@ Feature: README enforcement
     When the user runs `givn check review --change readme-demo`
     Then the command exits non-zero
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive blocks while the README has open placeholders
     Given a project root with givn/ initialised
     And a scaffolded README with open placeholders
     And the project's verify commands are no-ops
+    And givn addon "coverage" is "false"
     And a completed change "readme-demo" with all required artifacts
+    And the semantic gate fixtures are offline
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
     And stdout mentions "Quick start"
@@ -119,7 +121,9 @@ Feature: README enforcement
     Given a project root with givn/ initialised
     And the README is missing
     And the project's verify commands are no-ops
+    And givn addon "coverage" is "false"
     And a completed change "readme-demo" with all required artifacts
+    And the semantic gate fixtures are offline
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
     And the directory givn/changes/readme-demo/ exists
@@ -129,7 +133,9 @@ Feature: README enforcement
     Given a project root with givn/ initialised
     And a hand-written README without any givn markers
     And the project's verify commands are no-ops
+    And givn addon "coverage" is "false"
     And a completed change "readme-demo" with all required artifacts
+    And the semantic gate fixtures are offline
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
     And the directory givn/changes/readme-demo/ exists
@@ -141,6 +147,7 @@ Feature: README enforcement
     And givn addon "coverage" is "false"
     And the project's verify commands are no-ops
     And a completed change "readme-demo" with all required artifacts
+    And the semantic gate fixtures are offline
     When the user runs `givn readme check`
     Then the command exits 0
     When the user runs `givn archive --change readme-demo`
@@ -153,6 +160,7 @@ Feature: README enforcement
     And a complete README whose development managed block is stale
     And a givn project providing its own workflow scripts
     And a completed change "readme-demo" with all required artifacts
+    And the semantic gate fixtures are offline
     When the user invokes `givn archive --change readme-demo`
     Then the command succeeds
     And the development managed block lists the current configured workflow commands
