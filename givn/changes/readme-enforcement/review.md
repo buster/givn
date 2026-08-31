@@ -64,89 +64,99 @@ Classification of the delta:
 
 | Scenario A | Scenario B | Disposition |
 |---|---|---|
-| `A binary without retrieval reports the explicit unavailable mode` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `A feature-free build keeps retrieval explicitly unavailable` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `A missing draft file is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `A modified delta matching its merge target in the same capability is allowed` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `A modified delta matching its merge target in the same capability is allowed` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `A modified delta matching its merge target in the same capability is allowed` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Archive blocked when delta spec has non-removed @wip scenario` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Archive blocks when the README is missing` | `Archive blocks for a hand-written README without givn markers` | KEEP-AS-BOUNDARY |
-| `A removed delta referencing its target by title is allowed` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `A removed delta referencing its target by title is allowed` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `A removed delta referencing its target by title is allowed` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `A VALID-BOUNDARY score below the boundary without distinction remains blocked` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `A VALID-BOUNDARY score exactly at the boundary remains blocked` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `A valid feature without a scenario is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `A VARIANT score below the boundary without consolidation remains blocked` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Changing a classified endpoint before remediation makes the decision stale` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Check tasks blocked when delta spec has @wip` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Consumer runs the README check on a complete README and it passes` | `A project without the readme addon needs no README impact decision` | KEEP-AS-BOUNDARY |
-| `Consumer runs the README check on a complete README and it passes` | `Review accepts an updated README impact decision naming the sections` | KEEP-AS-BOUNDARY |
-| `Detail mode — unknown change errors` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Every resolved semantic classification requires a rationale` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Explore remains unavailable without the retrieval feature` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `File and standard input cannot be selected together` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `givn addons disable errors when givn/ is not initialised` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `givn addons disable when already disabled is idempotent` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `givn addons disable when already disabled is idempotent` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `givn addons disable when already disabled is idempotent` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `givn addons enable errors when givn/ is not initialised` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `givn check with known artifact proceeds to run hooks` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `givn check with known artifact proceeds to run hooks` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `givn check with known artifact proceeds to run hooks` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Id beginning with a hyphen passed after the argument separator is rejected by validation` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Id ending with a hyphen is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Id with a dot is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Id with non-ASCII letters is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Id with spaces is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Integrity hook fails on Step Definitions section that is not a table` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Integrity hook passes on edited arc42 chapter` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `Integrity hook passes on edited arc42 chapter` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `Integrity hook passes on edited arc42 chapter` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Integrity hook passes when arc42 is disabled` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `Integrity hook passes when arc42 is disabled` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `Integrity hook passes when arc42 is disabled` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Integrity hook resolves the change directory from a relative features path inside givn/changes` | `An unknown README impact value is refused` | UNRELATED |
-| `Invalid Gherkin input is rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Multiple scenarios in one input are rejected` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Path traversal id is rejected by archive` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Path traversal id is rejected by check` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Path traversal id is rejected by graph` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Path traversal id is rejected by instructions` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Path traversal id is rejected by lint` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Path traversal id is rejected by status` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `README check reports a damaged managed block` | `README check reports a hand-written README without givn markers as unmanaged` | KEEP-AS-BOUNDARY |
-| `README check reports a damaged managed block` | `README check reports a missing README` | KEEP-AS-BOUNDARY |
-| `README check reports a legacy scaffold README as needing migration` | `README check reports a damaged managed block` | KEEP-AS-BOUNDARY |
-| `README check reports a legacy scaffold README as needing migration` | `README check reports a hand-written README without givn markers as unmanaged` | KEEP-AS-BOUNDARY |
-| `README check reports a legacy scaffold README as needing migration` | `README check reports a missing README` | KEEP-AS-BOUNDARY |
-| `README check reports a missing README` | `README check reports a hand-written README without givn markers as unmanaged` | KEEP-AS-BOUNDARY |
-| `Review accepts an updated README impact decision naming the sections` | `A project without the readme addon needs no README impact decision` | KEEP-AS-BOUNDARY |
-| `Review blocks with a clear message when review.md is missing` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Review passes when a long scenario has a split-or-keep entry` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `Review passes when a long scenario has a split-or-keep entry` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `Review passes when a long scenario has a split-or-keep entry` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Review passes when a shape match exists only between permanent scenarios` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `Review passes when a shape match exists only between permanent scenarios` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `Review passes when a shape match exists only between permanent scenarios` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `The audit reports an unavailable retrieval model` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `The audit reports retrieval unavailable without the retrieval feature` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `The default scope excludes the archive tree` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `The default scope excludes the archive tree` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `The default scope excludes the archive tree` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Uninitialized project errors` | `Review refuses sign-off without a recorded README impact decision` | UNRELATED |
-| `Valid kebab-case change id is accepted by every command that accepts --change` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `Valid kebab-case change id is accepted by every command that accepts --change` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `Valid kebab-case change id is accepted by every command that accepts --change` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `A project without the readme addon needs no README impact decision` | UNRELATED |
-| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `Consumer runs the README check on a complete README and it passes` | UNRELATED |
-| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `Review accepts an updated README impact decision naming the sections` | UNRELATED |
-
-| Scenario | Decision |
-|---|---|
-| `Search does not return the running change's own delta` | `Instructions stay silent about the README when it is complete` | UNRELATED |
-| (none) | Keep all |
+| `A binary without retrieval reports the explicit unavailable mode` | `Missing impact decision refuses the review` | UNRELATED |
+| `A disabled addon needs no impact decision` | `A recorded impact decision passes the review` | KEEP-AS-BOUNDARY |
+| `A feature-free build keeps retrieval explicitly unavailable` | `Missing impact decision refuses the review` | UNRELATED |
+| `A legacy README is reported for migration` | `A marker-less README is unmanaged` | KEEP-AS-BOUNDARY |
+| `A legacy README is reported for migration` | `The check names a damaged managed block` | KEEP-AS-BOUNDARY |
+| `A legacy README is reported for migration` | `The check reports a missing README` | KEEP-AS-BOUNDARY |
+| `A missing draft file is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `A missing README blocks the archive` | `An unmanaged README blocks the archive` | KEEP-AS-BOUNDARY |
+| `A modified delta matching its merge target in the same capability is allowed` | `A disabled addon needs no impact decision` | UNRELATED |
+| `A modified delta matching its merge target in the same capability is allowed` | `A recorded impact decision passes the review` | UNRELATED |
+| `A modified delta matching its merge target in the same capability is allowed` | `The check passes on a complete README` | UNRELATED |
+| `A modified delta matching its merge target in the same capability is allowed` | `Updated impact decision passes the review` | UNRELATED |
+| `Archive blocked when delta spec has non-removed @wip scenario` | `Missing impact decision refuses the review` | UNRELATED |
+| `A removed delta referencing its target by title is allowed` | `A disabled addon needs no impact decision` | UNRELATED |
+| `A removed delta referencing its target by title is allowed` | `A recorded impact decision passes the review` | UNRELATED |
+| `A removed delta referencing its target by title is allowed` | `The check passes on a complete README` | UNRELATED |
+| `A removed delta referencing its target by title is allowed` | `Updated impact decision passes the review` | UNRELATED |
+| `A VALID-BOUNDARY score below the boundary without distinction remains blocked` | `Missing impact decision refuses the review` | UNRELATED |
+| `A VALID-BOUNDARY score exactly at the boundary remains blocked` | `Missing impact decision refuses the review` | UNRELATED |
+| `A valid feature without a scenario is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `A VARIANT score below the boundary without consolidation remains blocked` | `Missing impact decision refuses the review` | UNRELATED |
+| `Changing a classified endpoint before remediation makes the decision stale` | `Missing impact decision refuses the review` | UNRELATED |
+| `Check tasks blocked when delta spec has @wip` | `Missing impact decision refuses the review` | UNRELATED |
+| `Detail mode — unknown change errors` | `Missing impact decision refuses the review` | UNRELATED |
+| `Every resolved semantic classification requires a rationale` | `Missing impact decision refuses the review` | UNRELATED |
+| `Explore remains unavailable without the retrieval feature` | `Missing impact decision refuses the review` | UNRELATED |
+| `File and standard input cannot be selected together` | `Missing impact decision refuses the review` | UNRELATED |
+| `givn addons disable errors when givn/ is not initialised` | `Missing impact decision refuses the review` | UNRELATED |
+| `givn addons disable when already disabled is idempotent` | `A disabled addon needs no impact decision` | UNRELATED |
+| `givn addons disable when already disabled is idempotent` | `A recorded impact decision passes the review` | UNRELATED |
+| `givn addons disable when already disabled is idempotent` | `The check passes on a complete README` | UNRELATED |
+| `givn addons disable when already disabled is idempotent` | `Updated impact decision passes the review` | UNRELATED |
+| `givn addons enable errors when givn/ is not initialised` | `Missing impact decision refuses the review` | UNRELATED |
+| `givn check with known artifact proceeds to run hooks` | `A disabled addon needs no impact decision` | UNRELATED |
+| `givn check with known artifact proceeds to run hooks` | `A recorded impact decision passes the review` | UNRELATED |
+| `givn check with known artifact proceeds to run hooks` | `The check passes on a complete README` | UNRELATED |
+| `givn check with known artifact proceeds to run hooks` | `Updated impact decision passes the review` | UNRELATED |
+| `Id beginning with a hyphen passed after the argument separator is rejected by validation` | `Missing impact decision refuses the review` | UNRELATED |
+| `Id ending with a hyphen is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `Id with a dot is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `Id with non-ASCII letters is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `Id with spaces is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `Integrity hook fails on Step Definitions section that is not a table` | `Missing impact decision refuses the review` | UNRELATED |
+| `Integrity hook passes on edited arc42 chapter` | `A disabled addon needs no impact decision` | UNRELATED |
+| `Integrity hook passes on edited arc42 chapter` | `A recorded impact decision passes the review` | UNRELATED |
+| `Integrity hook passes on edited arc42 chapter` | `The check passes on a complete README` | UNRELATED |
+| `Integrity hook passes on edited arc42 chapter` | `Updated impact decision passes the review` | UNRELATED |
+| `Integrity hook passes when arc42 is disabled` | `A disabled addon needs no impact decision` | UNRELATED |
+| `Integrity hook passes when arc42 is disabled` | `A recorded impact decision passes the review` | UNRELATED |
+| `Integrity hook passes when arc42 is disabled` | `The check passes on a complete README` | UNRELATED |
+| `Integrity hook passes when arc42 is disabled` | `Updated impact decision passes the review` | UNRELATED |
+| `Integrity hook resolves the change directory from a relative features path inside givn/changes` | `An unknown impact value is refused` | UNRELATED |
+| `Invalid Gherkin input is rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `Multiple scenarios in one input are rejected` | `Missing impact decision refuses the review` | UNRELATED |
+| `Path traversal id is rejected by archive` | `Missing impact decision refuses the review` | UNRELATED |
+| `Path traversal id is rejected by check` | `Missing impact decision refuses the review` | UNRELATED |
+| `Path traversal id is rejected by graph` | `Missing impact decision refuses the review` | UNRELATED |
+| `Path traversal id is rejected by instructions` | `Missing impact decision refuses the review` | UNRELATED |
+| `Path traversal id is rejected by lint` | `Missing impact decision refuses the review` | UNRELATED |
+| `Path traversal id is rejected by status` | `Missing impact decision refuses the review` | UNRELATED |
+| `Review blocks with a clear message when review.md is missing` | `Missing impact decision refuses the review` | UNRELATED |
+| `Review passes when a long scenario has a split-or-keep entry` | `A disabled addon needs no impact decision` | UNRELATED |
+| `Review passes when a long scenario has a split-or-keep entry` | `A recorded impact decision passes the review` | UNRELATED |
+| `Review passes when a long scenario has a split-or-keep entry` | `The check passes on a complete README` | UNRELATED |
+| `Review passes when a long scenario has a split-or-keep entry` | `Updated impact decision passes the review` | UNRELATED |
+| `Review passes when a shape match exists only between permanent scenarios` | `A disabled addon needs no impact decision` | UNRELATED |
+| `Review passes when a shape match exists only between permanent scenarios` | `A recorded impact decision passes the review` | UNRELATED |
+| `Review passes when a shape match exists only between permanent scenarios` | `The check passes on a complete README` | UNRELATED |
+| `Review passes when a shape match exists only between permanent scenarios` | `Updated impact decision passes the review` | UNRELATED |
+| `Search does not return the running change's own delta` | `Instructions stay silent on a complete README` | UNRELATED |
+| `The audit reports an unavailable retrieval model` | `Missing impact decision refuses the review` | UNRELATED |
+| `The audit reports retrieval unavailable without the retrieval feature` | `Missing impact decision refuses the review` | UNRELATED |
+| `The check names a damaged managed block` | `A marker-less README is unmanaged` | KEEP-AS-BOUNDARY |
+| `The check names a damaged managed block` | `The check reports a missing README` | KEEP-AS-BOUNDARY |
+| `The check passes on a complete README` | `A disabled addon needs no impact decision` | KEEP-AS-BOUNDARY |
+| `The check passes on a complete README` | `A recorded impact decision passes the review` | KEEP-AS-BOUNDARY |
+| `The check passes on a complete README` | `Updated impact decision passes the review` | KEEP-AS-BOUNDARY |
+| `The check reports a missing README` | `A marker-less README is unmanaged` | KEEP-AS-BOUNDARY |
+| `The default scope excludes the archive tree` | `A disabled addon needs no impact decision` | UNRELATED |
+| `The default scope excludes the archive tree` | `A recorded impact decision passes the review` | UNRELATED |
+| `The default scope excludes the archive tree` | `The check passes on a complete README` | UNRELATED |
+| `The default scope excludes the archive tree` | `Updated impact decision passes the review` | UNRELATED |
+| `Uninitialized project errors` | `Missing impact decision refuses the review` | UNRELATED |
+| `Updated impact decision passes the review` | `A disabled addon needs no impact decision` | KEEP-AS-BOUNDARY |
+| `Updated impact decision passes the review` | `A recorded impact decision passes the review` | KEEP-AS-BOUNDARY |
+| `Valid kebab-case change id is accepted by every command that accepts --change` | `A disabled addon needs no impact decision` | UNRELATED |
+| `Valid kebab-case change id is accepted by every command that accepts --change` | `A recorded impact decision passes the review` | UNRELATED |
+| `Valid kebab-case change id is accepted by every command that accepts --change` | `The check passes on a complete README` | UNRELATED |
+| `Valid kebab-case change id is accepted by every command that accepts --change` | `Updated impact decision passes the review` | UNRELATED |
+| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `A disabled addon needs no impact decision` | UNRELATED |
+| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `A recorded impact decision passes the review` | UNRELATED |
+| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `The check passes on a complete README` | UNRELATED |
+| `Verify-e2e hook resolves the change directory from a relative features path inside givn/changes` | `Updated impact decision passes the review` | UNRELATED |
 
 ## Ubiquitous language
 
