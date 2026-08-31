@@ -42,7 +42,7 @@ fn workflow_scripts_project(world: &mut GivnWorld) {
     }
 }
 
-#[then("the README contains an open placeholder for the description")]
+#[then("the README has the description open placeholder")]
 fn readme_has_description_placeholder(world: &mut GivnWorld) {
     let env = world
         .env
@@ -56,7 +56,7 @@ fn readme_has_description_placeholder(world: &mut GivnWorld) {
     );
 }
 
-#[then("the README contains an open placeholder for the license")]
+#[then("the README has the license open placeholder")]
 fn readme_has_license_placeholder(world: &mut GivnWorld) {
     let env = world
         .env
@@ -70,7 +70,7 @@ fn readme_has_license_placeholder(world: &mut GivnWorld) {
     );
 }
 
-#[then("the README contains the development managed block naming the configured workflow commands")]
+#[then("the README has the development managed block")]
 fn readme_has_dev_block(world: &mut GivnWorld) {
     let env = world
         .env
@@ -89,7 +89,7 @@ fn readme_has_dev_block(world: &mut GivnWorld) {
     );
 }
 
-#[then("the development managed block lists the current configured workflow commands")]
+#[then("the development block lists the configured commands")]
 fn dev_block_lists_commands(world: &mut GivnWorld) {
     let env = world
         .env
@@ -126,7 +126,7 @@ fn archived_change_dir_exists(world: &mut GivnWorld) {
     );
 }
 
-#[then(regex = r#"^the instructions mention the unfinished README and \`givn readme check\`$"#)]
+#[then("the instructions mention the unfinished README")]
 fn instructions_mention_readme(world: &mut GivnWorld) {
     let out = super::output(world);
     let stdout = String::from_utf8_lossy(&out.stdout).to_string();

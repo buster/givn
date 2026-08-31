@@ -73,6 +73,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: c9f0971
+  - [x] COMMIT: c9f0971 -- S1 checker + readme check dispatch; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 2: README check reports a legacy scaffold README as needing migration
@@ -102,6 +103,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 5f670f9
+  - [x] COMMIT: 5f670f9 -- S2 legacy scaffold detection; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 3: README check reports a damaged managed block
@@ -132,6 +134,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: f900edd
+  - [x] COMMIT: f900edd -- S3 damaged managed block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 4: README check reports a missing README
@@ -161,6 +164,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 84f7849
+  - [x] COMMIT: 84f7849 -- S4 missing README finding; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 5: README check reports a hand-written README without givn markers as unmanaged
@@ -191,6 +195,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 070e2a4
+  - [x] COMMIT: 070e2a4 -- S5 unmanaged README finding; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 6: Review refuses sign-off without a recorded README impact decision
@@ -228,6 +233,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 4789df2
+  - [x] COMMIT: 4789df2 -- S6 README-IMPACT enforcement in integrity hook; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 7: Review accepts an updated README impact decision naming the sections
@@ -260,6 +266,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: a0d2ffd
+  - [x] COMMIT: a0d2ffd -- S7 updated-impact acceptance; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 8: A project without the readme addon needs no README impact decision
@@ -291,6 +298,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 31bdb12
+  - [x] COMMIT: 31bdb12 -- S8 addon gating; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 9: An unknown README impact value is refused
@@ -321,6 +329,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: c8533d5
+  - [x] COMMIT: c8533d5 -- S9 unknown impact value refusal; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 10: Archive blocks while the README has open placeholders
@@ -360,6 +369,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 421ea6f
+  - [x] COMMIT: 421ea6f -- S10 archive completeness gate; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 11: Archive blocks when the README is missing
@@ -392,6 +402,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: f4c8bc5
+  - [x] COMMIT: f4c8bc5 -- S11 archive missing-README block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 12: Archive blocks for a hand-written README without givn markers
@@ -423,6 +434,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 89aa21d
+  - [x] COMMIT: 89aa21d -- S12 archive unmanaged block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 13: Archive does not re-insert a deleted development managed block while the README stays managed
@@ -455,6 +467,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: d4b0fb7
+  - [x] COMMIT: d4b0fb7 -- S13 refresh-if-present pinning; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 14: Instructions stay silent about the README when it is complete
@@ -486,12 +499,13 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 5ae1b34
+  - [x] COMMIT: 5ae1b34 -- S14 instructions silence guard; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## E2E setup: prove the e2e filter and fixture conventions
 
-- [ ] Already proven in the setup task above (counts pasted).
-- [ ] Fixture convention for archive scenarios: `verify.command` passes and
+- [x] Already proven in the setup task above (counts pasted).
+- [x] Fixture convention for archive scenarios: `verify.command` passes and
       the coverage addon is satisfied or disabled
       (`tests/steps/extract_coverage_gate_steps.rs` convention).
 
@@ -531,6 +545,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: a5eb61f
+  - [x] COMMIT: a5eb61f -- S15 marked template + scaffold dev block; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 16: Consumer runs the README check on a complete README and it passes
@@ -546,6 +561,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 1846936
+  - [x] COMMIT: 1846936 -- S16 check happy path; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 17: Consumer checks a review with a recorded README impact decision and it passes
@@ -561,6 +577,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 92ba8af
+  - [x] COMMIT: 92ba8af -- S17 review happy path; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 18: Consumer archives a change and the development managed block refreshes
@@ -597,6 +614,7 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 675fe58
+  - [x] COMMIT: 675fe58 -- S18 archive dev-block refresh; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Scenario 19: Consumer asks for instructions and the unfinished README is surfaced
@@ -627,20 +645,39 @@ non-@e2e first, @e2e last).
 
   ```
   commit hash: 4ec0040
+  - [x] COMMIT: 4ec0040 -- S19 instructions nudge; RED+GREEN+REFACTOR evidence above.
   ```
 
 ## Final verification
 
-- [ ] `./run-tests.sh` exits 0 on the full suite:
+- [x] `./run-tests.sh` exits 0 on the full suite:
 
   ```
-  (paste output)
+  FULL_EXIT=0 — 417 scenarios (417 passed, across the standing suite incl.
+  the adapted README-enforcement-affected fixtures)
   ```
 
-- [ ] `./run-tests.sh --e2e` exits 0:
+- [x] `./run-tests.sh --e2e` exits 0:
 
   ```
-  (paste output)
+  E2E_EXIT=0 — 30 scenarios (30 passed)
   ```
 
-- [ ] E2E filter proof (strict subset counts) recorded in the setup task.
+- [x] E2E filter proof (strict subset counts) recorded in the setup task.
+
+- [x] Delta runs (both groups, `--no-default-features --features
+      spec-retrieval`, stub embedder): 14/14 non-e2e + 5/5 e2e passed.
+  - [x] COMMIT: fbc048d -- standing-suite fixture adaptation (67 failing
+        scenarios after the gates landed; all adapted, suite green).
+  - [x] COMMIT: a806c6e -- archive/review skill guidance for the README gate
+        and impact decision.
+  - [x] COMMIT: 5fedabc -- agent integrations regenerated (dogfood).
+  - [x] COMMIT: 8cb7058 -- development block renders coverage commands from
+        the command file regardless of addon enable order (found by the
+        standing coverage-script-workflow scenario).
+      Empty/no-op step bodies in both step files: 0 (grep for
+      `unimplemented!`/`todo!`). Commits: 19 scenario commits + fixture
+      adaptation + skill guidance + integration regen + dev-block fix.
+      Coverage: measured by the archive-time coverage gate via
+      measure-coverage.sh/merge-coverages.sh; per-scenario targeted runs
+      carry no instrumentation (repo convention).
