@@ -264,31 +264,33 @@ non-@e2e first, @e2e last).
 
 ## Scenario 8: A project without the readme addon needs no README impact decision
 
-- [ ] RED — `cargo test --test features_runner -- --name "A project without the readme addon needs no README impact decision"`
+- [x] RED — legitimate immediate GREEN: all steps reused (`givn addon "readme"
+      is "false"` is an existing definition; the addon gating shipped with
+      scenario 6's integrity-hook threading).
 
   ```
-  (paste RED output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] GREEN — addon gating in the integrity check.
+- [x] GREEN — reuse only (addon gating via `manifest.addons.readme`).
 
   Files:
-  - (paste production files)
+  - (no production files — pure step reuse)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): A project without the readme addon needs no README impact decision`
+- [x] COMMIT — `feat(readme-enforcement): A project without the readme addon needs no README impact decision`
 
   ```
-  commit hash:
+  commit hash: 31bdb12
   ```
 
 ## Scenario 9: An unknown README impact value is refused
