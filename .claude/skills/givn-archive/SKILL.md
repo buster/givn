@@ -25,6 +25,12 @@ Archive change `<change-id>`.
    catch it and block archive anyway.
 3. `review.md` contains `REVIEW: PASS`.
 4. Hooks of all `apply.requires` artifacts pass (runs `./run-tests.sh`).
+5. **README completeness gate**: with the readme addon enabled, the README
+   must carry no `<!-- givn:todo: ... -->` open placeholders, no scaffold
+   remnants, no damaged managed block, and must not be missing or
+   marker-less. A blocked archive names every unfinished section — fill each
+   one with real content before re-attempting. `givn readme check` reports
+   the same findings any time.
 
 If any gate fails, the archive is refused with a clear error. Do **not**
 bypass a gate failure by mass-checking boxes — go back, genuinely
