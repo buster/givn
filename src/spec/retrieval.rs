@@ -48,6 +48,14 @@ const RERANKER_LOGIT_THRESHOLD: f32 = 3.0;
 const BGE_ADMISSION_THRESHOLD: f32 = 3.0;
 #[cfg(feature = "spec-retrieval")]
 const E5_ADMISSION_THRESHOLD: f32 = 0.9;
+
+/// Unified rulebook selection: at most this many highest-scored neighbours
+/// per delta scenario survive the per-scenario cut (ADR-066).
+const NEIGHBOURS_PER_SCENARIO: usize = 5;
+
+/// Unified rulebook selection: the shared cap on judged pairs per run
+/// (ADR-066). Pairs beyond the cap are unselected, not candidates.
+const PAIR_CAP: usize = 20;
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
 const BGE_PIPELINE_VERSION: &str = "rust-production-v2";
 #[cfg(any(feature = "cross-encoder-reranker", feature = "nli-evidence"))]
@@ -3270,10 +3278,43 @@ fn semantic_candidates(
             })
             .then_with(|| left.candidate_id.cmp(&right.candidate_id))
     });
+    let result = apply_hybrid_selection(result);
     Ok(SemanticCandidateSet {
         candidates: result,
         e5_token_caps,
     })
+}
+
+/// Unified rulebook hybrid selection (ADR-066): per delta scenario keep at
+/// most `NEIGHBOURS_PER_SCENARIO` highest-scored pairs, then cap the union at
+/// `PAIR_CAP` pairs by score with deterministic endpoint tie order. Pairs
+/// dropped here are unselected — they are not candidates and carry no
+/// blocking state.
+fn apply_hybrid_selection(candidates: Vec<SemanticCandidate>) -> Vec<SemanticCandidate> {
+    let mut by_scenario: BTreeMap<(String, String, String), Vec<&SemanticCandidate>> =
+        BTreeMap::new();
+    for candidate in &candidates {
+        for endpoint in [&candidate.left, &candidate.right] {
+            if endpoint.scope == "current-change" {
+                by_scenario
+                    .entry(semantic_endpoint_key(endpoint))
+                    .or_default()
+                    .push(candidate);
+            }
+        }
+    }
+    let mut selected: BTreeMap<String, SemanticCandidate> = BTreeMap::new();
+    for neighbours in by_scenario.values_mut() {
+        neighbours.sort_by(|a, b| semantic_candidate_order(a, b));
+        neighbours.truncate(NEIGHBOURS_PER_SCENARIO);
+        for candidate in neighbours.drain(..) {
+            selected.insert(candidate.candidate_id.clone(), candidate.clone());
+        }
+    }
+    let mut result: Vec<SemanticCandidate> = selected.into_values().collect();
+    result.sort_by(semantic_candidate_order);
+    result.truncate(PAIR_CAP);
+    result
 }
 
 #[cfg(all(feature = "spec-retrieval", feature = "cross-encoder-reranker"))]
