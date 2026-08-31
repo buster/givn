@@ -236,7 +236,7 @@ fn combined_unavailable_project(world: &mut GivnWorld) {
     .expect("write unavailable commands");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n",
     )
     .expect("write unavailable review disposition");
     world.env = Some(env);

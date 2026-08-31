@@ -197,7 +197,7 @@ fn e2e_advisory_cap_project(world: &mut GivnWorld) {
     .expect("write blocking review commands");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n",
+        "REVIEW: PASS\nREADME-IMPACT: none",
     )
     .expect("write blocking review dispositions");
     world.env = Some(env);

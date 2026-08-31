@@ -85,7 +85,7 @@ fn change_all_complete_with_tasks_content(
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
         } else if *file == "review.md" {
-            writeln!(f, "REVIEW: PASS").ok();
+            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
         } else if *file == "tasks.md" {
             let content = tasks_content.replace("\\n", "\n");
             write!(f, "{}", content).ok();

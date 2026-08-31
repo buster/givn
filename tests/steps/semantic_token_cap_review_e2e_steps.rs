@@ -163,7 +163,7 @@ fn e2e_unresolved_semantic_candidate(world: &mut GivnWorld) {
     .expect("write active semantic candidate");
     std::fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unresolved active semantic candidate` | `Permanent semantic candidate` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unresolved active semantic candidate` | `Permanent semantic candidate` | related |\n",
     )
     .expect("write running change review");
     std::fs::write(

@@ -83,7 +83,7 @@ pub(crate) fn two_similar_active_deltas(world: &mut GivnWorld) {
     .expect("write second active delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | related |\n| `Unknown provider selection is rejected` | `Provider name is unknown` | related |\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | related |\n| `Unknown provider selection is rejected` | `Provider name is unknown` | related |\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
     )
     .expect("write overlap dispositions");
     world.env = Some(env);
@@ -1001,7 +1001,7 @@ fn exact_boundary_semantic_project(world: &mut GivnWorld) {
     .expect("write boundary delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Exact boundary delta` | `Exact boundary permanent` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Exact boundary delta` | `Exact boundary permanent` | related |\n",
     )
     .expect("write boundary dispositions");
     world.env = Some(env);
@@ -1066,7 +1066,7 @@ fn rule_nested_semantic_project(world: &mut GivnWorld) {
     .expect("write Rule-nested delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
     )
     .expect("write Rule overlap dispositions");
     world.env = Some(env);
@@ -1292,7 +1292,7 @@ fn modified_target_semantic_project(world: &mut GivnWorld) {
     .expect("write modified delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
     )
     .expect("write modified overlap dispositions");
     world.env = Some(env);

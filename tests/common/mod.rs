@@ -205,6 +205,9 @@ pub fn make_bare_root() -> TestEnv {
 /// The default fixture: a temp directory with `givn init` already run, so
 /// `givn/specs`, `givn/changes`, `givn/archive`, config, and skills are
 /// scaffolded exactly as a real initialised project (no duplicated logic).
+/// The README is written in its complete, givn-managed form — a real project
+/// that archives has filled its scaffold sections, and the README
+/// completeness gate would otherwise block every archive-flow fixture.
 pub fn make_init_root() -> TestEnv {
     let env = make_bare_root();
     let out = run_givn(&env, &["init"]);
@@ -214,7 +217,62 @@ pub fn make_init_root() -> TestEnv {
         String::from_utf8_lossy(&out.stdout),
         String::from_utf8_lossy(&out.stderr),
     );
+    std::fs::write(
+        env.path("README.md"),
+        complete_readme_fixture(),
+    )
+    .expect("write complete README fixture");
     env
+}
+
+/// A complete, givn-managed README: filled sections, badge fences, and an
+/// intact development managed block.
+fn complete_readme_fixture() -> String {
+    "\
+# test-project
+
+<!-- givn:begin:coverage-badge -->
+[![Line Coverage: n/a](https://img.shields.io/badge/line%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+[![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
+<!-- givn:end:coverage-badge -->
+
+A small command-line tool used as a givn test fixture.
+
+## Quick start
+
+```sh
+cargo install test-project
+test-project --help
+```
+
+## Prerequisites
+
+Rust (latest stable).
+
+## Usage
+
+`test-project <args>` prints the requested output to stdout.
+
+## Contributing
+
+Conventional Commits; PRs require a green test suite.
+
+## License
+
+MIT
+
+<!-- givn:begin:development -->
+## Development
+
+Run the project-owned scripts used by `givn/commands.yaml`:
+
+```sh
+./run-tests.sh
+./run-tests.sh --e2e
+```
+<!-- givn:end:development -->
+"
+    .to_string()
 }
 
 /// Invoke the `givn` binary with `env`'s temp dir as current directory and

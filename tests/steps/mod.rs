@@ -1048,7 +1048,7 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
     // Write all-checked tasks.md.
     std::fs::write(change_dir.join("tasks.md"), "- [x] done\n").unwrap();
     // Write REVIEW: PASS marker.
-    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change_dir.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: none").unwrap();
     // Create specs dir + feature for specs artifact Done status.
     let specs_dir = change_dir.join("specs").join("example");
     std::fs::create_dir_all(&specs_dir).expect("create specs dir");

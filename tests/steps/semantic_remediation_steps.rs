@@ -47,7 +47,7 @@ pub(crate) fn remediation_project(world: &mut GivnWorld, classification: String)
     .expect("write remediation delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | boundary |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | boundary |\n",
     )
     .expect("write remediation dispositions");
     world.env = Some(env);
@@ -183,7 +183,7 @@ pub(crate) fn remediation_delta_to_delta_world(
     fs::write(&delta, initial).expect("write delta-to-delta remediation delta");
     fs::write(
         env.path(&format!("givn/changes/{change_id}/review.md")),
-        "REVIEW: PASS\n\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Unknown provider selection is rejected` | related |\n",
     )
     .expect("write delta-to-delta remediation dispositions");
     world.env = Some(env);

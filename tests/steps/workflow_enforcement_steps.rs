@@ -370,7 +370,7 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
         "- [x] COMMIT: a1b2c3d4 -- Implement all tasks\n",
     )
     .unwrap();
-    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 
     // Create a corresponding permanent spec so merging works.
@@ -431,7 +431,7 @@ fn change_new_capability(world: &mut GivnWorld) {
         "- [x] COMMIT: a1b2c3d4 -- Implement new capability\n",
     )
     .unwrap();
-    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
 
     // Set verify to fail after merge (pass during gate hooks, fail post-merge).
@@ -591,7 +591,7 @@ fn archive_ready_change_with_wip(world: &mut GivnWorld) {
         "- [x] COMMIT: a1b2c3d4 -- Implement all tasks\n",
     )
     .unwrap();
-    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     set_verify_true(world);
 
@@ -632,7 +632,7 @@ fn archive_ready_change_wip_only_on_removed(world: &mut GivnWorld) {
         "- [x] COMMIT: a1b2c3d4 -- Implement all tasks\n",
     )
     .unwrap();
-    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     set_verify_true(world);
 
@@ -665,7 +665,7 @@ fn change_with_wip_spec(world: &mut GivnWorld) {
     std::fs::write(change.join("design.md"), "# Design\n").unwrap();
     std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
     std::fs::write(change.join("tasks.md"), "- [x] COMMIT: a1b2c3d4 -- Task\n").unwrap();
-    std::fs::write(change.join("review.md"), "REVIEW: PASS\n").unwrap();
+    std::fs::write(change.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none").unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     set_verify_true(world);
 }

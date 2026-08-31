@@ -459,32 +459,33 @@ non-@e2e first, @e2e last).
 
 ## Scenario 14: Instructions stay silent about the README when it is complete
 
-- [ ] RED — `cargo test --test features_runner -- --name "Instructions stay silent about the README when it is complete"`
+- [x] RED — `cargo test --test features_runner -- --name "Instructions stay silent about the README when it is complete"`
 
   ```
-  (paste RED output)
+  EXIT=101 — 1 scenario (1 failed): fixture step unimplemented
   ```
 
-- [ ] GREEN — nudge only when findings exist (regression guard; RED proof for
-      the nudge surface is scenario 19's paired evidence).
+- [x] GREEN — nudge only when findings exist (regression guard; RED proof for
+      the nudge surface is scenario 19's paired evidence). The current binary
+      has no nudge, so silence holds trivially until scenario 19 adds it.
 
   Files:
-  - (paste production files)
+  - tests/steps/readme_enforcement_steps.rs (complete-README fixture)
 
   ```
-  (paste GREEN output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] REFACTOR
+- [x] REFACTOR
 
   ```
-  (paste output)
+  EXIT=0 — 1 scenario (1 passed)
   ```
 
-- [ ] COMMIT — `feat(readme-enforcement): Instructions stay silent about the README when it is complete`
+- [x] COMMIT — `feat(readme-enforcement): Instructions stay silent about the README when it is complete`
 
   ```
-  commit hash:
+  commit hash: 5ae1b34
   ```
 
 ## E2E setup: prove the e2e filter and fixture conventions
