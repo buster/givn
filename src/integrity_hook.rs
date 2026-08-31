@@ -9,6 +9,7 @@ pub fn run_integrity_hook(
     features_path: &str,
     arc42_enabled: bool,
     coverage_enabled: bool,
+    readme_enabled: bool,
 ) -> Result<()> {
     let change_dir = crate::state::find_change_dir(features_path);
     let change_dir = match change_dir {
@@ -26,7 +27,53 @@ pub fn run_integrity_hook(
     if coverage_enabled {
         check_coverage_config()?;
     }
+    if readme_enabled {
+        check_readme_impact(&change_dir)?;
+    }
 
+    Ok(())
+}
+
+/// Check that `review.md` records a machine-checkable README impact decision.
+///
+/// Gated on `manifest.addons.readme` — with the addon off, the decision is not
+/// required. A valid decision is exactly one line per occurrence:
+/// `README-IMPACT: none` or `README-IMPACT: updated - <sections>`.
+fn check_readme_impact(change_dir: &Path) -> Result<()> {
+    let review_path = change_dir.join("review.md");
+    if !review_path.exists() {
+        // No review.md — nothing to check (matching the other integrity checks).
+        return Ok(());
+    }
+    let content = std::fs::read_to_string(&review_path)?;
+    let mut found_any = false;
+    for line in content.lines() {
+        let Some(value) = line
+            .trim_start()
+            .strip_prefix("README-IMPACT:")
+            .map(str::trim)
+        else {
+            continue;
+        };
+        found_any = true;
+        let valid = value == "none"
+            || (value.starts_with("updated - ")
+                && value
+                    .strip_prefix("updated - ")
+                    .is_some_and(|sections| !sections.trim().is_empty()));
+        if !valid {
+            bail!(
+                "README-IMPACT value '{value}' is not a valid README impact decision — \
+                 use 'README-IMPACT: none' or 'README-IMPACT: updated - <sections>'"
+            );
+        }
+    }
+    if !found_any {
+        bail!(
+            "review.md is missing the README impact decision — add a line \
+             'README-IMPACT: none' or 'README-IMPACT: updated - <sections>'"
+        );
+    }
     Ok(())
 }
 

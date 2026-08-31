@@ -67,19 +67,19 @@ Feature: README enforcement
     When the user invokes `givn readme check`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review refuses sign-off without a recorded README impact decision
     Given a project root with givn/ initialised
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a reviewable change "readme-demo"
     When the user runs `givn check review --change readme-demo`
     Then the command exits non-zero
-    And stderr mentions "README impact decision"
+    And stderr contains "README impact decision"
 
   @givn.added @wip
   Scenario: Review accepts an updated README impact decision naming the sections
     Given a project root with givn/ initialised
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a reviewable change "readme-demo"
     And the review of change "readme-demo" records the README impact decision "updated - Usage"
     When the user runs `givn check review --change readme-demo`
@@ -89,7 +89,7 @@ Feature: README enforcement
   Scenario: A project without the readme addon needs no README impact decision
     Given a project root with givn/ initialised
     And givn addon "readme" is "false"
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a reviewable change "no-addon"
     When the user runs `givn check review --change no-addon`
     Then the command exits 0
@@ -97,7 +97,7 @@ Feature: README enforcement
   @givn.added @wip
   Scenario: An unknown README impact value is refused
     Given a project root with givn/ initialised
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a reviewable change "readme-demo"
     And the review of change "readme-demo" records the README impact decision "maybe"
     When the user runs `givn check review --change readme-demo`
@@ -107,7 +107,7 @@ Feature: README enforcement
   Scenario: Archive blocks while the README has open placeholders
     Given a project root with givn/ initialised
     And a scaffolded README with open placeholders
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a completed change "readme-demo" with all required artifacts
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
@@ -118,7 +118,7 @@ Feature: README enforcement
   Scenario: Archive blocks when the README is missing
     Given a project root with givn/ initialised
     And the README is missing
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a completed change "readme-demo" with all required artifacts
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
@@ -128,7 +128,7 @@ Feature: README enforcement
   Scenario: Archive blocks for a hand-written README without givn markers
     Given a project root with givn/ initialised
     And a hand-written README without any givn markers
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a completed change "readme-demo" with all required artifacts
     When the user runs `givn archive --change readme-demo`
     Then the command exits non-zero
@@ -139,7 +139,7 @@ Feature: README enforcement
     Given a project root with givn/ initialised
     And a complete README whose only managed block is the coverage badge
     And givn addon "coverage" is "false"
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a completed change "readme-demo" with all required artifacts
     When the user runs `givn readme check`
     Then the command exits 0
@@ -161,7 +161,7 @@ Feature: README enforcement
   @givn.added @e2e @wip
   Scenario: Consumer checks a review with a recorded README impact decision and it passes
     Given a project root with givn/ initialised
-    And the project's verify.command exits 0 on the current permanent specs
+    And the project's verify commands are no-ops
     And a reviewable change "readme-demo"
     And the review of change "readme-demo" records the README impact decision "none"
     When the user invokes `givn check review --change readme-demo`
