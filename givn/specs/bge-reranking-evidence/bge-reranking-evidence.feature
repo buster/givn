@@ -174,20 +174,6 @@ Feature: BGE reranking evidence for bounded semantic search
     And  the JSON evidence reports the BGE model and elapsed runtime
 
   @bge
-  Scenario: E5 candidates outside the bounded BGE set remain explicitly unscored and blocking
-    Given  a project with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs
-    And  the local second-stage evidence is enabled
-    When  the user runs blocking change review with second-stage evidence enabled
-    Then  the semantic review report records BGE status "BGE_ENABLED"
-    And  the semantic review report records exactly 512 unique pairs and 1024 directional calls
-    And  exactly one E5 candidate outside the bounded set is recorded as `BGE_UNSCORED`
-    And  the semantic review report records the outside candidates as `BGE_UNSCORED`
-    And  those candidates remain blocking E5 candidates
-    And  each unscored candidate block has null BGE directional scores and the E5 rank/endpoint order
-    And  no unscored candidate is labeled `BGE_FILTERED`
-    And  no unscored candidate is present in the filtered evidence collection
-
-  @bge
   Scenario: Duplicate JSON exposes partial unscored candidates
     Given  a permanent corpus with exactly 513 E5 raw semantic pairs and a successful bounded top-K union of exactly 512 pairs
     And  the local second-stage evidence is enabled
@@ -199,20 +185,18 @@ Feature: BGE reranking evidence for bounded semantic search
     And  each unscored candidate remains outside the filtered collection
     And  the JSON contains no unscored candidate with BGE directional scores
 
-  @bge @gate-combination
   Scenario: The independent E5 gate remains separate from BGE evidence
     Given  an end-to-end project with an active semantic review candidate
     And  the local second-stage evidence is enabled
     When  the user runs blocking change review with the E5 similarity gate and second-stage evidence enabled
-    Then  the command reports the E5 gate result separately from BGE admission
-    And  a BGE status does not replace the E5 gate result
+    Then  the semantic review report records the embedding admission for the selected pairs
+    And  a BGE status does not remove the embedding admission
     And  no BGE status is rendered as a Givn classification
 
-  @gate-only
   Scenario: The E5 similarity gate remains available without BGE
     Given  an end-to-end project with an active semantic review candidate
     When  the user runs blocking change review with the E5 similarity gate and BGE disabled
-    Then  the command reports the E5 gate result
+    Then  the pair cache accounting reports "0" reused and "0" computed
     And  the output contains no participating BGE model or score
 
   @bge

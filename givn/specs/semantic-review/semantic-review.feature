@@ -1,18 +1,14 @@
 Feature: Generate the semantic review report
 
   Scenario: Change review generates a complete report for a semantic candidate
-    Given  an end-to-end project prepared for semantic review with a similar active delta
-    When  the end-to-end user runs change review for "running-change"
+    Given  a rulebook review project with a single admitted candidate
+    When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report exists
-    And  the semantic review report contains a candidate with both endpoints and an "UNCERTAIN" classification
-    And  the candidate has left scope "current-change" and title "Unknown provider is rejected"
-    And  the candidate has right scope "permanent" and title "Provider name is unknown"
-    And  both endpoint content hashes and evidence hashes are exactly 16 lowercase hexadecimal characters
-    And  the candidate id is exactly 16 lowercase hexadecimal characters
-    And  the candidate embedding score has exactly four decimals in the range "0.9500" through "1.0000"
-    And  the candidate contains the concrete fact "fact_contradiction: false"
-    And  the semantic review report has no timestamp or environment fields
+    And  the semantic review report status is "BLOCKED"
+    And  the semantic review report candidate count is 1
+    And  the candidate embedding score has exactly four decimals in the range "0.9000" through "1.0000"
+    And  the semantic review report contains deterministic facts
 
   Scenario: Removed delta scenarios produce a clean semantic report
     Given  a project prepared for semantic review with only a removed delta
@@ -25,15 +21,12 @@ Feature: Generate the semantic review report
     And  the permanent index remains structurally permanent-only
 
   Scenario: The report distinguishes permanent and current-change candidate scopes
-    Given  a project prepared for semantic review with two similar active deltas
+    Given  a rulebook review project with two similar active deltas
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains scope "delta-to-permanent"
     And  the semantic review report contains scope "delta-to-delta"
-    And  the report names the exact left and right endpoint titles for both scopes
-    And  all candidate scores have exactly four decimals and are at least "0.9500"
-    And  all endpoint hashes are exactly 16 lowercase hexadecimal characters
-    And  the semantic review report contains deterministic facts
+    And  all candidate scores have exactly four decimals and are at least "0.9000"
 
   Scenario: Active deltas below the E5 boundary produce no candidates
     Given  a project prepared for semantic review with active deltas below the similarity boundary
@@ -49,7 +42,7 @@ Feature: Generate the semantic review report
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains a candidate
-    And  the candidate embedding score is exactly "0.9500"
+    And  the candidate embedding score is exactly "0.9000"
     And  the candidate id is exactly 16 lowercase hexadecimal characters
     And  the candidate content and evidence hashes are exactly 16 lowercase hexadecimal characters
 

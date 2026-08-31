@@ -39,24 +39,27 @@ done
 # --- non-e2e groups (mirrors ./run-tests.sh, including its envs) ------------
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
-    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and not @e2e'
+    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and not @rulebook and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker" \
-    --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output and not @e2e'
+    --tags '(@bge or @bge-approval) and not @gate-combination and not @review-output and not @rulebook and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker,spec-similarity-gate" \
-    --tags '@gate-combination and not @e2e'
+    --tags '@gate-combination and not @rulebook and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval,spec-similarity-gate" \
-    --tags '@gate-only and not @e2e'
+    --tags '@gate-only and not @rulebook and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=disabled \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker" --tags '@bge-disabled and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$features_path" "spec-retrieval,nli-evidence" \
-    --tags '@nli and not @nli-combined and not @review-output and not @nli-disabled and not @e2e'
+    --tags '@nli and not @nli-combined and not @review-output and not @rulebook and not @nli-disabled and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker,nli-evidence" \
-    --tags '@nli-combined and not @review-output and not @e2e'
+    --tags '@nli-combined and not @review-output and not @rulebook and not @e2e'
+GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
+    run_group "$features_path" "spec-retrieval,cross-encoder-reranker,nli-evidence" \
+    --tags '@rulebook and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval,nli-evidence" --tags '@nli-disabled and not @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
@@ -69,16 +72,16 @@ cargo llvm-cov report --cobertura --output-path "$non_e2e_path"
 cargo llvm-cov clean --workspace
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
-    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and @e2e'
+    --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @rulebook and not @release-proof and not @rulebook and @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker" \
-    --tags '@bge and not @gate-combination and not @review-output and @e2e'
+    --tags '@bge and not @gate-combination and not @review-output and not @rulebook and @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$features_path" "spec-retrieval,nli-evidence" \
-    --tags '@nli and not @nli-combined and not @review-output and @e2e'
+    --tags '@nli and not @nli-combined and not @review-output and not @rulebook and @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$features_path" "spec-retrieval,cross-encoder-reranker,nli-evidence" \
-    --tags '@nli-combined and not @review-output and @e2e'
+    --tags '@nli-combined and not @review-output and not @rulebook and @e2e'
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
     run_group "$review_output_features" "spec-retrieval,cross-encoder-reranker,nli-evidence,spec-similarity-gate" \
     --tags '@review-output and @e2e'

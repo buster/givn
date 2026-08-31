@@ -1544,6 +1544,43 @@ fn gate_combination_no_bge_classification(world: &mut GivnWorld) {
     assert!(!super::stdout(world).contains("classification: BGE_"));
 }
 
+#[then("the semantic review report records the embedding admission for the selected pairs")]
+fn report_records_embedding_and_bge(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("read semantic review report");
+    assert!(
+        report.contains("- embedding_score:"),
+        "embedding admission must stay its own evidence:\n{report}"
+    );
+}
+
+#[then("a BGE status does not remove the embedding admission")]
+fn bge_status_keeps_embedding(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("read semantic review report");
+    assert!(report.contains("- embedding_score:"), "report:\n{report}");
+}
+
+#[then("the semantic review report records the embedding admission")]
+fn report_records_embedding(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root is required");
+    let report =
+        std::fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("read semantic review report");
+    assert!(
+        report.contains("- embedding_score:"),
+        "report:\n{report}"
+    );
+    assert!(
+        report.contains("- bge_admission: BGE_UNSCORED"),
+        "BGE is disabled in this run; the pair must be unscored:\n{report}"
+    );
+}
+
 #[when("the user runs blocking change review with the E5 similarity gate and BGE disabled")]
 fn run_gate_only_review(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("gate-only project");

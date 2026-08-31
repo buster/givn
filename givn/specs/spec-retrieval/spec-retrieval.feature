@@ -38,13 +38,6 @@ Feature: spec-retrieval
     Then  stdout does not contain "Provider name is unknown"
     And  the command exits 0
 
-  Scenario: Review gate keeps retrieval advisory
-    Given  a givn project with permanent scenarios for retrieval
-    And  an active change delta contains a scenario named "Running change only"
-    When  the user runs `givn check review --change running-change`
-    Then  stdout contains "retrieval advisory"
-    And  the command exits 0
-
   Scenario: Review rejects a missing change delta
     Given  a givn project with permanent scenarios for retrieval
     When  the user runs `givn spec review --change missing-change`
@@ -76,3 +69,9 @@ Feature: spec-retrieval
     When  the user runs `givn spec index`
     Then  the command fails
     And  stderr contains "retrieval model is unavailable"
+  Scenario: Review gate runs the unified rulebook and stays green without candidates
+    Given  a givn project with permanent scenarios for retrieval
+    And  an active change delta contains a scenario named "Running change only"
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  the pair cache accounting reports "0" reused and "0" computed
