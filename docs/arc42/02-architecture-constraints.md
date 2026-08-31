@@ -21,7 +21,7 @@ register](adr/README.md).
 | TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
 | TC-12 | Retrieval, strict E5, BGE, and NLI are enabled by default for Cargo installation, while runtime selectors and a feature-free build remain explicit. | `Cargo.toml`, `src/spec/retrieval.rs` |
 | TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
-| TC-14 | E5 uses the binary-fixed similarity value `0.95` where the strict gate is compiled. | `src/spec/retrieval.rs` |
+| TC-14 | The rulebook admission uses the binary-fixed similarity value `0.90`; no separate strict-gate boundary remains. | `src/spec/retrieval.rs` |
 | TC-15 | BGE is optional local evidence; its operating point is `3.0`, not a Givn classification. | `src/spec/retrieval.rs` |
 | TC-16 | NLI is optional local evidence selected independently from BGE. | `Cargo.toml`, `src/spec/retrieval.rs` |
 | TC-17 | Complete semantic serialization is the E5 content-hash boundary. | `src/spec/retrieval.rs` |
@@ -81,7 +81,7 @@ Second-stage candidate selection depends on the command surface:
 | Duplicate Audit | Deterministic exact/structural findings first; E5 semantic candidates use the full in-memory E5 comparison. BGE uses the endpoint top-five union; NLI uses the full E5 semantic set. |
 | Explore | The command ranks permanent plus optional request-local candidates and retains at most five results before BGE/NLI selection. |
 | Advisory review | The existing retrieval path builds its own delta/permanent and projected candidate pool; BGE and NLI operate independently over that pool. |
-| Blocking semantic report | Active Added/Modified deltas are compared with permanent and other active delta endpoints at E5 `0.9500`; BGE/NLI receive those report candidates, not a universal top-five pool. |
+| Blocking semantic report | Active Added/Modified deltas are compared at the rulebook's single E5 `0.9000` admission; BGE/NLI receive the hybrid-selected pairs, not a universal top-five pool. |
 
 All second-stage layers retain raw E5 identity and distinguish recommended,
 filtered, unscored, token-cap, and unavailable states. They never classify or

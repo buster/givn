@@ -72,7 +72,7 @@ Second-stage selection is not one universal pool:
 | Duplicate Audit | all remaining semantic pairs after exact/structural findings | endpoint top-five union, then E5-ranked budget | full E5 semantic set, independently budgeted |
 | Explore | at most five ranked permanent/request-local results | that result set, then budget | that result set, independently |
 | Advisory review | existing delta/permanent and projected retrieval pool | that pool, then budget | that pool, independently |
-| Blocking review | all report candidates at E5 `0.9500` | report candidates, then budget | report candidates, independently |
+| Blocking review | the rulebook-selected pairs at E5 `0.9000` | selected pairs, then budget | selected pairs, independently |
 
 `BGE_FILTERED` and `NLI_FILTERED` are non-blocking evidence. `BGE_UNSCORED`
 token-cap states remain visible and blocking. A combined recommendation is the
