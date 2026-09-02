@@ -20,10 +20,12 @@ flowchart LR
 
 | Entity | Interaction |
 |---|---|
-| Developer | Runs lifecycle, lint, check, archive, retrieval, and addon commands. |
+| Developer | Runs lifecycle, lint, check, archive, retrieval, addon, and run commands. |
 | AI coding agent | Reads effective instructions, generated skills, review reports, and Arc42 docs; edits project artifacts and source. |
 | Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
 | Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and executes feature scenarios. |
+| Started product | Spawned by `givn run` from the declared start command; its output is inherited, its exit code forwarded, and its signals forwarded on unix. |
+| Automation caller around givn (for example the kiekste preview host) | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
 | Model artifact source and XDG cache | Supply E5, BGE, or NLI artifacts on explicit semantic use and retain them in the user's cache. No hosted inference service is part of the boundary. |
 
@@ -38,14 +40,15 @@ not alter other content.
 |---|---|---|
 | CLI arguments | in | `clap` subcommands, options, and exit status. |
 | `givn/config.yaml` | in/out | Project overlay, addon flags, version marker, and skill targets. |
-| `givn/commands.yaml` | in/out | Project-owned `verify`, E2E, and coverage commands/paths; applied as a later overlay. |
+| `givn/commands.yaml` | in/out | Project-owned `verify`, E2E, and coverage commands/paths plus the `run:` block (product type, start command, port source, readiness path, readiness timeout); applied as a later overlay with replace-whole semantics for the block. |
 | `givn/**` artifacts | in/out | Markdown and `.feature` lifecycle files, plus generated semantic reports and failed-review findings documents. |
 | `GIVN_FEATURES` | in | Feature path exported to project command processes. |
 | `givn instructions --json` | out | One object with `id`, `generates`, `requires`, and resolved `instruction`. |
 | `givn instructions arc42-docs` / `design-review` | out | Effective ADR qualification and review guidance; the project cascade may override the default source. |
 | `givn spec index/search/explore/review/duplicates` | in/out | Local E5 index, advisory retrieval, surface-specific second-stage evidence (explore, search with `--evidence`), complete permanent audit, and advisory change review with decision-first text, verbose, or structured JSON output. |
 | `givn check review --change <id>` | in/out | Mandatory checks and, with retrieval, change-local semantic report generation. |
-| `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development managed block damage, unmanaged or missing README; exit status reflects findings. |
+| `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development and run managed block damage, unmanaged or missing README; exit status reflects findings. |
+| `givn run [--port <n>] [--print]` | in/out | Starts the declared product; for servers waits for readiness, prints `givn run: ready at http://127.0.0.1:<port><ready_path>` on stdout, forwards the child's exit code, and forwards SIGINT/SIGTERM on unix. Exit codes: 0 nothing-to-start/clean shutdown, 1 preflight findings or `--port` without `port_env`, 2 readiness timeout, 130 SIGINT, 143 SIGTERM. `--print` emits one sh-eval-able start line without executing. |
 | `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Copy/remove archive of the complete change directory, retaining semantic-review evidence. |
@@ -61,6 +64,9 @@ not alter other content.
 - Filesystem-derived state and visible skip markers.
 - Static lint and explicit project test-runner commands.
 - Mandatory task/review checks plus additional post hooks.
+- Run-command declaration in `givn/commands.yaml`: scaffolding, managed-upgrade
+  backfill, deterministic validation, managed README run block, archive gate,
+  and the `givn run` executor with its readiness probe and machine contract.
 - README enforcement when the readme addon is enabled: marked scaffolding, the
   deterministic README check, the archive completeness gate, the review-level
   README impact decision, and managed development-block refresh.
@@ -77,6 +83,9 @@ not alter other content.
 ### Out of scope
 
 - Hosted model inference or a remote retrieval service.
+- Deriving run-declaration content from repository sources, build manifests,
+  container files, or framework conventions; health monitoring beyond the
+  declared readiness probe; a background or daemon mode for `givn run`.
 - Automatic classification, automatic feature edits, automatic chunking, or
   automatic scenario splitting for token caps.
 - A configurable Arc42 output directory or chapter selection cascade.

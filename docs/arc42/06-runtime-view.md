@@ -427,11 +427,16 @@ Git worktree and that
 `git status --porcelain --untracked-files=all` is empty. A failed preflight
 returns before changing any project file.
 
-The command then refreshes `givn/config.yaml` and synchronizes generated skills,
-commands, and Givn-owned `AGENTS.md` blocks. It stages an explicit allowlist,
+The command then refreshes `givn/config.yaml`, backfills the `run:` scaffold
+into `givn/commands.yaml` when the file exists and has no top-level `run:` key
+(idempotent; a project that already declares `run:` produces no diff), and
+synchronizes generated skills, commands, and Givn-owned `AGENTS.md` blocks. It
+stages an explicit allowlist — including `givn/commands.yaml` for the backfill —
 never a complete directory or worktree, and creates one managed commit when
-files changed. If the catalog returns one or more bundles, the command then
-writes one aggregate `givn/changes/<aggregate-id>/` with Proposal, Design,
+files changed. The backfill application reports
+`wrote run: scaffold to givn/commands.yaml — fill it in; givn archive is
+blocked until you do`. If the catalog returns one or more bundles, the command
+then writes one aggregate `givn/changes/<aggregate-id>/` with Proposal, Design,
 `migration.yaml`, and `.givn-skip` for `specs`; its Design records the managed
 commit hash and all bundle phases in order. A second commit contains only that
 aggregate plan. A gap with no declared route creates no migration change.
@@ -453,4 +458,44 @@ The Cucumber test binary creates an isolated temporary project, invokes the
 compiled CLI, captures exit status and stdout/stderr, and performs secondary
 filesystem assertions. Review/archive success cases assert the CLI receipt
 first. Failure cases snapshot permanent specs and verify rollback. No consumer
-repository or external service participates.
+repository or external service participates. The `ready_fixture` test target
+plays the started product in `givn run` scenarios: it binds a port, answers a
+readiness path, and can self-exit, fail early, answer failure forever, or trap
+signals into a marker file.
+
+## 6.15 `givn run`
+
+`givn run [--port <n>] [--print]` executes the product declared by the `run:`
+block of `givn/commands.yaml`:
+
+```mermaid
+sequenceDiagram
+    participant C as Caller (human or kiekste)
+    participant G as givn run
+    participant P as Started product
+    C->>G: givn run
+    G->>G: preflight check_run (findings → exit 1)
+    G->>G: resolve port (--port via port_env / ephemeral / fixed)
+    G->>P: spawn sh -c command (stdio inherited)
+    loop until 2xx or ready_timeout_s
+        G->>P: blocking HTTP/1.0 GET ready_path
+    end
+    G-->>C: stdout: givn run: ready at http://127.0.0.1:<port><ready_path>
+    alt SIGINT/SIGTERM
+        C->>G: signal
+        G->>P: forward signal (unix)
+        G-->>C: exit 130 (SIGINT) / 143 (SIGTERM)
+    else child exits
+        P-->>G: exit code
+        G-->>C: forward child's exit code exactly
+    else deadline without 2xx
+        G-->>C: exit 2
+    end
+```
+
+A library product prints that there is nothing to start and exits 0. `--print`
+resolves the plan without spawning: it emits one sh-eval-able line
+(`PORT=<port> <command>` when `port_env` is set, else `<command>`) and exits 0.
+An ephemeral port is allocated by binding `127.0.0.1:0`, reading the port, and
+dropping the listener before spawn. Signal forwarding is unix-only; on other
+platforms a server product is refused at preflight with exit 1.

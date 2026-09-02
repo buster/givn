@@ -17,7 +17,10 @@ The active change `semantic-reranker-budget` is not complete. `givn status
 verification. Therefore its ADR-063 is `proposed`, not an accepted current
 architecture contract. The active change `semantic-scoring-throughput` is
 between design and review; its ADR-064 (shared model thread budget) is likewise
-`proposed`.
+`proposed`. The active change `run-command` proposes ADR-067 (one tool declares
+and executes the product start command) and amends ADR-028 with the
+run-declaration gate; the durable run-declaration facts live in chapters 3,
+6.15, 8.16, and the glossary.
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and

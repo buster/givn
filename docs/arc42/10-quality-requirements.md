@@ -104,6 +104,10 @@ graph TD
 | Q-66 | Failed-review auditability | An advisory review fails the similarity gate. | The structured JSON review document is persisted beside the change and matches stdout, so the evidence survives without rerunning model inference. |
 | Q-67 | Gate safety | A consumer installs givn and sets a fixture request (simulated output or a disabled evidence stage). | The installed build ignores the request, announces that it is ignored for installed builds, and still requires the real models. |
 | Q-68 | Model availability | A consumer installs givn and points it at a local or custom real-model location. | The installed build honours the model-location request and never treats it as a fixture request. |
+| Q-69 | Correctness | An automation caller starts a server with `givn run` and scans stdout. | Exactly the stable prefix `givn run: ready at http://127.0.0.1:<port><ready_path>` marks readiness, even with the child's interleaved output. |
+| Q-70 | Gate safety | A change is archived while the `run:` block is unconfigured. | The archive is blocked with labeled findings before any mutation, independent of the readme addon; the change stays active. |
+| Q-71 | Configurability | `givn upgrade` runs twice in a project without a `run:` block. | The first run backfills the scaffold and commits it through the managed allowlist; the second run produces no diff and no commit. |
+| Q-72 | Correctness | A server with `port_env` is started without `--port`. | givn allocates a free port by binding `127.0.0.1:0`, hands it to the product through the declared environment variable, and names it in the ready line. |
 
 ## 10.3 Verification Signals
 

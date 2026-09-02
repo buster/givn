@@ -126,3 +126,32 @@
 | **Development build** | A givn binary built for development and testing (the debug profile used by `cargo test` and `cargo build`). It honours fixture requests so the fixture suite stays fast and offline. |
 | **Fixture request** | An environment-driven request to substitute simulated model output or to disable a model evidence stage. It is honoured only by a development build; an installed build ignores it, announces the refusal, and runs the real model. |
 | **Model-location request** | An environment-driven request that still runs the real models, but from a chosen local, offline, or custom cache location. It is honoured by both builds; it never substitutes simulated output. |
+| **Run declaration** | The author-owned `run:` block in `givn/commands.yaml`: product type, start command, exactly one server port source, readiness path, and readiness timeout. One replace-whole overlay unit, like `verify` and `coverage`. Anti-terms: "start config", "launch config". |
+| **Product type** | The declared kind of the built product: `server`, `cli`, or `library`. Drives which run-declaration fields apply and how the README block renders. Anti-term: "product kind". |
+| **Start command** | The declared command that starts the built product. Anti-terms: "entrypoint", "launch command". |
+| **Sentinel start command** | `givn missing-run-command` — the scaffold placeholder meaning "not configured yet"; a hidden subcommand that prints guidance and exits 1 when executed. Anti-term: "default command". |
+| **Run finding** | One labeled deterministic validation result for the run declaration: `UNCF`, `MISS`, `FORB`, or `NOOP`, from rules R1–R10. Anti-term: "warning". |
+| **Run gate** | The blocking check of the run declaration in `givn check review` and `givn archive`, independent of the readme addon. Anti-terms: "start gate", "run-block gate". |
+| **Run managed block** | The README region between `<!-- givn:begin:run -->` and `<!-- givn:end:run -->` rendered from the run declaration. Anti-terms: "quick start section", "run todo". |
+| **Port hand-off** | Declaring `port_env` so the caller passes the port to the product through that environment variable; the declared alternative is a fixed `port`. Anti-terms: "port injection", "port mapping". |
+| **Ephemeral port** | A kernel-assigned free port obtained by binding `127.0.0.1:0`, reading the port, and dropping the listener before spawn. Anti-term: "dynamic port". |
+| **Readiness path** | The declared HTTP path on the started server that answers 2xx once it is ready to serve. Anti-terms: "health endpoint", "health URL". |
+| **Readiness probe** | givn's blocking HTTP/1.0 poll against the readiness path: 2xx accepts, everything else retries until `ready_timeout_s`. Anti-terms: "health check", "ping". |
+| **Readiness timeout** | The declared `ready_timeout_s` seconds the readiness probe may take before giving up; elapsed without a 2xx response, `givn run` exits 2. Anti-term: "grace period". |
+| **Ready line** | The one stdout contract line `givn run: ready at http://127.0.0.1:<port><ready_path>`, emitted once after the first 2xx response, with a stable greppable prefix. Anti-terms: "banner", "status output". |
+| **Start plan** | The resolved, printable form of the run declaration produced by `givn run --print`: one sh-eval-able line (`PORT=<port> <command>` with a port hand-off, else `<command>`). Anti-term: "run config". |
+| **Backfill scaffold** | The managed-upgrade append of the run-declaration scaffold into an existing `givn/commands.yaml` when the `run:` key is absent; idempotent. Anti-term: "migration". |
+| **Executor** | The givn subsystem behind `givn run` that resolves the start plan, spawns the product, probes readiness, forwards exit codes, and forwards signals on unix. Anti-terms: "supervisor", "daemon". |
+
+### Run-declaration invariants
+
+- A change cannot be reviewed as complete or archived while the run
+  declaration has findings (enforcement site: `check review` mandatory check
+  and the archive run gate).
+- The sentinel start command is acceptable only for `product_type: library`
+  (enforcement site: validation rule R1).
+- A server declares exactly one port source — fixed `port` or `port_env`
+  hand-off, never both, never neither (enforcement site: validation rules
+  R4/R5; executor preflight for `--port`).
+- givn never derives the product type or start command from repository
+  content (enforcement site: product boundary — no derivation code exists).
