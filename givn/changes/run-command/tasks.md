@@ -136,37 +136,37 @@ Production: `src/cli/run.rs` (`resolve_start_plan`, preflight, `--print`), `src/
 - [x] RED: RED: unrecognized subcommand 'run', exit 101
 - [x] GREEN: files: src/cli/run.rs, src/main.rs (Run subcommand), tests/steps/run_execution_support.rs, tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf`
 
 ### Scenario: An unconfigured declaration refuses to start
 - [x] RED: RED: stderr missing run.command is unset / no stderr-mentions step, exit 101
 - [x] GREEN: files: src/cli/run.rs (preflight), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf`
 
 ### Scenario: A caller port without a port hand-off is refused
 - [x] RED: RED: unrecognized subcommand, exit 101
 - [x] GREEN: files: src/cli/run.rs (resolve_start_plan --port rule), tests/steps/run_execution_support.rs (fixed-port fixture) — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf`
 
 ### Scenario: Print mode omits the port hand-off for a fixed-port declaration
 - [x] RED: RED: ambiguous step match + unrecognized subcommand, exit 101
 - [x] GREEN: files: src/cli/run.rs (print_line), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf`
 
 ### Scenario: Print mode for a library resolves the declared start command
 - [x] RED: RED: unrecognized subcommand, exit 101
 - [x] GREEN: files: src/cli/run.rs (library --print), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf`
 
 ### Scenario: Print mode on an unconfigured declaration reports preflight findings
 - [x] RED: RED: unrecognized subcommand, exit 101
 - [x] GREEN: files: src/cli/run.rs (preflight before print), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
-- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `b8246bf`
 
 ## T6 — Spawn/probe loop + exit-code forwarding
 
