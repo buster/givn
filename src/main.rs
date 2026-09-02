@@ -138,6 +138,10 @@ enum Commands {
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
 
+    /// Sentinel default run.command: prints setup guidance and exits non-zero.
+    #[command(name = "missing-run-command", hide = true)]
+    MissingRunCommand,
+
     /// Generate shell completion script and print it to stdout.
     ///
     /// Add to your shell profile:
@@ -316,6 +320,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
+        Commands::MissingRunCommand => cli::missing_run_command::run(),
         Commands::Completions { shell } => {
             let mut cmd = Cli::command();
             generate(shell, &mut cmd, "givn", &mut std::io::stdout());
