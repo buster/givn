@@ -37,9 +37,9 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-35 accepted records, the explicitly proposed `ADR-063` and `ADR-064` (owned by
-the open `semantic-reranker-budget` and `semantic-scoring-throughput` changes),
-and the explicitly proposed `ADR-067` (owned by the open `run-command` change).
+35 accepted records and the explicitly proposed `ADR-063` and `ADR-064` (owned
+by the open `semantic-reranker-budget` and `semantic-scoring-throughput`
+changes).
 
 | ID | Status | Decision | Qualification basis |
 |---|---|---|---|
@@ -80,7 +80,6 @@ and the explicitly proposed `ADR-067` (owned by the open `run-command` change).
 | [ADR-061](ADR-061-surface-specific-independent-pools.md) | accepted | Score BGE/NLI independently over each surface's E5 pool | candidate-pool boundary |
 | [ADR-063](ADR-063-reranker-pair-budget.md) | proposed | Bound second-stage inference with an E5-ranked budget | runtime/review decision in open verification |
 | [ADR-064](ADR-064-shared-model-thread-budget.md) | proposed | Share one thread budget across the semantic model stages | computing-resource config boundary in open change |
-| [ADR-067](ADR-067-givn-declares-and-executes-the-product-start.md) | proposed | Declare and execute the product start command in one tool | start-declaration and execution boundary in open change |
 | [ADR-066](ADR-066-unified-semantic-rulebook.md) | proposed | Run change-scoped semantic review as one unified rulebook with a pair-score cache | change-scoped review verdict and cache boundary |
 
 ## Relationships

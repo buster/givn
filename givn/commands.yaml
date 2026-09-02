@@ -9,3 +9,10 @@ coverage:
   non_e2e_path: "coverage/non-e2e-cobertura.xml"
   e2e_path: "coverage/e2e-cobertura.xml"
   output_path: "coverage/cobertura-coverage.xml"
+
+# --- Product start ------------------------------------------------------------
+# How the built product is started. givn is a CLI; its canonical entry point
+# runs from source so the declaration works without a global install.
+run:
+  command: "cargo run -- instructions"
+  product_type: cli

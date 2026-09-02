@@ -201,11 +201,10 @@ fn clear_permanent_specs(env: &common::TestEnv) {
 }
 
 fn prepare_retrieval_commands(env: &common::TestEnv) {
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
-    )
-    .expect("write retrieval test commands");
+    );
 }
 
 fn write_feature(env: &common::TestEnv, path: &str, content: &str) {

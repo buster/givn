@@ -21,6 +21,7 @@ Feature: Repository-wide ownership fixtures
   @e2e
   Scenario: Pre-merge archive failure preserves the permanent specification tree
     Given  an isolated ownership fixture with a failing pre-merge archive hook
+    And the project declares a complete run declaration
     When  the maintainer runs `givn archive --change fixture-consolidation`
     Then  the fixture command fails
     And  the fixture permanent specification tree remains unchanged

@@ -166,11 +166,10 @@ fn e2e_unresolved_semantic_candidate(world: &mut GivnWorld) {
         "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unresolved active semantic candidate` | `Permanent semantic candidate` | related |\n",
     )
     .expect("write running change review");
-    std::fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write deterministic E2E commands");
+    );
     world.env = Some(env);
     world.retrieval_reranker = Some("nli-stub".to_string());
     world.retrieval_stub_scores = Some(

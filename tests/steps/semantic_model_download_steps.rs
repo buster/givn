@@ -522,11 +522,10 @@ fn completed_change_without_model_artifacts(world: &mut GivnWorld) {
         "REVIEW: PASS\nREADME-IMPACT: none",
     )
     .expect("write archive review");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\naddons:\n  arc42: false\n  coverage: false\n",
-    )
-    .expect("write archive commands");
+    );
     world.last_change_id = Some("archive-download".to_string());
 }
 

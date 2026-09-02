@@ -190,11 +190,10 @@ fn e2e_advisory_cap_project(world: &mut GivnWorld) {
         "@givn.delta @running-change\nFeature: active E5 cap\n\n  @givn.added\n  Scenario: Active over-cap scenario\n    Given an active over-cap context\n    When the active over-cap action runs\n    Then the active over-cap result is complete\n",
     )
     .expect("write active advisory scenario");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write blocking review commands");
+    );
     fs::write(
         env.path("givn/changes/running-change/review.md"),
         "REVIEW: PASS\nREADME-IMPACT: none",

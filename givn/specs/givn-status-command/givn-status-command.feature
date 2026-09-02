@@ -92,6 +92,7 @@ Feature: givn-status-command
   Scenario: Detail mode — active change with all required done (text)
     Given  a project root with givn/ initialised
     And  a change "done" exists with all required artifacts complete
+    And the project declares a complete run declaration
     When  the user runs `givn status --change done`
     Then  the command exits 0
     And  stdout mentions "ready-to-archive"

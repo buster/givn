@@ -16,6 +16,7 @@ Feature: review-disposition-gates
           Then the command exits 0
       """
     And  the change's review.md contains a disposition row naming "Reviewed shape one" and "Reviewed shape two"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
     And  stdout contains "net delta"
@@ -36,6 +37,7 @@ Feature: review-disposition-gates
           Then the command exits 0
       """
     And  the change's review.md has no disposition entries
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "disposition"
@@ -65,6 +67,7 @@ Feature: review-disposition-gates
           Then the command exits 0
       """
     And  the change's review.md has no disposition entries
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "split-or-keep"
@@ -93,6 +96,7 @@ Feature: review-disposition-gates
           Then the command exits 0
       """
     And  the change's review.md contains a split-or-keep row for "The disposed marathon"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
@@ -115,6 +119,7 @@ Feature: review-disposition-gates
           Then the command exits 0
       """
     And  the change's review.md has no disposition entries
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "Permanent twin"
@@ -147,6 +152,7 @@ Feature: review-disposition-gates
           Then nothing asserted
       """
     And  the change's review.md has no disposition entries
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
@@ -164,6 +170,7 @@ Feature: review-disposition-gates
           When the user runs `givn lint`
           Then the command exits 0
       """
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "review.md"
@@ -186,6 +193,7 @@ Feature: review-disposition-gates
         Scenario: Receipt removed
           Given removed placeholder
       """
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
     And  stdout contains "net delta"

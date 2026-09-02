@@ -230,11 +230,10 @@ fn e2e_blocking_change_available(world: &mut GivnWorld) {
         "givn_config_version: \"0.3.0\"\naddons:\n  arc42: false\n  coverage: false\n",
     )
     .expect("disable optional archive addons");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
-    )
-    .expect("write blocking review commands");
+    );
 }
 
 #[when("the end-to-end user runs blocking review without an index through the givn CLI")]

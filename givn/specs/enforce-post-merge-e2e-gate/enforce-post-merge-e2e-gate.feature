@@ -5,6 +5,7 @@ Feature: Enforce Post-Merge E2E Gate
     And  the givn/config.yaml has e2e_command unconfigured
     And  a completed change "add-e2e-scenario" whose delta contains an @e2e-tagged scenario
     And  the permanent specs currently have no @e2e scenarios
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change add-e2e-scenario`
     Then  the command exits non-zero
     And  stderr contains "verify.e2e_command"
@@ -16,6 +17,7 @@ Feature: Enforce Post-Merge E2E Gate
     And  the givn/config.yaml has e2e_command unconfigured
     And  a completed change "no-e2e" whose delta contains zero @e2e-tagged scenarios
     And  the permanent specs currently have no @e2e scenarios
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change no-e2e`
     Then  the command exits 0
     And  the change directory has been moved to givn/archive/
@@ -24,6 +26,7 @@ Feature: Enforce Post-Merge E2E Gate
     Given  a project root with givn/ initialised
     And  the givn/config.yaml has e2e_command set to "true"
     And  a completed change "configured-e2e" whose delta contains an @e2e-tagged scenario
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change configured-e2e`
     Then  the command exits 0
     And  stdout contains "Running post-merge verify-e2e"
@@ -34,6 +37,7 @@ Feature: Enforce Post-Merge E2E Gate
     Given  a givn project with verify.e2e_command unconfigured in givn/config.yaml
     And  a change "real-e2e-merge" with all artifacts done, whose delta spec has an @e2e scenario
     And  the permanent spec directory givn/specs/ has no @e2e scenario
+    And the project declares a complete run declaration
     When  the user invokes `givn archive --change real-e2e-merge`
     Then  the command fails
     And  stderr says the e2e runner is not configured for permanent specs with @e2e coverage

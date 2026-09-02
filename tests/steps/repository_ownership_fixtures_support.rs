@@ -50,11 +50,10 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
     )
     .expect("write review");
     let verify = if failing { "false" } else { "true" };
-    fs::write(
-        root.join("givn/commands.yaml"),
-        format!("verify:\n  command: \"{verify}\"\n  e2e_command: \"true\"\n"),
-    )
-    .expect("write fixture commands");
+    common::write_commands_yaml(
+        &root.join("givn/commands.yaml"),
+        &format!("verify:\n  command: \"{verify}\"\n  e2e_command: \"true\"\n"),
+    );
 
     world.env = Some(env);
     world.last_change_id = Some("fixture-consolidation".to_string());

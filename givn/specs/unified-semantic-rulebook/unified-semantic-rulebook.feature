@@ -12,6 +12,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook @e2e
   Scenario: Consumer rerun reuses recorded pair judgements
     Given  a rulebook review project with a single admitted candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the pair cache accounting reports "0" reused and "1" computed
@@ -23,6 +24,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook @e2e
   Scenario: Consumer review caps the judged pairs at the pair cap
     Given  a rulebook review project with more candidate pairs than the pair cap
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report candidate count is 20
@@ -33,6 +35,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook @e2e
   Scenario: Consumer archive applies the rulebook to the current permanent tree
     Given  a completed semantic review change with a generated report and archive prerequisites
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change running-change`
     Then  the command exits 0
     And  the archived rulebook change directory exists
@@ -42,6 +45,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook @e2e
   Scenario: Consumer review keeps a duplicate pair born inside the delta
     Given  a rulebook review project with two similar active deltas and an unrelated permanent corpus
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains scope "delta-to-delta"
@@ -50,6 +54,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook
   Scenario: A changed endpoint re-judges its recorded pair
     Given  a rulebook review project with a single admitted candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the pair cache accounting reports "0" reused and "1" computed
     When  the rulebook user changes the active candidate
@@ -59,6 +64,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook
   Scenario: A changed permanent endpoint re-judges its recorded pair
     Given  a rulebook review project with a single admitted candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the pair cache accounting reports "0" reused and "1" computed
     When  the rulebook user changes the permanent endpoint
@@ -68,6 +74,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook
   Scenario: The neighbour count cuts per-scenario pairs before the pair cap
     Given  a rulebook review project with one active delta and more neighbours than the neighbour count
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report candidate count is 5
@@ -77,6 +84,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   Scenario: Emergency budget truncation keeps outside candidates unscored and blocking
     Given  a rulebook review project with more candidate pairs than the pair cap
     And  an emergency pair budget below the selected pair count
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report records the outside candidates as `BGE_UNSCORED`
@@ -85,6 +93,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook
   Scenario: The pair cap fills deterministically when scores tie
     Given  a rulebook review project with more candidate pairs than the pair cap
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     And  the semantic review report is snapshotted
     When  the rulebook user reruns change review without edits
@@ -94,6 +103,7 @@ Feature: The unified semantic rulebook compares, selects, and judges pairs once 
   @rulebook
   Scenario: A change without candidates reports empty cache accounting
     Given  a project prepared for semantic review with active deltas below the similarity boundary
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits 0
     And  the pair cache accounting reports "0" reused and "0" computed

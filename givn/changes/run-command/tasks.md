@@ -39,9 +39,25 @@ Production: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest
 Production: `assets/run.yaml.tmpl` (new), embed verbatim in `assets/commands.yaml.tmpl`, unit test `assets/run_scaffold_is_embedded_verbatim`.
 
 - [x] Asset + containment test written; `cargo test --lib run_scaffold_is_embedded_verbatim` → `test result: ok. 1 passed` — exit **0**
-- [x] COMMIT: `feat(run-command): shared run scaffold asset embedded verbatim in the commands template` — hash `_t2`
+- [x] COMMIT: `feat(run-command): shared run scaffold asset embedded verbatim in the commands template` — hash `c7edf9d`
 
 ## T3 — Validation rules R1–R10 (`src/cli/run_block.rs`)
+
+> **T3/T10/T11/T12/T13 executed as one atomic, suite-green unit.** The run
+> gate cannot exist in the bin without its consumers (clippy `-D warnings`,
+> dual lib/bin module tree), and the suite cannot stay green with the gate
+> live before the shared fixtures, the permanent-suite migration, and the
+> dogfood declaration land. One commit carries: run_block R1–R10, the check
+> review wiring, the shared declaration Givens, the permanent-suite
+> fixture migration (101 feature-level insertions + wholesale-fixture
+> writers converted to the idempotent `write_commands_yaml` helper), and
+> givn's own run declaration. Per-scenario RED/GREEN evidence below was
+> captured against this evolving tree exactly as recorded.
+>
+> Environment note: the full suite requires `TMPDIR` on the root filesystem
+> (13G tmpfs /tmp exhausts under cucumber's default concurrency 64); this is
+> a pre-existing environment constraint, not a runner change.
+
 
 ### Scenario: An unconfigured declaration reports only unset findings
 - [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`

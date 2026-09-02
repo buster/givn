@@ -57,6 +57,7 @@ Feature: README enforcement
     Given  a project root with givn/ initialised
     And  verify commands are no-ops
     And  a reviewable change "readme-demo"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change readme-demo`
     Then  the command exits non-zero
     And  stderr contains "README impact decision"
@@ -66,6 +67,7 @@ Feature: README enforcement
     And  verify commands are no-ops
     And  a reviewable change "readme-demo"
     And  its review records the impact "updated - Usage"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change readme-demo`
     Then  the command exits 0
 
@@ -74,6 +76,7 @@ Feature: README enforcement
     And  givn addon "readme" is "false"
     And  verify commands are no-ops
     And  a reviewable change "no-addon"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change no-addon`
     Then  the command exits 0
 
@@ -82,6 +85,7 @@ Feature: README enforcement
     And  verify commands are no-ops
     And  a reviewable change "readme-demo"
     And  its review records the impact "maybe"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change readme-demo`
     Then  the command exits non-zero
 
@@ -92,6 +96,7 @@ Feature: README enforcement
     And  givn addon "coverage" is "false"
     And  a completed change "readme-demo"
     And  the semantic gate is offline
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change readme-demo`
     Then  the command exits non-zero
     And  stdout mentions "Quick start"
@@ -104,6 +109,7 @@ Feature: README enforcement
     And  givn addon "coverage" is "false"
     And  a completed change "readme-demo"
     And  the semantic gate is offline
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change readme-demo`
     Then  the command exits non-zero
     And  the directory givn/changes/readme-demo/ exists
@@ -115,6 +121,7 @@ Feature: README enforcement
     And  givn addon "coverage" is "false"
     And  a completed change "readme-demo"
     And  the semantic gate is offline
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change readme-demo`
     Then  the command exits non-zero
     And  the directory givn/changes/readme-demo/ exists
@@ -126,6 +133,7 @@ Feature: README enforcement
     And  givn addon "coverage" is "false"
     And  a completed change "readme-demo"
     And  the semantic gate is offline
+    And the project declares a complete run declaration
     When  the user runs `givn readme check`
     Then  the command exits 0
     When  the user runs `givn archive --change readme-demo`
@@ -139,6 +147,7 @@ Feature: README enforcement
     And  a givn project providing its own workflow scripts
     And  a completed change "readme-demo"
     And  the semantic gate is offline
+    And the project declares a complete run declaration
     When  the user invokes `givn archive --change readme-demo`
     Then  the command succeeds
     And  the development block lists the configured commands
@@ -150,6 +159,7 @@ Feature: README enforcement
     And  verify commands are no-ops
     And  a reviewable change "readme-demo"
     And  its review records the impact "none"
+    And the project declares a complete run declaration
     When  the user invokes `givn check review --change readme-demo`
     Then  the command exits 0
 

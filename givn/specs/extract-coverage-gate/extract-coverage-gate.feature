@@ -4,6 +4,7 @@ Feature: Extract Coverage Gate
     Given  a project root with givn/ initialised
     And  the givn/config.yaml has the coverage addon enabled with valid commands
     And  a completed change "cov-demo" with all required artifacts
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change cov-demo`
     Then  the command exits 0
     And  stdout contains "Coverage gate"
@@ -13,6 +14,7 @@ Feature: Extract Coverage Gate
     Given  a project root with givn/ initialised
     And  the givn/config.yaml has the coverage addon enabled but the non-e2e coverage command exits non-zero
     And  a completed change "cov-fail" with all required artifacts
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change cov-fail`
     Then  the command exits non-zero
     And  stdout contains "coverage"
@@ -23,6 +25,7 @@ Feature: Extract Coverage Gate
   Scenario: Consumer archives a change with coverage enabled and the coverage summary appears in README
     Given  a givn project with coverage enabled and valid coverage commands that produce Cobertura XML
     And  a completed change "cov-real" with all required artifacts
+    And the project declares a complete run declaration
     When  the user invokes `givn archive --change cov-real`
     Then  the command succeeds
     And  the README.md contains a coverage summary fence

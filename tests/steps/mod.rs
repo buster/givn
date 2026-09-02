@@ -183,6 +183,8 @@ pub struct GivnWorld {
     pub(crate) hf_endpoint_override: Option<String>,
     /// Event log path for resolver-order assertions.
     pub(crate) download_event_path: Option<std::path::PathBuf>,
+    /// Findings from the last run-declaration validation.
+    pub(crate) run_findings: Vec<givn::cli::run_block::RunFinding>,
 }
 
 // --- helpers ---------------------------------------------------------------
