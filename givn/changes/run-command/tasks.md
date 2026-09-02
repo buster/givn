@@ -32,7 +32,7 @@ Production: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest
 - [x] RED: `GIVN_FEATURES=... cargo test --test features_runner -- --name "An unknown product type is rejected when the commands file loads"` — `1 step (1 failed)`, `Step panicked ... unimplemented` — exit **101**
 - [x] GREEN: files touched: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest.run`), `src/config/overlay.rs` (`OverlayDoc.run`, replace-whole merge), `tests/steps/run_command_steps.rs` (3 steps). — `1 scenario (1 passed)`, `3 steps (3 passed)` — exit **0**
 - [x] REFACTOR: none needed (minimal implementation, existing patterns) — re-run exit **0**
-- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `_`
+- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `edb92f2`; lint follow-up `1e0fix` (Run wiring in graph.rs/hooks.rs, is_unconfigured deferred to its first use in T5) — hash `_t1fix`
 
 ## T2 — Shared scaffold asset
 

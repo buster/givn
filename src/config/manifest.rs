@@ -212,11 +212,6 @@ impl Run {
     fn default_ready_timeout_s() -> u64 {
         60
     }
-
-    /// True while the block is unconfigured.
-    pub fn is_unconfigured(&self) -> bool {
-        self.command.trim() == Self::SENTINEL || self.product_type.is_none()
-    }
 }
 
 /// Coverage instrumentation configuration.
