@@ -60,37 +60,59 @@ Production: `assets/run.yaml.tmpl` (new), embed verbatim in `assets/commands.yam
 
 
 ### Scenario: An unconfigured declaration reports only unset findings
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R1+R2+skip logic; RED: unimplemented stub panicked, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A server without a readiness path is incomplete
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R3; RED: no finding mentions requires run.ready_path, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A server needs exactly one port source
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R4; RED: no finding mentions exactly one of run.port or run.port_env, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A server rejects two port sources
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R5; RED: no finding mentions mutually exclusive, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: Server-only fields are rejected for a CLI product
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R6; RED: no finding mentions applies to product_type server only, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A zero readiness timeout is rejected
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R7; RED: no finding mentions must be greater than zero, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A relative readiness path is rejected
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R8; RED: no finding mentions must be an absolute path, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A no-op start command is rejected
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R9; RED: no finding mentions does nothing, exit 101; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A library may keep the placeholder command
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: R10 exception (landed with R1's library exception); first run passed, no separate RED possible; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A complete server declaration validates cleanly
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: composition of implemented rules; first run passed, no separate RED possible; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ### Scenario: A complete CLI declaration validates cleanly
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: composition of implemented rules; first run passed, no separate RED possible; GREEN files: src/cli/run_block.rs, tests/steps/run_command_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: combined unit `feat(run-command): run-declaration validation, review gate, shared fixtures, permanent-suite migration, dogfood declaration` — hash b0ba35a
 
 ## T4 — Sentinel subcommand + e2e bring-up
 
@@ -206,26 +228,28 @@ Production: `src/cli/readme.rs` (markers, `render_run_block`, `refresh_run_block
 
 Production/test infra: `tests/steps/run_declaration_fixtures_support.rs` (§4.2): `declare_run`, `strip_run`, shared Givens in `tests/steps/mod.rs`.
 
-- [ ] Implementation + compile proof: `_`
-- [ ] COMMIT: `_` — hash `_`
+- [x] Implementation + compile proof: `tests/steps/run_declaration_fixtures_support.rs` (declare_run/strip_run over `common::replace_top_level_key`/`remove_top_level_key`), shared Givens registered; `cargo test --test features_runner --no-run` exit 0. Design note: the default fixture `make_init_root` and the wholesale fixture writers carry a complete cli declaration via the idempotent `common::write_commands_yaml` — same philosophy as the complete-README fixture.
+- [x] COMMIT: combined unit — hash `b0ba35a`
 
 ## T11 — Permanent-suite migration
 
-- [ ] All permanent-spec fixture scenarios reaching `givn check review`/`givn archive` carry the shared complete-run-declaration Given; exact-output assertions audited.
-- [ ] Evidence: full `./run-tests.sh` exit `_`
-- [ ] COMMIT: `_` — hash `_`
+- [x] All permanent-spec fixture scenarios reaching `givn check review`/`givn archive` carry the shared complete-run-declaration Given (101 feature-level insertions across 14 files, anchored after the last Given-chain rewrite); wholesale fixture writers converted to `common::write_commands_yaml`; release-0-3-0 legacy flow fills the backfilled scaffold like a real project. Exact-output assertions audited by full-suite run (substring assertions unaffected; the run gate prints before the README gate).
+- [x] Evidence: full `TMPDIR=$HOME/tmp ./run-tests.sh` exit **0** (2600+ steps, 0 failures)
+- [x] COMMIT: combined unit — hash `b0ba35a`
 
 ## T12 — Dogfood: givn's own run declaration
 
-- [ ] `givn/commands.yaml` gains `run: {command: "cargo run -- instructions", product_type: cli}` (design §7.5) — before the gates sharpen.
-- [ ] COMMIT: `_` — hash `_`
+- [x] `givn/commands.yaml` gains `run: {command: "cargo run -- instructions", product_type: cli}` (design §7.5) — landed before the gate wiring in the same suite-green unit.
+- [x] COMMIT: combined unit — hash `b0ba35a`
 
 ## T13 — `givn check review` wiring
 
 Production: `src/cli/check.rs` review arm (§6.3, findings on stdout).
 
 ### @e2e Scenario: The review check reports an unconfigured run declaration
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: gate wiring in `src/cli/check.rs` review arm behind the integrity hook; e2e scenario asserts exit non-zero + `run.command is unset` + `run.product_type is unset` on stdout — targeted run passed, exit 0
+- [x] REFACTOR: fmt + clippy clean, exit 0
+- [x] COMMIT: combined unit — hash `b0ba35a`
 
 ## T14 — Archive run gate + refresh
 
