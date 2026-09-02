@@ -119,6 +119,16 @@ fn run_mandatory_checks(
                 manifest.addons.readme,
             )?;
             println!("  ✓ integrity passed");
+            let run_findings = crate::cli::run_block::check_run(manifest);
+            if !run_findings.is_empty() {
+                for f in &run_findings {
+                    println!("  [{}] {}", crate::cli::run_block::label(f.kind), f.message);
+                }
+                anyhow::bail!(
+                    "run declaration incomplete — configure `run:` in givn/commands.yaml"
+                );
+            }
+            println!("  ✓ run declaration passed");
             if let Some(id) = change {
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
                 run_retrieval_gate(project_root, id)?;

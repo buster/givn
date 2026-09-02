@@ -173,11 +173,10 @@ fn change_for_review_gate(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project prepared for semantic indexing is required first");
-    std::fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
-    )
-    .expect("write release gate commands");
+    );
     let config_path = env.path("givn/config.yaml");
     let config = std::fs::read_to_string(&config_path).expect("read fixture config");
     let disabled = config

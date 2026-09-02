@@ -2,6 +2,7 @@ Feature: Generate the semantic review report
 
   Scenario: Change review generates a complete report for a semantic candidate
     Given  a rulebook review project with a single admitted candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report exists
@@ -12,6 +13,7 @@ Feature: Generate the semantic review report
 
   Scenario: Removed delta scenarios produce a clean semantic report
     Given  a project prepared for semantic review with only a removed delta
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits 0
     And  the semantic review report exists
@@ -22,6 +24,7 @@ Feature: Generate the semantic review report
 
   Scenario: The report distinguishes permanent and current-change candidate scopes
     Given  a rulebook review project with two similar active deltas
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains scope "delta-to-permanent"
@@ -30,6 +33,7 @@ Feature: Generate the semantic review report
 
   Scenario: Active deltas below the E5 boundary produce no candidates
     Given  a project prepared for semantic review with active deltas below the similarity boundary
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits 0
     And  the semantic review report exists
@@ -39,6 +43,7 @@ Feature: Generate the semantic review report
 
   Scenario: A candidate at the exact E5 boundary is included
     Given  a project prepared for semantic review with a candidate scored exactly at the similarity boundary
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains a candidate
@@ -48,6 +53,7 @@ Feature: Generate the semantic review report
 
   Scenario: Rule-nested active deltas enter the semantic candidate universe
     Given  a project prepared for semantic review with a Rule-nested active delta
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report contains the exact Rule-nested endpoint title "Rule nested rejects an unknown provider"
@@ -56,6 +62,7 @@ Feature: Generate the semantic review report
 
   Scenario: Endpoint evidence preserves complete Gherkin source order
     Given  a project prepared for semantic review with feature and Rule backgrounds, step docstrings, and data tables
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  endpoint evidence lists feature Background steps before Rule Background steps and scenario steps
@@ -65,6 +72,7 @@ Feature: Generate the semantic review report
 
   Scenario: A modified delta excludes only its own projected target
     Given  a project prepared for semantic review with a modified scenario and another candidate in the same target file
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the report excludes the modified scenario's own projected target endpoint
@@ -75,6 +83,7 @@ Feature: Generate the semantic review report
     Given  a project prepared for semantic review with a similar active delta
     And  the permanent specifications are snapshotted
     And  the active feature files, review dispositions, and index boundary are snapshotted
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  stderr contains "UNCERTAIN"
@@ -87,6 +96,7 @@ Feature: Generate the semantic review report
   Scenario: A complete classification allows change review and survives regeneration
     Given  the remediation case carries the distinguishing marker "modified permanent contract replacement mu archive bridge contract delta evidence fixture gateway history invariant journal keeper ledger merge namespace output projection"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -98,6 +108,7 @@ Feature: Generate the semantic review report
 
   Scenario: Every resolved semantic classification requires a rationale
     Given  a project prepared for semantic review with a similar active delta
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE" without a rationale
@@ -108,6 +119,7 @@ Feature: Generate the semantic review report
   Scenario: A regenerated classified report is byte-for-byte deterministic
     Given  the remediation case carries the distinguishing marker "regression deterministic report omega glacier harbor invariant matrix nonce ordered receipt stable"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -119,6 +131,7 @@ Feature: Generate the semantic review report
 
   Scenario: The semantic report obeys its strict wire grammar
     Given  a project prepared for semantic review with a similar active delta
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report has the exact headers in the defined order
@@ -132,6 +145,7 @@ Feature: Generate the semantic review report
 
   Scenario: Equal-score candidates use deterministic tie ordering
     Given  a project prepared for semantic review with equal-score candidates
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  equal-score candidates are ordered by left endpoint tuple, right endpoint tuple, and candidate id
@@ -140,6 +154,7 @@ Feature: Generate the semantic review report
   Scenario: Changing a candidate scenario invalidates its previous classification
     Given  the remediation case carries the distinguishing marker "regression active candidate invalidation sigma texture vector antler birch comet dune ember fjord granite harbor island juniper kiln lagoon marble nebula olive prism quartz rocket sandal timber umber"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -151,6 +166,7 @@ Feature: Generate the semantic review report
   Scenario: Changing a permanent endpoint invalidates its prior classification
     Given  the remediation case carries the distinguishing marker "regression permanent endpoint invalidation tau unmodified baseline acorn beacon copper delta engine frost grove hickory iris jade kettle lemon mosaic nickel opal pebble ruby stone thistle"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -162,6 +178,7 @@ Feature: Generate the semantic review report
   Scenario: Any changed endpoint evidence or prior-report metadata invalidates carry-forward
     Given  the remediation case carries the distinguishing marker "regression evidence metadata invalidation upsilon version hash"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -173,6 +190,7 @@ Feature: Generate the semantic review report
   Scenario: Removed candidates disappear after classification
     Given  the remediation case carries the distinguishing marker "regression removed candidate disappearance phi projected state"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -208,6 +226,7 @@ Feature: Generate the semantic review report
   Scenario: A blocked report is atomically complete before failure
     Given  a project prepared for semantic review with a similar active delta
     And  a malformed prior semantic report
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the regenerated semantic review report is complete according to the strict grammar
@@ -220,6 +239,7 @@ Feature: Generate the semantic review report
 
   Scenario: Malformed delta input cannot produce a semantic pass
     Given  a project prepared for semantic review with a malformed delta feature
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  stderr contains "delta feature is not valid Gherkin"
@@ -228,6 +248,7 @@ Feature: Generate the semantic review report
   Scenario: A malformed permanent index is rebuilt before semantic review continues
     Given  a project prepared for semantic review with a similar active delta
     And  the permanent index contains malformed or incompatible content
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  the semantic review report exists
@@ -240,6 +261,7 @@ Feature: Generate the semantic review report
   Scenario: A generated semantic report survives the existing archive move
     Given  a completed semantic review change with a generated report and archive prerequisites
     And  the active semantic review report bytes are snapshotted
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change running-change`
     Then  the command exits 0
     And  `givn/archive/running-change/semantic-review.md` exists
@@ -249,6 +271,7 @@ Feature: Generate the semantic review report
   Scenario: An unavailable retrieval model cannot produce a semantic pass
     Given  a project prepared for semantic review with a similar active delta
     And  the semantic review retrieval model is unavailable
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     And  stderr contains "retrieval model is unavailable"
@@ -270,6 +293,7 @@ Feature: Generate the semantic review report
   Scenario: A DUPLICATE classification without removal remains blocked
     Given  the remediation case carries the distinguishing marker "duplicate removal blocking contract alpha crimson lantern meadow orbit quartz river summit velvet walnut xenon yellow zephyr atlas beacon cobalt delta ember"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -282,6 +306,7 @@ Feature: Generate the semantic review report
     Given  the remediation case carries the distinguishing marker "duplicate projected removal success beta canyon copper ivory juniper kelp mosaic nickel opal prairie ruby saffron topaz umber violet willow xylophone yarrow zenith"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     And  the permanent specifications are snapshotted
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -295,6 +320,7 @@ Feature: Generate the semantic review report
   Scenario: A VARIANT classification without consolidation remains blocked
     Given  the remediation case carries the distinguishing marker "variant consolidation blocking contract gamma acorn birch cedar dune elm fern grove harbor iris jade kiln lagoon maple north oak pine quarry rose stone thistle"
     Given  a project prepared for semantic remediation with a "VARIANT" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VARIANT"
@@ -306,6 +332,7 @@ Feature: Generate the semantic review report
   Scenario: Consolidating a VARIANT candidate verifies the projected remediation
     Given  the remediation case carries the distinguishing marker "variant parameterized examples success delta anchor blossom circuit drum engine flare glacier hinge island jacket kettle ladder marble nebula orange prism"
     Given  a project prepared for semantic remediation with a "VARIANT" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VARIANT"
@@ -318,6 +345,7 @@ Feature: Generate the semantic review report
   Scenario: A VARIANT score below the boundary without consolidation remains blocked
     Given  the remediation case carries the distinguishing marker "variant score only independent contracts epsilon pebble plume pollen pumpkin raven sandal shell silver spruce stream thunder timber turbine valley vessel winter wren"
     Given  a project prepared for semantic remediation with a "VARIANT" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VARIANT"
@@ -329,6 +357,7 @@ Feature: Generate the semantic review report
   Scenario: A VALID-BOUNDARY score below the boundary without distinction remains blocked
     Given  the remediation case carries the distinguishing marker "boundary score only missing invariant zeta ash basil cloud coral dahlia echo frost granite honey juniper lemon mist nutmeg olive pepper rain snow tulip"
     Given  a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VALID-BOUNDARY"
@@ -340,6 +369,7 @@ Feature: Generate the semantic review report
   Scenario: A VALID-BOUNDARY classification above the boundary remains blocked
     Given  the remediation case carries the distinguishing marker "boundary above threshold blocking eta arrow bronze comet dragon eclipse feather galaxy helmet ivory jigsaw kingdom lilac magnet nickel ozone pebble rocket"
     Given  a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VALID-BOUNDARY"
@@ -351,6 +381,7 @@ Feature: Generate the semantic review report
   Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
     Given  the remediation case carries the distinguishing marker "boundary explicit observable fact success theta acrobat bamboo crystal domino emerald fossil garden harbor insect jasmine koala lantern mango needle ocean pocket rainbow"
     Given  a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VALID-BOUNDARY"
@@ -363,6 +394,7 @@ Feature: Generate the semantic review report
   Scenario: A VALID-BOUNDARY score exactly at the boundary remains blocked
     Given  the remediation case carries the distinguishing marker "boundary exact threshold blocking iota almond butter carrot daisy engine fig grape hazel igloo jelly kiwi lemon melon nut olive peach quince raisin"
     Given  a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VALID-BOUNDARY"
@@ -374,6 +406,7 @@ Feature: Generate the semantic review report
   Scenario: Changing a classified endpoint before remediation makes the decision stale
     Given  the remediation case carries the distinguishing marker "stale endpoint identity changed kappa beacon breeze candle drizzle ember flame glow hearth incense kettle lantern moonlight nightfall"
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -387,6 +420,7 @@ Feature: Generate the semantic review report
     Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
     And  the permanent specifications are snapshotted
     And  the active feature files, review dispositions, and index boundary are snapshotted
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change running-change`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "DUPLICATE"
@@ -409,6 +443,7 @@ Feature: Generate the semantic review report
     Given  the remediation case carries the distinguishing marker "the polar research outpost logs the same geomagnetic surge onto the east-facing chart roll and the west-facing chart roll of the calibration change in a repository that owns no permanent specification history"
     Given  a project prepared for semantic remediation with a delta-to-delta "DUPLICATE" candidate on change "rc-unclassified"
     Given  the remediation notes record that "the calibration bench ran unattended for eleven full seasons, and the east-tower duty officer transcribed the geomagnetic surge reading onto both chart rolls only because the west-tower gauge unit had been disconnected for a recalibration that nobody scheduled; the archive clerk later stamped both copies with the same observation time despite the fact that the two instruments measure orthogonal field components, a discrepancy the shift supervisor attributed to the storm watch rather than to any deliberate duplication"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change rc-unclassified`
     Then  the command exits non-zero
     And  the semantic review report contains scope "delta-to-delta"
@@ -418,6 +453,7 @@ Feature: Generate the semantic review report
     Given  the remediation case carries the distinguishing marker "the coastal lighthouse keeper repeats the identical fog-signal watch entry on the dusk page and the midnight page of the guard log, and the active change has no permanent baseline to draw from"
     Given  a project prepared for semantic remediation with a delta-to-delta "VARIANT" candidate on change "rc-var-blocked"
     Given  the remediation notes record that "the lighthouse keeper copied the fog-signal watch entry from the dusk page onto the midnight page and initialled both before climbing down from the lantern room, using the same lamp count, the same sounding interval, and the same duty code, while the guard log otherwise would have shown an empty midnight watch for the month"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change rc-var-blocked`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VARIANT"
@@ -430,6 +466,7 @@ Feature: Generate the semantic review report
     Given  the remediation case carries the distinguishing marker "the beekeepers cooperative lists the same hive inspection stamp on both the spring inspection sheet and the autumn inspection sheet while the running change carries two first-time delta scenarios"
     Given  a project prepared for semantic remediation with a delta-to-delta "VARIANT" candidate on change "rc-var-consolidated"
     Given  the remediation notes record that "the beekeepers ran the spring and autumn hive inspections on the same calendar day because only one inspector held the service key, pressing the self-same inspection stamp onto both record sheets, with the same brood-frame count and the same queen condition noted twice, so the cooperative's ledger contained two entries differing in nothing but the heading of the sheet"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change rc-var-consolidated`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VARIANT"
@@ -443,6 +480,7 @@ Feature: Generate the semantic review report
     Given  the remediation case carries the distinguishing marker "the tide-driven mill records the same sluice gate reading on the upstream rotation table and the downstream rotation table of the gearbox repair change inside a repository that just started its first change"
     Given  a project prepared for semantic remediation with a delta-to-delta "VALID-BOUNDARY" candidate on change "rc-boundary-blocked"
     Given  the remediation notes record that "the millwright recorded the sluice gate reading on the upstream rotation table, then matched the identical reading onto the downstream rotation table after the gearbox repair had been signed off by the foreman, copying the same water height, the same bearing temperature, and the same rotation speed onto both tables without any note explaining why one station measured twice"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change rc-boundary-blocked`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VALID-BOUNDARY"
@@ -455,6 +493,7 @@ Feature: Generate the semantic review report
     Given  the remediation case carries the distinguishing marker "the glacier mapping crew writes the same crevasse-stability fix into the inner traverse notebook and the outer traverse notebook of the survey change, with no permanent corpus to anchor either scenario"
     Given  a project prepared for semantic remediation with a delta-to-delta "VALID-BOUNDARY" candidate on change "rc-boundary-sharpened"
     Given  the remediation notes record that "the glacier mapping crew wrote the crevasse-stability value in the inner traverse notebook on the night before the final survey flight, then transcribed the very same number and the same ice-thickness estimate into the outer notebook on the morning of departure, keeping the two notebooks separate but the recorded figures indistinguishable between the two delta endpoints"
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change rc-boundary-sharpened`
     Then  the command exits non-zero
     When  the user classifies every semantic review candidate as "VALID-BOUNDARY"

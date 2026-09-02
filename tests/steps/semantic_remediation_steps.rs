@@ -33,11 +33,10 @@ pub(crate) fn remediation_project(world: &mut GivnWorld, classification: String)
         "Feature: Provider catalog\n\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
     )
     .expect("write remediation permanent spec");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write remediation commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create remediation delta");
     fs::write(
@@ -171,11 +170,10 @@ pub(crate) fn remediation_delta_to_delta_world(
         fs::remove_dir_all(&permanent).expect("remove generated specs");
     }
     fs::create_dir_all(&permanent).expect("create empty permanent specs");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write delta-to-delta remediation commands");
+    );
     let delta = env.path(&format!("givn/changes/{change_id}/specs/running.feature"));
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta-to-delta delta");
     let initial = "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Unknown provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n"

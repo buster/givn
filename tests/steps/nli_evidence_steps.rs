@@ -229,11 +229,10 @@ fn combined_unavailable_project(world: &mut GivnWorld) {
         "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Active provider request\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
     )
     .expect("write unavailable active candidate");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write unavailable commands");
+    );
     fs::write(
         env.path("givn/changes/running-change/review.md"),
         "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Active provider request` | `Provider request is accepted` | related |\n",

@@ -292,11 +292,10 @@ fn e2e_nli_blocking_project(world: &mut GivnWorld) {
         "@givn.delta @running-change\nFeature: running change\n\n  @givn.added\n  Scenario: Audit storage quota\n    Given an isolated archive ledger\n    When the ledger reaches capacity\n    Then the retention policy rejects the write\n",
     )
     .expect("write E2E NLI blocking delta");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write E2E NLI blocking commands");
+    );
     world.env = Some(env);
 }
 

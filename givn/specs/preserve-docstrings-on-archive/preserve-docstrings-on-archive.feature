@@ -10,6 +10,7 @@ Feature: Preserve Docstrings on Archive
         "count": 3
       }
       """
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change modify-docstring`
     Then  the command exits 0
     And  the permanent spec file for "modify-cap" contains the text "docstring-survives-modified-merge"
@@ -21,6 +22,7 @@ Feature: Preserve Docstrings on Archive
       """
       payload:docstring-survives-added-merge
       """
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change add-docstring`
     Then  the command exits 0
     And  the permanent spec file for "add-cap" contains the text "docstring-survives-added-merge"
@@ -29,6 +31,7 @@ Feature: Preserve Docstrings on Archive
     Given  a project root with givn/ initialised
     And  a permanent spec for capability "table-cap" contains a scenario named "Existing behaviour"
     And  a completed change "keep-table" whose delta modifies scenario "Existing behaviour" within capability "table-cap" and gives a step a data table containing the text "table-survives-modified-merge"
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change keep-table`
     Then  the command exits 0
     And  the permanent spec file for "table-cap" contains the text "table-survives-modified-merge"
@@ -39,6 +42,7 @@ Feature: Preserve Docstrings on Archive
       """
       payload:docstring-present-after-real-archive
       """
+    And the project declares a complete run declaration
     When  the user invokes `givn archive --change real-modify`
     Then  the command succeeds
     And  the permanent spec file for "real-cap" contains the text "docstring-present-after-real-archive"

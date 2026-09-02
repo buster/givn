@@ -36,11 +36,10 @@ fn removed_semantic_delta_project(_world: &mut GivnWorld) {
     fs::create_dir_all(&specs).expect("create permanent specs");
     fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
         .expect("write permanent semantic fixtures");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(
@@ -63,11 +62,10 @@ pub(crate) fn two_similar_active_deltas(world: &mut GivnWorld) {
     fs::create_dir_all(&specs).expect("create permanent specs");
     fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
         .expect("write permanent semantic fixtures");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let first = env.path("givn/changes/running-change/specs/first.feature");
     let second = env.path("givn/changes/running-change/specs/second.feature");
     fs::create_dir_all(first.parent().expect("delta parent")).expect("create delta specs");
@@ -539,11 +537,10 @@ fn malformed_semantic_delta_project(_world: &mut GivnWorld) {
     fs::create_dir_all(&specs).expect("create permanent specs");
     fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
         .expect("write permanent semantic fixtures");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(delta, "not valid Gherkin\nwithout a Feature keyword\n")
@@ -640,11 +637,10 @@ fn completed_semantic_review_change(world: &mut GivnWorld) {
         "addons:\n  arc42: false\n  absolute_mode: false\n  readme: false\n  coverage: false\n  domain_modeling: false\n  dev_principles: false\n  grill_me: false\n  grill_with_docs: false\n",
     )
     .expect("disable archive fixture addons");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\naddons:\n  arc42: false\n  absolute_mode: false\n  readme: false\n  coverage: false\n  domain_modeling: false\n  dev_principles: false\n  grill_me: false\n  grill_with_docs: false\n",
-    )
-    .expect("write archive commands");
+    );
 
     let scores = world
         .retrieval_stub_scores
@@ -955,11 +951,10 @@ fn below_boundary_semantic_project(_world: &mut GivnWorld) {
     fs::create_dir_all(&specs).expect("create permanent specs");
     fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
         .expect("write permanent semantic fixtures");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(
@@ -987,11 +982,10 @@ fn exact_boundary_semantic_project(world: &mut GivnWorld) {
         "Feature: boundary fixtures\n\n  Scenario: Exact boundary permanent\n    Given a boundary catalog\n    When the boundary action runs\n    Then the boundary result appears\n",
     )
     .expect("write boundary permanent");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(
@@ -1058,11 +1052,10 @@ fn rule_nested_semantic_project(world: &mut GivnWorld) {
     fs::create_dir_all(&specs).expect("create permanent specs");
     fs::write(specs.join("retrieval.feature"), PERMANENT_CORPUS)
         .expect("write permanent semantic fixtures");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(
@@ -1142,11 +1135,10 @@ fn complete_evidence_semantic_project(_world: &mut GivnWorld) {
         "@permanent-tag\nFeature: Evidence feature\n  Feature description\n\n  Background:\n    Given a feature background\n\n  Rule: Evidence rule\n    Rule description\n\n    Background:\n      Given a rule background\n\n    @rule-tag\n    Scenario: Evidence permanent\n      Given a step with \"quote\"\n        \"\"\"\n        doc \\\"value\\\"\n        \"\"\"\n      And a table\n        | header | cell \\\"quoted\\\" |\n      When the evidence action runs\n      Then the evidence result appears\n",
     )
     .expect("write evidence permanent");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(
@@ -1284,11 +1276,10 @@ fn modified_target_semantic_project(world: &mut GivnWorld) {
         "Feature: current change\n\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Authentication token is missing\n    Given a configured provider catalog\n    When the user authenticates without a token\n    Then authentication is rejected\n",
     )
     .expect("write target permanent specs");
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
-    )
-    .expect("write semantic review commands");
+    );
     let delta = env.path("givn/changes/running-change/specs/running.feature");
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(

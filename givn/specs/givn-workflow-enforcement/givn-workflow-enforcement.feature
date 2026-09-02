@@ -4,6 +4,7 @@ Feature: givn Workflow Enforcement
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains `- [x] COMMIT: a1b2c3d4 -- Implement scenario one`
     And  the change's design.md contains a Step Definitions table with valid step file paths
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
     And  stdout contains "integrity"
@@ -11,6 +12,7 @@ Feature: givn Workflow Enforcement
   Scenario: Integrity hook fails on placeholder commit hash
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains `- [x] COMMIT: ___ -- scenario one`
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "placeholder"
@@ -21,6 +23,7 @@ Feature: givn Workflow Enforcement
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md Step Definitions table lists `tests/steps/nonexistent.rs`
     And  the file tests/steps/nonexistent.rs does not exist
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "Step Definitions"
@@ -31,6 +34,7 @@ Feature: givn Workflow Enforcement
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md Step Definitions table lists `tests/steps/empty.rs`
     And  the file tests/steps/empty.rs exists and is zero bytes
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "empty"
@@ -40,6 +44,7 @@ Feature: givn Workflow Enforcement
     Given  a givn project with a change that has passed design-review
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md Step Definitions section contains prose with backticks instead of a markdown table
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "must use a markdown table"
@@ -49,6 +54,7 @@ Feature: givn Workflow Enforcement
     And  a change that has passed design-review
     And  the change's tasks.md contains valid commit hashes
     And  the change's design.md contains a valid Step Definitions table with existing files
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
@@ -58,6 +64,7 @@ Feature: givn Workflow Enforcement
     And  the change's design.md contains a valid Step Definitions table with existing files
     And  the change's arc42.md marks chapter "01 introduction-and-goals" as Affected: Yes
     And  docs/arc42/01-introduction-and-goals.md is byte-identical to the givn template
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits non-zero
     And  stderr contains "arc42"
@@ -69,6 +76,7 @@ Feature: givn Workflow Enforcement
     And  the change's design.md contains a valid Step Definitions table with existing files
     And  the change's arc42.md marks chapter "01 introduction-and-goals" as Affected: Yes
     And  docs/arc42/01-introduction-and-goals.md differs from the givn template
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
 
@@ -78,6 +86,7 @@ Feature: givn Workflow Enforcement
     And  the change's design.md contains a valid Step Definitions table with existing files
     And  the change's arc42.md marks an unresolvable chapter name as Affected: Yes
     And  no corresponding docs/arc42/ file exists
+    And the project declares a complete run declaration
     When  the user runs `givn check review --change test-change`
     Then  the command exits 0
     And  stdout contains "integrity"
@@ -85,6 +94,7 @@ Feature: givn Workflow Enforcement
   Scenario: Archive re-runs verify against merged permanent specs and passes
     Given  a givn project with a completed change configured for archive
     And  the project's verify.command exits 0 on the current permanent specs
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change integrity-hook-and-archive-gate`
     Then  the command exits 0
     And  the change directory has been moved to givn/archive/
@@ -95,6 +105,7 @@ Feature: givn Workflow Enforcement
     Given  a givn project with a completed change configured for archive
     And  the delta spec introduces a scenario that conflicts with an existing permanent scenario
     And  verify.command exits non-zero on the merged permanent spec
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change integrity-hook-and-archive-gate`
     Then  the command exits non-zero
     And  stderr contains "verify"
@@ -107,6 +118,7 @@ Feature: givn Workflow Enforcement
   Scenario: New-capability merge failure produces clear recovery instructions
     Given  a givn project with a completed change that introduces a brand-new capability
     And  verify.command exits non-zero on the merged permanent spec
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change integrity-hook-and-archive-gate`
     Then  the command exits non-zero
     And  stderr says the specs have been rolled back
@@ -120,12 +132,14 @@ Feature: givn Workflow Enforcement
 
   Scenario: Archive blocked when delta spec has non-removed @wip scenario
     Given  a givn project with an archive-ready change whose delta spec contains @wip
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change wip-change`
     Then  the command exits non-zero
     And  stderr contains "@wip"
 
   Scenario: Archive allowed when @wip only on a @givn.removed placeholder
     Given  a givn project with an archive-ready change whose @wip is only on a @givn.removed scenario
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change wip-removed-change`
     Then  the command exits 0
     And  the change directory has been moved to givn/archive/

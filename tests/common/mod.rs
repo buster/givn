@@ -207,7 +207,12 @@ pub fn make_bare_root() -> TestEnv {
 /// scaffolded exactly as a real initialised project (no duplicated logic).
 /// The README is written in its complete, givn-managed form — a real project
 /// that archives has filled its scaffold sections, and the README
-/// completeness gate would otherwise block every archive-flow fixture.
+/// completeness gate would otherwise block every archive-flow fixture. The
+/// commands file likewise carries a complete run declaration — a real
+/// project that archives has filled in the scaffolded `run:` block, and the
+/// run-declaration gate would otherwise block every archive-flow fixture.
+/// Scenario-specific states override via the shared declaration Givens
+/// (`declare_run`/`strip_run` in `run_declaration_fixtures_support`).
 pub fn make_init_root() -> TestEnv {
     let env = make_bare_root();
     let out = run_givn(&env, &["init"]);
@@ -219,7 +224,135 @@ pub fn make_init_root() -> TestEnv {
     );
     std::fs::write(env.path("README.md"), complete_readme_fixture())
         .expect("write complete README fixture");
+    let commands = env.path("givn/commands.yaml");
+    let content = std::fs::read_to_string(&commands).expect("read commands.yaml");
+    let updated = replace_top_level_key(&content, "run", &complete_run_declaration("cli"));
+    std::fs::write(&commands, updated).expect("write commands.yaml");
     env
+}
+
+/// Write a fixture `givn/commands.yaml`, appending a complete run
+/// declaration unless the content already carries a top-level `run:` key.
+/// A real project at any workflow stage that reaches the review or archive
+/// gates has filled in its run scaffold; fixtures mimic that state.
+pub(crate) fn write_commands_yaml(path: &std::path::Path, yaml: &str) {
+    let has_run = yaml.lines().any(is_top_level_key_named_run);
+    let content = if has_run {
+        yaml.to_string()
+    } else {
+        format!("{}\n{}", yaml, complete_run_declaration("cli"))
+    };
+    fs::write(path, content).expect("write commands.yaml");
+}
+
+fn is_top_level_key_named_run(line: &str) -> bool {
+    line.starts_with("run:")
+        && !line.starts_with(' ')
+        && !line.starts_with('\t')
+        && !line.starts_with('#')
+}
+
+/// The run declaration block for a product type, as YAML text. The commands
+/// are never executed by the gates — validation only reads them.
+pub(crate) fn complete_run_declaration(product_type: &str) -> String {
+    match product_type {
+        "server" => "\
+run:
+  command: \"./serve-fixture.sh\"
+  product_type: server
+  port_env: \"PORT\"
+  ready_path: \"/healthz\"
+  ready_timeout_s: 60
+"
+        .to_string(),
+        "cli" => "\
+run:
+  command: \"./fixture-start.sh\"
+  product_type: cli
+"
+        .to_string(),
+        "library" => "\
+run:
+  command: \"./build-lib.sh\"
+  product_type: library
+"
+        .to_string(),
+        other => panic!("unknown fixture product type: {other}"),
+    }
+}
+
+/// Replace the block of lines belonging to a top-level key with new text.
+/// A top-level key is a line that starts in column 0 and begins the key
+/// name. Comment lines and blanks inside the block belong to it.
+pub(crate) fn replace_top_level_key(content: &str, key: &str, replacement: &str) -> String {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut out: Vec<&str> = Vec::new();
+    let mut replaced = false;
+    let mut in_block = false;
+    for line in &lines {
+        if is_top_level_key(line) {
+            let name = line.split(':').next().unwrap_or(line).trim();
+            if name == key {
+                if !replaced {
+                    out.extend(replacement.lines());
+                    replaced = true;
+                }
+                in_block = true;
+                continue;
+            }
+            in_block = false;
+        }
+        if !in_block {
+            out.push(line);
+        }
+    }
+    if !replaced {
+        out.extend(replacement.lines());
+    }
+    let mut result = out.join("\n");
+    if !result.ends_with('\n') {
+        result.push('\n');
+    }
+    result
+}
+
+/// Remove the block of lines belonging to a top-level key, including any
+/// blank line that directly precedes it.
+pub(crate) fn remove_top_level_key(content: &str, key: &str) -> String {
+    let lines: Vec<&str> = content.lines().collect();
+    let mut out: Vec<&str> = Vec::new();
+    let mut in_block = false;
+    for line in &lines {
+        if is_top_level_key(line) {
+            let name = line.split(':').next().unwrap_or(line).trim();
+            in_block = name == key;
+            if in_block {
+                // Drop a blank line directly before the removed block.
+                if out.last().is_some_and(|l| l.trim().is_empty()) {
+                    out.pop();
+                }
+                continue;
+            }
+        }
+        if !in_block {
+            out.push(line);
+        }
+    }
+    let mut result = out.join("\n");
+    if !result.ends_with('\n') && !result.is_empty() {
+        result.push('\n');
+    }
+    result
+}
+
+/// True when the line starts a top-level YAML mapping entry (column 0,
+/// not a comment, non-empty).
+fn is_top_level_key(line: &str) -> bool {
+    !line.is_empty()
+        && !line.starts_with(' ')
+        && !line.starts_with('\t')
+        && !line.starts_with('#')
+        && line.contains(':')
 }
 
 /// A complete, givn-managed README: filled sections, badge fences, and an

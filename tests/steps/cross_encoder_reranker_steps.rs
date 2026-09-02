@@ -31,11 +31,10 @@ fn valid_boundary_pair(world: &mut GivnWorld) {
         "givn/specs/json/json.feature",
         "Feature: machine-readable lint output\n\n  Scenario: A parse error is reported as a machine-readable finding\n    Given a malformed feature file\n    When the user runs `givn lint --json`\n    Then stdout reports a JSON parse finding\n",
     );
-    fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
-    )
-    .expect("write reranker commands");
+    );
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_reranker = Some("stub".to_string());

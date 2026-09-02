@@ -25,6 +25,7 @@ Feature: Uppercase Checkbox Parsing
   Scenario: Uppercase checkboxes satisfy the archive gate
     Given  a project root with givn/ initialised
     And  a change "checkbox-archive" exists with all required artifacts complete and tasks.md containing "- [X] all done" with a valid COMMIT hash
+    And the project declares a complete run declaration
     When  the user runs `givn archive --change checkbox-archive`
     Then  the command exits 0
     And  the change directory has been moved to givn/archive/

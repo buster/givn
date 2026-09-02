@@ -55,3 +55,72 @@ fn loading_fails_mentioning(world: &mut GivnWorld, needle: String) {
         "load error {err:?} does not mention {needle:?}"
     );
 }
+
+// --- Given: declaration under validation -------------------------------------
+
+#[given(regex = r#"^a run declaration:$"#)]
+fn a_run_declaration(world: &mut GivnWorld, step: &Step) {
+    let yaml = step
+        .docstring
+        .as_ref()
+        .expect("docstring content for run declaration")
+        .clone();
+    let base = givn::config::manifest::Manifest::load_embedded().expect("load default manifest");
+    world.overlay_manifest =
+        Some(givn::config::overlay::apply(base, &yaml).expect("parse run declaration"));
+    world.run_findings.clear();
+}
+
+// --- When: validate ------------------------------------------------------------
+
+#[when("the run declaration is validated")]
+fn the_run_declaration_is_validated(world: &mut GivnWorld) {
+    let manifest = world
+        .overlay_manifest
+        .as_ref()
+        .expect("a run declaration is required first");
+    world.run_findings = givn::cli::run_block::check_run(manifest);
+}
+
+// --- Then: findings ------------------------------------------------------------
+
+#[then(regex = r#"^the check reports "(.*)"$"#)]
+fn the_check_reports(world: &mut GivnWorld, needle: String) {
+    assert!(
+        world
+            .run_findings
+            .iter()
+            .any(|f| f.message.contains(&needle)),
+        "no finding mentions {needle:?}: {:?}",
+        world.run_findings,
+    );
+}
+
+#[then("the check reports no findings")]
+fn the_check_reports_no_findings(world: &mut GivnWorld) {
+    assert!(
+        world.run_findings.is_empty(),
+        "expected no findings: {:?}",
+        world.run_findings,
+    );
+}
+
+#[then("the check reports no port or readiness findings")]
+fn the_check_reports_no_port_or_readiness_findings(world: &mut GivnWorld) {
+    use givn::cli::run_block::RunFindingKind;
+    let offending: Vec<_> = world
+        .run_findings
+        .iter()
+        .filter(|f| {
+            matches!(
+                f.kind,
+                RunFindingKind::MissingField | RunFindingKind::ForbiddenField
+            )
+        })
+        .collect();
+    assert!(
+        offending.is_empty(),
+        "expected no port or readiness findings: {:?}",
+        offending,
+    );
+}

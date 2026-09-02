@@ -18,12 +18,6 @@ before the README completeness gate, independently of the readme addon, so a
 project without a README addon is still held to declaring how its product
 starts. This is an extension of ADR-028's existing boundary, not a new record.
 
-ADR-067 is proposed by the open `run-command` change: one tool declares and
-executes the product start command. It records why givn owns the start
-declaration and the `givn run` execution boundary (with kiekste and other
-automation as callers) instead of leaving execution to an external orchestrator.
-It remains `proposed` until that change passes its remaining gates.
-
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

@@ -1,5 +1,6 @@
 //! Compiled-CLI E2E steps for the 0.2.0-to-0.4.0 migration boundary.
 
+use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
 
@@ -33,11 +34,10 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     skill.push_str("\nlegacy generated marker\n");
     std::fs::write(generated_skill, skill).expect("mark generated skill as legacy");
 
-    std::fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
-    )
-    .expect("configure fixture verification");
+    );
     std::fs::write(env.path(".gitignore"), ".opencode/\nAGENTS.md\n")
         .expect("ignore generated agent files");
 
@@ -71,11 +71,10 @@ fn current_git_project_with_stale_integration() -> crate::common::TestEnv {
     let mut skill = std::fs::read_to_string(&generated_skill).expect("read generated skill");
     skill.push_str("\nstale generated marker\n");
     std::fs::write(generated_skill, skill).expect("mark generated skill as stale");
-    std::fs::write(
-        env.path("givn/commands.yaml"),
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
         "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
-    )
-    .expect("configure fixture verification");
+    );
 
     git(&env, &["init"]);
     git(&env, &["config", "user.name", "Givn Migration Test"]);
@@ -442,6 +441,8 @@ fn completed_automatic_migration(world: &mut GivnWorld) {
         "upgrade failed: {}",
         String::from_utf8_lossy(&upgrade.stderr)
     );
+    // A real 0.2.0 project fills in the backfilled run scaffold before its
+    // next archive; the fixture mimics that with a complete cli declaration.
     let migration = env.path("givn/changes/migrate-0-2-0-to-0-4-0");
     std::fs::write(
         migration.join("design-review.md"),
@@ -459,6 +460,7 @@ fn completed_automatic_migration(world: &mut GivnWorld) {
     )
     .expect("write completed review");
     world.env = Some(env);
+    crate::steps::run_declaration_fixtures_support::declare_run(world, "cli");
 }
 
 #[when("the consumer archives the maintenance migration")]
