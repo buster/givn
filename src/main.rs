@@ -134,6 +134,15 @@ enum Commands {
     },
     /// Re-render managed config scaffold, preserve user overrides, bump version.
     Upgrade,
+    /// Start the product declared in the run block of givn/commands.yaml.
+    Run {
+        /// Caller-provided port, handed to the product through run.port_env.
+        #[arg(long)]
+        port: Option<u16>,
+        /// Print one sh-eval-able start line without executing.
+        #[arg(long)]
+        print: bool,
+    },
     /// Sentinel default verify.command: prints setup guidance and exits non-zero.
     #[command(name = "missing-testrunner", hide = true)]
     MissingTestrunner,
@@ -319,6 +328,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             SpecCommands::BgeParity => cli::spec::run_bge_parity(),
         },
         Commands::Upgrade => cli::upgrade::run(),
+        Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),
         Commands::MissingTestrunner => cli::missing_testrunner::run(),
         Commands::MissingRunCommand => cli::missing_run_command::run(),
         Commands::Completions { shell } => {

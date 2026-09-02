@@ -185,6 +185,12 @@ pub struct GivnWorld {
     pub(crate) download_event_path: Option<std::path::PathBuf>,
     /// Findings from the last run-declaration validation.
     pub(crate) run_findings: Vec<givn::cli::run_block::RunFinding>,
+    /// Reserved fixed port written into the fixture's run declaration.
+    pub(crate) run_fixed_port: Option<u16>,
+    /// Caller-provided port handed to `givn run --port`.
+    pub(crate) run_caller_port: Option<u16>,
+    /// The start command declared by the fixture's run declaration.
+    pub(crate) run_declared_command: Option<String>,
 }
 
 // --- helpers ---------------------------------------------------------------

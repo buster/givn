@@ -126,29 +126,47 @@ Production: `src/cli/missing_run_command.rs` (pattern `missing_testrunner.rs`), 
 - [x] RED: targeted `--name` under e2e scope — `stderr missing "run.command is unset": error: unrecognized subcommand 'missing-run-command'` — exit 101
 - [x] GREEN: files: `src/cli/missing_run_command.rs` (new), `src/cli/mod.rs`, `src/main.rs` (hidden subcommand + dispatch), `tests/steps/run_execution_steps.rs` (`stderr mentions` step per design §16) — `1 scenario (1 passed)`, exit 0
 - [x] REFACTOR: fmt + clippy clean, exit 0
-- [x] COMMIT: hash `_t4`
+- [x] COMMIT: `test(e2e): The sentinel start command prints setup guidance` — hash `ef41f34`
 
 ## T5 — Executor plan resolution + preflight
 
 Production: `src/cli/run.rs` (`resolve_start_plan`, preflight, `--print`), `src/main.rs` `Commands::Run`.
 
 ### Scenario: A library has nothing to start
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: RED: unrecognized subcommand 'run', exit 101
+- [x] GREEN: files: src/cli/run.rs, src/main.rs (Run subcommand), tests/steps/run_execution_support.rs, tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
 
 ### Scenario: An unconfigured declaration refuses to start
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: RED: stderr missing run.command is unset / no stderr-mentions step, exit 101
+- [x] GREEN: files: src/cli/run.rs (preflight), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
 
 ### Scenario: A caller port without a port hand-off is refused
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: RED: unrecognized subcommand, exit 101
+- [x] GREEN: files: src/cli/run.rs (resolve_start_plan --port rule), tests/steps/run_execution_support.rs (fixed-port fixture) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
 
 ### Scenario: Print mode omits the port hand-off for a fixed-port declaration
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: RED: ambiguous step match + unrecognized subcommand, exit 101
+- [x] GREEN: files: src/cli/run.rs (print_line), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
 
 ### Scenario: Print mode for a library resolves the declared start command
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: RED: unrecognized subcommand, exit 101
+- [x] GREEN: files: src/cli/run.rs (library --print), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
 
 ### Scenario: Print mode on an unconfigured declaration reports preflight findings
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: RED: unrecognized subcommand, exit 101
+- [x] GREEN: files: src/cli/run.rs (preflight before print), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): executor plan resolution, preflight, and print mode` — hash `_t5`
 
 ## T6 — Spawn/probe loop + exit-code forwarding
 
