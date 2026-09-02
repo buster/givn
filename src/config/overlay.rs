@@ -1,4 +1,6 @@
-use crate::config::manifest::{Addons, Apply, Artifact, Coverage, HookEntry, Manifest, Verify};
+use crate::config::manifest::{
+    Addons, Apply, Artifact, Coverage, HookEntry, Manifest, Run, Verify,
+};
 /// Apply the project overlay (from `givn/config.yaml`) onto the embedded default manifest.
 ///
 /// Overlay semantics (ADR-010, ADR-024):
@@ -23,6 +25,11 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
     // Merge verify block.
     if let Some(v) = overlay.verify {
         result.verify = v;
+    }
+
+    // Merge run block (replace-whole, same semantics as verify).
+    if let Some(r) = overlay.run {
+        result.run = r;
     }
 
     // Merge coverage block.
@@ -297,6 +304,7 @@ struct OverlayDoc {
     #[serde(default)]
     artifacts: Vec<OverlayArtifact>,
     verify: Option<Verify>,
+    run: Option<Run>,
     coverage: Option<Coverage>,
     apply: Option<Apply>,
     addons: Option<Addons>,

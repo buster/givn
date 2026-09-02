@@ -22,17 +22,17 @@ Stub for unimplemented steps: `unimplemented!()` (Rust/cucumber-rs).
     error: test failed, to rerun pass `--test features_runner`
     ```
     exit code **101** (non-zero) — `.fail_on_skipped()` rejects undefined steps.
-- [x] Commit: `chore(run-command): step skeletons and strict-mode proof` — hash `pending`
+- [x] Commit: `chore(run-command): step skeletons and strict-mode proof` — hash `43ef246`
 
 ## T1 — Data model + load rejection
 
 Production: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest.run`), `src/config/overlay.rs` (`OverlayDoc.run`, replace-whole merge in `apply`).
 
 ### Scenario: An unknown product type is rejected when the commands file loads
-- [ ] RED: command `_` — output `_` — exit `_`
-- [ ] GREEN: files touched `_` — output `_` — exit `_`
-- [ ] REFACTOR: `_` — exit `_`
-- [ ] COMMIT: `_` — hash `_`
+- [x] RED: `GIVN_FEATURES=... cargo test --test features_runner -- --name "An unknown product type is rejected when the commands file loads"` — `1 step (1 failed)`, `Step panicked ... unimplemented` — exit **101**
+- [x] GREEN: files touched: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest.run`), `src/config/overlay.rs` (`OverlayDoc.run`, replace-whole merge), `tests/steps/run_command_steps.rs` (3 steps). — `1 scenario (1 passed)`, `3 steps (3 passed)` — exit **0**
+- [x] REFACTOR: none needed (minimal implementation, existing patterns) — re-run exit **0**
+- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `_`
 
 ## T2 — Shared scaffold asset
 

@@ -16,6 +16,10 @@ pub struct Manifest {
     #[serde(default)]
     pub verify: Verify,
 
+    /// Product start configuration.
+    #[serde(default)]
+    pub run: Run,
+
     /// Coverage merge script configuration.
     #[serde(default)]
     pub coverage: Coverage,
@@ -133,6 +137,85 @@ impl Verify {
 
     fn default_features_path() -> String {
         "givn/specs".to_string()
+    }
+}
+
+/// Product start configuration (`givn/commands.yaml`, key `run`).
+///
+/// givn never executes `command` as a side effect of validation — it
+/// validates the block, renders it into the README, and blocks the archive
+/// gate while it is unconfigured. Starting the product is the job of
+/// `givn run` and of automation around givn.
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct Run {
+    /// Command that starts the product. Default is the sentinel.
+    #[serde(default = "Run::default_command")]
+    pub command: String,
+
+    /// `server`, `cli`, or `library`. `None` means unconfigured.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub product_type: Option<ProductType>,
+
+    /// Fixed listen port. `product_type: server` only.
+    /// Mutually exclusive with `port_env`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port: Option<u16>,
+
+    /// Name of the environment variable through which the caller passes
+    /// the port. `product_type: server` only. Mutually exclusive with `port`.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub port_env: Option<String>,
+
+    /// HTTP path that answers 2xx once the server is ready to serve.
+    /// `product_type: server` only.
+    #[serde(default, skip_serializing_if = "Option::is_none")]
+    pub ready_path: Option<String>,
+
+    /// Seconds the caller waits for readiness before giving up.
+    #[serde(default = "Run::default_ready_timeout_s")]
+    pub ready_timeout_s: u64,
+}
+
+/// The kind of product the run declaration starts.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Deserialize, Serialize)]
+#[serde(rename_all = "lowercase")]
+pub enum ProductType {
+    /// Long-running process that listens on a port.
+    Server,
+    /// One-shot command-line tool.
+    Cli,
+    /// Consumed as a dependency; nothing to start.
+    Library,
+}
+
+impl Default for Run {
+    fn default() -> Self {
+        Self {
+            command: Self::default_command(),
+            product_type: None,
+            port: None,
+            port_env: None,
+            ready_path: None,
+            ready_timeout_s: Self::default_ready_timeout_s(),
+        }
+    }
+}
+
+impl Run {
+    /// Sentinel: the block exists but was never filled in.
+    pub const SENTINEL: &'static str = "givn missing-run-command";
+
+    fn default_command() -> String {
+        Self::SENTINEL.to_string()
+    }
+
+    fn default_ready_timeout_s() -> u64 {
+        60
+    }
+
+    /// True while the block is unconfigured.
+    pub fn is_unconfigured(&self) -> bool {
+        self.command.trim() == Self::SENTINEL || self.product_type.is_none()
     }
 }
 
