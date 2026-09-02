@@ -209,7 +209,7 @@ fn run_shell_command(command: &str, features_path: &str) -> Result<()> {
 #[cfg(test)]
 mod verify_e2e_hook_tests {
     use super::*;
-    use crate::config::manifest::{Addons, Apply, Coverage, Manifest, Verify};
+    use crate::config::manifest::{Addons, Apply, Coverage, Manifest, Run, Verify};
     use std::fs;
 
     fn manifest_with(e2e_command: &str) -> Manifest {
@@ -224,6 +224,7 @@ mod verify_e2e_hook_tests {
                 e2e_command: e2e_command.to_string(),
                 features_path: "givn/specs".to_string(),
             },
+            run: Run::default(),
             addons: Addons::default(),
             coverage: Coverage::default(),
             givn_config_version: None,

@@ -191,7 +191,7 @@ fn print_json(manifest: &Manifest, state: Option<&ChangeState>) -> Result<()> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::config::manifest::{Addons, Apply, HookFull, Verify};
+    use crate::config::manifest::{Addons, Apply, HookFull, Run, Verify};
     use crate::state::ArtifactStatus;
 
     fn artifact(id: &str, requires: &[&str], optional: bool, post: Vec<HookEntry>) -> Artifact {
@@ -229,6 +229,7 @@ mod tests {
                 e2e_command: String::new(),
                 features_path: "givn/specs".to_string(),
             },
+            run: Run::default(),
             addons: Addons {
                 arc42: true,
                 ..Default::default()
