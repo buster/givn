@@ -119,11 +119,14 @@ Production: `assets/run.yaml.tmpl` (new), embed verbatim in `assets/commands.yam
 Production: `src/cli/missing_run_command.rs` (pattern `missing_testrunner.rs`), `src/main.rs` hidden subcommand.
 
 ### E2E setup (before first @e2e scenario)
-- [ ] Local environment confirmation: `_`
-- [ ] Filter proof (e2e strictly smaller than full): full count `_`, e2e count `_`
+- [x] Local environment confirmation: no service stack exists (design §13); e2e interaction = compiled givn binary in temp projects + in-tree fixture binaries. `./run-tests.sh --e2e` ran clean end-to-end (exit 0).
+- [x] Filter proof (e2e strictly smaller than full): full `./run-tests.sh` = 549 scenarios; `./run-tests.sh --e2e` = 106 scenarios. 106 < 549 — the `--tags @e2e` filter is real; commands are distinct (`--e2e` adds the tag filter).
 
 ### @e2e Scenario: The sentinel start command prints setup guidance
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: targeted `--name` under e2e scope — `stderr missing "run.command is unset": error: unrecognized subcommand 'missing-run-command'` — exit 101
+- [x] GREEN: files: `src/cli/missing_run_command.rs` (new), `src/cli/mod.rs`, `src/main.rs` (hidden subcommand + dispatch), `tests/steps/run_execution_steps.rs` (`stderr mentions` step per design §16) — `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: fmt + clippy clean, exit 0
+- [x] COMMIT: hash `_t4`
 
 ## T5 — Executor plan resolution + preflight
 
