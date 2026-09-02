@@ -32,14 +32,14 @@ Production: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest
 - [x] RED: `GIVN_FEATURES=... cargo test --test features_runner -- --name "An unknown product type is rejected when the commands file loads"` — `1 step (1 failed)`, `Step panicked ... unimplemented` — exit **101**
 - [x] GREEN: files touched: `src/config/manifest.rs` (`Run`, `ProductType`, `Default`, `Manifest.run`), `src/config/overlay.rs` (`OverlayDoc.run`, replace-whole merge), `tests/steps/run_command_steps.rs` (3 steps). — `1 scenario (1 passed)`, `3 steps (3 passed)` — exit **0**
 - [x] REFACTOR: none needed (minimal implementation, existing patterns) — re-run exit **0**
-- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `edb92f2`; lint follow-up `1e0fix` (Run wiring in graph.rs/hooks.rs, is_unconfigured deferred to its first use in T5) — hash `_t1fix`
+- [x] COMMIT: `feat(run-command): An unknown product type is rejected when the commands file loads` — hash `edb92f2`; lint follow-up `fix(run-command): wire Run into manifest fixtures; defer is_unconfigured to first use` — hash `9c28932`
 
 ## T2 — Shared scaffold asset
 
 Production: `assets/run.yaml.tmpl` (new), embed verbatim in `assets/commands.yaml.tmpl`, unit test `assets/run_scaffold_is_embedded_verbatim`.
 
-- [ ] Asset + containment test written; unit run output `_`
-- [ ] COMMIT: `_` — hash `_`
+- [x] Asset + containment test written; `cargo test --lib run_scaffold_is_embedded_verbatim` → `test result: ok. 1 passed` — exit **0**
+- [x] COMMIT: `feat(run-command): shared run scaffold asset embedded verbatim in the commands template` — hash `_t2`
 
 ## T3 — Validation rules R1–R10 (`src/cli/run_block.rs`)
 

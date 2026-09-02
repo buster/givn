@@ -331,6 +331,20 @@ impl Manifest {
 mod tests {
     use super::*;
 
+    /// The run scaffold is a single source of truth: `assets/run.yaml.tmpl`
+    /// is `include_str!`ed by the upgrade backfill, while
+    /// `assets/commands.yaml.tmpl` embeds a copy (assets are static). This
+    /// test pins the copy so the two cannot drift.
+    #[test]
+    fn run_scaffold_is_embedded_verbatim() {
+        let scaffold = include_str!("../../assets/run.yaml.tmpl");
+        let commands = include_str!("../../assets/commands.yaml.tmpl");
+        assert!(
+            commands.contains(scaffold),
+            "commands.yaml.tmpl must embed run.yaml.tmpl byte for byte"
+        );
+    }
+
     /// Verify that every key documented in config.yaml.tmpl maps to a real
     /// manifest schema key, and vice versa (no drift allowed).
     ///
