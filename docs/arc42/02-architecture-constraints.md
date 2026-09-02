@@ -32,6 +32,8 @@ register](adr/README.md).
 | TC-22 | Ignored generated paths are force-staged only through the calculated Givn-owned allowlist. | `src/cli/migration.rs`, ignored-path migration E2E fixture |
 | TC-23 | Large E5, BGE, and NLI artifacts use `$XDG_CACHE_HOME/givn/<role>` or `$HOME/.cache/givn/<role>` by default; explicit model/cache overrides take precedence. | `src/spec/retrieval.rs`, semantic-model-download design |
 | TC-24 | Automatic model acquisition is triggered only by an explicit semantic operation and validates artifacts before inference; the persistent index remains project-local. | `src/spec/retrieval.rs`, semantic-model-download feature |
+| TC-25 | `givn run` signal forwarding (SIGINT/SIGTERM) is unix-only via a direct `libc` dependency; on other platforms server products refuse to start at preflight while cli/library products work. | `Cargo.toml` `[target.'cfg(unix)'.dependencies]`, `src/cli/run.rs` |
+| TC-26 | givn never derives run-declaration content from repository sources, build manifests, container files, or framework conventions; the declaration is author-owned configuration validated only by deterministic rules. | `src/cli/run_block.rs`, run-command feature specs |
 
 ## 2.2 Configuration and Gate Constraints
 
@@ -41,19 +43,22 @@ The effective manifest is assembled in this order:
 2. Apply `givn/config.yaml` as a project overlay.
 3. If present, apply `givn/commands.yaml` as another manifest overlay. In the
    current project this file is the source for `verify.command`,
-   `verify.e2e_command`, and coverage command/path values.
+   `verify.e2e_command`, coverage command/path values, and the `run:` block
+   declaring how the built product is started.
 
 Artifact `post` lists are configurable additional hooks. They do not replace
 the binary's mandatory behavior:
 
 - `givn check tasks` runs WIP protection and `verify.command`.
-- `givn check review` runs `verify.command`, `verify-e2e`, `integrity`, and,
-  for a named change, overlap and retrieval checks.
+- `givn check review` runs `verify.command`, `verify-e2e`, `integrity`, the
+  run-declaration check, and, for a named change, overlap and retrieval checks.
 - Built-in hook names cannot be made best-effort with `allow_failure`.
 - `givn check` without an artifact runs only configured `post` hooks; it does
   not call the artifact-specific mandatory path.
 - `givn archive` runs configured hooks for `apply.requires` and then its own
-  archive stages, including post-merge verification.
+  archive stages, including post-merge verification. The run-declaration gate
+  runs before the README completeness gate and independently of the readme
+  addon.
 
 The embedded manifest has empty `post` lists for the standard `tasks` and
 `review` artifacts. Documentation in an older generated config may still show

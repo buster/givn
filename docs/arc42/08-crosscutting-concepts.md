@@ -634,3 +634,55 @@ licensing, roadmap, and repository rules have one owning project document. An
 ADR stores the rationale for one independent durable architecture decision and
 links to those facts. A refinement amends an existing ADR. The runtime does not
 infer architectural significance or validate the LLM verdict.
+
+## 8.16 The Run Declaration and `givn run`
+
+The `run:` block in `givn/commands.yaml` declares how the built product starts:
+`command`, `product_type` (`server` | `cli` | `library`), exactly one port
+source for servers (`port` or `port_env`), `ready_path`, and
+`ready_timeout_s` (default 60). It is applied as a replace-whole overlay unit,
+identical to `verify` and `coverage`: a partial block yields defaults for the
+fields it omits.
+
+`givn init` scaffolds the block with the sentinel command
+`givn missing-run-command`; `givn upgrade` backfills the same scaffold into
+existing projects through the managed allowlist. `givn missing-run-command`
+(hidden) prints configuration guidance and exits 1 so a copy-executed sentinel
+explains itself.
+
+Deterministic validation rules (no heuristics, no repository inspection):
+
+| Rule | Condition | Kind |
+|---|---|---|
+| R1 | command empty or sentinel (fires only for unset/server/cli types — a library may keep the sentinel) | `UNCF` |
+| R2 | product_type unset | `UNCF` |
+| R3 | server without `ready_path` | `MISS` |
+| R4 | server with neither `port` nor `port_env` | `MISS` |
+| R5 | server with both port sources | `FORB` |
+| R6 | server-only field on a cli/library product | `FORB` |
+| R7 | server with `ready_timeout_s: 0` | `MISS` |
+| R8 | relative `ready_path` | `MISS` |
+| R9 | first command token on the no-op list (`true`, `:`, `echo`, `printf`, `sleep`, `cat`, `test`, `[`) or command `exit 0` | `NOOP` |
+| R10 | library with a real command | allowed, rendered |
+
+With product_type unset, R3–R8 are skipped and R9 still runs. The same
+findings block `givn check review` and — before the README completeness gate,
+independently of the readme addon — `givn archive`.
+
+The README carries a managed run block (`<!-- givn:begin:run -->` /
+`<!-- givn:end:run -->`). Unconfigured, its body is exactly one
+`<!-- givn:todo: set run.command and run.product_type in givn/commands.yaml -->`
+placeholder, so the standard open-placeholder and damaged-block mechanics
+apply. Configured, it renders the start command; for a server also the port
+source, readiness path, and timeout; for a library a single "nothing to start"
+line. The block is refreshed at archive time next to the development block.
+
+`givn run` executes the declaration. Its machine contract: the ready line
+`givn run: ready at http://127.0.0.1:<port><ready_path>` on stdout after the
+first 2xx probe response; exit 0 for a library and for clean shutdown; exit 1
+for preflight findings (printed to stderr) or `--port` without `port_env`;
+exit 2 on readiness timeout; the child's exit code forwarded exactly for early
+server exits and cli products; 130 on SIGINT and 143 on SIGTERM, both forwarded
+to the child first (unix-only). The readiness probe is a blocking
+`std::net::TcpStream` HTTP/1.0 request — 2xx accepts, everything else retries
+until the deadline; no HTTP client dependency is introduced.

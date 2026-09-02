@@ -22,6 +22,7 @@ flowchart TD
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
     CLI --> CHECK[mandatory check and archive gates]
+    CLI --> RUNBLK[run-declaration validation and run executor]
     CFG --> GRAPH[manifest overlay and facet cascade]
     GH --> MERGE[delta parsing and merge]
     O --> FINGER[Fingerprint evidence]
@@ -39,15 +40,18 @@ flowchart TD
 | `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
 | `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs overlap/retrieval gates. |
-| `cli::archive` | Check archive prerequisites, run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, refresh the development managed block, run optional coverage, and copy/remove the change to archive. |
+| `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, refresh the development and run managed blocks, run optional coverage, and copy/remove the change to archive. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
-| `cli::readme` | Scaffold the README from the marked template with the development managed block, run the deterministic completeness check behind `givn readme check`, and refresh the development managed block from the effective command file at archive time. |
+| `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
 | `cli::skills` | Synchronize selected skill targets and opencode commands. |
-| `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, and dispatch the exact legacy migration preparation route. |
-| `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight Git state, calculate the managed-path allowlist, create managed/migration commits, and write the aggregate maintenance plan. |
-| `config::manifest` | Define artifact, apply, verify, coverage, addon, and hook data structures. |
+| `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
+| `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight Git state, calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration commits, and write the aggregate maintenance plan. |
+| `cli::run_block` | Validate the `run:` declaration with the deterministic rules (R1–R10) and produce labeled findings for `check review` and the archive gate. |
+| `cli::run` | Resolve the start plan (product type, port source, `--port`/`--print`), execute the declared command, probe readiness over `std::net`, print the ready line, forward child exit codes, and forward SIGINT/SIGTERM on unix. |
+| `cli::missing_run_command` | Sentinel behind `givn missing-run-command`: prints start-configuration guidance to stderr and exits 1. |
+| `config::manifest` | Define artifact, apply, verify, coverage, addon, hook, and run-declaration data structures. |
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
@@ -104,4 +108,7 @@ passes every channel through unchanged.
 The Cucumber test binary contains regular step modules and separate compiled-CLI
 E2E step modules. They invoke the public binary in temporary project roots.
 They are test building blocks, not production modules, and are intentionally
-owned by this repository.
+owned by this repository. The `ready_fixture` harness-false test target is a
+test-only child process that binds a port, answers a readiness path, and can
+self-exit or trap signals; it exists so `givn run` scenarios exercise a real
+HTTP-ready product without shipping any test surface in the binary.

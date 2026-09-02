@@ -15,6 +15,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
+| Product start | One author-owned `run:` declaration in `givn/commands.yaml` documents and gates how the built product starts; `givn run` executes it with a std-only readiness probe, a greppable ready line, a spec'd exit-code contract, and unix signal forwarding. ADR-067 records the declare-and-execute boundary. |
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
 | Arc42 | `givn init` enables addons by default unless `--no-addons`; Arc42 chapters are scaffolded at fixed `docs/arc42/`. |
 | Structural overlap | Deterministic Fingerprint evidence and disposition gate. |
@@ -38,8 +39,8 @@ blocks.
 mandatory checks for explicit `givn check tasks` and `givn check review`:
 
 - tasks: WIP protection for a change delta and `verify.command`;
-- review: `verify.command`, `verify-e2e`, `integrity`, and, for a named change,
-  overlap and retrieval checks.
+- review: `verify.command`, `verify-e2e`, `integrity`, the deterministic
+  run-declaration check, and, for a named change, overlap and retrieval checks.
 
 Built-in hook names cannot be downgraded with `allow_failure`. Custom shell
 hooks can be configured and may be allowed to fail. A no-argument `givn check`

@@ -69,6 +69,10 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-38 | Acquire missing E5, BGE, and NLI model artifacts on explicit semantic use and reuse them from the user-level XDG cache. |
 | FR-39 | Give every semantic surface a consistent missing-index repair hint and actionable model-setup diagnostics. |
 | FR-40 | Control the compute threads of every semantic model stage (E5, BGE, NLI) through one `GIVN_SPEC_THREADS` setting that defaults to the machine's available parallelism and refuses invalid values by name before any model work. |
+| FR-41 | Declare how the built product is started in `givn/commands.yaml` (`run:` block): product type (server, cli, library), start command, exactly one port source for servers (fixed port or `port_env` hand-off), readiness path, and readiness timeout. |
+| FR-42 | Scaffold the run declaration on `givn init`, backfill it through the managed upgrade into existing projects, validate it with deterministic rules, render it into a managed README run block, and block `givn check review` and `givn archive` while it is unconfigured. |
+| FR-43 | Start the declared product with `givn run`: readiness probe against the declared path, one greppable ready line, `--port` and `--print` forms, forwarded child exit codes, and SIGINT/SIGTERM forwarding on unix. |
+| FR-44 | Never derive the product type or start command from repository content; the declaration is the single source of truth. |
 
 ### Non-functional requirements
 
@@ -112,6 +116,7 @@ the [ADR register](adr/README.md).
 | CI systems | Need deterministic lint, test-runner, archive, and semantic outcomes. |
 | Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
 | Migrating project maintainers | Need a clean Git boundary and an explicit plan for project-specific 0.3.0 work. |
+| Automation callers around givn (for example the kiekste preview host) | Consume the run declaration and the `givn run` machine contract (ready line, exit codes, port hand-off) to start products without guessing. |
 
 ## 1.5 Acceptance Ownership
 
