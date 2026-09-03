@@ -115,7 +115,13 @@ For `givn check review`, it runs:
    coverage checks.
 4. For a named change, the overlap disposition gate.
 5. For a named change with retrieval available, the semantic report gate and
-   the configured retrieval review path.
+   the configured retrieval review path. The same semantic stage maintains the
+   remediation log: a blocked run appends the run record and before-state
+   candidate entries; after successful remediation verification the gate
+   validates entry completeness and — in a Git repository — that every
+   recorded commit is reachable and carries the
+   `semantic-remediation: <change>/<candidate>` stamp, then the passing run
+   appends the after-state fields and after run record.
 
 These mandatory checks are in `src/cli/check.rs` and cannot be removed by
 removing a `post` entry. Built-in hook names also ignore `allow_failure` when

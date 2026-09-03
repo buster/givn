@@ -142,6 +142,13 @@
 | **Start plan** | The resolved, printable form of the run declaration produced by `givn run --print`: one sh-eval-able line (`PORT=<port> <command>` with a port hand-off, else `<command>`). Anti-term: "run config". |
 | **Backfill scaffold** | The managed-upgrade append of the run-declaration scaffold into an existing `givn/commands.yaml` when the `run:` key is absent; idempotent. Anti-term: "migration". |
 | **Executor** | The givn subsystem behind `givn run` that resolves the start plan, spawns the product, probes readiness, forwards exit codes, and forwards signals on unix. Anti-terms: "supervisor", "daemon". |
+| **Remediation log** | `givn/changes/<id>/semantic-remediation.md`, the append-only per-change artifact written by blocking `givn check review`; one entry per admitted candidate plus one review-run record per executed run, retained next to the semantic report under archive. Anti-terms: "remediation report", "history file". |
+| **Remediation log entry** | The per-candidate log block: before state (scores, BGE/NLI evidence states, verbatim endpoint text), decision (classification and rationale), fix (remediation text and commits), and after state (verified end state and recomputed score). Anti-term: "candidate record". |
+| **Review run record** | The log block for one executed semantic review run, anchored by its commit and recording per-stage durations (embedding recall, BGE, NLI); `null` only when a stage did not execute — a measured 0 is valid, including cache-only runs. Anti-term: "timing log". |
+| **Git anchor** | The full 40-character SHA commit recorded in a run record or log entry field (`null` without Git history, including an unborn branch); it pins the log's historical facts to reproducible Git states. Anti-term: "short hash". |
+| **Git stamp** | The footer line `semantic-remediation: <change-id>/<candidate-id>` in every remediation commit message, one line per fixed candidate; the review gate cross-validates it against the log entry. Anti-terms: "commit tag", "release stamp". |
+| **Verbatim scenario text** | The exact source lines of an endpoint's Gherkin scenario, recorded 1:1 in the log entry with its content and evidence hashes; it is the reviewed text, not the model-internal serialization. Anti-terms: "normalized evidence", "scenario dump". |
+| **Append-only log** | The remediation log's write discipline: entries are written once at run time and never regenerated; identical endpoint evidence is not duplicated, changed endpoints start a new entry. Anti-term: "rewrite log". |
 
 ### Run-declaration invariants
 
