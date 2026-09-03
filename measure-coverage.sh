@@ -5,7 +5,8 @@
 # every scenario observes the backend configuration its assertions expect.
 # A single llvm-cov invocation cannot reproduce those environments, so this
 # script replays the exact same groups with `cargo llvm-cov --no-report`
-# (profraws accumulate) and renders one Cobertura report for the non-e2e
+# (profraws accumulate; only profraws are cleaned between runs so the
+# instrumented build stays warm) and renders one Cobertura report for the non-e2e
 # groups and a second, distinct report for the e2e groups. The archive gate
 # requires the two reports to differ — duplicated output is rejected.
 set -eu
@@ -15,7 +16,7 @@ e2e_path=${GIVN_COVERAGE_E2E_PATH:-coverage/e2e-cobertura.xml}
 features_path=${GIVN_FEATURES:-givn/specs}
 
 mkdir -p "$(dirname "$non_e2e_path")"
-cargo llvm-cov clean --workspace
+cargo llvm-cov clean --profraw-only
 
 # usage: run_group <feature-scope> <cargo-features> [cucumber args...]
 run_group() {
@@ -69,7 +70,7 @@ GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub \
 cargo llvm-cov report --cobertura --output-path "$non_e2e_path"
 
 # --- e2e groups (mirrors ./run-tests.sh --e2e) ------------------------------
-cargo llvm-cov clean --workspace
+cargo llvm-cov clean --profraw-only
 GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_RERANKER=disabled \
     run_group "$features_path" "spec-retrieval" \
     --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @rulebook and not @release-proof and not @rulebook and @e2e'
