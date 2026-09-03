@@ -1523,3 +1523,51 @@ fn apply_log_state(world: &mut GivnWorld, state: String) {
 fn gate_a3(world: &mut GivnWorld) {
     run_review(world);
 }
+
+// --- Individual wordings for the nine modified permanent copies -------------
+//
+// Each modified delta copy replaces its permanent original at archive time
+// while carrying the same review flow. The real-model gate admits
+// near-identical delta-to-delta pairs, so every copy phrases the same slot
+// differently; the bodies are the canonical implementations.
+
+#[given("the remediation-log fixture stages one \"DUPLICATE\" case")]
+#[given("the remediation-log fixture reproduces one \"DUPLICATE\" case")]
+#[given("the remediation-log fixture erases one \"DUPLICATE\" case")]
+#[given("the remediation-log fixture stages one \"VARIANT\" case")]
+fn fixture_individual(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+}
+
+#[given("the review-flow fixture prepares a similar active delta")]
+fn fixture_individual_similar(world: &mut GivnWorld) {
+    super::semantic_review_steps::two_similar_active_deltas(world);
+}
+
+#[given("the review-flow fixture prepares a \"VALID-BOUNDARY\" case")]
+fn fixture_individual_boundary(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_project(world, "VALID-BOUNDARY".to_string());
+}
+
+#[when(
+    regex = r#"^the (assessor resolves the admitted candidate to|gate operator marks the admitted candidate as) \"(DUPLICATE|VARIANT|VALID-BOUNDARY)\"$"#
+)]
+fn classify_individual(world: &mut GivnWorld, _slot: String, classification: String) {
+    super::semantic_review_steps::update_semantic_classification(world, &classification, true);
+}
+
+#[when(
+    regex = r#"^the (assessor registers the applied correction|gate operator files the executed correction) \"[^\"]*\" with the commit record \[([^\]]*)\] in the log$"#
+)]
+fn record_individual(world: &mut GivnWorld, _slot: String, commits: String) {
+    let commits = commits
+        .split(',')
+        .map(|item| item.trim().to_string())
+        .filter(|item| !item.is_empty())
+        .collect::<Vec<_>>()
+        .join(", ");
+    fill_verified_entries(world, "remediation", "\"removed the redundant scenario\"");
+    fill_verified_entries(world, "commits", &format!("[{commits}]"));
+}
+
+// --- End individual wordings ------------------------------------------------

@@ -231,12 +231,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: A complete classification allows change review and survives regeneration
     Given the remediation case carries the distinguishing marker "tackline urchin wharf xebec yacht zodiac anchorline brine compass depth"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
-    And the project declares a complete run declaration
+    Given the remediation-log fixture stages one "DUPLICATE" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the assessor resolves the admitted candidate to "DUPLICATE"
+    And the assessor registers the applied correction "collapsed the doubled flow" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -246,12 +245,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: A regenerated classified report is byte-for-byte deterministic
     Given the remediation case carries the distinguishing marker "eddy fathom gale hull inlet kelp navigation oar quay rigging"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
-    And the project declares a complete run declaration
+    Given the remediation-log fixture reproduces one "DUPLICATE" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the assessor resolves the admitted candidate to "DUPLICATE"
+    And the assessor registers the applied correction "settled the repeated flow" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -260,12 +258,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Changing a candidate scenario invalidates its previous classification
     Given the remediation case carries the distinguishing marker "shroud trawl untow wharfyard xebec zither apron buoy clipper derrick"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
-    And the project declares a complete run declaration
+    Given the remediation-log fixture stages one "DUPLICATE" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the gate operator marks the admitted candidate as "DUPLICATE"
+    And the gate operator files the executed correction "withdrew the doubled scenario" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -274,12 +271,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Changing a permanent endpoint invalidates its prior classification
     Given the remediation case carries the distinguishing marker "estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
-    And the project declares a complete run declaration
+    Given the remediation-log fixture stages one "DUPLICATE" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the gate operator marks the admitted candidate as "DUPLICATE"
+    And the gate operator files the executed correction "retired the mirrored scenario" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -288,12 +284,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Any changed endpoint evidence or prior-report metadata invalidates carry-forward
     Given the remediation case carries the distinguishing marker "oarlock prow quayside shroud trawl untow wharfyard xebec zither apron"
-    Given a project prepared for semantic review with a similar active delta
-    And the project declares a complete run declaration
+    Given the review-flow fixture prepares a similar active delta
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the assessor resolves the admitted candidate to "DUPLICATE"
+    And the assessor registers the applied correction "dropped the reworked scenario" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the active classified endpoint changes without remediation
     And the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -303,12 +298,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Removed candidates disappear after classification
     Given the remediation case carries the distinguishing marker "buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
-    And the project declares a complete run declaration
+    Given the remediation-log fixture erases one "DUPLICATE" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the assessor resolves the admitted candidate to "DUPLICATE"
+    And the assessor registers the applied correction "erased the redundant copy" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -317,13 +311,12 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Removing a DUPLICATE candidate verifies the projected remediation
     Given the remediation case carries the distinguishing marker "lighthouse mast navigation quay rigging spar tackline urchin wharf zither"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
+    Given the remediation-log fixture stages one "DUPLICATE" case
     And  the permanent specifications are snapshotted
-    And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the gate operator marks the admitted candidate as "DUPLICATE"
+    And the gate operator files the executed correction "removed the overlapping case" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -334,12 +327,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Consolidating a VARIANT candidate verifies the projected remediation
     Given the remediation case carries the distinguishing marker "apron buoy clipper derrick estuary fathom gangway hull isthmus jetty"
-    Given a project prepared for semantic remediation with a "VARIANT" candidate
-    And the project declares a complete run declaration
+    Given the remediation-log fixture stages one "VARIANT" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "VARIANT"
-    And the user records the remediation fix "consolidated the pair into one outline" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the assessor resolves the admitted candidate to "VARIANT"
+    And the assessor registers the applied correction "folded the twin flows into one outline" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the active variant is consolidated with an explicit parameter
     And the user runs `givn check review --change running-change`
     Then the command exits 0
@@ -349,12 +341,11 @@ Feature: Remediation log for semantic review
   @givn.modified
   Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
     Given the remediation case carries the distinguishing marker "anchorline brine compass depth eddy fathom gale hull inlet kelp"
-    Given a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
-    And the project declares a complete run declaration
+    Given the review-flow fixture prepares a "VALID-BOUNDARY" case
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the user classifies every semantic review candidate as "VALID-BOUNDARY"
-    And the user records the remediation fix "reworded the distinction below the boundary" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    When the assessor resolves the admitted candidate to "VALID-BOUNDARY"
+    And the assessor registers the applied correction "sharpened the boundary distinction" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
     And the valid boundary is rewritten with an explicit distinction below the similarity boundary
     And the user runs `givn check review --change running-change`
     Then the command exits 0
