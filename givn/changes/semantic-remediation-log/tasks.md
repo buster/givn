@@ -425,23 +425,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): The remediation log obeys its strict wire grammar`
+  - [x] COMMIT: `0a1dc7f` — `feat(semantic-remediation-log): The remediation log obeys its strict wire grammar`
 
-- [ ] Scenario: `Failed review before the semantic stage does not create the remediation log`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `Failed review before the semantic stage does not create the remediation log`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 0 — legitimate immediate GREEN:
+        the malformed-delta fixture and exit/stderr steps are existing definitions and
+        the log-absent assertion landed earlier; the semantic stage is never reached
+        so no log is written. "6 steps (6 passed)".
         ```
-  - [ ] GREEN: no-log-on-early-failure behaviour. Files:
-        <!-- list them -->
+  - [x] GREEN: no-log-on-early-failure behaviour. Files:
+        none new — the log write sits strictly after the semantic stage in
+        `semantic_review_core`; the existing malformed-delta fixture binds it.
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "6 steps (6 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): Failed review before the semantic stage does not create the remediation log`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): Failed review before the semantic stage does not create the remediation log`
 
 - [ ] Scenario: `The remediation log survives the archive move`
   - [ ] RED: run only this scenario. Must fail.
