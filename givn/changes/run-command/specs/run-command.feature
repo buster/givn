@@ -10,7 +10,7 @@
 
 Feature: Run command declaration
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Scaffolding ships an unconfigured run declaration
     Given a project root without a givn/ directory
     When the user runs `givn init`
@@ -19,7 +19,7 @@ Feature: Run command declaration
     And the README has the run managed block
     And the README has the run open placeholder
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The review check reports an unconfigured run declaration
     Given a project root with givn/ initialised
     And verify commands are no-ops
@@ -30,7 +30,7 @@ Feature: Run command declaration
     And stdout mentions "run.command is unset"
     And stdout mentions "run.product_type is unset"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Archive passes once the run declaration is complete
     Given a project root with givn/ initialised
     And a complete README
@@ -42,7 +42,7 @@ Feature: Run command declaration
     Then the command exits 0
     And the archived change directory "run-demo" exists
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Upgrade backfills the run declaration into an existing project
     Given a git-managed project with givn initialised
     And the commands file has no run declaration
@@ -51,7 +51,7 @@ Feature: Run command declaration
     And the file "givn/commands.yaml" contains "run:"
     And stdout mentions "fill it in"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The check names a damaged run managed block
     Given a project root with givn/ initialised
     And a README with a broken run managed block
@@ -59,14 +59,14 @@ Feature: Run command declaration
     Then the command exits non-zero
     And stdout mentions "run managed block"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: The sentinel start command prints setup guidance
     Given a project root with givn/ initialised
     When the user runs `givn missing-run-command`
     Then the command exits non-zero
     And stderr mentions "run.command is unset"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive is blocked while the run declaration is unconfigured
     Given a project root with givn/ initialised
     And a complete README
@@ -79,7 +79,7 @@ Feature: Run command declaration
     And stdout mentions "run declaration"
     And the directory givn/changes/run-demo/ exists
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unconfigured declaration reports only unset findings
     Given a run declaration:
       """
@@ -91,7 +91,7 @@ Feature: Run command declaration
     And the check reports "run.product_type is unset"
     And the check reports no port or readiness findings
 
-  @givn.added @wip
+  @givn.added
   Scenario: A server without a readiness path is incomplete
     Given a run declaration:
       """
@@ -103,7 +103,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "requires run.ready_path"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A server needs exactly one port source
     Given a run declaration:
       """
@@ -115,7 +115,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "exactly one of run.port or run.port_env"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A server rejects two port sources
     Given a run declaration:
       """
@@ -129,7 +129,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "mutually exclusive"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Server-only fields are rejected for a CLI product
     Given a run declaration:
       """
@@ -141,7 +141,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "applies to product_type server only"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A zero readiness timeout is rejected
     Given a run declaration:
       """
@@ -155,7 +155,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "must be greater than zero"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A relative readiness path is rejected
     Given a run declaration:
       """
@@ -168,7 +168,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "must be an absolute path"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A no-op start command is rejected
     Given a run declaration:
       """
@@ -179,7 +179,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports "does nothing"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A library may keep the placeholder command
     Given a run declaration:
       """
@@ -190,7 +190,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports no findings
 
-  @givn.added @wip
+  @givn.added
   Scenario: A complete server declaration validates cleanly
     Given a run declaration:
       """
@@ -204,7 +204,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports no findings
 
-  @givn.added @wip
+  @givn.added
   Scenario: A complete CLI declaration validates cleanly
     Given a run declaration:
       """
@@ -215,7 +215,7 @@ Feature: Run command declaration
     When the run declaration is validated
     Then the check reports no findings
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unknown product type is rejected when the commands file loads
     Given a commands file with a run declaration:
       """
@@ -226,7 +226,7 @@ Feature: Run command declaration
     When the commands file is loaded
     Then loading fails mentioning "product_type"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unconfigured declaration renders exactly one open placeholder
     Given a run declaration:
       """
@@ -237,7 +237,7 @@ Feature: Run command declaration
     Then the rendered block has the run open placeholder
     And the rendered block has no start command
 
-  @givn.added @wip
+  @givn.added
   Scenario: The README renders a complete server declaration
     Given a run declaration:
       """
@@ -254,7 +254,7 @@ Feature: Run command declaration
     And the rendered block mentions the port hand-off "PORT"
     And the rendered block has no open placeholder
 
-  @givn.added @wip
+  @givn.added
   Scenario: The README renders a CLI product
     Given a run declaration:
       """
@@ -266,7 +266,7 @@ Feature: Run command declaration
     Then the rendered block mentions the start command "my-tool --help"
     And the rendered block has no open placeholder
 
-  @givn.added @wip
+  @givn.added
   Scenario: The README renders a library product as nothing to start
     Given a run declaration:
       """
@@ -279,7 +279,7 @@ Feature: Run command declaration
     And the rendered block has no open placeholder
     And the rendered block has no start command
 
-  @givn.added @wip
+  @givn.added
   Scenario: The README renders a library's declared start command
     Given a run declaration:
       """
@@ -292,7 +292,7 @@ Feature: Run command declaration
     And the rendered block mentions the start command "cargo build --lib"
     And the rendered block has no open placeholder
 
-  @givn.added @wip
+  @givn.added
   Scenario: A half-configured server declaration renders the placeholder
     Given a run declaration:
       """
@@ -305,7 +305,7 @@ Feature: Run command declaration
     Then the rendered block has the run open placeholder
     And the rendered block has no start command
 
-  @givn.added @wip
+  @givn.added
   Scenario: The backfill appends the run scaffold to an existing commands file
     Given a commands file without a run declaration:
       """
@@ -316,13 +316,13 @@ Feature: Run command declaration
     Then the backfilled commands file contains "run:"
     And the backfilled commands file keeps the original content
 
-  @givn.added @wip
+  @givn.added
   Scenario: The backfill is idempotent
     Given a commands file that already has a run declaration
     When the backfill runs
     Then the commands file is unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: The upgrade commit includes the backfilled run declaration
     Given a git-managed project with givn initialised
     And the commands file has no run declaration
@@ -331,7 +331,7 @@ Feature: Run command declaration
     And the working tree is clean
     And the latest commit contains "givn/commands.yaml"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A repeated upgrade creates no additional commit
     Given a git-managed project with givn initialised
     And the commands file has no run declaration
