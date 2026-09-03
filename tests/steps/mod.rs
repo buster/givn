@@ -64,6 +64,8 @@ pub mod semantic_e5_token_cap_steps;
 pub mod semantic_model_download_e2e_steps;
 pub mod semantic_model_download_steps;
 pub mod semantic_remediation_e2e_steps;
+pub mod semantic_remediation_log_e2e_steps;
+pub mod semantic_remediation_log_steps;
 pub mod semantic_remediation_steps;
 pub mod semantic_reranker_budget_e2e_steps;
 pub mod semantic_reranker_budget_steps;
@@ -173,6 +175,10 @@ pub struct GivnWorld {
     pub(crate) semantic_active_snapshot: Option<Vec<(String, Vec<u8>)>>,
     /// Snapshot of the semantic-review disposition file.
     pub(crate) semantic_review_snapshot: Option<Vec<u8>>,
+    /// Snapshot of a change-local remediation log.
+    pub(crate) remediation_log_snapshot: Option<Vec<u8>>,
+    /// The remediation commit hash recorded by the Git fixture steps.
+    pub(crate) remediation_commit_hash: Option<String>,
     /// Bytes written before a malformed permanent index is rebuilt.
     pub(crate) malformed_index_snapshot: Option<Vec<u8>>,
     /// Classification mode for the semantic-remediation fixture.

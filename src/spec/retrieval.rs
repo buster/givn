@@ -478,6 +478,39 @@ struct EmbeddingBatch {
 }
 
 #[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+pub(crate) struct LogCandidateInput {
+    pub candidate_id: String,
+    pub embedding_score: f32,
+    pub bge_admission: Option<String>,
+    pub bge_symmetric_raw: Option<f32>,
+    pub nli_admission: Option<String>,
+    pub nli_symmetric_entailment: Option<f32>,
+    pub left_file: String,
+    pub left_title: String,
+    pub right_file: String,
+    pub right_title: String,
+    pub left_content_hash: String,
+    pub right_content_hash: String,
+    pub left_evidence_hash: String,
+    pub right_evidence_hash: String,
+    pub left_gherkin: Option<String>,
+    pub right_gherkin: Option<String>,
+    pub classification: String,
+    pub rationale: Option<String>,
+}
+
+#[cfg(feature = "spec-retrieval")]
+#[derive(Debug, Clone)]
+pub(crate) struct VerifiedRemediation {
+    pub candidate_id: String,
+    pub left_evidence_hash: String,
+    pub right_evidence_hash: String,
+    pub classification: String,
+    pub recomputed_score: Option<f32>,
+}
+
+#[cfg(feature = "spec-retrieval")]
 #[derive(Debug)]
 struct SemanticCandidateSet {
     candidates: Vec<SemanticCandidate>,
@@ -3262,7 +3295,9 @@ fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Res
     let refresh = refresh_index(root, true)?;
     let delta = collect_delta_scenarios(root, &delta_root)?;
     let report_path = change_dir.join("semantic-review.md");
+    let e5_started = std::time::Instant::now();
     let semantic_set = semantic_candidates(root, &refresh.index, &delta)?;
+    let e5_runtime_ms = e5_started.elapsed().as_millis();
     let mut candidates = semantic_set.candidates;
     let e5_token_caps = semantic_set.e5_token_caps;
     #[cfg(feature = "cross-encoder-reranker")]
@@ -3284,13 +3319,88 @@ fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Res
     );
     let prior = read_prior_remediation_entries(&report_path);
     let carried_classifications = apply_prior_classifications(&report_path, &mut candidates)?;
-    let remediation =
+    let remediation: Result<Vec<VerifiedRemediation>> =
         verify_semantic_remediation(root, &refresh.index, &delta, &prior, &candidates);
+    let mut gate_failure: Option<String> = None;
+    if write_report {
+        let head_commit = super::remediation_log::git_head_commit(root);
+        let log_path = change_dir.join("semantic-remediation.md");
+        let bge_runtime_ms = bge_run.as_ref().and_then(|run| run.runtime_ms);
+        let nli_runtime_ms = {
+            #[cfg(feature = "nli-evidence")]
+            {
+                nli_run.as_ref().and_then(|run| run.runtime_ms)
+            }
+            #[cfg(not(feature = "nli-evidence"))]
+            {
+                None
+            }
+        };
+        let log_candidates = log_candidate_inputs(root, &candidates);
+        super::remediation_log::update_log(
+            &log_path,
+            change_id,
+            super::remediation_log::LogRunKind::Before,
+            head_commit.as_deref(),
+            Some(e5_runtime_ms),
+            bge_runtime_ms,
+            nli_runtime_ms,
+            &log_candidates,
+            &[],
+        )?;
+        if let Ok(verified) = &remediation {
+            let verified_entries = verified
+                .iter()
+                .map(|entry| super::remediation_log::VerifiedLogEntry {
+                    candidate_id: entry.candidate_id.clone(),
+                    left_evidence_hash: entry.left_evidence_hash.clone(),
+                    right_evidence_hash: entry.right_evidence_hash.clone(),
+                })
+                .collect::<Vec<_>>();
+            gate_failure = super::remediation_log::validate_log(
+                &log_path,
+                root,
+                change_id,
+                &verified_entries,
+                head_commit.as_deref(),
+            )
+            .err()
+            .map(|error| format!("{error:#}"));
+            if gate_failure.is_none() {
+                let completions = verified
+                    .iter()
+                    .map(|entry| super::remediation_log::LogCompletion {
+                        candidate_id: entry.candidate_id.clone(),
+                        left_evidence_hash: entry.left_evidence_hash.clone(),
+                        right_evidence_hash: entry.right_evidence_hash.clone(),
+                        state: match entry.classification.as_str() {
+                            "VARIANT" => "outline-consolidated",
+                            "VALID-BOUNDARY" => "score-below-boundary",
+                            _ => "endpoint-absent",
+                        },
+                        after_score: entry.recomputed_score,
+                    })
+                    .collect::<Vec<_>>();
+                super::remediation_log::update_log(
+                    &log_path,
+                    change_id,
+                    super::remediation_log::LogRunKind::After,
+                    head_commit.as_deref(),
+                    Some(e5_runtime_ms),
+                    bge_runtime_ms,
+                    nli_runtime_ms,
+                    &[],
+                    &completions,
+                )?;
+            }
+        }
+    }
+    let remediation_blocked = remediation.is_err() || gate_failure.is_some();
     let report = render_semantic_report(
         change_id,
         &candidates,
         &e5_token_caps,
-        remediation.is_err(),
+        remediation_blocked,
         bge_run.as_ref(),
         #[cfg(feature = "nli-evidence")]
         nli_run.as_ref(),
@@ -3305,8 +3415,11 @@ fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Res
             Err(_) => println!("semantic review report saved: {}", report_path.display()),
         }
     }
+    if let Some(failure) = gate_failure {
+        bail!("{failure}");
+    }
     let verified_remediations = match remediation {
-        Ok(count) => count,
+        Ok(verified) => verified.len(),
         Err(error) => bail!("{error}"),
     };
     if carried_classifications > 0 || verified_remediations > 0 {
@@ -4203,15 +4316,83 @@ fn report_scalar(value: &str) -> String {
 }
 
 #[cfg(feature = "spec-retrieval")]
+fn log_candidate_inputs(root: &Path, candidates: &[SemanticCandidate]) -> Vec<LogCandidateInput> {
+    candidates
+        .iter()
+        .filter(|candidate| {
+            candidate.bge_admission != Some("BGE_FILTERED") && {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    candidate.nli_admission != Some("NLI_FILTERED")
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    true
+                }
+            }
+        })
+        .map(|candidate| LogCandidateInput {
+            candidate_id: candidate.candidate_id.clone(),
+            embedding_score: candidate.score,
+            bge_admission: candidate.bge_admission.map(|value| value.to_string()),
+            bge_symmetric_raw: candidate
+                .bge
+                .as_ref()
+                .map(|evidence| evidence.symmetric_raw),
+            nli_admission: {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    candidate.nli_admission.map(|value| value.to_string())
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    None
+                }
+            },
+            nli_symmetric_entailment: {
+                #[cfg(feature = "nli-evidence")]
+                {
+                    candidate.nli.as_ref().map(|evidence| evidence.symmetric[0])
+                }
+                #[cfg(not(feature = "nli-evidence"))]
+                {
+                    None
+                }
+            },
+            left_file: candidate.left.file.clone(),
+            left_title: candidate.left.title.clone(),
+            right_file: candidate.right.file.clone(),
+            right_title: candidate.right.title.clone(),
+            left_content_hash: candidate.left.content_hash.clone(),
+            right_content_hash: candidate.right.content_hash.clone(),
+            left_evidence_hash: candidate.left.evidence_hash.clone(),
+            right_evidence_hash: candidate.right.evidence_hash.clone(),
+            left_gherkin: super::remediation_log::verbatim_scenario_text(
+                root,
+                &candidate.left.file,
+                &candidate.left.title,
+            ),
+            right_gherkin: super::remediation_log::verbatim_scenario_text(
+                root,
+                &candidate.right.file,
+                &candidate.right.title,
+            ),
+            classification: candidate.classification.clone(),
+            rationale: candidate.rationale.clone(),
+        })
+        .collect()
+}
+
+#[cfg(feature = "spec-retrieval")]
 fn verify_semantic_remediation(
     root: &Path,
     index: &SpecIndex,
     delta: &[DeltaScenario],
     prior: &[PriorRemediationEntry],
     candidates: &[SemanticCandidate],
-) -> Result<usize> {
+) -> Result<Vec<VerifiedRemediation>> {
     let permanent = permanent_semantic_endpoints(root)?;
-    let mut verified = 0;
+    let mut verified: Vec<VerifiedRemediation> = Vec::new();
     for entry in prior {
         let delta_to_delta = entry.right_scope == "current-change";
         if entry.rationale.is_empty()
@@ -4249,7 +4430,13 @@ fn verify_semantic_remediation(
             "DUPLICATE" => {
                 if delta_to_delta {
                     verify_duplicate_delta_to_delta(root, entry, current_left, current_right)?;
-                    verified += 1;
+                    verified.push(VerifiedRemediation {
+                        candidate_id: entry.candidate_id.clone(),
+                        left_evidence_hash: entry.left_evidence_hash.clone(),
+                        right_evidence_hash: entry.right_evidence_hash.clone(),
+                        classification: entry.classification.clone(),
+                        recomputed_score: None,
+                    });
                     continue;
                 }
                 if let Some(left) = current_left {
@@ -4287,7 +4474,13 @@ fn verify_semantic_remediation(
                         entry.candidate_id
                     );
                 }
-                verified += 1;
+                verified.push(VerifiedRemediation {
+                    candidate_id: entry.candidate_id.clone(),
+                    left_evidence_hash: entry.left_evidence_hash.clone(),
+                    right_evidence_hash: entry.right_evidence_hash.clone(),
+                    classification: entry.classification.clone(),
+                    recomputed_score: None,
+                });
             }
             "VARIANT" => {
                 if delta_to_delta {
@@ -4297,7 +4490,13 @@ fn verify_semantic_remediation(
                         current_left,
                         current_right,
                     )?;
-                    verified += 1;
+                    verified.push(VerifiedRemediation {
+                        candidate_id: entry.candidate_id.clone(),
+                        left_evidence_hash: entry.left_evidence_hash.clone(),
+                        right_evidence_hash: entry.right_evidence_hash.clone(),
+                        classification: entry.classification.clone(),
+                        recomputed_score: None,
+                    });
                     continue;
                 }
                 let Some(left) = current_left else {
@@ -4345,7 +4544,13 @@ fn verify_semantic_remediation(
                         entry.candidate_id
                     );
                 }
-                verified += 1;
+                verified.push(VerifiedRemediation {
+                    candidate_id: entry.candidate_id.clone(),
+                    left_evidence_hash: entry.left_evidence_hash.clone(),
+                    right_evidence_hash: entry.right_evidence_hash.clone(),
+                    classification: entry.classification.clone(),
+                    recomputed_score: Some(score),
+                });
             }
             "VALID-BOUNDARY" => {
                 if delta_to_delta {
@@ -4356,7 +4561,13 @@ fn verify_semantic_remediation(
                         current_left,
                         current_right,
                     )?;
-                    verified += 1;
+                    verified.push(VerifiedRemediation {
+                        candidate_id: entry.candidate_id.clone(),
+                        left_evidence_hash: entry.left_evidence_hash.clone(),
+                        right_evidence_hash: entry.right_evidence_hash.clone(),
+                        classification: entry.classification.clone(),
+                        recomputed_score: None,
+                    });
                     continue;
                 }
                 let Some(left) = current_left else {
@@ -4405,7 +4616,13 @@ fn verify_semantic_remediation(
                         entry.candidate_id
                     );
                 }
-                verified += 1;
+                verified.push(VerifiedRemediation {
+                    candidate_id: entry.candidate_id.clone(),
+                    left_evidence_hash: entry.left_evidence_hash.clone(),
+                    right_evidence_hash: entry.right_evidence_hash.clone(),
+                    classification: entry.classification.clone(),
+                    recomputed_score: Some(score),
+                });
             }
             _ => {}
         }

@@ -380,6 +380,33 @@ NLI keeps its per-sequence inference loop and receives only the shared thread
 setting in this change. True batched-tensor NLI inference is deferred to a named
 follow-up change (`semantic-nli-batched-inference`).
 
+### 8.5j Remediation Log and Git Stamp
+
+Beside the report, blocking `givn check review` maintains the append-only
+remediation log `givn/changes/<id>/semantic-remediation.md` (ADR-068). It is
+never regenerated: each run whose candidate universe changed appends a run
+record (kind `before`/`after`, HEAD commit anchor, per-stage durations for the
+E5 recall, BGE, and NLI stages — `null` for a stage that did not run, never 0),
+and each newly admitted candidate evidence state appends a candidate entry with
+the before scores and BGE/NLI evidence states, the endpoint content and
+evidence hashes, the endpoint scenario text verbatim as it appears in the
+feature file, and the decision fields. The agent fills `classification`
+carrying over from the report plus `rationale`, `remediation`, and `commits`
+in place; the passing rerun writes `after_state` (`endpoint-absent`,
+`outline-consolidated`, `score-below-boundary`), the recomputed embedding score
+when the pair was actually recomputed, and the after commit anchor.
+
+After the projected remediation verification succeeds, the gate validates the
+log: every resolved candidate (classification other than `UNCERTAIN`) needs a
+complete entry with a non-empty `remediation` and at least one commit. When the
+project has Git history, every recorded commit must be reachable from HEAD and
+its message must contain the exact footer line
+`semantic-remediation: <change-id>/<candidate-id>` (one line per fixed
+candidate); missing, unreachable, or mismatched stamps block. Without Git
+history the anchors are `null` and stamp checks are skipped. A failing run
+never mutates the log's prior entries; a review that fails before the semantic
+stage writes no log. The archive retains the log next to the report.
+
 ## 8.6 Filesystem-derived State
 
 There is no lifecycle state file. `state` walks the effective manifest graph and

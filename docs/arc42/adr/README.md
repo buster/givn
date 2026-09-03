@@ -82,6 +82,7 @@ The active register contains only independent durable architecture decisions:
 | [ADR-064](ADR-064-shared-model-thread-budget.md) | proposed | Share one thread budget across the semantic model stages | computing-resource config boundary in open change |
 | [ADR-066](ADR-066-unified-semantic-rulebook.md) | proposed | Run change-scoped semantic review as one unified rulebook with a pair-score cache | change-scoped review verdict and cache boundary |
 | [ADR-067](ADR-067-givn-declares-and-executes-the-product-start.md) | accepted | Declare and execute the product start in the same tool | start-command contract boundary |
+| [ADR-068](ADR-068-remediation-log.md) | proposed | Keep remediation evidence in an append-only log stamped into Git history | remediation-evidence persistence and gate boundary |
 
 ## Relationships
 

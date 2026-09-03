@@ -58,3 +58,11 @@ the product start (`run:` in `givn/commands.yaml`) also executes it
 port hand-off, and signal forwarding. The record was proposed with the
 change's design and left `proposed` until the full suite and the @e2e scope
 stayed green; the compatibility obligation is carried by R-45 in chapter 11.
+
+ADR-068 is proposed by the open `semantic-remediation-log` change: remediation
+evidence for semantic candidates lives in an append-only
+`semantic-remediation.md` beside the regenerated report, with per-run stage
+durations, verbatim before/after scenario text, and a
+`semantic-remediation: <change>/<candidate>` Git stamp that the review gate
+cross-validates. The record stays `proposed` until the change passes its
+remaining gates.
