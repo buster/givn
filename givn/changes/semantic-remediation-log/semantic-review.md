@@ -33,54 +33,6 @@ NLI model load attempts: 0
 NLI runtime ms: null
 
 ## Candidate 1
-- candidate_id: 1f8ad4b5b8120e75
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "Changing a candidate scenario invalidates its previous classification"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 9e964a6fa11b33fe
-- left_evidence_hash: f0fb4b7cec1daf5f
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Removed candidates disappear after classification"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: c62b9515636df203
-- right_evidence_hash: 95baa549ae1ccff1
-- embedding_score: 0.9862
-- fact_contradiction: true
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 324
-- bge_right_tokens: 317
-- bge_pair_tokens: 641
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 312
-- nli_right_tokens: 303
-- nli_pair_tokens: 614
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 2
 - candidate_id: ee41cb225074c75b
 - classification: UNCERTAIN
 - rationale: null
@@ -90,26 +42,26 @@ NLI runtime ms: null
 - left_title: "Changing a candidate scenario invalidates its previous classification"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 9e964a6fa11b33fe
-- left_evidence_hash: f0fb4b7cec1daf5f
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"withdrew the doubled scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 88b2e99b1724a7ca
+- left_evidence_hash: 5f0834034e7edf78
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "Changing a permanent endpoint invalidates its prior classification"
 - right_delta_operation: modified
 - right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: def66a6e45c78fdc
-- right_evidence_hash: 230aefd85a07b07e
-- embedding_score: 0.9845
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"retired the mirrored scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 6090ced16202130a
+- right_evidence_hash: cf4a645735995a71
+- embedding_score: 0.9831
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 324
-- bge_right_tokens: 319
-- bge_pair_tokens: 643
+- bge_left_tokens: 303
+- bge_right_tokens: 297
+- bge_pair_tokens: 600
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -122,157 +74,13 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 312
-- nli_right_tokens: 305
-- nli_pair_tokens: 616
+- nli_left_tokens: 289
+- nli_right_tokens: 282
+- nli_pair_tokens: 570
 - nli_limit: 512
 - nli_refactoring_required: true
 
-## Candidate 3
-- candidate_id: 9b09b6c87227ae7e
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "Changing a permanent endpoint invalidates its prior classification"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: def66a6e45c78fdc
-- left_evidence_hash: 230aefd85a07b07e
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Removed candidates disappear after classification"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: c62b9515636df203
-- right_evidence_hash: 95baa549ae1ccff1
-- embedding_score: 0.9830
-- fact_contradiction: false
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 319
-- bge_right_tokens: 317
-- bge_pair_tokens: 636
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 305
-- nli_right_tokens: 303
-- nli_pair_tokens: 607
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 4
-- candidate_id: 6c5a7b7f2bb78094
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A complete classification allows change review and survives regeneration"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 872251d7fd40d77d
-- right_evidence_hash: ea15963b8d5ffec8
-- embedding_score: 0.9828
-- fact_contradiction: false
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 377
-- bge_pair_tokens: 720
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 362
-- nli_pair_tokens: 690
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 5
-- candidate_id: 3c0c6a553bb8c825
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A complete classification allows change review and survives regeneration"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Changing a candidate scenario invalidates its previous classification"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 9e964a6fa11b33fe
-- right_evidence_hash: f0fb4b7cec1daf5f
-- embedding_score: 0.9825
-- fact_contradiction: false
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 324
-- bge_pair_tokens: 667
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 312
-- nli_pair_tokens: 640
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 6
+## Candidate 2
 - candidate_id: ba8f909ecfbe6231
 - classification: UNCERTAIN
 - rationale: null
@@ -282,26 +90,26 @@ NLI runtime ms: null
 - left_title: "Changing a candidate scenario invalidates its previous classification"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 9e964a6fa11b33fe
-- left_evidence_hash: f0fb4b7cec1daf5f
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"withdrew the doubled scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 88b2e99b1724a7ca
+- left_evidence_hash: 5f0834034e7edf78
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
 - right_delta_operation: modified
 - right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 872251d7fd40d77d
-- right_evidence_hash: ea15963b8d5ffec8
-- embedding_score: 0.9811
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"removed the overlapping case\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: b5343e2ccc3e71dd
+- right_evidence_hash: c09cc6493391a8d5
+- embedding_score: 0.9812
 - fact_contradiction: false
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 324
-- bge_right_tokens: 377
-- bge_pair_tokens: 701
+- bge_left_tokens: 303
+- bge_right_tokens: 356
+- bge_pair_tokens: 659
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -314,13 +122,109 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 312
-- nli_right_tokens: 362
-- nli_pair_tokens: 673
+- nli_left_tokens: 289
+- nli_right_tokens: 338
+- nli_pair_tokens: 626
 - nli_limit: 512
 - nli_refactoring_required: true
 
-## Candidate 7
+## Candidate 3
+- candidate_id: 1f8ad4b5b8120e75
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "Changing a candidate scenario invalidates its previous classification"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"withdrew the doubled scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 88b2e99b1724a7ca
+- left_evidence_hash: 5f0834034e7edf78
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Removed candidates disappear after classification"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture erases one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"erased the redundant copy\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: a7d5d12f863d2d95
+- right_evidence_hash: 0953f78c0e987f52
+- embedding_score: 0.9803
+- fact_contradiction: true
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 303
+- bge_right_tokens: 294
+- bge_pair_tokens: 597
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 289
+- nli_right_tokens: 283
+- nli_pair_tokens: 571
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 4
+- candidate_id: 3c0c6a553bb8c825
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "A complete classification allows change review and survives regeneration"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Changing a candidate scenario invalidates its previous classification"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"withdrew the doubled scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 88b2e99b1724a7ca
+- right_evidence_hash: 5f0834034e7edf78
+- embedding_score: 0.9790
+- fact_contradiction: false
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 320
+- bge_right_tokens: 303
+- bge_pair_tokens: 623
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 307
+- nli_right_tokens: 289
+- nli_pair_tokens: 595
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 5
 - candidate_id: ccedb70d898e1dd6
 - classification: UNCERTAIN
 - rationale: null
@@ -330,26 +234,26 @@ NLI runtime ms: null
 - left_title: "Removed candidates disappear after classification"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: c62b9515636df203
-- left_evidence_hash: 95baa549ae1ccff1
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture erases one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"erased the redundant copy\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: a7d5d12f863d2d95
+- left_evidence_hash: 0953f78c0e987f52
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
 - right_delta_operation: modified
 - right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 872251d7fd40d77d
-- right_evidence_hash: ea15963b8d5ffec8
-- embedding_score: 0.9809
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"removed the overlapping case\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: b5343e2ccc3e71dd
+- right_evidence_hash: c09cc6493391a8d5
+- embedding_score: 0.9787
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 317
-- bge_right_tokens: 377
-- bge_pair_tokens: 694
+- bge_left_tokens: 294
+- bge_right_tokens: 356
+- bge_pair_tokens: 650
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -362,42 +266,42 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 303
-- nli_right_tokens: 362
-- nli_pair_tokens: 664
+- nli_left_tokens: 283
+- nli_right_tokens: 338
+- nli_pair_tokens: 620
 - nli_limit: 512
 - nli_refactoring_required: true
 
-## Candidate 8
-- candidate_id: 525cd8943a791b45
+## Candidate 6
+- candidate_id: a7b5a6b86a97f640
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
 - left_scope: current-change
 - left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
+- left_title: "A complete classification allows change review and survives regeneration"
 - left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic review with a similar active delta","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: df4d129f783e8bf1
-- left_evidence_hash: 3c311d8cef1c4aff
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Changing a permanent endpoint invalidates its prior classification"
+- right_title: "A regenerated classified report is byte-for-byte deterministic"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: def66a6e45c78fdc
-- right_evidence_hash: 230aefd85a07b07e
-- embedding_score: 0.9803
-- fact_contradiction: true
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture reproduces one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"settled the repeated flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: c27d9d7437f29536
+- right_evidence_hash: 21affb4036f5a477
+- embedding_score: 0.9778
+- fact_contradiction: false
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 345
-- bge_right_tokens: 319
-- bge_pair_tokens: 664
+- bge_left_tokens: 320
+- bge_right_tokens: 295
+- bge_pair_tokens: 615
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -410,9 +314,105 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 337
-- nli_right_tokens: 305
-- nli_pair_tokens: 641
+- nli_left_tokens: 307
+- nli_right_tokens: 283
+- nli_pair_tokens: 589
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 7
+- candidate_id: 6c5a7b7f2bb78094
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "A complete classification allows change review and survives regeneration"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"removed the overlapping case\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: b5343e2ccc3e71dd
+- right_evidence_hash: c09cc6493391a8d5
+- embedding_score: 0.9761
+- fact_contradiction: false
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 320
+- bge_right_tokens: 356
+- bge_pair_tokens: 676
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 307
+- nli_right_tokens: 338
+- nli_pair_tokens: 644
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 8
+- candidate_id: d2f71e4b52c4087e
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "Changing a permanent endpoint invalidates its prior classification"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"retired the mirrored scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 6090ced16202130a
+- left_evidence_hash: cf4a645735995a71
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"removed the overlapping case\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: b5343e2ccc3e71dd
+- right_evidence_hash: c09cc6493391a8d5
+- embedding_score: 0.9760
+- fact_contradiction: true
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 297
+- bge_right_tokens: 356
+- bge_pair_tokens: 653
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 282
+- nli_right_tokens: 338
+- nli_pair_tokens: 619
 - nli_limit: 512
 - nli_refactoring_required: true
 
@@ -426,26 +426,26 @@ NLI runtime ms: null
 - left_title: "A complete classification allows change review and survives regeneration"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "Changing a permanent endpoint invalidates its prior classification"
 - right_delta_operation: modified
 - right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: def66a6e45c78fdc
-- right_evidence_hash: 230aefd85a07b07e
-- embedding_score: 0.9800
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"retired the mirrored scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 6090ced16202130a
+- right_evidence_hash: cf4a645735995a71
+- embedding_score: 0.9757
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 319
-- bge_pair_tokens: 662
+- bge_left_tokens: 320
+- bge_right_tokens: 297
+- bge_pair_tokens: 617
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -458,42 +458,42 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 305
-- nli_pair_tokens: 633
+- nli_left_tokens: 307
+- nli_right_tokens: 282
+- nli_pair_tokens: 588
 - nli_limit: 512
 - nli_refactoring_required: true
 
 ## Candidate 10
-- candidate_id: 8ec2e4e75d014063
+- candidate_id: 525cd8943a791b45
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
 - left_scope: current-change
 - left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A complete classification allows change review and survives regeneration"
+- left_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
 - left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given the review-flow fixture prepares a similar active delta","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"dropped the reworked scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 1827a64de5b62885
+- left_evidence_hash: d52d9f58dc66b238
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
+- right_title: "Changing a permanent endpoint invalidates its prior classification"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic review with a similar active delta","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: df4d129f783e8bf1
-- right_evidence_hash: 3c311d8cef1c4aff
-- embedding_score: 0.9793
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"retired the mirrored scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 6090ced16202130a
+- right_evidence_hash: cf4a645735995a71
+- embedding_score: 0.9754
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 345
-- bge_pair_tokens: 688
+- bge_left_tokens: 323
+- bge_right_tokens: 297
+- bge_pair_tokens: 620
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -506,109 +506,13 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 337
-- nli_pair_tokens: 665
+- nli_left_tokens: 319
+- nli_right_tokens: 282
+- nli_pair_tokens: 600
 - nli_limit: 512
 - nli_refactoring_required: true
 
 ## Candidate 11
-- candidate_id: e97b98f4140071ec
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A complete classification allows change review and survives regeneration"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Removed candidates disappear after classification"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: c62b9515636df203
-- right_evidence_hash: 95baa549ae1ccff1
-- embedding_score: 0.9790
-- fact_contradiction: true
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 317
-- bge_pair_tokens: 660
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 303
-- nli_pair_tokens: 631
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 12
-- candidate_id: d2f71e4b52c4087e
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "Changing a permanent endpoint invalidates its prior classification"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: def66a6e45c78fdc
-- left_evidence_hash: 230aefd85a07b07e
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 872251d7fd40d77d
-- right_evidence_hash: ea15963b8d5ffec8
-- embedding_score: 0.9788
-- fact_contradiction: true
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 319
-- bge_right_tokens: 377
-- bge_pair_tokens: 696
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 305
-- nli_right_tokens: 362
-- nli_pair_tokens: 666
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 13
 - candidate_id: 59a24748b7b9d9b6
 - classification: UNCERTAIN
 - rationale: null
@@ -618,26 +522,26 @@ NLI runtime ms: null
 - left_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic review with a similar active delta","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: df4d129f783e8bf1
-- left_evidence_hash: 3c311d8cef1c4aff
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given the review-flow fixture prepares a similar active delta","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"dropped the reworked scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 1827a64de5b62885
+- left_evidence_hash: d52d9f58dc66b238
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "Changing a candidate scenario invalidates its previous classification"
 - right_delta_operation: modified
 - right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 9e964a6fa11b33fe
-- right_evidence_hash: f0fb4b7cec1daf5f
-- embedding_score: 0.9781
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"withdrew the doubled scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 88b2e99b1724a7ca
+- right_evidence_hash: 5f0834034e7edf78
+- embedding_score: 0.9752
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 345
-- bge_right_tokens: 324
-- bge_pair_tokens: 669
+- bge_left_tokens: 323
+- bge_right_tokens: 303
+- bge_pair_tokens: 626
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -650,14 +554,14 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 337
-- nli_right_tokens: 312
-- nli_pair_tokens: 648
+- nli_left_tokens: 319
+- nli_right_tokens: 289
+- nli_pair_tokens: 607
 - nli_limit: 512
 - nli_refactoring_required: true
 
-## Candidate 14
-- candidate_id: a7b5a6b86a97f640
+## Candidate 12
+- candidate_id: e97b98f4140071ec
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
@@ -666,74 +570,26 @@ NLI runtime ms: null
 - left_title: "A complete classification allows change review and survives regeneration"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "A regenerated classified report is byte-for-byte deterministic"
+- right_title: "Removed candidates disappear after classification"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 595d81d54dddd4f4
-- right_evidence_hash: 0954f077235e5842
-- embedding_score: 0.9770
-- fact_contradiction: false
-- bge_forward_raw: null
-- bge_reverse_raw: null
-- bge_symmetric_raw: null
-- bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 319
-- bge_pair_tokens: 662
-- bge_limit: 512
-- bge_refactoring_required: true
-- nli_forward_entailment: null
-- nli_forward_neutral: null
-- nli_forward_contradiction: null
-- nli_reverse_entailment: null
-- nli_reverse_neutral: null
-- nli_reverse_contradiction: null
-- nli_symmetric_entailment: null
-- nli_symmetric_neutral: null
-- nli_symmetric_contradiction: null
-- nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 304
-- nli_pair_tokens: 632
-- nli_limit: 512
-- nli_refactoring_required: true
-
-## Candidate 15
-- candidate_id: ee0ff79bda83e746
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
-- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A regenerated classified report is byte-for-byte deterministic"
-- left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 595d81d54dddd4f4
-- left_evidence_hash: 0954f077235e5842
-- right_scope: current-change
-- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Changing a permanent endpoint invalidates its prior classification"
-- right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: def66a6e45c78fdc
-- right_evidence_hash: 230aefd85a07b07e
-- embedding_score: 0.9766
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture erases one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"erased the redundant copy\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: a7d5d12f863d2d95
+- right_evidence_hash: 0953f78c0e987f52
+- embedding_score: 0.9741
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 319
-- bge_right_tokens: 319
-- bge_pair_tokens: 638
+- bge_left_tokens: 320
+- bge_right_tokens: 294
+- bge_pair_tokens: 614
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -746,41 +602,89 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 304
-- nli_right_tokens: 305
-- nli_pair_tokens: 608
+- nli_left_tokens: 307
+- nli_right_tokens: 283
+- nli_pair_tokens: 589
 - nli_limit: 512
 - nli_refactoring_required: true
 
-## Candidate 16
-- candidate_id: daeb8c967ed2729f
+## Candidate 13
+- candidate_id: 9b09b6c87227ae7e
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
 - left_scope: current-change
 - left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A regenerated classified report is byte-for-byte deterministic"
+- left_title: "Changing a permanent endpoint invalidates its prior classification"
 - left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 595d81d54dddd4f4
-- left_evidence_hash: 0954f077235e5842
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"retired the mirrored scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 6090ced16202130a
+- left_evidence_hash: cf4a645735995a71
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Changing a candidate scenario invalidates its previous classification"
+- right_title: "Removed candidates disappear after classification"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 9e964a6fa11b33fe
-- right_evidence_hash: f0fb4b7cec1daf5f
-- embedding_score: 0.9757
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture erases one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"erased the redundant copy\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: a7d5d12f863d2d95
+- right_evidence_hash: 0953f78c0e987f52
+- embedding_score: 0.9736
 - fact_contradiction: false
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 319
-- bge_right_tokens: 324
+- bge_left_tokens: 297
+- bge_right_tokens: 294
+- bge_pair_tokens: 591
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 282
+- nli_right_tokens: 283
+- nli_pair_tokens: 564
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 14
+- candidate_id: 8ec2e4e75d014063
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "A complete classification allows change review and survives regeneration"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given the review-flow fixture prepares a similar active delta","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"dropped the reworked scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 1827a64de5b62885
+- right_evidence_hash: d52d9f58dc66b238
+- embedding_score: 0.9720
+- fact_contradiction: true
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 320
+- bge_right_tokens: 323
 - bge_pair_tokens: 643
 - bge_limit: 512
 - bge_refactoring_required: true
@@ -794,42 +698,42 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 304
-- nli_right_tokens: 312
-- nli_pair_tokens: 615
+- nli_left_tokens: 307
+- nli_right_tokens: 319
+- nli_pair_tokens: 625
 - nli_limit: 512
 - nli_refactoring_required: true
 
-## Candidate 17
-- candidate_id: f209590e1b115a9f
+## Candidate 15
+- candidate_id: c06af4f544a86b89
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
 - left_scope: current-change
 - left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
+- left_title: "A complete classification allows change review and survives regeneration"
 - left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic review with a similar active delta","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: df4d129f783e8bf1
-- left_evidence_hash: 3c311d8cef1c4aff
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"collapsed the doubled flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: 290f40512e575a2b
+- left_evidence_hash: 296364db94b11eb3
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
+- right_title: "Consolidating a VARIANT candidate verifies the projected remediation"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 872251d7fd40d77d
-- right_evidence_hash: ea15963b8d5ffec8
-- embedding_score: 0.9752
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Consolidating a VARIANT candidate verifies the projected remediation"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"apron buoy clipper derrick estuary fathom gangway hull isthmus jetty\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"VARIANT\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"VARIANT\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"folded the twin flows into one outline\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the active variant is consolidated with an explicit parameter","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 5810857d010c63f5
+- right_evidence_hash: 81c9cf1a5296594e
+- embedding_score: 0.9716
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 345
-- bge_right_tokens: 377
-- bge_pair_tokens: 722
+- bge_left_tokens: 320
+- bge_right_tokens: 322
+- bge_pair_tokens: 642
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -842,9 +746,105 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 337
-- nli_right_tokens: 362
-- nli_pair_tokens: 698
+- nli_left_tokens: 307
+- nli_right_tokens: 307
+- nli_pair_tokens: 613
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 16
+- candidate_id: ee0ff79bda83e746
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "A regenerated classified report is byte-for-byte deterministic"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture reproduces one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"settled the repeated flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: c27d9d7437f29536
+- left_evidence_hash: 21affb4036f5a477
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Changing a permanent endpoint invalidates its prior classification"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a permanent endpoint invalidates its prior classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"retired the mirrored scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 6090ced16202130a
+- right_evidence_hash: cf4a645735995a71
+- embedding_score: 0.9711
+- fact_contradiction: true
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 295
+- bge_right_tokens: 297
+- bge_pair_tokens: 592
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 283
+- nli_right_tokens: 282
+- nli_pair_tokens: 564
+- nli_limit: 512
+- nli_refactoring_required: true
+
+## Candidate 17
+- candidate_id: daeb8c967ed2729f
+- classification: UNCERTAIN
+- rationale: null
+- scope: delta-to-delta
+- left_scope: current-change
+- left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- left_title: "A regenerated classified report is byte-for-byte deterministic"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture reproduces one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"settled the repeated flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: c27d9d7437f29536
+- left_evidence_hash: 21affb4036f5a477
+- right_scope: current-change
+- right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
+- right_title: "Changing a candidate scenario invalidates its previous classification"
+- right_delta_operation: modified
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Changing a candidate scenario invalidates its previous classification"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"shroud trawl untow wharfyard xebec zither apron buoy clipper derrick\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"withdrew the doubled scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 88b2e99b1724a7ca
+- right_evidence_hash: 5f0834034e7edf78
+- embedding_score: 0.9705
+- fact_contradiction: false
+- bge_forward_raw: null
+- bge_reverse_raw: null
+- bge_symmetric_raw: null
+- bge_admission: BGE_TOKEN_CAP
+- bge_left_tokens: 295
+- bge_right_tokens: 303
+- bge_pair_tokens: 598
+- bge_limit: 512
+- bge_refactoring_required: true
+- nli_forward_entailment: null
+- nli_forward_neutral: null
+- nli_forward_contradiction: null
+- nli_reverse_entailment: null
+- nli_reverse_neutral: null
+- nli_reverse_contradiction: null
+- nli_symmetric_entailment: null
+- nli_symmetric_neutral: null
+- nli_symmetric_contradiction: null
+- nli_admission: NLI_TOKEN_CAP
+- nli_left_tokens: 283
+- nli_right_tokens: 289
+- nli_pair_tokens: 571
 - nli_limit: 512
 - nli_refactoring_required: true
 
@@ -858,26 +858,26 @@ NLI runtime ms: null
 - left_title: "A regenerated classified report is byte-for-byte deterministic"
 - left_delta_operation: modified
 - left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 595d81d54dddd4f4
-- left_evidence_hash: 0954f077235e5842
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture reproduces one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"settled the repeated flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: c27d9d7437f29536
+- left_evidence_hash: 21affb4036f5a477
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "Removed candidates disappear after classification"
 - right_delta_operation: modified
 - right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removed candidates disappear after classification"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: c62b9515636df203
-- right_evidence_hash: 95baa549ae1ccff1
-- embedding_score: 0.9742
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"buoy clipper derrick estuary fathom gangway hull isthmus jetty keelson\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture erases one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"erased the redundant copy\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: a7d5d12f863d2d95
+- right_evidence_hash: 0953f78c0e987f52
+- embedding_score: 0.9702
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 319
-- bge_right_tokens: 317
-- bge_pair_tokens: 636
+- bge_left_tokens: 295
+- bge_right_tokens: 294
+- bge_pair_tokens: 589
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -890,42 +890,42 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 304
-- nli_right_tokens: 303
-- nli_pair_tokens: 606
+- nli_left_tokens: 283
+- nli_right_tokens: 283
+- nli_pair_tokens: 565
 - nli_limit: 512
 - nli_refactoring_required: true
 
 ## Candidate 19
-- candidate_id: c06af4f544a86b89
+- candidate_id: a2da15dccede425e
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
 - left_scope: current-change
 - left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A complete classification allows change review and survives regeneration"
+- left_title: "A regenerated classified report is byte-for-byte deterministic"
 - left_delta_operation: modified
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A complete classification allows change review and survives regeneration"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"tackline urchin wharf xebec yacht zodiac anchorline brine compass depth\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"DUPLICATE\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"removed the redundant scenario\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 8c69e0400d6ec291
-- left_evidence_hash: 75508f54f967b680
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture reproduces one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"settled the repeated flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: c27d9d7437f29536
+- left_evidence_hash: 21affb4036f5a477
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Consolidating a VARIANT candidate verifies the projected remediation"
+- right_title: "Removing a DUPLICATE candidate verifies the projected remediation"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Consolidating a VARIANT candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"apron buoy clipper derrick estuary fathom gangway hull isthmus jetty\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"VARIANT\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"VARIANT\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"consolidated the pair into one outline\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active variant is consolidated with an explicit parameter","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 26e59cf7b21378e6
-- right_evidence_hash: ffd68a2d31af79a4
-- embedding_score: 0.9724
-- fact_contradiction: true
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Removing a DUPLICATE candidate verifies the projected remediation"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"lighthouse mast navigation quay rigging spar tackline urchin wharf zither\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture stages one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the gate operator marks the admitted candidate as \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the gate operator files the executed correction \"removed the overlapping case\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: b5343e2ccc3e71dd
+- right_evidence_hash: c09cc6493391a8d5
+- embedding_score: 0.9697
+- fact_contradiction: false
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 343
-- bge_right_tokens: 344
-- bge_pair_tokens: 687
+- bge_left_tokens: 295
+- bge_right_tokens: 356
+- bge_pair_tokens: 651
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -938,42 +938,42 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 329
-- nli_right_tokens: 326
-- nli_pair_tokens: 654
+- nli_left_tokens: 283
+- nli_right_tokens: 338
+- nli_pair_tokens: 620
 - nli_limit: 512
 - nli_refactoring_required: true
 
 ## Candidate 20
-- candidate_id: 7bc640272bdb543c
+- candidate_id: b28018dc0459eeb1
 - classification: UNCERTAIN
 - rationale: null
 - scope: delta-to-delta
 - left_scope: current-change
 - left_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- left_title: "A surviving pair records its recomputed embedding score after remediation"
-- left_delta_operation: added
-- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A surviving pair records its recomputed embedding score after remediation"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.added"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eucalyptus falcon garnet hammock inkwell jackdaw kettle lantern marlin needle\"","docstring":null,"data_table":null},{"text":"Given a semantic-remediation logging project holding one \"VARIANT\" finding","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"And the user classifies every semantic review candidate as \"VARIANT\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"consolidated the pair into one outline\" and commits [\"2b3c4d5e6f708192\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active variant is consolidated with an explicit parameter","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And the remediation log records after state \"outline-consolidated\" with the recomputed embedding score below the boundary","docstring":null,"data_table":null},{"text":"And the candidate entry records the consolidated outline text verbatim from the active delta","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 10dc7a4f92c0c170
-- left_evidence_hash: 832aae0882698540
+- left_title: "A regenerated classified report is byte-for-byte deterministic"
+- left_delta_operation: modified
+- left_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","A regenerated classified report is byte-for-byte deterministic"]
+- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"eddy fathom gale hull inlet kelp navigation oar quay rigging\"","docstring":null,"data_table":null},{"text":"Given the remediation-log fixture reproduces one \"DUPLICATE\" case","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"settled the repeated flow\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the classified duplicate candidate is removed from the active delta","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- left_content_hash: c27d9d7437f29536
+- left_evidence_hash: 21affb4036f5a477
 - right_scope: current-change
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
-- right_title: "Consolidating a VARIANT candidate verifies the projected remediation"
+- right_title: "Any changed endpoint evidence or prior-report metadata invalidates carry-forward"
 - right_delta_operation: modified
-- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Consolidating a VARIANT candidate verifies the projected remediation"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"apron buoy clipper derrick estuary fathom gangway hull isthmus jetty\"","docstring":null,"data_table":null},{"text":"Given a project prepared for semantic remediation with a \"VARIANT\" candidate","docstring":null,"data_table":null},{"text":"And the project declares a complete run declaration","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the user classifies every semantic review candidate as \"VARIANT\"","docstring":null,"data_table":null},{"text":"And the user records the remediation fix \"consolidated the pair into one outline\" and commits [\"0123456789abcdef0123456789abcdef01234567\"] in the remediation log","docstring":null,"data_table":null},{"text":"And the active variant is consolidated with an explicit parameter","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And stdout contains \"semantic remediation verified\"","docstring":null,"data_table":null},{"text":"And the semantic review report status is \"PASS\"","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 26e59cf7b21378e6
-- right_evidence_hash: ffd68a2d31af79a4
-- embedding_score: 0.9724
+- right_projected_target: ["givn/specs/semantic-remediation-log/semantic-remediation-log.feature","Any changed endpoint evidence or prior-report metadata invalidates carry-forward"]
+- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","semantic-remediation-log"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.modified"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given the remediation case carries the distinguishing marker \"oarlock prow quayside shroud trawl untow wharfyard xebec zither apron\"","docstring":null,"data_table":null},{"text":"Given the review-flow fixture prepares a similar active delta","docstring":null,"data_table":null},{"text":"When the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"When the assessor resolves the admitted candidate to \"DUPLICATE\"","docstring":null,"data_table":null},{"text":"And the assessor registers the applied correction \"dropped the reworked scenario\" with the commit record [\"0123456789abcdef0123456789abcdef01234567\"] in the log","docstring":null,"data_table":null},{"text":"And the active classified endpoint changes without remediation","docstring":null,"data_table":null},{"text":"And the user runs `givn check review --change running-change`","docstring":null,"data_table":null},{"text":"Then the command exits non-zero","docstring":null,"data_table":null},{"text":"And a later candidate entry records different endpoint hashes than its predecessor","docstring":null,"data_table":null},{"text":"And the prior candidate entry is retained unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
+- right_content_hash: 1827a64de5b62885
+- right_evidence_hash: d52d9f58dc66b238
+- embedding_score: 0.9682
 - fact_contradiction: true
 - bge_forward_raw: null
 - bge_reverse_raw: null
 - bge_symmetric_raw: null
 - bge_admission: BGE_TOKEN_CAP
-- bge_left_tokens: 348
-- bge_right_tokens: 344
-- bge_pair_tokens: 692
+- bge_left_tokens: 295
+- bge_right_tokens: 323
+- bge_pair_tokens: 618
 - bge_limit: 512
 - bge_refactoring_required: true
 - nli_forward_entailment: null
@@ -986,8 +986,8 @@ NLI runtime ms: null
 - nli_symmetric_neutral: null
 - nli_symmetric_contradiction: null
 - nli_admission: NLI_TOKEN_CAP
-- nli_left_tokens: 344
-- nli_right_tokens: 326
-- nli_pair_tokens: 669
+- nli_left_tokens: 283
+- nli_right_tokens: 319
+- nli_pair_tokens: 601
 - nli_limit: 512
 - nli_refactoring_required: true
