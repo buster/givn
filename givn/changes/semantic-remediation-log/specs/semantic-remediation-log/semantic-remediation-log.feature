@@ -273,7 +273,7 @@ Feature: Remediation log for semantic review
     And `givn/archive/running-change/semantic-remediation.md` exists
     And the archived remediation log bytes equal the active log snapshot
 
-  @givn.added @wip
+  @givn.added
   Scenario: Advisory spec review does not create the remediation log
     Given the remediation case carries the distinguishing marker "remediation log advisory boundary ash birch cedar delta elm fern glade heather iris juniper kiln larch moss nettle opal plum quince reed"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
