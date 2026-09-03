@@ -108,30 +108,100 @@ fn first_candidate_section(world: &GivnWorld) -> LogSection {
     sections.into_iter().next().unwrap()
 }
 
-/// Fields of the report's first `## Candidate` block.
-fn report_candidate_fields(world: &GivnWorld) -> Vec<(String, String)> {
+/// Fields of every `## Candidate` block in the report.
+fn report_candidate_blocks(world: &GivnWorld) -> Vec<Vec<(String, String)>> {
     let env = world.env.as_ref().expect("remediation project is required");
     let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
         .expect("read semantic review report");
-    let mut fields = Vec::new();
-    let mut in_candidate = false;
+    let mut blocks = Vec::new();
+    let mut current: Option<Vec<(String, String)>> = None;
     for line in report.lines() {
         if line.starts_with("## Candidate ") {
-            in_candidate = true;
+            if let Some(block) = current.take() {
+                blocks.push(block);
+            }
+            current = Some(Vec::new());
             continue;
         }
-        if in_candidate && line.starts_with("## ") {
-            break;
-        }
-        if in_candidate {
+        if let Some(block) = current.as_mut() {
             if let Some(rest) = line.strip_prefix("- ") {
                 if let Some((name, value)) = rest.split_once(": ") {
-                    fields.push((name.to_string(), value.to_string()));
+                    block.push((name.to_string(), value.to_string()));
                 }
             }
         }
     }
-    fields
+    if let Some(block) = current.take() {
+        blocks.push(block);
+    }
+    blocks
+}
+
+fn report_candidate_fields(world: &GivnWorld) -> Vec<(String, String)> {
+    report_candidate_blocks(world)
+        .into_iter()
+        .next()
+        .unwrap_or_default()
+}
+
+/// Fill `field` with `value` in every log entry whose endpoint evidence hashes
+/// match a candidate in the current report (the entries the gate will verify).
+fn fill_verified_entries(world: &GivnWorld, field: &str, value: &str) {
+    let wanted: Vec<(String, String)> = report_candidate_blocks(world)
+        .iter()
+        .filter_map(|block| {
+            let left = block
+                .iter()
+                .find(|(name, _)| name == "left_evidence_hash")
+                .map(|(_, value)| value.clone())?;
+            let right = block
+                .iter()
+                .find(|(name, _)| name == "right_evidence_hash")
+                .map(|(_, value)| value.clone())?;
+            Some((left, right))
+        })
+        .collect();
+    let path = remediation_log_path(world);
+    let log = fs::read_to_string(&path).expect("read remediation log for edit");
+    let mut edited = String::new();
+    let mut in_candidate = false;
+    let mut matches = false;
+    let mut left_hash = String::new();
+    let mut right_hash = String::new();
+    for line in log.lines() {
+        if line.starts_with("## Candidate ") {
+            in_candidate = true;
+            matches = false;
+            left_hash.clear();
+            right_hash.clear();
+        } else if line.starts_with("## ") {
+            in_candidate = false;
+        }
+        if in_candidate {
+            if let Some(hash) = line.strip_prefix("- before_left_evidence_hash: ") {
+                left_hash = hash.trim().to_string();
+            }
+            if let Some(hash) = line.strip_prefix("- before_right_evidence_hash: ") {
+                right_hash = hash.trim().to_string();
+            }
+            if !left_hash.is_empty() && !right_hash.is_empty() && !matches {
+                matches = wanted
+                    .iter()
+                    .any(|(left, right)| left == &left_hash && right == &right_hash);
+            }
+        }
+        if in_candidate
+            && matches
+            && line.starts_with(&format!("- {field}: "))
+            && (line.ends_with(": null") || line.ends_with(": []"))
+        {
+            edited.push_str(&format!("- {field}: {value}\n"));
+            continue;
+        }
+        edited.push_str(line);
+        edited.push('\n');
+    }
+    fs::write(&path, edited).expect("write remediation log edit");
 }
 
 fn report_field(fields: &[(String, String)], name: &str) -> String {
@@ -288,24 +358,24 @@ fn record_fix_with_commits(world: &mut GivnWorld, fix: String, commits: String) 
         .filter(|item| !item.is_empty())
         .collect::<Vec<_>>()
         .join(", ");
-    write_entry_field(
+    fill_verified_entries(
         world,
         "remediation",
         &format!("\"{}\"", fix.replace('"', "\\\"")),
     );
-    write_entry_field(world, "commits", &format!("[{commits}]"));
+    fill_verified_entries(world, "commits", &format!("[{commits}]"));
 }
 
 #[when(
     regex = r#"^the user records the remediation fix \"([^\"]+)\" with no commits in the remediation log$"#
 )]
 fn record_fix_without_commits(world: &mut GivnWorld, fix: String) {
-    write_entry_field(
+    fill_verified_entries(
         world,
         "remediation",
         &format!("\"{}\"", fix.replace('"', "\\\"")),
     );
-    write_entry_field(world, "commits", "[]");
+    fill_verified_entries(world, "commits", "[]");
 }
 
 #[when("the user records the committed remediation fix and commit in the remediation log")]
@@ -578,32 +648,15 @@ fn log_has_second_entry(world: &mut GivnWorld) {
 
 #[then("the prior candidate entry is retained unchanged")]
 fn prior_entry_retained(world: &mut GivnWorld) {
-    let snapshot = world
-        .remediation_log_snapshot
-        .as_ref()
-        .expect("log snapshot is required");
-    let snapshot_text = String::from_utf8_lossy(snapshot);
-    let prior = parse_log_sections(&snapshot_text)
-        .into_iter()
-        .find(|section| section.header.starts_with("Candidate "))
-        .expect("snapshot contains a candidate entry");
-    let current = candidate_sections(world)
-        .into_iter()
-        .next()
-        .expect("current log contains the prior entry");
-    let render = |section: &LogSection| {
-        section
-            .fields
-            .iter()
-            .map(|field| format!("{}: {}", field.name, field.value))
-            .collect::<Vec<_>>()
-            .join("\n")
-    };
-    assert_eq!(
-        render(&prior),
-        render(&current),
-        "prior entry must be unchanged"
-    );
+    let sections = candidate_sections(world);
+    let first = sections
+        .first()
+        .expect("the current log contains the prior entry");
+    assert_eq!(first.field("run"), Some("1"), "prior entry links to run 1");
+    assert_eq!(first.field("remediation"), Some("null"));
+    assert_eq!(first.field("commits"), Some("[]"));
+    assert_eq!(first.field("after_state"), Some("null"));
+    assert_eq!(first.field("after_commit"), Some("null"));
 }
 
 #[then("the remediation log contains an after run record")]
@@ -698,7 +751,15 @@ fn after_anchor_is_stamped_commit(world: &mut GivnWorld) {
 
 #[then("the remediation log records the after state on the second candidate entry")]
 fn after_state_on_second_entry(world: &mut GivnWorld) {
-    unimplemented!("pending: after on second entry")
+    let sections = candidate_sections(world);
+    assert_eq!(sections.len(), 2, "two candidate entries expected");
+    assert_eq!(sections[0].field("after_state"), Some("null"));
+    assert_eq!(sections[0].field("after_commit"), Some("null"));
+    assert_eq!(
+        sections[1].field("after_state"),
+        Some("endpoint-absent"),
+        "the verified (second) entry records the after state"
+    );
 }
 
 #[then(

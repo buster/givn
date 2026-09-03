@@ -337,7 +337,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
+  - [x] COMMIT: `27b4fe1` — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
 
 - [ ] Scenario: `The after state lands on the entry matching the verified evidence hashes`
   - [ ] RED: run only this scenario. Must fail.

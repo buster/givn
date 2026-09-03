@@ -200,7 +200,7 @@ Feature: Remediation log for semantic review
     Then the command exits 0
     And stdout contains "semantic remediation verified"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The after state lands on the entry matching the verified evidence hashes
     Given the remediation case carries the distinguishing marker "remediation log after field matching alpha bramble cedar delta elm fern gale heather iris juniper kiln larch moss nest opal plum reed"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
