@@ -98,7 +98,7 @@ Feature: Remediation log for semantic review
     Then the command exits non-zero
     And stderr contains "semantic-remediation"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A stamp naming a different candidate blocks review
     Given the remediation case carries the distinguishing marker "remediation log mismatched stamp blocking alder bramble cedar delta fern glade heather iris juniper kelp maple nest opal plum reed willow"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate in a Git repository

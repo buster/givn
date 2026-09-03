@@ -195,23 +195,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A remediation commit without the semantic-remediation stamp blocks review`
+  - [x] COMMIT: `8ddef26` — `feat(semantic-remediation-log): A remediation commit without the semantic-remediation stamp blocks review`
 
-- [ ] Scenario: `A stamp naming a different candidate blocks review`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A stamp naming a different candidate blocks review`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 0 — legitimate immediate GREEN:
+        all steps were already real (the git fixture and the wrong-stamp commit step
+        landed with scenario 7; the per-candidate stamp match is scenario-1 gate code).
+        "10 steps (10 passed)".
         ```
-  - [ ] GREEN: per-candidate stamp matching. Files:
-        <!-- list them -->
+  - [x] GREEN: per-candidate stamp matching. Files:
+        none new — stamp mismatch blocking is the existing `validate_log`
+        missing-stamp bail bound to the wrong-stamp commit step.
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "10 steps (10 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A stamp naming a different candidate blocks review`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A stamp naming a different candidate blocks review`
 
 - [ ] Scenario: `A stamped remediation commit verifies the log and passes review`
   - [ ] RED: run only this scenario. Must fail.
