@@ -37,6 +37,11 @@ pub const DEV_BLOCK_BEGIN: &str = "<!-- givn:begin:development -->";
 /// The closing marker of the development managed block.
 pub const DEV_BLOCK_END: &str = "<!-- givn:end:development -->";
 
+/// The opening marker of the run managed block.
+pub const RUN_BLOCK_BEGIN: &str = "<!-- givn:begin:run -->";
+/// The closing marker of the run managed block.
+pub const RUN_BLOCK_END: &str = "<!-- givn:end:run -->";
+
 /// Check the project README and return every deterministic finding.
 pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
     let path = project_root.join("README.md");
@@ -138,6 +143,18 @@ pub fn check_readme(project_root: &std::path::Path) -> Vec<ReadmeFinding> {
         });
     }
 
+    // Run managed block damage: exactly one of the two markers present.
+    let run_begins = content.matches(RUN_BLOCK_BEGIN).count();
+    let run_ends = content.matches(RUN_BLOCK_END).count();
+    if (run_begins == 0) != (run_ends == 0) {
+        findings.push(ReadmeFinding {
+            kind: ReadmeFindingKind::DamagedBlock,
+            message: "the run managed block is damaged — exactly one of the \
+                      begin/end markers is present; restore the marker pair."
+                .to_string(),
+        });
+    }
+
     findings
 }
 
@@ -194,9 +211,11 @@ pub fn scaffold_readme() -> Result<usize> {
 
     let project_name = detect_project_name(&project_root);
     let development_block = render_development_block();
+    let run_block = render_run_block();
     let rendered = template
         .replace("{{PROJECT_NAME}}", &project_name)
-        .replace("{{DEVELOPMENT_BLOCK}}", &development_block);
+        .replace("{{DEVELOPMENT_BLOCK}}", &development_block)
+        .replace("{{RUN_BLOCK}}", &run_block);
 
     std::fs::write(&dest, rendered)?;
     Ok(1)
@@ -279,6 +298,109 @@ pub(crate) fn refresh_development_block(project_root: &std::path::Path) -> Resul
     };
     let after_end = end_marker + DEV_BLOCK_END.len();
     let new_block = render_development_block();
+    let updated = format!(
+        "{}{}{}",
+        &content[..begin],
+        new_block,
+        &content[after_end..]
+    );
+    std::fs::write(&path, updated)?;
+    Ok(true)
+}
+
+/// Render the run managed block from the effective command file.
+///
+/// One render predicate governs the body: while the run declaration has
+/// validation findings (unconfigured or half-configured), the block shows
+/// exactly one open todo line and never a partial render; once the
+/// declaration is complete, the real start instructions are rendered.
+pub fn render_run_block() -> String {
+    const RUN_TODO: &str =
+        "<!-- givn:todo: set run.command and run.product_type in givn/commands.yaml -->\n";
+    match crate::config::overlay::load_effective() {
+        Ok(manifest) => render_run_block_for(&manifest),
+        Err(_) => format!("{RUN_BLOCK_BEGIN}\n{RUN_TODO}{RUN_BLOCK_END}\n"),
+    }
+}
+
+/// Render the run managed block for a concrete manifest (the seam the
+/// unit scenarios and `render_run_block` both use).
+pub fn render_run_block_for(manifest: &crate::config::manifest::Manifest) -> String {
+    const RUN_TODO: &str =
+        "<!-- givn:todo: set run.command and run.product_type in givn/commands.yaml -->\n";
+    let body = {
+        let findings = crate::cli::run_block::check_run(manifest);
+        if findings.is_empty() {
+            run_block_body(&manifest.run)
+        } else {
+            RUN_TODO.to_string()
+        }
+    };
+    format!("{RUN_BLOCK_BEGIN}\n{body}{RUN_BLOCK_END}\n")
+}
+
+fn run_block_body(run: &crate::config::manifest::Run) -> String {
+    use crate::config::manifest::ProductType;
+
+    let mut out = String::from("## Run\n\n");
+    match run.product_type {
+        Some(ProductType::Server) => {
+            out.push_str("Start the project:\n\n```sh\n");
+            out.push_str(&run.command);
+            out.push_str("\n```\n\n");
+            let port_source = match &run.port_env {
+                Some(name) => format!("${name}"),
+                None => format!("port {}", run.port.unwrap_or_default()),
+            };
+            let ready_path = run.ready_path.as_deref().unwrap_or("/healthz");
+            out.push_str(&format!(
+                "The server listens on {port_source} and answers readiness at \
+                 {ready_path}; givn waits up to {}s for readiness.\n\n",
+                run.ready_timeout_s
+            ));
+        }
+        Some(ProductType::Cli) => {
+            out.push_str("Run the tool:\n\n```sh\n");
+            out.push_str(&run.command);
+            out.push_str("\n```\n\n");
+        }
+        Some(ProductType::Library) => {
+            out.push_str(crate::cli::run::LIBRARY_LINE);
+            out.push('\n');
+            out.push('\n');
+            if run.command != crate::config::manifest::Run::SENTINEL {
+                out.push_str("The declared start command:\n\n```sh\n");
+                out.push_str(&run.command);
+                out.push_str("\n```\n\n");
+            }
+        }
+        // Unconfigured or half-configured declarations never reach this
+        // function: the render predicate routes findings to the todo line.
+        None => {}
+    }
+    out
+}
+
+/// Replace the run managed block content in an existing README.
+///
+/// Mirrors [`refresh_development_block`]: a missing block is left alone and
+/// exactly one marker present is reported as damaged by the checker.
+/// Runs only after the run gate has passed, so a refresh never
+/// re-introduces a placeholder.
+pub(crate) fn refresh_run_block(project_root: &std::path::Path) -> Result<bool> {
+    let path = project_root.join("README.md");
+    if !path.exists() {
+        return Ok(false);
+    }
+    let content = std::fs::read_to_string(&path)?;
+    let Some(begin) = content.find(RUN_BLOCK_BEGIN) else {
+        return Ok(false);
+    };
+    let Some(end_marker) = content.find(RUN_BLOCK_END) else {
+        return Ok(false);
+    };
+    let after_end = end_marker + RUN_BLOCK_END.len();
+    let new_block = render_run_block();
     let updated = format!(
         "{}{}{}",
         &content[..begin],

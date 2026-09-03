@@ -252,6 +252,17 @@ pub fn run(change: &str) -> Result<()> {
                 );
             }
         }
+        match crate::cli::readme::refresh_run_block(&project_root) {
+            Ok(true) => println!("✓ run managed block refreshed"),
+            Ok(false) => {}
+            Err(e) => {
+                let _ = crate::cli::coverage_gate::rollback_readme(&project_root, &backup_dir);
+                bail!(
+                    "archive blocked: run managed block refresh failed: {e:#}. \
+                     README has been restored to its pre-archive state."
+                );
+            }
+        }
     }
 
     // === Coverage gate (archive-level, only if addon enabled) ===
