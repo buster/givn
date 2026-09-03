@@ -85,7 +85,7 @@ Feature: Remediation log for semantic review
     Then the command exits non-zero
     And stderr contains "remediation log"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A remediation commit without the semantic-remediation stamp blocks review
     Given the remediation case carries the distinguishing marker "remediation log missing stamp blocking anchor birch cedar dune elm fern gale hollow iris juniper kelp larch moss oak plum reed"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate in a Git repository

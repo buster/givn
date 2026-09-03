@@ -177,23 +177,25 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `$(git log --oneline -1 | cut -c1-7)` — `feat(semantic-remediation-log): A resolved candidate without a complete log entry blocks review`
+  - [x] COMMIT: `40c87a8` — `feat(semantic-remediation-log): A resolved candidate without a complete log entry blocks review`
 
-- [ ] Scenario: `A remediation commit without the semantic-remediation stamp blocks review`
-  - [ ] RED: run only this scenario (Git fixture steps land here). Must fail.
+- [x] Scenario: `A remediation commit without the semantic-remediation stamp blocks review`
+  - [x] RED: run only this scenario (Git fixture steps land here). Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "2 steps (1 passed, 1 failed)";
+        the Git-repository fixture step was an unimplemented stub.
         ```
-  - [ ] GREEN: git fixture steps, stamp detection, blocking diagnostic. Files:
-        <!-- list them -->
+  - [x] GREEN: git fixture steps, stamp detection, blocking diagnostic. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (git helpers, repo
+        fixture, unstamped/wrong/matching commit steps, history reset).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "10 steps (10 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A remediation commit without the semantic-remediation stamp blocks review`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A remediation commit without the semantic-remediation stamp blocks review`
 
 - [ ] Scenario: `A stamp naming a different candidate blocks review`
   - [ ] RED: run only this scenario. Must fail.

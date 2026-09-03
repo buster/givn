@@ -221,11 +221,48 @@ fn remediation_project_with_blank_lines(world: &mut GivnWorld) {
     unimplemented!("pending: blank-lines fixture")
 }
 
+fn git(world: &GivnWorld, args: &[&str]) {
+    let env = world.env.as_ref().expect("project is required");
+    let output = std::process::Command::new("git")
+        .arg("-C")
+        .arg(env.root())
+        .args(args)
+        .output()
+        .expect("git is available");
+    assert!(
+        output.status.success(),
+        "git {args:?} failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+}
+
+fn git_head(world: &GivnWorld) -> String {
+    let env = world.env.as_ref().expect("project is required");
+    let output = std::process::Command::new("git")
+        .arg("-C")
+        .arg(env.root())
+        .args(["rev-parse", "HEAD"])
+        .output()
+        .expect("git is available");
+    assert!(output.status.success(), "git rev-parse HEAD failed");
+    String::from_utf8_lossy(&output.stdout).trim().to_string()
+}
+
+fn init_git_repo(world: &GivnWorld) {
+    git(world, &["init", "-q"]);
+    git(world, &["config", "user.email", "fixture@givn.test"]);
+    git(world, &["config", "user.name", "fixture"]);
+    git(world, &["config", "commit.gpgsign", "false"]);
+}
+
 #[given(
     regex = r#"^a project prepared for semantic remediation with a \"DUPLICATE\" candidate in a Git repository$"#
 )]
 fn remediation_project_in_git(world: &mut GivnWorld) {
-    unimplemented!("pending: git fixture")
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+    init_git_repo(world);
+    git(world, &["add", "-A"]);
+    git(world, &["commit", "-q", "-m", "chore: fixture baseline"]);
 }
 
 #[given(
@@ -282,19 +319,53 @@ fn record_both_committed_fixes(world: &mut GivnWorld) {
 
 #[when("the user commits the remediation without the semantic-remediation stamp")]
 fn commit_without_stamp(world: &mut GivnWorld) {
-    unimplemented!("pending: unstamped commit")
+    git(world, &["add", "-A"]);
+    git(
+        world,
+        &[
+            "commit",
+            "-q",
+            "-m",
+            "fix(running-change): remove the duplicate scenario",
+        ],
+    );
+    world.remediation_commit_hash = Some(git_head(world));
 }
 
 #[when(
     regex = r#"^the user commits the remediation with the stamp naming candidate \"([^\"]+)\"$"#
 )]
 fn commit_with_wrong_stamp(world: &mut GivnWorld, candidate: String) {
-    unimplemented!("pending: wrong stamp")
+    git(world, &["add", "-A"]);
+    let message = format!(
+        "fix(running-change): remove the duplicate scenario\n\nsemantic-remediation: running-change/{candidate}\n"
+    );
+    git(world, &["commit", "-q", "-m", &message]);
+    world.remediation_commit_hash = Some(git_head(world));
 }
 
 #[when("the user commits the remediation with the matching semantic-remediation stamp")]
 fn commit_with_matching_stamp(world: &mut GivnWorld) {
-    unimplemented!("pending: matching stamp")
+    let ids = report_candidate_ids_from_report(world);
+    assert_eq!(ids.len(), 1, "one stamped candidate expected");
+    git(world, &["add", "-A"]);
+    let message = format!(
+        "fix(running-change): remove the duplicate scenario\n\nsemantic-remediation: running-change/{}\n",
+        ids[0]
+    );
+    git(world, &["commit", "-q", "-m", &message]);
+    world.remediation_commit_hash = Some(git_head(world));
+}
+
+fn report_candidate_ids_from_report(world: &GivnWorld) -> Vec<String> {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read semantic review report");
+    report
+        .lines()
+        .filter_map(|line| line.strip_prefix("- candidate_id: "))
+        .map(|value| value.trim().to_string())
+        .collect()
 }
 
 #[when("the user commits the remediation with one matching stamp per candidate")]
@@ -304,7 +375,7 @@ fn commit_with_stamp_per_candidate(world: &mut GivnWorld) {
 
 #[when("the user removes the remediation commit from Git history")]
 fn remove_commit_from_history(world: &mut GivnWorld) {
-    unimplemented!("pending: drop commit")
+    git(world, &["reset", "-q", "--hard", "HEAD~1"]);
 }
 
 #[when("the classified duplicate candidates are removed from the active deltas")]
