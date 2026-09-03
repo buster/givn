@@ -239,7 +239,10 @@ Suite gate: full permanent suite `TMPDIR=/home/buster/tmp ./run-tests.sh` exit 0
 Production: libc sigaction handlers, `AtomicI32` flag, forward+wait, library seam returns 128+sig.
 
 ### Scenario: A terminate request is forwarded and the start waits
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: no handler installed — SIGTERM default-killed the test runner itself (`process didn't exit successfully ... signal: 15, SIGTERM`), exit 101
+- [x] GREEN: files: src/cli/run.rs (sigaction handler, AtomicI32 flag, group-forward, bounded 2s reap grace, return 128+sig), tests/steps/run_execution_steps.rs, tests/steps/run_execution_support.rs (InProcStart), tests/steps/mod.rs — targeted run `1 scenario (1 passed)`, exit 0. Deviation recorded: first GREEN attempt forwarded to the direct child only; `sh` forked instead of exec'ing the fixture, the signal never reached the product (trap marker missing). Root fix: forward to the process group. All waiting loops bounded (10s ready poll, 2s marker poll, 2s reap grace) per reviewer directive — design §7.4 updated, R-44 residual resolved.
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): forward SIGTERM to the started product and exit 143` — hash `03dcbf0`
 
 ### @e2e Scenario: An interrupt stops the started product
 - [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
