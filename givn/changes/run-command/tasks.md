@@ -347,13 +347,19 @@ Production: `src/cli/check.rs` review arm (§6.3, findings on stdout).
 
 ## T14 — Archive run gate + refresh
 
-Production: `src/cli/archive.rs` (gate before README gate, §6.4) + `refresh_run_block` call.
+Production: `src/cli/archive.rs` (gate before README gate, §6.4) + `refresh_run_block` call. The refresh call landed with T9 (same file, same rollback handling); the gate is the missing piece.
 
 ### Scenario: Archive is blocked while the run declaration is unconfigured
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: archive proceeded past the missing gate — `stdout mentions "run declaration"` never appeared and the change directory moved away, exit 101
+- [x] GREEN: files: src/cli/archive.rs (run-declaration gate after the similarity gate, before the README gate, labeled findings + bail), tests/steps/run_execution_e2e_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): archive run-declaration gate before the README gate` — hash `a45c606`
 
 ### @e2e Scenario: Archive passes once the run declaration is complete
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: `verify commands are no-ops with a complete server run declaration` Given and the named archived-directory Then missing, `Step doesn't match any function`, exit 101
+- [x] GREEN: files: tests/steps/run_execution_e2e_steps.rs (composed Given: no-op verify/coverage yaml + complete server declaration via declare_run; `the archived change directory "<id>" exists`), src/cli/archive.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR + suite gate: cargo fmt + clippy clean; the new gate initially blocked the two coverage-workflow archiving fixtures (no run declaration) — both writers converted to the idempotent `common::write_commands_yaml` (T11 pattern); full `TMPDIR=/home/buster/tmp ./run-tests.sh` exit 0, 548 scenarios, 0 failures
+- [x] COMMIT: `feat(run-command): archive run-declaration gate before the README gate` — hash `a45c606`
 
 ## T15 — Backfill + managed upgrade
 
