@@ -226,10 +226,10 @@ Feature: Remediation log for semantic review
     Then the command exits non-zero
     And the remediation log records the candidate's BGE and NLI evidence states as non-null values from the report
 
-  @givn.added @wip
+  @givn.added
   Scenario: A commit fixing two candidates carries one stamp line per candidate
     Given the remediation case carries the distinguishing marker "remediation log multi candidate stamp lines acorn birch cedar dune elm fern gale heather iris juniper kiln larch maple nest opal reed slate"
-    Given a project prepared for semantic review with two similar active deltas
+    Given a project prepared for semantic review with two permanent-duplicate deltas in a Git repository
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     And the user classifies every semantic review candidate as "DUPLICATE"

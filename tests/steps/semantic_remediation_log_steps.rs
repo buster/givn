@@ -395,7 +395,17 @@ fn record_committed_fix(world: &mut GivnWorld) {
 
 #[when("the user records both remediation fixes and the commit in the remediation log")]
 fn record_both_committed_fixes(world: &mut GivnWorld) {
-    unimplemented!("pending: record both fixes")
+    let hash = world
+        .remediation_commit_hash
+        .as_ref()
+        .expect("remediation commit hash recorded")
+        .clone();
+    fill_verified_entries(
+        world,
+        "remediation",
+        "\"removed the redundant scenario\"",
+    );
+    fill_verified_entries(world, "commits", &format!("[\"{hash}\"]"));
 }
 
 #[when("the user commits the remediation without the semantic-remediation stamp")]
@@ -451,7 +461,15 @@ fn report_candidate_ids_from_report(world: &GivnWorld) -> Vec<String> {
 
 #[when("the user commits the remediation with one matching stamp per candidate")]
 fn commit_with_stamp_per_candidate(world: &mut GivnWorld) {
-    unimplemented!("pending: per-candidate stamps")
+    let ids = report_candidate_ids_from_report(world);
+    assert_eq!(ids.len(), 2, "two stamped candidates expected");
+    git(world, &["add", "-A"]);
+    let mut message = String::from("fix(running-change): remove both duplicate scenarios\n");
+    for id in &ids {
+        message.push_str(&format!("\nsemantic-remediation: running-change/{id}\n"));
+    }
+    git(world, &["commit", "-q", "-m", &message]);
+    world.remediation_commit_hash = Some(git_head(world));
 }
 
 #[when("the user removes the remediation commit from Git history")]
@@ -459,9 +477,57 @@ fn remove_commit_from_history(world: &mut GivnWorld) {
     git(world, &["reset", "-q", "--soft", "HEAD~1"]);
 }
 
+#[given("a project prepared for semantic review with two permanent-duplicate deltas in a Git repository")]
+fn two_permanent_duplicate_deltas(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let specs = env.path("givn/specs");
+    fs::remove_dir_all(&specs).expect("remove generated specs");
+    fs::create_dir_all(&specs).expect("create permanent specs");
+    fs::write(
+        specs.join("retrieval.feature"),
+        "Feature: retrieval fixtures\n\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n  Scenario: Authentication token is missing\n    Given a configured provider catalog\n    When the user authenticates without a token\n    Then authentication is rejected\n\n  Scenario: Provider configuration is valid\n    Given a configured provider catalog\n    When the user selects a known provider\n    Then the command accepts the request\n",
+    )
+    .expect("write permanent corpus");
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\n",
+    );
+    let first = env.path("givn/changes/running-change/specs/first.feature");
+    let second = env.path("givn/changes/running-change/specs/second.feature");
+    fs::create_dir_all(first.parent().expect("delta parent")).expect("create delta specs");
+    fs::write(
+        &first,
+        "@givn.delta @running-change\nFeature: first\n\n  @givn.added\n  Scenario: Unknown provider is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
+    )
+    .expect("write first delta");
+    fs::write(
+        &second,
+        "@givn.delta @running-change\nFeature: second\n\n  @givn.added\n  Scenario: Missing authentication token is rejected\n    Given a configured provider catalog\n    When the user authenticates without a token\n    Then authentication is rejected\n",
+    )
+    .expect("write second delta");
+    fs::write(
+        env.path("givn/changes/running-change/review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Unknown provider is rejected` | `Provider name is unknown` | related |\n| `Missing authentication token is rejected` | `Authentication token is missing` | related |\n| `Unknown provider is rejected` | `Missing authentication token is rejected` | related |\n| `Unknown provider is rejected` | `Authentication token is missing` | related |\n| `Missing authentication token is rejected` | `Provider name is unknown` | related |\n",
+    )
+    .expect("write overlap dispositions");
+    world.env = Some(env);
+    world.retrieval_embedder = Some("stub".to_string());
+    world.retrieval_reranker = Some("stub".to_string());
+    world.retrieval_stub_scores = Some(
+        "Unknown provider is rejected|Provider name is unknown=0.9600;Missing authentication token is rejected|Authentication token is missing=0.9600".to_string(),
+    );
+    init_git_repo(world);
+    git(world, &["add", "-A"]);
+    git(world, &["commit", "-q", "-m", "chore: fixture baseline"]);
+}
+
 #[when("the classified duplicate candidates are removed from the active deltas")]
 fn remove_both_duplicates(world: &mut GivnWorld) {
-    unimplemented!("pending: remove both deltas")
+    let env = world.env.as_ref().expect("remediation project is required");
+    fs::remove_file(env.path("givn/changes/running-change/specs/first.feature"))
+        .expect("remove first duplicate delta");
+    fs::remove_file(env.path("givn/changes/running-change/specs/second.feature"))
+        .expect("remove second duplicate delta");
 }
 
 #[when("the user deletes the remediation log")]

@@ -382,23 +382,29 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A logged pair scored by BGE and NLI records their evidence states`
+  - [x] COMMIT: `852cefb` — `feat(semantic-remediation-log): A logged pair scored by BGE and NLI records their evidence states`
 
-- [ ] Scenario: `A commit fixing two candidates carries one stamp line per candidate`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A commit fixing two candidates carries one stamp line per candidate`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the two-candidate fixture was an unimplemented stub; the naive
+        two-similar-deltas fixture also admitted a delta-to-delta candidate
+        (3 candidates), so the fixture uses two lexically distinct deltas each
+        duplicating a different permanent scenario (2 candidates).
         ```
-  - [ ] GREEN: per-candidate stamp lines on one commit. Files:
-        <!-- list them -->
+  - [x] GREEN: per-candidate stamp lines on one commit. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (git-backed
+        two-permanent-duplicate fixture, remove-both step, one-stamp-per-
+        candidate commit step, fill-both-entries record step).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "11 steps (11 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A commit fixing two candidates carries one stamp line per candidate`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A commit fixing two candidates carries one stamp line per candidate`
 
 - [ ] Scenario: `The remediation log obeys its strict wire grammar`
   - [ ] RED: run only this scenario. Must fail.
