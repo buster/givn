@@ -432,10 +432,17 @@ hf-hub):
 ### 7.4 Spawn, wait, signals
 
 - Spawn: `sh -c <command>` (unix), child env gets `port_env` when resolved,
-  stdio inherited. Child pid captured.
+  stdio inherited. Child pid captured. The child is put into its own process
+  group (`pre_exec` + `setpgid(0, 0)`) — deviation from the original draft,
+  added during implementation: the readiness-timeout teardown found below
+  kills `sh` only, and a server started by a compound command survives as an
+  orphan holding the inherited stdio pipes (observed as a hanging test
+  harness, but equally real for callers). Group id equals the child pid.
 - Single wait loop (50 ms tick): child `try_wait` → early exit forwards the
   child's exit code; readiness pending → probe attempt; deadline passed
-  without 2xx → exit 2; signal flag set → forward and exit 128+sig.
+  without 2xx → `SIGKILL` the child's **process group** (`kill(-pgid)`, so
+  `sh` and everything it started die together) → exit 2; signal flag set →
+  forward and exit 128+sig.
 - Signal forwarding (unix-only, documented platform constraint): `libc`
   `sigaction` handlers for `SIGINT`/`SIGTERM` store the signal number in a
   `static AtomicI32` (async-signal-safe; no allocation in the handler). On
@@ -444,12 +451,14 @@ hf-hub):
   decision), 143 for SIGTERM** (conventional 128+n; judgment call, flagged),
   and the binary wrapper converts it to `process::exit` (§7 seam) — the
   in-process SIGTERM scenario asserts the returned code.
-- Teardown boundary: forwarding reaches givn's direct child (`sh -c`) only.
+- Teardown boundary: the readiness-timeout kill reaches the whole process
+  group (see spawn bullet above). Signal **forwarding** remains scoped to
+  givn's direct child (`sh -c`) only.
   **Residual (R-44):** grandchildren of compound start commands (`a && b`,
   pipelines) are not signalled and may survive the interrupt. Start commands
   should use `exec` so the shell process is replaced by the product; accepted
-  as a unix-boring tradeoff rather than reimplementing process-group
-  supervision inside givn. With `exec`-style commands, killing the givn pid
+  as a unix-boring tradeoff rather than reimplementing process-group signal
+  fan-out inside givn. With `exec`-style commands, killing the givn pid
   tears down everything it started.
 - Non-unix hosts: `givn run` refuses server products at preflight with a
   clear message, exit 1; `cli`/`library` products work (no signals needed).

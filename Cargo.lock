@@ -854,6 +854,7 @@ dependencies = [
  "fastembed",
  "gherkin",
  "hf-hub",
+ "libc",
  "ndarray",
  "ort",
  "quick-xml",

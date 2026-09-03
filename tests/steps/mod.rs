@@ -191,6 +191,17 @@ pub struct GivnWorld {
     pub(crate) run_caller_port: Option<u16>,
     /// The start command declared by the fixture's run declaration.
     pub(crate) run_declared_command: Option<String>,
+    /// In-flight readiness probe for the in-process probe scenarios.
+    pub(crate) run_probe: Option<ProbeJob>,
+    /// Canned HTTP responder for the probe scenarios.
+    pub(crate) run_responder: Option<run_execution_support::Responder>,
+}
+
+/// A readiness probe running on a background thread.
+#[derive(Debug)]
+pub(crate) struct ProbeJob {
+    pub(crate) port: u16,
+    pub(crate) handle: std::thread::JoinHandle<givn::cli::run::ProbeOutcome>,
 }
 
 // --- helpers ---------------------------------------------------------------
