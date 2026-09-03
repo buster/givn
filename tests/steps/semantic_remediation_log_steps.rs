@@ -269,7 +269,8 @@ fn remediation_project_in_git(world: &mut GivnWorld) {
     regex = r#"^a project prepared for semantic remediation with a \"DUPLICATE\" candidate in a Git repository without commits$"#
 )]
 fn remediation_project_in_git_without_commits(world: &mut GivnWorld) {
-    unimplemented!("pending: unborn branch fixture")
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+    init_git_repo(world);
 }
 
 #[given("a completed semantic remediation change with a generated log and archive prerequisites")]

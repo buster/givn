@@ -316,23 +316,28 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): An unreachable remediation commit blocks review`
+  - [x] COMMIT: `662bd9f` — `feat(semantic-remediation-log): An unreachable remediation commit blocks review`
 
-- [ ] Scenario: `A Git repository without commits behaves like no Git history`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A Git repository without commits behaves like no Git history`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the unborn-branch fixture was an unimplemented stub and the scenario used
+        the stale anchor step text — aligned with the renamed null-anchor step and
+        the When/Then flow from scenario 10.
         ```
-  - [ ] GREEN: unborn-branch HEAD resolution maps to null anchors. Files:
-        <!-- list them -->
+  - [x] GREEN: unborn-branch HEAD resolution maps to null anchors. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (fixture without a
+        baseline commit; null anchors come from `git_head_commit` returning
+        `None` on `rev-parse HEAD` failure).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "11 steps (11 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
 
 - [ ] Scenario: `The after state lands on the entry matching the verified evidence hashes`
   - [ ] RED: run only this scenario. Must fail.
