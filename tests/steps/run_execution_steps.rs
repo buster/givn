@@ -5,7 +5,7 @@
 //! inside the runner: the SIGTERM scenario calls the library entry point
 //! and asserts the returned exit code.
 
-use std::time::Duration;
+use std::time::{Duration, Instant};
 
 use cucumber::{given, then, when};
 
@@ -64,6 +64,38 @@ fn library_declaration_real_command(world: &mut GivnWorld) {
 fn unconfigured_declaration(world: &mut GivnWorld) {
     world.env.get_or_insert_with(common::make_init_root);
     super::run_declaration_fixtures_support::strip_run(world);
+}
+
+#[given("givn run is executing a product that stays ready")]
+fn inproc_start_stays_ready(world: &mut GivnWorld) {
+    let port = support::reserve_free_port();
+    let port_arg = port.to_string();
+    let marker = {
+        let env = world.env.get_or_insert_with(common::make_init_root);
+        env.path("trap-term-marker")
+    };
+    let fixture = support::ready_fixture_path().to_string_lossy().into_owned();
+    let command = format!(
+        "{fixture} serve --port {port_arg} --trap-marker {}",
+        marker.display()
+    );
+    support::write_server_declaration(world, &command, None, Some(port), "/healthz", 60);
+    let prev_cwd = std::env::current_dir().expect("runner cwd");
+    let root = world
+        .env
+        .as_ref()
+        .expect("fixture project root")
+        .root()
+        .to_path_buf();
+    std::env::set_current_dir(&root).expect("chdir fixture root");
+    let handle = std::thread::spawn(|| givn::cli::run::execute(None, false));
+    world.run_inproc = Some(support::InProcStart {
+        port,
+        marker,
+        prev_cwd,
+        handle: Some(handle),
+        joined: None,
+    });
 }
 
 // --- Given: in-process probe mechanics ---------------------------------------
@@ -145,6 +177,26 @@ fn readiness_timeout_elapses(_world: &mut GivnWorld) {
     // The probe's own deadline governs; joining happens in the Then step.
 }
 
+#[when("givn receives a terminate request while running the product")]
+fn inproc_terminate(world: &mut GivnWorld) {
+    let port = world
+        .run_inproc
+        .as_ref()
+        .expect("an in-process start is required")
+        .port;
+    // The ready line goes to the runner's stdout, so readiness is observed
+    // at the HTTP boundary instead.
+    let outcome = givn::cli::run::probe_until_ready(port, "/healthz", Duration::from_secs(10));
+    assert!(
+        matches!(outcome, givn::cli::run::ProbeOutcome::Ready { .. }),
+        "the product never became ready: {outcome:?}"
+    );
+    #[cfg(unix)]
+    unsafe {
+        libc::kill(std::process::id() as i32, libc::SIGTERM);
+    }
+}
+
 // --- Then: probe outcomes ------------------------------------------------------
 
 #[then("the probe reports ready after more than one attempt")]
@@ -211,6 +263,43 @@ fn ready_line_names_readiness_path(world: &mut GivnWorld, path: String) {
 }
 
 // --- Then: stderr ------------------------------------------------------------------
+
+#[then("givn exits 143")]
+fn inproc_exits_143(world: &mut GivnWorld) {
+    let code = {
+        let job = world
+            .run_inproc
+            .as_mut()
+            .expect("an in-process start is required");
+        if job.joined.is_none() {
+            let handle = job.handle.take().expect("start thread handle");
+            job.joined = Some(handle.join().expect("start thread"));
+        }
+        job.joined.expect("joined exit code")
+    };
+    assert_eq!(code, 143, "expected 143 (128+SIGTERM)");
+}
+
+#[then("the started product received the terminate signal")]
+fn product_received_terminate(world: &mut GivnWorld) {
+    let marker = world
+        .run_inproc
+        .as_ref()
+        .expect("an in-process start is required")
+        .marker
+        .clone();
+    // The fixture observes the stored signal on its next serve-loop tick,
+    // so the marker may lag the forwarded signal by a few milliseconds.
+    let deadline = Instant::now() + Duration::from_secs(2);
+    let content = loop {
+        match std::fs::read_to_string(&marker) {
+            Ok(content) => break content,
+            Err(_) if Instant::now() < deadline => std::thread::sleep(Duration::from_millis(20)),
+            Err(e) => panic!("trap marker missing at {}: {e}", marker.display()),
+        }
+    };
+    assert_eq!(content, "15", "fixture must report SIGTERM");
+}
 
 #[then("the command exits 7")]
 fn command_exits_seven(world: &mut GivnWorld) {

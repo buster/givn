@@ -195,6 +195,8 @@ pub struct GivnWorld {
     pub(crate) run_probe: Option<ProbeJob>,
     /// Canned HTTP responder for the probe scenarios.
     pub(crate) run_responder: Option<run_execution_support::Responder>,
+    /// In-process `givn run` execution for the SIGTERM scenario.
+    pub(crate) run_inproc: Option<run_execution_support::InProcStart>,
 }
 
 /// A readiness probe running on a background thread.

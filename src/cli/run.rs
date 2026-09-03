@@ -8,11 +8,34 @@
 use std::io::{Read, Write};
 use std::net::TcpStream;
 use std::process::Command;
+use std::sync::atomic::{AtomicI32, Ordering};
 use std::time::{Duration, Instant};
 
 use crate::cli::run_block::{self, RunFindingKind};
 use crate::config::manifest::{Manifest, ProductType, Run};
 use crate::config::overlay::load_effective;
+
+/// The signal caught by the executor's handler, 0 while none arrived.
+/// The handler only stores the number (async-signal-safe).
+static SIGNAL: AtomicI32 = AtomicI32::new(0);
+
+/// Catch SIGTERM so it can be forwarded to the started product; without
+/// this, an interrupt would kill givn and orphan the product.
+#[cfg(unix)]
+fn install_signal_handlers() {
+    extern "C" fn handler(sig: i32) {
+        SIGNAL.store(sig, Ordering::SeqCst);
+    }
+    let mut action: libc::sigaction = unsafe { std::mem::zeroed() };
+    action.sa_sigaction = handler as *const () as usize;
+    action.sa_flags = libc::SA_RESTART;
+    unsafe {
+        libc::sigaction(libc::SIGTERM, &action, std::ptr::null_mut());
+    }
+}
+
+#[cfg(not(unix))]
+fn install_signal_handlers() {}
 
 /// The resolved, ready-to-execute start plan.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -210,6 +233,7 @@ fn start_product(plan: &StartPlan) -> i32 {
     #[cfg(unix)]
     use std::os::unix::process::CommandExt;
 
+    install_signal_handlers();
     let mut command = Command::new("sh");
     command.arg("-c").arg(&plan.command);
     // Own process group: the declared command is a shell line, so killing
@@ -237,6 +261,41 @@ fn start_product(plan: &StartPlan) -> i32 {
     let deadline = Instant::now() + Duration::from_secs(plan.ready_timeout_s);
     let mut ready = false;
     loop {
+        // A caught signal is forwarded before anything else is inspected,
+        // so givn always answers with 128+sig even if the product dies
+        // from the very same signal.
+        let caught = SIGNAL.load(Ordering::SeqCst);
+        if caught != 0 {
+            // The declared command runs under `sh`, which does not always
+            // exec it in place — forward to the child's whole process
+            // group so the product itself receives the signal.
+            #[cfg(unix)]
+            unsafe {
+                libc::kill(-(child.id() as i32), caught);
+            }
+            #[cfg(not(unix))]
+            let _ = child.kill();
+            // Reaping is bounded: a product that ignores the signal is
+            // killed after the grace period, so givn never waits forever.
+            let grace = Instant::now() + Duration::from_secs(2);
+            loop {
+                if matches!(child.try_wait(), Ok(Some(_))) {
+                    break;
+                }
+                if Instant::now() >= grace {
+                    #[cfg(unix)]
+                    unsafe {
+                        libc::kill(-(child.id() as i32), libc::SIGKILL);
+                    }
+                    #[cfg(not(unix))]
+                    let _ = child.kill();
+                    let _ = child.wait();
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(20));
+            }
+            return 128 + caught;
+        }
         if let Ok(Some(status)) = child.try_wait() {
             // The child's exit code is forwarded exactly — early exits
             // before readiness and cli exits alike.
