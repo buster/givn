@@ -157,23 +157,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: cargo fmt --all && targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A surviving pair records its recomputed embedding score after remediation`
+  - [x] COMMIT: `c68ef47` — `feat(semantic-remediation-log): A surviving pair records its recomputed embedding score after remediation`
 
-- [ ] Scenario: `A resolved candidate without a complete log entry blocks review`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A resolved candidate without a complete log entry blocks review`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 0 — legitimate immediate GREEN:
+        every step was already a real definition ("the user records the remediation
+        fix ... with no commits" landed with scenario 4, the completeness gate with
+        scenario 1), so no pending or undefined body remained. "10 steps (10 passed)".
         ```
-  - [ ] GREEN: completeness gate with the remediation-log stderr diagnostic. Files:
-        <!-- list them -->
+  - [x] GREEN: completeness gate with the remediation-log stderr diagnostic. Files:
+        none new — gate behaviour (`validate_log` empty-commits bail) and the
+        no-commits edit step already existed; this scenario binds them.
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "10 steps (10 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A resolved candidate without a complete log entry blocks review`
+  - [x] COMMIT: `$(git log --oneline -1 | cut -c1-7)` — `feat(semantic-remediation-log): A resolved candidate without a complete log entry blocks review`
 
 - [ ] Scenario: `A remediation commit without the semantic-remediation stamp blocks review`
   - [ ] RED: run only this scenario (Git fixture steps land here). Must fail.
