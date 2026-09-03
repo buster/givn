@@ -4,7 +4,7 @@
 //! Step definitions live in `run_execution_steps.rs` /
 //! `run_execution_e2e_steps.rs`.
 
-use std::net::TcpListener;
+use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::Command;
 use std::sync::Arc;
@@ -19,6 +19,20 @@ use super::GivnWorld;
 pub(crate) fn reserve_free_port() -> u16 {
     let listener = TcpListener::bind(("127.0.0.1", 0)).expect("reserve free port");
     listener.local_addr().expect("local addr").port()
+}
+
+/// Block until the canned responder accepts connections (bounded), so a
+/// probe thread started afterwards observes its first attempt against a
+/// live listener instead of racing the bind.
+pub(crate) fn wait_for_listener(port: u16) {
+    let deadline = std::time::Instant::now() + Duration::from_secs(2);
+    while std::time::Instant::now() < deadline {
+        if TcpStream::connect(("127.0.0.1", port)).is_ok() {
+            return;
+        }
+        std::thread::sleep(Duration::from_millis(5));
+    }
+    panic!("responder listener never came up on port {port}");
 }
 
 /// Locate (or build) the harness-free `ready_fixture` test binary. The
