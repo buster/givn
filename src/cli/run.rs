@@ -30,6 +30,7 @@ fn install_signal_handlers() {
     action.sa_sigaction = handler as *const () as usize;
     action.sa_flags = libc::SA_RESTART;
     unsafe {
+        libc::sigaction(libc::SIGINT, &action, std::ptr::null_mut());
         libc::sigaction(libc::SIGTERM, &action, std::ptr::null_mut());
     }
 }
