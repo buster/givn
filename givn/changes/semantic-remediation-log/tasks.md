@@ -296,23 +296,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A repeated passing rerun does not grow the remediation log`
+  - [x] COMMIT: `d525f04` — `feat(semantic-remediation-log): A repeated passing rerun does not grow the remediation log`
 
-- [ ] Scenario: `An unreachable remediation commit blocks review`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `An unreachable remediation commit blocks review`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        `git reset --hard HEAD~1` deleted the log tracked by the dropped commit,
+        so the record step failed — switched to a soft reset (commit object
+        orphaned, working tree intact).
         ```
-  - [ ] GREEN: ancestor check with reachability diagnostic. Files:
-        <!-- list them -->
+  - [x] GREEN: ancestor check with reachability diagnostic. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (soft-reset step;
+        reachability is scenario-1 `validate_log` gate code).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "12 steps (12 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): An unreachable remediation commit blocks review`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): An unreachable remediation commit blocks review`
 
 - [ ] Scenario: `A Git repository without commits behaves like no Git history`
   - [ ] RED: run only this scenario. Must fail.
