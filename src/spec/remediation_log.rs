@@ -148,7 +148,7 @@ fn render_log(change_id: &str, state: &LogState) -> String {
             "\n## Run {}\n- kind: {}\n- commit: {}\n- e5_runtime_ms: {}\n- bge_runtime_ms: {}\n- nli_runtime_ms: {}\n",
             index + 1,
             run.kind.as_str(),
-            optional_text(run.commit.as_deref()),
+            run.commit.as_deref().unwrap_or("null"),
             runtime_text(run.e5_runtime_ms),
             runtime_text(run.bge_runtime_ms),
             runtime_text(run.nli_runtime_ms),
@@ -189,7 +189,7 @@ fn render_log(change_id: &str, state: &LogState) -> String {
             commits_text(&entry.commits),
             entry.after_state.as_deref().unwrap_or("null"),
             score_text(entry.after_embedding_score),
-            optional_text(entry.after_commit.as_deref()),
+            entry.after_commit.as_deref().unwrap_or("null"),
         ));
         report.push_str(&gherkin_field(
             "after_left_gherkin",

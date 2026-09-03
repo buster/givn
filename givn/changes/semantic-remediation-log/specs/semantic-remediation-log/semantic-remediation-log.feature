@@ -111,7 +111,7 @@ Feature: Remediation log for semantic review
     Then the command exits non-zero
     And stderr contains "semantic-remediation"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A stamped remediation commit verifies the log and passes review
     Given the remediation case carries the distinguishing marker "remediation log stamped commit success acorn beacon cedar dune elm fern glade heather jade kiln larch maple nectar opal reed summit"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate in a Git repository
