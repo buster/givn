@@ -508,6 +508,8 @@ pub(crate) struct VerifiedRemediation {
     pub right_evidence_hash: String,
     pub classification: String,
     pub recomputed_score: Option<f32>,
+    pub left_file: String,
+    pub left_title: String,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -3379,6 +3381,15 @@ fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Res
                             _ => "endpoint-absent",
                         },
                         after_score: entry.recomputed_score,
+                        after_gherkin: if entry.classification == "DUPLICATE" {
+                            None
+                        } else {
+                            super::remediation_log::verbatim_scenario_text(
+                                root,
+                                &entry.left_file,
+                                &entry.left_title,
+                            )
+                        },
                     })
                     .collect::<Vec<_>>();
                 super::remediation_log::update_log(
@@ -4436,6 +4447,8 @@ fn verify_semantic_remediation(
                         right_evidence_hash: entry.right_evidence_hash.clone(),
                         classification: entry.classification.clone(),
                         recomputed_score: None,
+                        left_file: entry.left_file.clone(),
+                        left_title: entry.left_title.clone(),
                     });
                     continue;
                 }
@@ -4480,6 +4493,8 @@ fn verify_semantic_remediation(
                     right_evidence_hash: entry.right_evidence_hash.clone(),
                     classification: entry.classification.clone(),
                     recomputed_score: None,
+                    left_file: entry.left_file.clone(),
+                    left_title: entry.left_title.clone(),
                 });
             }
             "VARIANT" => {
@@ -4496,6 +4511,8 @@ fn verify_semantic_remediation(
                         right_evidence_hash: entry.right_evidence_hash.clone(),
                         classification: entry.classification.clone(),
                         recomputed_score: None,
+                        left_file: entry.left_file.clone(),
+                        left_title: entry.left_title.clone(),
                     });
                     continue;
                 }
@@ -4550,6 +4567,8 @@ fn verify_semantic_remediation(
                     right_evidence_hash: entry.right_evidence_hash.clone(),
                     classification: entry.classification.clone(),
                     recomputed_score: Some(score),
+                    left_file: entry.left_file.clone(),
+                    left_title: entry.left_title.clone(),
                 });
             }
             "VALID-BOUNDARY" => {
@@ -4567,6 +4586,8 @@ fn verify_semantic_remediation(
                         right_evidence_hash: entry.right_evidence_hash.clone(),
                         classification: entry.classification.clone(),
                         recomputed_score: None,
+                        left_file: entry.left_file.clone(),
+                        left_title: entry.left_title.clone(),
                     });
                     continue;
                 }
@@ -4622,6 +4643,8 @@ fn verify_semantic_remediation(
                     right_evidence_hash: entry.right_evidence_hash.clone(),
                     classification: entry.classification.clone(),
                     recomputed_score: Some(score),
+                    left_file: entry.left_file.clone(),
+                    left_title: entry.left_title.clone(),
                 });
             }
             _ => {}

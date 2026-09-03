@@ -38,6 +38,7 @@ pub(super) struct LogCompletion {
     pub right_evidence_hash: String,
     pub state: &'static str,
     pub after_score: Option<f32>,
+    pub after_gherkin: Option<String>,
 }
 
 #[derive(Debug, Clone)]
@@ -82,6 +83,7 @@ struct EntryRecord {
     after_state: Option<String>,
     after_embedding_score: Option<f32>,
     after_commit: Option<String>,
+    after_left_gherkin: Option<String>,
 }
 
 #[derive(Debug, Default)]
@@ -188,6 +190,10 @@ fn render_log(change_id: &str, state: &LogState) -> String {
             entry.after_state.as_deref().unwrap_or("null"),
             score_text(entry.after_embedding_score),
             optional_text(entry.after_commit.as_deref()),
+        ));
+        report.push_str(&gherkin_field(
+            "after_left_gherkin",
+            entry.after_left_gherkin.as_deref(),
         ));
     }
     report
@@ -328,6 +334,7 @@ fn parse_log(content: &str) -> LogState {
                 after_state: unquote(&lookup("after_state")),
                 after_embedding_score: parse_optional_score(&lookup("after_embedding_score")),
                 after_commit: unquote(&lookup("after_commit")),
+                after_left_gherkin: raw_optional(&lookup("after_left_gherkin")),
             });
         }
     }
@@ -420,6 +427,7 @@ pub(super) fn update_log(
                 after_state: None,
                 after_embedding_score: None,
                 after_commit: None,
+                after_left_gherkin: None,
             });
             changed = true;
         }
@@ -439,6 +447,7 @@ pub(super) fn update_log(
         entry.after_state = Some(completion.state.to_string());
         entry.after_embedding_score = completion.after_score;
         entry.after_commit = head_commit.map(|commit| commit.to_string());
+        entry.after_left_gherkin = completion.after_gherkin.clone();
         changed = true;
         if state.runs.last().map(|run| run.kind) != Some(LogRunKind::After) {
             state.runs.push(RunRecord {
