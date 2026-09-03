@@ -20,13 +20,13 @@ Feature: Remediation log for semantic review
     And the candidate entry records the endpoint scenario text verbatim from the active delta
     And the candidate entry records the endpoint content and evidence hashes from the report
 
-  @givn.added @wip
+  @givn.added
   Scenario: Rerunning review with unchanged endpoints does not grow the remediation log
     Given the remediation case carries the distinguishing marker "remediation log append-only stability anchor birch cobalt dune elm fern grove inlet jasper knoll larch meadow nest opal prairie quail reed slate"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
-    And the user runs `givn check review --change running-change` again
+    And the user runs `givn check review --change running-change` again without edits
     Then the remediation log still contains exactly one candidate entry and one run record
 
   @givn.added @wip

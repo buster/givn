@@ -438,7 +438,16 @@ fn entry_records_report_hashes(world: &mut GivnWorld) {
 
 #[then("the remediation log still contains exactly one candidate entry and one run record")]
 fn log_is_not_grown(world: &mut GivnWorld) {
-    unimplemented!("pending: no growth")
+    assert_eq!(
+        candidate_sections(world).len(),
+        1,
+        "unchanged rerun must not append a candidate entry"
+    );
+    assert_eq!(
+        run_sections(world).len(),
+        1,
+        "unchanged rerun must not append a run record"
+    );
 }
 
 #[then("the remediation log contains a second candidate entry with different endpoint hashes")]
