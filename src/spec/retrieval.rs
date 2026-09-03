@@ -4345,7 +4345,16 @@ fn log_candidate_inputs(root: &Path, candidates: &[SemanticCandidate]) -> Vec<Lo
         .map(|candidate| LogCandidateInput {
             candidate_id: candidate.candidate_id.clone(),
             embedding_score: candidate.score,
-            bge_admission: candidate.bge_admission.map(|value| value.to_string()),
+            bge_admission: {
+                #[cfg(feature = "cross-encoder-reranker")]
+                {
+                    Some(candidate.bge_admission.unwrap_or("BGE_UNSCORED").to_string())
+                }
+                #[cfg(not(feature = "cross-encoder-reranker"))]
+                {
+                    candidate.bge_admission.map(|value| value.to_string())
+                }
+            },
             bge_symmetric_raw: candidate
                 .bge
                 .as_ref()
@@ -4353,7 +4362,7 @@ fn log_candidate_inputs(root: &Path, candidates: &[SemanticCandidate]) -> Vec<Lo
             nli_admission: {
                 #[cfg(feature = "nli-evidence")]
                 {
-                    candidate.nli_admission.map(|value| value.to_string())
+                    Some(candidate.nli_admission.unwrap_or("NLI_UNSCORED").to_string())
                 }
                 #[cfg(not(feature = "nli-evidence"))]
                 {

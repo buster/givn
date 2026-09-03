@@ -339,37 +339,50 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
   - [x] COMMIT: `27b4fe1` — `feat(semantic-remediation-log): A Git repository without commits behaves like no Git history`
 
-- [ ] Scenario: `The after state lands on the entry matching the verified evidence hashes`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `The after state lands on the entry matching the verified evidence hashes`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the prior-entry-retained assertion used a snapshot the scenario never
+        took — redefined as structural non-mutation (run 1 linkage, scaffold
+        decision fields, no after fields).
         ```
-  - [ ] GREEN: evidence-hash entry matching for after fields. Files:
-        <!-- list them -->
+  - [x] GREEN: evidence-hash entry matching for after fields. Files:
+        `tests/steps/semantic_remediation_log_steps.rs`
+        (`fill_verified_entries` routes the record steps to the entries whose
+        evidence hashes match the current report; after-on-second-entry and
+        prior-entry assertions).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "14 steps (14 passed)".
+        Scenario 3 re-run confirmed unaffected: exit 0.
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): The after state lands on the entry matching the verified evidence hashes`
+  - [x] COMMIT: `a07309c` — `feat(semantic-remediation-log): The after state lands on the entry matching the verified evidence hashes`
 
-- [ ] Scenario: `A logged pair scored by BGE and NLI records their evidence states` (@rulebook)
-  - [ ] RED: rulebook command, run only this scenario. Must fail.
+- [x] Scenario: `A logged pair scored by BGE and NLI records their evidence states` (@rulebook)
+  - [x] RED: rulebook command, run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stub GIVN_SPEC_BGE=stub GIVN_SPEC_RERANKER=nli-stub cargo test --no-default-features --features spec-retrieval,cross-encoder-reranker,nli-evidence --test features_runner -- --name "A logged pair scored by BGE and NLI records their evidence states"
+        Output: exit 101 — "1 step failed" (unimplemented stub), then renderer
+        mismatches: admission states and UNSCORED fallbacks were quoted/absent.
         ```
-  - [ ] GREEN: BGE/NLI state mirroring from the report. Files:
-        <!-- list them -->
+  - [x] GREEN: BGE/NLI state mirroring from the report. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (non-null mirror
+        assertion), `src/spec/remediation_log.rs` (admission states rendered
+        as bare values), `src/spec/retrieval.rs` (UNSCORED fallback mirrored
+        only when the stage is compiled, matching the report grammar).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0. Scenario 1 re-run (E5-only
+        build) confirms the null path: exit 0 — "12 steps (12 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A logged pair scored by BGE and NLI records their evidence states`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A logged pair scored by BGE and NLI records their evidence states`
 
 - [ ] Scenario: `A commit fixing two candidates carries one stamp line per candidate`
   - [ ] RED: run only this scenario. Must fail.

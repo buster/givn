@@ -766,7 +766,20 @@ fn after_state_on_second_entry(world: &mut GivnWorld) {
     "the remediation log records the candidate's BGE and NLI evidence states as non-null values from the report"
 )]
 fn entry_records_non_null_evidence(world: &mut GivnWorld) {
-    unimplemented!("pending: non-null evidence")
+    let report_fields = report_candidate_fields(world);
+    let entry = first_candidate_section(world);
+    for (report_name, entry_name) in [
+        ("bge_admission", "before_bge_admission"),
+        ("nli_admission", "before_nli_admission"),
+    ] {
+        let expected = report_field(&report_fields, report_name);
+        assert_ne!(expected, "null", "the report must record {report_name}");
+        assert_eq!(
+            entry.field(entry_name),
+            Some(expected.as_str()),
+            "{entry_name} must mirror the non-null report state"
+        );
+    }
 }
 
 #[then("the remediation log has the exact headers and entry field order")]
