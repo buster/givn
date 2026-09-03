@@ -400,7 +400,7 @@ Production: `src/cli/upgrade.rs` (`backfill_commands`, `RUN_SCAFFOLD`), `src/cli
 
 ## Final gate
 
-- [ ] `./run-tests.sh` (full suite incl. delta scope) → exit `_`
-- [ ] `./run-tests.sh --e2e` → exit `_`
-- [ ] `givn lint --change run-command` → exit `_`
-- [ ] Coverage gate green (review hook)
+- [x] `./run-tests.sh` (full suite incl. delta scope) → exit **0** (548 scenarios, 0 failures; delta scope re-verified separately: 48/48 passed, exit 0)
+- [x] `./run-tests.sh --e2e` → exit **0** (106 scenarios, 0 failures)
+- [x] `givn lint --change run-command` → exit **2** with 48 @wip findings before the tag removal; exit **0** ("2 file(s) checked — clean") after dropping @wip from all 48 scenarios
+- [x] Coverage gate green (review hook)
