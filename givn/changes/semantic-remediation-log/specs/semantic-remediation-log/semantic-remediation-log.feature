@@ -253,7 +253,7 @@ Feature: Remediation log for semantic review
     And the remediation log ends with exactly one final newline
     And the verbatim scenario text preserves interior blank lines and the Examples table
 
-  @givn.added @wip
+  @givn.added
   Scenario: Failed review before the semantic stage does not create the remediation log
     Given the remediation case carries the distinguishing marker "remediation log early failure safety basil cedar dune elm frost grove hollow iris juniper kelp maple nettle opal pine quince"
     Given a project prepared for semantic review with a malformed delta feature
