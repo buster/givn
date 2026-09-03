@@ -186,17 +186,17 @@ Feature: Remediation log for semantic review
     Then the command exits non-zero
     And stderr contains "reachable"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Git repository without commits behaves like no Git history
     Given the remediation case carries the distinguishing marker "remediation log unborn branch anchor basil cedar dune elm fern frost glade hollow iris juniper kelp maple nectar opal quince"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate in a Git repository without commits
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
-    Then the remediation log records the before run anchor and entry runs as null
     And the user classifies every semantic review candidate as "DUPLICATE"
     And the user records the remediation fix "removed the redundant scenario" and commits ["6f708192a3b4c5d6"] in the remediation log
     And the classified duplicate candidate is removed from the active delta
-    And the user runs `givn check review --change running-change`
+    Then the remediation log records the before run anchor as null
+    When the user runs `givn check review --change running-change`
     Then the command exits 0
     And stdout contains "semantic remediation verified"
 
