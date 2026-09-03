@@ -234,23 +234,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A stamped remediation commit verifies the log and passes review`
+  - [x] COMMIT: `7ebdde8` — `feat(semantic-remediation-log): A stamped remediation commit verifies the log and passes review`
 
-- [ ] Scenario: `A project without Git history records null run anchors and reviews without stamp checks`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A project without Git history records null run anchors and reviews without stamp checks`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the null-anchor assertion was an unimplemented stub, and the scenario's
+        keyword flow was corrected (And after Then resolves Then-keyword steps).
         ```
-  - [ ] GREEN: null anchors and skipped stamp checks outside Git. Files:
-        <!-- list them -->
+  - [x] GREEN: null anchors and skipped stamp checks outside Git. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (null-anchor
+        assertion; no-git behaviour is scenario-1 gate code with
+        `head_commit: None`).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "11 steps (11 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A project without Git history records null run anchors and reviews without stamp checks`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A project without Git history records null run anchors and reviews without stamp checks`
 
 - [ ] Scenario: `A verified remediation from before the log existed still passes review`
   - [ ] RED: run only this scenario. Must fail.
