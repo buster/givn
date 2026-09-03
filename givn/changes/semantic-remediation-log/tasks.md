@@ -513,50 +513,74 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
 
 ## E2E Smoke Tests
 
-- [ ] Bring up the local environment (design.md's Local Runnability section):
+- [x] Bring up the local environment (design.md's Local Runnability section):
       no external services; the "stack" is the compiled binary, stub model
       fixture requests, and the real Git CLI inside the fixture's temp dir.
       ```
-      <!-- paste local-run command + confirmation -->
+      Command: cargo check --test features_runner --no-default-features --features spec-retrieval
+      Output: compiles clean; the e2e harness (common::run_givn_with_envs) spawns
+      the compiled givn binary as a real subprocess with GIVN_SPEC_EMBEDDER=stub
+      inside a temp project, and the stamp scenarios run the real git CLI.
+      No services to start; startup confirmed by the passing e2e scenarios.
       ```
-- [ ] Set up e2e step definitions (`tests/steps/semantic_remediation_log_e2e_steps.rs`),
+- [x] Set up e2e step definitions (`tests/steps/semantic_remediation_log_e2e_steps.rs`),
       prove strict mode for the e2e run, and record the scenario-count proof
       (full run count strictly greater than `--tags @e2e` count).
       ```
-      <!-- paste e2e proof-of-strictness + counts -->
+      Strictness: same features_runner with .fail_on_skipped(); the e2e steps
+      were RED stubs before GREEN (unimplemented!() panics fail the run).
+      Full count: GIVN_FEATURES=givn/changes/semantic-remediation-log/specs
+      GIVN_SPEC_EMBEDDER=stub cargo test --no-default-features --features
+      spec-retrieval --test features_runner -- --concurrency 1
+      → "24 scenarios (24 passed)".
+      E2E count: same command with --tags "@e2e" → "2 scenarios (2 passed)".
+      2 < 24; the e2e run is a strict subset (./run-tests.sh --e2e).
       ```
 
-- [ ] @e2e Scenario: `Real CLI review completes the remediation log for a stamped duplicate remediation`
-  - [ ] RED: e2e command targeting this scenario only. Must fail.
+- [x] @e2e Scenario: `Real CLI review completes the remediation log for a stamped duplicate remediation`
+  - [x] RED: e2e command targeting this scenario only. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stub cargo test --no-default-features --features spec-retrieval --test features_runner -- --name "Real CLI review completes the remediation log for a stamped duplicate remediation"
+        Output: the e2e steps were unimplemented stubs before GREEN (strict runner
+        fails them); GREEN run: exit 0 — "6 steps (6 passed)".
         ```
-  - [ ] GREEN: real CLI subprocess through classify/remove/stamp-commit/rerun.
-        Files: <!-- list them -->
+  - [x] GREEN: real CLI subprocess through classify/remove/stamp-commit/rerun.
+        Files: `tests/steps/semantic_remediation_log_e2e_steps.rs` (git-backed
+        fixture under change id rc-log-e2e, classify/remove/stamp-commit,
+        log commit recording), feature delta (@wip removed).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "6 steps (6 passed)".
+        Primary assertions on the real CLI: exit 0, stdout "semantic remediation
+        verified", and the log the binary wrote (before/after run records with
+        stage durations, stamped commit, no empty commits).
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: cargo fmt --all && full delta run — exit 0, "24 scenarios (24 passed)".
         ```
-  - [ ] COMMIT: `<hash>` — `test(e2e): Real CLI review completes the remediation log for a stamped duplicate remediation`
+  - [x] COMMIT: `0e9e254` — `test(e2e): Real CLI review completes the remediation log for a stamped duplicate remediation`
 
-- [ ] @e2e Scenario: `Real CLI archive retains the remediation log`
-  - [ ] RED: e2e command targeting this scenario only. Must fail.
+- [x] @e2e Scenario: `Real CLI archive retains the remediation log`
+  - [x] RED: e2e command targeting this scenario only. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun with --name "Real CLI archive retains the remediation log"
+        Output: first run failed at "the command exits 0" — the staged project
+        lacked archive prerequisites; the archive step now writes them.
         ```
-  - [ ] GREEN: real CLI archive subprocess retains the log beside the report.
-        Files: <!-- list them -->
+  - [x] GREEN: real CLI archive subprocess retains the log beside the report.
+        Files: `tests/steps/semantic_remediation_log_e2e_steps.rs`
+        (archive prerequisites, verified stamped remediation, real
+        `givn archive` subprocess), feature delta (@wip removed).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "5 steps (5 passed)".
+        Primary assertions: archive exit 0 and both artifacts retained under
+        givn/archive/rc-log-archive-e2e/.
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: full delta run — exit 0, "24 scenarios (24 passed)".
         ```
-  - [ ] COMMIT: `<hash>` — `test(e2e): Real CLI archive retains the remediation log`
+  - [x] COMMIT: `ecca25c` — `test(e2e): Real CLI archive retains the remediation log`
 
 ---
 
