@@ -1,6 +1,8 @@
 use crate::steps::GivnWorld;
 use cucumber::{given, then};
 
+use crate::common;
+
 #[given("a fresh givn project")]
 fn fresh_project(world: &mut GivnWorld) {
     world.env = Some(crate::common::make_bare_root());
@@ -19,7 +21,7 @@ printf '%s\n' '<?xml version="1.0"?><coverage line-rate="0.95" branch-rate="0.95
     std::fs::write(env.path("merge-coverages.sh"), merge).expect("write merge script");
     make_executable(&env.path("merge-coverages.sh"));
     let yaml = "verify:\n  command: \"true\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"./measure-coverage.sh\"\n  merge_command: \"./merge-coverages.sh\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  coverage: true\n";
-    std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
+    common::write_commands_yaml(&env.path("givn/commands.yaml"), yaml);
 }
 
 #[then("givn/commands.yaml contains `measure_command: \"./measure-coverage.sh\"`")]

@@ -135,6 +135,39 @@ fn server_declaration_with_port_handoff(world: &mut GivnWorld) {
     support::write_server_declaration(world, &command, Some("PORT"), None, "/healthz", 60);
 }
 
+#[given("verify commands are no-ops with a complete server run declaration")]
+fn verify_noops_with_server_run(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let yaml = "\
+verify:
+  command: \"true\"
+  e2e_command: \"true\"
+coverage:
+  measure_command: \"true\"
+  merge_command: \"true\"
+  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"
+  e2e_path: \"coverage/e2e-cobertura.xml\"
+  output_path: \"coverage/cobertura-coverage.xml\"
+";
+    std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
+    crate::steps::run_declaration_fixtures_support::declare_run(world, "server");
+}
+
+#[then(regex = r#"^the archived change directory "([^"]+)" exists$"#)]
+fn archived_change_dir_named_exists(world: &mut GivnWorld, id: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    assert!(
+        env.path(&format!("givn/archive/{id}")).is_dir(),
+        "the change must have been moved to givn/archive/{id}/"
+    );
+}
+
 #[given("a README with a broken run managed block")]
 fn broken_run_block_readme(world: &mut GivnWorld) {
     // Insert a run managed block that lost its end marker: exactly one of

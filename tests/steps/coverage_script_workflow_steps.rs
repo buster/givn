@@ -46,7 +46,7 @@ fn write_commands(env: &crate::common::TestEnv, measure: &str, merge: &str) {
     let yaml = format!(
         "verify:\n  command: \"true\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"{measure}\"\n  merge_command: \"{merge}\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  coverage: true\n"
     );
-    std::fs::write(env.path("givn/commands.yaml"), yaml).expect("write commands.yaml");
+    crate::common::write_commands_yaml(&env.path("givn/commands.yaml"), &yaml);
 }
 
 fn write_measure_script(env: &crate::common::TestEnv) {
