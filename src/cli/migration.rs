@@ -332,8 +332,11 @@ pub fn prepare_managed_upgrade(
     ensure_clean_git(project_root)?;
 
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
+    let commands_path = project_root.join("givn/commands.yaml");
     let snapshot = FileSnapshot::capture(
-        std::iter::once(config_path.to_path_buf()).chain(managed_paths.iter().cloned()),
+        std::iter::once(config_path.to_path_buf())
+            .chain(std::iter::once(commands_path.clone()))
+            .chain(managed_paths.iter().cloned()),
     )?;
 
     let upgraded = crate::cli::upgrade::upgrade_config(existing_config, target_version)?;
@@ -361,6 +364,23 @@ fn apply_managed_upgrade(config_path: &Path, upgraded: &str, project_root: &Path
     crate::skills::targets::sync(project_root)
         .context("synchronize generated Givn skills and commands")?;
 
+    // Run backfill: an existing project may predate the run declaration.
+    // Idempotent — a commands file that already declares `run:` is left
+    // untouched, so a repeated upgrade produces no diff and no commit.
+    let commands_path = project_root.join("givn/commands.yaml");
+    if commands_path.exists() {
+        let existing = std::fs::read_to_string(&commands_path)
+            .with_context(|| format!("read managed commands file '{}'", commands_path.display()))?;
+        if let Some(backfilled) = crate::cli::upgrade::backfill_commands(&existing) {
+            std::fs::write(&commands_path, backfilled).with_context(|| {
+                format!("write managed commands file '{}'", commands_path.display())
+            })?;
+            println!(
+                "  wrote    run: scaffold to givn/commands.yaml — fill it in; `givn archive` is blocked until you do"
+            );
+        }
+    }
+
     Ok(())
 }
 
@@ -370,7 +390,10 @@ fn commit_managed_upgrade(
     managed_paths: &[PathBuf],
     commit_message: &str,
 ) -> Result<Option<String>> {
-    let mut paths = vec![config_path.to_path_buf()];
+    let mut paths = vec![
+        config_path.to_path_buf(),
+        project_root.join("givn/commands.yaml"),
+    ];
     paths.extend(managed_paths.iter().cloned());
     stage_paths(project_root, paths)?;
 
