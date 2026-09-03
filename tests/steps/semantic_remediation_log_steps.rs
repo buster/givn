@@ -146,7 +146,7 @@ fn report_candidate_fields(world: &GivnWorld) -> Vec<(String, String)> {
 
 /// Fill `field` with `value` in every log entry whose endpoint evidence hashes
 /// match a candidate in the current report (the entries the gate will verify).
-fn fill_verified_entries(world: &GivnWorld, field: &str, value: &str) {
+pub(crate) fn fill_verified_entries(world: &GivnWorld, field: &str, value: &str) {
     let wanted: Vec<(String, String)> = report_candidate_blocks(world)
         .iter()
         .filter_map(|block| {

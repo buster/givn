@@ -673,6 +673,16 @@ fn completed_semantic_review_change(world: &mut GivnWorld) {
             "- rationale: \"The candidate has the same observable behavior\"",
         );
     fs::write(&report_path, report).expect("classify archive report");
+    super::semantic_remediation_log_steps::fill_verified_entries(
+        world,
+        "remediation",
+        "\"removed the redundant scenario\"",
+    );
+    super::semantic_remediation_log_steps::fill_verified_entries(
+        world,
+        "commits",
+        "[\"fixture-archive-0001\"]",
+    );
     fs::remove_dir_all(change_dir.join("specs")).expect("remove classified archive delta");
     fs::create_dir_all(change_dir.join("specs")).expect("recreate archive delta directory");
     let output = common::run_givn_with_envs(
