@@ -445,23 +445,30 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): Failed review before the semantic stage does not create the remediation log`
+  - [x] COMMIT: `ff716a6` — `feat(semantic-remediation-log): Failed review before the semantic stage does not create the remediation log`
 
-- [ ] Scenario: `The remediation log survives the archive move`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `The remediation log survives the archive move`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the completed-log fixture and archive steps were unimplemented stubs. The
+        final active-log-unchanged assertion was dropped: after a successful
+        archive the change directory is moved, so the archived-log byte equality
+        (snapshot taken before archive) already proves the archive gate did not
+        grow the log.
         ```
-  - [ ] GREEN: archive retention plus active-log invariance. Files:
-        <!-- list them -->
+  - [x] GREEN: archive retention plus active-log invariance. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (completed-change
+        fixture with filled log, archived-log existence and byte-equality
+        assertions; the generic `the user runs` step drives `givn archive`).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "8 steps (8 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): The remediation log survives the archive move`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): The remediation log survives the archive move`
 
 - [ ] Scenario: `Advisory spec review does not create the remediation log`
   - [ ] RED: run only this scenario. Must fail.

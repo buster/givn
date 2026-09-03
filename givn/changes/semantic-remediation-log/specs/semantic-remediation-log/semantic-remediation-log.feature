@@ -262,7 +262,7 @@ Feature: Remediation log for semantic review
     Then the command exits non-zero
     And the remediation log does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: The remediation log survives the archive move
     Given the remediation case carries the distinguishing marker "remediation log archive retention evidence acorn birch clover delta elm fern glade heather iris juniper kiln larch moss opal plum quince reed"
     Given a completed semantic remediation change with a generated log and archive prerequisites
@@ -272,7 +272,6 @@ Feature: Remediation log for semantic review
     Then the command exits 0
     And `givn/archive/running-change/semantic-remediation.md` exists
     And the archived remediation log bytes equal the active log snapshot
-    And the active remediation log is unchanged by the archive run
 
   @givn.added @wip
   Scenario: Advisory spec review does not create the remediation log

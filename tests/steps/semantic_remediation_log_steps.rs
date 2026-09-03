@@ -354,7 +354,63 @@ fn remediation_project_in_git_without_commits(world: &mut GivnWorld) {
 
 #[given("a completed semantic remediation change with a generated log and archive prerequisites")]
 fn completed_remediation_log_change(world: &mut GivnWorld) {
-    unimplemented!("pending: completed log fixture")
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+    let env = world.env.as_ref().expect("remediation project is required");
+    let change_dir = env.path("givn/changes/running-change");
+    fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write archive proposal");
+    fs::write(change_dir.join("design.md"), "# Design\n").expect("write archive design");
+    fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write archive design review");
+    fs::write(
+        change_dir.join("tasks.md"),
+        "- [x] all done\n- [x] COMMIT: `fixture-archive-0001`\n",
+    )
+    .expect("write archive tasks");
+    fs::write(
+        env.path("givn/config.yaml"),
+        "addons:\n  arc42: false\n  absolute_mode: false\n  readme: false\n  coverage: false\n  domain_modeling: false\n  dev_principles: false\n  grill_me: false\n  grill_with_docs: false\n",
+    )
+    .expect("disable archive fixture addons");
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
+        "verify:\n  command: \"true\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"true\"\n  merge_command: \"true\"\n  non_e2e_path: coverage/non.xml\n  e2e_path: coverage/e2e.xml\n  output_path: coverage/all.xml\naddons:\n  arc42: false\n  absolute_mode: false\n  readme: false\n  coverage: false\n  domain_modeling: false\n  dev_principles: false\n  grill_me: false\n  grill_with_docs: false\n",
+    );
+    let scores = world
+        .retrieval_stub_scores
+        .clone()
+        .expect("semantic score fixture");
+    let output = common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_STUB_PAIR_SCORES", &scores)],
+    );
+    assert!(
+        !output.status.success(),
+        "initial semantic review should require classifications"
+    );
+    let report_path = change_dir.join("semantic-review.md");
+    let report = fs::read_to_string(&report_path).expect("generated semantic report");
+    fs::write(&report_path, report).expect("keep archive report");
+    fill_verified_entries(
+        world,
+        "remediation",
+        "\"removed the redundant scenario\"",
+    );
+    fill_verified_entries(world, "commits", "[\"fixture-archive-0001\"]");
+    fs::remove_dir_all(change_dir.join("specs")).expect("remove classified archive delta");
+    fs::create_dir_all(change_dir.join("specs")).expect("recreate archive delta directory");
+    let output = common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[("GIVN_SPEC_EMBEDDER", "stub"), ("GIVN_SPEC_STUB_PAIR_SCORES", &scores)],
+    );
+    assert!(
+        output.status.success(),
+        "completed semantic review failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    world.remediation_log_snapshot =
+        Some(fs::read(remediation_log_path(world)).expect("snapshot completed log"));
 }
 
 #[when(
@@ -545,6 +601,7 @@ fn delete_remediation_log(world: &mut GivnWorld) {
 }
 
 #[when("the active remediation log bytes are snapshotted")]
+#[given("the active remediation log bytes are snapshotted")]
 fn snapshot_remediation_log(world: &mut GivnWorld) {
     world.remediation_log_snapshot =
         Some(fs::read(remediation_log_path(world)).expect("snapshot log"));
@@ -1022,15 +1079,38 @@ fn log_bytes_equal_snapshot(world: &mut GivnWorld) {
 
 #[then("`givn/archive/running-change/semantic-remediation.md` exists")]
 fn archived_log_exists(world: &mut GivnWorld) {
-    unimplemented!("pending: archived log exists")
+    let env = world.env.as_ref().expect("remediation project is required");
+    assert!(
+        env.path("givn/archive/running-change/semantic-remediation.md")
+            .is_file(),
+        "the archived change must retain the remediation log"
+    );
 }
 
 #[then("the archived remediation log bytes equal the active log snapshot")]
 fn archived_log_bytes_equal_snapshot(world: &mut GivnWorld) {
-    unimplemented!("pending: archived bytes equal")
+    let env = world.env.as_ref().expect("remediation project is required");
+    let archived =
+        fs::read(env.path("givn/archive/running-change/semantic-remediation.md"))
+            .expect("read archived remediation log");
+    assert_eq!(
+        archived,
+        *world
+            .remediation_log_snapshot
+            .as_ref()
+            .expect("active log snapshot")
+    );
 }
 
 #[then("the active remediation log is unchanged by the archive run")]
 fn active_log_unchanged_by_archive(world: &mut GivnWorld) {
-    unimplemented!("pending: archive does not mutate log")
+    let current = fs::read(remediation_log_path(world)).expect("read active log");
+    assert_eq!(
+        current,
+        *world
+            .remediation_log_snapshot
+            .as_ref()
+            .expect("active log snapshot"),
+        "the archive run must not grow the remediation log"
+    );
 }
