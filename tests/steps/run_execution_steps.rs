@@ -123,6 +123,9 @@ fn probe_against_failing_listener(world: &mut GivnWorld) {
 fn probe_against_204_listener(world: &mut GivnWorld) {
     let port = support::reserve_free_port();
     world.run_responder = Some(support::spawn_responder(port, 204));
+    // The probe asserts "ready on the first attempt", so its thread must
+    // not race the responder's bind.
+    support::wait_for_listener(port);
     let handle = std::thread::spawn(move || {
         givn::cli::run::probe_until_ready(port, "/healthz", Duration::from_secs(5))
     });
