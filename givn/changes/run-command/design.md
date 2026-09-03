@@ -142,7 +142,9 @@ impl Run {
 | `tests/steps/run_command_steps.rs` | declaration capability, unit-level steps |
 | `tests/steps/run_command_e2e_steps.rs` | declaration capability, @e2e steps |
 | `tests/steps/run_execution_steps.rs` | execution capability, unit-level steps (probe mechanics, signal forwarding) |
-| `tests/steps/run_execution_e2e_steps.rs` | execution capability, @e2e steps |
+| `tests/steps/run_execution_e2e_steps.rs` | execution capability, @e2e steps (also hosts the git-managed fixture and the git-state upgrade steps — as-built deviation from the §16 note that placed them in `run_command_e2e_steps.rs`, kept next to the archive/upgrade scenarios that consume them) |
+| `tests/steps/run_readme_steps.rs` | **new** — README run-block render steps (as-built: split out for the readme capability) |
+| `tests/steps/run_upgrade_steps.rs` | **new** — run-scaffold backfill steps (as-built: split out rather than folded into the execution file) |
 | `tests/steps/run_execution_support.rs` | fixture-binary location, start-plan fixtures, spawn-and-interrupt harness (pattern: `*_support.rs`) |
 | `tests/steps/run_declaration_fixtures_support.rs` | **new** — shared run-declaration fixture helpers and their Given wiring (§4.2) |
 | `tests/steps/mod.rs` | registration (§9) |
@@ -774,15 +776,15 @@ decision; task 16 closes the change.
   managed block`, `the archived change directory "<id>" exists`; the
   complete-declaration Givens are the shared fixture steps of §4.2
   (`the project declares a complete run declaration [for a <word> product]`,
-  `the commands file has no run declaration`) — the previously planned
-  combined `verify commands are no-ops with a complete server run
-  declaration` step is replaced by composing the existing no-ops step with
-  the shared Given; `stderr mentions "..."` is provided by the execution
-  unit steps and reused by the sentinel e2e scenario; assertion steps for
-  the sentinel/placeholder/markers.
+  `the commands file has no run declaration`) — the as-built composed
+  `verify commands are no-ops with a complete server run declaration` step
+  writes the no-ops yaml and appends the shared server declaration in one
+  Given (equivalent to composing the two); `stderr mentions "..."` is
+  provided by the execution unit steps and reused by the sentinel e2e
+  scenario; assertion steps for the sentinel/placeholder/markers.
 - New git-state assertion steps (upgrade commit observability), implemented
-  next to the git-managed fixture in `run_command_e2e_steps.rs` (git
-  helpers pattern: `release_0_3_0_e2e_steps`): `the working tree is clean`,
+  next to the git-managed fixture in `run_execution_e2e_steps.rs` (git
+  helpers pattern: `release_0_3_0_e2e_steps`; §5 as-built note): `the working tree is clean`,
   `the latest commit contains "givn/commands.yaml"`,
   `the user runs \`givn upgrade\` again`, `the latest commit is unchanged by
   the second upgrade` — real `git` state of the fixture project.

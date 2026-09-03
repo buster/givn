@@ -156,11 +156,7 @@ pub fn backfill_commands(existing: &str) -> Option<String> {
     if has_run {
         return None;
     }
-    let base = existing.trim_end();
-    if base.is_empty() {
-        return Some(RUN_SCAFFOLD.to_string());
-    }
-    Some(format!("{base}\n\n{RUN_SCAFFOLD}"))
+    Some(format!("{}\n\n{RUN_SCAFFOLD}", existing.trim_end()))
 }
 
 /// Group user-owned lines by their top-level YAML key. A top-level key line
