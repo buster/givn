@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: accepted
 date: 2026-09-02
 decision-makers:
   - givn maintainers
@@ -145,7 +145,8 @@ The @e2e ready-line and exit-code scenarios of the `run-execution` capability
 (ready line prefix, caller-provided port, exit codes 0/1/2/130/143, forwarded
 child code) and the R1–R10 `check_run` validation suite of the
 `run-command` capability are the fitness evidence: `./run-tests.sh` and
-`./run-tests.sh --e2e` must stay green before this record leaves `proposed`.
+`./run-tests.sh --e2e` stayed green (548 and 106 scenarios, zero failures)
+before this record left `proposed` — accepted 2026-09-03.
 
 ## Pros and Cons of the Options
 

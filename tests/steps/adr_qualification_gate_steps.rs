@@ -528,7 +528,7 @@ fn final_register_has_expected_count(world: &mut GivnWorld) {
     assert_eq!(proposed, 2, "unexpected proposed ADR count");
 }
 
-#[then("the final register has 35 accepted decisions and three proposed decisions")]
+#[then("the final register has 36 accepted decisions and three proposed decisions")]
 fn final_register_has_three_proposed(world: &mut GivnWorld) {
     let register = guidance(world);
     let accepted = register
@@ -539,7 +539,7 @@ fn final_register_has_three_proposed(world: &mut GivnWorld) {
         .lines()
         .filter(|line| line.contains("| proposed |"))
         .count();
-    assert_eq!(accepted, 35, "unexpected accepted ADR count");
+    assert_eq!(accepted, 36, "unexpected accepted ADR count");
     assert_eq!(proposed, 3, "unexpected proposed ADR count");
 }
 
