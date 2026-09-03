@@ -126,17 +126,17 @@ Feature: Remediation log for semantic review
     And stdout contains "semantic remediation verified"
     And the remediation log records the after state with the stamped commit as the after anchor
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project without Git history records null run anchors and reviews without stamp checks
     Given the remediation case carries the distinguishing marker "remediation log absent history anchor ash birch cedar dune elm fern gale heather iris juniper kelp larch moss nectar opal quince"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
-    Then the remediation log records the before run anchor and entry runs as null
     And the user classifies every semantic review candidate as "DUPLICATE"
     And the user records the remediation fix "removed the redundant scenario" and commits ["3c4d5e6f708192a3"] in the remediation log
     And the classified duplicate candidate is removed from the active delta
-    And the user runs `givn check review --change running-change`
+    Then the remediation log records the before run anchor as null
+    When the user runs `givn check review --change running-change`
     Then the command exits 0
     And stdout contains "semantic remediation verified"
 

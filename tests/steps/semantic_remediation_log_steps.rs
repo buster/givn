@@ -669,9 +669,12 @@ fn entry_records_consolidated_text(world: &mut GivnWorld) {
     );
 }
 
-#[then("the remediation log records the before run anchor and entry runs as null")]
+#[then("the remediation log records the before run anchor as null")]
 fn anchors_are_null(world: &mut GivnWorld) {
-    unimplemented!("pending: null anchors")
+    let runs = run_sections(world);
+    assert_eq!(runs.len(), 1, "one run record expected");
+    assert_eq!(runs[0].field("kind"), Some("before"));
+    assert_eq!(runs[0].field("commit"), Some("null"));
 }
 
 #[then("the remediation log records the after state with the stamped commit as the after anchor")]
