@@ -15,12 +15,13 @@ repository's development scripts.
 | `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the semantic report gate. |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps. Filesystem-derived, no separate state file. |
 | `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` edges, optional/gates-archive flags, post hooks; overlays live status with `--change`. |
-| `givn archive --change <id>` | Archive a completed change. Gated: `apply.requires` artifacts must exist, `REVIEW: PASS` present, all their hooks pass. |
+| `givn archive --change <id>` | Archive a completed change. Gated: `apply.requires` artifacts must exist, `REVIEW: PASS` present, all their hooks pass; the run declaration must be complete. |
+| `givn run [--port <n>] [--print]` | Start the product declared in the `run:` block of `givn/commands.yaml`. Hands the port to the product through `port_env` (ephemeral port when the caller passes none), prints `givn run: ready at <url>` once readiness is observed, forwards SIGINT/SIGTERM (exit 130/143), and forwards the product's exit code. `--print` emits one sh-eval-able start line without starting. |
 | `givn eject <target> [--force]` | Write an embedded default facet into the project for editing (`design:template`, `review:instruction`, `skill:givn-propose`, `manifest`). |
 | `givn addons list` / `enable <name>` / `disable <name>` | Manage opt-in addon artifact/policy sets. |
 | `givn extras install` / `uninstall` | Enable/disable the curated extras skill+command bundle. |
 | `givn skills sync` | Regenerate all skills, commands, and AGENTS.md blocks from current templates. |
-| `givn upgrade` | Refresh and commit managed config/agent files in a clean Git project; apply declared migration bundles when required. |
+| `givn upgrade` | Refresh and commit managed config/agent files in a clean Git project; apply declared migration bundles when required; backfill the run-declaration scaffold into an existing `givn/commands.yaml` when the `run:` key is absent (idempotent, committed with the managed upgrade). |
 | `givn completions <bash\|zsh\|fish>` | Print a shell completion script. |
 
 ## Agent skills
@@ -87,6 +88,11 @@ Key sections:
   (default `givn/specs`).
 - `coverage.measure_command` / `coverage.merge_command` — project-owned
   scripts producing Cobertura reports for the archive coverage gate.
+- `run:` — the run declaration: `command`, `product_type` (`server`/`cli`/
+  `library`), exactly one of `port` (fixed) or `port_env` (the caller hands
+  the port over) for servers, `ready_path`, and `ready_timeout_s`. Validated
+  by rules R1–R10; gating `givn check review` and `givn archive`; executed by
+  `givn run`; documented in the README's run managed block.
 - `artifacts:` — patch the embedded workflow graph: remove/reorder steps, make
   steps optional, add custom steps with own template and instruction.
 - `apply.requires` — which artifacts gate `givn archive` (default
