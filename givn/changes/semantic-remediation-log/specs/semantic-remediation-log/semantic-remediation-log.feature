@@ -43,7 +43,7 @@ Feature: Remediation log for semantic review
     And the remediation log contains a second candidate entry with different endpoint hashes
     And the prior candidate entry is retained unchanged
 
-  @givn.added @wip
+  @givn.added
   Scenario: The passing rerun completes the after state and the after run record
     Given the remediation case carries the distinguishing marker "remediation log completion state evidence alder beacon clover dawn elder frost glade hollow iris kelp laurel maple nectar opal pear reed summit"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
