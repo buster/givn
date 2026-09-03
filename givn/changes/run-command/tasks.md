@@ -245,7 +245,10 @@ Production: libc sigaction handlers, `AtomicI32` flag, forward+wait, library sea
 - [x] COMMIT: `feat(run-command): forward SIGTERM to the started product and exit 143` — hash `03dcbf0`
 
 ### @e2e Scenario: An interrupt stops the started product
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: SIGINT not yet in the handler set — givn subprocess died by default disposition, `the command exits 130` failed (`status.code()` None), exit 101; stray fixture left behind (expected in RED: no teardown path ran)
+- [x] GREEN: files: src/cli/run.rs (SIGINT added to sigaction set), tests/steps/run_execution_e2e_steps.rs (stays-ready given, interrupt when with 30s watchdog, exits-130 then, trap-marker then with 2s poll), tests/steps/mod.rs (run_trap_marker field) — targeted run `1 scenario (1 passed)`, exit 0. Deviation recorded: first GREEN attempt passed `--trap-marker=<path>` (equals syntax); the fixture only parses `--trap-marker <path>` (space-separated), marker never written — fixed in the step, not the fixture.
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): forward SIGINT to the started product and exit 130` — hash `bf935fc`
 
 ## T8 — Caller-provided port + print mode @e2e
 
