@@ -59,6 +59,13 @@ tokio = { version = "1", features = ["macros", "rt-multi-thread"] }
 name = "features_runner"
 harness = false
 
+[[test]]
+name = "ready_fixture"
+harness = false
+
+[target.'cfg(unix)'.dependencies]
+libc = "0.2"
+
 [profile.release]
 strip = true
 opt-level = "z"

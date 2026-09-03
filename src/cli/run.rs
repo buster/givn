@@ -5,6 +5,11 @@
 //! `std::process::exit`. This seam keeps the executor unit-testable
 //! in-process (a `process::exit` would kill the test runner).
 
+use std::io::{Read, Write};
+use std::net::TcpStream;
+use std::process::Command;
+use std::time::{Duration, Instant};
+
 use crate::cli::run_block::{self, RunFindingKind};
 use crate::config::manifest::{Manifest, ProductType, Run};
 use crate::config::overlay::load_effective;
@@ -16,6 +21,9 @@ pub struct StartPlan {
     pub command: String,
     /// The declared product type.
     pub product_type: ProductType,
+    /// The resolved port the product listens on (declared fixed port or the
+    /// injected hand-off port). `None` for products without a port.
+    pub port: Option<u16>,
     /// Port hand-off: env var name and the resolved port (caller-provided
     /// or freshly allocated).
     pub port_env: Option<(String, u16)>,
@@ -23,6 +31,15 @@ pub struct StartPlan {
     pub ready_path: Option<String>,
     /// Seconds to wait for readiness.
     pub ready_timeout_s: u64,
+}
+
+/// One readiness-probe attempt.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum ProbeOutcome {
+    /// The ready path answered 2xx on the Nth attempt (1-based).
+    Ready { attempts: u32 },
+    /// The deadline elapsed without a 2xx response.
+    TimedOut,
 }
 
 /// Allocate one ephemeral port by binding `127.0.0.1:0` and dropping the
@@ -65,14 +82,67 @@ pub fn resolve_start_plan(
         (None, Some(name)) => Some((name.to_string(), ephemeral_port())),
         _ => None,
     };
+    let port = match (&port_env, run.port) {
+        (Some((_, port)), _) => Some(*port),
+        (None, Some(port)) => Some(port),
+        (None, None) => None,
+    };
 
     Ok(StartPlan {
         command: run.command.clone(),
         product_type,
+        port,
         port_env,
         ready_path: run.ready_path.clone(),
         ready_timeout_s: run.ready_timeout_s,
     })
+}
+
+/// One readiness probe attempt against `127.0.0.1:port`: an HTTP/1.0 GET on
+/// `ready_path`. 2xx accepts; anything else — other statuses, malformed
+/// responses, connection refused or reset — is a failed attempt.
+pub fn probe_once(port: u16, ready_path: &str) -> bool {
+    let Ok(mut stream) = TcpStream::connect_timeout(
+        &std::net::SocketAddr::from(([127, 0, 0, 1], port)),
+        Duration::from_millis(500),
+    ) else {
+        return false;
+    };
+    let request = format!("GET {ready_path} HTTP/1.0\r\nHost: 127.0.0.1:{port}\r\n\r\n");
+    if stream.write_all(request.as_bytes()).is_err() {
+        return false;
+    }
+    let mut head = [0u8; 8 * 1024];
+    let Ok(n) = stream.read(&mut head) else {
+        return false;
+    };
+    let head = String::from_utf8_lossy(&head[..n]);
+    let Some(status) = head
+        .lines()
+        .next()
+        .and_then(|line| line.split_whitespace().nth(1))
+        .and_then(|code| code.parse::<u16>().ok())
+    else {
+        return false;
+    };
+    (200..300).contains(&status)
+}
+
+/// Poll the readiness probe every 100 ms until it accepts or the deadline
+/// elapses. Returns the attempt count for the retry scenarios.
+pub fn probe_until_ready(port: u16, ready_path: &str, timeout: Duration) -> ProbeOutcome {
+    let deadline = Instant::now() + timeout;
+    let mut attempts = 0;
+    loop {
+        attempts += 1;
+        if probe_once(port, ready_path) {
+            return ProbeOutcome::Ready { attempts };
+        }
+        if Instant::now() >= deadline {
+            return ProbeOutcome::TimedOut;
+        }
+        std::thread::sleep(Duration::from_millis(100));
+    }
 }
 
 /// The line `givn run --print` emits: one sh-eval-able start line.
@@ -134,10 +204,67 @@ pub fn execute(caller_port: Option<u16>, print: bool) -> i32 {
     start_product(&plan)
 }
 
-/// Spawn the product, wait for readiness, forward signals. Implemented by
-/// the spawn/probe task (T6); the plan-resolution scenarios above never
-/// reach it.
+/// Spawn the product via `sh -c`, wait for readiness (server products),
+/// and forward the child's exit code.
 fn start_product(plan: &StartPlan) -> i32 {
-    let _ = plan;
-    unimplemented!("spawn/probe loop lands with the executor loop task")
+    #[cfg(unix)]
+    use std::os::unix::process::CommandExt;
+
+    let mut command = Command::new("sh");
+    command.arg("-c").arg(&plan.command);
+    // Own process group: the declared command is a shell line, so killing
+    // `sh` alone would orphan its grandchildren (servers keep the inherited
+    // stdio pipes open forever). The group id equals the child's pid.
+    #[cfg(unix)]
+    unsafe {
+        command.pre_exec(|| {
+            libc::setpgid(0, 0);
+            Ok(())
+        });
+    }
+    if let Some((name, port)) = &plan.port_env {
+        command.env(name, port.to_string());
+    }
+    let mut child = match command.spawn() {
+        Ok(child) => child,
+        Err(e) => {
+            eprintln!("givn run: failed to start {}: {e}", plan.command);
+            return 1;
+        }
+    };
+
+    let is_server = plan.product_type == ProductType::Server;
+    let deadline = Instant::now() + Duration::from_secs(plan.ready_timeout_s);
+    let mut ready = false;
+    loop {
+        if let Ok(Some(status)) = child.try_wait() {
+            // The child's exit code is forwarded exactly — early exits
+            // before readiness and cli exits alike.
+            return status.code().unwrap_or(1);
+        }
+        if is_server && !ready {
+            let port = plan.port.expect("a server plan carries a resolved port");
+            let ready_path = plan.ready_path.as_deref().expect("R3 requires ready_path");
+            // One probe attempt per tick: a zero deadline degenerates
+            // probe_until_ready to a single attempt.
+            if matches!(
+                probe_until_ready(port, ready_path, Duration::ZERO),
+                ProbeOutcome::Ready { .. }
+            ) {
+                ready = true;
+                println!("givn run: ready at http://127.0.0.1:{port}{ready_path}");
+            } else if !ready && Instant::now() >= deadline {
+                // Kill the whole group: `sh` plus everything it started.
+                #[cfg(unix)]
+                unsafe {
+                    libc::kill(-(child.id() as i32), libc::SIGKILL);
+                }
+                #[cfg(not(unix))]
+                let _ = child.kill();
+                let _ = child.wait();
+                return 2;
+            }
+        }
+        std::thread::sleep(Duration::from_millis(50));
+    }
 }
