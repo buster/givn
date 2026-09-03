@@ -189,11 +189,12 @@ pub(crate) fn has_e2e_intent_in_tasks(content: &str) -> bool {
 
 /// Execute a shell command with GIVN_FEATURES set.
 fn run_shell_command(command: &str, features_path: &str) -> Result<()> {
-    let status = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(command)
-        .env("GIVN_FEATURES", features_path)
-        .status()?;
+    let status = crate::subprocess::sh_streamed(
+        command,
+        &[("GIVN_FEATURES", features_path)],
+        None,
+        "gate hook",
+    )?;
 
     if status.success() {
         Ok(())

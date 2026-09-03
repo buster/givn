@@ -19,7 +19,8 @@ use gherkin::GherkinEnv;
 /// 7. Move change to givn/archive/<id>/.
 ///
 /// All-or-nothing: if any step fails, abort and roll back.
-pub fn run(change: &str) -> Result<()> {
+pub fn run(change: &str, verbose: bool) -> Result<()> {
+    crate::subprocess::set_verbose(verbose);
     let project_root = std::env::current_dir()?;
     let change_dir = crate::state::resolve_change_dir(&project_root, change)?;
 
@@ -36,7 +37,10 @@ pub fn run(change: &str) -> Result<()> {
     let manifest = load_effective()?;
     let state = ChangeState::from_manifest(&change_dir, &manifest);
 
-    println!("Archiving change '{change}'...");
+    println!(
+        "[{}] Archiving change '{change}'...",
+        crate::subprocess::local_timestamp()
+    );
 
     // === Gate checks (manifest-aware) ===
 
@@ -79,14 +83,23 @@ pub fn run(change: &str) -> Result<()> {
     } else {
         change_dir.join("specs").to_string_lossy().into_owned()
     };
-    println!("Running archive gate hooks...");
+    println!(
+        "[{}] Running archive gate hooks...",
+        crate::subprocess::local_timestamp()
+    );
     crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
-    println!("✓ Gate hooks passed");
+    println!(
+        "[{}] ✓ Gate hooks passed",
+        crate::subprocess::local_timestamp()
+    );
 
     // Re-run the strict semantic gate immediately before touching the
     // permanent tree. A REVIEW: PASS marker alone must not bypass it.
     run_similarity_gate(&project_root, change)?;
-    println!("✓ Similarity gate passed");
+    println!(
+        "[{}] ✓ Similarity gate passed",
+        crate::subprocess::local_timestamp()
+    );
 
     // Run declaration gate: the project must declare a complete, configured
     // run block in givn/commands.yaml. Runs before the README gate so the
@@ -110,7 +123,10 @@ pub fn run(change: &str) -> Result<()> {
                  see the findings above"
             );
         }
-        println!("✓ run declaration passed");
+        println!(
+            "[{}] ✓ run declaration passed",
+            crate::subprocess::local_timestamp()
+        );
     }
 
     // README completeness gate (readme addon enabled): no open placeholders,
@@ -130,7 +146,10 @@ pub fn run(change: &str) -> Result<()> {
                 "archive blocked: finish the README before archiving — see the README check report above"
             );
         }
-        println!("✓ README completeness gate passed");
+        println!(
+            "[{}] ✓ README completeness gate passed",
+            crate::subprocess::local_timestamp()
+        );
     }
 
     // Backup permanent specs and README before merge/coverage.
@@ -201,19 +220,27 @@ pub fn run(change: &str) -> Result<()> {
             let permanent_path = permanent_dir.join(format!("{cap}.feature"));
 
             merge_file(&permanent_path, &delta_feature)?;
-            println!("  merged → {}", permanent_path.display());
+            println!(
+                "[{}]   merged → {}",
+                crate::subprocess::local_timestamp(),
+                permanent_path.display()
+            );
         }
     }
 
     // === Post-merge verify gate ===
 
     let verify_command = &manifest.verify.command;
-    println!("Running post-merge verify: {verify_command}");
-    let verify_status = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(verify_command)
-        .env("GIVN_FEATURES", "givn/specs")
-        .status()?;
+    println!(
+        "[{}] Running post-merge verify: {verify_command}",
+        crate::subprocess::local_timestamp()
+    );
+    let verify_status = crate::subprocess::sh_streamed(
+        verify_command,
+        &[("GIVN_FEATURES", "givn/specs")],
+        None,
+        "post-merge verify",
+    )?;
 
     if !verify_status.success() {
         rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
@@ -223,7 +250,10 @@ pub fn run(change: &str) -> Result<()> {
             verify_status.code().unwrap_or(-1)
         );
     }
-    println!("✓ Post-merge verify passed");
+    println!(
+        "[{}] ✓ Post-merge verify passed",
+        crate::subprocess::local_timestamp()
+    );
 
     // === Post-merge verify-e2e gate ===
 
@@ -242,12 +272,16 @@ pub fn run(change: &str) -> Result<()> {
     } else {
         let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
         if merged_has_e2e {
-            println!("Running post-merge verify-e2e: {e2e_command}");
-            let e2e_status = std::process::Command::new("sh")
-                .arg("-c")
-                .arg(e2e_command)
-                .env("GIVN_FEATURES", "givn/specs")
-                .status()?;
+            println!(
+                "[{}] Running post-merge verify-e2e: {e2e_command}",
+                crate::subprocess::local_timestamp()
+            );
+            let e2e_status = crate::subprocess::sh_streamed(
+                e2e_command,
+                &[("GIVN_FEATURES", "givn/specs")],
+                None,
+                "post-merge verify-e2e",
+            )?;
 
             if !e2e_status.success() {
                 rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
@@ -257,7 +291,10 @@ pub fn run(change: &str) -> Result<()> {
                     e2e_status.code().unwrap_or(-1)
                 );
             }
-            println!("✓ Post-merge verify-e2e passed");
+            println!(
+                "[{}] ✓ Post-merge verify-e2e passed",
+                crate::subprocess::local_timestamp()
+            );
         }
     }
 
@@ -267,7 +304,10 @@ pub fn run(change: &str) -> Result<()> {
     // README from the pre-archive backup.
     if manifest.addons.readme {
         match crate::cli::readme::refresh_development_block(&project_root) {
-            Ok(true) => println!("✓ development managed block refreshed"),
+            Ok(true) => println!(
+                "[{}] ✓ development managed block refreshed",
+                crate::subprocess::local_timestamp()
+            ),
             Ok(false) => {}
             Err(e) => {
                 let _ = crate::cli::coverage_gate::rollback_readme(&project_root, &backup_dir);
@@ -278,7 +318,10 @@ pub fn run(change: &str) -> Result<()> {
             }
         }
         match crate::cli::readme::refresh_run_block(&project_root) {
-            Ok(true) => println!("✓ run managed block refreshed"),
+            Ok(true) => println!(
+                "[{}] ✓ run managed block refreshed",
+                crate::subprocess::local_timestamp()
+            ),
             Ok(false) => {}
             Err(e) => {
                 let _ = crate::cli::coverage_gate::rollback_readme(&project_root, &backup_dir);
@@ -299,7 +342,11 @@ pub fn run(change: &str) -> Result<()> {
     // Clean up backup (all gates passed).
     if backup_dir.exists() {
         std::fs::remove_dir_all(&backup_dir)?;
-        println!("  removed backup: {}", backup_dir.display());
+        println!(
+            "[{}]   removed backup: {}",
+            crate::subprocess::local_timestamp(),
+            backup_dir.display()
+        );
     }
 
     // === Move change to archive ===
@@ -308,7 +355,11 @@ pub fn run(change: &str) -> Result<()> {
     copy_dir_all(&change_dir, &archive_target)?;
     std::fs::remove_dir_all(&change_dir)?;
 
-    println!("✓ Archived '{change}' to {}", archive_target.display());
+    println!(
+        "[{}] ✓ Archived '{change}' to {}",
+        crate::subprocess::local_timestamp(),
+        archive_target.display()
+    );
     println!("\nChange archived successfully.");
     println!("The delta specs have been merged into givn/specs/.");
 

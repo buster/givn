@@ -189,16 +189,18 @@ fn run_command(
     paths: &CoveragePaths,
     label: &str,
 ) -> Result<()> {
-    let status = std::process::Command::new("sh")
-        .arg("-c")
-        .arg(command)
-        .current_dir(project_root)
-        .env("GIVN_FEATURES", "givn/specs")
-        .env("GIVN_COVERAGE_NON_E2E_PATH", &paths.non_e2e_relative)
-        .env("GIVN_COVERAGE_E2E_PATH", &paths.e2e_relative)
-        .env("GIVN_COVERAGE_OUTPUT_PATH", &paths.output_relative)
-        .status()
-        .with_context(|| format!("archive blocked: failed to start {label} command"))?;
+    let status = crate::subprocess::sh_streamed(
+        command,
+        &[
+            ("GIVN_FEATURES", "givn/specs"),
+            ("GIVN_COVERAGE_NON_E2E_PATH", &paths.non_e2e_relative),
+            ("GIVN_COVERAGE_E2E_PATH", &paths.e2e_relative),
+            ("GIVN_COVERAGE_OUTPUT_PATH", &paths.output_relative),
+        ],
+        Some(project_root),
+        label,
+    )
+    .with_context(|| format!("archive blocked: failed to start {label} command"))?;
 
     if !status.success() {
         bail!(
