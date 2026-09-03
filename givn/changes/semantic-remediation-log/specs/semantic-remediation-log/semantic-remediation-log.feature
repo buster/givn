@@ -241,6 +241,20 @@ Feature: Remediation log for semantic review
     And stdout contains "semantic remediation verified"
 
   @givn.added
+  Scenario: A stripped log entry for a verified remediation still passes review
+    Given the remediation case carries the distinguishing marker "remediation log stripped entry compatibility acorn birch cedar dune elm fern glade heather iris juniper kiln larch moss nettle opal plum reed slate"
+    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When the user runs `givn check review --change running-change`
+    And the user classifies every semantic review candidate as "DUPLICATE"
+    And the user records the remediation fix "removed the redundant scenario" and commits ["8192a3b4c5d6e7f0"] in the remediation log
+    And the user strips every candidate entry from the remediation log
+    And the classified duplicate candidate is removed from the active delta
+    And the user runs `givn check review --change running-change`
+    Then the command exits 0
+    And stdout contains "semantic remediation verified"
+
+  @givn.added
   Scenario: The remediation log obeys its strict wire grammar
     Given the remediation case carries the distinguishing marker "remediation log wire grammar discipline alpha bramble cedar delta elm fern grove heather iris juniper kiln larch moss nettle opal reed"
     Given a project prepared for semantic remediation whose delta scenario contains blank lines and an Examples table

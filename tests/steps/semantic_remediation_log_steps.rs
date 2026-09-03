@@ -596,6 +596,21 @@ fn delete_remediation_log(world: &mut GivnWorld) {
     fs::remove_file(remediation_log_path(world)).expect("delete remediation log");
 }
 
+#[when("the user strips every candidate entry from the remediation log")]
+fn strip_log_entries(world: &mut GivnWorld) {
+    let path = remediation_log_path(world);
+    let log = fs::read_to_string(&path).expect("read remediation log");
+    let kept: Vec<&str> = log
+        .lines()
+        .take_while(|line| !line.starts_with("## Candidate "))
+        .collect();
+    let mut stripped = kept.join("\n");
+    if !stripped.ends_with('\n') {
+        stripped.push('\n');
+    }
+    fs::write(&path, stripped).expect("strip remediation log entries");
+}
+
 #[when("the active remediation log bytes are snapshotted")]
 #[given("the active remediation log bytes are snapshotted")]
 fn snapshot_remediation_log(world: &mut GivnWorld) {
