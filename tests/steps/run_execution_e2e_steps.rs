@@ -134,3 +134,60 @@ fn server_declaration_with_port_handoff(world: &mut GivnWorld) {
     let command = support::serve_command("/healthz", &[]);
     support::write_server_declaration(world, &command, Some("PORT"), None, "/healthz", 60);
 }
+
+#[given("a README with a broken run managed block")]
+fn broken_run_block_readme(world: &mut GivnWorld) {
+    // Insert a run managed block that lost its end marker: exactly one of
+    // the two markers present is the damaged state.
+    let text = crate::steps::readme_enforcement_steps::scaffolded_readme_text().replace(
+        "## Quick start\n",
+        "## Quick start\n\n<!-- givn:begin:run -->\nRun instructions.\n",
+    );
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    std::fs::write(env.path("README.md"), text).expect("write README.md");
+}
+
+#[then("the commands file has run.command set to the sentinel")]
+fn commands_file_has_sentinel(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content =
+        std::fs::read_to_string(env.path("givn/commands.yaml")).expect("read commands.yaml");
+    assert!(
+        content.contains(givn::config::manifest::Run::SENTINEL),
+        "commands file must carry the run.command sentinel:\n{content}"
+    );
+}
+
+#[then("the README has the run managed block")]
+fn readme_has_run_block(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    assert!(
+        readme.contains("<!-- givn:begin:run -->") && readme.contains("<!-- givn:end:run -->"),
+        "README must contain the run managed block:\n{readme}"
+    );
+}
+
+#[then("the README has the run open placeholder")]
+fn readme_has_run_placeholder(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let readme = std::fs::read_to_string(env.path("README.md")).expect("read README.md");
+    assert!(
+        readme.contains(
+            "<!-- givn:todo: set run.command and run.product_type in givn/commands.yaml -->"
+        ),
+        "README must carry the run open placeholder:\n{readme}"
+    );
+}

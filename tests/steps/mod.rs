@@ -53,6 +53,7 @@ pub mod run_declaration_fixtures_support;
 pub mod run_execution_e2e_steps;
 pub mod run_execution_steps;
 pub mod run_execution_support;
+pub mod run_readme_steps;
 pub mod search_evidence_e2e_steps;
 pub mod search_evidence_steps;
 pub mod semantic_compact_serialization_e2e_steps;
@@ -199,6 +200,8 @@ pub struct GivnWorld {
     pub(crate) run_inproc: Option<run_execution_support::InProcStart>,
     /// Marker file the fixture writes when it receives a signal.
     pub(crate) run_trap_marker: Option<std::path::PathBuf>,
+    /// The run managed block text produced by the render step.
+    pub(crate) run_rendered_block: Option<String>,
 }
 
 /// A readiness probe running on a background thread.
