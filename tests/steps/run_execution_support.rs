@@ -24,20 +24,28 @@ pub(crate) fn reserve_free_port() -> u16 {
 /// Locate (or build) the harness-free `ready_fixture` test binary. The
 /// build-on-demand mirrors the `release_givn_binary` precedent.
 pub(crate) fn ready_fixture_path() -> PathBuf {
-    let deps = std::env::current_exe()
+    let exe_dir = std::env::current_exe()
         .expect("current exe")
         .parent()
         .expect("exe parent")
         .to_path_buf();
-    if let Some(path) = scan_for_fixture(&deps) {
+    if let Some(path) = scan_for_fixture(&exe_dir) {
         return path;
     }
-    let status = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()))
-        .args(["build", "--test", "ready_fixture"])
-        .status()
-        .expect("build ready_fixture");
+    // The on-demand build must land in the same target directory the runner
+    // uses: coverage replays (llvm-cov --target-dir target/llvm-cov-target)
+    // scan here and would otherwise never see a binary built into the
+    // default target dir. The runner lives at <target>/<profile>/deps, so
+    // two levels up is that target directory.
+    let target_dir = exe_dir.ancestors().nth(2).map(|p| p.to_path_buf());
+    let mut build = Command::new(std::env::var("CARGO").unwrap_or_else(|_| "cargo".into()));
+    build.args(["build", "--test", "ready_fixture"]);
+    if let Some(target_dir) = &target_dir {
+        build.arg("--target-dir").arg(target_dir);
+    }
+    let status = build.status().expect("build ready_fixture");
     assert!(status.success(), "ready_fixture build failed");
-    scan_for_fixture(&deps).expect("ready_fixture binary after build")
+    scan_for_fixture(&exe_dir).expect("ready_fixture binary after build")
 }
 
 fn scan_for_fixture(dir: &std::path::Path) -> Option<PathBuf> {
