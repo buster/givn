@@ -171,33 +171,68 @@ Production: `src/cli/run.rs` (`resolve_start_plan`, preflight, `--print`), `src/
 ## T6 — Spawn/probe loop + exit-code forwarding
 
 Production: `probe_until_ready` (std::net HTTP/1.0), spawn loop, exit-code table.
+Deviation recorded: production loop, fixture, and steps landed in one working
+pass (no standalone per-scenario RED capture retained); the driving failures
+were captured during the first full scenario pass and fixed one by one —
+fixed-port fixture handed `None` to the writer (R4 violation), 404→200 flip
+raced the first probe (responder now blocks until the first connection),
+fixed-port product never exited (fixture lacked `--exit-after`), missing
+`exits 7` step, and the readiness-timeout kill orphaned the `sh` grandchild
+holding the inherited stdio pipes (product fix: process-group spawn +
+group `SIGKILL`, design §7.4 updated).
 
 ### Scenario: A fixed declared port is used without a port hand-off
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: first run hung — fixed-port product never exited; fixture command lacked `--exit-after 1` (fixture defect, then `exits 0`+ready-line passed only after fix)
+- [x] GREEN: files: src/cli/run.rs (start_product), tests/ready_fixture.rs, tests/steps/run_execution_steps.rs (fixed-port given reserves the port), tests/steps/run_execution_support.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: A readiness timeout abandons the start
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN defect capture: test harness hung — givn killed only `sh`, the never-ready fixture grandchild survived holding the inherited pipes; root fix in product (process-group kill), manual reproduction confirmed exit 2 in ~1s before the fix
+- [x] GREEN: files: src/cli/run.rs (setpgid + kill(-pgid)), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: An early product exit is forwarded before readiness
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: initial run failed on missing generic exit step (harness gap, exit 101); `exits 3` exact step resolved the ambiguity
+- [x] GREEN: files: src/cli/run.rs (early-exit forwarding), tests/steps/run_execution_steps.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: A CLI product forwards the product's exit code
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: `Then the command exits 7 — Step doesn't match any function` (exit 101); regex step conflicted with exact steps (cucumber ambiguity), replaced by exact `the command exits 7`
+- [x] GREEN: files: tests/steps/run_execution_steps.rs (exits-7 step), src/cli/run.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: A port that is not listening yet is retried until ready
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] GREEN: in-process probe against reserved-but-unbound port; first full pass passed; targeted rerun green with T6 commit build
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: A failing readiness response is retried until ready
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: 404→200 flip raced the probe's first attempt (attempt count not guaranteed >1); Responder gained a connection counter + `wait_for_connections`
+- [x] GREEN: files: tests/steps/run_execution_support.rs (Responder), tests/steps/run_execution_steps.rs (When waits for first hit) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: Any success response satisfies the readiness probe
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] GREEN: 204-first responder; first full pass passed; targeted rerun green with T6 commit build
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### Scenario: The readiness probe gives up after the timeout
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] GREEN: never-answering responder with 300ms deadline → `ProbeOutcome::TimedOut`; first full pass passed; targeted rerun green with T6 commit build
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
 
 ### @e2e Scenario: The started server reports readiness and forwards a clean exit
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: covered by the T6 shared defects above (fixture/executable-scan and step wiring)
+- [x] GREEN: files: tests/steps/run_execution_e2e_steps.rs, tests/steps/run_execution_support.rs (ready_fixture_path executable-bit scan fixed to skip `.d` dep-info files) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): product start loop, readiness probe, exit-code forwarding` — hash `918a59d`
+
+Suite gate: full permanent suite `TMPDIR=$HOME/tmp ./run-tests.sh` exit 0 after T6.
 
 ## T7 — Signal forwarding
 
