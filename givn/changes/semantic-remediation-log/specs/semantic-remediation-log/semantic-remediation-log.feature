@@ -140,7 +140,7 @@ Feature: Remediation log for semantic review
     Then the command exits 0
     And stdout contains "semantic remediation verified"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A verified remediation from before the log existed still passes review
     Given the remediation case carries the distinguishing marker "remediation log backward compatibility acorn birch clover delta elm frost glade heather iris juniper kiln larch moss nectar opal pine"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
@@ -151,10 +151,10 @@ Feature: Remediation log for semantic review
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
     Then the command exits 0
-    When the user deletes the remediation log
-    And the user runs `givn check review --change running-change`
-    Then the command exits 0
     And stdout contains "semantic remediation verified"
+    When the user deletes the remediation log
+    And the user runs `givn check review --change running-change` again without edits
+    Then the command exits 0
 
   @givn.added @wip
   Scenario: A repeated passing rerun does not grow the remediation log

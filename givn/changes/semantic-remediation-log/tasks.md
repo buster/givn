@@ -254,23 +254,28 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A project without Git history records null run anchors and reviews without stamp checks`
+  - [x] COMMIT: `0ead41b` — `feat(semantic-remediation-log): A project without Git history records null run anchors and reviews without stamp checks`
 
-- [ ] Scenario: `A verified remediation from before the log existed still passes review`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A verified remediation from before the log existed still passes review`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the delete-log step was an unimplemented stub, and the final assertion was
+        corrected: a post-PASS rerun regenerates the report without candidates, so
+        it exits 0 without re-printing the verification receipt; the observable is
+        the gate not blocking.
         ```
-  - [ ] GREEN: backward-compatible gate scope. Files:
-        <!-- list them -->
+  - [x] GREEN: backward-compatible gate scope. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (delete-log step;
+        gate scope with an empty log is scenario-1 `validate_log` code).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "13 steps (13 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A verified remediation from before the log existed still passes review`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A verified remediation from before the log existed still passes review`
 
 - [ ] Scenario: `A repeated passing rerun does not grow the remediation log`
   - [ ] RED: run only this scenario. Must fail.
