@@ -470,37 +470,44 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
   - [x] COMMIT: `b682457` — `feat(semantic-remediation-log): The remediation log survives the archive move`
 
-- [ ] Scenario: `Advisory spec review does not create the remediation log`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `Advisory spec review does not create the remediation log`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 0 — legitimate immediate GREEN:
+        the advisory command step, exit/stdout steps, and the log-absent assertion are
+        existing definitions; the advisory path never enters the semantic stage.
+        "6 steps (6 passed)".
         ```
-  - [ ] GREEN: advisory path stays log-free. Files:
-        <!-- list them -->
+  - [x] GREEN: advisory path stays log-free. Files:
+        none new — the log write is bound to the blocking report path only.
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "6 steps (6 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): Advisory spec review does not create the remediation log`
+  - [x] COMMIT: `1375422` — `feat(semantic-remediation-log): Advisory spec review does not create the remediation log`
 
-- [ ] Scenario: `Blocking review without its retrieval feature does not create the remediation log`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `Blocking review without its retrieval feature does not create the remediation log`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun (feature-free build step). Output: exit 101 —
+        the no-feature build failed to compile: src/spec/remediation_log.rs was
+        not cfg-gated and imported the spec-retrieval-only LogCandidateInput.
         ```
-  - [ ] GREEN: feature-free path stays log-free. Files:
-        <!-- list them -->
+  - [x] GREEN: feature-free path stays log-free. Files:
+        `src/spec/mod.rs` (module gated behind `spec-retrieval`),
+        `tests/steps/semantic_remediation_log_steps.rs` (no new steps; the
+        feature-free fixture step is an existing definition).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "6 steps (6 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): Blocking review without its retrieval feature does not create the remediation log`
+  - [x] COMMIT: `3418bd2` — `feat(semantic-remediation-log): Blocking review without its retrieval feature does not create the remediation log`
 
 ---
 

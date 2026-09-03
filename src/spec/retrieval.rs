@@ -4348,7 +4348,12 @@ fn log_candidate_inputs(root: &Path, candidates: &[SemanticCandidate]) -> Vec<Lo
             bge_admission: {
                 #[cfg(feature = "cross-encoder-reranker")]
                 {
-                    Some(candidate.bge_admission.unwrap_or("BGE_UNSCORED").to_string())
+                    Some(
+                        candidate
+                            .bge_admission
+                            .unwrap_or("BGE_UNSCORED")
+                            .to_string(),
+                    )
                 }
                 #[cfg(not(feature = "cross-encoder-reranker"))]
                 {
@@ -4362,7 +4367,12 @@ fn log_candidate_inputs(root: &Path, candidates: &[SemanticCandidate]) -> Vec<Lo
             nli_admission: {
                 #[cfg(feature = "nli-evidence")]
                 {
-                    Some(candidate.nli_admission.unwrap_or("NLI_UNSCORED").to_string())
+                    Some(
+                        candidate
+                            .nli_admission
+                            .unwrap_or("NLI_UNSCORED")
+                            .to_string(),
+                    )
                 }
                 #[cfg(not(feature = "nli-evidence"))]
                 {
