@@ -46,39 +46,55 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
       - Commit: recorded with the first scenario commit (skeleton has no
         observable behaviour of its own).
 
-- [ ] Scenario: `The first blocked review creates the remediation log with before evidence`
-  - [ ] RED: remove `@wip`, stub pending steps with `unimplemented!()`, run only this scenario. Must fail.
+- [x] Scenario: `The first blocked review creates the remediation log with before evidence`
+  - [x] RED: remove `@wip`, stub pending steps with `unimplemented!()`, run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stub cargo test --no-default-features --features spec-retrieval --test features_runner -- --name "The first blocked review creates the remediation log with before evidence"
+        Output: exit 101 — "1 scenario (1 failed)", "6 steps (5 passed, 1 failed)",
+        "Step panicked. Captured output: not implemented: pending: log exists".
         ```
-  - [ ] GREEN: minimum production code — log state, renderer, before-run
+  - [x] GREEN: minimum production code — log state, renderer, before-run
         record, candidate entry, verbatim extraction, E5 timing. Files:
-        <!-- list them -->
+        `src/spec/remediation_log.rs` (new module: log state, parser,
+        renderer, append-only update, gate, git helpers, verbatim
+        extraction), `src/spec/mod.rs`, `src/spec/retrieval.rs`
+        (`LogCandidateInput`/`VerifiedRemediation`, E5 timing around
+        `semantic_candidates`, log update + gate + after completions wired
+        into `semantic_review_core` behind `write_report`,
+        `verify_semantic_remediation` now returns per-entry results),
+        `tests/steps/semantic_remediation_log_steps.rs`,
+        `tests/steps/semantic_remediation_log_e2e_steps.rs`,
+        `tests/steps/mod.rs`.
         Run targeting this scenario only. Must pass.
         ```
-        <!-- paste GREEN evidence -->
+        Command: as above
+        Output: exit 0 — "1 scenario (1 passed)", "12 steps (12 passed)".
         ```
-  - [ ] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
+  - [x] REFACTOR: clean up, no behaviour change. Re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: cargo fmt --all && targeted rerun as above
+        Output: exit 0 — "1 scenario (1 passed)", "12 steps (12 passed)".
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): The first blocked review creates the remediation log with before evidence`
+  - [x] COMMIT: `df68d46` — `feat(semantic-remediation-log): The first blocked review creates the remediation log with before evidence`
 
-- [ ] Scenario: `Rerunning review with unchanged endpoints does not grow the remediation log`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `Rerunning review with unchanged endpoints does not grow the remediation log`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — the Then step was an
+        unimplemented stub; also fixed the second-run step to reuse the existing
+        "again without edits" definition. "5 steps (4 passed, 1 failed)".
         ```
-  - [ ] GREEN: fingerprint dedup for run records and entries. Files:
-        <!-- list them -->
+  - [x] GREEN: fingerprint dedup for run records and entries. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (assertion; dedup
+        behaviour was implemented with the scenario-1 production code).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "6 steps (6 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): Rerunning review with unchanged endpoints does not grow the remediation log`
+  - [x] COMMIT: see commit below — `feat(semantic-remediation-log): Rerunning review with unchanged endpoints does not grow the remediation log`
 
 - [ ] Scenario: `A changed endpoint appends a new candidate entry and retains the prior entry`
   - [ ] RED: run only this scenario. Must fail.
