@@ -366,19 +366,32 @@ Production: `src/cli/archive.rs` (gate before README gate, §6.4) + `refresh_run
 Production: `src/cli/upgrade.rs` (`backfill_commands`, `RUN_SCAFFOLD`), `src/cli/migration.rs` (snapshot, apply, commit paths).
 
 ### Scenario: The backfill appends the run scaffold to an existing commands file
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: steps and production landed in one working pass — first targeted run passed, no separate RED possible; GREEN files: src/cli/upgrade.rs (backfill_commands + RUN_SCAFFOLD include_str), tests/steps/run_upgrade_steps.rs (new), tests/steps/mod.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `0c035af`
 
 ### Scenario: The backfill is idempotent
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED/GREEN: as above (first targeted run passed); GREEN files: as above — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `0c035af`
 
 ### Scenario: The upgrade commit includes the backfilled run declaration
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: `givn upgrade` failed with `requires a clean Git worktree` — the fixture committed the baseline WITH a run declaration, then the chain stripped it, leaving a dirty tree (fixture defect, exit 101)
+- [x] GREEN: files: tests/steps/run_execution_e2e_steps.rs (git-managed baseline commits a run-less commands.yaml; working-tree-clean and latest-commit-contains Thens; file-contains Then), src/cli/migration.rs (snapshot/apply/commit wiring) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `0c035af`
 
 ### Scenario: A repeated upgrade creates no additional commit
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: covered by the shared missing-steps defect above (exit 101)
+- [x] GREEN: files: tests/steps/run_execution_e2e_steps.rs (`upgrade again` When captures the pre-hash, unchanged-commit Then), src/cli/migration.rs (no diff → no commit) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `0c035af`
 
 ### @e2e Scenario: Upgrade backfills the run declaration into an existing project
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: covered by the shared fixture defect above (exit 101)
+- [x] GREEN: files: tests/steps/run_execution_e2e_steps.rs (git-managed Given), src/cli/migration.rs (snapshot + backfill + fill-it-in print + commit path) — targeted run `1 scenario (1 passed)`, exit 0 (exit 0, commands.yaml contains run:, stdout mentions "fill it in")
+- [x] REFACTOR + suite gate: cargo fmt + clippy clean; full `TMPDIR=/home/buster/tmp ./run-tests.sh` exit 0, 548 scenarios, 0 failures (migration/upgrade paths exercised by permanent fixtures)
+- [x] COMMIT: `feat(run-command): run-scaffold backfill in the managed upgrade` — hash `0c035af`
 
 ## T16 — ADR + arc42 finalization
 
