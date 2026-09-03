@@ -253,10 +253,16 @@ Production: libc sigaction handlers, `AtomicI32` flag, forward+wait, library sea
 ## T8 — Caller-provided port + print mode @e2e
 
 ### @e2e Scenario: A caller-provided port is handed to the product
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: ready-line step for the caller port went missing in the T6 step rewrite (change-scope run: `And the ready line names the caller-provided port — step doesn't match`, exit 101)
+- [x] GREEN: files: tests/steps/run_execution_steps.rs (`the ready line names the caller-provided port` asserting `:{port}/` from `run_caller_port`) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `test(e2e): caller-provided port hand-off and print-mode contract steps` — hash `1fbf3c5`
 
 ### @e2e Scenario: Print mode emits the start plan without starting
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: print-contract steps went missing in the T6 step rewrite (change-scope run: `stdout is one line that exports the port hand-off and names the start command — step doesn't match`, exit 101)
+- [x] GREEN: files: tests/steps/run_execution_steps.rs (both print-mode steps restored from b8246bf) — targeted run `1 scenario (1 passed)`, exit 0; fixed-port/library print variants re-verified green
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `test(e2e): caller-provided port hand-off and print-mode contract steps` — hash `1fbf3c5`
 
 ## T9 — README run block
 
