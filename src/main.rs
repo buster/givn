@@ -9,6 +9,7 @@ mod overlap;
 mod skills;
 mod spec;
 mod state;
+mod subprocess;
 
 use std::path::PathBuf;
 
@@ -103,6 +104,10 @@ enum Commands {
         /// Change identifier.
         #[arg(long)]
         change: String,
+        /// Stream every gate command's output with [HH:MM:SS] prefixes, so a
+        /// hang is visible at the exact line it stopped on.
+        #[arg(long)]
+        verbose: bool,
     },
     /// Write an embedded default facet into the project for editing.
     Eject {
@@ -284,7 +289,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
         }
         Commands::Status { change, json } => cli::status::run(change.as_deref(), json),
         Commands::Graph { change, json } => cli::graph::run(change.as_deref(), json),
-        Commands::Archive { change } => cli::archive::run(&change),
+        Commands::Archive { change, verbose } => cli::archive::run(&change, verbose),
         Commands::Eject { target, force } => cli::eject::run(&target, force),
         Commands::Addons { command } => match command {
             AddonsCommands::List => cli::addons::run_list(),
