@@ -620,6 +620,7 @@ fn strip_log_entries(world: &mut GivnWorld) {
 
 #[when("the active remediation log bytes are snapshotted")]
 #[given("the active remediation log bytes are snapshotted")]
+#[then("the active remediation log bytes are snapshotted")]
 fn snapshot_remediation_log(world: &mut GivnWorld) {
     world.remediation_log_snapshot =
         Some(fs::read(remediation_log_path(world)).expect("snapshot log"));
@@ -1156,6 +1157,7 @@ fn gate_a(world: &mut GivnWorld) {
 }
 
 #[when("the gate is evaluated a second time")]
+#[then("the gate is evaluated a second time")]
 fn gate_a2(world: &mut GivnWorld) {
     run_review(world);
 }
@@ -1467,4 +1469,57 @@ fn active_log_unchanged_by_archive(world: &mut GivnWorld) {
             .expect("active log snapshot"),
         "the archive run must not grow the remediation log"
     );
+}
+
+/// Repository-state branch shared by the consolidation outlines: one rule,
+/// several precondition spellings.
+#[given(
+    regex = r#"^a remediation-log project with one \"DUPLICATE\" finding (without Git history|inside a committed Git repository|inside an unborn Git repository)$"#
+)]
+fn fixture_repository_state(world: &mut GivnWorld, repository_state: String) {
+    match repository_state.as_str() {
+        "without Git history" => {
+            super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string())
+        }
+        "inside a committed Git repository" => remediation_project_in_git(world),
+        "inside an unborn Git repository" => remediation_project_in_git_without_commits(world),
+        other => panic!("unknown repository state {other}"),
+    }
+}
+
+/// Evidence-state branch for the invalid-evidence outline.
+#[when(
+    regex = r#"^the remediation evidence is left (without commit evidence|without the stamp|with a stamp naming another candidate|with its commit removed from the history)$"#
+)]
+fn apply_evidence_state(world: &mut GivnWorld, state: String) {
+    match state.as_str() {
+        "without commit evidence" => {
+            record_fix_without_commits(world, "removed the redundant scenario".to_string())
+        }
+        "without the stamp" => commit_without_stamp(world),
+        "with a stamp naming another candidate" => {
+            commit_with_wrong_stamp(world, "0000000000000000".to_string())
+        }
+        "with its commit removed from the history" => {
+            commit_with_matching_stamp(world);
+            remove_commit_from_history(world);
+            record_committed_fix(world);
+        }
+        other => panic!("unknown evidence state {other}"),
+    }
+}
+
+/// Log-state branch for the verified-remediation outline.
+#[when(regex = r#"^the remediation log is (deleted entirely|stripped of its candidate entries)$"#)]
+fn apply_log_state(world: &mut GivnWorld, state: String) {
+    match state.as_str() {
+        "deleted entirely" => delete_remediation_log(world),
+        "stripped of its candidate entries" => strip_log_entries(world),
+        other => panic!("unknown log state {other}"),
+    }
+}
+
+#[when("the gate is evaluated a third time")]
+fn gate_a3(world: &mut GivnWorld) {
+    run_review(world);
 }
