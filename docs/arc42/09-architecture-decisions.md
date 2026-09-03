@@ -51,3 +51,10 @@ open `unified-semantic-rulebook` change: one change-scoped comparison sequence
 (single `0.9000` admission, hybrid selection, pair-score cache) behind all
 three review surfaces. All three are listed as `proposed`
 in the register until their changes pass their remaining gates.
+
+ADR-067 is accepted by the `run-command` change: the same tool that declares
+the product start (`run:` in `givn/commands.yaml`) also executes it
+(`givn run`) under one spec'd machine contract — ready line, exit-code table,
+port hand-off, and signal forwarding. The record was proposed with the
+change's design and left `proposed` until the full suite and the @e2e scope
+stayed green; the compatibility obligation is carried by R-45 in chapter 11.
