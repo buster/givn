@@ -217,7 +217,7 @@ Feature: Remediation log for semantic review
     And the remediation log records the after state on the second candidate entry
     And the prior candidate entry is retained unchanged
 
-  @givn.added @wip @rulebook
+  @givn.added @rulebook
   Scenario: A logged pair scored by BGE and NLI records their evidence states
     Given the remediation case carries the distinguishing marker "remediation log second stage evidence states beacon cedar dune elm fern glade heather iris juniper kelp larch moss nettle opal pine quince reed"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate and BGE and NLI evidence
