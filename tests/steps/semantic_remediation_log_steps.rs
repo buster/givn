@@ -395,7 +395,7 @@ fn remove_both_duplicates(world: &mut GivnWorld) {
 
 #[when("the user deletes the remediation log")]
 fn delete_remediation_log(world: &mut GivnWorld) {
-    unimplemented!("pending: delete log")
+    fs::remove_file(remediation_log_path(world)).expect("delete remediation log");
 }
 
 #[when("the active remediation log bytes are snapshotted")]
