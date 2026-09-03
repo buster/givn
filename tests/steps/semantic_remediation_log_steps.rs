@@ -288,7 +288,16 @@ fn remediation_project_with_second_stage(world: &mut GivnWorld, classification: 
     "a project prepared for semantic remediation whose delta scenario contains blank lines and an Examples table"
 )]
 fn remediation_project_with_blank_lines(world: &mut GivnWorld) {
-    unimplemented!("pending: blank-lines fixture")
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+    let env = world.env.as_ref().expect("remediation project is required");
+    let delta = env.path("givn/changes/running-change/specs/running.feature");
+    fs::write(
+        delta,
+        "@givn.delta @running-change\nFeature: Provider change\n\n  @givn.added\n  Scenario Outline: Unknown provider is rejected\n    Given a configured provider catalog\n\n    When the user selects an unknown provider\n    Then the command rejects the request\n\n    Examples: providers\n      | provider |\n      | default  |\n",
+    )
+    .expect("write blank-line outline delta");
+    world.retrieval_stub_scores =
+        Some("Unknown provider is rejected|Provider name is unknown=0.9600".to_string());
 }
 
 fn git(world: &GivnWorld, args: &[&str]) {
@@ -850,27 +859,151 @@ fn entry_records_non_null_evidence(world: &mut GivnWorld) {
 
 #[then("the remediation log has the exact headers and entry field order")]
 fn log_has_exact_grammar(world: &mut GivnWorld) {
-    unimplemented!("pending: exact grammar")
+    let log = read_remediation_log(world);
+    let mut lines = log.lines();
+    assert_eq!(lines.next(), Some("# Semantic Remediation Log"));
+    assert_eq!(lines.next(), Some("Log schema version: 1"));
+    assert_eq!(lines.next(), Some("Change: \"running-change\""));
+    let sections = parse_log_sections(&log);
+    assert_eq!(sections.len(), 2, "one run record and one candidate entry");
+    assert_eq!(sections[0].header, "Run 1");
+    let run_fields: Vec<&str> = sections[0]
+        .fields
+        .iter()
+        .map(|field| field.name.as_str())
+        .collect();
+    assert_eq!(
+        run_fields,
+        vec!["kind", "commit", "e5_runtime_ms", "bge_runtime_ms", "nli_runtime_ms"]
+    );
+    assert!(
+        sections[1].header.starts_with("Candidate "),
+        "candidate entry header expected, got {}",
+        sections[1].header
+    );
+    let candidate_fields: Vec<&str> = sections[1]
+        .fields
+        .iter()
+        .map(|field| field.name.as_str())
+        .collect();
+    assert_eq!(
+        candidate_fields,
+        vec![
+            "run",
+            "before_embedding_score",
+            "before_bge_admission",
+            "before_bge_symmetric_raw",
+            "before_nli_admission",
+            "before_nli_symmetric_entailment",
+            "before_left_file",
+            "before_left_title",
+            "before_right_file",
+            "before_right_title",
+            "before_left_content_hash",
+            "before_right_content_hash",
+            "before_left_evidence_hash",
+            "before_right_evidence_hash",
+            "before_left_gherkin",
+            "before_right_gherkin",
+            "classification",
+            "rationale",
+            "remediation",
+            "commits",
+            "after_state",
+            "after_embedding_score",
+            "after_commit",
+            "after_left_gherkin",
+        ]
+    );
 }
 
 #[then("the remediation log contains only allowed fields and no unknown fields")]
 fn log_has_only_allowed_fields(world: &mut GivnWorld) {
-    unimplemented!("pending: allowed fields")
+    let allowed: Vec<&str> = vec![
+        "kind",
+        "commit",
+        "e5_runtime_ms",
+        "bge_runtime_ms",
+        "nli_runtime_ms",
+        "run",
+        "before_embedding_score",
+        "before_bge_admission",
+        "before_bge_symmetric_raw",
+        "before_nli_admission",
+        "before_nli_symmetric_entailment",
+        "before_left_file",
+        "before_left_title",
+        "before_right_file",
+        "before_right_title",
+        "before_left_content_hash",
+        "before_right_content_hash",
+        "before_left_evidence_hash",
+        "before_right_evidence_hash",
+        "before_left_gherkin",
+        "before_right_gherkin",
+        "classification",
+        "rationale",
+        "remediation",
+        "commits",
+        "after_state",
+        "after_embedding_score",
+        "after_commit",
+        "after_left_gherkin",
+    ];
+    for section in parse_log_sections(&read_remediation_log(world)) {
+        for field in &section.fields {
+            assert!(
+                allowed.contains(&field.name.as_str()),
+                "unknown field {} in section {}",
+                field.name,
+                section.header
+            );
+        }
+    }
 }
 
 #[then("the remediation log has no timestamp or environment fields")]
 fn log_has_no_timestamps(world: &mut GivnWorld) {
-    unimplemented!("pending: no timestamps")
+    for line in read_remediation_log(world).lines() {
+        for marker in [
+            "timestamp",
+            "generated",
+            "created_at",
+            "host",
+            "user:",
+            "os:",
+            "cwd",
+            "path:",
+        ] {
+            assert!(
+                !line.contains(marker),
+                "environment marker {marker} must not appear: {line}"
+            );
+        }
+    }
 }
 
 #[then("the remediation log ends with exactly one final newline")]
 fn log_ends_with_one_newline(world: &mut GivnWorld) {
-    unimplemented!("pending: final newline")
+    let log = read_remediation_log(world);
+    assert!(log.ends_with('\n'), "the log ends with a newline");
+    assert!(
+        !log.ends_with("\n\n"),
+        "the log ends with exactly one newline"
+    );
 }
 
 #[then("the verbatim scenario text preserves interior blank lines and the Examples table")]
 fn verbatim_preserves_structure(world: &mut GivnWorld) {
-    unimplemented!("pending: structure preserved")
+    let entry = first_candidate_section(world);
+    let block = entry.field("before_left_gherkin").expect("left gherkin");
+    assert!(
+        block.contains("\n\n    When"),
+        "the blank line between steps must be preserved:\n{block}"
+    );
+    assert!(block.contains("Examples: providers"));
+    assert!(block.contains("| provider |"));
+    assert!(block.contains("| default  |"));
 }
 
 #[then("the remediation log bytes equal the active log snapshot")]
