@@ -156,7 +156,7 @@ Feature: Remediation log for semantic review
     And the user runs `givn check review --change running-change` again without edits
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: A repeated passing rerun does not grow the remediation log
     Given the remediation case carries the distinguishing marker "remediation log pass rerun stability beacon cedar dune elm fern glade heather iris juniper kelp larch moss nettle opal plum quince"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
