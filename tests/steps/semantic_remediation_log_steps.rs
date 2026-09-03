@@ -309,7 +309,17 @@ fn record_fix_without_commits(world: &mut GivnWorld, fix: String) {
 
 #[when("the user records the committed remediation fix and commit in the remediation log")]
 fn record_committed_fix(world: &mut GivnWorld) {
-    unimplemented!("pending: record committed fix")
+    let hash = world
+        .remediation_commit_hash
+        .as_ref()
+        .expect("remediation commit hash recorded")
+        .clone();
+    write_entry_field(
+        world,
+        "remediation",
+        "\"removed the redundant scenario\"",
+    );
+    write_entry_field(world, "commits", &format!("[\"{hash}\"]"));
 }
 
 #[when("the user records both remediation fixes and the commit in the remediation log")]
@@ -666,7 +676,20 @@ fn anchors_are_null(world: &mut GivnWorld) {
 
 #[then("the remediation log records the after state with the stamped commit as the after anchor")]
 fn after_anchor_is_stamped_commit(world: &mut GivnWorld) {
-    unimplemented!("pending: after anchor")
+    let hash = world
+        .remediation_commit_hash
+        .as_ref()
+        .expect("remediation commit hash recorded");
+    let entry = candidate_sections(world)
+        .into_iter()
+        .next()
+        .expect("candidate entry expected");
+    assert_eq!(entry.field("after_commit"), Some(hash.as_str()));
+    assert_eq!(
+        entry.field("after_state"),
+        Some("endpoint-absent"),
+        "the duplicate entry records its verified after state"
+    );
 }
 
 #[then("the remediation log records the after state on the second candidate entry")]

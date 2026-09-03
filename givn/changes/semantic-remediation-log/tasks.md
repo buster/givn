@@ -215,23 +215,26 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A stamp naming a different candidate blocks review`
+  - [x] COMMIT: `5745c53` — `feat(semantic-remediation-log): A stamp naming a different candidate blocks review`
 
-- [ ] Scenario: `A stamped remediation commit verifies the log and passes review`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A stamped remediation commit verifies the log and passes review`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "12 steps (11 passed, 1 failed)";
+        after_commit was rendered as a quoted string instead of a bare 40-hex value.
         ```
-  - [ ] GREEN: stamped-commit happy path with after anchor. Files:
-        <!-- list them -->
+  - [x] GREEN: stamped-commit happy path with after anchor. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (record-committed-fix
+        and after-anchor assertions), `src/spec/remediation_log.rs`
+        (run commit / after_commit rendered as bare values or null).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "12 steps (12 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A stamped remediation commit verifies the log and passes review`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A stamped remediation commit verifies the log and passes review`
 
 - [ ] Scenario: `A project without Git history records null run anchors and reviews without stamp checks`
   - [ ] RED: run only this scenario. Must fail.
