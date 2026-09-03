@@ -282,7 +282,7 @@ Feature: Remediation log for semantic review
     And stdout contains "retrieval advisory"
     And the remediation log does not exist
 
-  @givn.added @wip
+  @givn.added
   Scenario: Blocking review without its retrieval feature does not create the remediation log
     Given the remediation case carries the distinguishing marker "remediation log feature-free boundary acorn bramble cedar delta elm fern glade heather iris juniper kiln larch moss nettle opal quince reed slate"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
