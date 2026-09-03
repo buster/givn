@@ -252,6 +252,19 @@ fn ready_line_names_fixed_port(world: &mut GivnWorld) {
     );
 }
 
+#[then("the ready line names the caller-provided port")]
+fn ready_line_names_caller_port(world: &mut GivnWorld) {
+    let port = world
+        .run_caller_port
+        .expect("a caller-provided port is required");
+    let stdout = super::stdout(world);
+    let line = ready_line(&stdout);
+    assert!(
+        line.contains(&format!(":{port}/")),
+        "ready line {line:?} does not name the caller-provided port {port}"
+    );
+}
+
 #[then(regex = r#"^the ready line names the readiness path "(.*)"$"#)]
 fn ready_line_names_readiness_path(world: &mut GivnWorld, path: String) {
     let stdout = super::stdout(world);
@@ -309,6 +322,64 @@ fn command_exits_seven(world: &mut GivnWorld) {
         Some(7),
         "stderr={}",
         super::stderr(world)
+    );
+}
+
+// --- Then: print-mode contract ------------------------------------------------
+
+#[then(
+    regex = r#"^stdout is one line that exports the port hand-off and names the start command$"#
+)]
+fn stdout_print_line_with_port(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    let lines: Vec<&str> = stdout.lines().filter(|l| !l.trim().is_empty()).collect();
+    assert_eq!(
+        lines.len(),
+        1,
+        "expected exactly one stdout line: {stdout:?}"
+    );
+    let command = world
+        .run_declared_command
+        .as_deref()
+        .expect("a declared start command is required");
+    assert!(
+        lines[0].contains(command),
+        "print line {:?} does not name the start command {command:?}",
+        lines[0],
+    );
+    assert!(
+        lines[0].contains("PORT="),
+        "print line {:?} does not export the port hand-off",
+        lines[0],
+    );
+}
+
+#[then(regex = r#"^stdout is one line that names the start command without exporting a port$"#)]
+fn stdout_print_line_without_port(world: &mut GivnWorld) {
+    let stdout = super::stdout(world);
+    let lines: Vec<&str> = stdout.lines().filter(|l| !l.trim().is_empty()).collect();
+    assert_eq!(
+        lines.len(),
+        1,
+        "expected exactly one stdout line: {stdout:?}"
+    );
+    let command = world
+        .run_declared_command
+        .as_deref()
+        .expect("a declared start command is required");
+    assert!(
+        lines[0].contains(command),
+        "print line {:?} does not name the start command {command:?}",
+        lines[0],
+    );
+    assert!(
+        !lines[0]
+            .split_whitespace()
+            .next()
+            .unwrap_or("")
+            .contains('='),
+        "print line {:?} unexpectedly exports a port hand-off",
+        lines[0],
     );
 }
 
