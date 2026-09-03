@@ -1571,3 +1571,29 @@ fn record_individual(world: &mut GivnWorld, _slot: String, commits: String) {
 }
 
 // --- End individual wordings ------------------------------------------------
+
+#[when("the active semantic review report bytes are snapshotted for comparison")]
+#[then("the active semantic review report bytes are snapshotted for comparison")]
+fn snapshot_report_for_comparison(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    world.semantic_report_snapshot = Some(
+        fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+            .expect("snapshot semantic report"),
+    );
+}
+
+#[then("the semantic review report bytes equal that comparison snapshot")]
+#[when("the semantic review report bytes equal that comparison snapshot")]
+fn report_bytes_equal_comparison_snapshot(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let current = fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+        .expect("read regenerated semantic report");
+    assert_eq!(
+        current,
+        *world
+            .semantic_report_snapshot
+            .as_ref()
+            .expect("report snapshot"),
+        "the regenerated report must be byte-identical"
+    );
+}
