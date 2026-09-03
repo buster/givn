@@ -114,23 +114,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending — `feat(semantic-remediation-log): A changed endpoint appends a new candidate entry and retains the prior entry`
+  - [x] COMMIT: `2e1a186` — `feat(semantic-remediation-log): A changed endpoint appends a new candidate entry and retains the prior entry`
 
-- [ ] Scenario: `The passing rerun completes the after state and the after run record`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `The passing rerun completes the after state and the after run record`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "6 steps (5 passed, 1 failed)";
+        the record-fix step was an unimplemented stub.
         ```
-  - [ ] GREEN: after-state fields, after run record, gate-then-complete order. Files:
-        <!-- list them -->
+  - [x] GREEN: after-state fields, after run record, gate-then-complete order. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (record-fix steps,
+        after-run-record and endpoint-absent assertions),
+        `src/spec/remediation_log.rs` (after_state rendered as a bare enum
+        value instead of a quoted string).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "12 steps (12 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): The passing rerun completes the after state and the after run record`
+  - [x] COMMIT: `$(git log --oneline -1 | cut -c1-7)` — `feat(semantic-remediation-log): The passing rerun completes the after state and the after run record`
 
 - [ ] Scenario: `A surviving pair records its recomputed embedding score after remediation`
   - [ ] RED: run only this scenario. Must fail.

@@ -244,14 +244,30 @@ fn completed_remediation_log_change(world: &mut GivnWorld) {
     regex = r#"^the user records the remediation fix \"([^\"]+)\" and commits \[([^\]]*)\] in the remediation log$"#
 )]
 fn record_fix_with_commits(world: &mut GivnWorld, fix: String, commits: String) {
-    unimplemented!("pending: record fix with commits")
+    let commits = commits
+        .split(',')
+        .map(|item| item.trim().to_string())
+        .filter(|item| !item.is_empty())
+        .collect::<Vec<_>>()
+        .join(", ");
+    write_entry_field(
+        world,
+        "remediation",
+        &format!("\"{}\"", fix.replace('"', "\\\"")),
+    );
+    write_entry_field(world, "commits", &format!("[{commits}]"));
 }
 
 #[when(
     regex = r#"^the user records the remediation fix \"([^\"]+)\" with no commits in the remediation log$"#
 )]
 fn record_fix_without_commits(world: &mut GivnWorld, fix: String) {
-    unimplemented!("pending: record fix without commits")
+    write_entry_field(
+        world,
+        "remediation",
+        &format!("\"{}\"", fix.replace('"', "\\\"")),
+    );
+    write_entry_field(world, "commits", "[]");
 }
 
 #[when("the user records the committed remediation fix and commit in the remediation log")]
@@ -494,14 +510,23 @@ fn prior_entry_retained(world: &mut GivnWorld) {
 
 #[then("the remediation log contains an after run record")]
 fn log_has_after_run_record(world: &mut GivnWorld) {
-    unimplemented!("pending: after run record")
+    let runs = run_sections(world);
+    assert!(
+        runs.iter().any(|run| run.field("kind") == Some("after")),
+        "an after run record is expected"
+    );
 }
 
 #[then(
     regex = r#"^the removed candidate entry records after state \"endpoint-absent\" with a null after score$"#
 )]
 fn removed_entry_after_state(world: &mut GivnWorld) {
-    unimplemented!("pending: endpoint-absent")
+    let entry = candidate_sections(world)
+        .into_iter()
+        .next()
+        .expect("candidate entry expected");
+    assert_eq!(entry.field("after_state"), Some("endpoint-absent"));
+    assert_eq!(entry.field("after_embedding_score"), Some("null"));
 }
 
 #[then(

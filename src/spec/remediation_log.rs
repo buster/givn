@@ -185,7 +185,7 @@ fn render_log(change_id: &str, state: &LogState) -> String {
             optional_text(entry.rationale.as_deref()),
             optional_text(entry.remediation.as_deref()),
             commits_text(&entry.commits),
-            optional_text(entry.after_state.as_deref()),
+            entry.after_state.as_deref().unwrap_or("null"),
             score_text(entry.after_embedding_score),
             optional_text(entry.after_commit.as_deref()),
         ));
