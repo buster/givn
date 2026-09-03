@@ -291,7 +291,7 @@ Feature: Remediation log for semantic review
     And stderr contains "spec retrieval is unavailable"
     And the remediation log does not exist
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI review completes the remediation log for a stamped duplicate remediation
     Given the remediation case carries the distinguishing marker "remediation log real review completion alder beacon cedar dune elm fern glade heather jade kiln larch maple nectar opal reed summit"
     Given an end-to-end project staged for a stamped remediation log on change "rc-log-e2e"
