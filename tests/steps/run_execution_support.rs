@@ -198,3 +198,22 @@ pub(crate) fn spawn_responder(port: u16, status: u16) -> Responder {
         handle: Some(handle),
     }
 }
+
+/// An in-process `givn run` execution: the library entry point runs on a
+/// background thread with the fixture project as the process cwd (restored
+/// by the asserting steps).
+#[derive(Debug)]
+pub(crate) struct InProcStart {
+    pub port: u16,
+    pub marker: std::path::PathBuf,
+    pub prev_cwd: std::path::PathBuf,
+    pub handle: Option<std::thread::JoinHandle<i32>>,
+    pub joined: Option<i32>,
+}
+
+impl Drop for InProcStart {
+    fn drop(&mut self) {
+        // Never leak a scenario cwd switch, even on failure paths.
+        let _ = std::env::set_current_dir(&self.prev_cwd);
+    }
+}

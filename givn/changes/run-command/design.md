@@ -446,20 +446,20 @@ hf-hub):
 - Signal forwarding (unix-only, documented platform constraint): `libc`
   `sigaction` handlers for `SIGINT`/`SIGTERM` store the signal number in a
   `static AtomicI32` (async-signal-safe; no allocation in the handler). On
-  flag, `libc::kill(child_pid, sig)`, then `wait` the child; the library
-  entry point then **returns** `128 + sig` → **130 for SIGINT (pinned
-  decision), 143 for SIGTERM** (conventional 128+n; judgment call, flagged),
-  and the binary wrapper converts it to `process::exit` (§7 seam) — the
-  in-process SIGTERM scenario asserts the returned code.
-- Teardown boundary: the readiness-timeout kill reaches the whole process
-  group (see spawn bullet above). Signal **forwarding** remains scoped to
-  givn's direct child (`sh -c`) only.
-  **Residual (R-44):** grandchildren of compound start commands (`a && b`,
-  pipelines) are not signalled and may survive the interrupt. Start commands
-  should use `exec` so the shell process is replaced by the product; accepted
-  as a unix-boring tradeoff rather than reimplementing process-group signal
-  fan-out inside givn. With `exec`-style commands, killing the givn pid
-  tears down everything it started.
+  flag, `libc::kill(-pgid, sig)` — the child's whole **process group**,
+  deviation from the original draft (the direct-child draft lost the signal
+  when `sh` forked instead of exec'ing the product) — then reap with a
+  **bounded 2 s grace** before `SIGKILL` to the group: givn never waits
+  indefinitely on a product that ignores the signal. The library entry
+  point then **returns** `128 + sig` → **130 for SIGINT (pinned decision),
+  143 for SIGTERM** (conventional 128+n; judgment call, flagged), and the
+  binary wrapper converts it to `process::exit` (§7 seam) — the in-process
+  SIGTERM scenario asserts the returned code.
+- Teardown boundary: the readiness-timeout kill and the signal forwarding
+  both reach the child's whole process group (see above). The original
+  residual (R-44: grandchildren of compound start commands survive) is
+  resolved by group-scoped teardown; the `exec`-style recommendation is no
+  longer load-bearing.
 - Non-unix hosts: `givn run` refuses server products at preflight with a
   clear message, exit 1; `cli`/`library` products work (no signals needed).
 - Exit-code contract (spec'd machine interface, primary caller kiekste):
