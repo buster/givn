@@ -268,29 +268,55 @@ Production: libc sigaction handlers, `AtomicI32` flag, forward+wait, library sea
 
 Production: `src/cli/readme.rs` (markers, `render_run_block`, `refresh_run_block`, damage check, `scaffold_readme`), `assets/addons/readme/README.md.tmpl` (`{{RUN_BLOCK}}`, shortened quick-start todo).
 
+RED evidence shared by the five render scenarios: steps undefined until this task (change-scope run exit 101, `Step doesn't match any function`); the `a run declaration:` Given is reused from T3's `run_command_steps.rs` (a duplicate Given caused an ambiguous-match failure, removed in favor of the shared one), and the renderer gained a `render_run_block_for(&Manifest)` seam so the unit scenarios render from the overlay manifest without chdir.
+
 ### Scenario: An unconfigured declaration renders exactly one open placeholder
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: undefined steps, exit 101 (change-scope run)
+- [x] GREEN: files: src/cli/readme.rs (render_run_block/render_run_block_for/run_block_body), tests/steps/run_readme_steps.rs (new), tests/steps/mod.rs — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### Scenario: The README renders a complete server declaration
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: undefined steps, exit 101 (change-scope run)
+- [x] GREEN: files: as above — targeted run `1 scenario (1 passed)`, exit 0 (start command, `/healthz`, `$PORT`, no placeholder)
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### Scenario: The README renders a CLI product
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: undefined steps, exit 101 (change-scope run)
+- [x] GREEN: files: as above — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### Scenario: The README renders a library product as nothing to start
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: undefined steps, exit 101 (change-scope run)
+- [x] GREEN: files: as above — targeted run `1 scenario (1 passed)`, exit 0 (library line, no placeholder, no start command)
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### Scenario: The README renders a library's declared start command
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: undefined steps, exit 101 (change-scope run)
+- [x] GREEN: files: as above — targeted run `1 scenario (1 passed)`, exit 0 (library line + real declared command fenced)
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### Scenario: A half-configured server declaration renders the placeholder
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: undefined steps, exit 101 (change-scope run)
+- [x] GREEN: files: as above — targeted run `1 scenario (1 passed)`, exit 0 (render predicate routes findings to the todo line, never a partial render)
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### @e2e Scenario: The check names a damaged run managed block
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: damage check and Given missing until this task (change-scope run exit 101)
+- [x] GREEN: files: src/cli/readme.rs (run-marker damage check naming the run managed block), tests/steps/run_execution_e2e_steps.rs (broken-run-block Given) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR: cargo fmt + clippy -D warnings clean, exit 0
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ### @e2e Scenario: Scaffolding ships an unconfigured run declaration
-- [ ] RED: `_` — GREEN: files `_` — REFACTOR: `_` — COMMIT: hash `_`
+- [x] RED: template lacked `{{RUN_BLOCK}}` and the run-block/placeholder/sentinel Thens were missing (change-scope run exit 101)
+- [x] GREEN: files: assets/addons/readme/README.md.tmpl ({{RUN_BLOCK}} under Quick start, todo shortened to "Exact commands to clone and build the project."), src/cli/readme.rs (scaffold_readme replaces {{RUN_BLOCK}}), tests/steps/run_execution_e2e_steps.rs (sentinel, run block, run placeholder Thens) — targeted run `1 scenario (1 passed)`, exit 0
+- [x] REFACTOR + suite gate: cargo fmt + clippy clean; full `TMPDIR=$HOME/tmp ./run-tests.sh` exit 0 (template change affects init paths used by permanent fixtures; substring assertions hold)
+- [x] COMMIT: `feat(run-command): README run managed block render, check, scaffold, refresh` — hash `45cd9c5`
 
 ## T10 — Shared run-declaration fixture step
 
