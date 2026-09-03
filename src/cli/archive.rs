@@ -88,6 +88,31 @@ pub fn run(change: &str) -> Result<()> {
     run_similarity_gate(&project_root, change)?;
     println!("✓ Similarity gate passed");
 
+    // Run declaration gate: the project must declare a complete, configured
+    // run block in givn/commands.yaml. Runs before the README gate so the
+    // finding order matches `givn check review`.
+    {
+        let findings = crate::cli::run_block::check_run(&manifest);
+        if !findings.is_empty() {
+            println!(
+                "archive blocked: run declaration has {} finding(s):",
+                findings.len()
+            );
+            for finding in &findings {
+                println!(
+                    "  [{}] {}",
+                    crate::cli::run_block::label(finding.kind),
+                    finding.message
+                );
+            }
+            bail!(
+                "archive blocked: finish the run declaration in givn/commands.yaml — \
+                 see the findings above"
+            );
+        }
+        println!("✓ run declaration passed");
+    }
+
     // README completeness gate (readme addon enabled): no open placeholders,
     // no remnants, no managed-block damage, an existing managed README. Runs
     // before any mutation, so a blocked archive needs no rollback.
