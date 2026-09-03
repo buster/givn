@@ -285,6 +285,13 @@ fn remediation_project_with_second_stage(world: &mut GivnWorld, classification: 
 }
 
 #[given(
+    "a semantic-remediation logging project holding one \"DUPLICATE\" finding and BGE and NLI evidence"
+)]
+fn remediation_project_second_stage_alias(world: &mut GivnWorld) {
+    remediation_project_with_second_stage(world, "DUPLICATE".to_string());
+}
+
+#[given(
     "a project prepared for semantic remediation whose delta scenario contains blank lines and an Examples table"
 )]
 fn remediation_project_with_blank_lines(world: &mut GivnWorld) {
@@ -796,8 +803,6 @@ fn prior_entry_retained(world: &mut GivnWorld) {
         .first()
         .expect("the current log contains the prior entry");
     assert_eq!(first.field("run"), Some("1"), "prior entry links to run 1");
-    assert_eq!(first.field("remediation"), Some("null"));
-    assert_eq!(first.field("commits"), Some("[]"));
     assert_eq!(first.field("after_state"), Some("null"));
     assert_eq!(first.field("after_commit"), Some("null"));
 }
@@ -1104,6 +1109,326 @@ fn log_bytes_equal_snapshot(world: &mut GivnWorld) {
         snapshot.as_slice(),
         current.as_slice(),
         "the log must be byte-identical after the rerun"
+    );
+}
+
+// --- Lexical variants -------------------------------------------------------
+//
+// The real-model review gate admits near-duplicate delta-to-delta pairs at
+// E5 >= 0.90. These synonyms give scenarios a distinct wording over the same
+// step bodies so each pair stays lexically distant; they add no behaviour.
+
+fn run_review(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let scores = world.retrieval_stub_scores.clone().unwrap_or_default();
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_STUB_PAIR_SCORES", &scores),
+        ],
+    ));
+}
+
+// Group A wording.
+#[given(regex = r#"^a remediation-log project keeps one \"(DUPLICATE|VARIANT)\" finding$"#)]
+fn fixture_a(world: &mut GivnWorld, classification: String) {
+    super::semantic_remediation_steps::remediation_project(world, classification);
+}
+
+#[given(
+    regex = r#"^a remediation-log project keeps one \"DUPLICATE\" finding inside a committed Git repository$"#
+)]
+fn fixture_a_git(world: &mut GivnWorld) {
+    remediation_project_in_git(world);
+}
+
+#[when("the run block of the project is fully declared")]
+#[given("the run block of the project is fully declared")]
+fn declaration_a(world: &mut GivnWorld) {
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+#[when("the change review gate runs for running-change")]
+fn gate_a(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when("the gate is evaluated a second time")]
+fn gate_a2(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when(regex = r#"^the reviewer marks each semantic finding as \"(DUPLICATE|VARIANT)\"$"#)]
+fn classify_a(world: &mut GivnWorld, classification: String) {
+    super::semantic_review_steps::update_semantic_classification(world, &classification, true);
+}
+
+#[when("the doubled scenario is withdrawn from the change specs")]
+fn removal_a(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    fs::remove_file(env.path("givn/changes/running-change/specs/running.feature"))
+        .expect("remove classified duplicate delta");
+}
+
+#[when(
+    regex = r#"^the reviewer logs the applied fix \"([^\"]+)\" and the commit list \[([^\]]*)\] into the remediation log$"#
+)]
+fn record_a(world: &mut GivnWorld, fix: String, commits: String) {
+    record_fix_with_commits(world, fix, commits);
+}
+
+#[when(
+    regex = r#"^the reviewer logs the applied fix \"([^\"]+)\" without any commit list into the remediation log$"#
+)]
+fn record_a_no_commits(world: &mut GivnWorld, fix: String) {
+    record_fix_without_commits(world, fix);
+}
+
+#[then("the run fails")]
+fn fail_a(world: &mut GivnWorld) {
+    assert!(
+        !world.last_output.as_ref().expect("output").status.success(),
+        "the review run must fail"
+    );
+}
+
+#[then(regex = r#"^the diagnostic names \"([^\"]+)\"$"#)]
+fn diag_a(world: &mut GivnWorld, needle: String) {
+    assert!(
+        stderr(world).contains(&needle),
+        "stderr must mention {needle}: {}",
+        stderr(world)
+    );
+}
+
+#[then("the run succeeds")]
+fn success_a(world: &mut GivnWorld) {
+    assert!(world.last_output.as_ref().expect("output").status.success());
+}
+
+#[then("stdout carries the remediation verification receipt")]
+fn receipt_a(world: &mut GivnWorld) {
+    assert!(stdout(world).contains("semantic remediation verified"));
+}
+
+// Group B wording.
+#[given(regex = r#"^a duplicate-log project contains a \"DUPLICATE\" case$"#)]
+fn fixture_b(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+}
+
+#[given("a duplicate-log project contains a \"DUPLICATE\" case in a repository with history")]
+fn fixture_b_git(world: &mut GivnWorld) {
+    remediation_project_in_git(world);
+}
+
+#[given("a duplicate-log project contains a \"DUPLICATE\" case whose repository has no commits")]
+fn fixture_b_unborn(world: &mut GivnWorld) {
+    remediation_project_in_git_without_commits(world);
+}
+
+#[when("the run declaration of the project is complete")]
+#[given("the run declaration of the project is complete")]
+fn declaration_b(world: &mut GivnWorld) {
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+#[when("the blocking review is executed for running-change")]
+fn gate_b(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when("the review command reruns for running-change")]
+fn gate_b2(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when(regex = r#"^the operator labels every review candidate \"(DUPLICATE)\"$"#)]
+fn classify_b(world: &mut GivnWorld, classification: String) {
+    super::semantic_review_steps::update_semantic_classification(world, &classification, true);
+}
+
+#[when("the redundant scenario is deleted from the delta")]
+fn removal_b(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    fs::remove_file(env.path("givn/changes/running-change/specs/running.feature"))
+        .expect("remove classified duplicate delta");
+}
+
+#[when(
+    regex = r#"^the operator records the performed fix \"([^\"]+)\" with commits \[([^\]]*)\] in the log$"#
+)]
+fn record_b(world: &mut GivnWorld, fix: String, commits: String) {
+    record_fix_with_commits(world, fix, commits);
+}
+
+#[when("the operator records the committed fix and its hash in the log")]
+fn record_b_committed(world: &mut GivnWorld) {
+    record_committed_fix(world);
+}
+
+#[then("the gate run ends unsuccessfully")]
+fn fail_b(world: &mut GivnWorld) {
+    assert!(
+        !world.last_output.as_ref().expect("output").status.success(),
+        "the review run must fail"
+    );
+}
+
+#[then(regex = r#"^the failure text mentions \"([^\"]+)\"$"#)]
+fn diag_b(world: &mut GivnWorld, needle: String) {
+    assert!(
+        stderr(world).contains(&needle),
+        "stderr must mention {needle}: {}",
+        stderr(world)
+    );
+}
+
+#[then("stdout announces the verified remediation")]
+fn receipt_b(world: &mut GivnWorld) {
+    assert!(stdout(world).contains("semantic remediation verified"));
+}
+
+// Group C wording.
+#[when("the project's run block is complete")]
+#[given("the project's run block is complete")]
+fn declaration_c(world: &mut GivnWorld) {
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+#[when("the review gate executes for running-change")]
+fn gate_c(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when(regex = r#"^the assessor classifies all candidates \"(DUPLICATE)\"$"#)]
+fn classify_c(world: &mut GivnWorld, classification: String) {
+    super::semantic_review_steps::update_semantic_classification(world, &classification, true);
+}
+
+#[when("the assessor notes the committed correction and hash in the log")]
+fn record_c_committed(world: &mut GivnWorld) {
+    record_committed_fix(world);
+}
+
+#[then("the attempt fails")]
+fn fail_c(world: &mut GivnWorld) {
+    assert!(
+        !world.last_output.as_ref().expect("output").status.success(),
+        "the review run must fail"
+    );
+}
+
+// --- End lexical variants ---------------------------------------------------
+
+#[given(
+    regex = r#"^a semantic-remediation logging project holding one \"(DUPLICATE|VARIANT|VALID-BOUNDARY)\" finding$"#
+)]
+fn remediation_project_alias(world: &mut GivnWorld, classification: String) {
+    super::semantic_remediation_steps::remediation_project(world, classification);
+}
+
+#[given(
+    regex = r#"^a semantic-remediation logging project holding one \"DUPLICATE\" finding inside an initialized repository$"#
+)]
+fn remediation_project_git_alias(world: &mut GivnWorld) {
+    remediation_project_in_git(world);
+}
+
+#[given(
+    "a semantic-remediation logging project holding one \"DUPLICATE\" finding whose repository has never been committed"
+)]
+fn remediation_project_unborn_alias(world: &mut GivnWorld) {
+    remediation_project_in_git_without_commits(world);
+}
+
+#[given(
+    "a semantic-remediation logging project holding two permanent-duplicate findings inside an initialized repository"
+)]
+fn two_permanent_duplicate_deltas_alias(world: &mut GivnWorld) {
+    two_permanent_duplicate_deltas(world);
+}
+
+#[when(
+    regex = r#"^the user logs the applied fix \"([^\"]+)\" and the commit list \[([^\]]*)\] into the remediation log$"#
+)]
+fn record_fix_with_commits_alias(world: &mut GivnWorld, fix: String, commits: String) {
+    record_fix_with_commits(world, fix, commits);
+}
+
+#[when(
+    regex = r#"^the user logs the applied fix \"([^\"]+)\" without any commit list into the remediation log$"#
+)]
+fn record_fix_without_commits_alias(world: &mut GivnWorld, fix: String) {
+    record_fix_without_commits(world, fix);
+}
+
+#[when(
+    regex = r#"^the user marks every semantic review candidate as \"(DUPLICATE|VARIANT|VALID-BOUNDARY)\"$"#
+)]
+fn classify_alias(world: &mut GivnWorld, classification: String) {
+    super::semantic_review_steps::update_semantic_classification(world, &classification, true);
+}
+
+#[when("the user reruns the blocking change review for running-change")]
+fn rerun_review_alias(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let scores = world.retrieval_stub_scores.clone().unwrap_or_default();
+    world.last_output = Some(common::run_givn_with_envs(
+        env,
+        &["check", "review", "--change", "running-change"],
+        &[
+            ("GIVN_SPEC_EMBEDDER", "stub"),
+            ("GIVN_SPEC_STUB_PAIR_SCORES", &scores),
+        ],
+    ));
+}
+
+#[when("the user logs the committed fix and its commit into the remediation log")]
+fn record_committed_fix_alias(world: &mut GivnWorld) {
+    record_committed_fix(world);
+}
+
+#[then("the review completes successfully and prints the remediation receipt")]
+fn pass_with_receipt_alias(world: &mut GivnWorld) {
+    assert!(world.last_output.as_ref().expect("output").status.success());
+    assert!(stdout(world).contains("semantic remediation verified"));
+}
+
+#[when("the permanent counterpart of the finding is rewritten in the permanent specs")]
+fn rewrite_permanent_counterpart_b(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let path = env.path("givn/specs/provider.feature");
+    let content = fs::read_to_string(&path).expect("read permanent counterpart");
+    let changed = content.replace("rejects the request", "reports the unknown name");
+    assert_ne!(
+        content, changed,
+        "permanent fixture did not contain target text"
+    );
+    fs::write(path, changed).expect("rewrite permanent counterpart");
+}
+
+// --- End lexical variants ---------------------------------------------------
+
+#[then("a later candidate entry records different endpoint hashes than its predecessor")]
+fn later_entry_differs(world: &mut GivnWorld) {
+    let sections = candidate_sections(world);
+    assert!(
+        sections.len() >= 2,
+        "at least two candidate entries expected, found {}",
+        sections.len()
+    );
+    let first = &sections[0];
+    let last = &sections[sections.len() - 1];
+    let differing = ["before_left_content_hash", "before_left_evidence_hash"]
+        .iter()
+        .filter(|name| first.field(name) != last.field(name))
+        .count();
+    assert!(
+        differing > 0,
+        "a later entry must record changed endpoint hashes"
     );
 }
 

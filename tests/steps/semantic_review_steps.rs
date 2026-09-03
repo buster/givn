@@ -181,7 +181,11 @@ fn classify_every_without_rationale(world: &mut GivnWorld, classification: Strin
     update_semantic_classification(world, &classification, false);
 }
 
-fn update_semantic_classification(world: &mut GivnWorld, classification: &str, rationale: bool) {
+pub(crate) fn update_semantic_classification(
+    world: &mut GivnWorld,
+    classification: &str,
+    rationale: bool,
+) {
     let path = remediation_change_dir(world).join("semantic-review.md");
     let mut report = fs::read_to_string(&path).expect("read semantic report");
     world.semantic_report_snapshot = Some(fs::read(&path).expect("snapshot prior semantic report"));
