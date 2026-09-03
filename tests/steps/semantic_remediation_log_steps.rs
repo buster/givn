@@ -734,7 +734,16 @@ fn verbatim_preserves_structure(world: &mut GivnWorld) {
 
 #[then("the remediation log bytes equal the active log snapshot")]
 fn log_bytes_equal_snapshot(world: &mut GivnWorld) {
-    unimplemented!("pending: bytes equal snapshot")
+    let snapshot = world
+        .remediation_log_snapshot
+        .as_ref()
+        .expect("log snapshot is required");
+    let current = fs::read(remediation_log_path(world)).expect("read log");
+    assert_eq!(
+        snapshot.as_slice(),
+        current.as_slice(),
+        "the log must be byte-identical after the rerun"
+    );
 }
 
 #[then("`givn/archive/running-change/semantic-remediation.md` exists")]

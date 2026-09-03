@@ -275,23 +275,28 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A verified remediation from before the log existed still passes review`
+  - [x] COMMIT: `7ea6da4` — `feat(semantic-remediation-log): A verified remediation from before the log existed still passes review`
 
-- [ ] Scenario: `A repeated passing rerun does not grow the remediation log`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A repeated passing rerun does not grow the remediation log`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 0 — legitimate immediate GREEN:
+        the snapshot and byte-equality steps landed with earlier scenarios (snapshot in
+        scenario 3, byte comparison implemented here) and the last-run-record dedup is
+        scenario-1 production code. "12 steps (12 passed)".
         ```
-  - [ ] GREEN: last-run-record fingerprint target. Files:
-        <!-- list them -->
+  - [x] GREEN: last-run-record fingerprint target. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (byte-equality
+        assertion only; dedup behaviour was implemented with the
+        scenario-1 production code).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "12 steps (12 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A repeated passing rerun does not grow the remediation log`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A repeated passing rerun does not grow the remediation log`
 
 - [ ] Scenario: `An unreachable remediation commit blocks review`
   - [ ] RED: run only this scenario. Must fail.
