@@ -77,15 +77,13 @@ pub fn ephemeral_port() -> u16 {
 /// Resolve the start plan from the manifest and the caller's `--port`.
 ///
 /// Preflight findings are returned as `Err` — the caller prints them to
-/// stderr (stdout is the executor's machine contract) and exits 1.
+/// stderr (stdout is the executor's machine contract) and exits 1. The
+/// caller (`execute`) always preflights before resolving, so no redundant
+/// validation happens here.
 pub fn resolve_start_plan(
     manifest: &Manifest,
     caller_port: Option<u16>,
 ) -> Result<StartPlan, Vec<run_block::RunFinding>> {
-    let findings = run_block::check_run(manifest);
-    if !findings.is_empty() {
-        return Err(findings);
-    }
     let run: &Run = &manifest.run;
     let product_type = run
         .product_type
