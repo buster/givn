@@ -385,7 +385,7 @@ fn commit_with_stamp_per_candidate(world: &mut GivnWorld) {
 
 #[when("the user removes the remediation commit from Git history")]
 fn remove_commit_from_history(world: &mut GivnWorld) {
-    git(world, &["reset", "-q", "--hard", "HEAD~1"]);
+    git(world, &["reset", "-q", "--soft", "HEAD~1"]);
 }
 
 #[when("the classified duplicate candidates are removed from the active deltas")]

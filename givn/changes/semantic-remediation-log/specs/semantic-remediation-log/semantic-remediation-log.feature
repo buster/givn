@@ -171,7 +171,7 @@ Feature: Remediation log for semantic review
     Then the command exits 0
     And the remediation log bytes equal the active log snapshot
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unreachable remediation commit blocks review
     Given the remediation case carries the distinguishing marker "remediation log unreachable commit blocking ash birch cedar delta fern glade heather iris juniper kelp maple moss nettle opal reed willow"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate in a Git repository
