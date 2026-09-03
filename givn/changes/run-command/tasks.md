@@ -395,8 +395,8 @@ Production: `src/cli/upgrade.rs` (`backfill_commands`, `RUN_SCAFFOLD`), `src/cli
 
 ## T16 — ADR + arc42 finalization
 
-- [ ] ADR-067 status `accepted`; arc42 chapters finalized; `arc42.md` STATUS: DONE re-verified.
-- [ ] COMMIT: `_` — hash `_`
+- [x] ADR-067 status `accepted` after the confirmation evidence held: full suite 548 scenarios exit 0 (T15 suite gate) and `./run-tests.sh --e2e` 106 scenarios exit 0 (this task); register README (prose + table row), chapter 9, and the ADR's Confirmation section record the transition; `arc42.md` STATUS: DONE re-verified (chapter-9 row updated to describe the completed flip). Permanent adr-qualification-gate scenario bumped to "36 accepted decisions and three proposed decisions" per the established single-transition pattern; its step updated to match (targeted run passed, exit 0).
+- [x] COMMIT: `feat(run-command): accept ADR-067 and finalize the arc42 register` — hash `51a6c42`
 
 ## Final gate
 
