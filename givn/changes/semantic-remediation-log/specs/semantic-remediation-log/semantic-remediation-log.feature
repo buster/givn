@@ -300,7 +300,7 @@ Feature: Remediation log for semantic review
     And stdout contains "semantic remediation verified"
     And the remediation log records the before and after run records with stage durations and the stamped commit
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Real CLI archive retains the remediation log
     Given the remediation case carries the distinguishing marker "remediation log real archive retention basil cedar dune elm frost glade hollow iris juniper kelp maple nettle opal pine quince reed slate"
     Given an end-to-end project staged for a stamped remediation log on change "rc-log-archive-e2e"
