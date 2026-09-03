@@ -1,7 +1,8 @@
 <!-- givn:begin:coverage-badge -->
-[![Line Coverage: 77%](https://img.shields.io/badge/line%20coverage-77%25-brightgreen)](coverage/cobertura-coverage.xml)
+[![Line Coverage: 76%](https://img.shields.io/badge/line%20coverage-76%25-brightgreen)](coverage/cobertura-coverage.xml)
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
+
 
 
 
@@ -121,7 +122,7 @@ Licensed under either of [MIT](LICENSE-MIT) or [Apache-2.0](LICENSE-APACHE) at y
 
 Merged report: [coverage/cobertura-coverage.xml](coverage/cobertura-coverage.xml)
 
-Line coverage: 77% (18719/24354)
+Line coverage: 76% (19468/25502)
 Branch coverage: n/a (0/0)
 
 Reproduce the result:
