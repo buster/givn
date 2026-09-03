@@ -94,23 +94,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: see commit below — `feat(semantic-remediation-log): Rerunning review with unchanged endpoints does not grow the remediation log`
+  - [x] COMMIT: `702c93f` — `feat(semantic-remediation-log): Rerunning review with unchanged endpoints does not grow the remediation log`
 
-- [ ] Scenario: `A changed endpoint appends a new candidate entry and retains the prior entry`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A changed endpoint appends a new candidate entry and retains the prior entry`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "5 steps (4 passed, 1 failed)";
+        the snapshot step was an unimplemented stub. Added the log-snapshot step
+        to the scenario before the endpoint change.
         ```
-  - [ ] GREEN: changed-evidence entry append with retained prior entry. Files:
-        <!-- list them -->
+  - [x] GREEN: changed-evidence entry append with retained prior entry. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (snapshot step, second-entry
+        and prior-entry-retained assertions; append behaviour was implemented with
+        the scenario-1 production code).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "11 steps (11 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A changed endpoint appends a new candidate entry and retains the prior entry`
+  - [x] COMMIT: pending — `feat(semantic-remediation-log): A changed endpoint appends a new candidate entry and retains the prior entry`
 
 - [ ] Scenario: `The passing rerun completes the after state and the after run record`
   - [ ] RED: run only this scenario. Must fail.
