@@ -146,6 +146,9 @@ Change: "<change-id>"
 - after_state: endpoint-absent|outline-consolidated|score-below-boundary|null
 - after_embedding_score: <4-decimals|null>
 - after_commit: <16-hex|null>
+- after_left_gherkin: |
+    <verbatim post-remediation text of the delta endpoint>
+    | null
 ```
 
 Semantics:
@@ -161,7 +164,10 @@ Semantics:
 - **After-field matching**: the passing run writes after fields into the entry
   whose candidate id and endpoint evidence hashes match the pair the verifier
   just verified — never first-entry-by-id — so a superseded entry (changed
-  endpoint) keeps its historical state untouched.
+  endpoint) keeps its historical state untouched. `after_left_gherkin` records
+  the post-remediation text of the delta endpoint (verbatim) or `null` when the
+  endpoint was removed; the permanent endpoint cannot change during verified
+  remediation, so it has no after field.
 - **Verbatim text** includes the tag lines above `Scenario:`/`Scenario
   Outline:` and ends before the next section directive; trailing blank lines
   are trimmed. The block is byte-identical to the feature-file source.

@@ -58,7 +58,7 @@ Feature: Remediation log for semantic review
     And the remediation log contains an after run record
     And the removed candidate entry records after state "endpoint-absent" with a null after score
 
-  @givn.added @wip
+  @givn.added
   Scenario: A surviving pair records its recomputed embedding score after remediation
     Given the remediation case carries the distinguishing marker "remediation log surviving score evidence ash birch cobalt fern glade heather jade knoll larch moss nettle opal plum quince reed thorn"
     Given a project prepared for semantic remediation with a "VARIANT" candidate

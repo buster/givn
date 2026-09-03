@@ -319,7 +319,8 @@ fn delete_remediation_log(world: &mut GivnWorld) {
 
 #[when("the active remediation log bytes are snapshotted")]
 fn snapshot_remediation_log(world: &mut GivnWorld) {
-    world.remediation_log_snapshot = Some(fs::read(remediation_log_path(world)).expect("snapshot log"));
+    world.remediation_log_snapshot =
+        Some(fs::read(remediation_log_path(world)).expect("snapshot log"));
 }
 
 #[then("the remediation log exists")]
@@ -477,9 +478,20 @@ fn log_has_second_entry(world: &mut GivnWorld) {
         .iter()
         .filter(|name| first.field(name) != second.field(name))
         .count();
-    assert!(differing > 0, "the new entry must record changed endpoint hashes");
-    assert_eq!(second.field("run"), Some("2"), "the new entry links to run 2");
-    assert_eq!(first.field("run"), Some("1"), "the prior entry links to run 1");
+    assert!(
+        differing > 0,
+        "the new entry must record changed endpoint hashes"
+    );
+    assert_eq!(
+        second.field("run"),
+        Some("2"),
+        "the new entry links to run 2"
+    );
+    assert_eq!(
+        first.field("run"),
+        Some("1"),
+        "the prior entry links to run 1"
+    );
 }
 
 #[then("the prior candidate entry is retained unchanged")]
@@ -505,7 +517,11 @@ fn prior_entry_retained(world: &mut GivnWorld) {
             .collect::<Vec<_>>()
             .join("\n")
     };
-    assert_eq!(render(&prior), render(&current), "prior entry must be unchanged");
+    assert_eq!(
+        render(&prior),
+        render(&current),
+        "prior entry must be unchanged"
+    );
 }
 
 #[then("the remediation log contains an after run record")]
@@ -533,12 +549,43 @@ fn removed_entry_after_state(world: &mut GivnWorld) {
     regex = r#"^the remediation log records after state \"outline-consolidated\" with the recomputed embedding score below the boundary$"#
 )]
 fn consolidated_entry_after_state(world: &mut GivnWorld) {
-    unimplemented!("pending: outline-consolidated")
+    let entry = candidate_sections(world)
+        .into_iter()
+        .next()
+        .expect("candidate entry expected");
+    assert_eq!(entry.field("after_state"), Some("outline-consolidated"));
+    let score = entry
+        .field("after_embedding_score")
+        .expect("after score field")
+        .parse::<f32>()
+        .expect("after score is a four-decimal number");
+    assert!(
+        score < 0.9,
+        "the recomputed score {score} must be below the 0.9000 boundary"
+    );
 }
 
 #[then("the candidate entry records the consolidated outline text verbatim from the active delta")]
 fn entry_records_consolidated_text(world: &mut GivnWorld) {
-    unimplemented!("pending: consolidated text")
+    let env = world.env.as_ref().expect("remediation project is required");
+    let entry = candidate_sections(world)
+        .into_iter()
+        .next()
+        .expect("candidate entry expected");
+    let file = entry
+        .field("before_left_file")
+        .expect("left file")
+        .trim_matches('"');
+    let title = entry
+        .field("before_left_title")
+        .expect("left title")
+        .trim_matches('"');
+    let expected = expected_verbatim(&env.root(), file, title);
+    assert_eq!(
+        entry.field("after_left_gherkin"),
+        Some(expected.as_str()),
+        "after_left_gherkin must record the consolidated outline verbatim"
+    );
 }
 
 #[then("the remediation log records the before run anchor and entry runs as null")]

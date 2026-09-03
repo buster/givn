@@ -134,23 +134,30 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: `$(git log --oneline -1 | cut -c1-7)` — `feat(semantic-remediation-log): The passing rerun completes the after state and the after run record`
+  - [x] COMMIT: `504f291` — `feat(semantic-remediation-log): The passing rerun completes the after state and the after run record`
 
-- [ ] Scenario: `A surviving pair records its recomputed embedding score after remediation`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `A surviving pair records its recomputed embedding score after remediation`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "10 steps (9 passed, 1 failed)";
+        the outline-consolidated assertion was an unimplemented stub.
         ```
-  - [ ] GREEN: derived after score for the recomputed pair. Files:
-        <!-- list them -->
+  - [x] GREEN: derived after score for the recomputed pair. Files:
+        `src/spec/retrieval.rs` (VerifiedRemediation gains left file/title),
+        `src/spec/remediation_log.rs` (after_left_gherkin field: render,
+        parse, completion), `src/spec/retrieval.rs` (completion extracts the
+        post-remediation delta text; DUPLICATE records null),
+        `tests/steps/semantic_remediation_log_steps.rs` (assertions).
+        Design.md grammar updated with `after_left_gherkin` and design-review
+        hardened accordingly.
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "11 steps (11 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: cargo fmt --all && targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): A surviving pair records its recomputed embedding score after remediation`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A surviving pair records its recomputed embedding score after remediation`
 
 - [ ] Scenario: `A resolved candidate without a complete log entry blocks review`
   - [ ] RED: run only this scenario. Must fail.
