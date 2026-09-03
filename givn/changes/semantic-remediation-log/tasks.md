@@ -468,7 +468,7 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): The remediation log survives the archive move`
+  - [x] COMMIT: `b682457` — `feat(semantic-remediation-log): The remediation log survives the archive move`
 
 - [ ] Scenario: `Advisory spec review does not create the remediation log`
   - [ ] RED: run only this scenario. Must fail.
