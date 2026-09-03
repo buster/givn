@@ -12,6 +12,7 @@ use std::time::{Duration, Instant};
 use cucumber::{given, then, when};
 
 use super::GivnWorld;
+use crate::common;
 use crate::steps::run_execution_support as support;
 
 #[given("a project with a server run declaration that becomes ready and exits cleanly")]
@@ -165,6 +166,123 @@ fn archived_change_dir_named_exists(world: &mut GivnWorld, id: String) {
     assert!(
         env.path(&format!("givn/archive/{id}")).is_dir(),
         "the change must have been moved to givn/archive/{id}/"
+    );
+}
+
+#[given("a git-managed project with givn initialised")]
+fn git_managed_project(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let init = common::run_givn(&env, &["init"]);
+    assert!(
+        init.status.success(),
+        "fixture init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    // The committed baseline predates the run declaration: the upgrade
+    // scenarios strip it themselves, and `givn upgrade` demands a clean
+    // worktree, so the strip must already be part of the baseline commit.
+    let commands = std::fs::read_to_string(env.path("givn/commands.yaml"))
+        .expect("read fixture commands.yaml");
+    let stripped = common::remove_top_level_key(&commands, "run");
+    std::fs::write(env.path("givn/commands.yaml"), stripped).expect("write commands.yaml");
+    std::fs::write(env.path(".gitignore"), ".opencode/\nAGENTS.md\n")
+        .expect("ignore generated agent files");
+    git_fixture(&env, &["init"]);
+    git_fixture(&env, &["config", "user.name", "Givn Run Test"]);
+    git_fixture(&env, &["config", "user.email", "givn-run@example.test"]);
+    git_fixture(&env, &["add", "--all"]);
+    let commit = git_fixture(&env, &["commit", "-m", "fixture: initialised project"]);
+    assert!(
+        commit.status.success(),
+        "fixture commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+    world.env = Some(env);
+}
+
+fn git_fixture(env: &common::TestEnv, args: &[&str]) -> std::process::Output {
+    std::process::Command::new("git")
+        .args(args)
+        .current_dir(env.root())
+        .output()
+        .expect("run git fixture command")
+}
+
+fn git_fixture_stdout(env: &common::TestEnv, args: &[&str]) -> String {
+    let output = git_fixture(env, args);
+    assert!(
+        output.status.success(),
+        "git command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+#[when("the user runs `givn upgrade` again")]
+fn upgrade_again(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    world.run_prev_commit = Some(git_fixture_stdout(env, &["rev-parse", "HEAD"]));
+    world.last_output = Some(common::run_givn(env, &["upgrade"]));
+}
+
+#[then(regex = r#"^the file "([^"]+)" contains "(.*)"$"#)]
+fn file_contains(world: &mut GivnWorld, rel: String, needle: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let content =
+        std::fs::read_to_string(env.path(&rel)).unwrap_or_else(|e| panic!("read {rel}: {e}"));
+    assert!(
+        content.contains(&needle),
+        "{rel} lacks {needle:?}:\n{content}"
+    );
+}
+
+#[then("the working tree is clean")]
+fn working_tree_is_clean(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let status = git_fixture_stdout(env, &["status", "--porcelain"]);
+    assert!(
+        status.trim().is_empty(),
+        "the working tree must be clean after the upgrade commit:\n{status}"
+    );
+}
+
+#[then(regex = r#"^the latest commit contains "(.*)"$"#)]
+fn latest_commit_contains(world: &mut GivnWorld, path: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let names = git_fixture_stdout(env, &["show", "--name-only", "--format=", "HEAD"]);
+    assert!(
+        names.lines().any(|line| line.trim() == path),
+        "latest commit must touch {path}; it touches:\n{names}"
+    );
+}
+
+#[then("the latest commit is unchanged by the second upgrade")]
+fn latest_commit_unchanged(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let before = world
+        .run_prev_commit
+        .as_deref()
+        .expect("the pre-second-upgrade commit hash is required");
+    let after = git_fixture_stdout(env, &["rev-parse", "HEAD"]);
+    assert_eq!(
+        before.trim(),
+        after.trim(),
+        "the second upgrade created an additional commit"
     );
 }
 

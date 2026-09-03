@@ -144,6 +144,25 @@ pub fn upgrade_config(existing: &str, version: &str) -> Result<String> {
     Ok(result)
 }
 
+/// The run scaffold appended by the backfill — the same text the config
+/// template embeds (`commands.yaml.tmpl` includes `run.yaml.tmpl` verbatim).
+pub const RUN_SCAFFOLD: &str = include_str!("../../assets/run.yaml.tmpl");
+
+/// Append the run scaffold to `existing` unless a top-level `run:` key is
+/// already present (line-based scan; a commented example is not a key).
+/// Returns `None` when nothing changed, which makes the backfill idempotent.
+pub fn backfill_commands(existing: &str) -> Option<String> {
+    let has_run = existing.lines().any(|line| line.starts_with("run:"));
+    if has_run {
+        return None;
+    }
+    let base = existing.trim_end();
+    if base.is_empty() {
+        return Some(RUN_SCAFFOLD.to_string());
+    }
+    Some(format!("{base}\n\n{RUN_SCAFFOLD}"))
+}
+
 /// Group user-owned lines by their top-level YAML key. A top-level key line
 /// has no leading whitespace and matches `<key>:` (with or without a value
 /// on the same line). Every subsequent indented line belongs to that group.
