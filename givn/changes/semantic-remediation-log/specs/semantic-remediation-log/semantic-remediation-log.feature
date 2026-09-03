@@ -29,12 +29,13 @@ Feature: Remediation log for semantic review
     And the user runs `givn check review --change running-change` again without edits
     Then the remediation log still contains exactly one candidate entry and one run record
 
-  @givn.added @wip
+  @givn.added
   Scenario: A changed endpoint appends a new candidate entry and retains the prior entry
     Given the remediation case carries the distinguishing marker "remediation log endpoint change evidence amber bramble cedar delta elm fjord gale heather iris juniper kelp lumen moss nectar osier pine quince rowan"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
+    And the active remediation log bytes are snapshotted
     And the user classifies every semantic review candidate as "DUPLICATE"
     And the active classified endpoint changes without remediation
     And the user runs `givn check review --change running-change`

@@ -303,7 +303,7 @@ fn delete_remediation_log(world: &mut GivnWorld) {
 
 #[when("the active remediation log bytes are snapshotted")]
 fn snapshot_remediation_log(world: &mut GivnWorld) {
-    unimplemented!("pending: snapshot log")
+    world.remediation_log_snapshot = Some(fs::read(remediation_log_path(world)).expect("snapshot log"));
 }
 
 #[then("the remediation log exists")]
@@ -452,12 +452,44 @@ fn log_is_not_grown(world: &mut GivnWorld) {
 
 #[then("the remediation log contains a second candidate entry with different endpoint hashes")]
 fn log_has_second_entry(world: &mut GivnWorld) {
-    unimplemented!("pending: second entry")
+    let sections = candidate_sections(world);
+    assert_eq!(sections.len(), 2, "exactly two candidate entries expected");
+    let first = &sections[0];
+    let second = &sections[1];
+    assert_eq!(first.header, second.header, "same candidate id");
+    let differing = ["before_left_content_hash", "before_left_evidence_hash"]
+        .iter()
+        .filter(|name| first.field(name) != second.field(name))
+        .count();
+    assert!(differing > 0, "the new entry must record changed endpoint hashes");
+    assert_eq!(second.field("run"), Some("2"), "the new entry links to run 2");
+    assert_eq!(first.field("run"), Some("1"), "the prior entry links to run 1");
 }
 
 #[then("the prior candidate entry is retained unchanged")]
 fn prior_entry_retained(world: &mut GivnWorld) {
-    unimplemented!("pending: prior entry retained")
+    let snapshot = world
+        .remediation_log_snapshot
+        .as_ref()
+        .expect("log snapshot is required");
+    let snapshot_text = String::from_utf8_lossy(snapshot);
+    let prior = parse_log_sections(&snapshot_text)
+        .into_iter()
+        .find(|section| section.header.starts_with("Candidate "))
+        .expect("snapshot contains a candidate entry");
+    let current = candidate_sections(world)
+        .into_iter()
+        .next()
+        .expect("current log contains the prior entry");
+    let render = |section: &LogSection| {
+        section
+            .fields
+            .iter()
+            .map(|field| format!("{}: {}", field.name, field.value))
+            .collect::<Vec<_>>()
+            .join("\n")
+    };
+    assert_eq!(render(&prior), render(&current), "prior entry must be unchanged");
 }
 
 #[then("the remediation log contains an after run record")]
