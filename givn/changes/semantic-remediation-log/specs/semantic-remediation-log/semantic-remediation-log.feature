@@ -72,7 +72,7 @@ Feature: Remediation log for semantic review
     And the remediation log records after state "outline-consolidated" with the recomputed embedding score below the boundary
     And the candidate entry records the consolidated outline text verbatim from the active delta
 
-  @givn.added @wip
+  @givn.added
   Scenario: A resolved candidate without a complete log entry blocks review
     Given the remediation case carries the distinguishing marker "remediation log incomplete entry blocking acorn bramble clover delta elm frost grove iris jasper kiln larch moss nettle pine quill reed"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
