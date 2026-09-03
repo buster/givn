@@ -240,7 +240,7 @@ Feature: Remediation log for semantic review
     Then the command exits 0
     And stdout contains "semantic remediation verified"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The remediation log obeys its strict wire grammar
     Given the remediation case carries the distinguishing marker "remediation log wire grammar discipline alpha bramble cedar delta elm fern grove heather iris juniper kiln larch moss nettle opal reed"
     Given a project prepared for semantic remediation whose delta scenario contains blank lines and an Examples table

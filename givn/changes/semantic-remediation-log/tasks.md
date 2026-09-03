@@ -404,23 +404,28 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
         ```
         Command: targeted rerun. Output: exit 0.
         ```
-  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): A commit fixing two candidates carries one stamp line per candidate`
+  - [x] COMMIT: `675c3b8` — `feat(semantic-remediation-log): A commit fixing two candidates carries one stamp line per candidate`
 
-- [ ] Scenario: `The remediation log obeys its strict wire grammar`
-  - [ ] RED: run only this scenario. Must fail.
+- [x] Scenario: `The remediation log obeys its strict wire grammar`
+  - [x] RED: run only this scenario. Must fail.
         ```
-        <!-- paste RED evidence -->
+        Command: targeted rerun as above. Output: exit 101 — "1 step failed";
+        the blank-lines/Examples fixture and the grammar assertions were
+        unimplemented stubs.
         ```
-  - [ ] GREEN: wire-grammar assertions on the blank-line/Examples fixture. Files:
-        <!-- list them -->
+  - [x] GREEN: wire-grammar assertions on the blank-line/Examples fixture. Files:
+        `tests/steps/semantic_remediation_log_steps.rs` (fixture with a
+        Scenario Outline containing interior blank lines and an Examples
+        table; exact header/field-order, allowed-fields, no-timestamp,
+        final-newline, and structure-preservation assertions).
         ```
-        <!-- paste GREEN evidence -->
+        Command: targeted rerun. Output: exit 0 — "10 steps (10 passed)".
         ```
-  - [ ] REFACTOR: re-run, must still pass.
+  - [x] REFACTOR: re-run, must still pass.
         ```
-        <!-- paste REFACTOR evidence -->
+        Command: targeted rerun. Output: exit 0.
         ```
-  - [ ] COMMIT: `<hash>` — `feat(semantic-remediation-log): The remediation log obeys its strict wire grammar`
+  - [x] COMMIT: pending hash — `feat(semantic-remediation-log): The remediation log obeys its strict wire grammar`
 
 - [ ] Scenario: `Failed review before the semantic stage does not create the remediation log`
   - [ ] RED: run only this scenario. Must fail.
