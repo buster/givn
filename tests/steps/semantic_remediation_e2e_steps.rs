@@ -35,6 +35,16 @@ fn e2e_duplicate_remediation_project(world: &mut GivnWorld) {
             "- rationale: \"The duplicate is removed from the projected change\"",
         );
     fs::write(report_path, report).expect("classify remediation report");
+    super::semantic_remediation_log_steps::fill_verified_entries(
+        world,
+        "remediation",
+        "\"removed the redundant scenario\"",
+    );
+    super::semantic_remediation_log_steps::fill_verified_entries(
+        world,
+        "commits",
+        "[\"0123456789abcdef0123456789abcdef01234567\"]",
+    );
     fs::remove_file(env.path("givn/changes/running-change/specs/running.feature"))
         .expect("remove duplicate delta for E2E");
 }
@@ -119,6 +129,16 @@ fn e2e_delta2delta_duplicate_remediation_project_named(world: &mut GivnWorld, ch
             "- rationale: \"The duplicate is removed from the projected change\"",
         );
     fs::write(report_path, report).expect("classify delta-to-delta report");
+    super::semantic_remediation_log_steps::fill_verified_entries(
+        world,
+        "remediation",
+        "\"removed the redundant scenario\"",
+    );
+    super::semantic_remediation_log_steps::fill_verified_entries(
+        world,
+        "commits",
+        "[\"0123456789abcdef0123456789abcdef01234567\"]",
+    );
     // Remove the redundant delta scenario, retaining the other one.
     fs::write(
         env.path(&format!("givn/changes/{change_id}/specs/running.feature")),

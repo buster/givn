@@ -307,3 +307,174 @@ Feature: Remediation log for semantic review
     When the remediation E2E user archives change "rc-log-archive-e2e" after a verified stamped remediation
     Then the command exits 0
     And the archived remediation log exists next to the archived semantic report
+
+  @givn.modified
+  Scenario: A complete classification allows change review and survives regeneration
+    Given  the remediation case carries the distinguishing marker "modified permanent contract replacement mu archive bridge contract delta evidence fixture gateway history invariant journal keeper ledger merge namespace output projection"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+    And  the semantic review report status is "PASS"
+
+  @givn.modified
+  Scenario: A regenerated classified report is byte-for-byte deterministic
+    Given  the remediation case carries the distinguishing marker "regression deterministic report omega glacier harbor invariant matrix nonce ordered receipt stable"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+    And  the semantic review report status is "PASS"
+
+  @givn.modified
+  Scenario: Changing a candidate scenario invalidates its previous classification
+    Given  the remediation case carries the distinguishing marker "regression active candidate invalidation sigma texture vector antler birch comet dune ember fjord granite harbor island juniper kiln lagoon marble nebula olive prism quartz rocket sandal timber umber"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+
+  @givn.modified
+  Scenario: Changing a permanent endpoint invalidates its prior classification
+    Given  the remediation case carries the distinguishing marker "regression permanent endpoint invalidation tau unmodified baseline acorn beacon copper delta engine frost grove hickory iris jade kettle lemon mosaic nickel opal pebble ruby stone thistle"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+
+  @givn.modified
+  Scenario: Any changed endpoint evidence or prior-report metadata invalidates carry-forward
+    Given  the remediation case carries the distinguishing marker "regression evidence metadata invalidation upsilon version hash"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+
+  @givn.modified
+  Scenario: Removed candidates disappear after classification
+    Given  the remediation case carries the distinguishing marker "regression removed candidate disappearance phi projected state"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+    And  the semantic review report status is "PASS"
+
+  Scenario Outline: Invalid prior report entries never carry a classification
+    Given  a project prepared for semantic review with a similar active delta
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the prior semantic report is replaced with a <invalid prior entry>
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    And  the regenerated semantic review report is complete
+    And  the semantic review report status is "BLOCKED"
+    And  the semantic review report candidate count is recomputed
+    And  the semantic review report contains classification "UNCERTAIN"
+    And  the regenerated semantic review report has the exact headers and candidate field order
+    And  the regenerated semantic review report contains only allowed fields and no unknown fields
+    And  the regenerated semantic review report ends with exactly one final newline
+    Examples:
+      | invalid prior entry |
+      | missing classification |
+      | invalid classification |
+      | duplicate candidate |
+      | stale candidate |
+      | unknown field |
+      | structurally malformed block |
+
+  @givn.modified
+  Scenario: Removing a DUPLICATE candidate verifies the projected remediation
+    Given  the remediation case carries the distinguishing marker "duplicate projected removal success beta canyon copper ivory juniper kelp mosaic nickel opal prairie ruby saffron topaz umber violet willow xylophone yarrow zenith"
+    Given  a project prepared for semantic remediation with a "DUPLICATE" candidate
+    And  the permanent specifications are snapshotted
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "DUPLICATE"
+    And  the user records the remediation fix "removed the redundant scenario" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the classified duplicate candidate is removed from the active delta
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+    And  the semantic review report status is "PASS"
+    And  the permanent specifications are unchanged
+
+  @givn.modified
+  Scenario: Consolidating a VARIANT candidate verifies the projected remediation
+    Given  the remediation case carries the distinguishing marker "variant parameterized examples success delta anchor blossom circuit drum engine flare glacier hinge island jacket kettle ladder marble nebula orange prism"
+    Given  a project prepared for semantic remediation with a "VARIANT" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "VARIANT"
+    And  the user records the remediation fix "consolidated the pair into one outline" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the active variant is consolidated with an explicit parameter
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+    And  the semantic review report status is "PASS"
+
+  @givn.modified
+  Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
+    Given  the remediation case carries the distinguishing marker "boundary explicit observable fact success theta acrobat bamboo crystal domino emerald fossil garden harbor insect jasmine koala lantern mango needle ocean pocket rainbow"
+    Given  a project prepared for semantic remediation with a "VALID-BOUNDARY" candidate
+    And the project declares a complete run declaration
+    When  the user runs `givn check review --change running-change`
+    Then  the command exits non-zero
+    When  the user classifies every semantic review candidate as "VALID-BOUNDARY"
+    And  the user records the remediation fix "reworded the distinction" and commits ["0123456789abcdef0123456789abcdef01234567"] in the remediation log
+    And  the valid boundary is rewritten with an explicit distinction below the similarity boundary
+    And  the user runs `givn check review --change running-change`
+    Then  the command exits 0
+    And  stdout contains "semantic remediation verified"
+    And  the semantic review report status is "PASS"
+
+  @givn.modified
+  Scenario: The migration preserves independent architecture history across three proposed decisions
+    Given  the consolidated ADR register and canonical sources are available
+    When  a maintainer compares the register with the canonical sources
+    Then  the final register has 36 accepted decisions and four proposed decisions
+    And  the change's migration manifest gives every assigned identifier exactly one disposition
+    And  reserved identifiers `ADR-050` and `ADR-051` have no record
+    And  non-ADR records are removed from the active register and ADR archive
+    And  absorbed records are absent and their refinements are in the target ADRs
+    And  superseded architectural records `ADR-019`, `ADR-042`, and `ADR-053` remain archived with replacement links
+    And  `ADR-043` and `ADR-049` are absent because their behavior is owned by permanent specifications
+    And  independent architecture decisions remain separate
+    And  `ADR-063` remains proposed and owned by its active change
