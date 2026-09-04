@@ -53,6 +53,19 @@ fn cli_distinguishes_retrieval_behavior(world: &mut GivnWorld) {
     assert!(output.contains("retrieval-unavailable"));
 }
 
+#[then("the CLI output no longer advertises retrieval commands")]
+fn cli_no_longer_advertises_retrieval(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        !output.contains("givn spec index"),
+        "specs instruction still advertises `givn spec index` after semantic-gate retirement"
+    );
+    assert!(
+        !output.contains("retrieval-unavailable"),
+        "specs instruction still describes retrieval-unavailable behaviour"
+    );
+}
+
 #[when("the author requests the design instructions through the Givn CLI")]
 fn author_requests_design_instructions(world: &mut GivnWorld) {
     let output = {

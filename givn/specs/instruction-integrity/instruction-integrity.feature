@@ -29,19 +29,6 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     When  the author requests the design instructions through the Givn CLI
     Then  the CLI output contains every required E2E design decision
 
-  Scenario: Review guidance verifies semantic remediation
-    Given  a semantic review contains classified candidates
-    When  the reviewer completes the review artifact
-    Then  the review records the remediation contract for each classification
-    And  the review records the projected-tree evidence and verification receipt
-    And  an unresolved or stale remediation remains blocking
-
-  @e2e
-  Scenario: A reviewer requests remediation-aware review guidance
-    Given  a Givn project with an active change
-    When  the reviewer requests the review instructions through the Givn CLI
-    Then  the CLI output contains semantic classification and remediation checks
-
   Scenario: Machine-readable instructions describe the effective artifact
     Given  the effective specs artifact metadata is available
     When  an agent inspects the specs instructions as JSON
@@ -72,3 +59,14 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then  the guidance explains the advisory and blocking retrieval paths
     And  the guidance preserves an explicit unavailable result for feature-free builds
     And  the guidance does not prohibit retrieval in a retrieval-capable build
+  Scenario: Review guidance names the deterministic disposition gates
+    Given  the review instructions are requested
+    When  the reviewer reads the deterministic gate guidance
+    Then  the guidance requires an overlap disposition for every shape match
+    And  the guidance requires a split-or-keep decision for every long scenario
+
+  @e2e
+  Scenario: A reviewer requests disposition-aware review guidance
+    Given  a Givn project with an active change
+    When  the reviewer requests the review instructions through the Givn CLI
+    Then  the CLI output contains the deterministic gate dispositions guidance
