@@ -19,15 +19,12 @@ in the loop.
 
 ## Interactions
 
-- An installed givn refuses a request for simulated embedder output
-- An installed givn honours a model-location request that still uses the real models
-- An installed givn announces each refused request by name
-- An installed givn keeps the review gate closed when model evidence is unavailable
-- Maintainer inspects the complete permanent scenario audit
-- A cold-cache index build logs every phase of the E5 model download and scenario processing
-- The JSON duplicate audit keeps the report channel free of progress wording
-- The review run logs the reranker and NLI downloads as they happen
-- Searching a cold E5 cache logs the model download before printing ranked results
+- audit the permanent corpus for exact and structural duplicates
+- search the permanent corpus lexically with `givn spec find`
+- inspect the corpus overview with `givn spec tree`
+- route a change proposal against the permanent corpus
+- verify the JSON duplicate audit channel stays clean of progress wording
+- keep the deterministic audit free of model wording
 
 ## Includes
 

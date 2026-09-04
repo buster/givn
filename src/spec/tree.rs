@@ -219,13 +219,22 @@ pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
         assertions: Vec<String>,
     }
     let mut entries: Vec<Entry> = Vec::new();
-    for entry in std::fs::read_dir(&specs_root)? {
+    // A missing specs directory is an empty corpus, not an error.
+    let group_entries = match std::fs::read_dir(&specs_root) {
+        Ok(rd) => rd,
+        Err(_) => return Ok(Vec::new()),
+    };
+    for entry in group_entries {
         let group_dir = entry?.path();
         if !group_dir.is_dir() {
             continue;
         }
-        for file in std::fs::read_dir(&group_dir)? {
-            let file = file?.path();
+        for file in std::fs::read_dir(&group_dir)
+            .into_iter()
+            .flatten()
+            .flatten()
+        {
+            let file = file.path();
             if file.extension().is_none_or(|e| e != "feature") {
                 continue;
             }
@@ -273,16 +282,26 @@ pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
                     right_file: b.file.clone(),
                     right_title: b.title.clone(),
                 });
-            } else if a.assertions.len() > b.assertions.len()
-                && is_subsequence(&b.assertions, &a.assertions)
-            {
-                matches.push(DuplicateMatch {
-                    kind: "assertion_subset".to_string(),
-                    left_file: b.file.clone(),
-                    left_title: b.title.clone(),
-                    right_file: a.file.clone(),
-                    right_title: a.title.clone(),
-                });
+            } else {
+                // Subset check must consider both directions: each
+                // unordered pair is visited once with a fixed order.
+                let (short_e, long_e) = if a.assertions.len() <= b.assertions.len() {
+                    (a, b)
+                } else {
+                    (b, a)
+                };
+                if !short_e.assertions.is_empty()
+                    && long_e.assertions.len() > short_e.assertions.len()
+                    && is_subsequence(&short_e.assertions, &long_e.assertions)
+                {
+                    matches.push(DuplicateMatch {
+                        kind: "assertion_subset".to_string(),
+                        left_file: short_e.file.clone(),
+                        left_title: short_e.title.clone(),
+                        right_file: long_e.file.clone(),
+                        right_title: long_e.title.clone(),
+                    });
+                }
             }
         }
     }
