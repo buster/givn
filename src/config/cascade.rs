@@ -110,52 +110,11 @@ mod tests {
     }
 
     #[test]
-    fn review_instruction_dedups_layer_twins_by_observable_outcome() {
-        let text = embedded("instructions/review.md");
-        assert!(text.contains("Dedup by observable outcome, not by layer"));
-        assert!(text.contains("driver, not an invariant"));
-        assert!(text.contains("keep the `@e2e` action proof"));
-        assert!(text.contains("precondition, causal action, or end state"));
-        assert!(text.contains("< 0.9500"));
-    }
-
-    #[test]
-    fn review_instruction_ships_worked_examples() {
-        let text = embedded("instructions/review.md");
-        assert!(text.contains("### Worked examples"));
-        assert!(text.contains("The open list shows the current items"));
-        assert!(text.contains("A checked-off item disappears from the view"));
-        assert!(text.contains("A phone reconnects after an empty list and restores its copy"));
-    }
-
-    #[test]
-    fn review_instruction_makes_blockers_actionable() {
-        let text = embedded("instructions/review.md");
-        assert!(text.contains("Remediation always includes a spec change"));
-        assert!(text.contains("| Blocker | Cause | Fix |"));
-        assert!(text.contains("score-only"));
-        assert!(text.contains("apply the projected spec change and rerun"));
-        assert!(text.contains("projected_result: success | failure"));
-    }
-
-    #[test]
     fn specs_instruction_requires_regular_scenarios_to_differ_from_e2e() {
         let text = embedded("instructions/specs.md");
         assert!(
             text.contains("Non-e2e scenarios must differ from their action's `@e2e` scenario.")
         );
         assert!(text.contains("the layer is a driver, not an invariant"));
-    }
-
-    #[test]
-    fn command_doc_and_review_template_carry_the_layer_rule() {
-        assert!(
-            embedded("commands/givn-review.md")
-                .contains("A layer difference is not an observable invariant.")
-        );
-        assert!(
-            embedded("templates/review.md")
-                .contains("A layer difference is not an observable invariant.")
-        );
     }
 }

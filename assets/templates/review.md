@@ -191,43 +191,6 @@ from this output (if the runner is coverage-instrumented).
 
 **Coverage measured:** YES / NO (YES = verify.command is coverage-instrumented and output contained coverage data)
 
-## Semantic Review and Remediation
-
-When `semantic-review.md` exists, record every candidate classification and its
-rationale:
-
-| Candidate | Classification | Rationale | Projected remediation | Score after remediation | Verified? |
-|---|---|---|---|---|---|
-| | `DUPLICATE` / `VARIANT` / `VALID-BOUNDARY` / `UNCERTAIN` | | | | |
-
-For each resolved classification, record the projected-tree evidence:
-
-- `DUPLICATE`: redundant endpoint absent, retained endpoint present.
-- `VARIANT`: one parameterized `Scenario Outline`, non-empty `Examples`, and
-  recomputed score `< 0.9500`.
-- `VALID-BOUNDARY`: both endpoints present, changed observable fact or
-  condition/outcome invariant, and recomputed score `< 0.9500`.
-
-A layer difference is not an observable invariant. A regular scenario that
-re-asserts its action's `@e2e` outcome is a `DUPLICATE`: keep the `@e2e`
-scenario, remove the non-e2e twin (or fold its distinct invariant into the
-`@e2e` one). A `VALID-BOUNDARY` requires a different precondition, causal
-action, or end state and a recomputed score `< 0.9500`.
-
-Missing, stale, unmatched, or score-only remediation is blocking. Record the
-verifier receipt only after all rows pass:
-
-Token-cap candidates are not resolved classifications. Record their
-`BGE_TOKEN_CAP`/`NLI_TOKEN_CAP` evidence, exact tokenizer counts, and the
-shorten-or-split instruction; leave them unresolved until the scenarios are
-refactored and the report is regenerated.
-
-```text
-semantic remediation verified: <!-- count -->
-```
-
----
-
 ## Sign-off
 
 - [ ] Fabrication audit: CLEAN (0 empty step bodies, all commits verified,

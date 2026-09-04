@@ -50,7 +50,9 @@ pub fn capability_tag(feature: &Feature) -> Option<&str> {
 /// tag containing `..`, `/`, or an empty string must never reach either.
 pub fn validate_capability_tag(tag: &str) -> Result<()> {
     let ok = !tag.is_empty()
-        && tag.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && tag
+            .chars()
+            .all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
         && !tag.starts_with('-')
         && !tag.ends_with('-');
     if !ok {
@@ -230,10 +232,9 @@ Feature: Test
 
     #[test]
     fn detect_retired_feature() {
-        let feature = parse_str(
-            "@givn.delta @givn.retired @old-capability\nFeature: Old capability\n",
-        )
-        .unwrap();
+        let feature =
+            parse_str("@givn.delta @givn.retired @old-capability\nFeature: Old capability\n")
+                .unwrap();
         assert!(is_retired_feature(&feature));
     }
 

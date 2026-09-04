@@ -104,22 +104,33 @@ fn reviewer_requests_review_instructions(world: &mut GivnWorld) {
     world.last_output = Some(output);
 }
 
+// Step kept for the @givn.removed placeholder in the removal delta (the
+// scenario itself was removed with the semantic gate).
+
 #[then("the CLI output contains semantic classification and remediation checks")]
 fn cli_contains_remediation_checks(world: &mut GivnWorld) {
     let output = stdout(world);
-    for required in [
-        "Semantic remediation verification",
-        "DUPLICATE",
-        "VARIANT",
-        "VALID-BOUNDARY",
-    ] {
-        assert!(
-            output.contains(required),
-            "review guidance missing {required}"
-        );
-    }
-    assert!(output.contains("semantic"));
-    assert!(output.contains("remediation verified"));
+    assert!(
+        !output.contains("Semantic remediation verification"),
+        "semantic remediation guidance must be gone"
+    );
+}
+
+#[then("the CLI output contains the deterministic gate dispositions guidance")]
+fn cli_contains_dispositions_guidance(world: &mut GivnWorld) {
+    let output = stdout(world);
+    assert!(
+        output.contains("## Deterministic gate dispositions"),
+        "review guidance missing deterministic gate dispositions section"
+    );
+    assert!(
+        output.contains("Overlap") && output.contains("dispositions"),
+        "review guidance missing overlap dispositions table requirement"
+    );
+    assert!(
+        output.contains("split-or-keep"),
+        "review guidance missing split-or-keep decision requirement"
+    );
 }
 
 #[when("the agent requests the specs instructions as JSON through the Givn CLI")]
