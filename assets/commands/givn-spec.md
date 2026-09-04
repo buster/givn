@@ -38,10 +38,21 @@ When `--json` is supplied, parse the documented object:
 
 Without `--json`, the command emits the resolved instruction text only.
 
-### 3. Read the proposal
+### 3. Read the proposal's Capability Routing table
 
-Read `givn/changes/<id>/proposal.md`. The capabilities/features listed there
-determine how many `.feature` files to create (one per capability).
+Read `givn/changes/<id>/proposal.md`'s `## Capability Routing` table. Each
+row's **Decision** column, not the proposal's free-text description,
+determines what to write:
+- `EXTEND <cap>`: add scenarios into the existing capability's delta (a
+  `@givn.modified` or `@givn.added` delta targeting that capability, in the
+  group where the capability already lives).
+- `NEW in <group>`: create a new capability file inside that group:
+  `givn/changes/<id>/specs/<group>/<capability>.feature`.
+
+If the table is missing rows for a capability you're about to write specs
+for, run `givn spec route` now and fill it in before proceeding — do not
+invent a capability name from the proposal's prose without going through
+routing first.
 
 Also check permanent specs at `givn/specs/<group>/` — existing scenarios for a
 capability are the baseline; delta scenarios extend or modify them. Delta
