@@ -143,37 +143,12 @@ row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
 
 ### Deterministic gate dispositions
 
-Complete the **Overlap dispositions** table for every shape match, add a
-**split-or-keep** decision for every long scenario, and explain every
-removed+added pair as supersession or unrelated work before sign-off.
-
-### Semantic review classifications
-
-When `semantic-review.md` exists, classify every candidate as `DUPLICATE`,
-`VARIANT`, or `VALID-BOUNDARY` and write a rationale. `UNCERTAIN` or a missing
-rationale blocks `givn check review --change <id>`. There is no `UNRELATED`
-escape classification. A seemingly unrelated pair that remains above the
-active boundary requires sharper domain vocabulary and observable invariants,
-followed by a fresh review run.
-
-A layer difference is not an observable invariant. Two scenarios that assert
-the same outcome at different layers (a regular scenario and its action's
-`@e2e` scenario) are the same behaviour: classify `DUPLICATE`, keep the `@e2e`
-action proof, and remove the non-e2e twin (or fold its distinct invariant into
-the `@e2e` one). `VALID-BOUNDARY` requires a different precondition, causal
-action, or end state AND a recomputed score strictly `< 0.9500`; otherwise it
-is the same behaviour. Remediation is always a spec change plus a rerun of
-`givn check review` — a label alone never un-blocks. Full rules and worked
-examples: `givn instructions review`.
-
-Token-cap evidence is not a classification. `BGE_TOKEN_CAP` and
-`NLI_TOKEN_CAP` are per-candidate states for complete pairs that exceed the
-actual model-tokenizer limit; they remain visible, unresolved, outside filtered
-collections, and blocking. `BGE_UNAVAILABLE` and `NLI_UNAVAILABLE` are
-run-level states only when that layer scores no pair. Do not classify a token-cap
-candidate as resolved from another layer's score. Tell the author to shorten or
-split the scenarios and rerun review; automatic chunking, automatic scenario
-edits, and verbosity inflation are not valid remediation.
+Complete the **Overlap dispositions** table for every shape match (section
+heading exactly `## Overlap dispositions`; the Decision column must be one
+of `duplicate`, `variant`, or `boundary` — an empty or unrecognised word
+does not clear the finding), add a **split-or-keep** decision (section
+heading exactly `## Split-or-keep`) for every long scenario, and explain
+every removed+added pair as supersession or unrelated work before sign-off.
 
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.

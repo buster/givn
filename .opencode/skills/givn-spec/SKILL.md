@@ -9,7 +9,7 @@ Write the Gherkin spec delta for change `<change-id>`.
 
 ## Context
 
-- Delta spec location: `givn/changes/<change-id>/specs/<capability>/<capability>.feature`
+- Delta spec location: `givn/changes/<change-id>/specs/<group>/<capability>.feature`
 - Instructions: run `givn instructions specs --change <change-id>`
 - Proposal (WHY): `givn/changes/<change-id>/proposal.md`
 - Permanent specs: `givn/specs/`

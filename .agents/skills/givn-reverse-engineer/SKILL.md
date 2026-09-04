@@ -52,7 +52,7 @@ separate changes.
 
 ## Artifacts produced (only 2)
 
-- `specs/<cap>/<cap>.feature` — descriptive scenarios (`@givn.added @wip`),
+- `specs/<group>/<cap>.feature` — descriptive scenarios (`@givn.added @wip`),
   all provisional until validated during characterization. The Feature:
   description block contains the black-box boundary and suspected bugs.
 - `tasks.md` — first task is harness setup; subsequent tasks are one
