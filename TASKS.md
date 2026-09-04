@@ -542,7 +542,16 @@ Full suite still green (the removed capabilities' step definitions still
 compile at this point — the Cargo feature flags haven't been dropped yet,
 that's 1.2).
 
-### [ ] 1.2 Drop the Cargo feature flags — DO THIS LAST, AFTER PHASE 4
+### [x] 1.2 Drop the Cargo feature flags — DONE LAST, AFTER PHASE 4
+
+**After-measurement (2026-09-04, post-1.2, canonical runner):**
+- `./run-tests.sh`: **19.6s** wall — 354 scenarios (354 passed)
+- `./run-tests.sh --e2e`: **10.0s** wall — 70 @e2e scenarios
+- Delta vs baseline: full suite **35.0s → 19.6s (−44%)**, e2e
+  **32.6s → 10.0s (−69%)**, scenario count 400 → 354 (the deterministic
+  rewrite also removed 46 redundant scenarios). No real model work remains
+  in any default invocation; `cargo test --no-default-features` is green
+  (359 scenarios incl. lib tests), which is requirement 6's proof.
 
 **File:** `Cargo.toml`
 
