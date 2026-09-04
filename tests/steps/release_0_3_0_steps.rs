@@ -72,6 +72,47 @@ fn default_features_contain_all_optional_features(world: &mut GivnWorld) {
     }
 }
 
+#[then("the default feature set is empty")]
+fn default_feature_set_is_empty(world: &mut GivnWorld) {
+    let metadata = world.additional_output.as_deref().expect("Cargo metadata");
+    let document: serde_json::Value = serde_json::from_str(metadata).expect("parse Cargo metadata");
+    let package = document["packages"]
+        .as_array()
+        .and_then(|packages| packages.iter().find(|package| package["name"] == "givn"))
+        .expect("givn package metadata");
+    let default_features = package["features"]["default"]
+        .as_array()
+        .expect("default feature list");
+    assert!(
+        default_features.is_empty(),
+        "default features must be empty, got {default_features:?}"
+    );
+}
+
+#[then("every optional model feature is declared for explicit opt-in")]
+fn optional_model_features_declared(world: &mut GivnWorld) {
+    let metadata = world.additional_output.as_deref().expect("Cargo metadata");
+    let document: serde_json::Value = serde_json::from_str(metadata).expect("parse Cargo metadata");
+    let package = document["packages"]
+        .as_array()
+        .and_then(|packages| packages.iter().find(|package| package["name"] == "givn"))
+        .expect("givn package metadata");
+    let features = package["features"]
+        .as_object()
+        .expect("feature declarations");
+    for feature in [
+        "spec-retrieval",
+        "spec-similarity-gate",
+        "cross-encoder-reranker",
+        "nli-evidence",
+    ] {
+        assert!(
+            features.contains_key(feature),
+            "optional feature {feature} is not declared"
+        );
+    }
+}
+
 #[then("a feature-free minimal build remains explicitly available")]
 fn feature_free_build_remains_available(world: &mut GivnWorld) {
     let _metadata = world.additional_output.as_deref().expect("Cargo metadata");

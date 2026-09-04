@@ -1,171 +1,38 @@
 Feature: Explore permanent scenarios before creation
 
   @e2e
-  Scenario: File exploration finds a semantically similar permanent scenario
-    Given  an end-to-end project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
-
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
-    When  the end-to-end user explores "draft.feature" with the file input
+  Scenario: Lexical search locates a permanent scenario by a step text token
+    Given  a spec discovery project whose corpus contains a scenario mentioning "shovel-unique-token"
+    When  the user searches the permanent corpus for "shovel-unique-token" with `givn spec find`
     Then  the command exits 0
-    And  stdout contains "Provider name is unknown"
-    And  stdout contains "embedding score"
+    And  stdout contains the matching scenario title
+    And  stdout identifies the owning group and capability
 
   @e2e
-  Scenario: Stdin exploration returns the same candidates as file exploration
-    Given  an end-to-end project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
-
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
-    When  the end-to-end user explores "draft.feature" with the file input
-    And  the end-to-end user explores the same draft through standard input
-    Then  the standard-input results equal the file results
-
-  @e2e
-  Scenario: JSON exploration reports query index and candidate fields
-    Given  an end-to-end project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
-
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
-    When  the end-to-end user explores "draft.feature" with JSON output
+  Scenario: The spec tree reports per-group counts and the group narrative
+    Given  a spec discovery project with two groups and a group.md narrative
+    When  the user inspects the corpus with `givn spec tree`
     Then  the command exits 0
-    And  stdout is a stable exploration JSON document
-    And  the exploration JSON query title is "Provider selection rejects an unknown provider"
-    And  the exploration JSON includes the query content hash
-    And  the exploration JSON includes the embedding model and index metadata
-    And  every exploration JSON result has rank title file and score
+    And  stdout contains both group names
+    And  stdout contains the scenario count and the e2e count per capability
+    And  stdout contains the group actor line
 
-  Scenario: File exploration excludes only the exact permanent scenario identity
-    Given  a project prepared for exact scenario identity exploration
-    When  the user explores "givn/specs/provider.feature" with the file input
+  Scenario: Lexical search is parsed from the AST so docstring payload creates no phantom hits
+    Given  a spec discovery project whose corpus embeds literal Gherkin with a "Scenario:" line inside a docstring
+    When  the user searches the permanent corpus for the docstring-embedded title with `givn spec find`
     Then  the command exits 0
-    And  no human-readable result is titled "Provider name is unknown"
-    And  stdout contains "Unknown provider is rejected"
+    And  stdout reports exactly one matching scenario
 
-  Scenario: Unchanged permanent scenarios reuse the existing index
-    Given  a project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
+  Scenario: Lexical search reports an empty result for unknown terms
+    Given  a spec discovery project with a non-empty corpus
+    When  the user searches the permanent corpus for "no-such-token-xyz" with `givn spec find`
+    Then  the command exits 0
+    And  stdout contains "no scenarios match"
 
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
-    When  the user explores "draft.feature" with the file input
-    And  the user explores "draft.feature" with the file input
-    Then  stdout contains "Reused 3 scenario vectors"
-
-  Scenario: A changed permanent scenario receives a new embedding on the next exploration
-    Given  a project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
-
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
-    When  the user explores "draft.feature" with the file input
-    And  the permanent scenario "Authentication token is missing" is changed
-    And  the user explores "draft.feature" with the file input
-    Then  stdout contains "Reused 2 scenario vectors"
-    And  stdout contains "Embedded 1 new scenario vectors"
-
-  Scenario: Invalid Gherkin input is rejected
-    Given  a project prepared for permanent scenario exploration
-    And  a file at "invalid.feature" containing invalid Gherkin
-    When  the user explores "invalid.feature" with the file input
-    Then  the command exits non-zero
-    And  stderr contains "not valid Gherkin"
-
-  Scenario: Multiple scenarios in one input are rejected
-    Given  a project prepared for permanent scenario exploration
-    And  a file at "multiple.feature" containing two complete scenarios
-    When  the user explores "multiple.feature" with the file input
-    Then  the command exits non-zero
-    And  stderr contains "exactly one scenario"
-
-  Scenario: A valid feature without a scenario is rejected
-    Given  a project prepared for permanent scenario exploration
-    And  a file at "empty.feature" containing no scenario
-    When  the user explores "empty.feature" with the file input
-    Then  the command exits non-zero
-    And  stderr contains "exactly one scenario"
-
-  Scenario: A missing draft file is rejected
-    Given  a project prepared for permanent scenario exploration
-    When  the user explores "missing.feature" with the file input
-    Then  the command exits non-zero
-    And  stderr contains "failed to read explore input file"
-
-  Scenario: File and standard input cannot be selected together
-    Given  a project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
-
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
-    When  the user explores "draft.feature" with both file and standard input
-    Then  the command exits non-zero
-    And  stderr contains "exactly one input"
-
-  Scenario: Explore remains unavailable without the retrieval feature
-    Given  a project prepared for permanent scenario exploration
-    When  the user runs explore through a build without spec retrieval
-    Then  the command exits non-zero
-    And  stderr contains "spec retrieval is unavailable"
-
-  Scenario: Exploration leaves permanent feature files unchanged
-    Given  a project prepared for permanent scenario exploration
-    And  a .feature file at "draft.feature" with:
-      """
-      Feature: Draft exploration
-
-        Scenario: Provider selection rejects an unknown provider
-          Given a configured provider catalog
-          When the user selects an unknown provider
-          Then the command rejects the request
-      """
+  Scenario: Discovery commands never modify permanent files
+    Given  a spec discovery project with two groups and a group.md narrative
     And  the permanent specifications are snapshotted
-    When  the user explores "draft.feature" with the file input
-    Then  the permanent specifications are unchanged
-
-  Scenario: Existing spec search keeps its current behavior
-    Given  a givn project with permanent scenarios for retrieval
-    And  the local spec index has been built
-    When  the user searches for "the command rejects an unknown provider"
+    When  the user inspects the corpus with `givn spec tree`
+    And  the user searches the permanent corpus for "anything" with `givn spec find`
     Then  the command exits 0
-    And  stdout contains "Provider name is unknown"
-    And  stdout contains "rank 1"
-
-  Scenario: Existing spec review keeps its current behavior
-    Given  a givn project with permanent scenarios for retrieval
-    And  an active change delta contains a scenario named "Running change only"
-    When  the user runs `givn spec review --change running-change`
-    Then  the command exits 0
-    And  stdout contains "retrieval advisory"
+    And  the permanent specifications are unchanged

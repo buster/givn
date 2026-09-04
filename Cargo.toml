@@ -12,12 +12,7 @@ repository = "https://github.com/buster/givn"
 path = "src/lib.rs"
 
 [features]
-default = [
-    "spec-retrieval",
-    "spec-similarity-gate",
-    "cross-encoder-reranker",
-    "nli-evidence",
-]
+default = []
 spec-retrieval = [
     "dep:fastembed",
     "dep:hf-hub",

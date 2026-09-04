@@ -27,7 +27,12 @@ fn review_md_disposition_row(world: &mut GivnWorld, title_a: String, title_b: St
     std::fs::write(&path, content).expect("write review.md disposition row");
 
     // The blocking semantic gate is part of `check review`; seed its report
-    // classification so this legacy disposition fixture remains a complete pass.
+    // classification so this legacy disposition fixture remains a complete
+    // pass. In a feature-free build the gate is compiled out entirely, so
+    // there is nothing to seed and nothing to classify.
+    if !cfg!(feature = "spec-retrieval") {
+        return;
+    }
     let env = world
         .env
         .as_ref()
