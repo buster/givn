@@ -107,10 +107,6 @@ pub fn cluster_tree(root: &Path) -> ClusterProposal {
         if !path.is_dir() {
             continue;
         }
-        let capability = path
-            .file_name()
-            .map(|n| n.to_string_lossy().into_owned())
-            .unwrap_or_default();
         // Flat layout: <cap>/<cap>.feature.
         let feature_path = path.join(format!(
             "{}.feature",
