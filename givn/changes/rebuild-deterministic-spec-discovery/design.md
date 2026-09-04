@@ -11,6 +11,10 @@ compiled CLI.
 
 ## Technology decisions
 
+- The change also carries a config-overlay delta: the 5.6 protected-gate
+  rule invalidated the permanent leaf-removal scenario; it now removes
+  design-review (rewiring tasks.requires) and a new scenario asserts the
+  protection itself.
 - New step-definition file `tests/steps/spec_discovery_deterministic_steps.rs`
   (one file per capability family, CLI-subprocess driven, grouped-layout
   fixtures).
@@ -28,6 +32,7 @@ compiled CLI.
 | spec-explore-change | `tests/steps/spec_discovery_deterministic_steps.rs` |
 | spec-explore-permanent | `tests/steps/spec_discovery_deterministic_steps.rs` |
 | spec-progress-output | `tests/steps/spec_discovery_deterministic_steps.rs` |
+| config-overlay | (existing overlay steps; delta modifies two scenarios) |
 
 ## Architecture Impact
 

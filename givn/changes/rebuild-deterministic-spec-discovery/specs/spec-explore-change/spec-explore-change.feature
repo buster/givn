@@ -89,3 +89,8 @@ Feature: Explore scenarios in the current change
     When   the user routes the change with `givn spec route --change`
     Then   the command exits 0
     And    the permanent specifications are unchanged
+  @givn.removed
+  Scenario: Provider selection rejects an unknown provider
+
+  @givn.removed
+  Scenario: Removed provider behavior
