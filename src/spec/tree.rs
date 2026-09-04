@@ -177,6 +177,67 @@ pub fn print_tree(rows: &[GroupRow]) {
     }
 }
 
+/// One lexical search hit (Phase 4.2): a scenario whose title or step text
+/// contains the (lowercased) query.
+#[derive(Debug, Clone, Serialize)]
+pub struct FindHit {
+    pub group: String,
+    pub capability: String,
+    pub file: String,
+    pub scenario: String,
+    pub e2e: bool,
+}
+
+/// Lexical search over the parsed AST — never a text grep, so docstring
+/// payload cannot produce phantom scenarios. Substring match, lowercased,
+/// over scenario titles and step text.
+pub fn find_scenarios(root: &Path, query: &str) -> Result<Vec<FindHit>> {
+    let needle = query.to_lowercase();
+    let specs_root = root.join("givn/specs");
+    let mut hits = Vec::new();
+    for entry in std::fs::read_dir(&specs_root)? {
+        let group_dir = entry?.path();
+        if !group_dir.is_dir() {
+            continue;
+        }
+        let group = group_dir
+            .file_name()
+            .and_then(|n| n.to_str())
+            .unwrap_or_default()
+            .to_string();
+        for file in std::fs::read_dir(&group_dir)? {
+            let file = file?.path();
+            if file.extension().is_none_or(|e| e != "feature") {
+                continue;
+            }
+            let feature = gherkin::Feature::parse_path(&file, GherkinEnv::default())?;
+            let capability = file
+                .file_stem()
+                .and_then(|n| n.to_str())
+                .unwrap_or_default()
+                .to_string();
+            for scenario in &feature.scenarios {
+                let e2e = scenario.tags.iter().any(|t| t == "e2e");
+                let title_match = scenario.name.to_lowercase().contains(&needle);
+                let step_match = scenario
+                    .steps
+                    .iter()
+                    .any(|s| s.value.to_lowercase().contains(&needle));
+                if title_match || step_match {
+                    hits.push(FindHit {
+                        group: group.clone(),
+                        capability: capability.clone(),
+                        file: file.display().to_string(),
+                        scenario: scenario.name.clone(),
+                        e2e,
+                    });
+                }
+            }
+        }
+    }
+    Ok(hits)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -198,6 +259,37 @@ mod tests {
         ];
         assert!((reuse_ratio(&steps) - 1.5).abs() < 1e-9);
         assert_eq!(reuse_ratio(&[]), 0.0);
+    }
+
+    #[test]
+    fn find_scenarios_matches_titles_and_steps_only_via_ast() {
+        let root = tempfile::TempDir::new().unwrap();
+        let base = root.path().join("givn/specs");
+        std::fs::create_dir_all(base.join("workers")).unwrap();
+        // A docstring containing a literal "Scenario:" must NOT create a
+        // phantom scenario (AST-based, not text grep).
+        std::fs::write(
+            base.join("workers/digging.feature"),
+            "Feature: Digging\n\n  Scenario: Unique shovelling title\n    Given x\n    Then the report says \"shovel-unique-token\"\n      \"\"\"\n      Scenario: fake in docstring shovel-unique-token\n      \"\"\"\n",
+        )
+        .unwrap();
+        let by_title = find_scenarios(root.path(), "Unique shovelling title").unwrap();
+        assert_eq!(by_title.len(), 1, "{by_title:?}");
+        assert_eq!(by_title[0].group, "workers");
+        assert_eq!(by_title[0].capability, "digging");
+        assert!(!by_title[0].e2e);
+        let by_step = find_scenarios(root.path(), "shovel-unique-token").unwrap();
+        assert_eq!(
+            by_title.len(),
+            1,
+            "docstring must not multiply hits: {by_step:?}"
+        );
+        assert_eq!(by_step[0].scenario, "Unique shovelling title");
+        assert!(
+            find_scenarios(root.path(), "no-such-token-xyz")
+                .unwrap()
+                .is_empty()
+        );
     }
 
     #[test]
