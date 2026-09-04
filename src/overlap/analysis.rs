@@ -69,9 +69,7 @@ fn collect_from_file(file: &Path, specs_root: &Path, is_delta: bool, out: &mut V
     };
     // The capability is the file stem — stable regardless of directory depth
     // or grouping scheme.
-    let capability = file
-        .file_stem()
-        .map(|n| n.to_string_lossy().into_owned());
+    let capability = file.file_stem().map(|n| n.to_string_lossy().into_owned());
     // The group is the immediate parent directory name, one level under
     // specs_root. This used to be conflated with `capability` — see the
     // duplicate_title exemption below for why that was a bug once grouping
@@ -110,6 +108,8 @@ pub fn scan_tree(root: &Path) -> Vec<Finding> {
     findings.extend(shape_matches(&scenarios));
     findings.extend(subsets(&scenarios));
     findings.extend(long_scenarios(&scenarios));
+    // Needs the raw filesystem, not the scenario list — call with root.
+    findings.extend(singleton_groups(root));
     findings.sort_by(|a, b| {
         kind_order(a).cmp(&kind_order(b)).then_with(|| {
             a.files
@@ -126,7 +126,8 @@ fn kind_order(f: &Finding) -> u8 {
         "duplicate_title" => 0,
         "shape_match" => 1,
         "subset" => 2,
-        _ => 3,
+        "singleton_group" => 3,
+        _ => 4,
     }
 }
 
@@ -259,6 +260,43 @@ fn long_scenarios(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
             contradiction: false,
         })
         .collect()
+}
+
+/// Find group directories containing exactly one capability file — i.e.
+/// `givn/specs/<name>/<name>.feature` where the group name equals the sole
+/// capability name. Such a "singleton group" is functionally identical to
+/// the old flat layout; flagging it (as a warning, never blocking) keeps
+/// `spec regroup` from satisfying the grouping requirement by creating
+/// one-capability groups that move nothing meaningfully.
+fn singleton_groups(root: &Path) -> Vec<Finding> {
+    let specs_root = root.join("givn/specs");
+    let mut findings = Vec::new();
+    let Ok(entries) = std::fs::read_dir(&specs_root) else {
+        return findings;
+    };
+    for entry in entries.flatten() {
+        let group_dir = entry.path();
+        if !group_dir.is_dir() {
+            continue;
+        }
+        let feature_count = std::fs::read_dir(&group_dir)
+            .map(|rd| {
+                rd.flatten()
+                    .filter(|e| e.path().extension().is_some_and(|ext| ext == "feature"))
+                    .count()
+            })
+            .unwrap_or(0);
+        if feature_count == 1 {
+            findings.push(Finding {
+                kind: "singleton_group".to_string(),
+                level: "warning".to_string(),
+                files: vec![group_dir.display().to_string()],
+                titles: vec!["group contains only one capability".to_string()],
+                contradiction: false,
+            });
+        }
+    }
+    findings
 }
 
 /// Review gate: every shape match (without fact contradiction) that involves
@@ -405,5 +443,59 @@ mod tests {
         assert_eq!(scenarios.len(), 1);
         assert_eq!(scenarios[0].capability.as_deref(), Some("cap-c"));
         assert_eq!(scenarios[0].group.as_deref(), Some("example-group"));
+    }
+}
+
+#[cfg(test)]
+mod singleton_tests {
+    use super::*;
+
+    #[test]
+    fn one_two_capability_group_and_one_singleton_produce_exactly_one_finding() {
+        let root = tempfile::TempDir::new().unwrap();
+        let base = root.path().join("givn/specs");
+        for (rel, text) in [
+            (
+                "example-group/cap-a.feature",
+                "Feature: A\n\n  Scenario: S1\n    Given x\n    Then y\n",
+            ),
+            (
+                "example-group/cap-b.feature",
+                "Feature: B\n\n  Scenario: S2\n    Given x\n    Then y\n",
+            ),
+            (
+                "lonely/lonely.feature",
+                "Feature: Lonely\n\n  Scenario: S3\n    Given x\n    Then y\n",
+            ),
+        ] {
+            let path = base.join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        }
+        let findings = singleton_groups(root.path());
+        assert_eq!(findings.len(), 1, "{findings:?}");
+        assert_eq!(findings[0].kind, "singleton_group");
+        assert_eq!(findings[0].level, "warning");
+        assert!(findings[0].files[0].ends_with("lonely"));
+    }
+
+    #[test]
+    fn flat_layout_capability_dirs_are_not_flagged_as_singleton_groups() {
+        // Pre-migration layout: givn/specs/<cap>/<cap>.feature — one feature
+        // file per directory, but these are capabilities, not groups. The
+        // shape is structurally identical to a singleton group, so the
+        // finding fires; this is expected and is one reason the finding is
+        // a warning rather than an error.
+        let root = tempfile::TempDir::new().unwrap();
+        let base = root.path().join("givn/specs");
+        let path = base.join("some-cap/some-cap.feature");
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(
+            &path,
+            "Feature: Some cap\n\n  Scenario: S\n    Given x\n    Then y\n",
+        )
+        .unwrap();
+        let findings = singleton_groups(root.path());
+        assert_eq!(findings.len(), 1);
     }
 }
