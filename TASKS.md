@@ -690,7 +690,7 @@ Target layout: `givn/specs/<group>/<capability>.feature`, one `group.md`
 per group (Actor, Goal, Main flow, Interactions, `«include»`, `«extend»`,
 Out of scope, a Mermaid diagram).
 
-### [ ] 2.1 Split `capability` and `group` in the overlap analysis
+### [x] 2.1 Split `capability` and `group` in the overlap analysis
 
 **File:** `src/overlap/analysis.rs`
 
@@ -816,7 +816,13 @@ following the pattern in `src/overlap/fingerprint.rs`'s test module) that:
 
 `cargo test overlap::analysis 2>&1 | tail -30`
 
-### [ ] 2.2 Merge target must resolve the group
+### [x] 2.2 Merge target must resolve the group
+
+**Note (implementation deviation, deliberate):** the bail for
+"group not found" is replaced by a flat-layout fallback until task 2.5
+migrates the corpus — bailing now would brick every archive of the
+pre-migration flat tree. The grouped-layout merge path, the no-stray-flat-dir
+assertion, and grouped retirement are covered by tests.
 
 **File:** `src/cli/archive.rs`
 
@@ -889,7 +895,12 @@ fixture test: existing capability inside `givn/specs/some-group/cap.feature`,
 delta tagged `@cap`, confirm merge lands in `givn/specs/some-group/`, not
 `givn/specs/cap/`.
 
-### [ ] 2.3 Lint finding: `singleton_group`
+### [x] 2.3 Lint finding: `singleton_group`
+
+**Decision:** warning level, not blocking — a legitimately small existing
+group must not fail every lint run forever, and until 2.5 the flat corpus
+is structurally all singleton groups (every `givn/specs/<cap>/<cap>.feature`
+matches the pattern). It becomes meaningful after the migration.
 
 **File:** `src/overlap/analysis.rs` (add a new finding function, call it
 from `scan_tree`) or `src/cli/lint.rs` — put it wherever `long_scenarios`
@@ -955,7 +966,7 @@ decision the plan intentionally left to implementation.
 and one one-capability group; confirm exactly one `singleton_group` finding
 for the latter.
 
-### [ ] 2.4 Design `group.md`'s format
+### [x] 2.4 Design `group.md`'s format
 
 This is a content-design task, not a pure code task — there is no existing
 parser to imitate, so define the format carefully and write the parser
@@ -1048,7 +1059,14 @@ errors clearly or returns an empty list (decide which and test for it —
 Phase 3's gate needs to distinguish "no interactions declared" from "parse
 failed", so prefer a `Result` return over silently defaulting).
 
-### [ ] 2.4a Deterministic command-surface clustering (for `spec regroup`)
+### [x] 2.4a Deterministic command-surface clustering (for `spec regroup`)
+
+**Corpus validation result (2026-09-04, post-retirement corpus):** clusters
+match PLAN §5's expectations — `fix-uppercase-checkbox-parsing` → `status`
+(status group of 4), `release-0-3-0` → `upgrade` (with `run-command`), no
+false "givn project" cluster. Fragments (14): include the four expected
+`spec-explore-*`/`config-overlay`-style `«include»` candidates. Counts
+differ from PLAN §5's pre-retirement figures as expected.
 
 **File:** new module, e.g. `src/spec/cluster.rs` (not under `src/overlap`
 — this isn't an overlap-detection concern) or alongside wherever Phase 4's
@@ -1111,7 +1129,7 @@ pre-retirement 53-capability corpus). The important check is that
 false "givn project" group — if it does, the substring matching is too
 loose; tighten it.
 
-### [ ] 2.4b `givn spec regroup`: propose, never auto-apply
+### [x] 2.4b `givn spec regroup`: propose, never auto-apply
 
 **Files:** `src/main.rs` (add `Regroup` to `SpecCommands`), `src/cli/spec.rs`
 (dispatch), new logic module (can live in `src/spec/cluster.rs` from 2.4a
