@@ -48,29 +48,6 @@ fn inspect_default_cargo_features(world: &mut GivnWorld) {
     world.additional_output = Some(String::from_utf8(output.stdout).expect("metadata is UTF-8"));
 }
 
-#[then("the default feature set contains every declared optional Givn feature")]
-fn default_features_contain_all_optional_features(world: &mut GivnWorld) {
-    let metadata = world.additional_output.as_deref().expect("Cargo metadata");
-    let document: serde_json::Value = serde_json::from_str(metadata).expect("parse Cargo metadata");
-    let package = document["packages"]
-        .as_array()
-        .and_then(|packages| packages.iter().find(|package| package["name"] == "givn"))
-        .expect("givn package metadata");
-    let default_features = package["features"]["default"]
-        .as_array()
-        .expect("default feature list");
-    for feature in [
-        "spec-retrieval",
-        "spec-similarity-gate",
-        "cross-encoder-reranker",
-        "nli-evidence",
-    ] {
-        assert!(
-            default_features.iter().any(|value| value == feature),
-            "default features lack {feature}"
-        );
-    }
-}
 
 #[then("the default feature set is empty")]
 fn default_feature_set_is_empty(world: &mut GivnWorld) {
