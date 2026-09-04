@@ -48,7 +48,6 @@ fn inspect_default_cargo_features(world: &mut GivnWorld) {
     world.additional_output = Some(String::from_utf8(output.stdout).expect("metadata is UTF-8"));
 }
 
-
 #[then("the default feature set is empty")]
 fn default_feature_set_is_empty(world: &mut GivnWorld) {
     let metadata = world.additional_output.as_deref().expect("Cargo metadata");

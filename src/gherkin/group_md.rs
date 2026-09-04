@@ -293,7 +293,7 @@ flowchart LR
         let text = WELL_FORMED.replace("## Out of scope", "## Out of scope (extra)");
         let doc = parse_group_md(&text).unwrap();
         assert!(doc.out_of_scope.is_empty());
-        assert_eq!(doc.diagram.contains("flowchart"), true);
+        assert!(doc.diagram.contains("flowchart"));
     }
 
     #[test]

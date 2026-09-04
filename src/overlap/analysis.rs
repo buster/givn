@@ -401,7 +401,7 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
     for (group, doc) in &docs {
         for raw in doc.includes.iter().chain(doc.extends.iter()) {
             if let Some(target) = use_case_ref_target(&specs_root, group, raw)
-                && group_names.iter().any(|g| *g == target)
+                && group_names.contains(&target)
                 && target != *group
             {
                 edges.entry(group.clone()).or_default().push(target);

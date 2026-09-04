@@ -297,8 +297,8 @@ mod tests {
         );
         assert_eq!(counts.get("lint"), Some(&1));
         assert_eq!(counts.get("status"), Some(&1));
-        assert!(counts.get("project").is_none());
-        assert!(counts.get("not-real").is_none());
+        assert!(!counts.contains_key("project"));
+        assert!(!counts.contains_key("not-real"));
     }
 
     #[test]
