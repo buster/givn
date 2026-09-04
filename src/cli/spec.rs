@@ -51,7 +51,25 @@ pub fn run_review(change_id: &str, _verbose: bool, _json: bool) -> Result<()> {
 }
 
 pub fn run_duplicates(json: bool) -> Result<()> {
-    crate::spec::retrieval::duplicates(&std::env::current_dir()?, json)
+    // Deterministic path only (Phase 4.3): exact/structural matches from
+    // the parsed AST + overlap fingerprint. No embeddings, no score.
+    let root = std::env::current_dir()?;
+    let matches = crate::spec::tree::duplicate_matches(&root)?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&matches)?);
+        return Ok(());
+    }
+    println!(
+        "scanned permanent corpus: {} exact/structural match(es)",
+        matches.len()
+    );
+    for m in &matches {
+        println!(
+            "  [{}] '{}' ({}) <> '{}' ({})",
+            m.kind, m.left_title, m.left_file, m.right_title, m.right_file
+        );
+    }
+    Ok(())
 }
 
 pub fn run_bge_parity() -> Result<()> {
