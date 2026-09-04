@@ -8,12 +8,11 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     And  the guidance requires a real browser for browser UI interactions
     And  the guidance treats an unresolved interface obstacle as a design gap
 
-  @e2e
   Scenario: An author requests the canonical interaction and E2E guidance
     Given  a Givn project with an active change
     When  the author requests the specs instructions through the Givn CLI
     Then  the CLI output contains the complete interaction and E2E policy
-    And  the CLI output distinguishes available and unavailable retrieval behavior
+    And  the CLI output no longer advertises retrieval commands
 
   Scenario: Design guidance requires the complete E2E setup record
     Given  the design instructions are requested

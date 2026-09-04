@@ -246,6 +246,14 @@ enum SpecCommands {
     /// Emit the Rust production candidate-pipeline attestation for benchmark approval.
     #[command(name = "bge-parity", hide = true)]
     BgeParity,
+    /// Propose a use-case grouping for the current spec tree from command-
+    /// surface clustering. Never modifies files — prints a proposal for a
+    /// human to review, confirm, and then apply via the migration step.
+    Regroup {
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -331,6 +339,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
             }
             SpecCommands::BgeParity => cli::spec::run_bge_parity(),
+            SpecCommands::Regroup { format } => {
+                cli::spec::run_regroup(matches!(format, SpecFormat::Json))
+            }
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),

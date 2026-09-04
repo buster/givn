@@ -57,3 +57,47 @@ pub fn run_duplicates(json: bool) -> Result<()> {
 pub fn run_bge_parity() -> Result<()> {
     crate::spec::retrieval::bge_parity(&std::env::current_dir()?)
 }
+
+/// `givn spec regroup` — print the command-surface clustering proposal.
+/// Never modifies files; a human reviews, confirms, and applies it via the
+/// migration step (retirement plan task 2.5).
+pub fn run_regroup(json: bool) -> Result<()> {
+    let proposal = crate::spec::cluster::cluster_tree(&std::env::current_dir()?);
+    if json {
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&serde_json::json!({
+                "groups": proposal
+                    .groups
+                    .iter()
+                    .map(|(sub, caps)| serde_json::json!({
+                        "dominant_subcommand": sub,
+                        "capabilities": caps,
+                    }))
+                    .collect::<Vec<_>>(),
+                "fragments": proposal.fragments,
+            }))?
+        );
+        return Ok(());
+    }
+    println!("Proposed use-case grouping (command-surface clustering)");
+    println!("Rename groups to use-case-flavoured labels before applying.");
+    println!("This command never modifies files.\n");
+    for (sub, caps) in &proposal.groups {
+        println!("group '{sub}' ({} capabilities):", caps.len());
+        for cap in caps {
+            println!("  - {cap}");
+        }
+    }
+    if !proposal.fragments.is_empty() {
+        println!(
+            "\nfragments ({} capability with no dominant command surface —",
+            proposal.fragments.len()
+        );
+        println!("«include» fragment candidates, not use-case candidates):");
+        for f in &proposal.fragments {
+            println!("  - {f}");
+        }
+    }
+    Ok(())
+}
