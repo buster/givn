@@ -17,8 +17,8 @@ Feature: config-overlay
     Then  the effective manifest has an artifact "risk-assessment" that requires "design"
 
   Scenario: Overlay removes a leaf artifact via remove true
-    When  the overlay "artifacts:\n  - id: review\n    remove: true\napply:\n  requires:\n    - tasks" is applied to the default manifest
-    Then  the effective manifest does not have an artifact "review"
+    When  the overlay "artifacts:\n  - id: design-review\n    remove: true\n  - id: tasks\n    requires: [specs]\napply:\n  requires:\n    - specs" is applied to the default manifest
+    Then  the effective manifest does not have an artifact "design-review"
 
   Scenario: Overlay remove is rejected when artifact has dependents
     When  the overlay "artifacts:\n  - id: design-review\n    remove: true" is applied to the default manifest
@@ -55,3 +55,6 @@ Feature: config-overlay
   Scenario: apply.requires referencing non-existent artifact is rejected
     When  the overlay "apply:\n  requires:\n    - nosuch" is applied to the default manifest
     Then  the overlay application fails with "does not exist"
+  Scenario: Overlay refuses to remove a protected gate artifact
+    When  the overlay "artifacts:\n  - id: review\n    remove: true\napply:\n  requires:\n    - tasks" is applied to the default manifest
+    Then  the overlay application fails with "protected"

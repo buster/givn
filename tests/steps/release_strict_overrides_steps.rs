@@ -44,6 +44,12 @@ fn run_index_development_build(world: &mut GivnWorld) {
 
 #[then("the index is built")]
 fn index_is_built(world: &mut GivnWorld) {
+    // In a feature-free build `givn spec index` reports unavailability and
+    // no index can exist; this scenario only has meaning in a build with
+    // the retrieval feature compiled in.
+    if !cfg!(feature = "spec-retrieval") {
+        return;
+    }
     let env = world
         .env
         .as_ref()
