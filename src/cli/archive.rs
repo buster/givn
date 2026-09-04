@@ -216,8 +216,38 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
                         .to_string()
                 });
 
+            crate::gherkin::delta::validate_capability_tag(&cap).map_err(|e| {
+                anyhow::anyhow!("archive blocked: {e} (from '{}')", delta_path.display())
+            })?;
+
             let permanent_dir = project_root.join("givn/specs").join(&cap);
             let permanent_path = permanent_dir.join(format!("{cap}.feature"));
+
+            if crate::gherkin::delta::is_retired_feature(&delta_feature) {
+                if !delta_feature.scenarios.is_empty() {
+                    bail!(
+                        "archive blocked: '{}' is tagged @givn.retired but contains {} \
+                         scenario(s) — a retirement delta must have zero scenarios",
+                        delta_path.display(),
+                        delta_feature.scenarios.len()
+                    );
+                }
+                if !permanent_dir.exists() {
+                    bail!(
+                        "archive blocked: '{}' retires capability '{cap}' but \
+                         givn/specs/{cap}/ does not exist",
+                        delta_path.display()
+                    );
+                }
+                std::fs::remove_dir_all(&permanent_dir)?;
+                record_retirement(&project_root, &cap, change)?;
+                println!(
+                    "[{}]   retired → {}",
+                    crate::subprocess::local_timestamp(),
+                    permanent_dir.display()
+                );
+                continue;
+            }
 
             merge_file(&permanent_path, &delta_feature)?;
             println!(
@@ -438,6 +468,48 @@ pub(crate) fn rollback_specs(
 
 /// Re-export the checker's finding labels for the archive gate report.
 use crate::cli::readme::finding_label;
+
+#[derive(serde::Serialize, serde::Deserialize)]
+struct RetiredEntry {
+    capability: String,
+    retired_date: String,
+    retired_by_change: String,
+}
+
+/// Append a retirement record to `givn/specs/.retired.yaml`. This file
+/// lives *inside* `givn/specs`, so it is covered by the same
+/// backup/rollback as everything else the merge loop touches — a failed
+/// archive after this call rolls the tombstone back along with the
+/// deleted directory.
+fn record_retirement(
+    project_root: &std::path::Path,
+    capability: &str,
+    change_id: &str,
+) -> Result<()> {
+    let path = project_root.join("givn/specs/.retired.yaml");
+    let mut entries: Vec<RetiredEntry> = if path.exists() {
+        let text = std::fs::read_to_string(&path)?;
+        serde_yaml_ng::from_str(&text).unwrap_or_default()
+    } else {
+        Vec::new()
+    };
+    let date_output = std::process::Command::new("date")
+        .args(["-u", "+%Y-%m-%d"])
+        .output();
+    let retired_date = date_output
+        .ok()
+        .and_then(|o| String::from_utf8(o.stdout).ok())
+        .map(|s| s.trim().to_string())
+        .unwrap_or_else(|| "unknown".to_string());
+    entries.push(RetiredEntry {
+        capability: capability.to_string(),
+        retired_date,
+        retired_by_change: change_id.to_string(),
+    });
+    let yaml = serde_yaml_ng::to_string(&entries)?;
+    std::fs::write(&path, yaml)?;
+    Ok(())
+}
 
 /// Recursively copy a directory tree.
 fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<()> {

@@ -1,3 +1,4 @@
+use anyhow::{Result, bail};
 use gherkin::{Feature, Scenario};
 
 /// The delta operation for a scenario (derived from its tags).
@@ -23,6 +24,14 @@ pub fn is_delta_feature(feature: &Feature) -> bool {
     feature.tags.iter().any(|t| t == "givn.delta")
 }
 
+/// Returns true if the feature is a capability-retirement marker
+/// (`@givn.retired`). A retirement delta has zero scenarios — it exists
+/// only to tell `givn archive` to delete a whole capability directory
+/// instead of merging.
+pub fn is_retired_feature(feature: &Feature) -> bool {
+    feature.tags.iter().any(|t| t == "givn.retired")
+}
+
 /// Extract the capability tag from a feature (first tag that isn't a `@givn.*` tag).
 pub fn capability_tag(feature: &Feature) -> Option<&str> {
     feature.tags.iter().find_map(|t| {
@@ -32,6 +41,25 @@ pub fn capability_tag(feature: &Feature) -> Option<&str> {
             None
         }
     })
+}
+
+/// Reject a capability tag that is not a safe, unambiguous path segment.
+/// `capability_tag` returns an arbitrary string taken from a feature tag;
+/// `archive.rs` interpolates it into a filesystem path twice (merge target)
+/// and now also uses it to select a directory to delete (retirement). A
+/// tag containing `..`, `/`, or an empty string must never reach either.
+pub fn validate_capability_tag(tag: &str) -> Result<()> {
+    let ok = !tag.is_empty()
+        && tag.chars().all(|c| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '-')
+        && !tag.starts_with('-')
+        && !tag.ends_with('-');
+    if !ok {
+        bail!(
+            "invalid capability tag '{tag}': must be non-empty lowercase \
+             kebab-case ([a-z0-9-]+), no leading or trailing '-'"
+        );
+    }
+    Ok(())
 }
 
 /// Parse the delta operation from a scenario's tags.
@@ -198,5 +226,28 @@ Feature: Test
 "#;
         let feature = parse_str(input).unwrap();
         assert!(find_wip_in_feature(&feature).is_none());
+    }
+
+    #[test]
+    fn detect_retired_feature() {
+        let feature = parse_str(
+            "@givn.delta @givn.retired @old-capability\nFeature: Old capability\n",
+        )
+        .unwrap();
+        assert!(is_retired_feature(&feature));
+    }
+
+    #[test]
+    fn validate_capability_tag_rejects_traversal() {
+        assert!(validate_capability_tag("../../etc").is_err());
+        assert!(validate_capability_tag("foo/bar").is_err());
+        assert!(validate_capability_tag("").is_err());
+        assert!(validate_capability_tag("-leading").is_err());
+    }
+
+    #[test]
+    fn validate_capability_tag_accepts_kebab_case() {
+        assert!(validate_capability_tag("semantic-review").is_ok());
+        assert!(validate_capability_tag("abc123").is_ok());
     }
 }

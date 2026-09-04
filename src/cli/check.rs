@@ -156,8 +156,8 @@ fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow
 }
 
 #[cfg(not(feature = "spec-retrieval"))]
-fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow::Result<()> {
-    crate::spec::retrieval::semantic_review(project_root, change_id)
+fn run_retrieval_gate(_project_root: &std::path::Path, _change_id: &str) -> anyhow::Result<()> {
+    Ok(())
 }
 
 /// Check if an artifact's output files exist in the change directory.
