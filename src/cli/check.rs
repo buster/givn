@@ -132,9 +132,57 @@ fn run_mandatory_checks(
             if let Some(id) = change {
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
                 run_retrieval_gate(project_root, id)?;
+                check_retirement_disclosed(project_root, id)?;
             }
         }
         _ => {}
+    }
+    Ok(())
+}
+
+/// If this change's delta retires any capability (`@givn.retired`),
+/// require review.md to contain a `RETIRE: <capability>` line for each
+/// one. A plain substring check, not a table parser — deliberately
+/// simple so there is no heading-name mismatch to get wrong (see the
+/// disposition-table parser in overlap/disposition.rs for what that
+/// class of bug looks like).
+fn check_retirement_disclosed(
+    project_root: &std::path::Path,
+    change_id: &str,
+) -> anyhow::Result<()> {
+    let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
+    let specs_dir = change_dir.join("specs");
+    let retired_caps: Vec<String> = crate::gherkin::parse::collect_feature_files(&specs_dir)
+        .into_iter()
+        .filter_map(|path| {
+            let feature =
+                gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default()).ok()?;
+            if crate::gherkin::delta::is_retired_feature(&feature) {
+                crate::gherkin::delta::capability_tag(&feature).map(|c| c.to_string())
+            } else {
+                None
+            }
+        })
+        .collect();
+    if retired_caps.is_empty() {
+        return Ok(());
+    }
+    let review_path = change_dir.join("review.md");
+    let review_text = std::fs::read_to_string(&review_path).unwrap_or_default();
+    let missing: Vec<&String> = retired_caps
+        .iter()
+        .filter(|cap| !review_text.contains(&format!("RETIRE: {cap}")))
+        .collect();
+    if !missing.is_empty() {
+        anyhow::bail!(
+            "review.md is missing a 'RETIRE: <capability>' line for: {}. \
+             Retiring a capability must be disclosed and justified in review.md.",
+            missing
+                .iter()
+                .map(|s| s.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
+        );
     }
     Ok(())
 }
@@ -178,4 +226,54 @@ fn artifact_output_exists(
         }
     }
     false
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Temp project with a change whose delta retires `dead-cap`.
+    fn temp_change(review_text: &str) -> tempfile::TempDir {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path().to_path_buf();
+        let change = project.join("givn/changes/retire-thing");
+        std::fs::create_dir_all(change.join("specs")).unwrap();
+        std::fs::write(
+            change.join("specs/retire-thing.feature"),
+            "@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n",
+        )
+        .unwrap();
+        std::fs::write(change.join("review.md"), review_text).unwrap();
+        root
+    }
+
+    #[test]
+    fn retirement_without_disclosure_fails() {
+        let root = temp_change("# Review\n\nREVIEW: PASS\n");
+        let project = root.path().to_path_buf();
+        let err = check_retirement_disclosed(&project, "retire-thing").unwrap_err();
+        assert!(err.to_string().contains("RETIRE: <capability>"), "{err}");
+        assert!(err.to_string().contains("dead-cap"), "{err}");
+    }
+
+    #[test]
+    fn disclosed_retirement_passes() {
+        let root = temp_change("# Review\n\nRETIRE: dead-cap — obsolete engine\n");
+        let project = root.path().to_path_buf();
+        check_retirement_disclosed(&project, "retire-thing").unwrap();
+    }
+
+    #[test]
+    fn no_retirement_delta_means_no_requirement() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path().to_path_buf();
+        let change = project.join("givn/changes/plain-change");
+        std::fs::create_dir_all(change.join("specs")).unwrap();
+        std::fs::write(
+            change.join("specs/plain-change.feature"),
+            "@givn.delta @some-cap\nFeature: Some capability\n\n  Scenario: One\n    Given x\n    Then y\n",
+        )
+        .unwrap();
+        check_retirement_disclosed(&project, "plain-change").unwrap();
+    }
 }
