@@ -1218,7 +1218,12 @@ givn lint 2>&1 | tail -20
 No `singleton_group` findings (task 2.3) unless deliberately accepted for
 a specific small group.
 
-### [ ] 2.6 Config wiring for grouping-related settings, if any turn out to be needed
+### [x] 2.6 Config wiring for grouping-related settings, if any turn out to be needed — SKIPPED
+
+**Skipped per the task's own criterion:** nothing implemented in Phase
+2/3/4 needs a `givn/config.yaml` key. Clustering uses the hand-maintained
+`KNOWN_SUBCOMMANDS` (explicitly allowed by the task), and grouping lives
+in the filesystem plus `group.md`.
 
 Re-read `PLAN.md` and this file's Phase 2/3/4 tasks once they're actually
 implemented — if none of them end up needing a new `givn/config.yaml` key

@@ -120,7 +120,11 @@ For each artifact:
   constraints or risks exist.
 
 **specs** (specs/**/*.feature):
-- One .feature file per capability, derived from the proposal.
+- One .feature file per capability, grouped under the capability's use-case
+  group: `givn/changes/<id>/specs/<group>/<capability>.feature` (mirrors the
+  permanent layout `givn/specs/<group>/<capability>.feature`). The group for
+  an existing capability is wherever it already lives; a new capability's
+  group comes from the Capability Routing decision.
 - Tags: `@givn.delta @<capability>` on Feature; `@givn.added` + `@wip` on
   each Scenario (use `@givn.modified` or `@givn.removed` where appropriate).
   Tags go on the line **before** `Scenario:`, never inside the scenario body.
@@ -265,7 +269,7 @@ orchestrator's architect subagent produce `design-review`, `tasks`, or
 **Artifacts written** (in manifest order):
 - proposal:  givn/changes/<id>/proposal.md
   <one-sentence summary>
-- specs:     givn/changes/<id>/specs/<cap>/<cap>.feature  (N scenarios, all @wip)
+- specs:     givn/changes/<id>/specs/<group>/<cap>.feature  (N scenarios, all @wip)
 - design:    givn/changes/<id>/design.md
   Key decisions: <brief summary>
 [... any additional artifacts preceding design-review/tasks ...]

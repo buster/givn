@@ -165,7 +165,7 @@ the `/givn-spec` skill instructs agents to use `spec index` / `spec search` /
 3. Strict similarity gate re-runs immediately before the merge — a
    `REVIEW: PASS` marker alone does not bypass it.
 4. Backup of `givn/specs` and `README.md` into `givn/.archive-backup-<id>/`.
-5. Each delta feature merges into `givn/specs/<cap>/<cap>.feature`;
+5. Each delta feature merges into `givn/specs/<group>/<cap>.feature`;
    `@givn.*` tags stripped, `@e2e` preserved. Title collisions or missing
    modified/removed titles abort.
 6. Post-merge `verify.command` against the permanent specs; then

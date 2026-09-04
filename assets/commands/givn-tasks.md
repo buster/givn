@@ -42,7 +42,7 @@ prerequisite artifacts; do not copy instruction prose into the file. Without
 ### 3. Read the inputs
 
 `givn/changes/<id>/design.md` (step def locations, strict-mode config, stub
-pattern), `.../specs/<capability>/<capability>.feature`, `.../proposal.md`.
+pattern), `.../specs/<group>/<capability>.feature`, `.../proposal.md`.
 
 ### 4. Write the task list
 
