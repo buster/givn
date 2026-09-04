@@ -16,10 +16,10 @@ a tombstone entry.
 
 ## Step Definitions
 
-No new step definitions. The retirement deltas have zero scenarios, so
-there is nothing to implement. Each task in tasks.md is a pure deletion
-verified by re-running the full suite and confirming the capability
-directory is gone after archive.
+None. No new step definitions: the retirement deltas in this change have
+zero scenarios, so there is nothing to implement. Each task in tasks.md is
+a pure deletion verified by re-running the full suite and confirming the
+capability directory is gone after archive.
 
 ## Architecture Impact
 
