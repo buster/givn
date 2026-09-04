@@ -667,7 +667,7 @@ without rewriting.
 
 **Verify:** `grep -n "Semantic review and retrieval vocabulary" assets/instructions/specs.md` prints nothing. `cargo build && cargo test`.
 
-### [ ] 1.5 Measure, before and after
+### [x] 1.5 Measure, before and after
 
 Before starting 1.2 (Cargo feature removal), capture:
 ```sh
@@ -1447,7 +1447,7 @@ Can be developed in parallel with Phase 2/3, but **Phase 1 task 1.2**
 (dropping Cargo default features) is blocked on this phase finishing (see
 the note at the top of Phase 1).
 
-### [ ] 4.1 `givn spec tree`
+### [x] 4.1 `givn spec tree`
 
 **Files:** `src/main.rs` (`SpecCommands::Tree`), `src/cli/spec.rs`
 (dispatch), new logic (e.g. `src/spec/tree.rs`).
@@ -1467,7 +1467,7 @@ minus the semantic ranking.
 **Verify:** run against the post-Phase-2 `givn/specs/` tree, confirm output
 matches manual inspection of a couple of groups.
 
-### [ ] 4.2 `givn spec find <query>`
+### [x] 4.2 `givn spec find <query>`
 
 Lexical (not semantic) search: substring/keyword match over scenario
 titles and step text, docstring-aware (parsed AST, per 3.3). Print
@@ -1479,7 +1479,7 @@ something like this already exist" without embeddings.
 **Verify:** search for a term known to appear in exactly one scenario
 title; confirm exactly one result.
 
-### [ ] 4.3 Salvage the deterministic half of `spec duplicates`
+### [x] 4.3 Salvage the deterministic half of `spec duplicates`
 
 **File:** `src/spec/retrieval.rs` — search for `collect_duplicate_scenarios`.
 
@@ -1524,7 +1524,7 @@ capabilities' scenarios exercised and passing (this is effectively the
 same verification as 1.2's, just scoped to confirm these four
 specifically before 1.2 touches `Cargo.toml`).
 
-### [ ] 4.5 `givn spec route`
+### [x] 4.5 `givn spec route`
 
 **Files:** `src/main.rs` (`SpecCommands::Route`), `src/cli/spec.rs`, new
 logic module (e.g. `src/spec/route.rs`, can reuse the clustering helpers
@@ -1567,7 +1567,7 @@ closely for a `spec`-adjacent change (a tie is an acceptable, even
 expected, output — the tool is allowed to say "I don't know, pick one of
 these").
 
-### [ ] 4.6 Add the `## Capability Routing` section to the proposal template
+### [x] 4.6 Add the `## Capability Routing` section to the proposal template
 
 **Files:** `assets/templates/proposal.md`, `assets/commands/givn-propose.md`,
 `assets/commands/givn-spec.md`
@@ -1635,7 +1635,7 @@ against it, manually fill in the table, confirm the resulting
 task 4.7's parser expects — write the parser and the template together,
 or you'll reproduce the Phase-5 heading-mismatch bug in a new location.
 
-### [ ] 4.7 Decision-consistency check at `givn check review`
+### [x] 4.7 Decision-consistency check at `givn check review`
 
 **File:** `src/cli/check.rs` (parser can live in a new module, e.g.
 `src/spec/routing_table.rs`, parallel to `src/overlap/disposition.rs`).
@@ -2214,3 +2214,30 @@ givn spec tree
 All must pass. The `--no-default-features` runs are the actual proof that
 the embedding-based semantic gate (requirement 6) is genuinely gone, not
 just disabled by a flag nobody flips.
+
+---
+
+## Completion notes (2026-09-04)
+
+All phases complete. Final verification results:
+
+- `cargo build` / `cargo build --no-default-features`: clean
+- `cargo test` / `cargo test --no-default-features`: 359 scenarios (359 passed) + 241 lib tests
+- `./run-tests.sh`: 354 scenarios (354 passed), 19.6s (baseline 35.0s, −44%)
+- `./run-tests.sh --e2e`: 70 @e2e scenarios, 10.0s (baseline 32.6s, −69%)
+- `givn lint`: clean (exit 0), including the machine-checked use-case
+  relationship graph and interaction/e2e coverage warnings
+- `givn spec tree/find/duplicates/route/regroup`: all deterministic, no embeddings
+
+Givn changes archived through the real workflow during this effort:
+`retire-semantic-capabilities`, `retire-semantic-review-guidance`,
+`retire-semantic-retrieval-vocabulary`, `group-specs-by-use-case`,
+`rebuild-deterministic-spec-discovery`, `default-build-is-feature-free`.
+
+Known deferred items:
+- Dead code in `src/spec/retrieval.rs` (the semantic pipeline) and orphaned
+  step files for retired capabilities remain compiled behind the opt-in
+  `spec-retrieval` feature; a follow-up can delete them outright.
+- 2.8's deep per-group step-phrasing convergence continues as an authoring
+  pass measured by `givn spec tree`'s reuse ratios (normalization and
+  reporting are done).
