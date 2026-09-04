@@ -38,7 +38,10 @@ pub fn apply_deltas(
         _ => format!("Feature: {}\n", delta_feature_name),
     };
 
-    // Validate all preconditions BEFORE making any changes (all-or-nothing).
+    // Validate and apply in one sequential pass. Each op is checked
+    // against the *projected* state, so a delta may legitimately remove a
+    // scenario and re-add a replacement with the same title (rewriting a
+    // capability is one atomic delta, not two).
     for delta in deltas {
         let title = &delta.scenario.name;
         let exists = perm_scenarios.iter().any(|s| s.title == *title);
@@ -51,8 +54,12 @@ pub fn apply_deltas(
                     ))
                     .into());
                 }
+                perm_scenarios.push(ScenarioText {
+                    title: title.clone(),
+                    text: render_scenario_stripped(delta.scenario),
+                });
             }
-            DeltaOp::Modified | DeltaOp::Removed => {
+            DeltaOp::Modified => {
                 if !exists {
                     return Err(GivnError::MergeError(format!(
                         "cannot {:?} scenario '{}': title not found in the permanent spec",
@@ -60,26 +67,18 @@ pub fn apply_deltas(
                     ))
                     .into());
                 }
-            }
-        }
-    }
-
-    // Apply all changes.
-    for delta in deltas {
-        let title = &delta.scenario.name;
-        match delta.op {
-            DeltaOp::Added => {
-                perm_scenarios.push(ScenarioText {
-                    title: title.clone(),
-                    text: render_scenario_stripped(delta.scenario),
-                });
-            }
-            DeltaOp::Modified => {
                 if let Some(s) = perm_scenarios.iter_mut().find(|s| s.title == *title) {
                     s.text = render_scenario_stripped(delta.scenario);
                 }
             }
             DeltaOp::Removed => {
+                if !exists {
+                    return Err(GivnError::MergeError(format!(
+                        "cannot {:?} scenario '{}': title not found in the permanent spec",
+                        delta.op, title
+                    ))
+                    .into());
+                }
                 perm_scenarios.retain(|s| s.title != *title);
             }
         }
