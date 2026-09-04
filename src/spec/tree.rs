@@ -188,6 +188,107 @@ pub struct FindHit {
     pub e2e: bool,
 }
 
+/// A deterministic duplicate/structural match (Phase 4.3). Exact
+/// duplicates, shared assertion shapes, and assertion subsets only — no
+/// embeddings, no score.
+#[derive(Debug, Clone, Serialize)]
+pub struct DuplicateMatch {
+    pub kind: String,
+    pub left_file: String,
+    pub left_title: String,
+    pub right_file: String,
+    pub right_title: String,
+}
+
+fn is_subsequence(needle: &[String], haystack: &[String]) -> bool {
+    let mut it = haystack.iter();
+    needle.iter().all(|n| it.any(|h| h == n))
+}
+
+/// Walk the permanent corpus and report exact/structural duplicate
+/// scenarios. Behavior text is the joined step values (normalized);
+/// structure comes from the overlap fingerprint's assertion sequence.
+pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
+    use crate::overlap::fingerprint::Fingerprint;
+
+    let specs_root = root.join("givn/specs");
+    struct Entry {
+        file: String,
+        title: String,
+        behavior: String,
+        assertions: Vec<String>,
+    }
+    let mut entries: Vec<Entry> = Vec::new();
+    for entry in std::fs::read_dir(&specs_root)? {
+        let group_dir = entry?.path();
+        if !group_dir.is_dir() {
+            continue;
+        }
+        for file in std::fs::read_dir(&group_dir)? {
+            let file = file?.path();
+            if file.extension().is_none_or(|e| e != "feature") {
+                continue;
+            }
+            let feature = gherkin::Feature::parse_path(&file, GherkinEnv::default())
+                .map_err(|e| anyhow::anyhow!("failed to parse {}: {e}", file.display()))?;
+            let file_label = file.display().to_string();
+            for scenario in &feature.scenarios {
+                let mut steps: Vec<&gherkin::Step> = scenario.steps.iter().collect();
+                if let Some(background) = &feature.background {
+                    steps.extend(background.steps.iter());
+                }
+                let behavior = steps
+                    .iter()
+                    .map(|s| normalize_phrasing(&s.value))
+                    .collect::<Vec<_>>()
+                    .join("\n");
+                let fingerprint = Fingerprint::of_scenario(scenario, feature.background.as_ref());
+                entries.push(Entry {
+                    file: file_label.clone(),
+                    title: scenario.name.clone(),
+                    behavior,
+                    assertions: fingerprint.assertions,
+                });
+            }
+        }
+    }
+
+    let mut matches = Vec::new();
+    for i in 0..entries.len() {
+        for j in (i + 1)..entries.len() {
+            let (a, b) = (&entries[i], &entries[j]);
+            if a.behavior == b.behavior {
+                matches.push(DuplicateMatch {
+                    kind: "exact_duplicate".to_string(),
+                    left_file: a.file.clone(),
+                    left_title: a.title.clone(),
+                    right_file: b.file.clone(),
+                    right_title: b.title.clone(),
+                });
+            } else if !a.assertions.is_empty() && a.assertions == b.assertions {
+                matches.push(DuplicateMatch {
+                    kind: "same_assertion_shape".to_string(),
+                    left_file: a.file.clone(),
+                    left_title: a.title.clone(),
+                    right_file: b.file.clone(),
+                    right_title: b.title.clone(),
+                });
+            } else if a.assertions.len() > b.assertions.len()
+                && is_subsequence(&b.assertions, &a.assertions)
+            {
+                matches.push(DuplicateMatch {
+                    kind: "assertion_subset".to_string(),
+                    left_file: b.file.clone(),
+                    left_title: b.title.clone(),
+                    right_file: a.file.clone(),
+                    right_title: a.title.clone(),
+                });
+            }
+        }
+    }
+    Ok(matches)
+}
+
 /// Lexical search over the parsed AST — never a text grep, so docstring
 /// payload cannot produce phantom scenarios. Substring match, lowercased,
 /// over scenario titles and step text.
