@@ -968,6 +968,13 @@ for the latter.
 
 ### [x] 2.4 Design `group.md`'s format
 
+**Extension (2026-09-04, user decision):** the use-case relationships are
+machine-checked, not just documented. scan_tree validates every group's
+group.md — unparseable docs, dangling `«include»`/`«extend»` targets, and
+cycles in the group relationship graph are errors (lint exit 3). One
+bullet names one target; relationships are recorded once on the depending
+side. Vocabulary recorded in docs/arc42/12-glossary.md.
+
 This is a content-design task, not a pure code task — there is no existing
 parser to imitate, so define the format carefully and write the parser
 deliberately simple (regex/line-based, not a new grammar).
