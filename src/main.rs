@@ -254,6 +254,14 @@ enum SpecCommands {
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
     },
+    /// Walk the permanent spec corpus by group: Actor/Goal per group,
+    /// scenario and @e2e counts per capability, phrasing reuse ratio per
+    /// group. Deterministic — no embeddings, no network, no score.
+    Tree {
+        /// Output format.
+        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
+        format: SpecFormat,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -341,6 +349,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             SpecCommands::BgeParity => cli::spec::run_bge_parity(),
             SpecCommands::Regroup { format } => {
                 cli::spec::run_regroup(matches!(format, SpecFormat::Json))
+            }
+            SpecCommands::Tree { format } => {
+                cli::spec::run_tree(matches!(format, SpecFormat::Json))
             }
         },
         Commands::Upgrade => cli::upgrade::run(),

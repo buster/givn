@@ -58,6 +58,17 @@ pub fn run_bge_parity() -> Result<()> {
     crate::spec::retrieval::bge_parity(&std::env::current_dir()?)
 }
 
+/// `givn spec tree` — deterministic corpus discovery (Phase 4.1).
+pub fn run_tree(json: bool) -> Result<()> {
+    let rows = crate::spec::tree::build_tree(&std::env::current_dir()?)?;
+    if json {
+        println!("{}", serde_json::to_string_pretty(&rows)?);
+    } else {
+        crate::spec::tree::print_tree(&rows);
+    }
+    Ok(())
+}
+
 /// `givn spec regroup` — print the command-surface clustering proposal.
 /// Never modifies files; a human reviews, confirms, and applies it via the
 /// migration step (retirement plan task 2.5).
