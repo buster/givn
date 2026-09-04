@@ -396,12 +396,14 @@ apply:
     fn overlay_can_remove_non_protected_artifact() {
         let base = Manifest::load_embedded().unwrap();
         let original_count = base.artifacts.len();
-        // design-review is not protected; removing it (and its reference in
-        // apply.requires) must keep working.
+        // design-review is not protected; removing it (and rewiring the
+        // tasks artifact that requires it) must keep working.
         let overlay = r#"
 artifacts:
   - id: design-review
     remove: true
+  - id: tasks
+    requires: [specs]
 apply:
   requires: [specs]
 "#;
