@@ -78,6 +78,12 @@ pub fn command_surface(capability: &str, feature: &gherkin::Feature) -> CommandS
     }
 }
 
+/// Public helper for the routing module — count backtick-wrapped
+/// `givn <subcommand>` invocations in `step_text`.
+pub fn count_invocations_for(step_text: &str, counts: &mut BTreeMap<String, usize>) {
+    count_invocations(step_text, counts);
+}
+
 fn count_invocations(step_text: &str, counts: &mut BTreeMap<String, usize>) {
     let mut rest = step_text;
     while let Some(pos) = rest.find("`givn ") {

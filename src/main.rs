@@ -269,6 +269,18 @@ enum SpecCommands {
         /// Substring to search for (case-insensitive).
         query: String,
     },
+    /// Route a proposal against the permanent corpus: ranked
+    /// EXTEND/NEW candidates with evidence. Advisory only — the decision is
+    /// recorded in the proposal's Capability Routing table, never derived
+    /// from this output at review time.
+    Route {
+        /// Active change whose proposal.md to route.
+        #[arg(long)]
+        change: Option<String>,
+        /// Proposal file to route (alternative to --change).
+        #[arg(long)]
+        file: Option<PathBuf>,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -361,6 +373,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 cli::spec::run_tree(matches!(format, SpecFormat::Json))
             }
             SpecCommands::Find { query } => cli::spec::run_find(&query),
+            SpecCommands::Route { change, file } => {
+                cli::spec::run_route(change.as_deref(), file.as_deref())
+            }
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),

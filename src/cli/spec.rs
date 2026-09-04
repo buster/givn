@@ -76,6 +76,27 @@ pub fn run_bge_parity() -> Result<()> {
     crate::spec::retrieval::bge_parity(&std::env::current_dir()?)
 }
 
+/// `givn spec route` — ranked routing candidates for a proposal (Phase 4.5).
+pub fn run_route(change: Option<&str>, file: Option<&std::path::Path>) -> Result<()> {
+    if change.is_some() == file.is_some() {
+        bail!("spec route requires exactly one input: use --change or --file");
+    }
+    let root = std::env::current_dir()?;
+    let proposal_path = match (change, file) {
+        (Some(id), _) => {
+            let change_dir = crate::state::resolve_change_dir(&root, id)?;
+            change_dir.join("proposal.md")
+        }
+        (_, Some(path)) => path.to_path_buf(),
+        _ => bail!("unreachable"),
+    };
+    let proposal_text = std::fs::read_to_string(&proposal_path)
+        .map_err(|e| anyhow::anyhow!("failed to read proposal {}: {e}", proposal_path.display()))?;
+    let report = crate::spec::route::route(&root, &proposal_text)?;
+    crate::spec::route::print_report(&report);
+    Ok(())
+}
+
 /// `givn spec find <query>` — lexical search over the parsed AST (Phase 4.2).
 pub fn run_find(query: &str) -> Result<()> {
     let hits = crate::spec::tree::find_scenarios(&std::env::current_dir()?, query)?;
