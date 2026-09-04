@@ -86,6 +86,7 @@ pub mod spec_explore_permanent_e2e_steps;
 pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
 pub mod spec_progress_output_e2e_steps;
+pub mod spec_discovery_deterministic_steps;
 pub mod spec_progress_output_steps;
 pub mod spec_retrieval_steps;
 pub mod template_conditional_rendering_e2e_steps;
