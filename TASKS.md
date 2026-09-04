@@ -1677,7 +1677,7 @@ first) and ideally before Phase 2 migration in general, since a correct
 `shape_match`/`disposition` mechanism is more useful to have in place
 before a large structural move than after.
 
-### [ ] 5.1 Fix the `tty` substring bug
+### [x] 5.1 Fix the `tty` substring bug
 
 **File:** `src/overlap/fingerprint.rs`
 
@@ -1764,7 +1764,7 @@ none construct a bare `Step` directly, parse a tiny full scenario via
 `crate::gherkin::parse::parse_str` and pull the step out of it instead.)
 `cargo test overlap::fingerprint 2>&1 | tail -30`
 
-### [ ] 5.2 Fix the apostrophe-eats-the-rest-of-the-line bug in `mask()`
+### [x] 5.2 Fix the apostrophe-eats-the-rest-of-the-line bug in `mask()`
 
 **File:** `src/overlap/fingerprint.rs`, function `mask`
 
@@ -1844,7 +1844,7 @@ fn apostrophe_does_not_eat_rest_of_line() {
 ```
 `cargo test overlap::fingerprint 2>&1 | tail -30`
 
-### [ ] 5.3 Make the disposition `decision` field actually mean something
+### [x] 5.3 Make the disposition `decision` field actually mean something
 
 **File:** `src/overlap/disposition.rs`
 
@@ -1914,7 +1914,7 @@ to tell the author which words are valid in the Disposition column
 (`duplicate` / `variant` / `boundary`) — search both files for wherever
 they currently describe the Overlap Dispositions table and add this.
 
-### [ ] 5.4 Fix the missing/mismatched headings in `review.md`
+### [x] 5.4 Fix the missing/mismatched headings in `review.md`
 
 **Files:** `assets/templates/review.md`, `assets/instructions/review.md`
 
@@ -1975,7 +1975,7 @@ the template actually produces non-empty `rows`/`split_rows` when a table
 row is added. This closes the exact gap that let the mismatch ship
 undetected.
 
-### [ ] 5.5 Run the overlap scan in `--change` scope, not just bare whole-tree mode
+### [x] 5.5 Run the overlap scan in `--change` scope, not just bare whole-tree mode
 
 **File:** `src/cli/lint.rs`
 
@@ -2025,7 +2025,7 @@ scenario, run `givn lint --change <id>` (not `check review`) — confirm the
 no paths) still scans the whole tree as before (regression check on
 existing behavior). `cargo test lint 2>&1 | tail -30`
 
-### [ ] 5.6 Protect `review` and `specs` artifacts from `overlay.rs`'s unguarded removal
+### [x] 5.6 Protect `review` and `specs` artifacts from `overlay.rs`'s unguarded removal
 
 **File:** `src/config/overlay.rs`
 
@@ -2101,7 +2101,7 @@ can ever be removed" — `design-review` removal, or a custom
 overlay-added artifact, is a reasonable one to test against, kept separate
 from `review`/protected ones. `cargo test config::overlay 2>&1 | tail -30`
 
-### [ ] 5.7 Warn when `givn check review` (no `--change`) silently skips the overlap gate
+### [x] 5.7 Warn when `givn check review` (no `--change`) silently skips the overlap gate
 
 **File:** `src/cli/check.rs`
 
@@ -2134,7 +2134,7 @@ verify-e2e, integrity, run declaration) — this task only adds visibility,
 it must not turn a previously-passing bare `check review` into a failure.
 `cargo test check 2>&1 | tail -20`
 
-### [ ] 5.8 Route the `long_scenario` threshold through one place, if Phase 2 ever needs a second threshold
+### [x] 5.8 Route the `long_scenario` threshold through one place, if Phase 2 ever needs a second threshold
 
 **File:** `src/overlap/analysis.rs` (threshold), `src/cli/lint.rs` (message)
 
