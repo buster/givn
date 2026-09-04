@@ -156,11 +156,21 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
     let proposal_text = std::fs::read_to_string(&proposal_path).unwrap_or_default();
     let rows = parse_routing_table(&proposal_text);
     if rows.is_empty() {
-        bail!(
-            "proposal.md is missing a filled '{HEADING_CAPABILITY_ROUTING}' table — \
-             run `givn spec route` and record a decision (EXTEND <cap> / NEW in <group>) \
-             for every capability this change touches"
+        // Legacy/foreign proposals predate the Capability Routing section.
+        // Nothing is recorded, so there is no decision to check against —
+        // warn loudly instead of failing (the template always scaffolds the
+        // table, and a present table is enforced strictly).
+        println!(
+            "  ⚠ proposal.md has no filled '{HEADING_CAPABILITY_ROUTING}' table — \
+             the delta capabilities [{}] are undeclared; run `givn spec route` and \
+             record decisions (EXTEND <cap> / NEW in <group>)",
+            deltas
+                .iter()
+                .map(|d| d.capability.as_str())
+                .collect::<Vec<_>>()
+                .join(", ")
         );
+        return Ok(());
     }
 
     let specs_root = project_root.join("givn/specs");
@@ -421,7 +431,9 @@ mod tests {
     }
 
     #[test]
-    fn delta_without_any_routing_table_fails() {
+    fn delta_without_any_routing_table_warns_but_passes() {
+        // Legacy proposals predate the table: nothing recorded, nothing to
+        // compare — a loud warning prints and the check passes.
         let (_root, project) = temp_project();
         seed_grouped_permanent(&project);
         seed_change(
@@ -430,8 +442,7 @@ mod tests {
             "gates/gate-a.feature",
             "@givn.delta @gate-a\nFeature: Gate A\n\n  @givn.added\n  Scenario: S2\n    Given x\n    Then y\n",
         );
-        let err = check_routing_consistency(&project, "my-change").unwrap_err();
-        assert!(err.to_string().contains("Capability Routing"), "{err}");
+        check_routing_consistency(&project, "my-change").unwrap();
     }
 
     #[test]
