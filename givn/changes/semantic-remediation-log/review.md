@@ -78,6 +78,11 @@ README-IMPACT: none
 | A regenerated classified report is byte-for-byte deterministic | Integrity hook skips arc42 check when slug cannot be resolved | supersession/boundary: the modified delta scenario supersedes its permanent original by title; the shared shape is the fixed review-flow skeleton while the asserted outcomes differ; retain both |
 | Changing a permanent endpoint invalidates its prior classification | Removed candidates disappear after classification | supersession: both are delta copies of modified permanent scenarios; the delta supersedes each original by title at archive; retain both |
 
+| A DUPLICATE classification without removal remains blocked | A boundary pairing without rewording still fails review on the first change | boundary: the shared skeleton is the fixed review-flow shape; each pairing asserts a distinct classification rule and outcome; retain both |
+| A VALID-BOUNDARY classification above the boundary remains blocked | A boundary pairing without rewording still fails review on the first change | boundary: the shared skeleton is the fixed review-flow shape; each pairing asserts a distinct classification rule and outcome; retain both |
+| A VARIANT classification without consolidation remains blocked | A boundary pairing without rewording still fails review on the first change | boundary: the shared skeleton is the fixed review-flow shape; each pairing asserts a distinct classification rule and outcome; retain both |
+| A VARIANT pairing stays blocked until the ending is consolidated away | A boundary pairing without rewording still fails review on the first change | boundary: the shared skeleton is the fixed review-flow shape; each pairing asserts a distinct classification rule and outcome; retain both |
+
 ## Split-or-keep
 
 | Scenario | Decision |

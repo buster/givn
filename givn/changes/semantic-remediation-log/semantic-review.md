@@ -3,7 +3,7 @@ Report schema version: 3
 Change: "semantic-remediation-log"
 Status: PASS
 Candidate count: 0
-Pair cache: 2 reused, 18 computed
+Pair cache: 18 reused, 2 computed
 refactoring required: shorten or split the scenarios, then rerun semantic review
 BGE status: BGE_ENABLED
 BGE reason: null
@@ -17,7 +17,7 @@ BGE unscored count: 0
 BGE unique pair count: 20
 BGE directional call count: 40
 BGE model load attempts: 1
-BGE runtime ms: 27878
+BGE runtime ms: 8179
 NLI status: NLI_ENABLED
 NLI reason: null
 NLI model: MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7
@@ -29,8 +29,8 @@ NLI filtered count: 20
 NLI unscored count: 0
 NLI unique pair count: 20
 NLI directional call count: 40
-NLI model load attempts: 1
-NLI runtime ms: 18850
+NLI model load attempts: 0
+NLI runtime ms: 0
 
 ## BGE Filtered Candidate
 - candidate_id: 8e2bb18bc6bd4ed4
@@ -63,15 +63,15 @@ NLI runtime ms: 18850
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "An invalid remediation evidence state blocks the review"
 - embedding_score: 0.9684
-- nli_forward_entailment: 0.0830
-- nli_forward_neutral: 0.4538
-- nli_forward_contradiction: 0.4631
-- nli_reverse_entailment: 0.0689
-- nli_reverse_neutral: 0.3251
-- nli_reverse_contradiction: 0.6060
-- nli_symmetric_entailment: 0.0764
-- nli_symmetric_neutral: 0.3882
-- nli_symmetric_contradiction: 0.5354
+- nli_forward_entailment: 0.2557
+- nli_forward_neutral: 0.3704
+- nli_forward_contradiction: 0.3739
+- nli_reverse_entailment: 0.2498
+- nli_reverse_neutral: 0.3228
+- nli_reverse_contradiction: 0.4274
+- nli_symmetric_entailment: 0.2532
+- nli_symmetric_neutral: 0.3464
+- nli_symmetric_contradiction: 0.4005
 - nli_admission: NLI_FILTERED
 
 ## BGE Filtered Candidate
@@ -153,15 +153,15 @@ NLI runtime ms: 18850
 - right_file: "givn/changes/semantic-remediation-log/specs/semantic-remediation-log/semantic-remediation-log.feature"
 - right_title: "An invalid remediation evidence state blocks the review"
 - embedding_score: 0.9637
-- nli_forward_entailment: 0.0724
-- nli_forward_neutral: 0.3781
-- nli_forward_contradiction: 0.5496
-- nli_reverse_entailment: 0.1144
-- nli_reverse_neutral: 0.1736
-- nli_reverse_contradiction: 0.7121
-- nli_symmetric_entailment: 0.0935
-- nli_symmetric_neutral: 0.2634
-- nli_symmetric_contradiction: 0.6431
+- nli_forward_entailment: 0.2519
+- nli_forward_neutral: 0.3420
+- nli_forward_contradiction: 0.4060
+- nli_reverse_entailment: 0.2578
+- nli_reverse_neutral: 0.2735
+- nli_reverse_contradiction: 0.4687
+- nli_symmetric_entailment: 0.2556
+- nli_symmetric_neutral: 0.3068
+- nli_symmetric_contradiction: 0.4376
 - nli_admission: NLI_FILTERED
 
 ## BGE Filtered Candidate

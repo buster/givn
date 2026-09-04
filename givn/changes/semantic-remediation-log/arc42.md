@@ -11,7 +11,7 @@
 | 5 | 05 building-block-view | Yes | New module `src/spec/remediation_log.rs` inside `spec::retrieval`. | Module row updated to name the remediation-log responsibility. |
 | 6 | 06 runtime-view | Yes | Blocking review gains log-writing, gate-validation, and after-state steps. | `check review` flow list and semantic stage description extended. |
 | 7 | 07 deployment-view | No | No deployment surface changes; the log is a project-local file. | |
-| 8 | 08 crosscutting-concepts | Yes | New persisted artifact, gate rules, Git stamp convention. | New §8.5h Remediation Log and Git Stamp. |
+| 8 | 08 crosscutting-concepts | Yes | New persisted artifact, gate rules, Git stamp convention. | New §8.5j Remediation Log and Git Stamp. |
 | 9 | 09 architecture-decisions | Yes | Qualifying new decision about where remediation evidence lives. | ADR-068 proposed; register paragraph added. |
 | 10 | 10 quality-requirements | No | Auditability improves within existing quality scenarios; no new scenario recorded yet. | |
 | 11 | 11 risks-and-technical-debt | Yes | The log reader joins the existing line-oriented parser debt class (D-10). | New debt row D-11 recording the reader's initial line-oriented state. |
