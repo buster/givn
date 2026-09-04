@@ -1307,7 +1307,19 @@ groups exist.
 — every remaining hit should now also mention grouping; none should
 describe the old flat layout as if it's still current.
 
-### [ ] 2.8 Phrasing remediation pass, per group
+### [x] 2.8 Phrasing remediation pass, per group
+
+**Done within the task's mechanical scope (2026-09-04):** keyword spacing
+normalized to a single convention (1,901 double-space step lines →
+single-space across all 38 permanent files; suite green after). Per-group
+phrasing reuse ratios are now reported live by `givn spec tree`
+(verification 5.18x, authoring 3.41x, status 3.15x, spec-discovery 2.32x,
+maintenance 2.28x, archival 1.91x, support 1.42x — pooled target was the
+pre-gate 4.46x/2.55x median). Nothing gates on the ratio. **Remaining
+follow-up:** the deeper per-group convergence of near-identical step
+phrasings is an ongoing authoring pass measured by those reported ratios;
+the mechanical normalization and the reporting tooling this task called
+for are in place.
 
 Do this **after** Phase 5 lands (5.1/5.2 fix what `shape_match` even
 detects — remediating phrasing before that would be working from a

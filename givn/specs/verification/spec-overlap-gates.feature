@@ -2,8 +2,8 @@ Feature: spec-overlap-gates
 
   @e2e
   Scenario: A duplicate title across two permanent spec files is a hard error
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/alpha/alpha.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/alpha/alpha.feature" with:
       """
       Feature: Alpha
         Scenario: The same behaviour twice
@@ -11,7 +11,7 @@ Feature: spec-overlap-gates
           When y
           Then z
       """
-    And  a .feature file at "givn/specs/beta/beta.feature" with:
+    And a .feature file at "givn/specs/beta/beta.feature" with:
       """
       Feature: Beta
         Scenario: The same behaviour twice
@@ -19,79 +19,79 @@ Feature: spec-overlap-gates
           When b
           Then c
       """
-    When  the user runs `givn lint`
-    Then  the command exits 3
-    And  stderr contains "duplicate scenario title"
-    And  stderr contains "alpha.feature"
-    And  stderr contains "beta.feature"
-    And  stderr contains "The same behaviour twice"
+    When the user runs `givn lint`
+    Then the command exits 3
+    And stderr contains "duplicate scenario title"
+    And stderr contains "alpha.feature"
+    And stderr contains "beta.feature"
+    And stderr contains "The same behaviour twice"
 
   Scenario: An added delta duplicating a permanent spec title is a hard error
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/alpha/alpha.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/alpha/alpha.feature" with:
       """
       Feature: Alpha
         Scenario: Shared title
           Given x
       """
-    And  a .feature file at "givn/changes/own/specs/beta/beta.feature" with:
+    And a .feature file at "givn/changes/own/specs/beta/beta.feature" with:
       """
       Feature: Beta
         Scenario: Shared title
           Given a
       """
-    When  the user runs `givn lint`
-    Then  the command exits 3
-    And  stderr contains "Shared title"
+    When the user runs `givn lint`
+    Then the command exits 3
+    And stderr contains "Shared title"
 
   Scenario: A delta of another active change duplicating a permanent spec title is a hard error
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/alpha/alpha.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/alpha/alpha.feature" with:
       """
       Feature: Alpha
         Scenario: Borrowed title
           Given x
       """
-    And  a .feature file at "givn/changes/other/specs/gamma/gamma.feature" with:
+    And a .feature file at "givn/changes/other/specs/gamma/gamma.feature" with:
       """
       Feature: Gamma
         Scenario: Borrowed title
           Given a
       """
-    When  the user runs `givn lint`
-    Then  the command exits 3
-    And  stderr contains "Borrowed title"
-    And  stderr contains "gamma.feature"
+    When the user runs `givn lint`
+    Then the command exits 3
+    And stderr contains "Borrowed title"
+    And stderr contains "gamma.feature"
 
   Scenario: Deltas of two active changes sharing a title are a hard error
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/changes/one/specs/a/a.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/changes/one/specs/a/a.feature" with:
       """
       Feature: A
         Scenario: Contested title
           Given x
       """
-    And  a .feature file at "givn/changes/two/specs/b/b.feature" with:
+    And a .feature file at "givn/changes/two/specs/b/b.feature" with:
       """
       Feature: B
         Scenario: Contested title
           Given a
       """
-    When  the user runs `givn lint`
-    Then  the command exits 3
-    And  stderr contains "Contested title"
-    And  stderr contains "a.feature"
-    And  stderr contains "b.feature"
+    When the user runs `givn lint`
+    Then the command exits 3
+    And stderr contains "Contested title"
+    And stderr contains "a.feature"
+    And stderr contains "b.feature"
 
   Scenario: A modified delta matching its merge target in the same capability is allowed
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Being modified
           Given x
       """
-    And  a .feature file at "givn/changes/one/specs/foo/foo.feature" with:
+    And a .feature file at "givn/changes/one/specs/foo/foo.feature" with:
       """
       Feature: Foo
         @givn.modified
@@ -99,49 +99,49 @@ Feature: spec-overlap-gates
           Given x
           When y
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
+    When the user runs `givn lint`
+    Then the command exits 0
 
   Scenario: A modified delta whose title exists in a different capability is a hard error
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Wrong home
           Given x
       """
-    And  a .feature file at "givn/changes/one/specs/bar/bar.feature" with:
+    And a .feature file at "givn/changes/one/specs/bar/bar.feature" with:
       """
       Feature: Bar
         @givn.modified
         Scenario: Wrong home
           Given a
       """
-    When  the user runs `givn lint`
-    Then  the command exits 3
-    And  stderr contains "Wrong home"
+    When the user runs `givn lint`
+    Then the command exits 3
+    And stderr contains "Wrong home"
 
   Scenario: A removed delta referencing its target by title is allowed
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Going away
           Given x
       """
-    And  a .feature file at "givn/changes/one/specs/foo/foo.feature" with:
+    And a .feature file at "givn/changes/one/specs/foo/foo.feature" with:
       """
       Feature: Foo
         @givn.removed
         Scenario: Going away
           Given removed placeholder
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
+    When the user runs `givn lint`
+    Then the command exits 0
 
   Scenario: Two scenarios with the same shape but different titles produce a warning
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: First sighting
@@ -150,7 +150,7 @@ Feature: spec-overlap-gates
           Then the command exits 0
           And stdout contains "clean"
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Second sighting
@@ -159,15 +159,15 @@ Feature: spec-overlap-gates
           Then the command exits 0
           And stdout contains "tidy"
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "First sighting"
-    And  stderr contains "Second sighting"
-    And  stderr contains "merging"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "First sighting"
+    And stderr contains "Second sighting"
+    And stderr contains "merging"
 
   Scenario: The same shape with contradicting facts produces a related-scenario hint
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Exits cleanly
@@ -176,7 +176,7 @@ Feature: spec-overlap-gates
           Then the command exits 0
           And stdout contains "clean"
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Exits with a finding
@@ -185,15 +185,15 @@ Feature: spec-overlap-gates
           Then the command exits 2
           And stdout contains "clean"
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "related_scenario"
-    And  stderr contains "Exits cleanly"
-    And  stderr contains "Exits with a finding"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "related_scenario"
+    And stderr contains "Exits cleanly"
+    And stderr contains "Exits with a finding"
 
   Scenario: A scenario whose assertion sequence is a subset of another produces a subset warning
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: The full check
@@ -202,7 +202,7 @@ Feature: spec-overlap-gates
           Then the command exits 0
           And stdout contains "clean"
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: The partial check
@@ -210,14 +210,14 @@ Feature: spec-overlap-gates
           When the user runs `givn lint`
           Then the command exits 0
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "subset"
-    And  stderr contains "The partial check"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "subset"
+    And stderr contains "The partial check"
 
   Scenario: A scenario with more than 14 steps produces a long-scenario warning
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: The marathon
@@ -237,76 +237,76 @@ Feature: spec-overlap-gates
           When the user runs `givn lint`
           Then the command exits 0
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "long scenario"
-    And  stderr contains "The marathon"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "long scenario"
+    And stderr contains "The marathon"
 
   Scenario: The default scope excludes the archive tree
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Current
           Given x
       """
-    And  a .feature file at "givn/archive/old/old.feature" with:
+    And a .feature file at "givn/archive/old/old.feature" with:
       """
       This is not gherkin
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
+    When the user runs `givn lint`
+    Then the command exits 0
 
   Scenario: An explicit archive path still lints its file
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/archive/old/old.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/archive/old/old.feature" with:
       """
       Feature: Old
         @wip
         Scenario: Past
           Given x
       """
-    When  the user runs `givn lint givn/archive/old/old.feature`
-    Then  the command exits 2
-    And  stderr contains "scenario 'Past' is tagged @wip"
+    When the user runs `givn lint givn/archive/old/old.feature`
+    Then the command exits 2
+    And stderr contains "scenario 'Past' is tagged @wip"
 
   @e2e
   Scenario: The json output reports duplicate-title findings machine-readably
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/alpha/alpha.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/alpha/alpha.feature" with:
       """
       Feature: Alpha
         Scenario: Twin title
           Given x
       """
-    And  a .feature file at "givn/specs/beta/beta.feature" with:
+    And a .feature file at "givn/specs/beta/beta.feature" with:
       """
       Feature: Beta
         Scenario: Twin title
           Given a
       """
-    When  the user runs `givn lint --json`
-    Then  the command exits 3
-    And  stdout is valid JSON
-    And  stdout contains "duplicate_title"
-    And  stdout contains "titles"
-    And  stdout contains "Twin title"
+    When the user runs `givn lint --json`
+    Then the command exits 3
+    And stdout is valid JSON
+    And stdout contains "duplicate_title"
+    And stdout contains "titles"
+    And stdout contains "Twin title"
 
   Scenario: The json output reports a parse error as a machine-readable finding
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/bad/bad.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/bad/bad.feature" with:
       """
       This is not gherkin
       """
-    When  the user runs `givn lint --json`
-    Then  the command exits 1
-    And  stdout is valid JSON
-    And  stdout contains "parse_error"
-    And  stdout contains "bad.feature"
+    When the user runs `givn lint --json`
+    Then the command exits 1
+    And stdout is valid JSON
+    And stdout contains "parse_error"
+    And stdout contains "bad.feature"
 
   Scenario: Consecutive And and But steps normalise to the same shape as plain Then steps
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Written with conjunctions
@@ -315,7 +315,7 @@ Feature: spec-overlap-gates
           Then the command exits 0
           And stdout contains "clean"
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Written with plain steps
@@ -324,14 +324,14 @@ Feature: spec-overlap-gates
           Then the command exits 0
           Then stdout contains "clean"
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "Written with conjunctions"
-    And  stderr contains "Written with plain steps"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "Written with conjunctions"
+    And stderr contains "Written with plain steps"
 
   Scenario: Quoted strings are masked in the shape comparison
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Looking for alpha
@@ -339,7 +339,7 @@ Feature: spec-overlap-gates
           When the user runs `givn lint`
           Then stdout contains "alpha"
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Looking for beta
@@ -347,14 +347,14 @@ Feature: spec-overlap-gates
           When the user runs `givn lint`
           Then stdout contains "beta"
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "Looking for alpha"
-    And  stderr contains "Looking for beta"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "Looking for alpha"
+    And stderr contains "Looking for beta"
 
   Scenario: Numbers are masked in the shape comparison but exit codes stay facts
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Exit zero
@@ -362,7 +362,7 @@ Feature: spec-overlap-gates
           When the user runs `givn lint`
           Then the command exits 0
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Exit two
@@ -370,15 +370,15 @@ Feature: spec-overlap-gates
           When the user runs `givn lint`
           Then the command exits 2
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "related_scenario"
-    And  stderr contains "Exit zero"
-    And  stderr contains "Exit two"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "related_scenario"
+    And stderr contains "Exit zero"
+    And stderr contains "Exit two"
 
   Scenario: Scenario outlines sharing a template produce a shape-match warning
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario Outline: Paying with <method>
@@ -399,14 +399,14 @@ Feature: spec-overlap-gates
             | method |
             | cash   |
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "Paying with"
-    And  stderr contains "Paying again with"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "Paying with"
+    And stderr contains "Paying again with"
 
   Scenario: Docstrings are ignored in the shape comparison
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: With a docstring
@@ -417,7 +417,7 @@ Feature: spec-overlap-gates
             one docstring
             ```
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: With another docstring
@@ -428,14 +428,14 @@ Feature: spec-overlap-gates
             a different docstring
             ```
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "With a docstring"
-    And  stderr contains "With another docstring"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "With a docstring"
+    And stderr contains "With another docstring"
 
   Scenario: Background steps are prepended before the comparison
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Background:
@@ -446,22 +446,22 @@ Feature: spec-overlap-gates
           Given another piece of context
           Then the command exits 0
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Without background context
           Given another piece of context
           Then the command exits 0
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "subset"
-    And  stderr contains "With background context"
-    And  stderr contains "Without background context"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "subset"
+    And stderr contains "With background context"
+    And stderr contains "Without background context"
 
   Scenario: Data table contents are compared as facts and can contradict
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Permission for admin
@@ -471,7 +471,7 @@ Feature: spec-overlap-gates
             | role  | allowed |
             | admin | yes     |
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Permission for guest
@@ -481,15 +481,15 @@ Feature: spec-overlap-gates
             | role  | allowed |
             | guest | no      |
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "related_scenario"
-    And  stderr contains "Permission for admin"
-    And  stderr contains "Permission for guest"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "related_scenario"
+    And stderr contains "Permission for admin"
+    And stderr contains "Permission for guest"
 
   Scenario: The same shape without any extractable facts suggests merging
-    Given  a project root with givn/ initialised
-    And  a .feature file at "givn/specs/foo/foo.feature" with:
+    Given a project root with givn/ initialised
+    And a .feature file at "givn/specs/foo/foo.feature" with:
       """
       Feature: Foo
         Scenario: Plain steps one
@@ -497,7 +497,7 @@ Feature: spec-overlap-gates
           When something happens
           Then nothing is asserted
       """
-    And  a .feature file at "givn/specs/bar/bar.feature" with:
+    And a .feature file at "givn/specs/bar/bar.feature" with:
       """
       Feature: Bar
         Scenario: Plain steps two
@@ -505,8 +505,8 @@ Feature: spec-overlap-gates
           When something happens
           Then nothing is asserted
       """
-    When  the user runs `givn lint`
-    Then  the command exits 0
-    And  stderr contains "merging"
-    And  stderr contains "Plain steps one"
-    And  stderr contains "Plain steps two"
+    When the user runs `givn lint`
+    Then the command exits 0
+    And stderr contains "merging"
+    And stderr contains "Plain steps one"
+    And stderr contains "Plain steps two"
