@@ -13,18 +13,14 @@ use crate::common;
 pub mod adr_qualification_gate_e2e_steps;
 pub mod adr_qualification_gate_steps;
 pub mod arc42_review_alignment_steps;
-pub mod bge_reranking_evidence_e2e_steps;
-pub mod bge_reranking_evidence_steps;
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
 pub mod choose_project_license_steps;
 pub mod coverage_readme_example_steps;
 pub mod coverage_script_workflow_e2e_steps;
 pub mod coverage_script_workflow_steps;
-pub mod cross_encoder_reranker_steps;
 pub mod deduplicate_change_dir_detection_steps;
 pub mod enforce_post_merge_e2e_gate_steps;
-pub mod enforce_spec_similarity_gate_steps;
 pub mod extract_coverage_gate_steps;
 pub mod fix_domain_modeling_skill_trigger_e2e_steps;
 pub mod fix_domain_modeling_skill_trigger_steps;
@@ -32,8 +28,6 @@ pub mod fix_uppercase_checkbox_parsing_steps;
 pub mod init_agent_target_selection_steps;
 pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
-pub mod nli_evidence_e2e_steps;
-pub mod nli_evidence_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_steps;
 pub mod readme_coverage_badge_steps;
@@ -55,40 +49,9 @@ pub mod run_execution_steps;
 pub mod run_execution_support;
 pub mod run_readme_steps;
 pub mod run_upgrade_steps;
-pub mod search_evidence_e2e_steps;
-pub mod search_evidence_steps;
-pub mod semantic_compact_serialization_e2e_steps;
-pub mod semantic_compact_serialization_steps;
-pub mod semantic_e5_token_cap_e2e_steps;
-pub mod semantic_e5_token_cap_steps;
-pub mod semantic_model_download_e2e_steps;
-pub mod semantic_model_download_steps;
-pub mod semantic_remediation_e2e_steps;
-pub mod semantic_remediation_log_e2e_steps;
-pub mod semantic_remediation_log_steps;
-pub mod semantic_remediation_steps;
-pub mod semantic_reranker_budget_e2e_steps;
-pub mod semantic_reranker_budget_steps;
-pub mod semantic_review_e2e_steps;
-pub mod semantic_review_output_e2e_steps;
-pub mod semantic_review_output_steps;
-pub mod semantic_review_steps;
-pub mod semantic_rulebook_e2e_steps;
-pub mod semantic_rulebook_steps;
-pub mod semantic_token_cap_review_e2e_steps;
-pub mod semantic_token_cap_review_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
-pub mod spec_duplicates_e2e_steps;
-pub mod spec_duplicates_steps;
-pub mod spec_explore_change_e2e_steps;
-pub mod spec_explore_change_steps;
-pub mod spec_explore_permanent_e2e_steps;
-pub mod spec_explore_permanent_steps;
 pub mod spec_overlap_gates_steps;
-pub mod spec_progress_output_e2e_steps;
-pub mod spec_progress_output_steps;
-pub mod spec_retrieval_steps;
 pub mod template_conditional_rendering_e2e_steps;
 pub mod template_conditional_rendering_steps;
 pub mod template_conditional_rendering_support;
@@ -152,46 +115,12 @@ pub struct GivnWorld {
     pub(crate) retrieval_bge_token_budget: Option<String>,
     /// Deterministic NLI token-budget fixture selector.
     pub(crate) retrieval_nli_token_budget: Option<String>,
-    /// Extra environment overrides for review-output scenarios.
-    pub(crate) retrieval_review_extra: Option<Vec<(String, String)>>,
-    /// Use the deterministic stub behind the validated local-artifact seam.
-    pub(crate) retrieval_bge_local_stub: bool,
-    /// Use deterministic NLI scores after validating automatic artifacts.
-    pub(crate) retrieval_nli_local_stub: bool,
-    /// Guard that restores the unreadable-feature fixture after its subprocess
-    /// invocation, including when a scenario assertion panics.
-    pub(crate) unreadable_feature: Option<spec_duplicates_steps::UnreadableFeatureGuard>,
-    /// Snapshot of permanent feature files for non-mutation assertions.
-    pub(crate) permanent_spec_snapshot: Option<Vec<(String, Vec<u8>)>>,
-    /// Snapshot of the active-change fixture tree for read-only audit checks.
-    pub(crate) active_change_snapshot: Option<Vec<(String, Vec<u8>)>>,
-    /// Snapshot of the archive fixture tree for read-only audit checks.
-    pub(crate) archive_snapshot: Option<Vec<(String, Vec<u8>)>>,
-    /// Snapshot of the generated permanent retrieval index for non-mutation
-    /// assertions.
-    pub(crate) permanent_index_snapshot: Option<Vec<u8>>,
-    /// Snapshot of a change-local semantic review report.
-    pub(crate) semantic_report_snapshot: Option<Vec<u8>>,
-    /// Snapshot of active semantic-review files and dispositions.
-    pub(crate) semantic_active_snapshot: Option<Vec<(String, Vec<u8>)>>,
-    /// Snapshot of the semantic-review disposition file.
-    pub(crate) semantic_review_snapshot: Option<Vec<u8>>,
-    /// Snapshot of a change-local remediation log.
-    pub(crate) remediation_log_snapshot: Option<Vec<u8>>,
-    /// The remediation commit hash recorded by the Git fixture steps.
-    pub(crate) remediation_commit_hash: Option<String>,
-    /// Bytes written before a malformed permanent index is rebuilt.
-    pub(crate) malformed_index_snapshot: Option<Vec<u8>>,
-    /// Classification mode for the semantic-remediation fixture.
-    pub(crate) semantic_remediation_mode: Option<String>,
     /// Isolated XDG cache root used by semantic model-download fixtures.
     pub(crate) xdg_cache_home: Option<std::path::PathBuf>,
     /// Local HF-compatible artifact source for compiled-CLI scenarios.
     pub(crate) artifact_server: Option<common::ArtifactFixtureServer>,
     /// Explicit dead-end HF endpoint for unreachable-source scenarios.
     pub(crate) hf_endpoint_override: Option<String>,
-    /// Event log path for resolver-order assertions.
-    pub(crate) download_event_path: Option<std::path::PathBuf>,
     /// Findings from the last run-declaration validation.
     pub(crate) run_findings: Vec<givn::cli::run_block::RunFinding>,
     /// Reserved fixed port written into the fixture's run declaration.
@@ -285,15 +214,6 @@ fn change_id_from_args(args: &[String]) -> Option<String> {
         return None;
     }
     args.iter().skip(1).rfind(|a| a.as_str() != "--").cloned()
-}
-
-/// The directory of the change the current scenario is acting on, defaulting
-/// to the shared `running-change` fixture id when the scenario did not stage a
-/// custom change id.
-pub(crate) fn remediation_change_dir(world: &GivnWorld) -> std::path::PathBuf {
-    let env = world.env.as_ref().expect("project is required");
-    let id = world.last_change_id.as_deref().unwrap_or("running-change");
-    env.path(&format!("givn/changes/{id}"))
 }
 
 // --- Given -----------------------------------------------------------------
@@ -451,12 +371,6 @@ pub(crate) fn world_envs(world: &GivnWorld) -> Vec<(&'static str, &str)> {
         .and_then(|path| path.to_str())
     {
         environments.push(("XDG_CACHE_HOME", value));
-    }
-    if world.retrieval_bge_local_stub {
-        environments.push(("GIVN_SPEC_BGE_LOCAL_STUB", "1"));
-    }
-    if world.retrieval_nli_local_stub {
-        environments.push(("GIVN_SPEC_NLI_LOCAL_STUB", "1"));
     }
     if let Some(server) = world.artifact_server.as_ref() {
         environments.push(("HF_ENDPOINT", server.endpoint()));
