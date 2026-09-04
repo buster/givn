@@ -350,6 +350,26 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     Ok(())
 }
 
+/// Resolve which group directory an existing capability lives in, by
+/// scanning `givn/specs/*/<cap>.feature`. Returns None if the capability
+/// doesn't exist yet anywhere (a genuinely new capability — the caller
+/// then decides placement; see the `## Capability Routing` section in
+/// proposal.md, Phase 4).
+fn resolve_capability_group(specs_root: &std::path::Path, cap: &str) -> Option<std::path::PathBuf> {
+    let entries = std::fs::read_dir(specs_root).ok()?;
+    for entry in entries.flatten() {
+        let group_dir = entry.path();
+        if !group_dir.is_dir() {
+            continue;
+        }
+        let candidate = group_dir.join(format!("{cap}.feature"));
+        if candidate.exists() {
+            return Some(group_dir);
+        }
+    }
+    None
+}
+
 /// Handle one parsed delta feature: validate its capability tag, then
 /// either retire the capability directory (`@givn.retired`) or merge the
 /// delta into the permanent spec. Extracted from `run`'s merge loop so the
@@ -374,8 +394,13 @@ fn process_delta_file(
     crate::gherkin::delta::validate_capability_tag(&cap)
         .map_err(|e| anyhow::anyhow!("archive blocked: {e} (from '{}')", delta_path.display()))?;
 
-    let permanent_dir = project_root.join("givn/specs").join(&cap);
-    let permanent_path = permanent_dir.join(format!("{cap}.feature"));
+    let specs_root = project_root.join("givn/specs");
+
+    // An existing capability lives in a group directory (grouped layout,
+    // `givn/specs/<group>/<cap>.feature`); a capability that exists nowhere
+    // yet — or one living in the pre-migration flat layout — uses the flat
+    // directory.
+    let grouped_dir = resolve_capability_group(&specs_root, &cap);
 
     if crate::gherkin::delta::is_retired_feature(delta_feature) {
         if !delta_feature.scenarios.is_empty() {
@@ -386,23 +411,52 @@ fn process_delta_file(
                 delta_feature.scenarios.len()
             );
         }
-        if !permanent_dir.exists() {
-            bail!(
-                "archive blocked: '{}' retires capability '{cap}' but \
-                 givn/specs/{cap}/ does not exist",
-                delta_path.display()
-            );
+        match grouped_dir {
+            Some(group_dir) => {
+                // Grouped layout: the capability is one file inside the
+                // group directory. Delete the file, then the group dir if
+                // it became empty — never the whole group (siblings live
+                // there too).
+                let cap_file = group_dir.join(format!("{cap}.feature"));
+                std::fs::remove_file(&cap_file)?;
+                let now_empty = std::fs::read_dir(&group_dir)
+                    .map(|rd| rd.flatten().count() == 0)
+                    .unwrap_or(false);
+                if now_empty {
+                    std::fs::remove_dir(&group_dir)?;
+                }
+                record_retirement(project_root, &cap, change_id)?;
+                println!(
+                    "[{}]   retired → {}",
+                    crate::subprocess::local_timestamp(),
+                    cap_file.display()
+                );
+            }
+            None => {
+                let flat_dir = specs_root.join(&cap);
+                if !flat_dir.exists() {
+                    bail!(
+                        "archive blocked: '{}' retires capability '{cap}' but \
+                         no such capability exists under givn/specs/",
+                        delta_path.display()
+                    );
+                }
+                // Flat layout (pre-migration corpus): the capability owns a
+                // whole directory — delete it.
+                std::fs::remove_dir_all(&flat_dir)?;
+                record_retirement(project_root, &cap, change_id)?;
+                println!(
+                    "[{}]   retired → {}",
+                    crate::subprocess::local_timestamp(),
+                    flat_dir.display()
+                );
+            }
         }
-        std::fs::remove_dir_all(&permanent_dir)?;
-        record_retirement(project_root, &cap, change_id)?;
-        println!(
-            "[{}]   retired → {}",
-            crate::subprocess::local_timestamp(),
-            permanent_dir.display()
-        );
         return Ok(());
     }
 
+    let permanent_dir = grouped_dir.unwrap_or_else(|| specs_root.join(&cap));
+    let permanent_path = permanent_dir.join(format!("{cap}.feature"));
     merge_file(&permanent_path, delta_feature)?;
     println!(
         "[{}]   merged → {}",
@@ -607,7 +661,10 @@ Feature: Dead capability
         let delta_path = project.join("delta.feature");
         let delta = parse_delta("@givn.delta @givn.retired @never-existed\nFeature: Ghost\n");
         let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
-        assert!(err.to_string().contains("does not exist"), "{err}");
+        assert!(
+            err.to_string().contains("no such capability exists"),
+            "{err}"
+        );
     }
 
     #[test]
@@ -663,5 +720,59 @@ Feature: Dead capability
         let merged =
             std::fs::read_to_string(project.join("givn/specs/dead-cap/dead-cap.feature")).unwrap();
         assert!(merged.contains("Extra step"), "{merged}");
+    }
+
+    #[test]
+    fn merge_targets_existing_group_directory() {
+        let (_root, project, _backup) = temp_project();
+        // Migrate the capability into a group directory (grouped layout:
+        // givn/specs/<group>/<cap>.feature).
+        let grouped = project.join("givn/specs/some-group");
+        std::fs::create_dir_all(&grouped).unwrap();
+        std::fs::rename(
+            project.join("givn/specs/dead-cap/dead-cap.feature"),
+            grouped.join("dead-cap.feature"),
+        )
+        .unwrap();
+        std::fs::remove_dir(project.join("givn/specs/dead-cap")).unwrap();
+
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta(
+            "@givn.delta @dead-cap\nFeature: Dead capability\n\n  @givn.added\n  Scenario: Extra step\n    Given another thing\n    Then it works\n",
+        );
+        process_delta_file(&project, "c", &delta_path, &delta).unwrap();
+
+        let merged = std::fs::read_to_string(grouped.join("dead-cap.feature")).unwrap();
+        assert!(merged.contains("Extra step"), "{merged}");
+        assert!(
+            !project.join("givn/specs/dead-cap").exists(),
+            "merge must not create a stray flat directory for a grouped capability"
+        );
+    }
+
+    #[test]
+    fn retirement_targets_grouped_capability_directory() {
+        let (_root, project, _backup) = temp_project();
+        let grouped = project.join("givn/specs/some-group");
+        std::fs::create_dir_all(&grouped).unwrap();
+        std::fs::rename(
+            project.join("givn/specs/dead-cap/dead-cap.feature"),
+            grouped.join("dead-cap.feature"),
+        )
+        .unwrap();
+        std::fs::remove_dir(project.join("givn/specs/dead-cap")).unwrap();
+
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
+        process_delta_file(&project, "c", &delta_path, &delta).unwrap();
+
+        assert!(
+            !grouped.join("dead-cap.feature").exists(),
+            "grouped capability file must be deleted with its directory"
+        );
+        assert!(
+            !project.join("givn/specs/dead-cap").exists(),
+            "no flat directory may appear for a grouped capability"
+        );
     }
 }
