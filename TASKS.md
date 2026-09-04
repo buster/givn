@@ -449,7 +449,7 @@ retirement list below and their specs currently only compile under
 `spec-retrieval`. Do task 1.2 last, after Phase 4, even though it's
 numbered here for narrative continuity with Phase 1.
 
-### [ ] 1.1 Retire the 15 dead capabilities
+### [x] 1.1 Retire the 15 dead capabilities
 
 **Exact retirement list** (verified against `givn/specs/` at the time this
 was written — re-run `ls givn/specs/` and diff against this list before
@@ -670,6 +670,17 @@ note, or a line in `review.md` for whichever change does 1.2) — after
 1.2, re-run both and record the delta. This number is the actual answer to
 "is e2e cost a real problem," which nobody in this whole initiative has
 measured until this task runs.
+
+**Baseline captured 2026-09-04 (post-1.1 retirement, pre-1.2), canonical
+runner `run-tests.sh` (stubs the embedder/rerankers — no real model work):**
+
+- `./run-tests.sh`: 35.0s wall — 400 scenarios (400 passed)
+- `./run-tests.sh --e2e`: 32.6s wall — 75 @e2e scenarios (68 + 5 + 2 across tag-scoped runs)
+- Full `cargo test` (lib tests) runs in <1s; note bare
+  `cargo test --test features_runner` (default features, no stub env) is
+  NOT the canonical entry point — fixture-spawning scenarios then do real
+  debug-build E5/BGE/NLI inference, minutes per scenario. Use
+  `./run-tests.sh` as measured in this baseline.
 
 ---
 
