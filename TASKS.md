@@ -1487,7 +1487,7 @@ features that the deterministic output is unchanged by the refactor
 (diff `givn spec duplicates`'s output before/after this task, restricted
 to non-semantic rows).
 
-### [ ] 4.4 Rewrite the specs for `spec-duplicates`, `spec-explore-change`, `spec-explore-permanent`, `spec-progress-output`
+### [x] 4.4 Rewrite the specs for `spec-duplicates`, `spec-explore-change`, `spec-explore-permanent`, `spec-progress-output`
 
 These four capabilities are **not retired** (Phase 1 explicitly excludes
 them) — they need their `.feature` files rewritten to describe the new
