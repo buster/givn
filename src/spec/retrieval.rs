@@ -3342,11 +3342,13 @@ fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Res
         super::remediation_log::update_log(
             &log_path,
             change_id,
-            super::remediation_log::LogRunKind::Before,
-            head_commit.as_deref(),
-            Some(e5_runtime_ms),
-            bge_runtime_ms,
-            nli_runtime_ms,
+            super::remediation_log::LogRunContext {
+                kind: super::remediation_log::LogRunKind::Before,
+                head_commit: head_commit.as_deref(),
+                e5_runtime_ms: Some(e5_runtime_ms),
+                bge_runtime_ms,
+                nli_runtime_ms,
+            },
             &log_candidates,
             &[],
         )?;
@@ -3395,11 +3397,13 @@ fn semantic_review_core(root: &Path, change_id: &str, write_report: bool) -> Res
                 super::remediation_log::update_log(
                     &log_path,
                     change_id,
-                    super::remediation_log::LogRunKind::After,
-                    head_commit.as_deref(),
-                    Some(e5_runtime_ms),
-                    bge_runtime_ms,
-                    nli_runtime_ms,
+                    super::remediation_log::LogRunContext {
+                        kind: super::remediation_log::LogRunKind::After,
+                        head_commit: head_commit.as_deref(),
+                        e5_runtime_ms: Some(e5_runtime_ms),
+                        bge_runtime_ms,
+                        nli_runtime_ms,
+                    },
                     &[],
                     &completions,
                 )?;

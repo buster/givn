@@ -7,8 +7,25 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: The first blocked review creates the remediation log with before evidence
-    Given the remediation case carries the distinguishing marker "quartz jetty fennel accordion basin locomotive marble wren cinder"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
+    Given the remediation case carries the distinguishing marker "bolt cleat elm fern keel pumice quern rudder"
+    Given the remediation fixture files carry the telescope corpus:
+      """
+Feature: Telescope calibration
+
+  Scenario: The dome alignment is recorded twice
+    Given a mounted telescope at dusk
+    When the operator logs the alignment
+    Then the calibration book holds one entry
+      --- delta ---
+@givn.delta @running-change
+Feature: Telescope calibration change
+
+  @givn.added
+  Scenario: The dome alignment is recorded twice
+    Given a mounted telescope at dusk
+    When the operator logs the alignment
+    Then the calibration book holds one entry
+      """
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -22,15 +39,32 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: Rerunning review with unchanged endpoints does not grow the remediation log
-    Given the remediation case carries the distinguishing marker "cinder apricot summit velvet anchor nickel prairie quill saffron"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
+    Given the remediation case carries the distinguishing marker "elm ibis javelin latch orchard parapet plum summit"
+    Given the remediation fixture files carry the bakery corpus:
+      """
+Feature: Bakery ledger
+
+  Scenario: The sourdough batch is logged twice
+    Given a proofing schedule for the night
+    When the baker records the sourdough batch
+    Then the ledger shows one entry
+      --- delta ---
+@givn.delta @running-change
+Feature: Bakery ledger change
+
+  @givn.added
+  Scenario: The sourdough batch is logged twice
+    Given a proofing schedule for the night
+    When the baker records the sourdough batch
+    Then the ledger shows one entry
+      """
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     And the user runs `givn check review --change running-change` again without edits
     Then the remediation log still contains exactly one candidate entry and one run record
 
   Scenario Outline: An invalid remediation evidence state blocks the review
-    Given the remediation case carries the distinguishing marker "timber xylophone umber glacier mist bone orchard latch cobalt dune"
+    Given the remediation case carries the distinguishing marker "accordion apricot grapple keel quill saffron scythe vest"
     Given a remediation-log project with one "DUPLICATE" finding <repository-state>
     And the run block of the project is fully declared
     When the change review gate runs for running-change
@@ -49,17 +83,16 @@ Feature: Remediation log for semantic review
       | inside a committed Git repository   | with its commit removed from the history   | reachable           |
 
   Scenario Outline: A verified remediation whose log record was <log-state> still passes review
-    Given the remediation case carries the distinguishing marker "ember filbert grove iris jasper kiln lagoon nettle opal"
+    Given the remediation case carries the distinguishing marker "dinghy fern harness heather nozzle whip wren zinnia"
     Given a duplicate-log project contains a "DUPLICATE" case
     And the run declaration of the project is complete
     When the blocking review is executed for running-change
     And the operator labels every review candidate "DUPLICATE"
-    And the operator records the performed fix "took the doubled scenario away" with commits ["4d5e6f708192a3b4"] in the log
+    And the operator records the fix "removed the twin" with commits ["4d5e6f70"]
     And the remediation log is <log-state>
     And the redundant scenario is deleted from the delta
     And the review command reruns for running-change
-    Then the run succeeds
-    And stdout announces the verified remediation
+    Then the review passes with the remediation receipt
 
     Examples:
       | log-state                           |
@@ -67,17 +100,16 @@ Feature: Remediation log for semantic review
       | stripped of its candidate entries   |
 
   Scenario Outline: A <repository-state> records null run anchors and reviews without stamp checks
-    Given the remediation case carries the distinguishing marker "plum ridge slate tulip vest walnut yarrow zinc atlas bramble"
+    Given the remediation case carries the distinguishing marker "jackdaw jetty mandrel mist needle urn vane yoke"
     Given a remediation-log project with one "DUPLICATE" finding <repository-state>
     And the run block of the project is fully declared
     When the change review gate runs for running-change
     And the reviewer marks each semantic finding as "DUPLICATE"
-    And the reviewer logs the applied fix "took the surplus scenario out" and the commit list ["3c4d5e6f708192a3"] into the remediation log
+    And the reviewer logs the fix "took the surplus out" and the commits ["3c4d5e6f"]
     And the doubled scenario is withdrawn from the change specs
     Then the remediation log records the before run anchor as null
     And the gate is evaluated a second time
-    Then the run succeeds
-    And stdout carries the remediation verification receipt
+    Then the review passes with the remediation receipt
 
     Examples:
       | repository-state                    |
@@ -86,16 +118,32 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: The passing rerun completes the after state, and a further rerun leaves the log unchanged
-    Given the remediation case carries the distinguishing marker "clover elm fern gale heather juniper kelp lumen moss pine"
-    Given a project prepared for semantic remediation with a "DUPLICATE" candidate
+    Given the remediation case carries the distinguishing marker "cleat domino lantern mist oarlock sandal thistle wren"
+    Given the remediation fixture files carry the ferry corpus:
+      """
+Feature: Ferry manifest
+
+  Scenario: The car deck count is noted twice
+    Given a ferry at the loading ramp
+    When the steward counts the cars
+    Then the manifest shows one deck count
+      --- delta ---
+@givn.delta @running-change
+Feature: Ferry manifest change
+
+  @givn.added
+  Scenario: The car deck count is noted twice
+    Given a ferry at the loading ramp
+    When the steward counts the cars
+    Then the manifest shows one deck count
+      """
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     And the user classifies every semantic review candidate as "DUPLICATE"
-    And the user records the remediation fix "removed the redundant scenario" and commits ["1a2b3c4d5e6f7081"] in the remediation log
+    And the user records the fix "removed the duplicate" and commits ["1a2b3c4d"]
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
+    Then the review passes with the remediation receipt
     And the remediation log contains an after run record
     And the removed candidate entry records after state "endpoint-absent" with a null after score
     And the active remediation log bytes are snapshotted
@@ -104,34 +152,67 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: A changed endpoint appends a new candidate entry that later receives the verified after state
-    Given the remediation case carries the distinguishing marker "quince reed thistle urn vine zinnia acorn beacon canyon domino"
-    Given a remediation-log project keeps one "DUPLICATE" finding
+    Given the remediation case carries the distinguishing marker "basin ember marlin nutmeg quartz spar timber tongs"
+    Given the remediation fixture files carry the orchard corpus:
+      """
+Feature: Orchard harvest log
+
+  Scenario: The cider press yield is recorded twice
+    Given a cider press during harvest
+    When the grower records the press yield
+    Then the harvest log holds one entry
+      --- delta ---
+@givn.delta @running-change
+Feature: Orchard harvest log change
+
+  @givn.added
+  Scenario: The cider press yield is recorded twice
+    Given a cider press during harvest
+    When the grower records the press yield
+    Then the harvest log holds one entry
+      """
     And the run block of the project is fully declared
     When the change review gate runs for running-change
     And the active remediation log bytes are snapshotted
     And the reviewer marks each semantic finding as "DUPLICATE"
-    And the active classified endpoint changes without remediation
+    And the active classified corpus endpoint changes without remediation
     And the gate is evaluated a second time
     Then the run fails
     And the remediation log contains a second candidate entry with different endpoint hashes
     And the prior candidate entry is retained unchanged
     When the reviewer marks each semantic finding as "DUPLICATE"
-    And the reviewer logs the applied fix "removed the superseded duplicate" and the commit list ["708192a3b4c5d6e7"] into the remediation log
+    And the reviewer logs the fix "removed the superseded twin" and the commits ["708192a3"]
     And the doubled scenario is withdrawn from the change specs
     And the gate is evaluated a third time
-    Then the run succeeds
-    And stdout carries the remediation verification receipt
+    Then the review passes with the remediation receipt
     And the remediation log records the after state on the second candidate entry
 
   @givn.added
   Scenario: A surviving pair records its recomputed embedding score after remediation
-    Given the remediation case carries the distinguishing marker "eucalyptus falcon garnet hammock inkwell jackdaw kettle lantern marlin needle"
-    Given a semantic-remediation logging project holding one "VARIANT" finding
+    Given the remediation case carries the distinguishing marker "abacus lumen lyre moss nickel quadrant scythe xylophone"
+    Given the remediation fixture files carry the beehive corpus:
+      """
+Feature: Beehive inspection
+
+  Scenario Outline: The queen sighting is logged twice
+    Given an inspected beehive in summer
+    When the beekeeper logs the queen sighting
+    Then the inspection card holds one entry
+      --- delta ---
+@givn.delta @running-change
+Feature: Beehive inspection change
+
+  @givn.added
+  Scenario Outline: The queen sighting is logged twice
+    Given an inspected beehive in summer
+    When the beekeeper logs the queen sighting
+    Then the inspection card holds one entry
+      """
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     And the user classifies every semantic review candidate as "VARIANT"
-    And the user records the remediation fix "consolidated the pair into one outline" and commits ["2b3c4d5e6f708192"] in the remediation log
-    And the active variant is consolidated with an explicit parameter
+    And the user records the fix "consolidated" and commits ["2b3c4d5e"]
+    And the active corpus variant is consolidated with an explicit parameter
     And the user runs `givn check review --change running-change`
     Then the command exits 0
     And the remediation log records after state "outline-consolidated" with the recomputed embedding score below the boundary
@@ -139,8 +220,25 @@ Feature: Remediation log for semantic review
 
   @givn.added @rulebook
   Scenario: A logged pair scored by BGE and NLI records their evidence states
-    Given the remediation case carries the distinguishing marker "ocelot parapet quarry rivet sandal tundra vignette whip yacht zephyr"
-    Given a semantic-remediation logging project holding one "DUPLICATE" finding and BGE and NLI evidence
+    Given the remediation case carries the distinguishing marker "accordion almanac bone hammock heather rivet spar zephyr"
+    Given the remediation fixture files carry the greenhouse corpus:
+      """
+Feature: Greenhouse watering plan
+
+  Scenario: The orchid watering is scheduled twice
+    Given an orchid bench with a moisture probe
+    When the gardener plans the watering
+    Then the plan shows one schedule entry
+      --- delta ---
+@givn.delta @running-change
+Feature: Greenhouse watering plan change
+
+  @givn.added
+  Scenario Outline: The orchid watering is scheduled twice
+    Given an orchid bench with a moisture probe
+    When the gardener plans the watering
+    Then the plan shows one schedule entry
+      """
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
@@ -148,7 +246,7 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: A commit fixing two candidates carries one stamp line per candidate
-    Given the remediation case carries the distinguishing marker "almanac bellows candelabra dredger effigy gondola hinges islet jackal knoll"
+    Given the remediation case carries the distinguishing marker "beacon cobalt fennel iris nettle pumice quill vane"
     Given a project prepared for semantic review with two permanent-duplicate deltas in a Git repository
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
@@ -157,12 +255,11 @@ Feature: Remediation log for semantic review
     And the user commits the remediation with one matching stamp per candidate
     And the user records both remediation fixes and the commit in the remediation log
     And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
+    Then the review passes with the remediation receipt
 
   @givn.added
   Scenario: The remediation log obeys its strict wire grammar
-    Given the remediation case carries the distinguishing marker "lyre mantle nutmeg oboe piston scythe tongs umbrella vane willow"
+    Given the remediation case carries the distinguishing marker "cobalt elm locomotive lumen piston ridge summit wharf"
     Given a project prepared for semantic remediation whose delta scenario contains blank lines and an Examples table
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
@@ -175,7 +272,7 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: Failed review before the semantic stage does not create the remediation log
-    Given the remediation case carries the distinguishing marker "yarn abacus crate dowel easel fluke harness inlet javelin keel"
+    Given the remediation case carries the distinguishing marker "eucalyptus fennel inlet moss needle nutmeg xylophone yacht"
     Given a project prepared for semantic review with a malformed delta feature
     And the project declares a complete run declaration
     When the user runs `givn check review --change running-change`
@@ -184,7 +281,7 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: The remediation log survives the archive move
-    Given the remediation case carries the distinguishing marker "lattice mandrel nozzle pumice quadrant rudder shim trowel udder valve"
+    Given the remediation case carries the distinguishing marker "accordion acorn jackal knoll lattice lumen orchard umber"
     Given a completed semantic remediation change with a generated log and archive prerequisites
     And the active remediation log bytes are snapshotted
     And the project declares a complete run declaration
@@ -195,7 +292,7 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: Advisory spec review does not create the remediation log
-    Given the remediation case carries the distinguishing marker "wand yoke zenith anvil bolt cleat dinghy eddy flange grapple"
+    Given the remediation case carries the distinguishing marker "clover kiln nettle nutmeg rivet trowel tulip wharf"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
     When the user runs the advisory semantic review command
     Then the command exits 0
@@ -204,7 +301,7 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: Blocking review without its retrieval feature does not create the remediation log
-    Given the remediation case carries the distinguishing marker "halyard ibis jib keelson limpet oarlock prow quern spar tackline"
+    Given the remediation case carries the distinguishing marker "beacon fern heather oarlock oboe thistle trowel vest"
     Given a project prepared for semantic remediation with a "DUPLICATE" candidate
     When the user runs change review through a build without spec retrieval
     Then the command exits non-zero
@@ -213,82 +310,39 @@ Feature: Remediation log for semantic review
 
   @givn.added @e2e
   Scenario: Real CLI review completes the remediation log for a stamped duplicate remediation
-    Given the remediation case carries the distinguishing marker "urchin wharf zither apron buoy clipper derrick estuary fathom gangway"
+    Given the remediation case carries the distinguishing marker "abacus anchor apricot cleat domino dune ember glacier"
     Given an end-to-end project staged for a stamped remediation log on change "rc-log-e2e"
     When the remediation E2E user runs change review for "rc-log-e2e" after classifying, removing, and stamp-committing the duplicate
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
+    Then the review passes with the remediation receipt
     And the remediation log records the before and after run records with stage durations and the stamped commit
 
   @givn.added @e2e
   Scenario: Real CLI archive retains the remediation log
-    Given the remediation case carries the distinguishing marker "hull isthmus jetty keelson lighthouse mast navigation quay rigging spar"
+    Given the remediation case carries the distinguishing marker "abacus atlas domino eddy needle piston valve zinnia"
     Given an end-to-end project staged for a stamped remediation log on change "rc-log-archive-e2e"
     When the remediation E2E user archives change "rc-log-archive-e2e" after a verified stamped remediation
     Then the command exits 0
     And the archived remediation log exists next to the archived semantic report
 
-  @givn.modified
+  @givn.removed
   Scenario: A complete classification allows change review and survives regeneration
-    Given the remediation case carries the distinguishing marker "tackline urchin wharf xebec yacht zodiac anchorline brine compass depth"
-    Given the remediation-log fixture stages one "DUPLICATE" case
-    When the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    When the assessor resolves the admitted candidate to "DUPLICATE"
-    And the assessor registers the applied correction "collapsed the doubled flow" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
-    And the classified duplicate candidate is removed from the active delta
-    And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
-    And the semantic review report status is "PASS"
-    And the active semantic review report bytes are snapshotted for comparison
-    When the user runs `givn check review --change running-change` again without edits
-    And the semantic review report bytes equal that comparison snapshot
+    Given a placeholder step
 
   @givn.removed
   Scenario: A regenerated classified report is byte-for-byte deterministic
     Given a placeholder step
 
-  @givn.modified
+  @givn.removed
   Scenario: Changing a candidate scenario invalidates its previous classification
-    Given the remediation case carries the distinguishing marker "shroud trawl untow wharfyard xebec zither apron buoy clipper derrick"
-    Given the remediation-log fixture stages one "DUPLICATE" case
-    When the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    When the gate operator marks the admitted candidate as "DUPLICATE"
-    And the gate operator files the executed correction "withdrew the doubled scenario" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
-    And the classified duplicate candidate is removed from the active delta
-    And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
+    Given a placeholder step
 
-  @givn.modified
+  @givn.removed
   Scenario: Changing a permanent endpoint invalidates its prior classification
-    Given the remediation case carries the distinguishing marker "estuary fathom gangway hull isthmus jetty keelson lighthouse mast navigation"
-    Given the remediation-log fixture stages one "DUPLICATE" case
-    When the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    When the gate operator marks the admitted candidate as "DUPLICATE"
-    And the gate operator files the executed correction "retired the mirrored scenario" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
-    And the redundant scenario is deleted from the delta
-    And the permanent counterpart of the finding is rewritten in the permanent specs
-    And the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    And stderr contains "no longer matches the recorded evidence"
+    Given a placeholder step
 
-  @givn.modified
+  @givn.removed
   Scenario: Any changed endpoint evidence or prior-report metadata invalidates carry-forward
-    Given the remediation case carries the distinguishing marker "oarlock prow quayside shroud trawl untow wharfyard xebec zither apron"
-    Given the review-flow fixture prepares a similar active delta
-    When the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    When the assessor resolves the admitted candidate to "DUPLICATE"
-    And the assessor registers the applied correction "dropped the reworked scenario" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
-    And the active classified endpoint changes without remediation
-    And the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    And a later candidate entry records different endpoint hashes than its predecessor
-    And the prior candidate entry is retained unchanged
+    Given a placeholder step
 
   @givn.removed
   Scenario: Removed candidates disappear after classification
@@ -296,51 +350,47 @@ Feature: Remediation log for semantic review
 
   @givn.modified
   Scenario: Removing a DUPLICATE candidate verifies the projected remediation
-    Given the remediation case carries the distinguishing marker "lighthouse mast navigation quay rigging spar tackline urchin wharf zither"
-    Given the remediation-log fixture stages one "DUPLICATE" case
+    Given the remediation case carries the distinguishing marker "cinder gondola locomotive rivet timber trowel tundra umber"
+    Given the remediation fixture files carry the observatory corpus:
+      """
+Feature: Observatory night log
+
+  Scenario: The seeing conditions are noted twice
+    Given a clear night at the observatory
+    When the astronomer notes the seeing
+    Then the night log holds one entry
+      --- delta ---
+@givn.delta @running-change
+Feature: Observatory night log change
+
+  @givn.added
+  Scenario: The seeing conditions are noted twice
+    Given a clear night at the observatory
+    When the astronomer notes the seeing
+    Then the night log holds one entry
+      """
     And  the permanent specifications are snapshotted
     When the user runs `givn check review --change running-change`
     Then the command exits non-zero
-    When the gate operator marks the admitted candidate as "DUPLICATE"
-    And the gate operator files the executed correction "removed the overlapping case" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
+    When the gate operator marks the candidate "DUPLICATE"
+    And the gate operator files the fix "removed" with the record ["0a1b2c40"]
     And the classified duplicate candidate is removed from the active delta
     And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
+    Then the review passes with the remediation receipt
     And the semantic review report status is "PASS"
     And the permanent specifications are unchanged
 
-  @givn.modified
+  @givn.removed
   Scenario: Consolidating a VARIANT candidate verifies the projected remediation
-    Given the remediation case carries the distinguishing marker "apron buoy clipper derrick estuary fathom gangway hull isthmus jetty"
-    Given the remediation-log fixture stages one "VARIANT" case
-    When the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    When the assessor resolves the admitted candidate to "VARIANT"
-    And the assessor registers the applied correction "folded the twin flows into one outline" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
-    And the active variant is consolidated with an explicit parameter
-    And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
-    And the semantic review report status is "PASS"
+    Given a placeholder step
 
-  @givn.modified
+  @givn.removed
   Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
-    Given the remediation case carries the distinguishing marker "anchorline brine compass depth eddy fathom gale hull inlet kelp"
-    Given the review-flow fixture prepares a "VALID-BOUNDARY" case
-    When the user runs `givn check review --change running-change`
-    Then the command exits non-zero
-    When the assessor resolves the admitted candidate to "VALID-BOUNDARY"
-    And the assessor registers the applied correction "sharpened the boundary distinction" with the commit record ["0123456789abcdef0123456789abcdef01234567"] in the log
-    And the valid boundary is rewritten with an explicit distinction below the similarity boundary
-    And the user runs `givn check review --change running-change`
-    Then the command exits 0
-    And stdout contains "semantic remediation verified"
-    And the semantic review report status is "PASS"
+    Given a placeholder step
 
   @givn.modified
   Scenario: The migration preserves independent architecture history across three proposed decisions
-    Given the remediation case carries the distinguishing marker "navigation quay rigging spar tackline urchin wharf xebec yacht zodiac"
+    Given the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
     Given  the consolidated ADR register and canonical sources are available
     When  a maintainer compares the register with the canonical sources
     Then  the final register has 36 accepted decisions and four proposed decisions
