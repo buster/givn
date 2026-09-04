@@ -608,7 +608,7 @@ in the whole plan where an actual e2e-cost number gets measured, and
 requirement 1 ("E2E cost is genuinely hurting") depends on this
 comparison existing.
 
-### [ ] 1.3 Remove the `semantic-review.md` sections from the review flow
+### [x] 1.3 Remove the `semantic-review.md` sections from the review flow
 
 **Files:** `assets/instructions/review.md`, `assets/templates/review.md`
 
