@@ -82,5 +82,5 @@ README-IMPACT: none
 
 | Scenario | Decision |
 |---|---|
-| A changed endpoint appends a new candidate entry that later receives the verified after state | keep: the length comes from one sequential review flow over one persisted artifact; every step is a distinct observable assertion, not repeated setup |
+| A changed endpoint appends a candidate entry and receives the verified after state | keep: the length comes from one sequential review flow over one persisted artifact; every step is a distinct observable assertion, not repeated setup |
 | The passing rerun completes the after state, and a further rerun leaves the log unchanged | keep: the length comes from one sequential review flow over one persisted artifact; every step is a distinct observable assertion, not repeated setup |

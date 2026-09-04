@@ -151,15 +151,14 @@ Feature: Ferry manifest change
     Then the remediation log bytes equal the active log snapshot
 
   @givn.added
-  Scenario: A changed endpoint appends a new candidate entry that later receives the verified after state
-    Given the remediation case carries the distinguishing marker "basin ember marlin nutmeg quartz spar timber tongs"
+  Scenario: A changed endpoint appends a candidate entry and receives the verified after state
+    Given the remediation case carries the distinguishing marker "basin ember marlin quartz spar tongs"
     Given the remediation fixture files carry the orchard corpus:
       """
 Feature: Orchard harvest log
 
   Scenario: The cider press yield is recorded twice
     Given a cider press during harvest
-    When the grower records the press yield
     Then the harvest log holds one entry
       --- delta ---
 @givn.delta @running-change
@@ -168,7 +167,6 @@ Feature: Orchard harvest log change
   @givn.added
   Scenario: The cider press yield is recorded twice
     Given a cider press during harvest
-    When the grower records the press yield
     Then the harvest log holds one entry
       """
     And the run block of the project is fully declared
@@ -347,6 +345,21 @@ Feature: Greenhouse watering plan change
   @givn.removed
   Scenario: Removed candidates disappear after classification
     Given a placeholder step
+
+  @givn.removed
+  Scenario: A modified delta excludes only its own projected target
+    Given a placeholder step
+
+  @givn.added
+  Scenario: Superseded permanent endpoints leave the semantic pair universe
+    Given a project prepared for semantic review with a modified scenario and another candidate in the same target file
+    And the project declares a complete run declaration
+    When the user runs `givn check review --change running-change`
+    Then the command exits non-zero
+    And the report excludes the modified scenario's own projected target endpoint
+    And the report still contains the other candidate in that target file
+    And the report records the modified delta operation and projected target identity
+    And the report pairs no live endpoint against a superseded permanent body
 
   @givn.modified
   Scenario: Removing a DUPLICATE candidate verifies the projected remediation

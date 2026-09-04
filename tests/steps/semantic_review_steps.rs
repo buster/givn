@@ -1298,19 +1298,21 @@ fn modified_target_semantic_project(world: &mut GivnWorld) {
     fs::create_dir_all(delta.parent().expect("delta parent")).expect("create delta specs");
     fs::write(
         &delta,
-        "@givn.delta @running-change\nFeature: current change\n\n  @givn.modified\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider from the updated catalog\n    Then the command rejects the request\n",
+        "@givn.delta @running-change\nFeature: current change\n\n  @givn.modified\n  Scenario: Provider name is unknown\n    Given a configured provider catalog\n    When the user selects an unknown provider from the updated catalog\n    Then the command rejects the request\n\n  @givn.added\n  Scenario: Provider selection is rejected\n    Given a configured provider catalog\n    When the user selects an unknown provider\n    Then the command rejects the request\n",
     )
     .expect("write modified delta");
     fs::write(
         env.path("givn/changes/running-change/review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n",
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Provider name is unknown` | `Provider selection is rejected` | related |\n",
     )
     .expect("write modified overlap dispositions");
     world.env = Some(env);
     world.retrieval_embedder = Some("stub".to_string());
     world.retrieval_reranker = Some("stub".to_string());
-    world.retrieval_stub_scores =
-        Some("Provider name is unknown|Authentication token is missing=0.9600".to_string());
+    world.retrieval_stub_scores = Some(
+        "Provider name is unknown|Authentication token is missing=0.9600;Provider selection is rejected|Provider name is unknown=0.9600"
+            .to_string(),
+    );
 }
 
 #[then("the report excludes the modified scenario's own projected target endpoint")]
@@ -1328,6 +1330,15 @@ fn report_records_modified_identity(_world: &mut GivnWorld) {
     let report = semantic_report(_world);
     assert!(report.contains("left_delta_operation: modified"));
     assert!(report.contains("left_projected_target: [\"givn/specs/running-change/running-change.feature\",\"Provider name is unknown\"]"));
+}
+
+#[then("the report pairs no live endpoint against a superseded permanent body")]
+fn report_excludes_superseded_permanent_pair(_world: &mut GivnWorld) {
+    let report = semantic_report(_world);
+    assert!(
+        !report.contains("right_title: \"Provider name is unknown\""),
+        "a live endpoint paired against the superseded permanent body"
+    );
 }
 
 #[then("the report contains no permanent-permanent candidate")]
