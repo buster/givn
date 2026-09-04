@@ -7,15 +7,12 @@ Feature: Remediation log for semantic review
 
   @givn.added
   Scenario: The first blocked review creates the remediation log with before evidence
-    Given the remediation case carries the distinguishing marker "bolt cleat elm fern keel pumice quern rudder"
-    Given the remediation fixture files carry the telescope corpus:
+    Given the fixture carries the telescope corpus:
       """
 Feature: Telescope calibration
 
   Scenario: The dome alignment is recorded twice
     Given a mounted telescope at dusk
-    When the operator logs the alignment
-    Then the calibration book holds one entry
       --- delta ---
 @givn.delta @running-change
 Feature: Telescope calibration change
@@ -23,31 +20,26 @@ Feature: Telescope calibration change
   @givn.added
   Scenario: The dome alignment is recorded twice
     Given a mounted telescope at dusk
-    When the operator logs the alignment
-    Then the calibration book holds one entry
       """
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change running-change`
+    And the run declaration is complete
+    When the review gate runs
     Then the command exits non-zero
-    And the remediation log exists
-    And the remediation log declares log schema version 1 and the change id
-    And the remediation log contains a before run record with embedding, BGE, and NLI stage durations
-    And the remediation log contains a candidate entry with the report's candidate id and embedding score
-    And the candidate entry records the BGE and NLI evidence states from the report
-    And the candidate entry records the endpoint scenario text verbatim from the active delta
-    And the candidate entry records the endpoint content and evidence hashes from the report
+    And the log exists
+    And the log declares schema version 1 and the change id
+    And the log records the before run stage durations
+    And the log records the candidate id and embedding score
+    And the entry records the BGE and NLI states from the report
+    And the entry records the scenario text verbatim
+    And the entry records the endpoint hashes
 
   @givn.added
   Scenario: Rerunning review with unchanged endpoints does not grow the remediation log
-    Given the remediation case carries the distinguishing marker "elm ibis javelin latch orchard parapet plum summit"
-    Given the remediation fixture files carry the bakery corpus:
+    Given the fixture carries the bakery corpus:
       """
 Feature: Bakery ledger
 
   Scenario: The sourdough batch is logged twice
     Given a proofing schedule for the night
-    When the baker records the sourdough batch
-    Then the ledger shows one entry
       --- delta ---
 @givn.delta @running-change
 Feature: Bakery ledger change
@@ -55,78 +47,70 @@ Feature: Bakery ledger change
   @givn.added
   Scenario: The sourdough batch is logged twice
     Given a proofing schedule for the night
-    When the baker records the sourdough batch
-    Then the ledger shows one entry
       """
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change running-change`
-    And the user runs `givn check review --change running-change` again without edits
-    Then the remediation log still contains exactly one candidate entry and one run record
+    And the run declaration is complete
+    When the review gate runs
+    And the review gate reruns
+    Then the log still holds one candidate entry and one run record
 
   Scenario Outline: An invalid remediation evidence state blocks the review
-    Given the remediation case carries the distinguishing marker "accordion apricot grapple keel quill saffron scythe vest"
     Given a remediation-log project with one "DUPLICATE" finding <repository-state>
-    And the run block of the project is fully declared
-    When the change review gate runs for running-change
-    And the reviewer marks each semantic finding as "DUPLICATE"
-    And the doubled scenario is withdrawn from the change specs
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "DUPLICATE"
+    And the doubled scenario is withdrawn
     And the remediation evidence is left <evidence-state>
-    And the gate is evaluated a second time
+    And the gate reruns
     Then the run fails
     And the diagnostic names "<expected-diagnostic>"
 
     Examples:
-      | repository-state                    | evidence-state                             | expected-diagnostic |
-      | without Git history                 | without commit evidence                    | remediation log     |
-      | inside a committed Git repository   | without the stamp                          | semantic-remediation |
-      | inside a committed Git repository   | with a stamp naming another candidate      | semantic-remediation |
-      | inside a committed Git repository   | with its commit removed from the history   | reachable           |
+      | repository-state                  | evidence-state                           | expected-diagnostic  |
+      | without Git history               | without commit evidence                  | remediation log      |
+      | inside a committed Git repository | without the stamp                        | semantic-remediation |
+      | inside a committed Git repository | with a stamp naming another candidate    | semantic-remediation |
+      | inside a committed Git repository | with its commit removed from the history | reachable            |
 
   Scenario Outline: A verified remediation whose log record was <log-state> still passes review
-    Given the remediation case carries the distinguishing marker "dinghy fern harness heather nozzle whip wren zinnia"
     Given a duplicate-log project contains a "DUPLICATE" case
-    And the run declaration of the project is complete
-    When the blocking review is executed for running-change
-    And the operator labels every review candidate "DUPLICATE"
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "DUPLICATE"
     And the operator records the fix "removed the twin" with commits ["4d5e6f70"]
     And the remediation log is <log-state>
     And the redundant scenario is deleted from the delta
-    And the review command reruns for running-change
+    And the review gate reruns
     Then the review passes with the remediation receipt
 
     Examples:
-      | log-state                           |
-      | deleted entirely                    |
-      | stripped of its candidate entries   |
+      | log-state                         |
+      | deleted entirely                  |
+      | stripped of its candidate entries |
 
   Scenario Outline: A <repository-state> records null run anchors and reviews without stamp checks
-    Given the remediation case carries the distinguishing marker "jackdaw jetty mandrel mist needle urn vane yoke"
     Given a remediation-log project with one "DUPLICATE" finding <repository-state>
-    And the run block of the project is fully declared
-    When the change review gate runs for running-change
-    And the reviewer marks each semantic finding as "DUPLICATE"
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "DUPLICATE"
     And the reviewer logs the fix "took the surplus out" and the commits ["3c4d5e6f"]
-    And the doubled scenario is withdrawn from the change specs
-    Then the remediation log records the before run anchor as null
-    And the gate is evaluated a second time
+    And the doubled scenario is withdrawn
+    Then the log records a null before run anchor
+    And the gate reruns
     Then the review passes with the remediation receipt
 
     Examples:
-      | repository-state                    |
-      | without Git history                 |
-      | inside an unborn Git repository     |
+      | repository-state                  |
+      | without Git history               |
+      | inside an unborn Git repository   |
 
   @givn.added
   Scenario: The passing rerun completes the after state, and a further rerun leaves the log unchanged
-    Given the remediation case carries the distinguishing marker "cleat domino lantern mist oarlock sandal thistle wren"
-    Given the remediation fixture files carry the ferry corpus:
+    Given the fixture carries the ferry corpus:
       """
 Feature: Ferry manifest
 
   Scenario: The car deck count is noted twice
     Given a ferry at the loading ramp
-    When the steward counts the cars
-    Then the manifest shows one deck count
       --- delta ---
 @givn.delta @running-change
 Feature: Ferry manifest change
@@ -134,32 +118,28 @@ Feature: Ferry manifest change
   @givn.added
   Scenario: The car deck count is noted twice
     Given a ferry at the loading ramp
-    When the steward counts the cars
-    Then the manifest shows one deck count
       """
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change running-change`
-    And the user classifies every semantic review candidate as "DUPLICATE"
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "DUPLICATE"
     And the user records the fix "removed the duplicate" and commits ["1a2b3c4d"]
-    And the classified duplicate candidate is removed from the active delta
-    And the user runs `givn check review --change running-change`
+    And the classified duplicate is removed
+    And the review gate reruns
     Then the review passes with the remediation receipt
-    And the remediation log contains an after run record
-    And the removed candidate entry records after state "endpoint-absent" with a null after score
-    And the active remediation log bytes are snapshotted
-    When the user runs `givn check review --change running-change` again without edits
-    Then the remediation log bytes equal the active log snapshot
+    And the log contains an after run record
+    And the removed entry records after state "endpoint-absent" with a null after score
+    And the log bytes are snapshotted
+    And the review gate reruns
+    Then the log bytes equal the snapshot
 
   @givn.added
   Scenario: A changed endpoint appends a candidate entry and receives the verified after state
-    Given the remediation case carries the distinguishing marker "basin ember marlin quartz spar tongs"
-    Given the remediation fixture files carry the orchard corpus:
+    Given the fixture carries the orchard corpus:
       """
 Feature: Orchard harvest log
 
   Scenario: The cider press yield is recorded twice
     Given a cider press during harvest
-    Then the harvest log holds one entry
       --- delta ---
 @givn.delta @running-change
 Feature: Orchard harvest log change
@@ -167,35 +147,30 @@ Feature: Orchard harvest log change
   @givn.added
   Scenario: The cider press yield is recorded twice
     Given a cider press during harvest
-    Then the harvest log holds one entry
       """
-    And the run block of the project is fully declared
-    When the change review gate runs for running-change
-    And the active remediation log bytes are snapshotted
-    And the reviewer marks each semantic finding as "DUPLICATE"
-    And the active classified corpus endpoint changes without remediation
-    And the gate is evaluated a second time
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "DUPLICATE"
+    And the classified endpoint changes
+    And the gate reruns
     Then the run fails
-    And the remediation log contains a second candidate entry with different endpoint hashes
+    And a second entry records different endpoint hashes
     And the prior candidate entry is retained unchanged
-    When the reviewer marks each semantic finding as "DUPLICATE"
+    And the assessor resolves the candidate to "DUPLICATE"
     And the reviewer logs the fix "removed the superseded twin" and the commits ["708192a3"]
-    And the doubled scenario is withdrawn from the change specs
-    And the gate is evaluated a third time
+    And the doubled scenario is withdrawn
+    And the gate reruns
     Then the review passes with the remediation receipt
-    And the remediation log records the after state on the second candidate entry
+    And the second entry records its after state
 
   @givn.added
   Scenario: A surviving pair records its recomputed embedding score after remediation
-    Given the remediation case carries the distinguishing marker "abacus lumen lyre moss nickel quadrant scythe xylophone"
-    Given the remediation fixture files carry the beehive corpus:
+    Given the fixture carries the beehive corpus:
       """
 Feature: Beehive inspection
 
   Scenario Outline: The queen sighting is logged twice
     Given an inspected beehive in summer
-    When the beekeeper logs the queen sighting
-    Then the inspection card holds one entry
       --- delta ---
 @givn.delta @running-change
 Feature: Beehive inspection change
@@ -203,30 +178,25 @@ Feature: Beehive inspection change
   @givn.added
   Scenario Outline: The queen sighting is logged twice
     Given an inspected beehive in summer
-    When the beekeeper logs the queen sighting
-    Then the inspection card holds one entry
       """
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change running-change`
-    And the user classifies every semantic review candidate as "VARIANT"
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "VARIANT"
     And the user records the fix "consolidated" and commits ["2b3c4d5e"]
-    And the active corpus variant is consolidated with an explicit parameter
-    And the user runs `givn check review --change running-change`
+    And the corpus variant is consolidated
+    And the review gate reruns
     Then the command exits 0
-    And the remediation log records after state "outline-consolidated" with the recomputed embedding score below the boundary
+    And the log records the "outline-consolidated" after state with a recomputed score below the boundary
     And the candidate entry records the consolidated outline text verbatim from the active delta
 
   @givn.added @rulebook
   Scenario: A logged pair scored by BGE and NLI records their evidence states
-    Given the remediation case carries the distinguishing marker "accordion almanac bone hammock heather rivet spar zephyr"
-    Given the remediation fixture files carry the greenhouse corpus:
+    Given the fixture carries the greenhouse corpus:
       """
 Feature: Greenhouse watering plan
 
-  Scenario: The orchid watering is scheduled twice
+  Scenario Outline: The orchid watering is scheduled twice
     Given an orchid bench with a moisture probe
-    When the gardener plans the watering
-    Then the plan shows one schedule entry
       --- delta ---
 @givn.delta @running-change
 Feature: Greenhouse watering plan change
@@ -234,25 +204,22 @@ Feature: Greenhouse watering plan change
   @givn.added
   Scenario Outline: The orchid watering is scheduled twice
     Given an orchid bench with a moisture probe
-    When the gardener plans the watering
-    Then the plan shows one schedule entry
       """
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change running-change`
+    And the run declaration is complete
+    When the review gate runs
     Then the command exits non-zero
-    And the remediation log records the candidate's BGE and NLI evidence states as non-null values from the report
+    And the log records non-null BGE and NLI states
 
   @givn.added
   Scenario: A commit fixing two candidates carries one stamp line per candidate
-    Given the remediation case carries the distinguishing marker "beacon cobalt fennel iris nettle pumice quill vane"
     Given a project prepared for semantic review with two permanent-duplicate deltas in a Git repository
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change running-change`
-    And the user classifies every semantic review candidate as "DUPLICATE"
-    And the classified duplicate candidates are removed from the active deltas
+    And the run declaration is complete
+    When the review gate runs
+    And the assessor resolves the candidate to "DUPLICATE"
+    And both classified duplicates are removed
     And the user commits the remediation with one matching stamp per candidate
-    And the user records both remediation fixes and the commit in the remediation log
-    And the user runs `givn check review --change running-change`
+    And both fixes are recorded in the log
+    And the review gate reruns
     Then the review passes with the remediation receipt
 
   @givn.added
@@ -363,15 +330,12 @@ Feature: Greenhouse watering plan change
 
   @givn.modified
   Scenario: Removing a DUPLICATE candidate verifies the projected remediation
-    Given the remediation case carries the distinguishing marker "cinder gondola locomotive rivet timber trowel tundra umber"
-    Given the remediation fixture files carry the observatory corpus:
+    Given the fixture carries the observatory corpus:
       """
 Feature: Observatory night log
 
   Scenario: The seeing conditions are noted twice
     Given a clear night at the observatory
-    When the astronomer notes the seeing
-    Then the night log holds one entry
       --- delta ---
 @givn.delta @running-change
 Feature: Observatory night log change
@@ -379,19 +343,16 @@ Feature: Observatory night log change
   @givn.added
   Scenario: The seeing conditions are noted twice
     Given a clear night at the observatory
-    When the astronomer notes the seeing
-    Then the night log holds one entry
       """
-    And  the permanent specifications are snapshotted
-    When the user runs `givn check review --change running-change`
+    And the permanent specs are snapshotted
+    When the review gate runs
     Then the command exits non-zero
-    When the gate operator marks the candidate "DUPLICATE"
-    And the gate operator files the fix "removed" with the record ["0a1b2c40"]
-    And the classified duplicate candidate is removed from the active delta
-    And the user runs `givn check review --change running-change`
+    When the assessor resolves the candidate to "DUPLICATE"
+    And the reviewer logs the fix "removed" and the commits ["0a1b2c40"]
+    And the classified duplicate is removed
+    And the review gate reruns
     Then the review passes with the remediation receipt
-    And the semantic review report status is "PASS"
-    And the permanent specifications are unchanged
+    And the permanent specs are unchanged
 
   @givn.removed
   Scenario: Consolidating a VARIANT candidate verifies the projected remediation
@@ -399,6 +360,10 @@ Feature: Observatory night log change
 
   @givn.removed
   Scenario: Rewriting a VALID-BOUNDARY candidate below the boundary verifies the projected remediation
+    Given a placeholder step
+
+  @givn.removed
+  Scenario: Folding the variant body into a Scenario Outline passes the first-change gate
     Given a placeholder step
 
   @givn.modified

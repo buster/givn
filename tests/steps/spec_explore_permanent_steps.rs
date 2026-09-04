@@ -160,7 +160,7 @@ fn explore_without_retrieval_feature(world: &mut GivnWorld) {
 }
 
 #[given("the permanent specifications are snapshotted")]
-fn snapshot_permanent_specs(world: &mut GivnWorld) {
+pub(crate) fn snapshot_permanent_specs(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("exploration project is required");
     let specs = env.path("givn/specs");
     let mut snapshot = Vec::new();
@@ -188,7 +188,7 @@ fn no_human_result_title(world: &mut GivnWorld, title: String) {
 }
 
 #[then("the permanent specifications are unchanged")]
-fn permanent_specs_unchanged(world: &mut GivnWorld) {
+pub(crate) fn permanent_specs_unchanged(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("exploration project is required");
     let before = world
         .permanent_spec_snapshot
