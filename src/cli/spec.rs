@@ -107,15 +107,12 @@ pub fn run_find(query: &str) -> Result<()> {
     println!("{} scenario(s) match '{query}':", hits.len());
     for hit in &hits {
         println!(
-            "  [{}] {} / {}{}",
+            "  [{}] {} / {} — {}",
             if hit.e2e { "e2e" } else { "   " },
             hit.group,
             hit.capability,
-            if hit.e2e {
-                format!(" — {}", hit.scenario)
-            } else {
-                format!(" — {}", hit.scenario)
-            }
+            " — ",
+            hit.scenario
         );
     }
     Ok(())

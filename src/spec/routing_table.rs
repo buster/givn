@@ -391,7 +391,7 @@ mod tests {
 
     #[test]
     fn new_decision_without_group_md_interactions_entry_fails() {
-        let (root, project) = temp_project();
+        let (_root, project) = temp_project();
         let base = project.join("givn/specs");
         std::fs::create_dir_all(base.join("gates")).unwrap();
         std::fs::write(
@@ -447,7 +447,7 @@ mod tests {
 
     #[test]
     fn change_without_delta_specs_passes_trivially() {
-        let (root, project) = temp_project();
+        let (_root, project) = temp_project();
         let change = project.join("givn/changes/my-change");
         std::fs::create_dir_all(&change).unwrap();
         check_routing_consistency(&project, "my-change").unwrap();

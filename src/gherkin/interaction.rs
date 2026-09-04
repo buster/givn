@@ -62,10 +62,10 @@ pub fn group_coverages(root: &Path) -> Result<Vec<GroupCoverage>> {
         let group_md = group_dir.join("group.md");
         if group_md.exists() {
             let text = std::fs::read_to_string(&group_md)?;
-            match crate::gherkin::group_md::parse_group_md(&text) {
-                Ok(doc) => declared = doc.interactions.len(),
-                Err(_) => {} // group_md_invalid is reported by the graph check
+            if let Ok(doc) = crate::gherkin::group_md::parse_group_md(&text) {
+                declared = doc.interactions.len();
             }
+            // Parse failures are reported by the graph check.
         }
 
         let mut e2e = 0usize;
@@ -106,18 +106,16 @@ pub fn interaction_gate_findings(root: &Path) -> Vec<Finding> {
         let (direction, detail) = if c.e2e_scenarios > c.declared_interactions {
             (
                 "over-coverage",
-                format!(
-                    "more @e2e scenarios than declared interactions — every @e2e must map to \
+                "more @e2e scenarios than declared interactions — every @e2e must map to \
                      one inventory entry; drop the tag or declare the interaction"
-                ),
+                    .to_string(),
             )
         } else {
             (
                 "under-coverage",
-                format!(
-                    "declared interactions without a matching @e2e scenario — the spec is \
+                "declared interactions without a matching @e2e scenario — the spec is \
                      incomplete; add the @e2e scenario or fix the inventory"
-                ),
+                    .to_string(),
             )
         };
         findings.push(Finding {
