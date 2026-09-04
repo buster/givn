@@ -191,6 +191,23 @@ from this output (if the runner is coverage-instrumented).
 
 **Coverage measured:** YES / NO (YES = verify.command is coverage-instrumented and output contained coverage data)
 
+## Overlap dispositions
+
+For every shape-match finding involving this change's delta, one row.
+Decision must be one of: `duplicate`, `variant`, `boundary`.
+
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| | | |
+
+## Split-or-keep
+
+For every scenario longer than the lint threshold, one row: `split` or `keep`.
+
+| Scenario | Decision |
+|---|---|
+| | |
+
 ## Sign-off
 
 - [ ] Fabrication audit: CLEAN (0 empty step bodies, all commits verified,

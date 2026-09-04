@@ -126,6 +126,34 @@ mod tests {
     }
 
     #[test]
+    fn filled_in_review_template_parses() {
+        // The template the archive flow scaffolds must carry headings the
+        // parser recognises — this is the test that would have caught the
+        // heading-mismatch bug that shipped with the disposition gate.
+        let template = crate::config::embedded::Assets::get_str("templates/review.md")
+            .expect("embedded review template");
+        // Fill the scaffolded tables the way an author would.
+        let filled = template
+            .replace(
+                "| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| | | |",
+                "| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `One` | `Two` | boundary |",
+            )
+            .replace(
+                "| Scenario | Decision |\n|---|---|\n| | |",
+                "| Scenario | Decision |\n|---|---|\n| `The marathon` | keep |",
+            );
+        assert!(filled.contains("| `One` | `Two` | boundary |"), "template table shape changed — update this test");
+        let (rows, split) = parse_review_content(&filled);
+        assert!(
+            disposed(&rows, "One", "Two"),
+            "a filled-in disposition row from the real template must clear the finding"
+        );
+        assert_eq!(split.len(), 1);
+        assert_eq!(split[0].title, "The marathon");
+        assert_eq!(split[0].decision, "keep");
+    }
+
+    #[test]
     fn parses_split_or_keep_rows() {
         let content =
             "## Split-or-keep\n\n| Scenario | Decision |\n|---|---|\n| `The marathon` | keep |\n";
