@@ -31,6 +31,7 @@ pub struct ScenarioInfo {
     pub title: String,
     pub file: PathBuf,
     pub capability: Option<String>,
+    pub group: Option<String>,
     pub is_delta: bool,
     pub op: DeltaOp,
     pub fingerprint: Fingerprint,
@@ -66,7 +67,16 @@ fn collect_from_file(file: &Path, specs_root: &Path, is_delta: bool, out: &mut V
         Ok(f) => f,
         Err(_) => return, // unparseable files produce no scenarios
     };
+    // The capability is the file stem — stable regardless of directory depth
+    // or grouping scheme.
     let capability = file
+        .file_stem()
+        .map(|n| n.to_string_lossy().into_owned());
+    // The group is the immediate parent directory name, one level under
+    // specs_root. This used to be conflated with `capability` — see the
+    // duplicate_title exemption below for why that was a bug once grouping
+    // landed.
+    let group = file
         .parent()
         .filter(|p| p.parent() == Some(specs_root))
         .and_then(|p| p.file_name())
@@ -82,6 +92,7 @@ fn collect_from_file(file: &Path, specs_root: &Path, is_delta: bool, out: &mut V
             title: scenario.name.clone(),
             file: file.to_path_buf(),
             capability: capability.clone(),
+            group: group.clone(),
             is_delta,
             op,
             fingerprint,
@@ -319,4 +330,80 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
     }
     println!("  ✓ overlap dispositions passed");
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// Temp project with a grouped specs tree seeded from (rel, text) pairs.
+    fn temp_tree(files: &[(&str, &str)]) -> tempfile::TempDir {
+        let root = tempfile::TempDir::new().unwrap();
+        for (rel, text) in files {
+            let path = root.path().join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        }
+        root
+    }
+
+    /// Regression test for the capability/group conflation bug: two
+    /// different capabilities sharing a group directory must still be
+    /// compared by title. Before the fix, both resolved `.capability` to
+    /// the group name, the duplicate_title exemption wrongly applied, and
+    /// the finding was suppressed.
+    #[test]
+    fn same_title_in_different_capabilities_of_one_group_is_flagged() {
+        let root = temp_tree(&[
+            (
+                "givn/specs/example-group/cap-a.feature",
+                "Feature: Cap A\n\n  Scenario: Same title\n    Given x\n    Then y\n",
+            ),
+            (
+                "givn/specs/example-group/cap-b.feature",
+                "Feature: Cap B\n\n  Scenario: Same title\n    Given y\n    Then z\n",
+            ),
+        ]);
+        let scenarios = collect_tree(root.path());
+        assert_eq!(scenarios.len(), 2);
+        assert_eq!(scenarios[0].capability.as_deref(), Some("cap-a"));
+        assert_eq!(scenarios[0].group.as_deref(), Some("example-group"));
+        let findings = title_duplicates(&scenarios);
+        assert!(
+            findings.iter().any(|f| f.kind == "duplicate_title"),
+            "same title in two capabilities of one group must be flagged, got {findings:?}"
+        );
+    }
+
+    #[test]
+    fn modified_delta_still_exempt_for_same_capability() {
+        let root = temp_tree(&[
+            (
+                "givn/specs/old-layout/old-cap/old-cap.feature",
+                "Feature: Old cap\n\n  Scenario: Shared\n    Given x\n    Then y\n",
+            ),
+            (
+                "givn/changes/c1/specs/old-layout/old-cap/old-cap.feature",
+                "@givn.delta @old-cap\nFeature: Old cap\n\n  @givn.modified\n  Scenario: Shared\n    Given x\n    Then y2\n",
+            ),
+        ]);
+        let scenarios = collect_tree(root.path());
+        let findings = title_duplicates(&scenarios);
+        assert!(
+            findings.is_empty(),
+            "modified-delta-vs-target in the same capability stays exempt, got {findings:?}"
+        );
+    }
+
+    #[test]
+    fn grouped_delta_layout_preserves_capability_and_group() {
+        let root = temp_tree(&[(
+            "givn/changes/c1/specs/example-group/cap-c.feature",
+            "@givn.delta @cap-c\nFeature: Cap C\n\n  @givn.modified\n  Scenario: S\n    Given x\n    Then y\n",
+        )]);
+        let scenarios = collect_tree(root.path());
+        assert_eq!(scenarios.len(), 1);
+        assert_eq!(scenarios[0].capability.as_deref(), Some("cap-c"));
+        assert_eq!(scenarios[0].group.as_deref(), Some("example-group"));
+    }
 }
