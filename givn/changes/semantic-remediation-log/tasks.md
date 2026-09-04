@@ -585,3 +585,27 @@ GIVN_FEATURES=givn/changes/semantic-remediation-log/specs GIVN_SPEC_EMBEDDER=stu
 
 **Done when:** every box checked with evidence and commit hash, both
 `./run-tests.sh` and `./run-tests.sh --e2e` exit 0 on the full suite.
+
+## Scenario: Superseded permanent endpoints leave the semantic pair universe (added 2026-09-04)
+
+The real-model gate blocked on delta-to-permanent pairs whose right side is a
+permanent body that this very change modifies or removes. Pairing a live
+endpoint against a body the change supersedes is a structural false positive:
+after archive the pair cannot exist. RED proved the report paired the added
+`Provider selection is rejected` against the superseded `Provider name is
+unknown` permanent body; GREEN excludes every superseded target from the pair
+universe.
+
+  - [x] RED: fixture gains an added delta scenario similar to the superseded
+        permanent body; `the report excludes the modified scenario's own
+        projected target endpoint` fails with
+        `right_title: "Provider name is unknown"` present.
+        Files: `tests/steps/semantic_review_steps.rs`
+        (extended `modified_target_semantic_project` fixture, disposition row).
+  - [x] GREEN: `permanent_semantic_endpoints` pairing loop skips every index
+        entry whose projected target is modified or removed by the active
+        delta. Files: `src/spec/retrieval.rs`. Command: targeted rerun —
+        exit 0, "8 steps (8 passed)"; full change-scoped run — 34/34.
+  - [x] REFACTOR: clippy -D warnings clean; the per-item Modified skip is
+        subsumed by the superseded-target set.
+  - [x] COMMIT: `8695130` — `feat(semantic-remediation-log): superseded permanent endpoints leave the pair universe`
