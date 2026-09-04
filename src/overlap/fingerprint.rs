@@ -14,9 +14,9 @@ pub struct Facts {
     /// Data-table facts: column header (or `col_<n>`) -> masked cell value.
     pub tables: BTreeMap<String, String>,
     /// `[DONE]` marker in the scenario title.
-    pub done: bool,
+    pub done: Option<bool>,
     /// `TTY` mention in any step.
-    pub tty: bool,
+    pub tty: Option<bool>,
 }
 
 impl Facts {
@@ -41,7 +41,14 @@ impl Facts {
                 return true;
             }
         }
-        if self.done != other.done || self.tty != other.tty {
+        if let (Some(a), Some(b)) = (self.done, other.done)
+            && a != b
+        {
+            return true;
+        }
+        if let (Some(a), Some(b)) = (self.tty, other.tty)
+            && a != b
+        {
             return true;
         }
         false
@@ -49,12 +56,20 @@ impl Facts {
 
     fn extract(assertion_steps: &[&Step], scenario_name: &str, all_steps: &[&Step]) -> Facts {
         let mut facts = Facts {
-            done: scenario_name.contains("[DONE]"),
+            done: if scenario_name.contains("[DONE]") {
+                Some(true)
+            } else {
+                None
+            },
             ..Default::default()
         };
         for step in all_steps {
-            if step.value.contains("TTY") || step.value.contains("tty") {
-                facts.tty = true;
+            let lower = step.value.to_lowercase();
+            if lower
+                .split(|c: char| !c.is_ascii_alphanumeric())
+                .any(|word| word == "tty")
+            {
+                facts.tty = Some(true);
             }
         }
         for (pos, step) in assertion_steps.iter().enumerate() {
@@ -228,5 +243,52 @@ mod tests {
         };
         let b = Facts::default();
         assert!(!a.contradicts(&b));
+    }
+}
+
+#[cfg(test)]
+mod phase5_tests {
+    use super::*;
+    use crate::gherkin::parse::parse_str;
+
+    fn steps_of(scenario_text: &str) -> Vec<Step> {
+        let feature = parse_str(scenario_text).unwrap();
+        feature
+            .scenarios
+            .first()
+            .expect("scenario present")
+            .steps
+            .clone()
+    }
+
+    #[test]
+    fn pretty_does_not_trigger_tty() {
+        let steps = steps_of(
+            "Feature: T\n\n  Scenario: S\n    Given x\n    Then the output is pretty-printed\n",
+        );
+        let refs: Vec<&Step> = steps.iter().collect();
+        let facts = Facts::extract(&refs, "scenario", &refs);
+        assert_eq!(facts.tty, None, "'pretty-printed' must not set tty");
+    }
+
+    #[test]
+    fn standalone_tty_word_still_triggers() {
+        let steps = steps_of(
+            "Feature: T\n\n  Scenario: S\n    Given x\n    Then the output is printed to a TTY\n",
+        );
+        let refs: Vec<&Step> = steps.iter().collect();
+        let facts = Facts::extract(&refs, "scenario", &refs);
+        assert_eq!(facts.tty, Some(true));
+    }
+
+    #[test]
+    fn missing_fact_never_contradicts_done_or_tty() {
+        let a = Facts::default();
+        let b = Facts {
+            tty: Some(true),
+            ..Default::default()
+        };
+        assert!(!a.contradicts(&b));
+        assert!(!b.contradicts(&a));
     }
 }
