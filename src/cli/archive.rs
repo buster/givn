@@ -576,16 +576,17 @@ Feature: Dead capability
         assert!(cap_dir.exists());
 
         let delta_path = project.join("delta.feature");
-        let delta = parse_delta(
-            "@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n",
-        );
+        let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
         process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
 
         assert!(!cap_dir.exists(), "capability dir should be deleted");
 
         let tombstone = std::fs::read_to_string(project.join("givn/specs/.retired.yaml")).unwrap();
         assert!(tombstone.contains("dead-cap"), "tombstone: {tombstone}");
-        assert!(tombstone.contains("retire-change"), "tombstone: {tombstone}");
+        assert!(
+            tombstone.contains("retire-change"),
+            "tombstone: {tombstone}"
+        );
     }
 
     #[test]
@@ -604,8 +605,7 @@ Feature: Dead capability
     fn retirement_of_missing_capability_is_blocked() {
         let (_root, project, _backup) = temp_project();
         let delta_path = project.join("delta.feature");
-        let delta =
-            parse_delta("@givn.delta @givn.retired @never-existed\nFeature: Ghost\n");
+        let delta = parse_delta("@givn.delta @givn.retired @never-existed\nFeature: Ghost\n");
         let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
         assert!(err.to_string().contains("does not exist"), "{err}");
     }
@@ -614,9 +614,7 @@ Feature: Dead capability
     fn unsafe_capability_tag_is_blocked() {
         let (_root, project, _backup) = temp_project();
         let delta_path = project.join("delta.feature");
-        let delta = parse_delta(
-            "@givn.delta @givn.retired @../../etc\nFeature: Traversal\n",
-        );
+        let delta = parse_delta("@givn.delta @givn.retired @../../etc\nFeature: Traversal\n");
         let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
         assert!(err.to_string().contains("invalid capability tag"), "{err}");
         assert!(project.join("givn/specs/dead-cap").exists());
@@ -633,8 +631,7 @@ Feature: Dead capability
 
         // Retire dead-cap (simulating the merge loop running to completion).
         let delta_path = project.join("delta.feature");
-        let delta =
-            parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
+        let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
         process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
         assert!(!project.join("givn/specs/dead-cap").exists());
         assert!(specs_dir.join(".retired.yaml").exists());
@@ -644,7 +641,9 @@ Feature: Dead capability
         rollback_specs(&specs_dir, &backup_specs, &backup_dir).unwrap();
 
         assert!(
-            project.join("givn/specs/dead-cap/dead-cap.feature").exists(),
+            project
+                .join("givn/specs/dead-cap/dead-cap.feature")
+                .exists(),
             "rollback must restore the retired capability"
         );
         assert!(

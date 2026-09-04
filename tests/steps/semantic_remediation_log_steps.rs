@@ -112,10 +112,9 @@ fn first_candidate_section(world: &GivnWorld) -> LogSection {
 /// Fields of every `## Candidate` block in the report.
 fn report_candidate_blocks(world: &GivnWorld) -> Vec<Vec<(String, String)>> {
     let env = world.env.as_ref().expect("remediation project is required");
-    let report = fs::read_to_string(
-        super::remediation_change_dir(world).join("semantic-review.md"),
-    )
-    .expect("read semantic review report");
+    let report =
+        fs::read_to_string(super::remediation_change_dir(world).join("semantic-review.md"))
+            .expect("read semantic review report");
     let mut blocks = Vec::new();
     let mut current: Option<Vec<(String, String)>> = None;
     for line in report.lines() {

@@ -120,6 +120,11 @@ fn review_guidance(world: &GivnWorld) -> &str {
         .expect("review guidance was not loaded")
 }
 
+// Steps kept for @givn.removed placeholders — the scenarios below were
+// removed from the permanent spec together with the semantic gate, but the
+// removal deltas still parse and must match step definitions until the
+// change is archived.
+
 #[given("a semantic review contains classified candidates")]
 fn semantic_review_contains_candidates(world: &mut GivnWorld) {
     let instruction =
@@ -129,38 +134,46 @@ fn semantic_review_contains_candidates(world: &mut GivnWorld) {
     world.additional_output = Some(format!("{instruction}\n{template}"));
 }
 
-#[when("the reviewer completes the review artifact")]
-fn reviewer_completes_review_artifact(world: &mut GivnWorld) {
+#[given("the review instructions are requested")]
+fn review_instructions_requested(world: &mut GivnWorld) {
+    let instruction =
+        std::fs::read_to_string("assets/instructions/review.md").expect("read review instruction");
+    let template =
+        std::fs::read_to_string("assets/templates/review.md").expect("read review template");
+    world.additional_output = Some(format!("{instruction}\n{template}"));
+}
+
+#[when("the reviewer reads the deterministic gate guidance")]
+fn reviewer_reads_deterministic_gate_guidance(world: &mut GivnWorld) {
     assert!(
         !review_guidance(world).is_empty(),
         "review guidance must not be empty"
     );
 }
 
-#[then("the review records the remediation contract for each classification")]
-fn review_records_remediation_contracts(world: &mut GivnWorld) {
+#[then("the guidance requires an overlap disposition for every shape match")]
+fn guidance_requires_overlap_dispositions(world: &mut GivnWorld) {
     let content = review_guidance(world);
-    for class in ["DUPLICATE", "VARIANT", "VALID-BOUNDARY"] {
-        assert!(
-            content.contains(class),
-            "review guidance missing {class} contract"
-        );
-    }
-    assert!(content.contains("remediation"));
+    assert!(
+        content.contains("## Deterministic gate dispositions"),
+        "review guidance missing deterministic gate dispositions section"
+    );
+    assert!(
+        content.contains("Overlap") && content.contains("dispositions"),
+        "review guidance missing overlap dispositions table requirement"
+    );
+    assert!(
+        content.contains("shape match"),
+        "review guidance does not tie dispositions to shape matches"
+    );
 }
 
-#[then("the review records the projected-tree evidence and verification receipt")]
-fn review_records_projected_evidence(world: &mut GivnWorld) {
-    let content = review_guidance(world);
-    assert!(content.contains("projected"));
-    assert!(content.contains("semantic remediation verified"));
-}
-
-#[then("an unresolved or stale remediation remains blocking")]
-fn stale_remediation_remains_blocking(world: &mut GivnWorld) {
-    let content = review_guidance(world);
-    assert!(content.contains("stale"));
-    assert!(content.contains("blocks") || content.contains("blocking"));
+#[then("the guidance requires a split-or-keep decision for every long scenario")]
+fn guidance_requires_split_or_keep(world: &mut GivnWorld) {
+    assert!(
+        review_guidance(world).contains("split-or-keep"),
+        "review guidance missing split-or-keep decision requirement"
+    );
 }
 
 fn instruction_json(world: &GivnWorld) -> serde_json::Value {
