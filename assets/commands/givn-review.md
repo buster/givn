@@ -147,9 +147,12 @@ row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
 
 ### Deterministic gate dispositions
 
-Complete the **Overlap dispositions** table for every shape match, add a
-**split-or-keep** decision for every long scenario, and explain every
-removed+added pair as supersession or unrelated work before sign-off.
+Complete the **Overlap dispositions** table for every shape match (section
+heading exactly `## Overlap dispositions`; the Decision column must be one
+of `duplicate`, `variant`, or `boundary` — an empty or unrecognised word
+does not clear the finding), add a **split-or-keep** decision (section
+heading exactly `## Split-or-keep`) for every long scenario, and explain
+every removed+added pair as supersession or unrelated work before sign-off.
 
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.

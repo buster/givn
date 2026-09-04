@@ -73,11 +73,21 @@ pub fn parse_review_content(content: &str) -> (Vec<DispositionRow>, Vec<SplitOrK
     (rows, split_rows)
 }
 
-/// True if a disposition row disposes the pair (a, b) in either order.
+/// The decision words accepted in the Disposition column of an
+/// `## Overlap dispositions` row (case-insensitive).
+pub const VALID_DECISIONS: &[&str] = &["duplicate", "variant", "boundary"];
+
+/// True if a disposition row validly disposes the pair (a, b) in either
+/// order: the titles match AND the decision is a non-empty member of
+/// [`VALID_DECISIONS`]. An empty or unrecognised decision word clears
+/// nothing — a disposition must actually say what the pair is.
 pub fn disposed(rows: &[DispositionRow], title_a: &str, title_b: &str) -> bool {
     rows.iter().any(|r| {
-        (r.title_a == title_a && r.title_b == title_b)
-            || (r.title_a == title_b && r.title_b == title_a)
+        let title_match = (r.title_a == title_a && r.title_b == title_b)
+            || (r.title_a == title_b && r.title_b == title_a);
+        title_match
+            && !r.decision.trim().is_empty()
+            && VALID_DECISIONS.contains(&r.decision.trim().to_lowercase().as_str())
     })
 }
 
@@ -93,6 +103,26 @@ mod tests {
         assert!(disposed(&rows, "One", "Two"));
         assert!(disposed(&rows, "Two", "One"));
         assert!(split.is_empty());
+    }
+
+    #[test]
+    fn empty_decision_is_not_disposed() {
+        let content = "## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `One` | `Two` | |\n";
+        let (rows, _) = parse_review_content(content);
+        assert!(
+            !disposed(&rows, "One", "Two"),
+            "an empty decision must not clear the finding"
+        );
+    }
+
+    #[test]
+    fn invalid_decision_word_is_not_disposed() {
+        let content = "## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `One` | `Two` | x |\n";
+        let (rows, _) = parse_review_content(content);
+        assert!(
+            !disposed(&rows, "One", "Two"),
+            "'x' is not a valid decision word"
+        );
     }
 
     #[test]
