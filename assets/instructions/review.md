@@ -201,8 +201,9 @@ heading `## Overlap dispositions` and one row per finding pair. The
 Decision column must be exactly one of `duplicate`, `variant`, or
 `boundary` (case-insensitive) — an empty or unrecognised word does not
 clear the finding. For every scenario longer than the gate threshold,
-write a `## Split-or-keep` section (exact heading) with a `split` or
-`keep` decision per row. For every removed+added pair, record whether the
+record a **split-or-keep** decision: write the section with the exact
+heading `## Split-or-keep`, one row per long scenario, each Decision
+either `split` or `keep`. For every removed+added pair, record whether the
 new scenario supersedes the removed one or is unrelated. These decisions
 are review evidence, not score thresholds.
 
