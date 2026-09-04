@@ -286,6 +286,13 @@ asserted content. Tabelle maschinell aus der Gate-Ausgabe generiert.
 |  |  | boundary |
 |  |  | boundary |
 
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| `Overlay remove is rejected when artifact has dependents` | `Overlay refuses to remove a protected gate artifact` | boundary |
+| `Cycle in dependency graph is rejected` | `Overlay refuses to remove a protected gate artifact` | boundary |
+| `Dangling require reference is rejected` | `Overlay refuses to remove a protected gate artifact` | boundary |
+| `apply.requires referencing non-existent artifact is rejected` | `Overlay refuses to remove a protected gate artifact` | boundary |
+
 ## Sign-off
 
 REVIEW: PASS

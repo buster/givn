@@ -1,9 +1,9 @@
 # Semantic Review
 Report schema version: 3
 Change: "rebuild-deterministic-spec-discovery"
-Status: BLOCKED
-Candidate count: 1
-Pair cache: 0 reused, 20 computed
+Status: PASS
+Candidate count: 0
+Pair cache: 19 reused, 1 computed
 BGE status: BGE_ENABLED
 BGE reason: null
 BGE model: rozgo/bge-reranker-v2-m3
@@ -16,20 +16,32 @@ BGE unscored count: 0
 BGE unique pair count: 20
 BGE directional call count: 40
 BGE model load attempts: 1
-BGE runtime ms: 20347
+BGE runtime ms: 5734
 NLI status: NLI_ENABLED
 NLI reason: null
 NLI model: MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7
 NLI top_k: 5
 NLI max unique pairs: 2048
 NLI E5 raw count: 20
-NLI recommended count: 4
-NLI filtered count: 16
+NLI recommended count: 0
+NLI filtered count: 20
 NLI unscored count: 0
 NLI unique pair count: 20
 NLI directional call count: 40
 NLI model load attempts: 1
-NLI runtime ms: 12235
+NLI runtime ms: 4037
+
+## BGE Filtered Candidate
+- candidate_id: c81dbfdec3abffa0
+- left_file: "givn/changes/rebuild-deterministic-spec-discovery/specs/config-overlay/config-overlay.feature"
+- left_title: "Overlay removes a leaf artifact via remove true"
+- right_file: "givn/specs/support/config-overlay.feature"
+- right_title: "Overlay removes a leaf artifact via remove true"
+- embedding_score: 0.9847
+- bge_forward_raw: 2.1862
+- bge_reverse_raw: 2.9524
+- bge_symmetric_raw: 2.5693
+- bge_admission: BGE_FILTERED
 
 ## BGE Filtered Candidate
 - candidate_id: fc4b1258bbeecf19
@@ -50,15 +62,15 @@ NLI runtime ms: 12235
 - right_file: "givn/specs/spec-discovery/spec-duplicates.feature"
 - right_title: "Repeating an unchanged audit produces the same report"
 - embedding_score: 0.9837
-- nli_forward_entailment: 0.2121
-- nli_forward_neutral: 0.7714
-- nli_forward_contradiction: 0.0166
-- nli_reverse_entailment: 0.6786
-- nli_reverse_neutral: 0.2689
-- nli_reverse_contradiction: 0.0525
-- nli_symmetric_entailment: 0.4389
-- nli_symmetric_neutral: 0.5269
-- nli_symmetric_contradiction: 0.0341
+- nli_forward_entailment: 0.2800
+- nli_forward_neutral: 0.4898
+- nli_forward_contradiction: 0.2302
+- nli_reverse_entailment: 0.4548
+- nli_reverse_neutral: 0.3020
+- nli_reverse_contradiction: 0.2432
+- nli_symmetric_entailment: 0.3649
+- nli_symmetric_neutral: 0.3932
+- nli_symmetric_contradiction: 0.2419
 - nli_admission: NLI_FILTERED
 
 ## BGE Filtered Candidate
@@ -97,43 +109,23 @@ NLI runtime ms: 12235
 - bge_symmetric_raw: 2.5565
 - bge_admission: BGE_FILTERED
 
-## Candidate 1
+## NLI Filtered Candidate
 - candidate_id: eb91d84e3818da22
-- classification: UNCERTAIN
-- rationale: null
-- scope: delta-to-delta
-- left_scope: current-change
 - left_file: "givn/changes/rebuild-deterministic-spec-discovery/specs/spec-duplicates/spec-duplicates.feature"
 - left_title: "Auditing leaves permanent specifications unchanged"
-- left_delta_operation: added
-- left_projected_target: ["givn/specs/spec-duplicates/spec-duplicates.feature","Auditing leaves permanent specifications unchanged"]
-- left_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","spec-duplicates"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.added"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given a spec discovery project whose corpus contains one feature with two identical scenarios","docstring":null,"data_table":null},{"text":"And the permanent specifications are snapshotted","docstring":null,"data_table":null},{"text":"When the user audits the permanent corpus with `givn spec duplicates`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And the permanent specifications are unchanged","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- left_content_hash: 3dcda2843993c466
-- left_evidence_hash: b3f43511b60ac422
-- right_scope: current-change
 - right_file: "givn/changes/rebuild-deterministic-spec-discovery/specs/spec-duplicates/spec-duplicates.feature"
 - right_title: "Repeating an unchanged audit produces the same report"
-- right_delta_operation: added
-- right_projected_target: ["givn/specs/spec-duplicates/spec-duplicates.feature","Repeating an unchanged audit produces the same report"]
-- right_evidence_json: {"feature_description":null,"feature_tags":["givn.delta","spec-duplicates"],"rule_description":null,"rule_tags":[],"scenario_description":null,"scenario_tags":["givn.added"],"outline_name":null,"examples":[],"feature_background_steps":[],"rule_background_steps":[],"normalized_steps":[{"text":"Given a spec discovery project whose corpus contains one feature with two identical scenarios","docstring":null,"data_table":null},{"text":"When the user audits the permanent corpus twice with `givn spec duplicates`","docstring":null,"data_table":null},{"text":"Then the command exits 0","docstring":null,"data_table":null},{"text":"And both audit reports are identical","docstring":null,"data_table":null}],"model_id":"intfloat/multilingual-e5-large","index_version":1,"fingerprint_schema_version":1,"evidence_schema_version":1,"report_schema_version":1}
-- right_content_hash: 9a85408daae3b1dd
-- right_evidence_hash: fce5dec90473af88
 - embedding_score: 0.9776
-- fact_contradiction: false
-- bge_forward_raw: 3.4348
-- bge_reverse_raw: 3.5084
-- bge_symmetric_raw: 3.4716
-- bge_admission: BGE_RECOMMENDED
-- nli_forward_entailment: 0.7515
-- nli_forward_neutral: 0.2444
-- nli_forward_contradiction: 0.0041
-- nli_reverse_entailment: 0.5340
-- nli_reverse_neutral: 0.3665
-- nli_reverse_contradiction: 0.0995
-- nli_symmetric_entailment: 0.6647
-- nli_symmetric_neutral: 0.3140
-- nli_symmetric_contradiction: 0.0213
-- nli_admission: NLI_RECOMMENDED
+- nli_forward_entailment: 0.4817
+- nli_forward_neutral: 0.2901
+- nli_forward_contradiction: 0.2282
+- nli_reverse_entailment: 0.4011
+- nli_reverse_neutral: 0.3392
+- nli_reverse_contradiction: 0.2597
+- nli_symmetric_entailment: 0.4410
+- nli_symmetric_neutral: 0.3147
+- nli_symmetric_contradiction: 0.2442
+- nli_admission: NLI_FILTERED
 
 ## BGE Filtered Candidate
 - candidate_id: 05ff00acaeaf13a3
@@ -289,16 +281,4 @@ NLI runtime ms: 12235
 - bge_forward_raw: 2.3848
 - bge_reverse_raw: 2.3696
 - bge_symmetric_raw: 2.3772
-- bge_admission: BGE_FILTERED
-
-## BGE Filtered Candidate
-- candidate_id: 6008aded767ad767
-- left_file: "givn/changes/rebuild-deterministic-spec-discovery/specs/spec-duplicates/spec-duplicates.feature"
-- left_title: "Exact duplicates in one feature are reported together"
-- right_file: "givn/changes/rebuild-deterministic-spec-discovery/specs/spec-duplicates/spec-duplicates.feature"
-- right_title: "The deterministic audit works without model downloads"
-- embedding_score: 0.9688
-- bge_forward_raw: 0.9508
-- bge_reverse_raw: 1.0590
-- bge_symmetric_raw: 1.0049
 - bge_admission: BGE_FILTERED
