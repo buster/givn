@@ -861,3 +861,11 @@ fn madr_checklist_is_evidence_not_escape(world: &mut GivnWorld) {
     assert!(content.contains("checklist is evidence for those dimensions"));
     assert!(content.contains("not an at-least-one escape"));
 }
+
+// Step retained from the retired semantic-remediation fixture set: the ADR
+// migration scenario reuses it to carry a distinguishing marker through the
+// register fixtures. Validation-only — no fixture state.
+#[given(regex = r#"^the remediation case carries the distinguishing marker "([^"]+)"$"#)]
+fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
+    assert!(!marker.trim().is_empty());
+}

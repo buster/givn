@@ -31,6 +31,9 @@ pub struct ScenarioInfo {
     pub title: String,
     pub file: PathBuf,
     pub capability: Option<String>,
+    /// The group directory the file lives under (grouped layout). Part of
+    /// the public analysis model; consumed by tooling built on scan_tree.
+    #[allow(dead_code)]
     pub group: Option<String>,
     pub is_delta: bool,
     pub op: DeltaOp,

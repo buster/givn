@@ -11,7 +11,7 @@ use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Command, Output};
 use std::sync::{
-    Arc, Mutex,
+    Arc,
     atomic::{AtomicBool, Ordering},
 };
 use std::thread::{self, JoinHandle};
@@ -42,7 +42,6 @@ impl TestEnv {
 pub struct ArtifactFixtureServer {
     endpoint: String,
     stop: Arc<AtomicBool>,
-    events: Arc<Mutex<Vec<String>>>,
     thread: Option<JoinHandle<()>>,
 }
 
@@ -59,13 +58,11 @@ impl ArtifactFixtureServer {
                 .expect("read artifact fixture address")
         );
         let stop = Arc::new(AtomicBool::new(false));
-        let events = Arc::new(Mutex::new(Vec::new()));
         let stop_thread = Arc::clone(&stop);
-        let events_thread = Arc::clone(&events);
         let thread = thread::spawn(move || {
             while !stop_thread.load(Ordering::Relaxed) {
                 match listener.accept() {
-                    Ok((stream, _)) => serve_artifact_request(stream, &events_thread),
+                    Ok((stream, _)) => serve_artifact_request(stream),
                     Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
                         thread::sleep(Duration::from_millis(2));
                     }
@@ -76,17 +73,12 @@ impl ArtifactFixtureServer {
         Self {
             endpoint,
             stop,
-            events,
             thread: Some(thread),
         }
     }
 
     pub fn endpoint(&self) -> &str {
         &self.endpoint
-    }
-
-    pub fn events(&self) -> Vec<String> {
-        self.events.lock().expect("lock artifact events").clone()
     }
 }
 
@@ -99,7 +91,7 @@ impl Drop for ArtifactFixtureServer {
     }
 }
 
-fn serve_artifact_request(mut stream: TcpStream, events: &Mutex<Vec<String>>) {
+fn serve_artifact_request(mut stream: TcpStream) {
     let mut request = [0u8; 8192];
     let Ok(size) = stream.read(&mut request) else {
         return;
@@ -112,10 +104,6 @@ fn serve_artifact_request(mut stream: TcpStream, events: &Mutex<Vec<String>>) {
     else {
         return;
     };
-    events
-        .lock()
-        .expect("lock artifact events")
-        .push(path.to_string());
     let payload = artifact_fixture_payload(path);
     let metadata = request.contains("bytes=0-0");
     let body = if metadata {

@@ -406,3 +406,44 @@ fn stdout_free_of_model_wording(world: &mut GivnWorld) {
     let out = stdout(world);
     assert!(!out.contains("model"), "stdout contains model: {out}");
 }
+
+#[given("the permanent specifications are snapshotted")]
+fn snapshot_specs(world: &mut GivnWorld) {
+    let env = env_of(world);
+    let specs = env.root().join("givn/specs");
+    let mut contents = String::new();
+    if specs.exists() {
+        collect_tree_text(&specs, &mut contents);
+    }
+    world.additional_output = Some(contents);
+}
+
+fn collect_tree_text(dir: &std::path::Path, out: &mut String) {
+    let mut entries: Vec<_> = std::fs::read_dir(dir)
+        .expect("read dir")
+        .flatten()
+        .collect();
+    entries.sort_by_key(|e| e.file_name());
+    for entry in entries {
+        let path = entry.path();
+        if path.is_dir() {
+            collect_tree_text(&path, out);
+        } else {
+            out.push_str(&path.display().to_string());
+            out.push('\n');
+            out.push_str(&std::fs::read_to_string(&path).unwrap_or_default());
+        }
+    }
+}
+
+#[then("the permanent specifications are unchanged")]
+fn specs_unchanged(world: &mut GivnWorld) {
+    let env = env_of(world);
+    let specs = env.root().join("givn/specs");
+    let mut contents = String::new();
+    if specs.exists() {
+        collect_tree_text(&specs, &mut contents);
+    }
+    let before = world.additional_output.as_ref().expect("snapshot missing");
+    assert_eq!(*before, contents, "permanent specifications changed");
+}

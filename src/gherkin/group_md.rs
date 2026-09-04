@@ -140,9 +140,11 @@ fn exact_heading(line: &str) -> Option<&'static str> {
     ALL_HEADINGS.iter().copied().find(|h| line == *h)
 }
 
-/// The canonical `group.md` scaffold. Generators (task 2.5's scaffolding)
-/// must emit this template verbatim so the parser and the generator can
-/// never drift apart.
+/// The canonical `group.md` scaffold. Generators (group scaffolding in a
+/// change's implementation) must emit this template verbatim so the parser
+/// and the generator can never drift apart. Reserved for tooling; exercised
+/// by the parser-agreement test.
+#[allow(dead_code)]
 pub fn group_md_template() -> String {
     r#"# Group: <group-name>
 

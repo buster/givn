@@ -34,7 +34,6 @@ pub struct RouteReport {
 struct CapabilityInfo {
     name: String,
     group: String,
-    file: std::path::PathBuf,
     /// subcommand -> invocation count.
     invocations: BTreeMap<String, usize>,
     text: String,
@@ -121,7 +120,6 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
                     .unwrap_or_default()
                     .to_string(),
                 group: group.clone(),
-                file,
                 invocations,
                 text: text.to_lowercase(),
             });
