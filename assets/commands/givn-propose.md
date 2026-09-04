@@ -118,6 +118,14 @@ For each artifact:
 - Observable behaviour only. No class names, routes, DB schemas, step mechanics.
 - Think about: who benefits, what changes from the user's perspective, what
   constraints or risks exist.
+- **Capability Routing (mandatory, before specs)**: after drafting the
+  proposal, run `givn spec route --change <id>` and fill in the proposal's
+  `## Capability Routing` table — one row per capability the change touches,
+  recording route's recommendation and the decision (`EXTEND <cap>` or
+  `NEW in <group>`). Deviations from route are allowed but must carry a
+  rationale in the table. The specs step reads this table, not the proposal's
+  prose; `givn check review` compares the recorded decision against the delta
+  that was actually authored.
 
 **specs** (specs/**/*.feature):
 - One .feature file per capability, grouped under the capability's use-case
