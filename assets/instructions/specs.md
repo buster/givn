@@ -49,17 +49,26 @@ What counts as "the real interface" depends on the system type:
 | **Library / SDK** | Public API surface called from real consumer code | Every public function or method a consumer invokes. |
 | **Message/event bus** | Real producer/consumer against running services | Every message type consumed, every side-effect-producing message published. |
 
-Record the inventory as a comment block at the very top of the `.feature`
-file, before the Feature header. One entry per interaction:
+Record the inventory in the owning group's `group.md`, under the
+`## Interactions` section — one bullet per interaction:
 
 ```
-# User Interaction Inventory:
-# - <action description>
-# - <action description>
+## Interactions
+
+- <action description>
+- <action description>
 ```
+
+The group file is the durable home of the inventory: it is never merged
+into a `.feature` file, so it survives the archive merge instead of being
+destroyed the way delta-file comment blocks are. When authoring a delta
+for an existing capability, read the interactions from that capability's
+group's `group.md`; when the change introduces a `NEW in <group>`
+capability (per the proposal's Capability Routing table), update that
+group's `group.md` Interactions section as part of the change.
 
 Each normalized inventory entry MUST have exactly one matching `@e2e` scenario
-in the same `.feature` file. If an entry has no corresponding scenario, the
+in the capability's `.feature` file. If an entry has no corresponding scenario, the
 spec is incomplete. Variants, error cases, and flag combinations of the same
 user action do not create additional inventory entries or additional `@e2e`
 scenarios. The inventory is exhaustive after this normalization.
@@ -145,12 +154,13 @@ live in a project-specific location documented in `design.md`. They are
 separate from the unit/integration step definitions because they use
 different infrastructure (browser driver, HTTP client, test harness).
 
-<example caption="Capability with inventory, unit scenarios, and one @e2e per inventory entry">
-# User Interaction Inventory:
-# - submit registration form on /register page
-# - navigate to login page
-# - submit login form on /login page
+<example caption="Group inventory (in group.md), unit scenarios, and one @e2e per inventory entry">
+<!-- givn/specs/<group>/group.md — ## Interactions section -->
+- submit registration form on /register page
+- navigate to login page
+- submit login form on /login page
 
+<!-- givn/changes/<id>/specs/<group>/user-registration.feature -->
 @givn.delta @user-registration
 
 Feature: User Registration
