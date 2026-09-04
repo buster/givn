@@ -206,55 +206,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
                 );
             }
 
-            let cap = crate::gherkin::delta::capability_tag(&delta_feature)
-                .map(|t| t.to_string())
-                .unwrap_or_else(|| {
-                    delta_path
-                        .file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or("unknown")
-                        .to_string()
-                });
-
-            crate::gherkin::delta::validate_capability_tag(&cap).map_err(|e| {
-                anyhow::anyhow!("archive blocked: {e} (from '{}')", delta_path.display())
-            })?;
-
-            let permanent_dir = project_root.join("givn/specs").join(&cap);
-            let permanent_path = permanent_dir.join(format!("{cap}.feature"));
-
-            if crate::gherkin::delta::is_retired_feature(&delta_feature) {
-                if !delta_feature.scenarios.is_empty() {
-                    bail!(
-                        "archive blocked: '{}' is tagged @givn.retired but contains {} \
-                         scenario(s) — a retirement delta must have zero scenarios",
-                        delta_path.display(),
-                        delta_feature.scenarios.len()
-                    );
-                }
-                if !permanent_dir.exists() {
-                    bail!(
-                        "archive blocked: '{}' retires capability '{cap}' but \
-                         givn/specs/{cap}/ does not exist",
-                        delta_path.display()
-                    );
-                }
-                std::fs::remove_dir_all(&permanent_dir)?;
-                record_retirement(&project_root, &cap, change)?;
-                println!(
-                    "[{}]   retired → {}",
-                    crate::subprocess::local_timestamp(),
-                    permanent_dir.display()
-                );
-                continue;
-            }
-
-            merge_file(&permanent_path, &delta_feature)?;
-            println!(
-                "[{}]   merged → {}",
-                crate::subprocess::local_timestamp(),
-                permanent_path.display()
-            );
+            process_delta_file(&project_root, change, delta_path, &delta_feature)?;
         }
     }
 
@@ -398,6 +350,68 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     Ok(())
 }
 
+/// Handle one parsed delta feature: validate its capability tag, then
+/// either retire the capability directory (`@givn.retired`) or merge the
+/// delta into the permanent spec. Extracted from `run`'s merge loop so the
+/// retirement path is testable without driving the full archive gate
+/// pipeline (which needs a manifest, hooks, and a verify command).
+fn process_delta_file(
+    project_root: &std::path::Path,
+    change_id: &str,
+    delta_path: &std::path::Path,
+    delta_feature: &gherkin::Feature,
+) -> Result<()> {
+    let cap = crate::gherkin::delta::capability_tag(delta_feature)
+        .map(|t| t.to_string())
+        .unwrap_or_else(|| {
+            delta_path
+                .file_stem()
+                .and_then(|s| s.to_str())
+                .unwrap_or("unknown")
+                .to_string()
+        });
+
+    crate::gherkin::delta::validate_capability_tag(&cap)
+        .map_err(|e| anyhow::anyhow!("archive blocked: {e} (from '{}')", delta_path.display()))?;
+
+    let permanent_dir = project_root.join("givn/specs").join(&cap);
+    let permanent_path = permanent_dir.join(format!("{cap}.feature"));
+
+    if crate::gherkin::delta::is_retired_feature(delta_feature) {
+        if !delta_feature.scenarios.is_empty() {
+            bail!(
+                "archive blocked: '{}' is tagged @givn.retired but contains {} \
+                 scenario(s) — a retirement delta must have zero scenarios",
+                delta_path.display(),
+                delta_feature.scenarios.len()
+            );
+        }
+        if !permanent_dir.exists() {
+            bail!(
+                "archive blocked: '{}' retires capability '{cap}' but \
+                 givn/specs/{cap}/ does not exist",
+                delta_path.display()
+            );
+        }
+        std::fs::remove_dir_all(&permanent_dir)?;
+        record_retirement(project_root, &cap, change_id)?;
+        println!(
+            "[{}]   retired → {}",
+            crate::subprocess::local_timestamp(),
+            permanent_dir.display()
+        );
+        return Ok(());
+    }
+
+    merge_file(&permanent_path, delta_feature)?;
+    println!(
+        "[{}]   merged → {}",
+        crate::subprocess::local_timestamp(),
+        permanent_path.display()
+    );
+    Ok(())
+}
+
 #[cfg(feature = "spec-retrieval")]
 fn run_similarity_gate(project_root: &std::path::Path, change_id: &str) -> Result<()> {
     let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
@@ -406,7 +420,6 @@ fn run_similarity_gate(project_root: &std::path::Path, change_id: &str) -> Resul
     }
     crate::spec::retrieval::semantic_review_archive_gate(project_root, change_id)
 }
-
 #[cfg(not(feature = "spec-retrieval"))]
 fn run_similarity_gate(_project_root: &std::path::Path, _change_id: &str) -> Result<()> {
     Ok(())
@@ -524,4 +537,132 @@ fn copy_dir_all(src: &std::path::Path, dst: &std::path::Path) -> Result<()> {
         }
     }
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::gherkin::parse::parse_str;
+
+    const PERMANENT_SPEC: &str = r#"
+Feature: Dead capability
+
+  Scenario: It does something
+    Given a thing
+    Then the thing happens
+"#;
+
+    /// A temp project whose `givn/specs/` holds one capability dir with a
+    /// real scenario. Returns (root, specs_dir, backup_dir).
+    fn temp_project() -> (tempfile::TempDir, std::path::PathBuf, std::path::PathBuf) {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path().to_path_buf();
+        let cap_dir = project.join("givn/specs/dead-cap");
+        std::fs::create_dir_all(&cap_dir).unwrap();
+        std::fs::write(cap_dir.join("dead-cap.feature"), PERMANENT_SPEC).unwrap();
+        let backup_dir = project.join("givn/.archive-backup-test");
+        (root, project, backup_dir)
+    }
+
+    /// Parse a delta feature from gherkin text.
+    fn parse_delta(text: &str) -> gherkin::Feature {
+        parse_str(text).unwrap()
+    }
+
+    #[test]
+    fn retirement_deletes_capability_and_writes_tombstone() {
+        let (_root, project, _backup) = temp_project();
+        let cap_dir = project.join("givn/specs/dead-cap");
+        assert!(cap_dir.exists());
+
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta(
+            "@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n",
+        );
+        process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
+
+        assert!(!cap_dir.exists(), "capability dir should be deleted");
+
+        let tombstone = std::fs::read_to_string(project.join("givn/specs/.retired.yaml")).unwrap();
+        assert!(tombstone.contains("dead-cap"), "tombstone: {tombstone}");
+        assert!(tombstone.contains("retire-change"), "tombstone: {tombstone}");
+    }
+
+    #[test]
+    fn retirement_delta_with_scenarios_is_blocked() {
+        let (_root, project, _backup) = temp_project();
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta(
+            "@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n\n  Scenario: Not empty\n    Given x\n",
+        );
+        let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
+        assert!(err.to_string().contains("zero scenarios"), "{err}");
+        assert!(project.join("givn/specs/dead-cap").exists());
+    }
+
+    #[test]
+    fn retirement_of_missing_capability_is_blocked() {
+        let (_root, project, _backup) = temp_project();
+        let delta_path = project.join("delta.feature");
+        let delta =
+            parse_delta("@givn.delta @givn.retired @never-existed\nFeature: Ghost\n");
+        let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
+        assert!(err.to_string().contains("does not exist"), "{err}");
+    }
+
+    #[test]
+    fn unsafe_capability_tag_is_blocked() {
+        let (_root, project, _backup) = temp_project();
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta(
+            "@givn.delta @givn.retired @../../etc\nFeature: Traversal\n",
+        );
+        let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
+        assert!(err.to_string().contains("invalid capability tag"), "{err}");
+        assert!(project.join("givn/specs/dead-cap").exists());
+    }
+
+    #[test]
+    fn rollback_restores_retired_capability_and_clears_tombstone() {
+        let (_root, project, backup_dir) = temp_project();
+        let specs_dir = project.join("givn/specs");
+        let backup_specs = backup_dir.join("specs");
+        std::fs::create_dir_all(&backup_specs).unwrap();
+        copy_dir_all(&specs_dir, &backup_specs).unwrap();
+        std::fs::write(backup_dir.join(".backup-state"), "present").unwrap();
+
+        // Retire dead-cap (simulating the merge loop running to completion).
+        let delta_path = project.join("delta.feature");
+        let delta =
+            parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
+        process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
+        assert!(!project.join("givn/specs/dead-cap").exists());
+        assert!(specs_dir.join(".retired.yaml").exists());
+
+        // Post-merge verify fails → rollback. The backup was taken before
+        // the merge loop, so it still holds dead-cap and no tombstone.
+        rollback_specs(&specs_dir, &backup_specs, &backup_dir).unwrap();
+
+        assert!(
+            project.join("givn/specs/dead-cap/dead-cap.feature").exists(),
+            "rollback must restore the retired capability"
+        );
+        assert!(
+            !specs_dir.join(".retired.yaml").exists(),
+            "rollback must clear the tombstone written after the backup"
+        );
+    }
+
+    #[test]
+    fn non_retirement_delta_still_merges() {
+        let (_root, project, _backup) = temp_project();
+        let delta_path = project.join("delta.feature");
+        let delta = parse_delta(
+            "@givn.delta @dead-cap\nFeature: Dead capability\n\n  @givn.added\n  Scenario: Extra step\n    Given another thing\n    Then it works\n",
+        );
+        process_delta_file(&project, "c", &delta_path, &delta).unwrap();
+        let merged =
+            std::fs::read_to_string(project.join("givn/specs/dead-cap/dead-cap.feature")).unwrap();
+        assert!(merged.contains("Extra step"), "{merged}");
+    }
 }
