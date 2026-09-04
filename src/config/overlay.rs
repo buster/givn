@@ -15,6 +15,12 @@ use crate::config::manifest::{
 use anyhow::{Result, bail};
 
 /// Parse the project overlay YAML and merge it onto `base`.
+/// Artifact ids that an overlay may not remove. `givn/config.yaml` is a
+/// tracked, agent-writable file — every gate in the workflow is a few YAML
+/// lines away from being deleted by whoever edits it, deliberately or not.
+/// `review` is the sign-off gate the whole workflow funnels into.
+const PROTECTED_ARTIFACTS: &[&str] = &["review"];
+
 pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
     // Parse the overlay as a Manifest (using lenient defaults for missing fields).
     let overlay: OverlayDoc = serde_yaml_ng::from_str(overlay_yaml)
@@ -74,6 +80,15 @@ pub fn apply(base: Manifest, overlay_yaml: &str) -> Result<Manifest> {
     // Merge artifact patches.
     for patch in overlay.artifacts {
         if patch.remove {
+            if PROTECTED_ARTIFACTS.contains(&patch.id.as_str()) {
+                bail!(
+                    "cannot remove artifact '{}' via overlay — it is a protected \
+                     gate. Use `optional: true` if you need to make it skippable, \
+                     or edit apply.requires directly if you understand the \
+                     consequences.",
+                    patch.id
+                );
+            }
             result.artifacts.retain(|a| a.id != patch.id);
             continue;
         }
@@ -364,10 +379,8 @@ mod tests {
     }
 
     #[test]
-    fn overlay_can_remove_artifact() {
+    fn overlay_cannot_remove_review_artifact() {
         let base = Manifest::load_embedded().unwrap();
-        let original_count = base.artifacts.len();
-        // When removing review, also update apply.requires to remove the reference.
         let overlay = r#"
 artifacts:
   - id: review
@@ -375,10 +388,26 @@ artifacts:
 apply:
   requires: [tasks]
 "#;
+        let err = apply(base, overlay).unwrap_err();
+        assert!(err.to_string().contains("protected"), "{err}");
+    }
+
+    #[test]
+    fn overlay_can_remove_non_protected_artifact() {
+        let base = Manifest::load_embedded().unwrap();
+        let original_count = base.artifacts.len();
+        // design-review is not protected; removing it (and its reference in
+        // apply.requires) must keep working.
+        let overlay = r#"
+artifacts:
+  - id: design-review
+    remove: true
+apply:
+  requires: [specs]
+"#;
         let result = apply(base, overlay).unwrap();
         assert_eq!(result.artifacts.len(), original_count - 1);
-        assert!(!result.artifacts.iter().any(|a| a.id == "review"));
-        assert!(!result.apply.requires.contains(&"review".to_string()));
+        assert!(!result.artifacts.iter().any(|a| a.id == "design-review"));
     }
 
     #[test]
