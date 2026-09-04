@@ -47,7 +47,7 @@ change, the test surface changes automatically.
 
 **Merge semantics:**
 - All scenarios are `@givn.added` against an empty permanent spec. On archive,
-  the merge creates the initial `givn/specs/<capability>/<capability>.feature`
+  the merge creates the initial permanent spec file `givn/specs/<group>/<capability>.feature`
   baseline.
 - `@givn.*` tags are stripped on archive, leaving clean runnable Gherkin.
 

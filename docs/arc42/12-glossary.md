@@ -8,7 +8,7 @@
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, or `claude`, represented by `.opencode/`, `.agents/`, or `.claude/`. |
 | **arc42-docs** | The effective lifecycle artifact added when the Arc42 addon is enabled. Its marker is `arc42.md`; durable chapters are scaffolded at fixed `docs/arc42/`. |
 | **Artifact** | A lifecycle document or generated path described by the effective manifest. It may have `requires`, `optional`, and configurable `post` hooks. |
-| **Capability** | A named behavior unit, normally represented by a feature file under `givn/specs/<capability>/`. |
+| **Capability** | A named behavior unit, represented by a feature file under `givn/specs/<group>/`. |
 | **Cascade** | Project-overrides-first lookup for an individual template, instruction, skill, or command asset, with embedded content as fallback. |
 | **Conditional section** | A marked region of a template retained only when its declared addon condition matches the current effective addon set; it is dropped from the generated file otherwise. |
 | **Change** | A unit of work under `givn/changes/<id>/`, later copied to `givn/archive/<id>/`. |
@@ -22,7 +22,8 @@
 | **Feature file** | A Gherkin `.feature` file. In givn it is the executable behavior specification and, after archive, the permanent record. |
 | **Manifest** | YAML data describing artifacts, dependencies, archive requirements, verify settings, coverage settings, and addons. |
 | **Manifest overlay** | Project YAML applied to the embedded manifest. `givn/config.yaml` is applied first; `givn/commands.yaml` is applied later. |
-| **Permanent spec** | A tag-stripped `.feature` under `givn/specs/`, used as the durable behavior source. |
+| **Permanent spec** | A tag-stripped `.feature` under `givn/specs/<group>/`, used as the durable behavior source. |
+| **Group** | A use-case directory `givn/specs/<group>/` holding one `.feature` per capability plus a `group.md` narrative (Actor, Goal, Interactions). |
 | **Hook (`post`)** | A configurable post-artifact command. It may name `verify`, `verify-e2e`, `lint`, `integrity`, or a shell command. Custom shell hooks may allow failure; built-in names cannot weaken mandatory semantics. |
 | **Mandatory check** | Binary-owned behavior run by explicit `givn check tasks` or `givn check review`, independent of an artifact's `post` list. |
 | **Template** | A source asset (embedded default or project override) rendered into a generated skill or slash command. Skill templates carry the `.tmpl` marker; conditional sections are resolved against the current addon configuration at generation time. |

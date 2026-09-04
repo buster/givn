@@ -43,13 +43,14 @@ Without `--json`, the command emits the resolved instruction text only.
 Read `givn/changes/<id>/proposal.md`. The capabilities/features listed there
 determine how many `.feature` files to create (one per capability).
 
-Also check permanent specs at `givn/specs/` — existing scenarios for a
-capability are the baseline; delta scenarios extend or modify them.
+Also check permanent specs at `givn/specs/<group>/` — existing scenarios for a
+capability are the baseline; delta scenarios extend or modify them. Delta
+files mirror the grouped layout: `givn/changes/<id>/specs/<group>/<cap>.feature`.
 
 ### 4. Write delta .feature files
 
 For each capability, create:
-`givn/changes/<id>/specs/<capability>/<capability>.feature`
+`givn/changes/<id>/specs/<group>/<capability>.feature`
 
 **Required tags:**
 - `@givn.delta` on the Feature line (marks this as a delta document)
@@ -135,7 +136,7 @@ Read `next_required.id` from the output and report it as the next step
 ## Spec written: <id>
 
 **Files created:**
-- givn/changes/<id>/specs/<capability>/<capability>.feature  (N scenarios)
+- givn/changes/<id>/specs/<group>/<capability>.feature  (N scenarios)
 
 **Lint:** clean (N @wip scenarios — expected)
 
@@ -149,5 +150,7 @@ Read `next_required.id` from the output and report it as the next step
 - Keep all scenarios `@wip` — step definitions are not written yet.
 - Never add implementation detail to the spec (belongs in design.md).
 - Run `givn lint` and fix parse errors before finishing.
-- One `.feature` file per capability. Do not put all scenarios in one file.
+- One `.feature` file per capability, under the capability's group
+  directory (`givn/changes/<id>/specs/<group>/<cap>.feature`). Do not put
+  all scenarios in one file.
 - `givn lint` exit 2 (@wip present) is expected and correct at this stage.
