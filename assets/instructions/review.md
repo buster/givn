@@ -196,10 +196,15 @@ fixed or classified under the three coverage buckets above.
 ## Deterministic gate dispositions
 
 For every shape match involving the change, complete the **Overlap
-dispositions** table in `review.md`. For every scenario longer than the gate
-threshold, record a **split-or-keep** decision. For every removed+added pair,
-record whether the new scenario supersedes the removed one or is unrelated.
-These decisions are review evidence, not score thresholds.
+dispositions** table in `review.md`. Write the section with the exact
+heading `## Overlap dispositions` and one row per finding pair. The
+Decision column must be exactly one of `duplicate`, `variant`, or
+`boundary` (case-insensitive) — an empty or unrecognised word does not
+clear the finding. For every scenario longer than the gate threshold,
+write a `## Split-or-keep` section (exact heading) with a `split` or
+`keep` decision per row. For every removed+added pair, record whether the
+new scenario supersedes the removed one or is unrelated. These decisions
+are review evidence, not score thresholds.
 
 ## Sign-off checklist
 

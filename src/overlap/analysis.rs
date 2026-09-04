@@ -314,6 +314,11 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
 
     let findings = scan_tree(root);
     let mut missing: Vec<String> = Vec::new();
+    // Track which disposition/split rows actually matched a current
+    // finding, so stale rows (scenario renamed/removed after the row was
+    // written) can be reported as a hygiene warning.
+    let mut matched_rows: Vec<bool> = vec![false; rows.len()];
+    let mut matched_split: Vec<bool> = vec![false; split_rows.len()];
     for finding in &findings {
         let involves_delta = finding.files.iter().any(|f| f.starts_with(&delta_prefix));
         if !involves_delta {
@@ -324,12 +329,25 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
                 let (a, b) = (finding.titles[0].as_str(), finding.titles[1].as_str());
                 if !crate::overlap::disposition::disposed(&rows, a, b) {
                     missing.push(format!("shape match: '{a}' / '{b}'"));
+                } else {
+                    for (i, r) in rows.iter().enumerate() {
+                        if (r.title_a == a && r.title_b == b) || (r.title_a == b && r.title_b == a)
+                        {
+                            matched_rows[i] = true;
+                        }
+                    }
                 }
             }
             "long_scenario" => {
                 let title = finding.titles.first().map(String::as_str).unwrap_or("?");
                 if !split_rows.iter().any(|r| r.title == title) {
                     missing.push(format!("split-or-keep: '{title}'"));
+                } else {
+                    for (i, r) in split_rows.iter().enumerate() {
+                        if r.title == title {
+                            matched_split[i] = true;
+                        }
+                    }
                 }
             }
             _ => {}
@@ -353,6 +371,26 @@ pub fn run_review_overlap_gate(root: &Path, change_id: &str) -> anyhow::Result<(
         "net delta json: {}",
         serde_json::json!({"added": added, "modified": modified, "removed": removed})
     );
+
+    // Orphan-row hygiene warning (non-blocking): disposition rows that no
+    // longer correspond to any current finding — e.g. the scenario was
+    // renamed after the row was written.
+    for (i, r) in rows.iter().enumerate() {
+        if !matched_rows[i] {
+            println!(
+                "  ⚠ stale disposition row: '{} / {}' matches no current shape-match finding",
+                r.title_a, r.title_b
+            );
+        }
+    }
+    for (i, r) in split_rows.iter().enumerate() {
+        if !matched_split[i] {
+            println!(
+                "  ⚠ stale split-or-keep row: '{}' matches no current long scenario",
+                r.title
+            );
+        }
+    }
 
     if !missing.is_empty() {
         if !review_path.exists() {
