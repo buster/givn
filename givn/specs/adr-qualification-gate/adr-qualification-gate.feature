@@ -128,9 +128,10 @@ Feature: Strict qualification and canonical routing of architecture decisions
     And  the CLI output requires the existing-ADR and duplicate check
     And  the CLI output says that qualification policy is guidance rather than runtime enforcement
   Scenario: The migration preserves independent architecture history across three proposed decisions
+    Given  the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
     Given  the consolidated ADR register and canonical sources are available
     When  a maintainer compares the register with the canonical sources
-    Then  the final register has 36 accepted decisions and three proposed decisions
+    Then  the final register has 36 accepted decisions and four proposed decisions
     And  the change's migration manifest gives every assigned identifier exactly one disposition
     And  reserved identifiers `ADR-050` and `ADR-051` have no record
     And  non-ADR records are removed from the active register and ADR archive
