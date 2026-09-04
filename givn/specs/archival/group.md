@@ -18,10 +18,9 @@ move the change into the archive — atomically, with rollback on failure.
 
 ## Interactions
 
-- archive a change with delta merging and rollback
-- enforce the post-merge e2e gate before the merge completes
-- extract and merge coverage data as part of the pipeline
-- preserve docstrings when merging delta features
+- Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
+- Consumer archives a change with coverage enabled and the coverage summary appears in README
+- Consumer archives a modified scenario and the permanent spec keeps the docstring
 
 ## Includes
 

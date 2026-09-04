@@ -73,6 +73,13 @@ spec is incomplete. Variants, error cases, and flag combinations of the same
 user action do not create additional inventory entries or additional `@e2e`
 scenarios. The inventory is exhaustive after this normalization.
 
+A `Scenario Outline` tagged `@e2e` counts as the e2e evidence for exactly ONE
+inventory entry: the tag marks that the outline as a whole proves the
+interaction; its Examples rows are input variation, not additional distinct
+interactions. Tagging one Outline with many Examples rows never covers many
+inventory entries. `givn lint` compares the declared interaction count and
+the `@e2e` count per group and reports over- and under-coverage.
+
 ## Executable-spec invariant
 
 The `.feature` file is the executable specification. The chosen

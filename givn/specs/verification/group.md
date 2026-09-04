@@ -20,10 +20,12 @@ changes reach review and archive.
 
 ## Interactions
 
-- lint feature files tree-wide or scoped to a change
-- scan the tree for scenario overlap findings
-- enforce change-directory dedup rules and workflow enforcement
-- validate artifact id input before gates run
+- Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected
+- Integrity check detects a placeholder COMMIT hash in tasks.md and fails
+- Review passes when every shape match is disposed and reports the net-delta receipt
+- A duplicate title across two permanent spec files is a hard error
+- The json output reports duplicate-title findings machine-readably
+- Consumer invokes givn check with an unknown artifact and gets a helpful error
 
 ## Includes
 
