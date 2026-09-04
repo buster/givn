@@ -10197,7 +10197,7 @@ mod tests {
     #[test]
     fn duplicate_boundary_passage_scores_are_below_the_similarity_threshold() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let delta_root = root.join("givn/specs/spec-duplicates");
+        let delta_root = root.join("givn/specs/spec-discovery");
         let delta = collect_delta_scenarios(root, &delta_root).expect("load duplicate delta");
         let active: Vec<&DeltaScenario> = delta
             .iter()
