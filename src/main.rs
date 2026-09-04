@@ -262,6 +262,13 @@ enum SpecCommands {
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
     },
+    /// Lexical (not semantic) search over permanent scenario titles and
+    /// step text — parsed from the AST, so docstring payload cannot create
+    /// phantom hits. No ranking model, no fuzzy matching.
+    Find {
+        /// Substring to search for (case-insensitive).
+        query: String,
+    },
 }
 
 #[derive(Clone, Copy, Debug, ValueEnum)]
@@ -353,6 +360,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             SpecCommands::Tree { format } => {
                 cli::spec::run_tree(matches!(format, SpecFormat::Json))
             }
+            SpecCommands::Find { query } => cli::spec::run_find(&query),
         },
         Commands::Upgrade => cli::upgrade::run(),
         Commands::Run { port, print } => std::process::exit(cli::run::execute(port, print)),

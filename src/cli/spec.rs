@@ -58,6 +58,30 @@ pub fn run_bge_parity() -> Result<()> {
     crate::spec::retrieval::bge_parity(&std::env::current_dir()?)
 }
 
+/// `givn spec find <query>` — lexical search over the parsed AST (Phase 4.2).
+pub fn run_find(query: &str) -> Result<()> {
+    let hits = crate::spec::tree::find_scenarios(&std::env::current_dir()?, query)?;
+    if hits.is_empty() {
+        println!("no scenarios match '{query}'");
+        return Ok(());
+    }
+    println!("{} scenario(s) match '{query}':", hits.len());
+    for hit in &hits {
+        println!(
+            "  [{}] {} / {}{}",
+            if hit.e2e { "e2e" } else { "   " },
+            hit.group,
+            hit.capability,
+            if hit.e2e {
+                format!(" — {}", hit.scenario)
+            } else {
+                format!(" — {}", hit.scenario)
+            }
+        );
+    }
+    Ok(())
+}
+
 /// `givn spec tree` — deterministic corpus discovery (Phase 4.1).
 pub fn run_tree(json: bool) -> Result<()> {
     let rows = crate::spec::tree::build_tree(&std::env::current_dir()?)?;
