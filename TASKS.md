@@ -645,7 +645,7 @@ Green (these are asset files embedded via `rust-embed`; a missing section
 reference elsewhere would show up as a broken test, e.g. anything that
 `grep`s the template/instruction for section headings).
 
-### [ ] 1.4 Also remove the now-dead `## Semantic review and retrieval
+### [x] 1.4 Also remove the now-dead `## Semantic review and retrieval
 vocabulary` section from `assets/instructions/specs.md`
 
 Same reasoning as 1.3 — this section only makes sense while the semantic
