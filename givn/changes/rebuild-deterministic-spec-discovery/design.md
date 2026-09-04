@@ -32,7 +32,7 @@ compiled CLI.
 | spec-explore-change | `tests/steps/spec_discovery_deterministic_steps.rs` |
 | spec-explore-permanent | `tests/steps/spec_discovery_deterministic_steps.rs` |
 | spec-progress-output | `tests/steps/spec_discovery_deterministic_steps.rs` |
-| config-overlay | (existing overlay steps; delta modifies two scenarios) |
+| config-overlay | `tests/steps/spec_discovery_deterministic_steps.rs` |
 
 ## Architecture Impact
 
