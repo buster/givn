@@ -16,9 +16,9 @@ and what the next step is — without reading files by hand.
 
 ## Interactions
 
-- show change/artifact status tree-wide or for one change
-- render task progress with checked/unchecked boxes
-- validate change id input when a specific change is requested
+- Consumer runs givn status on a change with uppercase checkboxes
+- Consumer runs givn status on a change with skipped artifacts and sees them correctly
+- Consumer invokes givn status with a path traversal change id and gets a clear error
 
 ## Includes
 

@@ -19,10 +19,11 @@ come with installation.
 
 ## Interactions
 
-- initialise a givn project with agent target selection
-- start a new change with a valid kebab-case id
-- request artifact writing instructions for a change
-- consolidate prose and install extras for an initialised project
+- Consumer selects agent targets during interactive init
+- Consumer runs init non-interactively and gets opencode skills
+- Consumer re-syncs skills after init and the selection is honoured
+- Canonical E2E policy is emitted by specs instructions
+- Generated guidance points to the canonical E2E policy
 
 ## Includes
 

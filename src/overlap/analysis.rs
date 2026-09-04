@@ -111,6 +111,7 @@ pub fn scan_tree(root: &Path) -> Vec<Finding> {
     // Needs the raw filesystem, not the scenario list — call with root.
     findings.extend(singleton_groups(root));
     findings.extend(use_case_graph_findings(root));
+    findings.extend(crate::gherkin::interaction::interaction_gate_findings(root));
     findings.sort_by(|a, b| {
         kind_order(a).cmp(&kind_order(b)).then_with(|| {
             a.files
