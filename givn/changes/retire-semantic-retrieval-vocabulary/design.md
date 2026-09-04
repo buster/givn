@@ -17,7 +17,7 @@ asserting the retrieval commands are gone from the specs instruction.
 | Cap | File |
 |---|---|
 | instruction-integrity | `tests/steps/instruction_integrity_e2e_steps.rs` |
-| skill-rewrites | (existing generic regex steps in `tests/steps/mod.rs`) |
+| skill-rewrites | `tests/steps/mod.rs` |
 
 ## Architecture Impact
 
