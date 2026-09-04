@@ -133,6 +133,11 @@ fn run_mandatory_checks(
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
                 run_retrieval_gate(project_root, id)?;
                 check_retirement_disclosed(project_root, id)?;
+            } else {
+                println!(
+                    "  ⚠ no --change given — overlap, retirement, and routing checks were skipped \
+                     (they require a specific change to scope to)"
+                );
             }
         }
         _ => {}
