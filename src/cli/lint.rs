@@ -179,10 +179,23 @@ fn run_with_root(
         }
     }
 
-    // Tree-wide overlap scan (default whole-tree scope only; explicit paths
-    // and --change keep their existing scoped semantics).
-    if paths.is_empty() && change.is_none() {
-        for finding in crate::overlap::analysis::scan_tree(project_root) {
+    // Tree-wide overlap scan. Whole-tree scope by default; with --change,
+    // run the same scan but keep only findings that involve the change's
+    // delta (same delta-prefix filter as run_review_overlap_gate), so the
+    // authoring loop surfaces overlap findings before check review does.
+    if paths.is_empty() {
+        let all_findings = crate::overlap::analysis::scan_tree(project_root);
+        let scoped_findings: Vec<_> = if let Some(id) = change {
+            let change_dir = crate::state::resolve_change_dir(project_root, id)?;
+            let delta_prefix = change_dir.join("specs").to_string_lossy().into_owned();
+            all_findings
+                .into_iter()
+                .filter(|f| f.files.iter().any(|file| file.starts_with(&delta_prefix)))
+                .collect()
+        } else {
+            all_findings
+        };
+        for finding in scoped_findings {
             if finding.kind == "duplicate_title" {
                 total_errors += 1;
                 has_duplicate = true;
