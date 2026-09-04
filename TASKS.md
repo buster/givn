@@ -1248,7 +1248,7 @@ needed (e.g. a per-project override for which subcommands count as
 **Verify:** only applicable if this task ends up doing anything —
 `cargo test config::overlay 2>&1 | tail -20`.
 
-### [ ] 2.7 Documentation churn — update every place that says "one file per capability" without grouping
+### [x] 2.7 Documentation churn — update every place that says "one file per capability" without grouping
 
 **Grep to find every occurrence first:**
 ```sh
