@@ -85,3 +85,5 @@ Feature: Explore permanent scenarios before creation
     And    the user searches the permanent corpus for "anything" with `givn spec find`
     Then   the command exits 0
     And    the permanent specifications are unchanged
+  @givn.removed
+  Scenario: Provider selection rejects an unknown provider

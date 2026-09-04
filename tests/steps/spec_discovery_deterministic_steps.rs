@@ -8,7 +8,7 @@
 
 use std::path::PathBuf;
 
-use crate::common::{make_bare_root, run_givn, TestEnv};
+use crate::common::{TestEnv, make_bare_root, run_givn};
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
 
@@ -48,7 +48,9 @@ fn corpus_with_exact_pair(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given("a spec discovery project whose corpus contains two features with one identical scenario each")]
+#[given(
+    "a spec discovery project whose corpus contains two features with one identical scenario each"
+)]
 fn corpus_with_cross_feature_pair(world: &mut GivnWorld) {
     let env = make_bare_root();
     let one = duplicate_pair_feature("The thing happens", "Unrelated other");
@@ -58,7 +60,9 @@ fn corpus_with_cross_feature_pair(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project whose corpus contains two scenarios with identical assertions but different actions$"#)]
+#[given(
+    regex = r#"^a spec discovery project whose corpus contains two scenarios with identical assertions but different actions$"#
+)]
 fn corpus_with_same_shape(world: &mut GivnWorld) {
     let env = make_bare_root();
     let body = "Feature: Shapes\n\n  Scenario: First shape\n    Given a prepared workspace\n    When the first action runs\n    Then the command exits 0\n    And stdout contains \"done\"\n\n  Scenario: Second shape\n    Given a prepared workspace\n    When the second action runs\n    Then the command exits 0\n    And stdout contains \"done\"\n";
@@ -66,7 +70,9 @@ fn corpus_with_same_shape(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project whose corpus contains one scenario whose assertions are a subset of another's$"#)]
+#[given(
+    regex = r#"^a spec discovery project whose corpus contains one scenario whose assertions are a subset of another's$"#
+)]
 fn corpus_with_subset(world: &mut GivnWorld) {
     let env = make_bare_root();
     let body = "Feature: Subsets\n\n  Scenario: Small\n    Given a prepared workspace\n    When the action runs\n    Then the command exits 0\n\n  Scenario: Large\n    Given a prepared workspace\n    When the action runs\n    Then the command exits 0\n    And stdout contains \"done\"\n";
@@ -74,7 +80,9 @@ fn corpus_with_subset(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project whose corpus contains a malformed permanent feature$"#)]
+#[given(
+    regex = r#"^a spec discovery project whose corpus contains a malformed permanent feature$"#
+)]
 fn corpus_with_malformed_feature(world: &mut GivnWorld) {
     let env = make_bare_root();
     write_feature(
@@ -92,7 +100,9 @@ fn project_without_specs_dir(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project whose archive contains a duplicate pair and whose corpus has none$"#)]
+#[given(
+    regex = r#"^a spec discovery project whose archive contains a duplicate pair and whose corpus has none$"#
+)]
 fn archive_holds_duplicate_pair(world: &mut GivnWorld) {
     let env = make_bare_root();
     write_feature(
@@ -121,7 +131,9 @@ fn corpus_with_token_scenario(world: &mut GivnWorld, token: String) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project whose corpus embeds literal Gherkin with a "Scenario:" line inside a docstring$"#)]
+#[given(
+    regex = r#"^a spec discovery project whose corpus embeds literal Gherkin with a "Scenario:" line inside a docstring$"#
+)]
 fn corpus_with_docstring_gherkin(world: &mut GivnWorld) {
     let env = make_bare_root();
     write_feature(
@@ -164,7 +176,9 @@ fn two_groups_with_narrative(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project whose corpus contains a capability that invokes `givn lint`$"#)]
+#[given(
+    regex = r#"^a spec discovery project whose corpus contains a capability that invokes `givn lint`$"#
+)]
 fn corpus_with_lint_capability(world: &mut GivnWorld) {
     let env = make_bare_root();
     write_feature(
@@ -192,7 +206,9 @@ fn change_with_lint_proposal(world: &mut GivnWorld) {
     .unwrap();
 }
 
-#[given(regex = r"^an active change whose proposal describes internal widget plumbing with no command surface$")]
+#[given(
+    regex = r"^an active change whose proposal describes internal widget plumbing with no command surface$"
+)]
 fn change_with_internal_proposal(world: &mut GivnWorld) {
     let env = env_of(world);
     let change = env.root().join("givn/changes/route-me");
@@ -213,7 +229,9 @@ fn corpus_and_change(world: &mut GivnWorld) {
     std::fs::write(change.join("proposal.md"), "Anything at all.\n").unwrap();
 }
 
-#[when(regex = r#"^the user audits the permanent corpus with `givn spec duplicates( --format json)?`$"#)]
+#[when(
+    regex = r#"^the user audits the permanent corpus with `givn spec duplicates( --format json)?`$"#
+)]
 fn run_duplicates(world: &mut GivnWorld, json: String) {
     let args = if json.trim().is_empty() {
         vec!["spec", "duplicates"]
@@ -236,7 +254,9 @@ fn run_find(world: &mut GivnWorld, query: String) {
     world.last_output = Some(run_givn(env_of(world), &["spec", "find", &query]));
 }
 
-#[when(regex = r#"^the user searches the permanent corpus for the docstring-embedded title with `givn spec find`$"#)]
+#[when(
+    regex = r#"^the user searches the permanent corpus for the docstring-embedded title with `givn spec find`$"#
+)]
 fn run_find_docstring_title(world: &mut GivnWorld) {
     world.last_output = Some(run_givn(
         env_of(world),
@@ -275,26 +295,36 @@ fn run_route_both(world: &mut GivnWorld) {
 #[then(regex = r#"^stdout contains the audit endpoint titles "(.*)" and "(.*)"$"#)]
 fn stdout_has_both_titles(world: &mut GivnWorld, a: String, b: String) {
     let out = stdout(world);
-    assert!(out.contains(&a) || !out.contains(&a), "titles are identical by construction: {a}");
+    assert!(
+        out.contains(&a) || !out.contains(&a),
+        "titles are identical by construction: {a}"
+    );
     assert!(out.contains(a.trim()) && out.contains(b.trim()), "{out}");
 }
 
 #[then("stdout is a JSON array")]
 fn stdout_is_json_array(world: &mut GivnWorld) {
     let out = stdout(world);
-    let value: serde_json::Value =
-        serde_json::from_str(&out).expect("stdout is valid JSON");
+    let value: serde_json::Value = serde_json::from_str(&out).expect("stdout is valid JSON");
     assert!(value.is_array(), "{value}");
 }
 
-#[then(regex = r#"^every JSON match carries kind left_file left_title right_file and right_title$"#)]
+#[then(
+    regex = r#"^every JSON match carries kind left_file left_title right_file and right_title$"#
+)]
 fn json_matches_have_fields(world: &mut GivnWorld) {
     let out = stdout(world);
     let value: serde_json::Value = serde_json::from_str(&out).expect("valid JSON");
     let items = value.as_array().expect("array");
     assert!(!items.is_empty(), "fixture must produce at least one match");
     for item in items {
-        for field in ["kind", "left_file", "left_title", "right_file", "right_title"] {
+        for field in [
+            "kind",
+            "left_file",
+            "left_title",
+            "right_file",
+            "right_title",
+        ] {
             assert!(
                 item.get(field).is_some_and(|v| v.is_string()),
                 "missing {field} in {item}"
@@ -357,9 +387,12 @@ fn audit_reports_identical(world: &mut GivnWorld) {
         .as_ref()
         .expect("first audit output missing");
     let second = stdout(world);
-    assert_eq!(first.trim(), second.trim(), "audit output must be deterministic");
+    assert_eq!(
+        first.trim(),
+        second.trim(),
+        "audit output must be deterministic"
+    );
 }
-
 
 #[then(regex = r#"^stdout stays free of "(.*)" and "(.*)" wording$"#)]
 fn stdout_free_of_two(world: &mut GivnWorld, a: String, b: String) {

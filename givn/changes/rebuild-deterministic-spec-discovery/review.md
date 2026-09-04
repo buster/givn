@@ -27,6 +27,10 @@ components promised or built.
 `spec-retrieval` loaded at scenario level (no scenario touches the
 model paths).
 
+- Config-overlay delta: EXTEND recorded in the routing table; the modified
+  scenarios re-express the leaf-removal contract against the protected-gate
+  rule.
+
 **Downgraded e2e scenario scan** — the six `@e2e` scenarios drive the real
 compiled CLI subprocess and assert observable stdout/stderr/exit results.
 
