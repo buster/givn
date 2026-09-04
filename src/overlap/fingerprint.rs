@@ -151,15 +151,10 @@ pub fn mask(value: &str) -> String {
                 }
                 out.push_str("*\"");
             }
-            '\'' => {
-                out.push('\'');
-                for n in chars.by_ref() {
-                    if n == '\'' {
-                        break;
-                    }
-                }
-                out.push_str("*'");
-            }
+            // A bare ' is never a quote delimiter in this corpus — it is an
+            // apostrophe (e.g. "the user's output"). Treating it as an
+            // opening quote consumed to end-of-line, discarding the actual
+            // assertion content and creating false shape matches.
             c if c.is_ascii_digit() => {
                 while chars.peek().is_some_and(|n| n.is_ascii_digit()) {
                     chars.next();
@@ -290,5 +285,23 @@ mod phase5_tests {
         };
         assert!(!a.contradicts(&b));
         assert!(!b.contradicts(&a));
+    }
+}
+
+#[cfg(test)]
+mod mask_tests {
+    use super::mask;
+
+    #[test]
+    fn apostrophe_does_not_eat_rest_of_line() {
+        assert_eq!(mask("the user's output is red"), "the user's output is red");
+    }
+
+    #[test]
+    fn double_quoted_values_are_still_masked() {
+        assert_eq!(
+            mask(r#"stdout contains "Created change 'x'""#),
+            r#"stdout contains "*""#
+        );
     }
 }
