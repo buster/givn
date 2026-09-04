@@ -9,20 +9,30 @@ use anyhow::Result;
 ///   0 = clean
 ///   1 = parse error
 ///   2 = @wip / PENDING
-///   3 = duplicate scenario title (overlap hard error)
+///   3 = duplicate scenario title (overlap hard error) or empty feature
 ///
-/// Parse errors (1) outrank duplicate titles (3), which outrank @wip (2).
+/// Parse errors (1) outrank duplicate titles/empty features (3), which
+/// outrank @wip (2).
 /// `@givn.removed` scenarios suppress @wip warnings (they contain placeholder steps).
 ///
 /// Returns the exit code; the caller (`main`) maps non-zero codes to
 /// `std::process::exit`.
 pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> {
     let project_root = std::env::current_dir()?;
+    run_with_root(&project_root, change, paths, json)
+}
+
+fn run_with_root(
+    project_root: &std::path::Path,
+    change: Option<&str>,
+    paths: Vec<String>,
+    json: bool,
+) -> Result<i32> {
     let feature_files = if !paths.is_empty() {
         paths.iter().map(std::path::PathBuf::from).collect()
     } else if let Some(id) = change {
         // Scope to givn/changes/<id>/specs/
-        let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
+        let change_dir = crate::state::resolve_change_dir(project_root, id)?;
         if !change_dir.exists() {
             anyhow::bail!("change '{id}' not found");
         }
@@ -59,6 +69,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
     let mut has_parse_error = false;
     let mut has_wip = false;
     let mut has_duplicate = false;
+    let mut has_empty_feature = false;
     let mut total_files = 0;
     let mut total_errors = 0;
     let mut findings: Vec<Finding> = Vec::new();
@@ -116,6 +127,21 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
                 contradiction: false,
             });
         }
+
+        if let Some(feature) = &result.feature
+            && feature.scenarios.is_empty()
+            && !crate::gherkin::delta::is_retired_feature(feature)
+        {
+            has_empty_feature = true;
+            total_errors += 1;
+            findings.push(Finding {
+                kind: "empty_feature".to_string(),
+                level: "error".to_string(),
+                files: vec![path.display().to_string()],
+                titles: vec!["feature has zero scenarios".to_string()],
+                contradiction: false,
+            });
+        }
     }
 
     // Cross-reference tasks.md for @e2e intent: if tasks.md plans e2e but no
@@ -123,7 +149,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
     if let Some(id) = change
         && !has_parse_error
     {
-        let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
+        let change_dir = crate::state::resolve_change_dir(project_root, id)?;
         let tasks_path = change_dir.join("tasks.md");
         if tasks_path.exists() {
             let tasks_content = std::fs::read_to_string(&tasks_path).unwrap_or_default();
@@ -156,7 +182,7 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
     // Tree-wide overlap scan (default whole-tree scope only; explicit paths
     // and --change keep their existing scoped semantics).
     if paths.is_empty() && change.is_none() {
-        for finding in crate::overlap::analysis::scan_tree(&project_root) {
+        for finding in crate::overlap::analysis::scan_tree(project_root) {
             if finding.kind == "duplicate_title" {
                 total_errors += 1;
                 has_duplicate = true;
@@ -179,11 +205,11 @@ pub fn run(change: Option<&str>, paths: Vec<String>, json: bool) -> Result<i32> 
         }
     }
 
-    // Exit code: parse errors (1) outrank duplicate titles (3), which
-    // outrank @wip/PENDING (2).
+    // Exit code: parse errors (1) outrank duplicate titles and empty
+    // features (3), which outrank @wip/PENDING (2).
     let exit_code = if has_parse_error {
         1
-    } else if has_duplicate {
+    } else if has_duplicate || has_empty_feature {
         3
     } else if has_wip {
         2
@@ -200,6 +226,7 @@ fn render_prose(finding: &Finding) {
         "shape_match" => "SHAPE",
         "subset" => "SUBST",
         "long_scenario" => "LONG ",
+        "empty_feature" => "EMPTY",
         "parse_error" => "ERROR",
         "wip" => "WIP  ",
         _ => "WARN ",
@@ -241,11 +268,62 @@ fn render_prose(finding: &Finding) {
                 title = finding.titles.first().map(String::as_str).unwrap_or("?")
             );
         }
+        "empty_feature" => {
+            eprintln!("[{level}] {location}  feature has zero scenarios");
+        }
         _ => {
             eprintln!(
                 "[{level}] {location}  {}",
                 finding.titles.first().map(String::as_str).unwrap_or("?")
             );
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// A temp project with givn/specs/ seeded from the given (path, text)
+    /// pairs. Returns the temp dir handle (keep alive) and the project root.
+    fn temp_project(files: &[(&str, &str)]) -> (tempfile::TempDir, std::path::PathBuf) {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path().to_path_buf();
+        for (rel, text) in files {
+            let path = project.join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        }
+        (root, project)
+    }
+
+    #[test]
+    fn empty_feature_is_an_error_and_exits_3() {
+        let (_root, project) = temp_project(&[(
+            "givn/specs/hollow/hollow.feature",
+            "@givn.delta @hollow\nFeature: Hollow\n",
+        )]);
+        let code = run_with_root(&project, None, vec![], false).unwrap();
+        assert_eq!(code, 3, "empty_feature must exit 3");
+    }
+
+    #[test]
+    fn retired_empty_feature_does_not_trigger_the_finding() {
+        let (_root, project) = temp_project(&[(
+            "givn/specs/old-cap/old-cap.feature",
+            "@givn.delta @givn.retired @old-cap\nFeature: Old capability\n",
+        )]);
+        let code = run_with_root(&project, None, vec![], false).unwrap();
+        assert_eq!(code, 0, "retirement markers are legitimately empty");
+    }
+
+    #[test]
+    fn populated_feature_is_clean() {
+        let (_root, project) = temp_project(&[(
+            "givn/specs/full/full.feature",
+            "Feature: Full\n\n  Scenario: One\n    Given x\n    Then y\n",
+        )]);
+        let code = run_with_root(&project, None, vec![], false).unwrap();
+        assert_eq!(code, 0);
     }
 }
