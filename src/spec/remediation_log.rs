@@ -296,8 +296,8 @@ fn parse_log(content: &str) -> LogState {
             });
             continue;
         }
-        if line.starts_with("## Candidate ") {
-            let candidate_id = line["## Candidate ".len()..].trim().to_string();
+        if let Some(candidate_id) = line.strip_prefix("## Candidate ") {
+            let candidate_id = candidate_id.trim().to_string();
             let fields = parse_fields(&mut lines);
             let lookup = |name: &str| {
                 fields
@@ -362,6 +362,17 @@ fn write_atomic(path: &Path, content: &str) -> Result<()> {
 
 /// Append-only update of the remediation log for one review run.
 ///
+/// Run metadata for one `update_log` invocation: the run kind, the git commit
+/// the log run is stamped with, and the embedder runtimes measured in ms.
+#[derive(Clone, Copy, Debug)]
+pub(super) struct LogRunContext<'a> {
+    pub(super) kind: LogRunKind,
+    pub(super) head_commit: Option<&'a str>,
+    pub(super) e5_runtime_ms: Option<u128>,
+    pub(super) bge_runtime_ms: Option<u128>,
+    pub(super) nli_runtime_ms: Option<u128>,
+}
+
 /// Appends a run record when the current candidate universe is not already
 /// covered by the log, appends entries for newly seen endpoint evidence, and
 /// applies after-state completions for verified remediations. Returns whether
@@ -369,14 +380,17 @@ fn write_atomic(path: &Path, content: &str) -> Result<()> {
 pub(super) fn update_log(
     path: &Path,
     change_id: &str,
-    kind: LogRunKind,
-    head_commit: Option<&str>,
-    e5_runtime_ms: Option<u128>,
-    bge_runtime_ms: Option<u128>,
-    nli_runtime_ms: Option<u128>,
+    context: LogRunContext<'_>,
     candidates: &[LogCandidateInput],
     completions: &[LogCompletion],
 ) -> Result<bool> {
+    let LogRunContext {
+        kind,
+        head_commit,
+        e5_runtime_ms,
+        bge_runtime_ms,
+        nli_runtime_ms,
+    } = context;
     let mut state = std::fs::read_to_string(path)
         .map(|content| parse_log(&content))
         .unwrap_or_default();

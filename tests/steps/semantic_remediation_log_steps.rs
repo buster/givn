@@ -123,12 +123,11 @@ fn report_candidate_blocks(world: &GivnWorld) -> Vec<Vec<(String, String)>> {
             current = Some(Vec::new());
             continue;
         }
-        if let Some(block) = current.as_mut() {
-            if let Some(rest) = line.strip_prefix("- ") {
-                if let Some((name, value)) = rest.split_once(": ") {
-                    block.push((name.to_string(), value.to_string()));
-                }
-            }
+        if let Some(block) = current.as_mut()
+            && let Some(rest) = line.strip_prefix("- ")
+            && let Some((name, value)) = rest.split_once(": ")
+        {
+            block.push((name.to_string(), value.to_string()));
         }
     }
     if let Some(block) = current.take() {
@@ -630,7 +629,9 @@ fn snapshot_remediation_log(world: &mut GivnWorld) {
 fn remediation_log_exists(world: &mut GivnWorld) {
     assert!(
         remediation_log_path(world).exists(),
-        "semantic remediation log is missing"
+        "semantic remediation log is missing; stderr: {} stdout: {}",
+        stderr(world),
+        stdout(world)
     );
 }
 
@@ -1167,6 +1168,56 @@ fn classify_a(world: &mut GivnWorld, classification: String) {
     super::semantic_review_steps::update_semantic_classification(world, &classification, true);
 }
 
+/// Corpus variant of `change_classified_endpoint_without_remediation`: the
+/// delta endpoint changes while titles stay identical, so the stub pair score
+/// key (title|title) keeps applying.
+#[when("the active classified corpus endpoint changes without remediation")]
+fn change_corpus_endpoint_without_remediation(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let path = env.path("givn/changes/running-change/specs/running.feature");
+    let content = fs::read_to_string(&path).expect("read corpus delta");
+    let changed = content
+        .lines()
+        .map(|line| {
+            if line.trim_start().starts_with("Given ") {
+                format!("{line} changed")
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>()
+        .join("\n");
+    fs::write(&path, changed).expect("write changed corpus delta");
+}
+
+/// Corpus variant of `consolidate_active_variant`: the delta scenario becomes
+/// an explicit-parameter Outline of the same domain content and the stub pair
+/// score drops below the boundary, so the rerun recomputes the pair.
+#[when("the active corpus variant is consolidated with an explicit parameter")]
+fn consolidate_corpus_variant(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("remediation project is required");
+    let path = env.path("givn/changes/running-change/specs/running.feature");
+    let content = fs::read_to_string(&path).expect("read corpus delta");
+    let mut lines = content
+        .lines()
+        .map(|line| {
+            if line.trim_start().starts_with("Given ") {
+                format!("{} for <variant>", line.trim_end())
+            } else {
+                line.to_string()
+            }
+        })
+        .collect::<Vec<_>>();
+    lines.push(String::new());
+    lines.push("    Examples:".to_string());
+    lines.push("      | variant |".to_string());
+    lines.push("      | seeded  |".to_string());
+    fs::write(&path, lines.join("\n")).expect("write consolidated corpus delta");
+    if let Some(scores) = world.retrieval_stub_scores.as_deref() {
+        world.retrieval_stub_scores = Some(scores.replace("=0.9600", "=0.8900"));
+    }
+}
+
 #[when("the doubled scenario is withdrawn from the change specs")]
 fn removal_a(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("remediation project is required");
@@ -1596,4 +1647,178 @@ fn report_bytes_equal_comparison_snapshot(world: &mut GivnWorld) {
             .expect("report snapshot"),
         "the regenerated report must be byte-identical"
     );
+}
+
+#[then("the review passes with the remediation receipt")]
+fn review_passes_with_receipt(world: &mut GivnWorld) {
+    let output = world.last_output.as_ref().expect("output");
+    assert!(output.status.success(), "the review run must pass");
+    assert!(
+        stdout(world).contains("semantic remediation verified"),
+        "stdout must carry the receipt: {}",
+        stdout(world)
+    );
+}
+
+// Short wordings for the token-budget reductions.
+#[when(
+    regex = r#"^the reviewer logs the fix \"([^\"]+)\" and the commit list \[([^\]]*)\] into the log$"#
+)]
+fn record_a_short(world: &mut GivnWorld, fix: String, commits: String) {
+    record_a(world, fix, commits);
+}
+
+#[when(
+    regex = r#"^the operator records the fix \"([^\"]+)\" with commits \[([^\]]*)\] in the log$"#
+)]
+fn record_b_short(world: &mut GivnWorld, fix: String, commits: String) {
+    record_fix_with_commits(world, fix, commits);
+}
+
+#[when(regex = r#"^the user records the fix \"([^\"]+)\" and commits \[([^\]]*)\] in the log$"#)]
+fn record_canonical_short(world: &mut GivnWorld, fix: String, commits: String) {
+    record_fix_with_commits(world, fix, commits);
+}
+
+#[when(
+    regex = r#"^the gate operator files the correction \"([^\"]+)\" with the record \[([^\]]*)\] in the log$"#
+)]
+fn record_gate_short(world: &mut GivnWorld, _fix: String, commits: String) {
+    record_individual(world, String::new(), commits);
+}
+
+#[when(
+    regex = r#"^the assessor registers the correction \"([^\"]+)\" with the record \[([^\]]*)\] in the log$"#
+)]
+fn record_assessor_short(world: &mut GivnWorld, _fix: String, commits: String) {
+    record_individual(world, String::new(), commits);
+}
+
+// Compact wordings for the token-budget reductions.
+#[given("the remediation fixture stages a \"DUPLICATE\" case")]
+fn fixture_compact(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+}
+
+#[given("the remediation fixture stages a \"VARIANT\" case")]
+fn fixture_compact_variant(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_project(world, "VARIANT".to_string());
+}
+
+#[when("the assessor resolves the candidate to \"DUPLICATE\"")]
+fn classify_compact_duplicate(world: &mut GivnWorld) {
+    super::semantic_review_steps::update_semantic_classification(world, "DUPLICATE", true);
+}
+
+#[when("the assessor resolves the candidate to \"VARIANT\"")]
+fn classify_compact_variant(world: &mut GivnWorld) {
+    super::semantic_review_steps::update_semantic_classification(world, "VARIANT", true);
+}
+
+#[when("the assessor resolves the candidate to \"VALID-BOUNDARY\"")]
+fn classify_compact_boundary(world: &mut GivnWorld) {
+    super::semantic_review_steps::update_semantic_classification(world, "VALID-BOUNDARY", true);
+}
+
+#[when(regex = r#"^the gate operator marks the candidate \"(DUPLICATE)\"$"#)]
+fn classify_gate_compact(world: &mut GivnWorld, classification: String) {
+    super::semantic_review_steps::update_semantic_classification(world, &classification, true);
+}
+
+#[when(regex = r#"^the assessor registers the fix \"[^\"]*\" with the record \[([^\]]*)\]$"#)]
+fn record_assessor_compact(world: &mut GivnWorld, commits: String) {
+    record_individual(world, String::new(), commits);
+}
+
+#[when(regex = r#"^the gate operator files the fix \"[^\"]*\" with the record \[([^\]]*)\]$"#)]
+fn record_gate_compact(world: &mut GivnWorld, commits: String) {
+    record_individual(world, String::new(), commits);
+}
+
+#[when(regex = r#"^the user records the fix \"[^\"]*\" and commits \[([^\]]*)\]$"#)]
+fn record_canonical_compact(world: &mut GivnWorld, commits: String) {
+    record_fix_with_commits(world, "removed the duplicate".to_string(), commits);
+}
+
+#[when(regex = r#"^the reviewer logs the fix \"[^\"]*\" and the commits \[([^\]]*)\]$"#)]
+fn record_a_compact(world: &mut GivnWorld, commits: String) {
+    record_a(world, "removed the duplicate".to_string(), commits);
+}
+
+#[when(regex = r#"^the operator records the fix \"[^\"]*\" with commits \[([^\]]*)\]$"#)]
+fn record_b_compact(world: &mut GivnWorld, commits: String) {
+    record_fix_with_commits(world, "removed the twin".to_string(), commits);
+}
+
+/// Per-scenario domain corpus: the docstring carries the permanent corpus and
+/// the delta feature (separated by a `--- delta ---` marker), so every
+/// scenario embeds genuinely different semantic content. The stub pair score
+/// is derived from the written titles automatically.
+#[given(regex = r#"^the remediation fixture files carry the ([a-z]+) corpus:$"#)]
+fn remediation_corpus(world: &mut GivnWorld, _domain: String, step: &cucumber::gherkin::Step) {
+    let content = step
+        .docstring
+        .as_deref()
+        .expect("corpus docstring is required")
+        .to_string();
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+    let env = world.env.as_ref().expect("remediation project is required");
+    let (permanent, delta) = match content.split_once("--- delta ---") {
+        Some((permanent, delta)) => (permanent.trim(), delta.trim()),
+        None => panic!("corpus docstring must contain a --- delta --- separator"),
+    };
+    fs::write(env.path("givn/specs/provider.feature"), permanent)
+        .expect("write domain permanent corpus");
+    let delta_path = env.path("givn/changes/running-change/specs/running.feature");
+    fs::create_dir_all(delta_path.parent().expect("delta parent")).expect("create delta dir");
+    fs::write(&delta_path, delta).expect("write domain delta");
+    if std::env::var("GIVN_DEBUG_CORPUS").is_ok() {
+        println!(
+            "CORPUS permanent:\n{}\n---\nCORPUS delta:\n{}",
+            permanent, delta
+        );
+    }
+
+    let delta_text = fs::read_to_string(&delta_path).expect("read domain delta");
+    let permanent_text =
+        fs::read_to_string(env.path("givn/specs/provider.feature")).expect("read domain permanent");
+    let delta_title = delta_text
+        .lines()
+        .find_map(|line| {
+            line.trim_start()
+                .strip_prefix("Scenario: ")
+                .or_else(|| line.trim_start().strip_prefix("Scenario Outline: "))
+        })
+        .expect("delta title")
+        .trim()
+        .to_string();
+    let permanent_title = permanent_text
+        .lines()
+        .find_map(|line| {
+            line.trim_start()
+                .strip_prefix("Scenario Outline: ")
+                .or_else(|| line.trim_start().strip_prefix("Scenario: "))
+        })
+        .expect("permanent title")
+        .trim()
+        .to_string();
+    world.retrieval_stub_scores = Some(format!("{delta_title}|{permanent_title}=0.9600"));
+
+    // The domain corpus changes every permanent scenario, so the persisted
+    // E5 index must be rebuilt before the review reads it.
+    let output =
+        common::run_givn_with_envs(env, &["spec", "index"], &[("GIVN_SPEC_EMBEDDER", "stub")]);
+    assert!(
+        output.status.success(),
+        "domain spec index failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+
+    // The domain titles need overlap dispositions in the fixture's review.md
+    // so the structural overlap gate lets the review reach the semantic stage.
+    let review = format!(
+        "REVIEW: PASS\nREADME-IMPACT: none\n## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `{delta_title}` | `{permanent_title}` | boundary |\n"
+    );
+    fs::write(env.path("givn/changes/running-change/review.md"), review)
+        .expect("write domain review dispositions");
 }
