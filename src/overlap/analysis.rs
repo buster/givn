@@ -248,10 +248,13 @@ fn is_subsequence(needle: &[String], haystack: &[String]) -> bool {
     needle.iter().all(|n| it.any(|h| h == n))
 }
 
+/// Scenarios longer than this many steps produce a `long_scenario` warning.
+pub const LONG_SCENARIO_STEP_THRESHOLD: usize = 14;
+
 fn long_scenarios(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
     scenarios
         .iter()
-        .filter(|s| s.op != DeltaOp::Removed && s.step_count > 14)
+        .filter(|s| s.op != DeltaOp::Removed && s.step_count > LONG_SCENARIO_STEP_THRESHOLD)
         .map(|s| Finding {
             kind: "long_scenario".to_string(),
             level: "warning".to_string(),
