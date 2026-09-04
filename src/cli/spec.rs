@@ -111,7 +111,6 @@ pub fn run_find(query: &str) -> Result<()> {
             if hit.e2e { "e2e" } else { "   " },
             hit.group,
             hit.capability,
-            " — ",
             hit.scenario
         );
     }
