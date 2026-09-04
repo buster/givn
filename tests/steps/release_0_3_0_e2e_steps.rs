@@ -150,13 +150,38 @@ fn one_managed_upgrade_commit_exists(world: &mut GivnWorld) {
     assert!(subjects.contains("update managed files"), "{subjects}");
 }
 
+/// Resolve the migration change id a fixture upgrade actually created by
+/// scanning `givn/changes/` for the `migrate-` prefix — version-agnostic
+/// by construction, so the suite survives future catalog additions.
+pub(crate) fn find_migration_change_id(env: &crate::common::TestEnv) -> String {
+    let mut entries: Vec<String> = std::fs::read_dir(env.path("givn/changes"))
+        .expect("read active changes")
+        .flatten()
+        .filter(|entry| entry.file_name().to_string_lossy().starts_with("migrate-"))
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(
+        entries.len(),
+        1,
+        "expected exactly one migration change, got {entries:?}"
+    );
+    entries.pop().expect("exactly one entry")
+}
+
 #[then("no migration change exists")]
 fn no_migration_change_exists(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("current project fixture");
     let changes = env.path("givn/changes");
     let archives = env.path("givn/archive");
-    assert!(!changes.join("migrate-0-2-0-to-0-4-0").exists());
-    assert!(!archives.join("migrate-0-2-0-to-0-4-0").exists());
+    let no_migrate = |dir: &std::path::Path| {
+        !dir.exists()
+            || std::fs::read_dir(dir)
+                .expect("read dir")
+                .flatten()
+                .all(|entry| !entry.file_name().to_string_lossy().starts_with("migrate-"))
+    };
+    assert!(no_migrate(&changes));
+    assert!(no_migrate(&archives));
     assert!(
         std::fs::read_dir(&changes)
             .expect("read active changes")
@@ -201,10 +226,12 @@ fn first_commit_has_managed_paths(world: &mut GivnWorld) {
     }
 }
 
-#[then(regex = r#"^a migration change named "([^"]+)" exists$"#)]
-fn migration_change_exists(world: &mut GivnWorld, id: String) {
+#[then("a migration change for the current version exists")]
+fn current_version_migration_change_exists(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
+    let id = find_migration_change_id(env);
     assert!(env.path(&format!("givn/changes/{id}")).is_dir());
+    assert!(id.starts_with("migrate-0-2-0-to-"), "{id}");
 }
 
 #[then("the migration change records the managed upgrade commit")]
@@ -213,8 +240,11 @@ fn migration_records_upgrade_commit(world: &mut GivnWorld) {
     let commits = git_stdout(env, &["rev-list", "--reverse", "HEAD"]);
     let hashes: Vec<&str> = commits.lines().collect();
     let commit_a = hashes.get(1).expect("Commit A hash");
-    let design = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-4-0/design.md"))
-        .expect("read migration design");
+    let design = {
+        let id = find_migration_change_id(env);
+        std::fs::read_to_string(env.path(&format!("givn/changes/{id}")).join("design.md"))
+    }
+    .expect("read migration design");
     assert!(
         design.contains(&format!("upgrade_commit: `{commit_a}`")),
         "{design}"
@@ -224,9 +254,15 @@ fn migration_records_upgrade_commit(world: &mut GivnWorld) {
 #[then("the migration change contains a proposal and detailed design")]
 fn migration_contains_plan(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
-    let proposal = env.path("givn/changes/migrate-0-2-0-to-0-4-0/proposal.md");
-    let design = env.path("givn/changes/migrate-0-2-0-to-0-4-0/design.md");
-    let metadata = env.path("givn/changes/migrate-0-2-0-to-0-4-0/migration.yaml");
+    let proposal = env
+        .path(&format!("givn/changes/{}", find_migration_change_id(env)))
+        .join("proposal.md");
+    let design = env
+        .path(&format!("givn/changes/{}", find_migration_change_id(env)))
+        .join("design.md");
+    let metadata = env
+        .path(&format!("givn/changes/{}", find_migration_change_id(env)))
+        .join("migration.yaml");
     assert!(proposal.exists());
     assert!(design.exists());
     assert!(metadata.exists());
@@ -245,7 +281,7 @@ fn migration_contains_plan(world: &mut GivnWorld) {
 #[then("the migration change intentionally has no product specification")]
 fn migration_has_no_product_spec(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
-    let migration = env.path("givn/changes/migrate-0-2-0-to-0-4-0");
+    let migration = env.path(&format!("givn/changes/{}", find_migration_change_id(env)));
     assert!(!migration.join("specs").exists());
     assert_eq!(
         std::fs::read_to_string(migration.join(".givn-skip")).expect("read skip marker"),
@@ -318,7 +354,7 @@ fn user_changes_remain_unchanged(world: &mut GivnWorld) {
     assert!(git_stdout(env, &["status", "--porcelain"]).contains("?? user-work.txt"));
 }
 
-#[given("a project that already has the 0.4.0 migration change")]
+#[given("a project that already has the current-version migration change")]
 fn prepared_project(world: &mut GivnWorld) {
     let env = legacy_git_project();
     let first = crate::common::run_givn(&env, &["upgrade"]);
@@ -327,8 +363,11 @@ fn prepared_project(world: &mut GivnWorld) {
         "initial upgrade failed: {}",
         String::from_utf8_lossy(&first.stderr)
     );
-    let design = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-4-0/design.md"))
-        .expect("read prepared migration design");
+    let design = {
+        let id = find_migration_change_id(&env);
+        std::fs::read_to_string(env.path(&format!("givn/changes/{id}")).join("design.md"))
+    }
+    .expect("read prepared migration design");
     let count = git_stdout(&env, &["rev-list", "--count", "HEAD"]);
     world.additional_output = Some(format!("{count}\n---DESIGN---\n{design}"));
     world.env = Some(env);
@@ -337,8 +376,11 @@ fn prepared_project(world: &mut GivnWorld) {
 #[then("the command does not overwrite the migration change")]
 fn migration_not_overwritten(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("prepared project fixture");
-    let actual = std::fs::read_to_string(env.path("givn/changes/migrate-0-2-0-to-0-4-0/design.md"))
-        .expect("read migration design");
+    let actual = {
+        let id = find_migration_change_id(env);
+        std::fs::read_to_string(env.path(&format!("givn/changes/{id}")).join("design.md"))
+    }
+    .expect("read migration design");
     let expected = world
         .additional_output
         .as_deref()
@@ -395,10 +437,18 @@ fn git_required_report(world: &mut GivnWorld) {
 
 #[given(regex = r#"^a Givn 0.2.0 project with an existing "([^"]+)" change$"#)]
 fn existing_migration_project(world: &mut GivnWorld, id: String) {
-    assert_eq!(id, "migrate-0-2-0-to-0-4-0");
+    // The pre-created migrate-* change is respected whatever its version suffix.
+    assert!(id.starts_with("migrate-"), "{id}");
     let env = legacy_git_project();
-    let migration = env.path("givn/changes/migrate-0-2-0-to-0-4-0");
+    let migration = env.path(&format!("givn/changes/{id}"));
     std::fs::create_dir_all(&migration).expect("create existing migration plan");
+    // The upgrade dedup detection keys on migration.yaml — the fixture's
+    // pre-existing plan carries one so it is recognised as pending.
+    std::fs::write(
+        migration.join("migration.yaml"),
+        "schema_version: 1\nsource_version: \"0.2.0\"\ntarget_version: \"0.4.0\"\n",
+    )
+    .expect("write existing migration metadata");
     let proposal = "# Existing migration proposal\nkeep this proposal\n";
     let design = "# Existing migration design\nkeep this design\n";
     std::fs::write(migration.join("proposal.md"), proposal).expect("write existing proposal");
@@ -410,7 +460,7 @@ fn existing_migration_project(world: &mut GivnWorld, id: String) {
 #[then("the command does not overwrite the existing migration proposal or design")]
 fn existing_plan_preserved(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("existing migration fixture");
-    let migration = env.path("givn/changes/migrate-0-2-0-to-0-4-0");
+    let migration = env.path(&format!("givn/changes/{}", find_migration_change_id(env)));
     let actual = format!(
         "{}---\n{}",
         std::fs::read_to_string(migration.join("proposal.md")).expect("read proposal"),
@@ -432,7 +482,7 @@ fn existing_plan_reported(world: &mut GivnWorld) {
     assert!(String::from_utf8_lossy(&output.stdout).contains("already exists"));
 }
 
-#[given("a completed automatic 0.4.0 migration change")]
+#[given("a completed automatic current-version migration change")]
 fn completed_automatic_migration(world: &mut GivnWorld) {
     let env = legacy_git_project();
     let upgrade = crate::common::run_givn(&env, &["upgrade"]);
@@ -443,7 +493,7 @@ fn completed_automatic_migration(world: &mut GivnWorld) {
     );
     // A real 0.2.0 project fills in the backfilled run scaffold before its
     // next archive; the fixture mimics that with a complete cli declaration.
-    let migration = env.path("givn/changes/migrate-0-2-0-to-0-4-0");
+    let migration = env.path(&format!("givn/changes/{}", find_migration_change_id(&env)));
     std::fs::write(
         migration.join("design-review.md"),
         "# Design Review\n\nDESIGN-REVIEW: PASS\n",
@@ -466,10 +516,8 @@ fn completed_automatic_migration(world: &mut GivnWorld) {
 #[when("the consumer archives the maintenance migration")]
 fn archive_maintenance_migration(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("completed migration fixture");
-    world.last_output = Some(crate::common::run_givn(
-        env,
-        &["archive", "--change", "migrate-0-2-0-to-0-4-0"],
-    ));
+    let id = find_migration_change_id(env);
+    world.last_output = Some(crate::common::run_givn(env, &["archive", "--change", &id]));
 }
 
 #[then("the maintenance migration is archived successfully")]
@@ -482,8 +530,27 @@ fn maintenance_migration_archived(world: &mut GivnWorld) {
         String::from_utf8_lossy(&output.stderr)
     );
     let env = world.env.as_ref().expect("completed migration fixture");
-    assert!(env.path("givn/archive/migrate-0-2-0-to-0-4-0").is_dir());
-    assert!(!env.path("givn/changes/migrate-0-2-0-to-0-4-0").exists());
+    let archived: Vec<String> = std::fs::read_dir(env.path("givn/archive"))
+        .expect("read archive")
+        .flatten()
+        .filter(|entry| entry.file_name().to_string_lossy().starts_with("migrate-"))
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert_eq!(
+        archived.len(),
+        1,
+        "the migration change moved to the archive"
+    );
+    let remaining: Vec<String> = std::fs::read_dir(env.path("givn/changes"))
+        .expect("read active changes")
+        .flatten()
+        .filter(|entry| entry.file_name().to_string_lossy().starts_with("migrate-"))
+        .map(|entry| entry.file_name().to_string_lossy().into_owned())
+        .collect();
+    assert!(
+        remaining.is_empty(),
+        "migration change still active: {remaining:?}"
+    );
 }
 
 #[then("the permanent specification tree contains no migration feature")]
