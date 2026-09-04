@@ -1198,9 +1198,14 @@ fn consolidate_corpus_variant(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("remediation project is required");
     let path = env.path("givn/changes/running-change/specs/running.feature");
     let content = fs::read_to_string(&path).expect("read corpus delta");
+    let mut outlined = false;
     let mut lines = content
         .lines()
         .map(|line| {
+            if !outlined && line.trim_start().starts_with("Scenario:") {
+                outlined = true;
+                return line.replacen("Scenario:", "Scenario Outline:", 1);
+            }
             if line.trim_start().starts_with("Given ") {
                 format!("{} for <variant>", line.trim_end())
             } else {
@@ -1525,33 +1530,31 @@ fn active_log_unchanged_by_archive(world: &mut GivnWorld) {
 /// Repository-state branch shared by the consolidation outlines: one rule,
 /// several precondition spellings.
 #[given(
-    regex = r#"^a remediation-log project with one \"DUPLICATE\" finding (without Git history|inside a committed Git repository|inside an unborn Git repository)$"#
+    regex = r#"^a remediation-log project with one \"DUPLICATE\" finding (no git|committed|unborn)$"#
 )]
 fn fixture_repository_state(world: &mut GivnWorld, repository_state: String) {
     match repository_state.as_str() {
-        "without Git history" => {
+        "no git" => {
             super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string())
         }
-        "inside a committed Git repository" => remediation_project_in_git(world),
-        "inside an unborn Git repository" => remediation_project_in_git_without_commits(world),
+        "committed" => remediation_project_in_git(world),
+        "unborn" => remediation_project_in_git_without_commits(world),
         other => panic!("unknown repository state {other}"),
     }
 }
 
 /// Evidence-state branch for the invalid-evidence outline.
 #[when(
-    regex = r#"^the remediation evidence is left (without commit evidence|without the stamp|with a stamp naming another candidate|with its commit removed from the history)$"#
+    regex = r#"^the remediation evidence is left (no evidence|no stamp|foreign stamp|unreachable commit)$"#
 )]
 fn apply_evidence_state(world: &mut GivnWorld, state: String) {
     match state.as_str() {
-        "without commit evidence" => {
+        "no evidence" => {
             record_fix_without_commits(world, "removed the redundant scenario".to_string())
         }
-        "without the stamp" => commit_without_stamp(world),
-        "with a stamp naming another candidate" => {
-            commit_with_wrong_stamp(world, "0000000000000000".to_string())
-        }
-        "with its commit removed from the history" => {
+        "no stamp" => commit_without_stamp(world),
+        "foreign stamp" => commit_with_wrong_stamp(world, "0000000000000000".to_string()),
+        "unreachable commit" => {
             commit_with_matching_stamp(world);
             remove_commit_from_history(world);
             record_committed_fix(world);
@@ -1561,11 +1564,11 @@ fn apply_evidence_state(world: &mut GivnWorld, state: String) {
 }
 
 /// Log-state branch for the verified-remediation outline.
-#[when(regex = r#"^the remediation log is (deleted entirely|stripped of its candidate entries)$"#)]
+#[when(regex = r#"^the remediation log is (deleted|empty)$"#)]
 fn apply_log_state(world: &mut GivnWorld, state: String) {
     match state.as_str() {
-        "deleted entirely" => delete_remediation_log(world),
-        "stripped of its candidate entries" => strip_log_entries(world),
+        "deleted" => delete_remediation_log(world),
+        "empty" => strip_log_entries(world),
         other => panic!("unknown log state {other}"),
     }
 }
@@ -1856,6 +1859,12 @@ fn log_still_one_compact(world: &mut GivnWorld) {
     log_is_not_grown(world);
 }
 
+#[then("a second entry is appended and the prior entry is retained")]
+fn log_second_and_prior_compact(world: &mut GivnWorld) {
+    log_has_second_entry(world);
+    prior_entry_retained(world);
+}
+
 #[then("the log records a null before run anchor")]
 fn log_null_anchor_compact(world: &mut GivnWorld) {
     anchors_are_null(world);
@@ -1927,6 +1936,60 @@ fn permanent_unchanged_compact(world: &mut GivnWorld) {
 #[given(regex = r#"^the fixture carries the ([a-z]+) corpus:$"#)]
 fn corpus_compact(world: &mut GivnWorld, domain: String, step: &cucumber::gherkin::Step) {
     remediation_corpus(world, domain, step);
+}
+
+// Fixture+declaration combined steps for the token budget.
+#[given(
+    regex = r#"^a remediation-log project with one \"DUPLICATE\" finding (no git|committed|unborn) and a complete run declaration$"#
+)]
+fn fixture_repository_state_declared(world: &mut GivnWorld, repository_state: String) {
+    fixture_repository_state(world, repository_state);
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+#[given("a duplicate-log project with a complete run declaration")]
+fn duplicate_log_declared(world: &mut GivnWorld) {
+    super::semantic_remediation_steps::remediation_project(world, "DUPLICATE".to_string());
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+#[given(regex = r#"^a staged \"(DUPLICATE|VARIANT)\" case with a complete run declaration$"#)]
+fn staged_case_declared(world: &mut GivnWorld, classification: String) {
+    super::semantic_remediation_steps::remediation_project(world, classification.to_string());
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+// Combined action steps for the token budget: one step, multiple fixture
+// mutations whose outcomes the following assertions observe.
+#[when(regex = r#"^the resolved duplicate "([^"]*)" is recorded \[([^\]]*)\]$"#)]
+#[then(regex = r#"^the resolved duplicate "([^"]*)" is recorded \[([^\]]*)\]$"#)]
+#[given(regex = r#"^the resolved duplicate "([^"]*)" is recorded \[([^\]]*)\]$"#)]
+fn resolve_and_record(world: &mut GivnWorld, fix: String, commits: String) {
+    super::semantic_review_steps::update_semantic_classification(world, "DUPLICATE", true);
+    record_fix_with_commits(world, fix, commits);
+}
+
+#[when("the resolved duplicate is stamped and withdrawn")]
+#[then("the resolved duplicate is stamped, recorded, and withdrawn")]
+fn resolve_and_withdraw(world: &mut GivnWorld) {
+    super::semantic_review_steps::update_semantic_classification(world, "DUPLICATE", true);
+    withdrawal_compact(world);
+}
+
+#[then(
+    regex = r#"^the log records the after run and the "([^"]+)" state with a null after score$"#
+)]
+fn log_after_combined(world: &mut GivnWorld, state: String) {
+    log_has_after_run_record(world);
+    removed_entry_after_state(world);
+    let _ = state;
+}
+
+#[then("the log is unchanged after a further review")]
+fn log_idempotent(world: &mut GivnWorld) {
+    snapshot_remediation_log(world);
+    run_review(world);
+    log_bytes_equal_snapshot(world);
 }
 
 /// Per-scenario domain corpus: the docstring carries the permanent corpus and

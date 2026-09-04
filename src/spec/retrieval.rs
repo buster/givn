@@ -3506,7 +3506,7 @@ fn semantic_candidates(
     // the pair universe entirely: pairing a live endpoint against a
     // superseded body would block the review on a condition the change
     // itself resolves.
-    let superseded: std::collections::BTreeSet<(String, String)> = active
+    let superseded: std::collections::BTreeSet<(String, String)> = delta
         .iter()
         .filter(|item| {
             matches!(
