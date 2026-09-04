@@ -825,8 +825,8 @@ struct DuplicateFacts {
     exit_code: Option<String>,
     contains_polarity: BTreeMap<usize, String>,
     tables: BTreeMap<String, String>,
-    done: bool,
-    tty: bool,
+    done: Option<bool>,
+    tty: Option<bool>,
 }
 
 #[cfg(feature = "spec-retrieval")]
@@ -8096,15 +8096,15 @@ fn distinguishing_facts(
     if left.done != right.done {
         facts.push(DistinguishingFact {
             field: "done".to_string(),
-            left: serde_json::Value::Bool(left.done),
-            right: serde_json::Value::Bool(right.done),
+            left: serde_json::json!(left.done),
+            right: serde_json::json!(right.done),
         });
     }
     if left.tty != right.tty {
         facts.push(DistinguishingFact {
             field: "tty".to_string(),
-            left: serde_json::Value::Bool(left.tty),
-            right: serde_json::Value::Bool(right.tty),
+            left: serde_json::json!(left.tty),
+            right: serde_json::json!(right.tty),
         });
     }
     facts
