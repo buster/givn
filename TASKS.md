@@ -1169,7 +1169,16 @@ problem (`PLAN.md` §5) from silently corrupting the real layout.
 **Verify:** `givn spec regroup` runs against the current tree and prints a
 proposal; confirm no files changed (`git status` clean before/after).
 
-### [ ] 2.5 Migration: apply the confirmed grouping
+### [x] 2.5 Migration: apply the confirmed grouping
+
+**Done 2026-09-04.** givn: 38 capabilities into 7 groups (authoring,
+verification, status, spec-discovery, archival, maintenance, support),
+7 group.md files with real prose, archived as change
+`group-specs-by-use-case` (commit `3c2512b`). watn: 26 capabilities into
+5 groups (model-setup, provider, interactive-setup, shell,
+corpus-infra), empty `watn-consolidation/` deleted, suite green 155/155
+(watn commit `e978c6c` on main). All moves are git renames; both suites
+green post-migration; lint clean of singleton_group findings.
 
 Once a human has reviewed `spec regroup`'s output and decided on final
 group names (they do not have to be the raw subcommand names — "authoring
