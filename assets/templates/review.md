@@ -96,6 +96,15 @@ driving mechanism:
 |---|---|---|---|---|---|
 | | | | | | |
 
+## Retirements
+
+For every capability retired by this change (a delta tagged
+`@givn.retired`), one line naming it and why:
+
+RETIRE: <capability-id> — <reason>
+
+N/A if this change retires nothing.
+
 ## Arc42 implementation conformance
 
 **N/A when the arc42 addon is disabled.** When `addons.arc42` is enabled, this
