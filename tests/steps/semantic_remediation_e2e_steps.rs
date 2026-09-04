@@ -73,10 +73,16 @@ fn e2e_delta2delta_duplicate_remediation_project(world: &mut GivnWorld) {
     );
     assert!(
         !output.status.success(),
-        "initial delta-to-delta remediation review passed"
+        "initial delta-to-delta remediation review passed; stderr: {}",
+        String::from_utf8_lossy(&output.stderr)
     );
     let report_path = env.path("givn/changes/running-change/semantic-review.md");
-    let report = fs::read_to_string(&report_path).expect("read delta-to-delta report");
+    let report = fs::read_to_string(&report_path).unwrap_or_else(|error| {
+        panic!(
+            "read delta-to-delta report: {error}; subprocess stderr: {}",
+            String::from_utf8_lossy(&output.stderr)
+        )
+    });
     let report = report
         .replace("- classification: UNCERTAIN", "- classification: DUPLICATE")
         .replace(

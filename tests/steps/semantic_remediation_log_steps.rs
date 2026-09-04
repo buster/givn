@@ -12,7 +12,8 @@ pub(crate) fn remediation_log_path(world: &GivnWorld) -> std::path::PathBuf {
         .env
         .as_ref()
         .expect("remediation log project is required");
-    env.path("givn/changes/running-change/semantic-remediation.md")
+    let id = world.last_change_id.as_deref().unwrap_or("running-change");
+    env.path(&format!("givn/changes/{id}/semantic-remediation.md"))
 }
 
 pub(crate) fn read_remediation_log(world: &GivnWorld) -> String {
@@ -111,8 +112,10 @@ fn first_candidate_section(world: &GivnWorld) -> LogSection {
 /// Fields of every `## Candidate` block in the report.
 fn report_candidate_blocks(world: &GivnWorld) -> Vec<Vec<(String, String)>> {
     let env = world.env.as_ref().expect("remediation project is required");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .expect("read semantic review report");
+    let report = fs::read_to_string(
+        super::remediation_change_dir(world).join("semantic-review.md"),
+    )
+    .expect("read semantic review report");
     let mut blocks = Vec::new();
     let mut current: Option<Vec<(String, String)>> = None;
     for line in report.lines() {
@@ -515,8 +518,9 @@ fn commit_with_matching_stamp(world: &mut GivnWorld) {
 
 fn report_candidate_ids_from_report(world: &GivnWorld) -> Vec<String> {
     let env = world.env.as_ref().expect("remediation project is required");
-    let report = fs::read_to_string(env.path("givn/changes/running-change/semantic-review.md"))
-        .expect("read semantic review report");
+    let report =
+        fs::read_to_string(super::remediation_change_dir(world).join("semantic-review.md"))
+            .expect("read semantic review report");
     report
         .lines()
         .filter_map(|line| line.strip_prefix("- candidate_id: "))
@@ -1631,7 +1635,7 @@ fn record_individual(world: &mut GivnWorld, _slot: String, commits: String) {
 fn snapshot_report_for_comparison(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("remediation project is required");
     world.semantic_report_snapshot = Some(
-        fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+        fs::read(super::remediation_change_dir(world).join("semantic-review.md"))
             .expect("snapshot semantic report"),
     );
 }
@@ -1640,7 +1644,7 @@ fn snapshot_report_for_comparison(world: &mut GivnWorld) {
 #[when("the semantic review report bytes equal that comparison snapshot")]
 fn report_bytes_equal_comparison_snapshot(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("remediation project is required");
-    let current = fs::read(env.path("givn/changes/running-change/semantic-review.md"))
+    let current = fs::read(super::remediation_change_dir(world).join("semantic-review.md"))
         .expect("read regenerated semantic report");
     assert_eq!(
         current,
