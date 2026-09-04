@@ -1333,7 +1333,7 @@ it's a quality pass with a numeric before/after, not a gate.
 Do this after Phase 2 (needs `group.md` to exist) and after Phase 5 (needs
 correct overlap detection to sanity-check the result).
 
-### [ ] 3.1 Move the interaction inventory into `group.md`
+### [x] 3.1 Move the interaction inventory into `group.md`
 
 The `# User Interaction Inventory:` comment block currently lives at the
 top of each delta `.feature` file and is destroyed by
@@ -1352,7 +1352,7 @@ the storage location.
 — confirm the updated wording says `group.md`, not "comment block at the
 very top of the `.feature` file."
 
-### [ ] 3.2 Lint finding: interaction/e2e mismatch
+### [x] 3.2 Lint finding: interaction/e2e mismatch
 
 **File:** likely `src/overlap/analysis.rs` (a new whole-tree check, same
 shape as `singleton_groups`) or a new module `src/gherkin/interaction.rs`
@@ -1376,7 +1376,7 @@ initiative is moving away from.
 scenarios passes; 2 declared and 3 `@e2e` scenarios fails (over);
 2 declared and 1 `@e2e` scenario fails (under).
 
-### [ ] 3.3 Docstring-aware counting, everywhere this plan counts scenarios
+### [x] 3.3 Docstring-aware counting, everywhere this plan counts scenarios
 
 Any tool built in this plan that counts scenarios or `@e2e` tags (task
 3.2, task 4.1's `spec tree`) must count from the **parsed AST**
@@ -1399,7 +1399,7 @@ text-searches for the literal string "Scenario:" instead of using the
 parsed AST) should turn up nothing outside of test fixtures/string
 literals used to construct test input.
 
-### [ ] 3.4 Decide and document: does a Scenario Outline's tag count once or N times (once per Examples row)?
+### [x] 3.4 Decide and document: does a Scenario Outline's tag count once or N times (once per Examples row)?
 
 This is a genuine open decision, not a coding task with a right answer
 baked in. Pick one interpretation, write it into
