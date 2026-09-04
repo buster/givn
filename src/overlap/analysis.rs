@@ -110,6 +110,7 @@ pub fn scan_tree(root: &Path) -> Vec<Finding> {
     findings.extend(long_scenarios(&scenarios));
     // Needs the raw filesystem, not the scenario list — call with root.
     findings.extend(singleton_groups(root));
+    findings.extend(use_case_graph_findings(root));
     findings.sort_by(|a, b| {
         kind_order(a).cmp(&kind_order(b)).then_with(|| {
             a.files
@@ -127,7 +128,8 @@ fn kind_order(f: &Finding) -> u8 {
         "shape_match" => 1,
         "subset" => 2,
         "singleton_group" => 3,
-        _ => 4,
+        "group_md_invalid" | "dangling_use_case_ref" | "use_case_cycle" => 4,
+        _ => 5,
     }
 }
 
@@ -271,6 +273,184 @@ fn long_scenarios(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
 /// the old flat layout; flagging it (as a warning, never blocking) keeps
 /// `spec regroup` from satisfying the grouping requirement by creating
 /// one-capability groups that move nothing meaningfully.
+/// A group.md relationship bullet must name one target: either a group
+/// directory or a capability file somewhere in the corpus. A parenthetical
+/// annotation after the target is allowed and ignored.
+fn use_case_ref_target(specs_root: &Path, group_name: &str, raw: &str) -> Option<String> {
+    let bullet = raw
+        .trim()
+        .trim_start_matches("- ")
+        .trim_start_matches("* ")
+        .trim();
+    if bullet.is_empty() || bullet.eq_ignore_ascii_case("none") {
+        return None;
+    }
+    // One bullet names one target; a comma means the author listed two
+    // refs in one bullet — reject so the docs stay machine-checkable.
+    let target = bullet
+        .split(" (")
+        .next()
+        .unwrap_or(bullet)
+        .trim()
+        .to_string();
+    if target.contains(',') || target.is_empty() {
+        return Some(target);
+    }
+    // A group directory…
+    if specs_root.join(&target).is_dir() {
+        return Some(target);
+    }
+    // …or a capability file in any group.
+    let mut owned = specs_root.read_dir().ok()?;
+    if owned.any(|entry| {
+        entry
+            .map(|e| e.path().join(format!("{target}.feature")).is_file())
+            .unwrap_or(false)
+    }) {
+        return Some(target);
+    }
+    // A capability owned by the referencing group itself.
+    if specs_root
+        .join(group_name)
+        .join(format!("{target}.feature"))
+        .is_file()
+    {
+        return Some(target);
+    }
+    Some(target) // unresolved — caller reports the dangling reference
+}
+
+/// Machine-check the use-case relationship graph recorded in the group
+/// files (Phase 2/3 vocabulary: use case = group narrative; `«include»` /
+/// `«extend»` = relationship bullets). Findings:
+/// - `group_md_invalid`: the group's group.md does not parse.
+/// - `dangling_use_case_ref`: an Includes/Extends bullet names no existing
+///   group or capability.
+/// - `use_case_cycle`: the include/extend graph between groups has a cycle.
+fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
+    use crate::gherkin::group_md::{GroupDoc, parse_group_md};
+
+    let specs_root = root.join("givn/specs");
+    let mut findings = Vec::new();
+    let mut docs: Vec<(String, GroupDoc)> = Vec::new();
+    let group_names: Vec<String> = std::fs::read_dir(&specs_root)
+        .map(|rd| {
+            rd.flatten()
+                .filter(|e| e.path().is_dir())
+                .filter_map(|e| e.file_name().to_str().map(str::to_string))
+                .collect()
+        })
+        .unwrap_or_default();
+
+    for group in &group_names {
+        let group_md = specs_root.join(group).join("group.md");
+        let text = match std::fs::read_to_string(&group_md) {
+            Ok(t) => t,
+            Err(_) => continue, // a group without group.md is not a relationship error
+        };
+        match parse_group_md(&text) {
+            Ok(doc) => docs.push((group.clone(), doc)),
+            Err(e) => findings.push(Finding {
+                kind: "group_md_invalid".to_string(),
+                level: "error".to_string(),
+                files: vec![group_md.display().to_string()],
+                titles: vec![format!("group.md does not parse: {e}")],
+                contradiction: false,
+            }),
+        }
+    }
+
+    // Dangling references.
+    for (group, doc) in &docs {
+        for (relation, refs) in [("«include»", &doc.includes), ("«extend»", &doc.extends)] {
+            for raw in refs {
+                let resolved = use_case_ref_target(&specs_root, group, raw);
+                let valid = resolved.as_ref().is_some_and(|target| {
+                    specs_root.join(target).is_dir() || group_names.iter().any(|g| g == target) || {
+                        let cap_file = format!("{target}.feature");
+                        specs_root
+                            .read_dir()
+                            .map(|rd| rd.flatten().any(|e| e.path().join(&cap_file).is_file()))
+                            .unwrap_or(false)
+                    }
+                });
+                if !valid {
+                    findings.push(Finding {
+                        kind: "dangling_use_case_ref".to_string(),
+                        level: "error".to_string(),
+                        files: vec![
+                            specs_root
+                                .join(group)
+                                .join("group.md")
+                                .display()
+                                .to_string(),
+                        ],
+                        titles: vec![format!(
+                            "{relation} target '{raw}' names no existing group or capability"
+                        )],
+                        contradiction: false,
+                    });
+                }
+            }
+        }
+    }
+
+    // Cycle detection over group-level edges (includes + extends).
+    let mut edges: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    for (group, doc) in &docs {
+        for raw in doc.includes.iter().chain(doc.extends.iter()) {
+            if let Some(target) = use_case_ref_target(&specs_root, group, raw)
+                && group_names.iter().any(|g| *g == target)
+                && target != *group
+            {
+                edges.entry(group.clone()).or_default().push(target);
+            }
+        }
+    }
+    // DFS from each group; a back-edge to the path means a cycle.
+    fn visit(
+        node: &str,
+        edges: &BTreeMap<String, Vec<String>>,
+        path: &mut Vec<String>,
+        done: &mut Vec<String>,
+        cycles: &mut Vec<Vec<String>>,
+    ) {
+        path.push(node.to_string());
+        for next in edges.get(node).cloned().unwrap_or_default() {
+            if let Some(pos) = path.iter().position(|n| n == &next) {
+                cycles.push(path[pos..].to_vec());
+            } else if !done.iter().any(|n| n == &next) {
+                visit(&next, edges, path, done, cycles);
+            }
+        }
+        done.push(path.pop().expect("pushed above"));
+    }
+    let mut cycles: Vec<Vec<String>> = Vec::new();
+    let mut done: Vec<String> = Vec::new();
+    for group in &group_names {
+        if !done.iter().any(|n| n == group) {
+            visit(group, &edges, &mut Vec::new(), &mut done, &mut cycles);
+        }
+    }
+    for cycle in cycles {
+        findings.push(Finding {
+            kind: "use_case_cycle".to_string(),
+            level: "error".to_string(),
+            files: cycle
+                .iter()
+                .map(|g| specs_root.join(g).join("group.md").display().to_string())
+                .collect(),
+            titles: vec![format!(
+                "include/extend graph has a cycle: {}",
+                cycle.join(" -> ")
+            )],
+            contradiction: false,
+        });
+    }
+
+    findings
+}
+
 fn singleton_groups(root: &Path) -> Vec<Finding> {
     let specs_root = root.join("givn/specs");
     let mut findings = Vec::new();
@@ -538,5 +718,121 @@ mod singleton_tests {
         .unwrap();
         let findings = singleton_groups(root.path());
         assert_eq!(findings.len(), 1);
+    }
+}
+
+#[cfg(test)]
+mod use_case_graph_tests {
+    use super::*;
+
+    fn seed(root: &Path, files: &[(&str, &str)]) {
+        for (rel, text) in files {
+            let path = root.join(rel);
+            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+            std::fs::write(path, text).unwrap();
+        }
+    }
+
+    const GROUP_MD: &str = "# Group: G\n\n## Actor\n\nA.\n\n## Goal\n\nG.\n\n## Interactions\n\n- x\n\n## Includes\n\n- none\n\n## Extends\n\n- none\n";
+
+    #[test]
+    fn dangling_include_ref_is_an_error() {
+        let root = tempfile::TempDir::new().unwrap();
+        seed(
+            root.path(),
+            &[(
+                "givn/specs/alpha/group.md",
+                &GROUP_MD.replace("- none\n\n## Extends", "- ghost-group\n\n## Extends"),
+            )],
+        );
+        let findings = use_case_graph_findings(root.path());
+        assert!(
+            findings
+                .iter()
+                .any(|f| f.kind == "dangling_use_case_ref" && f.level == "error"),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn references_to_groups_and_capabilities_resolve() {
+        let root = tempfile::TempDir::new().unwrap();
+        seed(
+            root.path(),
+            &[
+                (
+                    "givn/specs/alpha/group.md",
+                    &GROUP_MD.replace("- none\n\n## Extends", "- beta\n\n## Extends"),
+                ),
+                ("givn/specs/beta/group.md", GROUP_MD),
+                (
+                    "givn/specs/beta/helper.feature",
+                    "Feature: H\n\n  Scenario: S\n    Given x\n    Then y\n",
+                ),
+            ],
+        );
+        let findings = use_case_graph_findings(root.path());
+        assert!(
+            findings.is_empty(),
+            "group and capability refs must resolve: {findings:?}"
+        );
+    }
+
+    #[test]
+    fn mutual_include_is_a_cycle() {
+        let root = tempfile::TempDir::new().unwrap();
+        seed(
+            root.path(),
+            &[
+                (
+                    "givn/specs/alpha/group.md",
+                    &GROUP_MD.replace("- none\n\n## Extends", "- beta\n\n## Extends"),
+                ),
+                (
+                    "givn/specs/beta/group.md",
+                    &GROUP_MD.replace("- none\n\n## Extends", "- alpha\n\n## Extends"),
+                ),
+            ],
+        );
+        let findings = use_case_graph_findings(root.path());
+        assert!(
+            findings.iter().any(|f| f.kind == "use_case_cycle"),
+            "{findings:?}"
+        );
+    }
+
+    #[test]
+    fn parenthetical_annotations_are_allowed() {
+        let root = tempfile::TempDir::new().unwrap();
+        seed(
+            root.path(),
+            &[(
+                "givn/specs/alpha/group.md",
+                &GROUP_MD.replace(
+                    "- none\n\n## Extends",
+                    "- beta (config storage is contributed there)\n\n## Extends",
+                ),
+            )],
+        );
+        seed(root.path(), &[("givn/specs/beta/group.md", GROUP_MD)]);
+        let findings = use_case_graph_findings(root.path());
+        assert!(findings.is_empty(), "{findings:?}");
+    }
+
+    #[test]
+    fn unparseable_group_md_is_an_error() {
+        let root = tempfile::TempDir::new().unwrap();
+        seed(
+            root.path(),
+            &[(
+                "givn/specs/alpha/group.md",
+                "# broken\n\nno sections here\n",
+            )],
+        );
+        let findings = use_case_graph_findings(root.path());
+        assert!(
+            findings.iter().any(|f| f.kind == "group_md_invalid"),
+            "{findings:?}"
+        );
     }
 }

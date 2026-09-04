@@ -31,7 +31,7 @@ changes reach review and archive.
 
 ## Extends
 
-- archival (verification gates are the pre-archive line of defence)
+- none
 
 ## Out of scope
 

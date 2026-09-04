@@ -26,10 +26,11 @@ move the change into the archive — atomically, with rollback on failure.
 ## Includes
 
 - verification (the gates run before any mutation)
+- support (coverage-script-workflow for coverage merge commands)
 
 ## Extends
 
-- support (coverage-script-workflow for coverage merge commands)
+- none
 
 ## Out of scope
 

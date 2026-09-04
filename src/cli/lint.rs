@@ -70,6 +70,7 @@ fn run_with_root(
     let mut has_wip = false;
     let mut has_duplicate = false;
     let mut has_empty_feature = false;
+    let mut has_use_case_error = false;
     let mut total_files = 0;
     let mut total_errors = 0;
     let mut findings: Vec<Finding> = Vec::new();
@@ -200,6 +201,13 @@ fn run_with_root(
                 total_errors += 1;
                 has_duplicate = true;
             }
+            if matches!(
+                finding.kind.as_str(),
+                "group_md_invalid" | "dangling_use_case_ref" | "use_case_cycle"
+            ) {
+                total_errors += 1;
+                has_use_case_error = true;
+            }
             findings.push(finding);
         }
     }
@@ -222,7 +230,7 @@ fn run_with_root(
     // features (3), which outrank @wip/PENDING (2).
     let exit_code = if has_parse_error {
         1
-    } else if has_duplicate || has_empty_feature {
+    } else if has_duplicate || has_empty_feature || has_use_case_error {
         3
     } else if has_wip {
         2
@@ -240,6 +248,9 @@ fn render_prose(finding: &Finding) {
         "subset" => "SUBST",
         "long_scenario" => "LONG ",
         "empty_feature" => "EMPTY",
+        "group_md_invalid" => "UCDOC",
+        "dangling_use_case_ref" => "UCREF",
+        "use_case_cycle" => "UCCYC",
         "parse_error" => "ERROR",
         "wip" => "WIP  ",
         _ => "WARN ",
