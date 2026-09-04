@@ -1706,16 +1706,21 @@ fn fixture_compact_variant(world: &mut GivnWorld) {
 }
 
 #[when("the assessor resolves the candidate to \"DUPLICATE\"")]
+#[then("the assessor resolves the candidate to \"DUPLICATE\"")]
+#[given("the assessor resolves the candidate to \"DUPLICATE\"")]
 fn classify_compact_duplicate(world: &mut GivnWorld) {
     super::semantic_review_steps::update_semantic_classification(world, "DUPLICATE", true);
 }
 
 #[when("the assessor resolves the candidate to \"VARIANT\"")]
+#[then("the assessor resolves the candidate to \"VARIANT\"")]
+#[given("the assessor resolves the candidate to \"VARIANT\"")]
 fn classify_compact_variant(world: &mut GivnWorld) {
     super::semantic_review_steps::update_semantic_classification(world, "VARIANT", true);
 }
 
 #[when("the assessor resolves the candidate to \"VALID-BOUNDARY\"")]
+#[then("the assessor resolves the candidate to \"VALID-BOUNDARY\"")]
 fn classify_compact_boundary(world: &mut GivnWorld) {
     super::semantic_review_steps::update_semantic_classification(world, "VALID-BOUNDARY", true);
 }
@@ -1741,6 +1746,8 @@ fn record_canonical_compact(world: &mut GivnWorld, commits: String) {
 }
 
 #[when(regex = r#"^the reviewer logs the fix \"[^\"]*\" and the commits \[([^\]]*)\]$"#)]
+#[then(regex = r#"^the reviewer logs the fix \"[^\"]*\" and the commits \[([^\]]*)\]$"#)]
+#[given(regex = r#"^the reviewer logs the fix \"[^\"]*\" and the commits \[([^\]]*)\]$"#)]
 fn record_a_compact(world: &mut GivnWorld, commits: String) {
     record_a(world, "removed the duplicate".to_string(), commits);
 }
@@ -1748,6 +1755,178 @@ fn record_a_compact(world: &mut GivnWorld, commits: String) {
 #[when(regex = r#"^the operator records the fix \"[^\"]*\" with commits \[([^\]]*)\]$"#)]
 fn record_b_compact(world: &mut GivnWorld, commits: String) {
     record_fix_with_commits(world, "removed the twin".to_string(), commits);
+}
+
+// Ultra-compact wordings for the real-model token budget (pairs <= 512).
+#[when("the review gate runs")]
+#[given("the review gate runs")]
+#[then("the review gate runs")]
+fn gate_compact_run(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when("the review gate reruns")]
+#[given("the review gate reruns")]
+#[then("the review gate reruns")]
+fn gate_compact_rerun(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when("the gate reruns")]
+#[given("the gate reruns")]
+#[then("the gate reruns")]
+fn gate_compact_second(world: &mut GivnWorld) {
+    run_review(world);
+}
+
+#[when("the run declaration is complete")]
+#[given("the run declaration is complete")]
+fn declaration_compact(world: &mut GivnWorld) {
+    super::run_declaration_fixtures_support::declare_run(world, "cli");
+}
+
+#[when("the log bytes are snapshotted")]
+#[given("the log bytes are snapshotted")]
+#[then("the log bytes are snapshotted")]
+fn snapshot_compact(world: &mut GivnWorld) {
+    snapshot_remediation_log(world);
+}
+
+#[when("the classified duplicate is removed")]
+#[then("the classified duplicate is removed")]
+fn removal_compact(world: &mut GivnWorld) {
+    removal_a(world);
+}
+
+#[when("the doubled scenario is withdrawn")]
+#[then("the doubled scenario is withdrawn")]
+fn withdrawal_compact(world: &mut GivnWorld) {
+    removal_a(world);
+}
+
+#[when("both classified duplicates are removed")]
+#[then("both classified duplicates are removed")]
+fn removal_both_compact(world: &mut GivnWorld) {
+    remove_both_duplicates(world);
+}
+
+#[when("both fixes are recorded in the log")]
+#[then("both fixes are recorded in the log")]
+fn record_both_compact(world: &mut GivnWorld) {
+    record_both_committed_fixes(world);
+}
+
+#[then("the log exists")]
+fn log_exists_compact(world: &mut GivnWorld) {
+    remediation_log_exists(world);
+}
+
+#[then("the log declares schema version 1 and the change id")]
+fn log_schema_compact(world: &mut GivnWorld) {
+    log_declares_schema_and_change(world);
+}
+
+#[then("the log records the candidate id and embedding score")]
+fn log_candidate_compact(world: &mut GivnWorld) {
+    log_has_candidate_entry(world);
+}
+
+#[then("the log records the before run stage durations")]
+fn log_durations_compact(world: &mut GivnWorld) {
+    log_has_before_run_record(world);
+}
+
+#[then("the entry records the BGE and NLI states from the report")]
+fn entry_evidence_compact(world: &mut GivnWorld) {
+    entry_mirrors_evidence_states(world);
+}
+
+#[then("the entry records the scenario text verbatim")]
+fn entry_verbatim_compact(world: &mut GivnWorld) {
+    entry_records_verbatim_text(world);
+}
+
+#[then("the entry records the endpoint hashes")]
+fn entry_hashes_compact(world: &mut GivnWorld) {
+    entry_records_report_hashes(world);
+}
+
+#[then("the log still holds one candidate entry and one run record")]
+fn log_still_one_compact(world: &mut GivnWorld) {
+    log_is_not_grown(world);
+}
+
+#[then("the log records a null before run anchor")]
+fn log_null_anchor_compact(world: &mut GivnWorld) {
+    anchors_are_null(world);
+}
+
+#[then(
+    regex = r#"^the log records the "([^"]+)" after state with a recomputed score below the boundary$"#
+)]
+fn log_after_state_compact(world: &mut GivnWorld, state: String) {
+    assert_eq!(state, "outline-consolidated");
+    consolidated_entry_after_state(world);
+}
+
+#[then("a second entry records different endpoint hashes")]
+fn log_second_entry_compact(world: &mut GivnWorld) {
+    log_has_second_entry(world);
+}
+
+#[then("the second entry records its after state")]
+fn log_second_after_compact(world: &mut GivnWorld) {
+    after_state_on_second_entry(world);
+}
+
+#[then(regex = r#"^the log records non-null BGE and NLI states$"#)]
+fn log_nonnull_evidence_compact(world: &mut GivnWorld) {
+    entry_records_non_null_evidence(world);
+}
+
+#[then("the log contains an after run record")]
+fn log_after_run_compact(world: &mut GivnWorld) {
+    log_has_after_run_record(world);
+}
+
+#[then(regex = r#"^the removed entry records after state "([^"]+)" with a null after score$"#)]
+fn log_removed_after_compact(world: &mut GivnWorld, state: String) {
+    assert_eq!(state, "endpoint-absent");
+    removed_entry_after_state(world);
+}
+
+#[then("the log bytes equal the snapshot")]
+fn log_bytes_equal_compact(world: &mut GivnWorld) {
+    log_bytes_equal_snapshot(world);
+}
+
+#[when("the classified endpoint changes")]
+#[then("the classified endpoint changes")]
+fn endpoint_change_compact(world: &mut GivnWorld) {
+    change_corpus_endpoint_without_remediation(world);
+}
+
+#[when("the corpus variant is consolidated")]
+#[then("the corpus variant is consolidated")]
+fn consolidate_corpus_compact(world: &mut GivnWorld) {
+    consolidate_corpus_variant(world);
+}
+
+#[then("the permanent specs are snapshotted")]
+#[given("the permanent specs are snapshotted")]
+fn permanent_snapshot_compact(world: &mut GivnWorld) {
+    super::spec_explore_permanent_steps::snapshot_permanent_specs(world);
+}
+
+#[then("the permanent specs are unchanged")]
+#[given("the permanent specs are unchanged")]
+fn permanent_unchanged_compact(world: &mut GivnWorld) {
+    super::spec_explore_permanent_steps::permanent_specs_unchanged(world);
+}
+
+#[given(regex = r#"^the fixture carries the ([a-z]+) corpus:$"#)]
+fn corpus_compact(world: &mut GivnWorld, domain: String, step: &cucumber::gherkin::Step) {
+    remediation_corpus(world, domain, step);
 }
 
 /// Per-scenario domain corpus: the docstring carries the permanent corpus and
