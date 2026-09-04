@@ -28,7 +28,7 @@ checklists, the run command, execution wiring, and README enforcement.
 
 ## Extends
 
-- verification (README gates are deterministic checks)
+- none
 
 ## Out of scope
 

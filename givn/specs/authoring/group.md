@@ -30,7 +30,7 @@ come with installation.
 
 ## Extends
 
-- verification (authoring outputs are what the verification gates check)
+- none
 
 ## Out of scope
 

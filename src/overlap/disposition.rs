@@ -142,7 +142,10 @@ mod tests {
                 "| Scenario | Decision |\n|---|---|\n| | |",
                 "| Scenario | Decision |\n|---|---|\n| `The marathon` | keep |",
             );
-        assert!(filled.contains("| `One` | `Two` | boundary |"), "template table shape changed — update this test");
+        assert!(
+            filled.contains("| `One` | `Two` | boundary |"),
+            "template table shape changed — update this test"
+        );
         let (rows, split) = parse_review_content(&filled);
         assert!(
             disposed(&rows, "One", "Two"),

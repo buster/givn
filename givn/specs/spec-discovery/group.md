@@ -29,7 +29,7 @@ in the loop.
 
 ## Extends
 
-- verification (duplicates are advisory evidence for the overlap gates)
+- none
 
 ## Out of scope
 

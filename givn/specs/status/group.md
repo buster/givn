@@ -26,7 +26,7 @@ and what the next step is — without reading files by hand.
 
 ## Extends
 
-- authoring (status output is the roadmap for the authoring loop)
+- none
 
 ## Out of scope
 

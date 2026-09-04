@@ -33,8 +33,10 @@ them.
 
 ## Extends
 
-- every other group (support capabilities are included, not invoked
-  directly)
+- none
+
+(Use cases that include support record the relationship on their own
+side; support holds no outgoing dependency.)
 
 ## Out of scope
 
