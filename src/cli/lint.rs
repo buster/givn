@@ -277,7 +277,8 @@ fn render_prose(finding: &Finding) {
         }
         "long_scenario" => {
             eprintln!(
-                "[{level}] {location}  long scenario: '{title}' has more than 14 steps",
+                "[{level}] {location}  long scenario: '{title}' has more than {} steps",
+                crate::overlap::analysis::LONG_SCENARIO_STEP_THRESHOLD,
                 title = finding.titles.first().map(String::as_str).unwrap_or("?")
             );
         }
