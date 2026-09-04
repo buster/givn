@@ -3501,6 +3501,21 @@ fn semantic_candidates(
         }
     }
     e5_token_caps.sort_by(e5_token_cap_order);
+    // Permanent bodies that this change replaces (modified) or deletes
+    // (removed) will not exist after the change is archived, so they leave
+    // the pair universe entirely: pairing a live endpoint against a
+    // superseded body would block the review on a condition the change
+    // itself resolves.
+    let superseded: std::collections::BTreeSet<(String, String)> = active
+        .iter()
+        .filter(|item| {
+            matches!(
+                item.operation,
+                crate::gherkin::delta::DeltaOp::Modified | crate::gherkin::delta::DeltaOp::Removed
+            )
+        })
+        .map(|item| (item.target_file.clone(), item.scenario.title.clone()))
+        .collect();
     let permanent = permanent_semantic_endpoints(root)?;
     let mut candidates = BTreeMap::new();
     for (active_index, item) in active.iter().enumerate() {
@@ -3508,10 +3523,7 @@ fn semantic_candidates(
             continue;
         };
         for entry in &index.entries {
-            if item.operation == crate::gherkin::delta::DeltaOp::Modified
-                && entry.file == item.target_file
-                && entry.title == item.scenario.title
-            {
+            if superseded.contains(&(entry.file.clone(), entry.title.clone())) {
                 continue;
             }
             let left = semantic_delta_endpoint(item);
