@@ -9,7 +9,9 @@ and no step definitions to write.
 
 ## Setup
 
-- [x] Set up: confirm the 15 retirement deltas exist under `specs/<cap>/<cap>.feature` with the original Feature lines, zero scenarios, and `@<cap>` tags matching the directory names exactly. `givn lint --change retire-semantic-capabilities` clean. Commit: (this change's artifacts commit)
+- [x] Set up: confirm the 15 retirement deltas exist under `specs/<cap>/<cap>.feature` with the original Feature lines, zero scenarios, and `@<cap>` tags matching the directory names exactly. `givn lint --change retire-semantic-capabilities` clean.
+  - [x] COMMIT: `03d8eab`
+  - [x] COMMIT: `d870968`
 
 ## Retirement deltas
 
@@ -31,4 +33,4 @@ and no step definitions to write.
 
 ## Teardown
 
-- [ ] After archive: `ls givn/specs/` shows none of the 15 directories; `givn/specs/.retired.yaml` lists all 15; `cargo test` green.
+- [x] After archive: `ls givn/specs/` shows none of the 15 directories; `givn/specs/.retired.yaml` lists all 15; `cargo test` green.

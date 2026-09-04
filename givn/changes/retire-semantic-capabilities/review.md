@@ -71,3 +71,5 @@ REVIEW: PASS
 - All retirement deltas lint-clean (`givn lint --change retire-semantic-capabilities`: 15 files, 0 findings)
 - Retirement list matches the verified 15-capability list; the four
   surviving `spec-*` subcommand capabilities are explicitly not retired
+
+README-IMPACT: none
