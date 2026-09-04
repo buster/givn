@@ -33,6 +33,20 @@ CLI subprocess and asserts its stdout.
 
 N/A
 
+## Overlap dispositions
+
+The three shape matches pair the modified `skill-rewrites` scenario with
+fixture-driven black-box scenarios that share the same masked
+assertion skeleton but assert different content. All pairs are
+**boundary**: different preconditions (different instruction sources),
+different actions, different asserted content.
+
+| Scenario A | Scenario B | Disposition |
+|---|---|---|
+| `Canonical E2E policy is emitted by specs instructions` | `Spec instructions use deterministic gates before retrieval exists` | boundary |
+| `Project override replaces the canonical specs instruction` | `Spec instructions use deterministic gates before retrieval exists` | boundary |
+| `Canonical policy classifies output-affecting flags as variants` | `Spec instructions use deterministic gates before retrieval exists` | boundary |
+
 ## Sign-off
 
 REVIEW: PASS
