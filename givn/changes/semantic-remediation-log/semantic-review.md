@@ -17,7 +17,7 @@ BGE unscored count: 0
 BGE unique pair count: 20
 BGE directional call count: 40
 BGE model load attempts: 1
-BGE runtime ms: 8179
+BGE runtime ms: 8234
 NLI status: NLI_ENABLED
 NLI reason: null
 NLI model: MoritzLaurer/mDeBERTa-v3-base-xnli-multilingual-nli-2mil7
