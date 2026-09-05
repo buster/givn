@@ -121,19 +121,18 @@ Redundant unit tests: none added; no duplicates removed.
 
 ### Overlap dispositions
 
-All findings are intra-delta and share one Given/When (skills sync) because
-they pin different facets of one generated artifact; each scenario asserts a
-distinct behavior facet with a differing assertion set.
+| Scenario A | Scenario B | Decision | Rationale |
+|---|---|---|---|
+| `The ideation guidance carries the phase ladder and the one-question rule` | `The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes` | boundary | Same Given/When (skills sync) but distinct behavior facets of one generated artifact: phase ladder and interaction rule vs. topic state layout and handoff safety. Assertion sets are disjoint (phase names and the one-question rule vs. state paths, change seed, and the handoff safety sentence); each scenario fails independently on its own phrases. |
 
-| Finding pair | Decision | Rationale |
-|---|---|---|
-| phase ladder ↔ persists topic state (SHAPE) | boundary | Different facets of the same guidance: phase ladder + interaction rule vs. topic state layout + handoff safety; differing assertion sets (6 vs 6, disjoint phrases) |
-| ships without addon ↔ phase ladder (SUBSET) | boundary | Assertion-subset relation is inherent: the foundational scenario pins Frame only; the ladder scenario adds the remaining phases |
-| ships without addon ↔ binds personas (SUBST) | boundary | Distinct facet: persona vocabulary; disjoint assertion set |
-| ships without addon ↔ persists topic state (SUBST) | boundary | Distinct facet: state paths + handoff safety; disjoint assertion set |
-| binds personas ↔ phase ladder (SUBST) | boundary | Distinct facet: persona mechanics vs. phase ladder; disjoint assertion sets |
-| binds personas ↔ persists topic state (SUBST) | boundary | Distinct facet: persona vocabulary vs. state paths; disjoint assertion sets |
-| ships without addon ↔ delivery e2e (SUBST) | boundary | Delivery e2e adds stdout pins + command-file + all-targets surface; the always-on scenario pins the no-addons precondition — a genuinely different invariant |
+The remaining lint findings are assertion-subset (SUBST) relations, not
+shape matches, and are inherent to a shared-content-contract surface: each
+scenario pins a different facet of the same generated guidance, so earlier
+facets are assertion-subsets of broader ones (`ships without any addon
+enabled` ⊂ delivery e2e; `ships without any addon enabled` and `binds
+personas` ⊂ phase ladder and topic state). Each subset scenario still fails
+independently in RED on its own phrases and pins a contract facet no other
+scenario pins — kept deliberately as one-behavior-per-scenario.
 
 No long scenarios (max 8 steps; threshold 14) — no Split-or-keep entries. No
 removed+added pairs.
@@ -150,9 +149,11 @@ cargo fmt + cargo clippy --workspace --all-targets -- -D warnings: clean
 
 ## README impact decision
 
-README-IMPACT: none — the README does not enumerate skills (it points to
-`docs/reference.md`); that registry was updated with the `givn-ideation` row
-as part of this review's ubiquitous-language pass.
+README-IMPACT: none
+
+The README does not enumerate skills (it points to `docs/reference.md`); that
+registry was updated with the `givn-ideation` row as part of this review's
+ubiquitous-language pass. The README itself needed no section refresh.
 
 ## Sign-off checklist
 
