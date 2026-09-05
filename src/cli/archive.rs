@@ -455,7 +455,12 @@ fn process_delta_file(
         return Ok(());
     }
 
-    let permanent_dir = grouped_dir.unwrap_or_else(|| specs_root.join(&cap));
+    let permanent_dir = match grouped_dir {
+        Some(dir) => dir,
+        None => routing_group_for_new_capability(project_root, change_id, &cap)
+            .map(|group| specs_root.join(group))
+            .unwrap_or_else(|| specs_root.join(&cap)),
+    };
     let permanent_path = permanent_dir.join(format!("{cap}.feature"));
     merge_file(&permanent_path, delta_feature)?;
     println!(
@@ -464,6 +469,31 @@ fn process_delta_file(
         permanent_path.display()
     );
     Ok(())
+}
+
+/// The declared group for a new capability, taken from the change's
+/// recorded routing decision. Returns `None` when the proposal is absent,
+/// unparseable, has no row for the capability, or does not declare
+/// `NEW in <group>` — the flat fallback applies in those cases.
+fn routing_group_for_new_capability(
+    project_root: &std::path::Path,
+    change_id: &str,
+    cap: &str,
+) -> Option<String> {
+    let proposal = std::fs::read_to_string(
+        project_root
+            .join("givn/changes")
+            .join(change_id)
+            .join("proposal.md"),
+    )
+    .ok()?;
+    crate::spec::routing_table::parse_routing_table(&proposal)
+        .into_iter()
+        .find(|row| row.capability == cap)
+        .and_then(|row| match row.decision {
+            crate::spec::routing_table::Decision::NewIn(group) => Some(group),
+            _ => None,
+        })
 }
 
 #[cfg(feature = "spec-retrieval")]
