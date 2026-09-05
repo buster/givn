@@ -9,7 +9,7 @@ Feature: ideation-skill
     When the user runs `givn skills sync`
     Then the generated givn-ideation guidance contains "Frame"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance carries the phase ladder and the one-question rule
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
