@@ -482,7 +482,14 @@ coverage:
 ```
 
 The measurement command must create distinct non-E2E and E2E Cobertura reports;
-the merge command must create a fresh output report. Givn validates the source
+the merge command must create a fresh output report. The merged report counts
+every measured line once — the union of the source reports' measured lines —
+and counts a line as covered when either source report hit it: both source
+reports measure the same source tree, so summed counters would count every
+shared line twice in the denominator. A merge falls back to summed counters
+only when a source report carries no per-line data (aggregate-only reports),
+and branch counters keep their summation because branch identity is not
+retained by the parser (documented limitation). Givn validates the source
 and merged reports, updates only its named README blocks, and restores specs,
 README, and coverage files if the pipeline fails. A zero branch denominator is
 rendered as `n/a`, not as a measured zero percent.
