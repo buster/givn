@@ -23,7 +23,7 @@ All steps reuse existing bindings:
 | Step | Defined in |
 |---|---|
 | `a givn project with verify.e2e_command unconfigured in givn/config.yaml` | `tests/steps/enforce_post_merge_e2e_gate_steps.rs` |
-| `a completed change "..." whose proposal records no routing decision and whose delta lives under specs/.../` | `tests/steps/grouped_merge_steps.rs` (reused from predecessor) |
+| `a completed change "..." whose proposal records no routing decision and whose delta lives under specs/.../` | `tests/steps/grouped_merge_steps.rs` |
 | `the project declares a complete run declaration` | `tests/steps/run_declaration_fixtures_support.rs` |
 | `the user invokes \`givn archive --change <id>\`` | `tests/steps/mod.rs` |
 | `the command exits non-zero` / `stderr contains "..."` / `the directory "..." does not exist` | `tests/steps/mod.rs` |
