@@ -457,9 +457,17 @@ fn process_delta_file(
 
     let permanent_dir = match grouped_dir {
         Some(dir) => dir,
-        None => routing_group_for_new_capability(project_root, change_id, &cap)
-            .map(|group| specs_root.join(group))
-            .unwrap_or_else(|| specs_root.join(&cap)),
+        None => {
+            let group = routing_group_for_new_capability(project_root, change_id, &cap)
+                .ok_or_else(|| {
+                    anyhow::anyhow!(
+                        "archive blocked: capability '{cap}' exists nowhere in the \
+                         permanent corpus and its proposal records no 'NEW in <group>' \
+                         routing decision"
+                    )
+                })?;
+            specs_root.join(group)
+        }
     };
     let permanent_path = permanent_dir.join(format!("{cap}.feature"));
     merge_file(&permanent_path, delta_feature)?;
