@@ -427,22 +427,30 @@ mod tests {
 
     #[test]
     fn union_merge_counts_a_shared_line_once() {
-        let mut a = CoberturaReport::default();
-        a.lines_covered = 2;
-        a.lines_valid = 4;
-        a.line_rate = 0.5;
-        a.line_hits.insert(
-            "src/lib.rs".into(),
-            [(1, 1), (2, 1), (3, 0), (4, 0)].into_iter().collect(),
-        );
-        let mut b = CoberturaReport::default();
-        b.lines_covered = 4;
-        b.lines_valid = 4;
-        b.line_rate = 1.0;
-        b.line_hits.insert(
-            "src/lib.rs".into(),
-            [(1, 1), (2, 1), (3, 1), (4, 1)].into_iter().collect(),
-        );
+        let a = CoberturaReport {
+            line_rate: 0.5,
+            lines_covered: 2,
+            lines_valid: 4,
+            line_hits: [(
+                "src/lib.rs".to_string(),
+                [(1, 1), (2, 1), (3, 0), (4, 0)].into_iter().collect(),
+            )]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
+        let b = CoberturaReport {
+            line_rate: 1.0,
+            lines_covered: 4,
+            lines_valid: 4,
+            line_hits: [(
+                "src/lib.rs".to_string(),
+                [(1, 1), (2, 1), (3, 1), (4, 1)].into_iter().collect(),
+            )]
+            .into_iter()
+            .collect(),
+            ..Default::default()
+        };
         let merged = merge_legacy_reports(&a, &b);
         assert_eq!(merged.lines_valid, 4);
         assert_eq!(merged.lines_covered, 4);
