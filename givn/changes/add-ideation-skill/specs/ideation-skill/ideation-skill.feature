@@ -40,7 +40,7 @@ Feature: ideation-skill
     And the generated givn-ideation guidance contains "docs/ideation/"
     And the generated givn-ideation guidance contains "Handoff never starts a change"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The explore guidance points to ideation for structured domain work
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
