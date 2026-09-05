@@ -15,6 +15,14 @@ non_e2e_path=${GIVN_COVERAGE_NON_E2E_PATH:-coverage/non-e2e-cobertura.xml}
 e2e_path=${GIVN_COVERAGE_E2E_PATH:-coverage/e2e-cobertura.xml}
 features_path=${GIVN_FEATURES:-givn/specs}
 
+# Prepare the instrumented ready-fixture process before the replay groups.
+# A cold replay target makes the first run-execution scenario build the
+# fixture with plain cargo, replacing the instrumented, feature-scoped givn
+# binary the groups spawn. The fixture links no production code and exits 0
+# with no arguments; running it here discards its profraw with the clean
+# below.
+cargo llvm-cov --no-report --locked --test ready_fixture
+
 mkdir -p "$(dirname "$non_e2e_path")"
 cargo llvm-cov clean --profraw-only
 
