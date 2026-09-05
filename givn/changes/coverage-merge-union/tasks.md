@@ -9,20 +9,20 @@ GIVN_FEATURES=givn/changes/coverage-merge-union/specs \
   --test features_runner -- --name "<scenario title>"
 ```
 
-- [ ] Task 1 (setup): none required — runner, strict mode, and step files exist (tests/features_runner.rs `.fail_on_skipped()`; proof pre-existing).
-- [ ] Scenario: A line measured by both reports is counted once in the merged report
-  - [ ] RED: run the scenario scoped; paste non-zero exit
-  - [ ] GREEN: per-line data through `CoberturaReport` (`line_hits`), union merge with aggregate fallback in `merge_legacy_reports`, new fixture givens + merged-counter then-step in `tests/steps/extract_coverage_gate_steps.rs`; list production files; run scenario scoped; paste zero exit
-  - [ ] REFACTOR: no behaviour change; re-run scenario; paste zero exit
-  - [ ] COMMIT:
-- [ ] Scenario: A line only one report measures counts once and uncovered lines are not dropped
-  - [ ] RED: run the scenario scoped; paste non-zero exit
-  - [ ] GREEN: no further production change expected (union covers it); run scenario scoped; paste zero exit
-  - [ ] REFACTOR: re-run; paste zero exit
-  - [ ] COMMIT:
-- [ ] Task: repository script — merge-coverages.sh recounts root line totals from the merged tree (`package/class/lines/line` walk, distinct (filename, number), aggregate fallback), then regenerate the repository report and confirm root rate equals the class-level union rate.
-  - [ ] COMMIT:
-- [ ] Task: arc42 — update docs/arc42/08-crosscutting-concepts.md coverage-gate section with the union rule and the branch-summation limitation.
-  - [ ] COMMIT:
+- [x] Task 1 (setup): none required — runner, strict mode, and step files exist (tests/features_runner.rs `.fail_on_skipped()`; proof pre-existing).
+- [x] Scenario: A line measured by both reports is counted once in the merged report
+  - [x] RED: exit 1 — "merged report does not claim lines-valid=\"4\" … lines-covered=\"4\" lines-valid=\"8\"" (sum denominator)
+  - [x] GREEN: production files: src/cobertura.rs (line_hits field, number attribute, line_hits(), union merge with aggregate fallback), tests/steps/extract_coverage_gate_steps.rs (legacy fixture givens, report-emitting scripts, merged-counter then-step); scenario exit 0 (4/4)
+  - [x] REFACTOR: none needed; re-run exit 0
+  - [x] COMMIT: `23bf23e`
+- [x] Scenario: A line only one report measures counts once and uncovered lines are not dropped
+  - [x] RED: exit 1 — "merged report does not claim lines-valid=\"4\" … lines-covered=\"2\" lines-valid=\"5\"" (sum denominator)
+  - [x] GREEN: covered by the same union change; scenario exit 0 (2/4)
+  - [x] REFACTOR: none needed; re-run exit 0
+  - [x] COMMIT: `23bf23e` (both scenarios share one production change)
+- [x] Task: repository script — merge-coverages.sh recounts root line totals from the merged tree (`package/class/lines/line` walk, distinct (filename, number) with hits summed, aggregate fallback); regenerated repository report: root 6946/16598 = 0.4185 equals the class-level union (was 12480/33196 = 0.3759).
+  - [x] COMMIT: `f197526`
+- [x] Task: arc42 — docs/arc42/08-crosscutting-concepts.md coverage-gate section states the union rule, the aggregate-only fallback, and the branch-summation limitation.
+  - [x] COMMIT: `4f38936`
 
 DESIGN-REVIEW: PASS marker lives in design-review.md.
