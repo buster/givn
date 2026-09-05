@@ -17,6 +17,12 @@ pub struct CoberturaReport {
     /// aggregate totals coincide; an aggregate match alone is not evidence of
     /// a copied report.
     pub file_lines: BTreeMap<String, (u64, u64)>,
+    /// Per-source-file hit counts keyed by line number: file → (line
+    /// number → hits). Required to compute a line union when merging two
+    /// reports of the same tree; aggregate counters alone cannot
+    /// distinguish a shared line from two distinct ones. Empty for
+    /// aggregate-only reports (`<packages />` without line elements).
+    pub line_hits: BTreeMap<String, BTreeMap<u64, u64>>,
 }
 
 /// Parse a Cobertura XML file and extract coverage statistics.
@@ -33,6 +39,7 @@ pub fn parse(path: &Path) -> Result<CoberturaReport> {
             branches_covered: r.branches_covered,
             branches_valid: r.branches_valid,
             file_lines: r.file_lines(),
+            line_hits: r.line_hits(),
         })
         .with_context(|| format!("failed to parse Cobertura XML: {}", path.display()))
 }
@@ -100,9 +107,60 @@ pub fn assert_distinct(a: &CoberturaReport, b: &CoberturaReport) -> Result<()> {
 
 /// Preserve the pre-script behavior for projects that are migrating from the
 /// two-command coverage schema. New projects use their merge script instead.
+///
+/// Line counters are the union of the two reports: both measure the same
+/// source tree, so summing the counters would count every shared line twice
+/// in the denominator. When both reports carry line data, every (file, line
+/// number) present in either report counts once, and it counts as covered
+/// when either report hit it; hits sum so intensity combines while identity
+/// governs the counters. Branch counters keep the legacy summation in both
+/// branches: branch identity (condition outcomes) is not retained by the
+/// parser, so a branch union is not computable without a new measurement
+/// contract. When either report carries no line data (aggregate-only, e.g.
+/// `<packages />`), the union is not computable either and the aggregate
+/// summation applies to all counters — the shape of the existing legacy
+/// fixtures, whose merged output must keep passing validation.
 pub(crate) fn merge_legacy_reports(a: &CoberturaReport, b: &CoberturaReport) -> CoberturaReport {
-    let lines_covered = a.lines_covered + b.lines_covered;
-    let lines_valid = a.lines_valid + b.lines_valid;
+    if a.line_hits.is_empty() || b.line_hits.is_empty() {
+        let lines_covered = a.lines_covered + b.lines_covered;
+        let lines_valid = a.lines_valid + b.lines_valid;
+        let branches_covered = a.branches_covered + b.branches_covered;
+        let branches_valid = a.branches_valid + b.branches_valid;
+        return CoberturaReport {
+            line_rate: if lines_valid > 0 {
+                lines_covered as f64 / lines_valid as f64
+            } else {
+                0.0
+            },
+            branch_rate: if branches_valid > 0 {
+                branches_covered as f64 / branches_valid as f64
+            } else {
+                0.0
+            },
+            lines_covered,
+            lines_valid,
+            branches_covered,
+            branches_valid,
+            file_lines: BTreeMap::new(),
+            line_hits: BTreeMap::new(),
+        };
+    }
+
+    let mut line_hits = a.line_hits.clone();
+    for (file, lines) in &b.line_hits {
+        let entry = line_hits.entry(file.clone()).or_default();
+        for (number, hits) in lines {
+            *entry.entry(*number).or_insert(0) += hits;
+        }
+    }
+    let mut file_lines = BTreeMap::new();
+    let mut lines_covered = 0u64;
+    let lines_valid = line_hits.values().map(|lines| lines.len() as u64).sum();
+    for (file, lines) in &line_hits {
+        let covered = lines.values().filter(|hits| **hits > 0).count() as u64;
+        lines_covered += covered;
+        file_lines.insert(file.clone(), (covered, lines.len() as u64));
+    }
     let branches_covered = a.branches_covered + b.branches_covered;
     let branches_valid = a.branches_valid + b.branches_valid;
 
@@ -121,7 +179,8 @@ pub(crate) fn merge_legacy_reports(a: &CoberturaReport, b: &CoberturaReport) -> 
         lines_valid,
         branches_covered,
         branches_valid,
-        file_lines: std::collections::BTreeMap::new(),
+        file_lines,
+        line_hits,
     }
 }
 
@@ -252,6 +311,8 @@ struct CoberturaLines {
 
 #[derive(Debug, serde::Deserialize)]
 struct CoberturaLine {
+    #[serde(rename = "@number")]
+    number: u64,
     #[serde(rename = "@hits")]
     hits: u64,
 }
@@ -268,6 +329,21 @@ impl CoberturaXml {
                     if line.hits > 0 {
                         entry.0 += 1;
                     }
+                }
+            }
+        }
+        map
+    }
+
+    /// Per-file hit counts keyed by line number, across all classes.
+    /// Hits from several classes sharing a filename sum for the same line.
+    fn line_hits(&self) -> BTreeMap<String, BTreeMap<u64, u64>> {
+        let mut map: BTreeMap<String, BTreeMap<u64, u64>> = BTreeMap::new();
+        for package in &self.packages.package {
+            for class in &package.classes.class {
+                let entry = map.entry(class.filename.clone()).or_default();
+                for line in &class.lines.line {
+                    *entry.entry(line.number).or_insert(0) += line.hits;
                 }
             }
         }
