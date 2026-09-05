@@ -6,7 +6,7 @@ Feature: grouped-merge-for-new-capabilities
   Scenario: A new capability without a declared group keeps the flat merge layout
     Given a placeholder step
 
-  @givn.added @wip
+  @e2e @givn.added
   Scenario: Archive is blocked when a new capability has no declared routing decision
     Given a givn project with verify.e2e_command unconfigured in givn/config.yaml
     And a completed change "flat-new" whose proposal records no routing decision and whose delta lives under specs/flat-new/
