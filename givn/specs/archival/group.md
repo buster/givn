@@ -21,6 +21,8 @@ move the change into the archive — atomically, with rollback on failure.
 - Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
 - Consumer archives a change with coverage enabled and the coverage summary appears in README
 - Consumer archives a modified scenario and the permanent spec keeps the docstring
+- Consumer archives a new capability and the merged spec lands in its declared group
+- Consumer archives a new capability and the merged spec lands in its declared group
 
 ## Includes
 
