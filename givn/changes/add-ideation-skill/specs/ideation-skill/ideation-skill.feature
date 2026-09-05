@@ -29,7 +29,7 @@ Feature: ideation-skill
     And the generated givn-ideation guidance contains "persona promotion"
     And the generated givn-ideation guidance contains "every artifact that affects"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
