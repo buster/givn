@@ -1,0 +1,62 @@
+---
+name: givn-ideation
+description: Work a vague idea into change-ready use cases through a structured, state-persisting domain exploration
+---
+
+# givn-ideation
+
+Work a vague idea into change-ready use cases. This is the structured,
+artifact-producing alternative to `givn-explore`: explore answers "do we want
+this, and which approach?" without artifacts; ideation answers "what does the
+solution look like, domain-wise?" and ends with change-ready use cases, one
+per future givn change.
+
+## When to use
+
+| | givn-explore | givn-ideation |
+|---|---|---|
+| Question | "Do we want this? Which option?" | "How does the solution look, domain-wise?" |
+| Structure | none, emergent | phases, notation, reviews |
+| Output | none, only insight | topic state, use cases, change seeds |
+| Duration | one conversation | several sessions |
+| Domain load | low | high (DDD, event storming) |
+
+## Context
+
+- Existing project: run `givn status` and `givn spec tree` first; read the
+  README, the durable arc42 chapters, and `docs/arc42/12-glossary.md` for
+  known terms before asking anything the project already answered.
+- New domain: start from the problem, not the solution.
+- Read the topic state before every session; write to it after every turn.
+  All ideation work persists there and survives sessions.
+
+## Frame
+
+Inventory what is known before exploring what is not.
+
+Existing project:
+
+1. Run `givn status` and `givn spec tree`; read the README and the arc42
+   chapters relevant to the domain.
+2. Record the research protocol: what exists, what the permanent specs
+   already own, where the gaps are.
+3. Identify stakeholders — the parties with an interest in the outcome,
+   including those who never touch the system (owners, regulators).
+
+New domain:
+
+1. Name the problem in one sentence. If the user named a solution first,
+   ask: "if that is the answer, what was the question?"
+2. Establish a vision: who the system serves and what changes for them.
+3. Establish stakeholders with their interests; every later artifact is
+   checked against this list.
+
+Write the frame protocol to the topic state. Report it to the user and let
+them confirm it before any phase starts.
+
+## What you must NOT do
+
+- Never write givn change artifacts — the outcome is topic state and change
+  seeds, produced later.
+- Never skip the user's confirmation on anything recorded in their name.
+- Never answer a question the project already answered in its specs or docs.

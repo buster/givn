@@ -15,24 +15,29 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
 
 ## Setup
 
-- [ ] **Setup**: prove strict mode with an undefined-step probe, confirm the
+- [x] **Setup**: prove strict mode with an undefined-step probe, confirm the
       runner contract, and prove the e2e subset.
       ```text
       GIVN_FEATURES=tests/strict-mode-ideation-probe.feature cargo test --test features_runner -- --name '^Undefined ideation step fails the runner$'
-      (expected: 1 failed scenario, non-zero exit — paste actual output; delete the probe file after)
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      Step doesn't match any function
+      error: test failed, to rerun `--test features_runner`
+      (exit 101 — strict mode proven; probe file deleted after the proof)
       ```
       ```text
-      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh      → paste scenario count (6)
-      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh --e2e → paste scenario count (1); 1 < 6 proves the tag filter is a strict subset
-      (both fail while scenarios are RED; the counts are the proof)
+      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh       → 1 feature; 6 scenarios (6 failed); exit 101
+      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh --e2e → 1 feature; 1 scenario (1 failed); exit 101
+      1 < 6 proves the @e2e tag filter is a strict subset; the failures are the expected pre-GREEN RED state
       ```
-- [ ] **Planning-layer commit**: commit the planning artifacts before the
+- [x] **Planning-layer commit**: commit the planning artifacts before the
       first scenario (proposal, spec delta with `@wip` tags, design,
       design-review, arc42 assessment, glossary terms, support-group
       inventory bullet, this tasks.md). Never stage unrelated working-tree
       files (`PLAN.md`, `TASKS.md`).
       Commit: `docs(add-ideation-skill): planning layer through design-review`
-      Hash: `<fill>`
+      Hash: `5139777`
 
 ## Non-E2E Scenarios
 

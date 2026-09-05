@@ -80,6 +80,7 @@ pub fn default_skill_names() -> Vec<&'static str> {
         "givn-steps",
         "givn-reverse-engineer",
         "givn-characterize",
+        "givn-ideation",
     ]
 }
 
