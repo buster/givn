@@ -15,13 +15,6 @@ Status values:
 
 - [Documentation Index](INDEX.md) - `current`; this navigation document.
 
-## Current Evidence
-
-- [Real-Model Duplicate Filter Report](semantic-duplicates-real-model-filter-report.md) - `current`; PR #27 full-corpus duplicate audit with 394 permanent scenarios, 1,274 E5 candidates, real BGE/NLI runs, and explicit token-cap and unscored evidence.
-- [E5 Threshold Versus Serialization Analysis](semantic-duplicates-e5-threshold-vs-serialization-analysis.md) - `current`; current E5 distribution, 2,048 default second-stage budget, ranked prefixes, and runtime measurements.
-- [Manual Semantic Evaluation](semantic-duplicates-manual-evaluation.md) - `current`; manual classifications for the current PR #27 BGE and NLI top-five outputs. This is a local evaluation record; its raw JSON inputs are intentionally unversioned and ephemeral.
-- [BGE Reranking Admission Benchmark](bge-reranking-benchmark.md) - `current`; BGE admission criteria and the current PR #27 run, with older measurements explicitly separated as historical.
-
 ## Process and Reference
 
 - [Workflow in Detail](workflow.md) - `current`; ordered phases with artifacts and completion criteria, the scenario TDD loop, advisory versus blocking gates, semantic duplicate assurance, status semantics, and archive mechanics.
@@ -31,8 +24,6 @@ Status values:
 
 ## Project Planning
 
-- [Implementation Task Breakdown](TASKS.md) - `current`; phase-by-phase implementation tasks and completion markers.
-- [Root Plan](../PLAN.md) - `reference`; six-change refactor plan and dependency context outside the `docs/` tree.
 - [Givn 0.2.0 to 0.3.0 Migration Guide](migrations/0.2.0-to-0.3.0.md) - `reference`; ordered LLM prompts for upgrading projects created from the 0.2.0 master branch.
 - [Migration Bundles](migrations/README.md) - `reference`; authoring contract for future release-owned migration bundles and aggregate plans.
 
@@ -66,10 +57,3 @@ Status values:
 
 - [Cross-Encoder Benchmark](archive/benchmarks/cross-encoder-benchmark.md) - `historical`; earlier 208-scenario BGE reranker branch comparison with standalone and integrated candidate pools.
 - [NLI Experiment Benchmark](archive/benchmarks/nli-benchmark.md) - `historical`; earlier NLI comparison branch run on 208 permanent scenarios and 839 integrated candidates.
-
-## Evidence Boundary
-
-The current operating point is the PR #27 run: `394` permanent scenarios,
-`1274` E5 candidates, `795` BGE-eligible top-five-union pairs, and the default
-`GIVN_SPEC_MAX_RERANK_PAIRS=2048`. The archived `385/100`, `425/199`, and old
-pair-cap measurements are historical evidence only.
