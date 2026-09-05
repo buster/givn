@@ -418,7 +418,11 @@ fn change_new_capability(world: &mut GivnWorld) {
     std::fs::create_dir_all(&specs_root).unwrap();
 
     let change = root.join("givn/changes/integrity-hook-and-archive-gate");
-    std::fs::write(change.join("proposal.md"), "# Proposal\n").unwrap();
+    std::fs::write(
+        change.join("proposal.md"),
+        crate::steps::fixture_routing_proposal("new-cap"),
+    )
+    .unwrap();
 
     // Delta for a new capability.
     let specs_dir = change.join("specs").join("new-cap");

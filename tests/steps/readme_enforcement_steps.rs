@@ -290,7 +290,11 @@ fn completed_change_short(world: &mut GivnWorld, id: String) {
         "givn new {id} failed: {}",
         String::from_utf8_lossy(&out.stderr)
     );
-    std::fs::write(change_dir.join("proposal.md"), "# Proposal\n").expect("write proposal");
+    std::fs::write(
+        change_dir.join("proposal.md"),
+        crate::steps::fixture_routing_proposal("example"),
+    )
+    .expect("write proposal");
     std::fs::write(change_dir.join("design.md"), "# Design\n").expect("write design");
     std::fs::write(change_dir.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
         .expect("write design-review");

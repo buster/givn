@@ -71,6 +71,14 @@ fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
         "tasks.md",
         "review.md",
     ] {
+        if *file == "proposal.md" {
+            std::fs::write(
+                change_dir.join(file),
+                crate::steps::fixture_routing_proposal("example"),
+            )
+            .expect("write proposal");
+            continue;
+        }
         let mut f = std::fs::File::create(change_dir.join(file)).expect("create artifact");
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
@@ -260,6 +268,14 @@ fn completed_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
         "tasks.md",
         "review.md",
     ] {
+        if *file == "proposal.md" {
+            std::fs::write(
+                change_dir.join(file),
+                crate::steps::fixture_routing_proposal("example"),
+            )
+            .expect("write proposal");
+            continue;
+        }
         let mut f = std::fs::File::create(change_dir.join(file)).expect("create artifact");
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();
@@ -303,6 +319,14 @@ fn completed_change_no_e2e_delta(world: &mut GivnWorld, id: String) {
         "tasks.md",
         "review.md",
     ] {
+        if *file == "proposal.md" {
+            std::fs::write(
+                change_dir.join(file),
+                crate::steps::fixture_routing_proposal("example"),
+            )
+            .expect("write proposal");
+            continue;
+        }
         let mut f = std::fs::File::create(change_dir.join(file)).expect("create artifact");
         if *file == "design-review.md" {
             writeln!(f, "DESIGN-REVIEW: PASS").ok();

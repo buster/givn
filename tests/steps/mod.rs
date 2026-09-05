@@ -157,6 +157,21 @@ pub(crate) struct ProbeJob {
 
 // --- helpers ---------------------------------------------------------------
 
+/// A completed-change fixture proposal that records a `NEW in <cap>` routing
+/// decision for the given capability. Since the fail-closed archive rule
+/// blocks new capabilities without a routing decision, every fixture that
+/// archives a brand-new capability must declare one. Declaring the group as
+/// the capability name reproduces the delta's own specs layout.
+pub(crate) fn fixture_routing_proposal(cap: &str) -> String {
+    format!(
+        "# Proposal: fixture\n\n\
+         ## Capability Routing\n\n\
+         | Proposed capability | Route's recommendation | Decision | Rationale |\n\
+         |---|---|---|---|\n\
+         | {cap} | (fixture) | `NEW in {cap}` | fixture |\n"
+    )
+}
+
 pub(crate) fn output(world: &GivnWorld) -> &Output {
     world
         .last_output
@@ -1004,6 +1019,11 @@ fn change_all_required_done(world: &mut GivnWorld, id: String) {
         "tasks.md",
         "review.md",
     ] {
+        if *file == "proposal.md" {
+            std::fs::write(change_dir.join(file), fixture_routing_proposal("example"))
+                .expect("write proposal");
+            continue;
+        }
         std::fs::write(change_dir.join(file), "").expect("write artifact");
     }
     // Write DESIGN-REVIEW: PASS marker.
