@@ -50,6 +50,7 @@ them.
 - A consumer synchronizes skills and the generated guidance omits disabled-addon sections
 - A consumer enables the addons a generated section needs and the guidance gains it
 - A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed
+- A consumer synchronizes skills and every agent target receives the ideation facilitation skill
 
 ## Includes
 
