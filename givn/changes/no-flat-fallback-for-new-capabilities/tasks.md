@@ -35,12 +35,27 @@ mode unchanged and previously proven.
   - [x] COMMIT: `test(e2e): Archive is blocked when a new capability has no declared routing decision`
         Hash: `eb498ed`
 
+- [x] Scenario: `Nothing is merged when one delta file of a change has no routing decision`
+  - [x] RED: exit 101 — the routed delta had already merged
+        (`givn/specs/mixed-group/mixed-routing.feature` existed) when the
+        unrouted one blocked; partial merge contradicted the design claim
+        "error surfaces before any file is written". Found in design-review
+        grilling, spec'd as a second scenario before fixing.
+  - [x] GREEN: prevalidation pass in `src/cli/archive.rs` (parse, WIP
+        check, resolve every target) before any merge; target resolution
+        extracted into `resolve_permanent_dir` + `delta_capability`; two
+        stale flat-fallback comments reworded. Rerun passed.
+  - [x] COMMIT: `test(e2e): Nothing is merged when one delta file of a change has no routing decision`
+        Hash: `e4836d3`
+
 ## Final verification
 
-- [ ] Change suite green (non-e2e + e2e scoped to the change).
-- [ ] `givn lint --change no-flat-fallback-for-new-capabilities` exit 0, no
-      `@wip` (removed placeholder suppressed by lint).
-- [ ] `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings`.
-- [ ] Full permanent suite exit 0.
-- [ ] Self-dogfood: `cargo install --path . --locked --force`; `givn skills
-      sync`.
+- [x] Change suite green: 3 non-e2e + 2 e2e scenarios passed; permanent
+      suite 361/362 with the single failure being the superseded
+      flat-layout scenario that this change's `@givn.removed` delta
+      retires at merge.
+- [x] `givn lint --change no-flat-fallback-for-new-capabilities` exit 0.
+- [x] `cargo fmt` + `cargo clippy --workspace --all-targets -- -D warnings`.
+- [x] `cargo test --lib`: 241 passed.
+- [x] Self-dogfood: `cargo install --path . --locked --force`; `givn skills
+      sync` (binary replaced from this checkout; integrations regenerated).
