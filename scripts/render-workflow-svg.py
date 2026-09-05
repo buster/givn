@@ -207,9 +207,25 @@ PHASES = [
 ]
 
 
+# Optional upstream entry: a domain-driven event-storming flow that precedes
+# the chain. Produces topic state under givn/ideation/ and change seeds — no
+# manifest artifact, no gates, rendered dashed to mark it as skippable.
+ENTRY = dict(
+    name="ideation",
+    sub="/givn-ideation &#183; event storming",
+    artifact="givn/ideation/&lt;topic&gt;/",
+    art_lines=[
+        "multi-session storm: domain events, personas, use cases, change seeds",
+        "hands off to propose &#8212; creates no chain artifact",
+    ],
+)
+
+
 def main():
     # ---- measure ----------------------------------------------------------
-    nodes = []  # ("row", phase, h) | ("check", card, h)
+    nodes = []  # ("entry", ENTRY, h) | ("row", phase, h) | ("check", card, h)
+    entry_h = max(PAD * 2 + LH_TITLE + 4 + len(ENTRY["art_lines"]) * LH_BODY, STEP_H)
+    nodes.append(["entry", ENTRY, entry_h])
     for p in PHASES:
         art_h = PAD * 2 + LH_TITLE + 4 + len(p["art_lines"]) * LH_BODY
         nodes.append(["row", p, max(art_h, STEP_H)])
@@ -233,7 +249,8 @@ def main():
     )
     s.append('<title id="t">Givn change lifecycle: proposal to archive</title>')
     s.append(
-        '<desc id="d">Top-to-bottom flow: each action pill creates the artifact shown to its '
+        '<desc id="d">Top-to-bottom flow: an optional ideation entry (domain-driven event '
+        'storming) feeds phase 1; each action pill creates the artifact shown to its '
         'right; check cards between the actions gate the transition. Advisory checks never '
         'block; every other check must pass before the next action starts.</desc>'
     )
@@ -253,13 +270,14 @@ def main():
 
     lx = MARGIN
     legend = [
-        (C_STEP, None, "action"),
-        ("#ffffff", C_ART_STROKE, "artifact"),
-        (C_CHK_BG, C_CHK_STROKE, "blocking check"),
-        (C_ADV_BG, C_ADV_STROKE, "advisory check"),
+        (C_STEP, None, "action", False),
+        ("#ffffff", C_ART_STROKE, "artifact", False),
+        (C_CHK_BG, C_CHK_STROKE, "blocking check", False),
+        (C_ADV_BG, C_ADV_STROKE, "advisory check", True),
+        ("#ffffff", C_ART_STROKE, "optional entry", True),
     ]
-    for fill, stroke, label in legend:
-        dash = ' stroke-dasharray="4 3"' if fill == C_ADV_BG else ""
+    for fill, stroke, label, dashed in legend:
+        dash = ' stroke-dasharray="4 3"' if dashed else ""
         s.append(
             f'<rect x="{lx}" y="100" width="15" height="15" rx="4" fill="{fill}" '
             f'stroke="{stroke}" stroke-width="1.5"{dash}/>'
@@ -269,17 +287,77 @@ def main():
         )
         lx += 22 + len(label) * CHAR * (FS_LEGEND / FS_ART_LINE) + 28
 
-    def arrow_down(x, y1, y2):
+    def arrow_down(x, y1, y2, dashed=False):
+        d = ' stroke-dasharray="4 3"' if dashed else ""
         return (
-            f'<line x1="{x}" y1="{y1}" x2="{x}" y2="{y2 - 11}" stroke="{C_LINE}" stroke-width="2"/>'
+            f'<line x1="{x}" y1="{y1}" x2="{x}" y2="{y2 - 11}" stroke="{C_LINE}" '
+            f'stroke-width="2"{d}/>'
             f'<polygon points="{x - 8},{y2 - 12} {x + 8},{y2 - 12} {x},{y2}" fill="{C_LINE}"/>'
         )
 
     prev_bottom = None
+    prev_dashed = False
     for idx, ((kind, payload, h), ny) in enumerate(zip(nodes, positions)):
         if prev_bottom is not None:
-            s.append(arrow_down(SPINE_X, prev_bottom + 3, ny))
-        if kind == "row":
+            s.append(arrow_down(SPINE_X, prev_bottom + 3, ny, dashed=prev_dashed))
+        if kind == "entry":
+            sx = MARGIN
+            sy = ny + (h - STEP_H) / 2
+            s.append(
+                f'<rect x="{sx}" y="{sy}" width="{STEP_W}" height="{STEP_H}" rx="12" '
+                f'fill="#ffffff" stroke="{C_ART_STROKE}" stroke-width="1.5" '
+                f'stroke-dasharray="4 3"/>'
+            )
+            ecy = sy + STEP_H / 2
+            s.append(
+                f'<text x="{sx + STEP_W / 2}" y="{ecy - 2}" text-anchor="middle" '
+                f'font-size="{FS_STEP}" font-weight="700" fill="{C_ART_NAME}">'
+                f'{payload["name"]}</text>'
+            )
+            s.append(
+                f'<text x="{sx + STEP_W / 2}" y="{ecy + 17}" text-anchor="middle" '
+                f'font-size="{FS_STEP_SUB}" fill="{C_MUTED}">{payload["sub"]}</text>'
+            )
+            ay = sy + STEP_H / 2
+            s.append(
+                f'<line x1="{sx + STEP_W + 4}" y1="{ay}" x2="{ART_X - 10}" y2="{ay}" '
+                f'stroke="{C_LINE}" stroke-width="2" stroke-dasharray="4 3"/>'
+            )
+            s.append(
+                f'<polygon points="{ART_X - 9},{ay - 6} {ART_X - 9},{ay + 6} {ART_X},{ay}" '
+                f'fill="{C_LINE}"/>'
+            )
+            acy = ny + (h - (PAD * 2 + LH_TITLE + 4 + len(payload["art_lines"]) * LH_BODY)) / 2
+            s.append(
+                f'<rect x="{ART_X}" y="{acy}" width="{ART_W}" height="{h}" rx="12" '
+                f'fill="#ffffff" stroke="{C_ART_STROKE}" stroke-width="1.5" '
+                f'stroke-dasharray="4 3"/>'
+            )
+            s.append(
+                f'<text x="{ART_X + PAD}" y="{acy + PAD + FS_ART - 3}" font-size="{FS_ART}" '
+                f'font-weight="700" font-family="{MONO}" fill="{C_ART_NAME}">'
+                f'{payload["artifact"]}</text>'
+            )
+            tw = len("OPTIONAL") * 6.6 + 18
+            s.append(
+                f'<rect x="{ART_X + ART_W - PAD - tw}" y="{acy + PAD - 3}" width="{tw}" '
+                f'height="{TAG_H}" rx="{TAG_H / 2}" fill="{C_TAG_ADV}"/>'
+            )
+            s.append(
+                f'<text x="{ART_X + ART_W - PAD - tw / 2}" y="{acy + PAD + TAG_H / 2 - 4}" '
+                f'text-anchor="middle" font-size="{FS_TAG}" font-weight="700" '
+                f'letter-spacing=".06em" fill="#ffffff">OPTIONAL</text>'
+            )
+            lyy = acy + PAD + LH_TITLE + 4 + FS_ART_LINE - 2
+            for ln in payload["art_lines"]:
+                s.append(
+                    f'<text x="{ART_X + PAD}" y="{lyy}" font-size="{FS_ART_LINE}" '
+                    f'fill="{C_MUTED}">{ln}</text>'
+                )
+                lyy += LH_BODY
+            prev_bottom = ny + h
+            prev_dashed = True
+        elif kind == "row":
             p = payload
             sx = MARGIN
             sy = ny + (h - STEP_H) / 2
@@ -327,9 +405,11 @@ def main():
                 )
                 lyy += LH_BODY
             prev_bottom = ny + h
+            prev_dashed = False
         else:
             s.append(render_card(payload, CHK_X, ny, CHK_W))
             prev_bottom = ny + h
+            prev_dashed = False
 
     s.append("</g></svg>")
 

@@ -46,7 +46,9 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
 - **One change lifecycle.** propose → spec → design → design-review → tasks →
   implement → review → archive. On archive, tagged delta scenarios merge into
-  the permanent specs and the tags are stripped.
+  the permanent specs and the tags are stripped. Optionally preceded by
+  `/givn-ideation` — a domain-driven event storming flow that turns a vague
+  idea into change-ready use cases.
 - **Scenario-by-scenario TDD with proof.** Each scenario runs RED (targeted,
   genuinely failing) → GREEN (minimum code) → REFACTOR → one atomic commit.
   The runner's strict mode is proven up front so an empty step definition can
@@ -86,6 +88,7 @@ Run "givn init" in your repository, then /givn-propose in your agent. Let the ag
 ```sh
 git init
 givn init                             # scaffold givn/ + generate skills + AGENTS.md hint
+/givn-ideation my-domain              # (optional, in your AI agent) event-storm a vague idea into use cases
 /givn-propose add-user-auth           # (in your AI agent) proposal → spec → design → tasks
 /givn-implement                       # (in your AI agent) scenario-by-scenario TDD loop
 /givn-review                          # (in your AI agent) coverage review, sign off
@@ -103,8 +106,6 @@ givn init                             # scaffold givn/ + generate skills + AGENT
   how semantic search assures deduplication.
 - [`docs/reference.md`](docs/reference.md) — full CLI reference, agent skills,
   addons, extras, configuration keys, project layout, dev scripts.
-- [`docs/retrieval-models.md`](docs/retrieval-models.md) — E5/BGE/NLI model
-  sources, caches, overrides, offline recovery.
 - [`docs/arc42/README.md`](docs/arc42/README.md) — architecture documentation,
   one file per chapter.
 - [`CHANGELOG.md`](CHANGELOG.md) · [`docs/migrations/README.md`](docs/migrations/README.md) —
