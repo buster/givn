@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="830" height="2146" viewBox="0 0 830 2146" role="img" aria-labelledby="t d">
+<svg xmlns="http://www.w3.org/2000/svg" width="830" height="2266" viewBox="0 0 830 2266" role="img" aria-labelledby="t d">
 <title id="t">Givn change lifecycle: proposal to archive</title>
-<desc id="d">Top-to-bottom flow: each action pill creates the artifact shown to its right; check cards between the actions gate the transition. Advisory checks never block; every other check must pass before the next action starts.</desc>
-<rect width="830" height="2146" fill="#ffffff"/>
+<desc id="d">Top-to-bottom flow: an optional ideation entry (domain-driven event storming) feeds phase 1; each action pill creates the artifact shown to its right; check cards between the actions gate the transition. Advisory checks never block; every other check must pass before the next action starts.</desc>
+<rect width="830" height="2266" fill="#ffffff"/>
 <g font-family="'Segoe UI',-apple-system,Roboto,Helvetica,Arial,sans-serif">
 <text x="20" y="50" font-size="24" font-weight="800" fill="#0f172a">
 givn &#8212; change lifecycle: proposal to archive</text>
@@ -15,114 +15,128 @@ givn &#8212; change lifecycle: proposal to archive</text>
 <text x="243.92000000000002" y="112" font-size="13" fill="#64748b">blocking check</text>
 <rect x="373.84000000000003" y="100" width="15" height="15" rx="4" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/>
 <text x="395.84000000000003" y="112" font-size="13" fill="#64748b">advisory check</text>
-<rect x="20" y="150.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="181.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="185.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">1</text>
-<text x="119.0" y="179.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">propose</text>
-<text x="119.0" y="198.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-propose</text>
-<line x1="194" y1="181.0" x2="220" y2="181.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,175.0 221,187.0 230,181.0" fill="#cbd5e1"/>
-<rect x="230" y="148.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="172.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">proposal.md</text>
-<text x="242" y="195.0" font-size="13" fill="#64748b">WHAT and WHY, domain language, no implementation detail</text>
-<line x1="105.0" y1="217" x2="105.0" y2="239" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,238 113.0,238 105.0,250" fill="#cbd5e1"/>
-<rect x="20" y="252.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="283.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="287.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">2</text>
-<text x="119.0" y="281.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">spec</text>
-<text x="119.0" y="300.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-spec</text>
-<line x1="194" y1="283.0" x2="220" y2="283.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,277.0 221,289.0 230,283.0" fill="#cbd5e1"/>
-<rect x="230" y="250.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="274.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">specs/*.feature</text>
-<text x="242" y="297.0" font-size="13" fill="#64748b">delta scenarios (add/modified/removed), &#8805; 1 E2E-tested per capability</text>
-<line x1="105.0" y1="319" x2="105.0" y2="341" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,340 113.0,340 105.0,352" fill="#cbd5e1"/>
-<rect x="20" y="352" width="790" height="62" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="32" y="376" font-size="15" font-weight="700" fill="#713f12">givn spec search / explore</text><rect x="727.2" y="361" width="70.8" height="17" rx="8.5" fill="#d97706"/><text x="762.6" y="368.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">ADVISORY</text><text x="32" y="391" font-size="13" fill="#713f12">E5 search for existing spec and overlap to avoid duplicates</text>
-<line x1="105.0" y1="417" x2="105.0" y2="439" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,438 113.0,438 105.0,450" fill="#cbd5e1"/>
-<rect x="20" y="450" width="790" height="81" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="32" y="474" font-size="15" font-weight="700" fill="#713f12">givn lint</text><rect x="727.2" y="459" width="70.8" height="17" rx="8.5" fill="#d97706"/><text x="762.6" y="466.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">ADVISORY</text><text x="32" y="489" font-size="13" fill="#713f12">syntax &#183; @wip tags &#183; overlap warnings (severity-ranked exit code)</text><text x="32" y="508" font-size="12.5" font-weight="600" fill="#dc2626">&#8617; runs again as a blocking built-in hook at every gate</text>
-<line x1="105.0" y1="534" x2="105.0" y2="556" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,555 113.0,555 105.0,567" fill="#cbd5e1"/>
-<rect x="20" y="569.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="600.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="604.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">3</text>
-<text x="119.0" y="598.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">design</text>
-<text x="119.0" y="617.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-design</text>
-<line x1="194" y1="600.0" x2="220" y2="600.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,594.0 221,606.0 230,600.0" fill="#cbd5e1"/>
-<rect x="230" y="567.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="591.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">design.md</text>
-<text x="242" y="614.0" font-size="13" fill="#64748b">HOW to implement, config, e2e infrastructure</text>
-<line x1="105.0" y1="636" x2="105.0" y2="658" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,657 113.0,657 105.0,669" fill="#cbd5e1"/>
-<rect x="20" y="671.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="702.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="706.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">4</text>
-<text x="119.0" y="700.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">design-review</text>
-<text x="119.0" y="719.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-design-review</text>
-<line x1="194" y1="702.0" x2="220" y2="702.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,696.0 221,708.0 230,702.0" fill="#cbd5e1"/>
-<rect x="230" y="669.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="693.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">design-review.md</text>
-<text x="242" y="716.0" font-size="13" fill="#64748b">plan stress-tested one question at a time, then hardened</text>
-<line x1="105.0" y1="738" x2="105.0" y2="760" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,759 113.0,759 105.0,771" fill="#cbd5e1"/>
-<rect x="20" y="771" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="795" font-size="15" font-weight="700" fill="#713f12">sign-off marker gate</text><rect x="727.2" y="780" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="787.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="810" font-size="13" fill="#713f12">file must end with &#8220;DESIGN-REVIEW: PASS&#8221; &#8212; otherwise partial;</text><text x="32" y="828" font-size="13" fill="#713f12">design deviations un-gate this review</text>
-<line x1="105.0" y1="854" x2="105.0" y2="876" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,875 113.0,875 105.0,887" fill="#cbd5e1"/>
-<rect x="20" y="898.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="929.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="933.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">5</text>
-<text x="119.0" y="927.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">tasks</text>
-<text x="119.0" y="946.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-tasks</text>
-<line x1="194" y1="929.0" x2="220" y2="929.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,923.0 221,935.0 230,929.0" fill="#cbd5e1"/>
-<rect x="230" y="887.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="911.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">tasks.md</text>
-<text x="242" y="934.0" font-size="13" fill="#64748b">setup task first, then RED / GREEN / REFACTOR / COMMIT</text>
-<text x="242" y="952.0" font-size="13" fill="#64748b">per scenario &#8212; @e2e scenarios last</text>
+<rect x="525.76" y="100" width="15" height="15" rx="4" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="547.76" y="112" font-size="13" fill="#64748b">optional entry</text>
+<rect x="20" y="159.0" width="170" height="62" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="105.0" y="188.0" text-anchor="middle" font-size="16" font-weight="700" fill="#334155">ideation</text>
+<text x="105.0" y="207.0" text-anchor="middle" font-size="11" fill="#64748b">/givn-ideation &#183; event storming</text>
+<line x1="194" y1="190.0" x2="220" y2="190.0" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/>
+<polygon points="221,184.0 221,196.0 230,190.0" fill="#cbd5e1"/>
+<rect x="230" y="148.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5" stroke-dasharray="4 3"/>
+<text x="242" y="172.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">givn/ideation/&lt;topic&gt;/</text>
+<rect x="727.2" y="157.0" width="70.8" height="17" rx="8.5" fill="#d97706"/>
+<text x="762.6" y="164.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">OPTIONAL</text>
+<text x="242" y="195.0" font-size="13" fill="#64748b">multi-session storm: domain events, personas, use cases, change seeds</text>
+<text x="242" y="213.0" font-size="13" fill="#64748b">hands off to propose &#8212; creates no chain artifact</text>
+<line x1="105.0" y1="235" x2="105.0" y2="257" stroke="#cbd5e1" stroke-width="2" stroke-dasharray="4 3"/><polygon points="97.0,256 113.0,256 105.0,268" fill="#cbd5e1"/>
+<rect x="20" y="270.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="301.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="305.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">1</text>
+<text x="119.0" y="299.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">propose</text>
+<text x="119.0" y="318.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-propose</text>
+<line x1="194" y1="301.0" x2="220" y2="301.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,295.0 221,307.0 230,301.0" fill="#cbd5e1"/>
+<rect x="230" y="268.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="292.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">proposal.md</text>
+<text x="242" y="315.0" font-size="13" fill="#64748b">WHAT and WHY, domain language, no implementation detail</text>
+<line x1="105.0" y1="337" x2="105.0" y2="359" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,358 113.0,358 105.0,370" fill="#cbd5e1"/>
+<rect x="20" y="372.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="403.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="407.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">2</text>
+<text x="119.0" y="401.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">spec</text>
+<text x="119.0" y="420.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-spec</text>
+<line x1="194" y1="403.0" x2="220" y2="403.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,397.0 221,409.0 230,403.0" fill="#cbd5e1"/>
+<rect x="230" y="370.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="394.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">specs/*.feature</text>
+<text x="242" y="417.0" font-size="13" fill="#64748b">delta scenarios (add/modified/removed), &#8805; 1 E2E-tested per capability</text>
+<line x1="105.0" y1="439" x2="105.0" y2="461" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,460 113.0,460 105.0,472" fill="#cbd5e1"/>
+<rect x="20" y="472" width="790" height="62" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="32" y="496" font-size="15" font-weight="700" fill="#713f12">givn spec search / explore</text><rect x="727.2" y="481" width="70.8" height="17" rx="8.5" fill="#d97706"/><text x="762.6" y="488.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">ADVISORY</text><text x="32" y="511" font-size="13" fill="#713f12">E5 search for existing spec and overlap to avoid duplicates</text>
+<line x1="105.0" y1="537" x2="105.0" y2="559" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,558 113.0,558 105.0,570" fill="#cbd5e1"/>
+<rect x="20" y="570" width="790" height="81" rx="10" fill="#fffbeb" stroke="#d97706" stroke-width="1.5" stroke-dasharray="4 3"/><text x="32" y="594" font-size="15" font-weight="700" fill="#713f12">givn lint</text><rect x="727.2" y="579" width="70.8" height="17" rx="8.5" fill="#d97706"/><text x="762.6" y="586.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">ADVISORY</text><text x="32" y="609" font-size="13" fill="#713f12">syntax &#183; @wip tags &#183; overlap warnings (severity-ranked exit code)</text><text x="32" y="628" font-size="12.5" font-weight="600" fill="#dc2626">&#8617; runs again as a blocking built-in hook at every gate</text>
+<line x1="105.0" y1="654" x2="105.0" y2="676" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,675 113.0,675 105.0,687" fill="#cbd5e1"/>
+<rect x="20" y="689.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="720.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="724.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">3</text>
+<text x="119.0" y="718.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">design</text>
+<text x="119.0" y="737.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-design</text>
+<line x1="194" y1="720.0" x2="220" y2="720.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,714.0 221,726.0 230,720.0" fill="#cbd5e1"/>
+<rect x="230" y="687.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="711.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">design.md</text>
+<text x="242" y="734.0" font-size="13" fill="#64748b">HOW to implement, config, e2e infrastructure</text>
+<line x1="105.0" y1="756" x2="105.0" y2="778" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,777 113.0,777 105.0,789" fill="#cbd5e1"/>
+<rect x="20" y="791.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="822.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="826.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">4</text>
+<text x="119.0" y="820.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">design-review</text>
+<text x="119.0" y="839.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-design-review</text>
+<line x1="194" y1="822.0" x2="220" y2="822.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,816.0 221,828.0 230,822.0" fill="#cbd5e1"/>
+<rect x="230" y="789.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="813.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">design-review.md</text>
+<text x="242" y="836.0" font-size="13" fill="#64748b">plan stress-tested one question at a time, then hardened</text>
+<line x1="105.0" y1="858" x2="105.0" y2="880" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,879 113.0,879 105.0,891" fill="#cbd5e1"/>
+<rect x="20" y="891" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="915" font-size="15" font-weight="700" fill="#713f12">sign-off marker gate</text><rect x="727.2" y="900" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="907.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="930" font-size="13" fill="#713f12">file must end with &#8220;DESIGN-REVIEW: PASS&#8221; &#8212; otherwise partial;</text><text x="32" y="948" font-size="13" fill="#713f12">design deviations un-gate this review</text>
 <line x1="105.0" y1="974" x2="105.0" y2="996" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,995 113.0,995 105.0,1007" fill="#cbd5e1"/>
-<rect x="20" y="1007" width="790" height="62" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1031" font-size="15" font-weight="700" fill="#713f12">givn check tasks</text><rect x="727.2" y="1016" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1023.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1046" font-size="13" fill="#713f12">@wip gate: no scenario may remain work in progress</text>
-<line x1="105.0" y1="1072" x2="105.0" y2="1094" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1093 113.0,1093 105.0,1105" fill="#cbd5e1"/>
-<rect x="20" y="1116.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="1147.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="1151.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">6</text>
-<text x="119.0" y="1145.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">implement</text>
-<text x="119.0" y="1164.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-implement</text>
-<line x1="194" y1="1147.0" x2="220" y2="1147.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,1141.0 221,1153.0 230,1147.0" fill="#cbd5e1"/>
-<rect x="230" y="1105.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="1129.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">production code</text>
-<text x="242" y="1152.0" font-size="13" fill="#64748b">one targeted TDD cycle per scenario, one atomic commit</text>
-<text x="242" y="1170.0" font-size="13" fill="#64748b">&#8212; hash recorded in tasks.md immediately</text>
+<rect x="20" y="1018.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="1049.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="1053.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">5</text>
+<text x="119.0" y="1047.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">tasks</text>
+<text x="119.0" y="1066.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-tasks</text>
+<line x1="194" y1="1049.0" x2="220" y2="1049.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,1043.0 221,1055.0 230,1049.0" fill="#cbd5e1"/>
+<rect x="230" y="1007.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="1031.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">tasks.md</text>
+<text x="242" y="1054.0" font-size="13" fill="#64748b">setup task first, then RED / GREEN / REFACTOR / COMMIT</text>
+<text x="242" y="1072.0" font-size="13" fill="#64748b">per scenario &#8212; @e2e scenarios last</text>
+<line x1="105.0" y1="1094" x2="105.0" y2="1116" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1115 113.0,1115 105.0,1127" fill="#cbd5e1"/>
+<rect x="20" y="1127" width="790" height="62" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1151" font-size="15" font-weight="700" fill="#713f12">givn check tasks</text><rect x="727.2" y="1136" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1143.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1166" font-size="13" fill="#713f12">@wip gate: no scenario may remain work in progress</text>
 <line x1="105.0" y1="1192" x2="105.0" y2="1214" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1213 113.0,1213 105.0,1225" fill="#cbd5e1"/>
-<rect x="20" y="1225" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1249" font-size="15" font-weight="700" fill="#713f12">per-scenario runner proof</text><rect x="727.2" y="1234" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1241.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1264" font-size="13" fill="#713f12">RED must exit non-zero (exit 0 = hard stop) &#183;</text><text x="32" y="1282" font-size="13" fill="#713f12">GREEN and REFACTOR must exit zero</text>
-<line x1="105.0" y1="1308" x2="105.0" y2="1330" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1329 113.0,1329 105.0,1341" fill="#cbd5e1"/>
-<rect x="20" y="1343.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="1374.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="1378.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">7</text>
-<text x="119.0" y="1372.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">review</text>
-<text x="119.0" y="1391.0" text-anchor="middle" font-size="11" fill="#dbeafe">givn check review</text>
-<line x1="194" y1="1374.0" x2="220" y2="1374.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,1368.0 221,1380.0 230,1374.0" fill="#cbd5e1"/>
-<rect x="230" y="1341.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="1365.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">review.md + semantic-review.md</text>
-<text x="242" y="1388.0" font-size="13" fill="#64748b">coverage gap classification, fabrication audit, worklist</text>
-<line x1="105.0" y1="1410" x2="105.0" y2="1432" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1431 113.0,1431 105.0,1443" fill="#cbd5e1"/>
-<rect x="20" y="1443" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1467" font-size="15" font-weight="700" fill="#713f12">check review battery</text><rect x="727.2" y="1452" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1459.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1482" font-size="13" fill="#713f12">verify suite &#8594; verify-e2e anti-bypass &#8594; integrity (commit hashes, promised files)</text><text x="32" y="1500" font-size="13" fill="#713f12">&#8594; overlap dispositions</text>
-<line x1="105.0" y1="1526" x2="105.0" y2="1548" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1547 113.0,1547 105.0,1559" fill="#cbd5e1"/>
-<rect x="20" y="1559" width="790" height="99" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1583" font-size="15" font-weight="700" fill="#713f12">semantic duplicate review</text><rect x="727.2" y="1568" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1575.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1598" font-size="13" fill="#713f12">E5 checks specs for duplicates &#8212; classify</text><text x="32" y="1616" font-size="13" fill="#713f12">DUPLICATE / VARIANT / VALID-BOUNDARY</text><text x="32" y="1635" font-size="12.5" font-weight="600" fill="#dc2626">&#8617; unresolved &#8658; rewrite or delete the scenario, rerun</text>
-<line x1="105.0" y1="1661" x2="105.0" y2="1683" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1682 113.0,1682 105.0,1694" fill="#cbd5e1"/>
-<rect x="20" y="1694" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1718" font-size="15" font-weight="700" fill="#713f12">coverage sign-off</text><rect x="727.2" y="1703" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1710.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1733" font-size="13" fill="#713f12">every uncovered line classified (dead code / missing test / justified)</text><text x="32" y="1751" font-size="13" fill="#713f12">&#8212; file ends with &#8220;REVIEW: PASS&#8221;</text>
-<line x1="105.0" y1="1777" x2="105.0" y2="1799" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1798 113.0,1798 105.0,1810" fill="#cbd5e1"/>
-<rect x="20" y="1821.0" width="170" height="62" rx="12" fill="#2563eb"/>
-<circle cx="44" cy="1852.0" r="12" fill="#ffffff" fill-opacity=".25"/>
-<text x="44" y="1856.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">8</text>
-<text x="119.0" y="1850.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">archive</text>
-<text x="119.0" y="1869.0" text-anchor="middle" font-size="11" fill="#dbeafe">archive --change &lt;id&gt;</text>
-<line x1="194" y1="1852.0" x2="220" y2="1852.0" stroke="#cbd5e1" stroke-width="2"/>
-<polygon points="221,1846.0 221,1858.0 230,1852.0" fill="#cbd5e1"/>
-<rect x="230" y="1810.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
-<text x="242" y="1834.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">givn/specs/* &#183; givn/archive/&lt;id&gt;/</text>
-<text x="242" y="1857.0" font-size="13" fill="#64748b">deltas merged into permanent specs, @givn.* stripped,</text>
-<text x="242" y="1875.0" font-size="13" fill="#64748b">change moved to givn/archive/&lt;id&gt;/</text>
+<rect x="20" y="1236.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="1267.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="1271.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">6</text>
+<text x="119.0" y="1265.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">implement</text>
+<text x="119.0" y="1284.0" text-anchor="middle" font-size="11" fill="#dbeafe">/givn-implement</text>
+<line x1="194" y1="1267.0" x2="220" y2="1267.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,1261.0 221,1273.0 230,1267.0" fill="#cbd5e1"/>
+<rect x="230" y="1225.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="1249.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">production code</text>
+<text x="242" y="1272.0" font-size="13" fill="#64748b">one targeted TDD cycle per scenario, one atomic commit</text>
+<text x="242" y="1290.0" font-size="13" fill="#64748b">&#8212; hash recorded in tasks.md immediately</text>
+<line x1="105.0" y1="1312" x2="105.0" y2="1334" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1333 113.0,1333 105.0,1345" fill="#cbd5e1"/>
+<rect x="20" y="1345" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1369" font-size="15" font-weight="700" fill="#713f12">per-scenario runner proof</text><rect x="727.2" y="1354" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1361.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1384" font-size="13" fill="#713f12">RED must exit non-zero (exit 0 = hard stop) &#183;</text><text x="32" y="1402" font-size="13" fill="#713f12">GREEN and REFACTOR must exit zero</text>
+<line x1="105.0" y1="1428" x2="105.0" y2="1450" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1449 113.0,1449 105.0,1461" fill="#cbd5e1"/>
+<rect x="20" y="1463.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="1494.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="1498.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">7</text>
+<text x="119.0" y="1492.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">review</text>
+<text x="119.0" y="1511.0" text-anchor="middle" font-size="11" fill="#dbeafe">givn check review</text>
+<line x1="194" y1="1494.0" x2="220" y2="1494.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,1488.0 221,1500.0 230,1494.0" fill="#cbd5e1"/>
+<rect x="230" y="1461.0" width="580" height="66" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="1485.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">review.md + semantic-review.md</text>
+<text x="242" y="1508.0" font-size="13" fill="#64748b">coverage gap classification, fabrication audit, worklist</text>
+<line x1="105.0" y1="1530" x2="105.0" y2="1552" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1551 113.0,1551 105.0,1563" fill="#cbd5e1"/>
+<rect x="20" y="1563" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1587" font-size="15" font-weight="700" fill="#713f12">check review battery</text><rect x="727.2" y="1572" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1579.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1602" font-size="13" fill="#713f12">verify suite &#8594; verify-e2e anti-bypass &#8594; integrity (commit hashes, promised files)</text><text x="32" y="1620" font-size="13" fill="#713f12">&#8594; overlap dispositions</text>
+<line x1="105.0" y1="1646" x2="105.0" y2="1668" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1667 113.0,1667 105.0,1679" fill="#cbd5e1"/>
+<rect x="20" y="1679" width="790" height="99" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1703" font-size="15" font-weight="700" fill="#713f12">semantic duplicate review</text><rect x="727.2" y="1688" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1695.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1718" font-size="13" fill="#713f12">E5 checks specs for duplicates &#8212; classify</text><text x="32" y="1736" font-size="13" fill="#713f12">DUPLICATE / VARIANT / VALID-BOUNDARY</text><text x="32" y="1755" font-size="12.5" font-weight="600" fill="#dc2626">&#8617; unresolved &#8658; rewrite or delete the scenario, rerun</text>
+<line x1="105.0" y1="1781" x2="105.0" y2="1803" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1802 113.0,1802 105.0,1814" fill="#cbd5e1"/>
+<rect x="20" y="1814" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1838" font-size="15" font-weight="700" fill="#713f12">coverage sign-off</text><rect x="727.2" y="1823" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1830.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1853" font-size="13" fill="#713f12">every uncovered line classified (dead code / missing test / justified)</text><text x="32" y="1871" font-size="13" fill="#713f12">&#8212; file ends with &#8220;REVIEW: PASS&#8221;</text>
 <line x1="105.0" y1="1897" x2="105.0" y2="1919" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,1918 113.0,1918 105.0,1930" fill="#cbd5e1"/>
-<rect x="20" y="1930" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="1954" font-size="15" font-weight="700" fill="#713f12">archive gates</text><rect x="727.2" y="1939" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="1946.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="1969" font-size="13" fill="#713f12">required artifacts complete &#183; PASS markers present &#183; hooks green &#183;</text><text x="32" y="1987" font-size="13" fill="#713f12">fresh similarity gate re-run directly before the merge</text>
-<line x1="105.0" y1="2013" x2="105.0" y2="2035" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,2034 113.0,2034 105.0,2046" fill="#cbd5e1"/>
-<rect x="20" y="2046" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="2070" font-size="15" font-weight="700" fill="#713f12">post-merge proof</text><rect x="727.2" y="2055" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="2062.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="2085" font-size="13" fill="#713f12">verify suite (+ e2e) against merged specs &#183; coverage addon gate &#8212;</text><text x="32" y="2103" font-size="13" fill="#713f12">any failure rolls specs and README back from the backup</text>
+<rect x="20" y="1941.0" width="170" height="62" rx="12" fill="#2563eb"/>
+<circle cx="44" cy="1972.0" r="12" fill="#ffffff" fill-opacity=".25"/>
+<text x="44" y="1976.5" text-anchor="middle" font-size="13" font-weight="700" fill="#ffffff">8</text>
+<text x="119.0" y="1970.0" text-anchor="middle" font-size="16" font-weight="700" fill="#ffffff">archive</text>
+<text x="119.0" y="1989.0" text-anchor="middle" font-size="11" fill="#dbeafe">archive --change &lt;id&gt;</text>
+<line x1="194" y1="1972.0" x2="220" y2="1972.0" stroke="#cbd5e1" stroke-width="2"/>
+<polygon points="221,1966.0 221,1978.0 230,1972.0" fill="#cbd5e1"/>
+<rect x="230" y="1930.0" width="580" height="84" rx="12" fill="#ffffff" stroke="#94a3b8" stroke-width="1.5"/>
+<text x="242" y="1954.0" font-size="15" font-weight="700" font-family="ui-monospace,'Cascadia Code',Menlo,Consolas,monospace" fill="#334155">givn/specs/* &#183; givn/archive/&lt;id&gt;/</text>
+<text x="242" y="1977.0" font-size="13" fill="#64748b">deltas merged into permanent specs, @givn.* stripped,</text>
+<text x="242" y="1995.0" font-size="13" fill="#64748b">change moved to givn/archive/&lt;id&gt;/</text>
+<line x1="105.0" y1="2017" x2="105.0" y2="2039" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,2038 113.0,2038 105.0,2050" fill="#cbd5e1"/>
+<rect x="20" y="2050" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="2074" font-size="15" font-weight="700" fill="#713f12">archive gates</text><rect x="727.2" y="2059" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="2066.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="2089" font-size="13" fill="#713f12">required artifacts complete &#183; PASS markers present &#183; hooks green &#183;</text><text x="32" y="2107" font-size="13" fill="#713f12">fresh similarity gate re-run directly before the merge</text>
+<line x1="105.0" y1="2133" x2="105.0" y2="2155" stroke="#cbd5e1" stroke-width="2"/><polygon points="97.0,2154 113.0,2154 105.0,2166" fill="#cbd5e1"/>
+<rect x="20" y="2166" width="790" height="80" rx="10" fill="#fef9c3" stroke="#ca8a04" stroke-width="1.5"/><text x="32" y="2190" font-size="15" font-weight="700" fill="#713f12">post-merge proof</text><rect x="727.2" y="2175" width="70.8" height="17" rx="8.5" fill="#b91c1c"/><text x="762.6" y="2182.5" text-anchor="middle" font-size="10" font-weight="700" letter-spacing=".06em" fill="#ffffff">BLOCKING</text><text x="32" y="2205" font-size="13" fill="#713f12">verify suite (+ e2e) against merged specs &#183; coverage addon gate &#8212;</text><text x="32" y="2223" font-size="13" fill="#713f12">any failure rolls specs and README back from the backup</text>
 </g></svg>

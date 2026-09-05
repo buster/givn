@@ -74,6 +74,7 @@
   .key.artifact{background:var(--card);border:1.5px solid var(--artifact-border)}
   .key.check{background:var(--check-bg);border:1.5px solid var(--check-border)}
   .key.advisory{background:var(--advisory-bg);border:1.5px dashed var(--advisory-border)}
+  .key.optional{background:var(--card);border:1.5px dashed var(--advisory-border)}
 
   /* ---------- chain layout ---------- */
   .phase{
@@ -108,12 +109,19 @@
   }
   .step b{display:block;font-size:.95rem;line-height:1.2}
   .step small{display:block;font-weight:400;opacity:.85;font-size:.72rem;margin-top:2px}
+  .step.optional{
+    background:var(--card);color:var(--ink);
+    border:1.5px dashed var(--advisory-border);box-shadow:none;
+  }
+  .step.optional small{color:var(--muted);opacity:1}
 
   .harrow{position:relative;height:2px;background:var(--line)}
   .harrow::after{
     content:"";position:absolute;right:-1px;top:-6px;
     border:7px solid transparent;border-left:9px solid var(--line);border-right:0;
   }
+  .harrow.dashed{background:none;height:0;border-top:2px dashed var(--line)}
+  .harrow.dashed::after{top:-8px}
 
   .artifact{
     background:var(--card);
@@ -126,6 +134,8 @@
     font-size:.92rem;color:var(--artifact-head);
   }
   .artifact small{display:block;color:var(--muted);font-size:.78rem;margin-top:4px}
+  .artifact.optional{border-style:dashed}
+  .vgap.dashed::before{border-left-style:dashed}
 
   .checks{display:flex;flex-direction:column;gap:10px;padding-left:18px}
   .check{
@@ -147,6 +157,7 @@
   }
   .tag.blocking{background:#b91c1c;color:#fff}
   .tag.adv{background:var(--advisory-border);color:#fff}
+  .tag.opt{background:var(--advisory-border);color:#fff}
 
   .loopback{
     margin-top:4px;font-size:.74rem;color:var(--loop);font-weight:600;
@@ -202,18 +213,33 @@
   <p class="subtitle">
     One lane per artifact. Blue steps create what the grey card names; yellow
     cards are the checks applied to that lane. Every check blocks except those
-    tagged <em>advisory</em>. Between gates the order is advisory only —
-    enforcement concentrates at the three chokepoints listed below.
+    tagged <em>advisory</em>. An optional ideation flow — domain-driven event
+    storming — can precede phase 1; it produces no chain artifact. Between
+    gates the order is advisory only — enforcement concentrates at the three
+    chokepoints listed below.
   </p>
   <div class="legend">
     <span><i class="key step"></i> action / step</span>
     <span><i class="key artifact"></i> artifact created</span>
     <span><i class="key check"></i> blocking check</span>
     <span><i class="key advisory"></i> advisory check</span>
+    <span><i class="key optional"></i> optional entry</span>
   </div>
 </header>
 
 <main>
+
+  <section class="phase">
+    <div class="step optional"><b>ideation</b><small>optional · skill /givn-ideation</small></div>
+    <div class="harrow dashed"></div>
+    <div class="artifact optional">
+      <b>givn/ideation/&lt;topic&gt;/</b><span class="tag opt">optional</span>
+      <small>multi-session domain-driven event storming: domain events, personas,
+      use cases, change seeds — hands off to propose, creates no chain artifact</small>
+    </div>
+    <div></div>
+  </section>
+  <div class="vgap dashed"></div>
 
   <section class="phase">
     <div class="step"><span class="num">1</span><b>propose</b><small>skill /givn-propose</small></div>
@@ -388,7 +414,6 @@
 <footer>
   <a href="workflow.md">workflow.md — process in detail</a>
   <a href="reference.md">reference.md — commands &amp; configuration</a>
-  <a href="retrieval-models.md">retrieval-models.md — model sources &amp; overrides</a>
   <a href="../README.md">README.md</a>
 </footer>
 

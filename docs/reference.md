@@ -33,7 +33,7 @@ Emitted by `givn init` / `givn skills sync` to `.agents/skills/<name>/SKILL.md`
 | Skill | When to use it |
 | --- | --- |
 | `givn-explore` | Think through ideas, investigate problems, clarify requirements before proposing a change. |
-| `givn-ideation` | Work a vague idea into change-ready use cases — structured, multi-session domain exploration with personas, reviews, and change seeds. The artifact-producing alternative to `givn-explore`. |
+| `givn-ideation` | Work a vague idea into change-ready use cases — domain-driven event storming with personas, reviews, and change seeds. The artifact-producing alternative to `givn-explore`. |
 | `givn-propose` | Write the proposal — WHAT and WHY, in domain language, no implementation detail. |
 | `givn-spec` | Write the Gherkin `.feature` delta — observable behaviour, no implementation detail. Includes retrieval-aware authoring guidance (`spec index`, `spec search`, `spec explore`). |
 | `givn-design` | Write the technical design — the HOW layer: tech decisions, architecture, step-def locations. |
@@ -103,8 +103,8 @@ Key sections:
   display `name` (built-in hook names always ignore `allow_failure`).
 - `addons:` / `extras:` — see tables above.
 
-Semantic retrieval knobs are environment variables, not config keys — see
-[`retrieval-models.md`](retrieval-models.md).
+Semantic retrieval knobs are environment variables, not config keys — see the
+semantic duplicate pipeline section in [`workflow.md`](workflow.md).
 
 ## What givn creates in your project
 
