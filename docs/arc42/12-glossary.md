@@ -154,6 +154,20 @@
 | **Git stamp** | The footer line `semantic-remediation: <change-id>/<candidate-id>` in every remediation commit message, one line per fixed candidate; the review gate cross-validates it against the log entry. Anti-terms: "commit tag", "release stamp". |
 | **Verbatim scenario text** | The exact source lines of an endpoint's Gherkin scenario, recorded 1:1 in the log entry with its content and evidence hashes; it is the reviewed text, not the model-internal serialization. Anti-terms: "normalized evidence", "scenario dump". |
 | **Append-only log** | The remediation log's write discipline: entries are written once at run time and never regenerated; identical endpoint evidence is not duplicated, changed endpoints start a new entry. Anti-term: "rewrite log". |
+| **Ideation** | The facilitation skill that works a vague idea into change-ready use cases through phases, stakeholder personas, and rubric reviews. Anti-terms: brainstorm, discovery, workshop. |
+| **Ideation topic** | One ideation effort whose state persists under `givn/ideation/<topic-id>/` across sessions until handoff. Anti-term: ideation session (a topic spans sessions). |
+| **Frame** | The ideation phase that inventories existing project knowledge or establishes problem, vision, and stakeholders for a new domain. |
+| **Event Storming** | The ideation phase that models the domain as a chain of past-tense domain events with actors, commands, and policies. Anti-term: Storm (rejected as ambiguous). |
+| **Use Case Definition** | The ideation phase that defines the use cases from the event storming protocol: name, goal level, boundary, and affected stakeholder types. Anti-terms: slicing, cutting. |
+| **Use Case Elaboration** | The ideation phase that elaborates each defined use case into acceptance rules, concrete examples, and the use-case contract. Anti-terms: mapping, specification (reserved for the feature file). |
+| **Persona** | A documented embodiment of one persona segment, kept as a living record of decisions, needs, and open demands, that reviews every artifact affecting it. Anti-terms: user profile, role, actor. |
+| **Stakeholder type** | A class of interested parties identified during Frame; one type may carry several personas. Anti-term: stakeholder group. |
+| **Persona segment** | One distinct incarnation of a stakeholder type with interests of its own (avid reader vs. collector). Anti-terms: variant, flavor. |
+| **Persona promotion** | The user-approved copy of a validated persona into the project-level persona collection at handoff; repeated promotion of the same segment merges. Anti-term: export. |
+| **Change seed** | The per-use-case proposal seed written into the topic state at handoff; the user starts the normal proposal flow from it, handoff never starts a change. Anti-terms: stub, pre-proposal. |
+| **Quality review** | A fresh-context, rubric-based advisory review at an ideation phase boundary. Anti-term: gate (binary-owned checks keep that word). |
+| **Open question** | A recorded unknown parked in the topic state instead of being debated. Anti-term: blocker. |
+| **Handoff** | The ideation step that publishes the topic document under the project docs, proposes glossary and persona merges, and writes change seeds. |
 
 ### Run-declaration invariants
 

@@ -72,6 +72,10 @@ not alter other content.
   README impact decision, and managed development-block refresh.
 - Addon management, including fixed-path durable Arc42 scaffolding and review.
 - Agent skill/command generation with selected targets and fenced-block ownership.
+- Pre-proposal ideation facilitation through the synchronized `givn-ideation`
+  skill: structured domain exploration with topic state under `givn/ideation/`,
+  stakeholder personas, and change seeds, as the artifact-producing alternative
+  to `givn-explore`.
 - Local E5 retrieval, complete Explore, change-aware Explore, semantic report,
   projected remediation, and permanent duplicate audit.
 - Optional BGE/NLI local evidence with actual-tokenizer cap handling.
