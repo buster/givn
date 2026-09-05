@@ -15,7 +15,7 @@ existing, proven ones; the setup proof is re-confirmed with the first RED.
       archival`), spec delta, design, arc42 assessment, archival inventory
       bullet, runtime-view chapter 6.7 clarification, this tasks.md.
       Commit: `docs(grouped-merge-for-new-capabilities): planning layer`
-      Hash: `700ef14`
+      Hash: `003a633`
 
 ## Non-E2E Scenarios
 
