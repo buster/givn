@@ -73,6 +73,15 @@ case "${1:-}" in
         ;;
 esac
 
+# Prepare the ready-fixture process before any suite runs. The on-demand
+# build inside a running suite compiles the workspace with default features
+# and replaces the givn binary the runners spawn (CARGO_BIN_EXE_givn), so
+# every scenario scheduled after it sees a feature-free build. Building the
+# fixture up front keeps the scan successful for the whole run; each suite
+# invocation still rebuilds givn with its own feature set before its runner
+# starts.
+cargo build --locked --test ready_fixture
+
 case "${1:-}" in
     --e2e)
         run_e5 cargo test --no-default-features --features spec-retrieval --test features_runner -- --tags 'not @bge and not @bge-approval and not @bge-disabled and not @gate-only and not @gate-combination and not @nli-future and not @nli and not @nli-combined and not @review-output and not @release-proof and not @rulebook and @e2e'
