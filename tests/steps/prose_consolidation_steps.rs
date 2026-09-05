@@ -13,14 +13,12 @@ fn env(world: &GivnWorld) -> &common::TestEnv {
 }
 
 fn target_skill_paths(world: &GivnWorld, skill: &str) -> Vec<std::path::PathBuf> {
-    let config = fs::read_to_string(env(world).path("givn/config.yaml")).unwrap_or_default();
-    let mut targets = Vec::new();
-    for target in ["opencode", "agents", "claude"] {
-        if config.contains(target) {
-            targets.push(env(world).path(&format!(".{target}/skills/givn-{skill}/SKILL.md")));
-        }
-    }
+    let targets = givn::config::overlay::load_skills_targets(&env(world).root())
+        .unwrap_or_else(|error| panic!("load skills targets from givn/config.yaml: {error}"));
     targets
+        .into_iter()
+        .map(|target| env(world).path(&format!(".{target}/skills/givn-{skill}/SKILL.md")))
+        .collect()
 }
 
 fn generated_skill_content(world: &GivnWorld, skill: &str) -> String {

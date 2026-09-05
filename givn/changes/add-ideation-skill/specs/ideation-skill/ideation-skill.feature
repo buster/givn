@@ -3,7 +3,7 @@
 Feature: ideation-skill
   The ideation facilitation skill ships through skill synchronization.
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation skill ships without any addon enabled
     Given a project root with givn/ initialised without addons
     When the user runs `givn skills sync`
