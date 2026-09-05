@@ -332,6 +332,7 @@ pub fn default_command_names() -> Vec<&'static str> {
         "givn-steps",
         "givn-reverse-engineer",
         "givn-characterize",
+        "givn-ideation",
     ]
 }
 

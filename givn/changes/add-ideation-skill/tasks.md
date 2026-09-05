@@ -77,77 +77,143 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
   - [x] COMMIT: `feat(ideation-skill): The ideation skill ships without any addon enabled`
         Hash: `34ba5ba`
 
-- [ ] Scenario: `The ideation guidance carries the phase ladder and the one-question rule`
-  - [ ] RED: remove `@wip`. Targeted run — must fail (phrases absent; paste
+- [x] Scenario: `The ideation guidance carries the phase ladder and the one-question rule`
+  - [x] RED: remove `@wip`. Targeted run — must fail (phrases absent; paste
         output)
-  - [ ] GREEN: extend `assets/skills/givn-ideation/SKILL.md.tmpl` with the
+        ```text
+        ✘  Then the generated givn-ideation guidance contains "Event Storming"
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        (exit 101)
+        ```
+  - [x] GREEN: extended `assets/skills/givn-ideation/SKILL.md.tmpl` with the
         phase sections: `Event Storming`, `Use Case Definition`, `Use Case
         Elaboration`, `Handoff` (Frame already exists), the one-question
         interaction rule, and a quality review paragraph containing
         `quality review`. Production files: the template only.
-        Targeted rerun: `<paste>`
-  - [ ] REFACTOR: `<paste>`
-  - [ ] COMMIT: `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
-        Hash: `<fill>`
+        Targeted rerun:
+        ```text
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
+        ```
+  - [x] REFACTOR: no cleanup needed; rerun:
+        ```text
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        ```
+  - [x] COMMIT: `feat(ideation-skill): The ideation guidance carries the phase ladder and the one-question rule`
+        Hash: `ae168f8`
 
-- [ ] Scenario: `The ideation guidance binds personas to the artifacts that affect them`
-  - [ ] RED: remove `@wip`. Targeted run — must fail (paste output)
-  - [ ] GREEN: extend the template with the persona sections: creation after
+- [x] Scenario: `The ideation guidance binds personas to the artifacts that affect them`
+  - [x] RED: remove `@wip`. Targeted run — must fail (paste output)
+        ```text
+        ✘  Then the generated givn-ideation guidance contains "stakeholder type"
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        (exit 101)
+        ```
+  - [x] GREEN: extended the template with the persona section: creation after
         Frame, `stakeholder type`, `persona segment`, living persona record,
         the affected-artifact rule (`every artifact that affects`), value
         ranking at Use Case Definition, critique at Use Case Elaboration,
         `persona promotion` at Handoff, user-confirmation authority.
-        Production files: the template only. Targeted rerun: `<paste>`
-  - [ ] REFACTOR: `<paste>`
-  - [ ] COMMIT: `feat(ideation-skill): The ideation guidance binds personas to the artifacts that affect them`
-        Hash: `<fill>`
+        Production files: the template only.
+        Note: the first GREEN attempt (commit `d8db969`) embedded "Persona
+        promotion" with a capital P — the case-sensitive assertion failed
+        (4/6 steps). Fixed the sentence to the lowercase phrase.
+        Targeted rerun:
+        ```text
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        (exit 0)
+        ```
+  - [x] REFACTOR: completed by the fix commit; rerun already shown green.
+  - [x] COMMIT: `feat(ideation-skill): The ideation guidance binds personas to the artifacts that affect them`
+        Hash: `d8db969` + fix `3286667` (completing commit for this scenario)
 
-- [ ] Scenario: `The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes`
-  - [ ] RED: remove `@wip`. Targeted run — must fail (paste output)
-  - [ ] GREEN: extend the template with the topic state layout
+- [x] Scenario: `The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes`
+  - [x] RED: remove `@wip`. Targeted run — must fail (paste output)
+        ```text
+        ✘  Then the generated givn-ideation guidance contains "givn/ideation/"
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        (exit 101)
+        ```
+  - [x] GREEN: extended the template with the topic state layout
         (`givn/ideation/` root, `session.md` resume, open-question parking,
         change seed files) and the handoff section (publish to
         `docs/ideation/`, glossary merge proposal, persona promotion offer,
         start-order suggestion) containing the literal sentence `Handoff
         never starts a change`. Production files: the template only.
-        Targeted rerun: `<paste>`
-  - [ ] REFACTOR: `<paste>`
-  - [ ] COMMIT: `feat(ideation-skill): The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes`
-        Hash: `<fill>`
+        Targeted rerun:
+        ```text
+        1 scenario (1 passed)
+        8 steps (8 passed)
+        (exit 0)
+        ```
+  - [x] REFACTOR: no cleanup needed; state-layout and handoff wording checked
+        against the glossary terms. Rerun already green.
+  - [x] COMMIT: `feat(ideation-skill): The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes`
+        Hash: `c5a8a91`
 
-- [ ] Scenario: `The explore guidance points to ideation for structured domain work`
-  - [ ] RED: remove `@wip`. Targeted run — must fail (paste output)
-  - [ ] GREEN: add the transition row to
+- [x] Scenario: `The explore guidance points to ideation for structured domain work`
+  - [x] RED: remove `@wip`. Targeted run — must fail (paste output)
+        ```text
+        ✘  Then the generated givn-explore guidance contains "givn-ideation"
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        (exit 101)
+        ```
+  - [x] GREEN: added the transition row to
         `assets/skills/givn-explore/SKILL.md.tmpl` (structured domain work
-        with artifacts and multiple changes → `/givn-ideation`) and the
+        with artifacts and several changes → `/givn-ideation`) and the
         offer line in `assets/commands/givn-explore.md` ("When no change
-        exists"). Production files: both explore assets. Targeted rerun:
-        `<paste>`
-  - [ ] REFACTOR: `<paste>`
-  - [ ] COMMIT: `feat(ideation-skill): The explore guidance points to ideation for structured domain work`
-        Hash: `<fill>`
+        exists"). Production files: both explore assets.
+        Targeted rerun:
+        ```text
+        1 scenario (1 passed)
+        4 steps (4 passed)
+        (exit 0)
+        ```
+  - [x] REFACTOR: wording checked against the explore template's existing
+        table style; no behaviour change. Rerun already green.
+  - [x] COMMIT: `feat(ideation-skill): The explore guidance points to ideation for structured domain work`
+        Hash: `e8115d1`
 
 ## E2E Scenarios
 
-- [ ] E2E setup: local runnability is the CLI subprocess in a temp project
+- [x] E2E setup: local runnability is the CLI subprocess in a temp project
       (no server, browser, database, or digital twins); the runner contract
       is `./run-tests.sh --e2e` with the `@e2e` tag filter (subset proof
       recorded in Setup). No additional infrastructure.
 
-- [ ] Scenario: `A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
-  - [ ] RED: remove `@wip`. Targeted run — must fail on the missing
+- [x] Scenario: `A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
+  - [x] RED: remove `@wip`. Targeted run — must fail on the missing
         generated command file (`.opencode/commands/givn-ideation.md` does
         not exist because command registration is still deferred; paste
         output)
-  - [ ] GREEN: create `assets/commands/givn-ideation.md` (description
+        ```text
+        ✘  And the generated givn-ideation command contains "ideation"
+        1 scenario (1 failed)
+        6 steps (5 passed, 1 failed)
+        (exit 101)
+        ```
+  - [x] GREEN: created `assets/commands/givn-ideation.md` (description
         frontmatter, argument note, pointer into the skill, givn awareness,
-        guardrails summary) and register `"givn-ideation"` in
+        guardrails summary) and registered `"givn-ideation"` in
         `default_command_names()` (`src/skills/targets.rs`). Production
         files: both. Targeted rerun via
         `GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh --e2e`:
         must pass all three targets plus the command file; paste output
-  - [ ] REFACTOR: `<paste>`
-  - [ ] COMMIT: `test(e2e): A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
+        ```text
+        1 scenario (1 passed)
+        6 steps (6 passed)
+        (exit 0)
+        ```
+  - [x] REFACTOR: wording checked against the generated guidance; no test
+        touches a missing source. Rerun already green.
+  - [x] COMMIT: `test(e2e): A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
         Hash: `<fill>`
 
 ## Final verification
