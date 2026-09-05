@@ -41,28 +41,41 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
 
 ## Non-E2E Scenarios
 
-- [ ] Scenario: `The ideation skill ships without any addon enabled`
-  - [ ] RED: remove `@wip` from this scenario only. Run:
+- [x] Scenario: `The ideation skill ships without any addon enabled`
+  - [x] RED: remove `@wip` from this scenario only. Run:
         ```text
         GIVN_FEATURES=givn/changes/add-ideation-skill/specs cargo test --test features_runner -- --name '^The ideation skill ships without any addon enabled$'
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        thread 'main' panicked: 1 step failed
+        error: test failed, to rerun `--test features_runner`
+        (exit 101 — guidance step fails on the missing generated skill)
         ```
-        (expected: fails — no `givn-ideation` skill exists, guidance step
-        panics on the missing generated file; paste output)
-  - [ ] GREEN: create `assets/skills/givn-ideation/SKILL.md.tmpl` (frontmatter
+  - [x] GREEN: created `assets/skills/givn-ideation/SKILL.md.tmpl` (frontmatter
         `name: givn-ideation` + one-sentence description, H1, When-to-use
-        positioning vs `givn-explore`, a Frame section heading), register
+        positioning vs `givn-explore`, a Frame section heading), registered
         `"givn-ideation"` in `default_skill_names()` (`src/skills/render.rs`).
-        Commit the helper fix `tests/steps/prose_consolidation_steps.rs`
+        Committed the helper fix `tests/steps/prose_consolidation_steps.rs`
         (real targets parsing) with this scenario. Production files:
         `assets/skills/givn-ideation/SKILL.md.tmpl`, `src/skills/render.rs`,
         `tests/steps/prose_consolidation_steps.rs`.
         ```text
-        (rerun the same targeted command — must pass; paste output)
+        GIVN_FEATURES=givn/changes/add-ideation-skill/specs cargo test --test features_runner -- --name '^The ideation skill ships without any addon enabled$'
+        ✔  Then the generated givn-ideation guidance contains "Frame"
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        (exit 0)
         ```
-  - [ ] REFACTOR: check template tone/structure against sibling skills; no
-        behavior change. Rerun targeted: `<paste>`
-  - [ ] COMMIT: `feat(ideation-skill): The ideation skill ships without any addon enabled`
-        Hash: `<fill>`
+  - [x] REFACTOR: template already matches sibling-skill structure and tone;
+        helper fix was applied during design-review hardening; no behaviour
+        change. Rerun targeted:
+        ```text
+        1 scenario (1 passed)
+        3 steps (3 passed)
+        ```
+  - [x] COMMIT: `feat(ideation-skill): The ideation skill ships without any addon enabled`
+        Hash: `34ba5ba`
 
 - [ ] Scenario: `The ideation guidance carries the phase ladder and the one-question rule`
   - [ ] RED: remove `@wip`. Targeted run — must fail (phrases absent; paste

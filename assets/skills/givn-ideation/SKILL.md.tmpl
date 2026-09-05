@@ -54,6 +54,65 @@ New domain:
 Write the frame protocol to the topic state. Report it to the user and let
 them confirm it before any phase starts.
 
+The phase ladder: Frame → Event Storming → Use Case Definition → Use Case
+Elaboration → Handoff. Run them in order; never skip ahead.
+
+## One question at a time
+
+Ask exactly one question at a time and wait for the answer before the next.
+If the outcome of a step is unclear, you do not have an example — you have a
+question. Record it in the questions log and move on; never debate opinions
+in place of a missing answer.
+
+## Event Storming
+
+Model the domain as a chain of past-tense domain events.
+
+- One event per line, past tense, in the domain's own language.
+- For each event: who triggers it (actor), with which command, which policy
+  reacts, what the actor reads (read model).
+- Reverse narrative: "which events must have happened to make this one
+  possible?" — walk backwards until the chain starts at the domain's
+  beginning.
+- Term collisions (same word, different meaning; different words, same
+  meaning) go to the glossary candidates file.
+- Unknowns go to the questions log; do not debate opinions.
+
+## Use Case Definition
+
+Cut the event chain into use cases.
+
+- A sequence of events that culminates in value is a use case.
+- Size each one: a user goal (`!`) is change-sized; a summary (`+`) groups
+  several; a subfunction (`-`) is a step inside a scenario, not a use case.
+- Name the boundary each use case lives in; term collisions mark boundaries.
+- Tag each use case with the affected stakeholders — their personas will
+  review it.
+
+## Use Case Elaboration
+
+Elaborate one defined use case at a time.
+
+- First the rules: acceptance rules as short statements.
+- Then the examples: concrete, with real values; unclear outcomes are parked,
+  not invented.
+- Then the contract: trigger, preconditions, main flow, extensions, minimal
+  and success guarantees.
+- Only now shape scenario skeletons: preconditions become Given, trigger and
+  actor action become When, guarantees become Then.
+
+## Quality reviews
+
+A fresh-context subagent runs a quality review at each phase boundary; one
+reviewer per boundary, findings advisory, the user arbitrates:
+
+- Frame: research protocol completeness, stakeholder list with interests.
+- Event Storming: symmetry of cause and effect, missing event partners, term
+  collisions.
+- Use Case Definition: sizing, boundaries, value criterion.
+- Use Case Elaboration: rules complete, examples concrete, contract
+  unambiguous.
+
 ## What you must NOT do
 
 - Never write givn change artifacts — the outcome is topic state and change
