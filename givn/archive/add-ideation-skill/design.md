@@ -133,7 +133,7 @@ future-proof.
 |---|---|
 | `a givn project with all agent skill targets enabled` | `tests/steps/prose_consolidation_steps.rs` |
 | `a project root with givn/ initialised without addons` | `tests/steps/mod.rs` |
-| `the user runs \`givn skills sync\`` | `tests/steps/mod.rs` (generic runner) |
+| `the user runs \`givn skills sync\`` | `tests/steps/mod.rs` |
 | `stdout contains "..."` | `tests/steps/mod.rs` |
 | `the generated givn-<skill> guidance contains "..."` | `tests/steps/prose_consolidation_steps.rs` |
 | `the generated givn-<skill> command contains "..."` | `tests/steps/prose_consolidation_steps.rs` |

@@ -56,6 +56,7 @@ exists and the exploration revealed updates, suggest the matching command:
 | New/changed requirement | `/givn-spec` |
 | Design decision | `/givn-design` |
 | Scope change | Edit proposal directly |
+| Structured domain work with artifacts and several changes | `/givn-ideation` |
 
 ## Context
 
