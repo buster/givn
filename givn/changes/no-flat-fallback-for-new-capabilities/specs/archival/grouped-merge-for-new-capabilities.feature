@@ -16,3 +16,14 @@ Feature: grouped-merge-for-new-capabilities
     And stderr contains "records no 'NEW in"
     And the directory "givn/specs/flat-new" does not exist
     And the change directory still exists under givn/changes/
+
+  @e2e @givn.added
+  Scenario: Nothing is merged when one delta file of a change has no routing decision
+    Given a givn project with verify.e2e_command unconfigured in givn/config.yaml
+    And a completed change "mixed-routing" with two deltas: one routed NEW in "mixed-group" and one unrouted
+    And the project declares a complete run declaration
+    When the user invokes `givn archive --change mixed-routing`
+    Then the command exits non-zero
+    And stderr contains "records no 'NEW in"
+    And the file "givn/specs/mixed-group/mixed-routing.feature" does not exist
+    And the change directory still exists under givn/changes/

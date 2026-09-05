@@ -188,6 +188,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         let delta_files = collect_feature_files(&delta_feature_dir);
         println!("Merging {} delta feature file(s)...", delta_files.len());
 
+        // Prevalidation pass: parse, WIP-check, and resolve every merge
+        // target before writing anything, so a blocked archive leaves no
+        // partially merged permanent specs behind.
+        let mut parsed: Vec<(&std::path::Path, gherkin::Feature)> = Vec::new();
         for delta_path in &delta_files {
             let env = GherkinEnv::default();
             let delta_feature = gherkin::Feature::parse_path(delta_path, env).map_err(|e| {
@@ -206,7 +210,17 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
                 );
             }
 
-            process_delta_file(&project_root, change, delta_path, &delta_feature)?;
+            parsed.push((delta_path, delta_feature));
+        }
+        for (delta_path, delta_feature) in &parsed {
+            if crate::gherkin::delta::is_retired_feature(delta_feature) {
+                continue;
+            }
+            let cap = delta_capability(delta_path, delta_feature)?;
+            resolve_permanent_dir(&project_root, change, &cap)?;
+        }
+        for (delta_path, delta_feature) in &parsed {
+            process_delta_file(&project_root, change, delta_path, delta_feature)?;
         }
     }
 
@@ -375,12 +389,10 @@ fn resolve_capability_group(specs_root: &std::path::Path, cap: &str) -> Option<s
 /// delta into the permanent spec. Extracted from `run`'s merge loop so the
 /// retirement path is testable without driving the full archive gate
 /// pipeline (which needs a manifest, hooks, and a verify command).
-fn process_delta_file(
-    project_root: &std::path::Path,
-    change_id: &str,
+fn delta_capability(
     delta_path: &std::path::Path,
     delta_feature: &gherkin::Feature,
-) -> Result<()> {
+) -> Result<String> {
     let cap = crate::gherkin::delta::capability_tag(delta_feature)
         .map(|t| t.to_string())
         .unwrap_or_else(|| {
@@ -393,13 +405,45 @@ fn process_delta_file(
 
     crate::gherkin::delta::validate_capability_tag(&cap)
         .map_err(|e| anyhow::anyhow!("archive blocked: {e} (from '{}')", delta_path.display()))?;
+    Ok(cap)
+}
+
+/// Resolve the permanent directory a capability's spec lives in: the group
+/// directory it already exists in, or — for a brand-new capability — the
+/// group its proposal's `NEW in <group>` routing decision declares.
+fn resolve_permanent_dir(
+    project_root: &std::path::Path,
+    change_id: &str,
+    cap: &str,
+) -> Result<std::path::PathBuf> {
+    let specs_root = project_root.join("givn/specs");
+    if let Some(dir) = resolve_capability_group(&specs_root, cap) {
+        return Ok(dir);
+    }
+    let group =
+        routing_group_for_new_capability(project_root, change_id, cap).ok_or_else(|| {
+            anyhow::anyhow!(
+                "archive blocked: capability '{cap}' exists nowhere in the \
+             permanent corpus and its proposal records no 'NEW in <group>' \
+             routing decision"
+            )
+        })?;
+    Ok(specs_root.join(group))
+}
+
+fn process_delta_file(
+    project_root: &std::path::Path,
+    change_id: &str,
+    delta_path: &std::path::Path,
+    delta_feature: &gherkin::Feature,
+) -> Result<()> {
+    let cap = delta_capability(delta_path, delta_feature)?;
 
     let specs_root = project_root.join("givn/specs");
 
-    // An existing capability lives in a group directory (grouped layout,
-    // `givn/specs/<group>/<cap>.feature`); a capability that exists nowhere
-    // yet — or one living in the pre-migration flat layout — uses the flat
-    // directory.
+    // An existing capability lives in the group directory that already
+    // contains it; a brand-new capability is placed by its proposal's
+    // routing decision (the archive blocks when none is recorded).
     let grouped_dir = resolve_capability_group(&specs_root, &cap);
 
     if crate::gherkin::delta::is_retired_feature(delta_feature) {
@@ -457,17 +501,7 @@ fn process_delta_file(
 
     let permanent_dir = match grouped_dir {
         Some(dir) => dir,
-        None => {
-            let group = routing_group_for_new_capability(project_root, change_id, &cap)
-                .ok_or_else(|| {
-                    anyhow::anyhow!(
-                        "archive blocked: capability '{cap}' exists nowhere in the \
-                         permanent corpus and its proposal records no 'NEW in <group>' \
-                         routing decision"
-                    )
-                })?;
-            specs_root.join(group)
-        }
+        None => resolve_permanent_dir(project_root, change_id, &cap)?,
     };
     let permanent_path = permanent_dir.join(format!("{cap}.feature"));
     merge_file(&permanent_path, delta_feature)?;
@@ -482,7 +516,7 @@ fn process_delta_file(
 /// The declared group for a new capability, taken from the change's
 /// recorded routing decision. Returns `None` when the proposal is absent,
 /// unparseable, has no row for the capability, or does not declare
-/// `NEW in <group>` — the flat fallback applies in those cases.
+/// `NEW in <group>` — the archive blocks in those cases.
 fn routing_group_for_new_capability(
     project_root: &std::path::Path,
     change_id: &str,
