@@ -50,18 +50,19 @@ Section plan:
    approaches without artifacts; ideation works a domain out until it is
    change-ready). One selection criterion table.
 2. **Context** — `givn status`, `givn spec tree` / `givn spec find` for
-   existing projects; README/arc42/glossary reading; topic state root.
+   existing projects; README, durable architecture chapters, and the
+   durable term list reading; topic state root.
 3. **Topic state layout** under `givn/ideation/<topic-id>/`:
    `session.md` (resume), `frame.md`, `eventstorming.md`,
    `use-case-definitions.md`, `use-cases/<uc-id>.md`,
    `personas/<type>--<segment>.md`, `questions.md` (open question log),
-   `glossary-candidates.md`, `changes/<uc-id>.md` (change seeds).
+   `domain-terms.md`, `changes/<uc-id>.md` (change seeds).
 4. **Interaction rules** — one question at a time; unclear outcome → record
    an open question in `questions.md` and continue; never debate opinions.
 5. **Resume** — read `session.md` first; report phase, progress, and open
    questions; continue where left off.
 6. **Phase: Frame** — existing project (research protocol: commands, docs,
-   glossary) vs. greenfield (problem, vision, stakeholders with interests —
+   durable term list) vs. greenfield (problem, vision, stakeholders with interests —
    distilled Wiegers questions: problem-first, 5-whys, stakeholder
    discovery including non-actors).
 7. **Personas** — created after Frame; one or more persona segments per
@@ -73,7 +74,7 @@ Section plan:
 8. **Phase: Event Storming** — past-tense domain events; actor, command,
    policy, read model per event; reverse narrative
    ("which events must have happened to make this one possible?"); term
-   collisions feed `glossary-candidates.md`; unresolvable points become
+   collisions feed `domain-terms.md`; unresolvable points become
    open questions.
 9. **Phase: Use Case Definition** — a sequence of events culminating in
    value is a use case; size it (user-goal `!` = change-sized, summary `+` =
@@ -90,14 +91,14 @@ Section plan:
      moderator / DDD architect / requirements auditor); findings advisory,
      user arbitrates.
 12. **Handoff** — publish readable `docs/ideation/<topic-id>.md`; propose
-    glossary merges into `docs/arc42/12-glossary.md` (user decides);
+    term merges into the durable term list (user decides);
     offer persona promotion into `givn/personas/` (user decides per file;
     repeated promotion of the same segment merges); write one change seed
     per use case into `changes/<uc-id>.md` with a suggested start order.
     Handoff never starts a change — the user runs the normal proposal flow
     per use case.
 13. **What you must NOT do** — no givn change artifacts, no code, no
-    automatic `givn new`, no glossary writes without an explicit user
+    automatic `givn new`, no term-list writes without an explicit user
     decision, no persona content the user has not confirmed, no batched
     questions.
 
@@ -221,3 +222,21 @@ The existing project coverage scripts remain unchanged.
 No new dependency, tool, runtime, or container is introduced; the existing
 Rust toolchain and cucumber runner apply unchanged. No version-bearing
 decision in this change.
+
+## Amendment: generated-content marker ban (final-verification finding)
+
+The permanent `template-conditional-rendering` scenarios scan every generated
+skill and command for disabled-addon markers — `arc42`, `glossary`,
+`ubiquitous`, `domain-modeling` (case-insensitive) plus the coverage marker
+strings. Addon-gated skills are removed when their addon is disabled and
+therefore exempt; an always-on skill is generated in every state and must
+never contain these markers in rendered text.
+
+Consequence for this design: the ideation template and command must not name
+the arc42 docs path, the glossary, or the domain-modeling skill. The topic
+state file for candidate terms is renamed `glossary-candidates.md` →
+`domain-terms.md`, and Handoff/Frame wording routes to "the durable term
+list". The durable term list itself remains the addon-owned glossary; ideation
+captures candidates and the user decides merges at handoff, without the
+always-on guidance naming the addon-owned artifact. The spec delta asserts no
+banned marker and no renamed state file, so the delta is unchanged.
