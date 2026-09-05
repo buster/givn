@@ -20,7 +20,7 @@ Feature: ideation-skill
     And the generated givn-ideation guidance contains "one question at a time"
     And the generated givn-ideation guidance contains "quality review"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The ideation guidance binds personas to the artifacts that affect them
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
