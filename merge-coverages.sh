@@ -123,8 +123,33 @@ def merge_packages():
 
 merge_packages()
 
-lines_covered = total("lines-covered")
-lines_valid = total("lines-valid")
+
+def class_level_totals(tree):
+    # Recount from package/class/lines/line only — never all descendants:
+    # class elements also carry <methods> blocks with their own <lines>, and
+    # a descendant walk would triple-count them. Keyed by distinct
+    # (filename, line number) with hits summed across duplicates; a line
+    # counts once and is covered when its merged hits are non-zero.
+    hits_by_key = {}
+    for package in tree.findall("./packages/package"):
+        for cls in package.findall("./classes/class"):
+            filename = cls.attrib.get("filename")
+            for line in cls.findall("./lines/line"):
+                key = (filename, int(line.attrib["number"]))
+                hits_by_key[key] = (
+                    hits_by_key.get(key, 0) + int(line.attrib.get("hits", 0))
+                )
+    covered = sum(1 for hits in hits_by_key.values() if hits > 0)
+    return covered, len(hits_by_key)
+
+
+lines_covered, lines_valid = class_level_totals(non_e2e)
+if lines_valid == 0:
+    # Aggregate-only inputs (no <packages> tree): the union is not
+    # computable, so keep the summed totals — a recount would write 0/0
+    # and fail the gate's validation.
+    lines_covered = total("lines-covered")
+    lines_valid = total("lines-valid")
 branches_covered = total("branches-covered")
 branches_valid = total("branches-valid")
 

@@ -407,6 +407,50 @@ mod tests {
     }
 
     #[test]
+    fn aggregate_only_reports_fall_back_to_summation() {
+        let a = CoberturaReport {
+            line_rate: 0.5,
+            branch_rate: 0.0,
+            lines_covered: 2,
+            lines_valid: 4,
+            branches_covered: 0,
+            branches_valid: 0,
+            file_lines: BTreeMap::new(),
+            line_hits: BTreeMap::new(),
+        };
+        let merged = merge_legacy_reports(&a, &a);
+        assert_eq!(merged.lines_covered, 4);
+        assert_eq!(merged.lines_valid, 8);
+        assert!((merged.line_rate - 0.5).abs() < 0.001);
+        assert!(merged.line_hits.is_empty());
+    }
+
+    #[test]
+    fn union_merge_counts_a_shared_line_once() {
+        let mut a = CoberturaReport::default();
+        a.lines_covered = 2;
+        a.lines_valid = 4;
+        a.line_rate = 0.5;
+        a.line_hits.insert(
+            "src/lib.rs".into(),
+            [(1, 1), (2, 1), (3, 0), (4, 0)].into_iter().collect(),
+        );
+        let mut b = CoberturaReport::default();
+        b.lines_covered = 4;
+        b.lines_valid = 4;
+        b.line_rate = 1.0;
+        b.line_hits.insert(
+            "src/lib.rs".into(),
+            [(1, 1), (2, 1), (3, 1), (4, 1)].into_iter().collect(),
+        );
+        let merged = merge_legacy_reports(&a, &b);
+        assert_eq!(merged.lines_valid, 4);
+        assert_eq!(merged.lines_covered, 4);
+        assert!((merged.line_rate - 1.0).abs() < 0.001);
+        assert_eq!(merged.file_lines.get("src/lib.rs"), Some(&(4, 4)));
+    }
+
+    #[test]
     fn validate_rejects_rates_that_disagree_with_counters() {
         let report = CoberturaReport {
             line_rate: 0.1,
