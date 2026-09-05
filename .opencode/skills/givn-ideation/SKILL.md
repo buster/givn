@@ -24,8 +24,8 @@ per future givn change.
 ## Context
 
 - Existing project: run `givn status` and `givn spec tree` first; read the
-  README, the durable arc42 chapters, and `docs/arc42/12-glossary.md` for
-  known terms before asking anything the project already answered.
+  README, the durable architecture chapters, and the durable term list
+  for known terms before asking anything the project already answered.
 - New domain: start from the problem, not the solution.
 - Read the topic state before every session; write to it after every turn.
   All ideation work persists there and survives sessions.
@@ -36,8 +36,8 @@ Inventory what is known before exploring what is not.
 
 Existing project:
 
-1. Run `givn status` and `givn spec tree`; read the README and the arc42
-   chapters relevant to the domain.
+1. Run `givn status` and `givn spec tree`; read the README and the
+   durable architecture chapters relevant to the domain.
 2. Record the research protocol: what exists, what the permanent specs
    already own, where the gaps are.
 3. Identify stakeholders — the parties with an interest in the outcome,
@@ -92,7 +92,7 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `personas/<type>--<segment>.md` — one persona per file.
 - `questions.md` — the open question log: every parked unknown. Never debate
   an unknown in place of a missing answer.
-- `glossary-candidates.md` — domain terms as they crystallize.
+- `domain-terms.md` — domain terms as they crystallize.
 - `changes/<uc-id>.md` — one change seed per use case, written at handoff.
 
 ## Handoff
@@ -101,8 +101,8 @@ The last phase produces the readable record:
 
 - Publish the topic document to `docs/ideation/<topic-id>.md` — written for
   humans, readable start to finish.
-- Propose glossary merges for crystallized terms into
-  `docs/arc42/12-glossary.md`; the user decides each one.
+- Propose term merges for crystallized terms into the durable term
+  list; the user decides each one.
 - Offer persona promotion; the user decides per persona file.
 - Write one change seed per use case with a suggested start order.
 - Handoff never starts a change — the user runs the normal proposal flow per
@@ -126,7 +126,7 @@ Model the domain as a chain of past-tense domain events.
   possible?" — walk backwards until the chain starts at the domain's
   beginning.
 - Term collisions (same word, different meaning; different words, same
-  meaning) go to the glossary candidates file.
+  meaning) go to the domain terms file.
 - Unknowns go to the questions log; do not debate opinions.
 
 ## Use Case Definition
