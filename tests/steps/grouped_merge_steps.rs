@@ -92,3 +92,22 @@ fn unrouted_new_change(world: &mut GivnWorld, id: String, delta_group: String) {
     prepare_change(env, &id, &proposal, &delta_group);
     world.last_change_id = Some(id);
 }
+
+#[given(
+    regex = r#"^a completed change "([^"]+)" with two deltas: one routed NEW in "([^"]+)" and one unrouted$"#
+)]
+fn mixed_routing_change(world: &mut GivnWorld, id: String, group: String) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let proposal = ROUTED_PROPOSAL
+        .replace("{ID}", &id)
+        .replace("{GROUP}", &group);
+    // First delta: capability `<id>` under the declared group (routed).
+    prepare_change(env, &id, &proposal, &group);
+    // Second delta: a different capability with no routing decision.
+    let change_dir = env.path(&format!("givn/changes/{id}"));
+    write_delta(&change_dir, "unrouted-group", "unrouted-cap");
+    world.last_change_id = Some(id);
+}
