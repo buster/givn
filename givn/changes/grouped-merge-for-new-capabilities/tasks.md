@@ -43,7 +43,7 @@ existing, proven ones; the setup proof is re-confirmed with the first RED.
 
 ## E2E Scenarios
 
-- [ ] E2E setup: none beyond the existing CLI-subprocess harness (no server,
+- [x] E2E setup: none beyond the existing CLI-subprocess harness (no server,
       browser, database, or digital twins).
 
 - [x] Scenario: `Consumer archives a new capability and the merged spec lands in its declared group`
