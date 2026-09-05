@@ -96,4 +96,25 @@ is deferred to its GREEN — its RED fails on the missing generated command
 file. Scenario content, tags, and phrases are unchanged; `givn lint --change`
 findings are unchanged.
 
+## Amendment re-pass (final-verification finding)
+
+The full suite failed one permanent scenario
+(`template-conditional-rendering.feature`: "the generated guidance omits
+disabled-addon sections") — its step scans every generated skill and command
+for disabled-addon markers (`arc42`, `glossary`, `ubiquitous`,
+`domain-modeling` case-insensitive, plus coverage marker strings). The
+always-on ideation template named `docs/arc42/12-glossary.md` and the
+glossary. Addon-gated skills are exempt (removed when disabled); always-on
+skills never contain the markers — confirmed against every other always-on
+template.
+
+Amendment applied to `design.md` (state file renamed `glossary-candidates.md`
+→ `domain-terms.md`; Frame/Event-Storming/Handoff wording routes to "the
+durable term list" without naming the addon-owned artifact; behavior
+unchanged — candidates are captured per topic and merges are user-decided at
+handoff). Fresh-context re-review verdict: PASS — spec delta needs no change
+(no scenario asserts a banned marker or the old file name), proposal not
+invalidated (HOW-level wording only), arc42 records consistent, no test or
+permanent fixture touched. TEMPLATE-REVIEW: PASS (amendment).
+
 DESIGN-REVIEW: PASS

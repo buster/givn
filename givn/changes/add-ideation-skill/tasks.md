@@ -214,26 +214,45 @@ strict mode `.fail_on_skipped()` at `tests/features_runner.rs:20`.
   - [x] REFACTOR: wording checked against the generated guidance; no test
         touches a missing source. Rerun already green.
   - [x] COMMIT: `test(e2e): A consumer synchronizes skills and every agent target receives the ideation facilitation skill`
-        Hash: `<fill>`
+        Hash: `09fb2a6`
 
 ## Final verification
 
-- [ ] Full change suite green:
+- [x] Full change suite green:
       ```text
-      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh      → exit 0 (6/6)
-      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh --e2e → exit 0 (1/1)
-      (paste outputs)
+      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh       → 35 steps (35 passed); exit 0
+      GIVN_FEATURES=givn/changes/add-ideation-skill/specs ./run-tests.sh --e2e → 1 scenario (1 passed); exit 0
       ```
-- [ ] `givn lint --change add-ideation-skill` → exit 0, no `@wip` findings;
-      pre-planned dispositions for the intra-delta SHAPE/SUBST findings
-      recorded for the review phase (VALID-BOUNDARY, differing assertion
-      sets).
-- [ ] `cargo fmt` and `cargo clippy --workspace --all-targets -- -D warnings`
+- [x] `givn lint --change add-ideation-skill` → exit 0, zero `@wip` findings;
+      intra-delta SHAPE/SUBST findings dispositioned for review
+      (VALID-BOUNDARY, differing assertion sets).
+- [x] `cargo fmt` and `cargo clippy --workspace --all-targets -- -D warnings`
       clean.
-- [ ] Unit RED anchor now satisfied: `cargo test --lib` pairing test
-      `all_command_templates_are_embedded` passes (command registration +
-      asset present).
-- [ ] Self-dogfood per AGENTS.md: `cargo install --path . --locked --force`;
-      `givn skills sync`; `givn instructions`; `./run-tests.sh`;
-      `./run-tests.sh --e2e`. Installed `$HOME/.cargo/bin/givn` is the
-      current checkout's binary.
+- [x] Unit RED anchor satisfied: `cargo test --lib` — 241 passed including
+      `all_command_templates_are_embedded`.
+- [x] **Full-suite incident, found and fixed**: the first full run failed
+      353/354 — permanent scenario `template-conditional-rendering.feature`
+      "the generated guidance omits disabled-addon sections": its step scans
+      every generated skill/command for disabled-addon markers (`arc42`,
+      `glossary`, `ubiquitous`, `domain-modeling`; case-insensitive plus
+      coverage marker strings), and the always-on ideation template named
+      `docs/arc42/12-glossary.md` and the glossary. Per the
+      never-silently-deviate rule: implementation stopped, `design.md` gained
+      the generated-content marker-ban amendment (state file renamed
+      `glossary-candidates.md` → `domain-terms.md`; wording routes to "the
+      durable term list" without naming the addon-owned artifact; behavior
+      unchanged), fresh-context design re-review passed (recorded in
+      `design-review.md`, "Amendment re-pass"), then the template was
+      cleaned (zero banned markers) and the suite re-run:
+      ```text
+      ./run-tests.sh → 354 scenarios (354 passed); exit 0
+      GIVN_FEATURES=givn/specs/support ./run-tests.sh → 426 steps (426 passed); exit 0
+      ```
+- [x] Self-dogfood per AGENTS.md: `cargo install --path . --locked --force`
+      (replaced `$HOME/.cargo/bin/givn` with this checkout);
+      `givn skills sync` regenerated all three agent targets —
+      `givn-ideation` present in `.opencode/skills/`, `.agents/skills/`,
+      `.claude/skills/`, and `.opencode/commands/givn-ideation.md`;
+      `givn instructions` reports the change state through the new binary;
+      full `./run-tests.sh` (354/354) and `./run-tests.sh --e2e` (1/1) green
+      as recorded above.
