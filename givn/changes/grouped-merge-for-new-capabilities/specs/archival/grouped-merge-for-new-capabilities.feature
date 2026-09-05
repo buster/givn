@@ -14,7 +14,7 @@ Feature: grouped-merge-for-new-capabilities
     And the directory "givn/specs/grouped-new" does not exist
     And the change directory has been moved to givn/archive/
 
-  @givn.added @wip
+  @givn.added
   Scenario: A new capability without a declared group keeps the flat merge layout
     Given a givn project with verify.e2e_command unconfigured in givn/config.yaml
     And a completed change "flat-new" whose proposal records no routing decision and whose delta lives under specs/flat-new/
