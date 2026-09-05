@@ -47,7 +47,7 @@ Feature: ideation-skill
     Then the generated givn-explore guidance contains "givn-ideation"
     And the generated givn-explore command contains "givn-ideation"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A consumer synchronizes skills and every agent target receives the ideation facilitation skill
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
