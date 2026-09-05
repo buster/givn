@@ -163,6 +163,7 @@
 | **Persona** | A documented embodiment of one persona segment, kept as a living record of decisions, needs, and open demands, that reviews every artifact affecting it. Anti-terms: user profile, role, actor. |
 | **Stakeholder type** | A class of interested parties identified during Frame; one type may carry several personas. Anti-term: stakeholder group. |
 | **Persona segment** | One distinct incarnation of a stakeholder type with interests of its own (avid reader vs. collector). Anti-terms: variant, flavor. |
+| **Domain terms** | The per-topic candidate file `givn/ideation/<topic-id>/domain-terms.md` holding domain terms as they crystallize; candidates are merged into the durable term list at handoff by user decision. Anti-term: glossary candidates (the always-on guidance may not name the addon-owned artifact). |
 | **Persona promotion** | The user-approved copy of a validated persona into the project-level persona collection at handoff; repeated promotion of the same segment merges. Anti-term: export. |
 | **Change seed** | The per-use-case proposal seed written into the topic state at handoff; the user starts the normal proposal flow from it, handoff never starts a change. Anti-terms: stub, pre-proposal. |
 | **Quality review** | A fresh-context, rubric-based advisory review at an ideation phase boundary. Anti-term: gate (binary-owned checks keep that word). |
