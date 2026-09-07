@@ -126,3 +126,37 @@ Feature: init-agent-target-selection
     And the file ".opencode/skills/givn-propose/SKILL.md" exists
     And the file ".claude/skills/givn-propose/SKILL.md" exists
     And the directory ".agents/skills/givn-propose" does not exist
+
+  Scenario: The --agents flag selects targets non-interactively, no prompt needed
+    Given a project root without a givn/ directory
+    When the user runs `givn init --agents opencode,claude`
+    Then the command exits 0
+    And the file ".opencode/skills/givn-propose/SKILL.md" exists
+    And the file ".claude/skills/givn-propose/SKILL.md" exists
+    And the directory ".agents/skills/givn-propose" does not exist
+    And givn skills targets in givn/config.yaml equal "opencode, claude"
+
+  Scenario: The --agents flag accepts the dotted directory form
+    Given a project root without a givn/ directory
+    When the user runs `givn init --agents .claude,.agents`
+    Then the command exits 0
+    And givn skills targets in givn/config.yaml equal "claude, agents"
+
+  Scenario: The --agents flag accepts "all" as a shorthand for every target
+    Given a project root without a givn/ directory
+    When the user runs `givn init --agents all`
+    Then the command exits 0
+    And the file ".opencode/skills/givn-propose/SKILL.md" exists
+    And the file ".claude/skills/givn-propose/SKILL.md" exists
+    And the file ".agents/skills/givn-propose/SKILL.md" exists
+    And givn skills targets in givn/config.yaml equal "opencode, agents, claude"
+
+  Scenario: An unknown agent name in the --agents flag is dropped with a hint
+    Given a project root without a givn/ directory
+    When the user runs `givn init --agents claude,nope`
+    Then the command exits 0
+    And stdout mentions "opencode"
+    And stdout mentions ".agents"
+    And stdout mentions ".claude"
+    And givn skills targets in givn/config.yaml equal "claude"
+    And the file ".claude/skills/givn-propose/SKILL.md" exists
