@@ -469,6 +469,32 @@ manual edit targets.
 - Review confirms that implementation preserves the use-case contract.
 - Archive preserves the accepted use-case document.
 
+### Workflow consumption matrix
+
+Every existing workflow phase is updated only where the use-case or persona
+context affects its responsibility:
+
+| Phase or surface | Required context | Required behavior |
+|---|---|---|
+| `/givn-ideation` | Topic use-case drafts, stakeholder types, confirmed personas, events, open questions | Produce the shared use-case schema, stable IDs, persona review records, and change seeds. Handoff remains explicit and never starts a change. |
+| `/givn-explore` | User intent to move from exploration to structured domain work | Route users to `/givn-ideation` when they need durable use cases, personas, or multiple future changes. |
+| `/givn-propose` | Change seed, permanent use-case ID, confirmed personas, relevant topic decisions | Read the selected use-case source, record use-case identity and persona impact in `proposal.md`, and preserve the WHAT/WHY boundary. |
+| `proposal` instructions/template | Use-case identity and affected stakeholders | Add the optional use-case context contract and require capability routing with `NEW in <usecase-id>` or `EXTEND <capability>`. |
+| `/givn-spec` | `proposal.md`, `usecase.md`, actor/persona distinction, interaction inventory | Write feature deltas under the owning use-case ID, update the use-case interaction inventory, and derive observable behavior from the use-case contract. |
+| `specs` instructions/template | Permanent `usecase.md`, capability ownership, typed relationships | Replace group wording, require capability-aware inventory entries, preserve actors in Gherkin, and keep persona biographies out of feature files. |
+| `/givn-design` | Use-case guarantees, rules, events relevant to the change, persona impact | Add domain-to-architecture traceability and map use-case guarantees to technical decisions and E2E coverage. |
+| `design` instructions/template | Selected use-case contract and persona/stakeholder impact | Require the use-case traceability table, relevant persona impact, unresolved-question disposition, and normal strict-mode/E2E design fields. |
+| `/givn-design-review` | Proposal, use-case document, personas, design traceability | Add a domain-context branch that checks value preservation, persona coverage, actor/persona distinction, relationship correctness, and explicit dispositions. |
+| `/givn-tasks` | Design constraints plus affected use-case guarantees and personas | Copy domain constraints into every scenario task so implementation agents cannot lose use-case context. |
+| `/givn-implement` | Proposal, use-case context, feature scenarios, design, task constraints | Read the use-case context, preserve approved domain terms, and treat the feature file as executable authority. |
+| `/givn-review` | Use-case contract, persona impact, migration ledger where applicable | Verify implementation conformance, persona-relevant outcomes, use-case document updates, and no fabricated or downgraded E2E coverage. |
+| `/givn-archive` | Use-case delta, base revision, feature deltas, coverage evidence | Merge or replace use-case documents atomically with features, block stale replacements, and preserve migration evidence. |
+| `givn instructions` | Current project/change state and resolved artifact instructions | Update the generic overview and artifact guidance so agents are told to consult the owning use case and ideation path where relevant. Do not inject full persona biographies into the JSON contract. |
+
+The source of truth for these changes is the asset set under `assets/`. The
+generated `.agents`, `.claude`, and `.opencode` copies are regenerated and
+verified after the source assets change.
+
 ### Persona rules
 
 - Never invent a persona.
@@ -791,6 +817,7 @@ src/cli/lint.rs
 src/cli/check.rs
 src/cli/archive.rs
 src/cli/migration.rs
+src/cli/instructions.rs
 src/cobertura.rs
 src/state.rs
 src/main.rs
