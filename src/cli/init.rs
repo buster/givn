@@ -181,23 +181,10 @@ fn resolve_agents_flag(agents: &[String]) -> Vec<AgentTarget> {
 /// in first-seen order. Unknown names are dropped with a warning listing
 /// the valid agents. Falls back to `DEFAULT_TARGETS` if nothing resolved.
 fn resolve_target_names<'a>(parts: impl Iterator<Item = &'a str>) -> Vec<AgentTarget> {
-    let mut targets: Vec<AgentTarget> = Vec::new();
-    let mut unknown: Vec<String> = Vec::new();
-    for part in parts {
-        match AgentTarget::from_name(part) {
-            Some(t) if !targets.contains(&t) => targets.push(t),
-            Some(_) => {}
-            None => {
-                let name = part.trim();
-                if !name.is_empty() {
-                    unknown.push(name.to_string());
-                }
-            }
-        }
-    }
+    let (targets, unknown) = crate::skills::targets::parse_target_names(parts);
 
     if !unknown.is_empty() {
-        let valid: Vec<&str> = AgentTarget::ALL.iter().map(|t| t.display()).collect();
+        let valid = crate::skills::targets::valid_names();
         println!(
             "Unknown agent(s): {}. Valid agents: {}",
             unknown.join(", "),

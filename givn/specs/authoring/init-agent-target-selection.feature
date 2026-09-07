@@ -55,6 +55,41 @@ Feature: init-agent-target-selection
     And the directory ".opencode/skills/givn-propose" does not exist
     And the file ".opencode/commands/givn-propose.md" does not exist
 
+  Scenario: givn skills targets add installs the new agent without touching anything else
+    Given a project root with givn/ initialised
+    And givn skills targets in givn/config.yaml equal "opencode"
+    When the user runs `givn skills targets add claude`
+    Then the command exits 0
+    And givn skills targets in givn/config.yaml equal "opencode, claude"
+    And the file ".claude/skills/givn-propose/SKILL.md" exists
+
+  Scenario: givn skills targets add accepts "all" as a shorthand for every target
+    Given a project root with givn/ initialised
+    And givn skills targets in givn/config.yaml equal "opencode"
+    When the user runs `givn skills targets add all`
+    Then the command exits 0
+    And givn skills targets in givn/config.yaml equal "opencode, agents, claude"
+    And the file ".agents/skills/givn-propose/SKILL.md" exists
+    And the file ".claude/skills/givn-propose/SKILL.md" exists
+
+  Scenario: givn skills targets add drops an unknown name with a hint
+    Given a project root with givn/ initialised
+    And givn skills targets in givn/config.yaml equal "opencode"
+    When the user runs `givn skills targets add claude,nope`
+    Then the command exits 0
+    And stdout mentions ".claude"
+    And givn skills targets in givn/config.yaml equal "opencode, claude"
+
+  Scenario: givn skills targets add errors when every given name is unknown
+    Given a project root with givn/ initialised
+    When the user runs `givn skills targets add nope`
+    Then the command exits non-zero
+
+  Scenario: givn skills targets add errors when givn/ is not initialised
+    Given a project root without a givn/ directory
+    When the user runs `givn skills targets add claude`
+    Then the command exits non-zero
+
   Scenario: Re-running init keeps the persisted selection
     Given a project root with givn/ initialised
     And givn skills targets in givn/config.yaml equal "claude"

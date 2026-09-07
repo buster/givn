@@ -93,6 +93,97 @@ fn configured_targets(project_root: &Path) -> Result<Vec<AgentTarget>> {
     Ok(targets)
 }
 
+/// Parse target names (dotted or bare form), deduplicated in first-seen
+/// order. Returns the resolved targets and any names that matched no known
+/// target; the caller decides how to report/handle unknowns.
+pub fn parse_target_names<'a>(
+    parts: impl Iterator<Item = &'a str>,
+) -> (Vec<AgentTarget>, Vec<String>) {
+    let mut targets: Vec<AgentTarget> = Vec::new();
+    let mut unknown: Vec<String> = Vec::new();
+    for part in parts {
+        match AgentTarget::from_name(part) {
+            Some(t) if !targets.contains(&t) => targets.push(t),
+            Some(_) => {}
+            None => {
+                let name = part.trim();
+                if !name.is_empty() {
+                    unknown.push(name.to_string());
+                }
+            }
+        }
+    }
+    (targets, unknown)
+}
+
+/// Display names of every known target, for warning/help messages.
+pub fn valid_names() -> Vec<&'static str> {
+    AgentTarget::ALL.iter().map(|t| t.display()).collect()
+}
+
+/// Add the given targets to the `skills: targets:` list in
+/// `givn/config.yaml`, preserving the rest of the file untouched. Returns
+/// the full resulting target list.
+pub fn add_targets(project_root: &Path, additions: &[AgentTarget]) -> Result<Vec<AgentTarget>> {
+    let config_path = project_root.join("givn/config.yaml");
+    let content = std::fs::read_to_string(&config_path)
+        .with_context(|| format!("failed to read {}", config_path.display()))?;
+
+    let mut merged = configured_targets(project_root)?;
+    for t in additions {
+        if !merged.contains(t) {
+            merged.push(*t);
+        }
+    }
+    let list = merged
+        .iter()
+        .map(|t| t.name())
+        .collect::<Vec<_>>()
+        .join(", ");
+    let targets_line = format!("  targets: [{list}]");
+
+    let mut lines: Vec<String> = content.lines().map(str::to_string).collect();
+
+    // Case 1: an uncommented `targets:` line inside an uncommented `skills:`
+    // block already exists — replace it in place.
+    let mut in_skills = false;
+    for line in &mut lines {
+        if in_skills {
+            if !line.starts_with(' ') {
+                in_skills = false;
+            } else if line.trim_start().starts_with("targets:") {
+                *line = targets_line.clone();
+                std::fs::write(&config_path, lines.join("\n") + "\n")?;
+                return Ok(merged);
+            }
+        }
+        if line.trim() == "skills:" {
+            in_skills = true;
+        }
+    }
+
+    // Case 2: `skills:` block exists but has no `targets:` line — insert one.
+    for i in 0..lines.len() {
+        if lines[i].trim() == "skills:" {
+            lines.insert(i + 1, targets_line.clone());
+            std::fs::write(&config_path, lines.join("\n") + "\n")?;
+            return Ok(merged);
+        }
+    }
+
+    // Case 3: no `skills:` block at all — append a new one.
+    let mut content = content;
+    if !content.ends_with('\n') {
+        content.push('\n');
+    }
+    if !content.ends_with("\n\n") {
+        content.push('\n');
+    }
+    content.push_str(&format!("skills:\n{targets_line}\n"));
+    std::fs::write(&config_path, content)?;
+    Ok(merged)
+}
+
 /// Regenerate all skills and commands in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
     let manifest = load_effective()?;
