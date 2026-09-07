@@ -37,7 +37,7 @@ gherkin = "0.16"
 anyhow = "1.0"
 thiserror = "2.0"
 quick-xml = { version = "0.41", features = ["serialize"] }
-fastembed = { version = "=5.17.2", optional = true, default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries-rustls-tls"] }
+fastembed = { version = "=5.17.3", optional = true, default-features = false, features = ["hf-hub-rustls-tls", "ort-download-binaries-rustls-tls"] }
 hf-hub = { version = "=0.5.0", optional = true, default-features = false, features = ["ureq"] }
 ndarray = { version = "=0.17.2", optional = true, default-features = false }
 ort = { version = "=2.0.0-rc.12", optional = true, default-features = false, features = ["api-24", "download-binaries", "ndarray", "std", "tls-rustls"] }
