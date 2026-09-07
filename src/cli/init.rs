@@ -23,7 +23,7 @@ const DEFAULT_TARGETS: [AgentTarget; 1] = [AgentTarget::Opencode];
 /// user-owned: givn writes to it only inside its own fenced
 /// `<!-- givn:begin:* -->` blocks (e.g. the `absolute_mode` addon), and only
 /// when the corresponding addon is enabled.
-pub fn run(force: bool, no_addons: bool) -> Result<()> {
+pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     let project_root = std::env::current_dir()?;
 
     print!("{BANNER}");
@@ -52,10 +52,15 @@ pub fn run(force: bool, no_addons: bool) -> Result<()> {
     };
 
     // Ask which agents to install skills/commands to (fresh config only).
-    // Non-interactive stdin (EOF) falls back to the default: opencode.
+    // `--agents` skips the prompt; otherwise non-interactive stdin (EOF)
+    // falls back to the default: opencode.
     let mut target_print = Vec::new();
     if config_created {
-        let targets = prompt_for_targets()?;
+        let targets = if agents.is_empty() {
+            prompt_for_targets()?
+        } else {
+            resolve_agents_flag(agents)
+        };
         for t in &targets {
             target_print.push(t.display().to_string());
         }
@@ -122,8 +127,10 @@ pub fn run(force: bool, no_addons: bool) -> Result<()> {
 
 /// Ask the user which agents to install skills/commands to.
 ///
-/// Reads one line from stdin. On a terminal the numbered prompt is shown;
-/// with piped/closed stdin the line is still read if available. An empty
+/// On a real terminal, shows an arrow-key/space/enter checkbox list
+/// (defaulting to `.opencode` checked). `dialoguer` needs a controlling
+/// terminal, so with piped/closed stdin (automation, tests) this instead
+/// reads one line of comma-separated names, same as before. An empty
 /// answer, EOF, or an answer with no known agent name falls back to the
 /// default (`opencode`). Unknown names are dropped with a warning listing
 /// the valid agents.
@@ -131,18 +138,24 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
     let stdin = std::io::stdin();
 
     if stdin.is_terminal() {
-        println!("\nWhich agents should givn install skills to?");
-        for (i, t) in AgentTarget::ALL.iter().enumerate() {
-            let marker = if *t == AgentTarget::Opencode {
-                " (default)"
-            } else {
-                ""
-            };
-            println!("  [{}] {}{}", i + 1, t.display(), marker);
+        let items: Vec<&str> = AgentTarget::ALL.iter().map(|t| t.display()).collect();
+        let defaults: Vec<bool> = AgentTarget::ALL
+            .iter()
+            .map(|t| DEFAULT_TARGETS.contains(t))
+            .collect();
+
+        let selected = dialoguer::MultiSelect::new()
+            .with_prompt(
+                "Which agents should givn install skills to? (space to toggle, enter to confirm)",
+            )
+            .items(&items)
+            .defaults(&defaults)
+            .interact()?;
+
+        if selected.is_empty() {
+            return Ok(DEFAULT_TARGETS.to_vec());
         }
-        println!(
-            "Enter numbers or names, comma-separated. Press Enter for the default (opencode): "
-        );
+        return Ok(selected.into_iter().map(|i| AgentTarget::ALL[i]).collect());
     }
 
     let mut line = String::new();
@@ -151,9 +164,26 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
         return Ok(DEFAULT_TARGETS.to_vec());
     }
 
+    Ok(resolve_target_names(line.split(',')))
+}
+
+/// Resolve the `--agents` flag values into targets, skipping the prompt.
+/// `all` (case-insensitive, alone or alongside other names) expands to
+/// every known target.
+fn resolve_agents_flag(agents: &[String]) -> Vec<AgentTarget> {
+    if agents.iter().any(|a| a.trim().eq_ignore_ascii_case("all")) {
+        return AgentTarget::ALL.to_vec();
+    }
+    resolve_target_names(agents.iter().map(String::as_str))
+}
+
+/// Resolve comma-split or flag-provided names into targets, deduplicated,
+/// in first-seen order. Unknown names are dropped with a warning listing
+/// the valid agents. Falls back to `DEFAULT_TARGETS` if nothing resolved.
+fn resolve_target_names<'a>(parts: impl Iterator<Item = &'a str>) -> Vec<AgentTarget> {
     let mut targets: Vec<AgentTarget> = Vec::new();
     let mut unknown: Vec<String> = Vec::new();
-    for part in line.split(',') {
+    for part in parts {
         match AgentTarget::from_name(part) {
             Some(t) if !targets.contains(&t) => targets.push(t),
             Some(_) => {}
@@ -176,10 +206,10 @@ fn prompt_for_targets() -> Result<Vec<AgentTarget>> {
     }
 
     if targets.is_empty() {
-        return Ok(DEFAULT_TARGETS.to_vec());
+        return DEFAULT_TARGETS.to_vec();
     }
 
-    Ok(targets)
+    targets
 }
 
 /// Append the `skills:` block with the chosen targets to `givn/config.yaml`.

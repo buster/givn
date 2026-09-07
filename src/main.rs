@@ -36,6 +36,12 @@ enum Commands {
         /// Do not enable addons (arc42, absolute_mode).
         #[arg(long)]
         no_addons: bool,
+        /// Agents to install skills/commands to, comma-separated
+        /// (e.g. `opencode,claude`, or `all`). Skips the interactive
+        /// prompt. Only takes effect on fresh config creation (or with
+        /// `--force`), same as the prompt it replaces.
+        #[arg(long, value_delimiter = ',')]
+        agents: Vec<String>,
     },
     /// Create a new change scaffold.
     New {
@@ -301,7 +307,11 @@ fn main() {
 
 fn dispatch(cli: Cli) -> anyhow::Result<()> {
     match cli.command {
-        Commands::Init { force, no_addons } => cli::init::run(force, no_addons),
+        Commands::Init {
+            force,
+            no_addons,
+            agents,
+        } => cli::init::run(force, no_addons, &agents),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions {
             artifact,
