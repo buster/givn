@@ -195,6 +195,22 @@ enum AddonsCommands {
 enum SkillsCommands {
     /// Regenerate skills and agent commands from current templates.
     Sync,
+    /// Manage the configured skill/command install targets.
+    Targets {
+        #[command(subcommand)]
+        command: TargetsCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum TargetsCommands {
+    /// Add agent target(s) to the existing selection in givn/config.yaml
+    /// and sync. Only the `skills: targets:` line is touched.
+    Add {
+        /// Agents to add, comma-separated (e.g. `claude,agents`, or `all`).
+        #[arg(value_delimiter = ',')]
+        agents: Vec<String>,
+    },
 }
 
 #[derive(Subcommand)]
@@ -350,9 +366,12 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             }
             Ok(())
         }
-        Commands::Skills {
-            command: SkillsCommands::Sync,
-        } => cli::skills::run_sync(),
+        Commands::Skills { command } => match command {
+            SkillsCommands::Sync => cli::skills::run_sync(),
+            SkillsCommands::Targets {
+                command: TargetsCommands::Add { agents },
+            } => cli::skills::run_targets_add(&agents),
+        },
         Commands::Spec { command } => match command {
             SpecCommands::Index => cli::spec::run_index(),
             SpecCommands::Search { query, evidence } => cli::spec::run_search(&query, evidence),
