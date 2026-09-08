@@ -18,7 +18,7 @@ use crate::spec::cluster::KNOWN_SUBCOMMANDS;
 #[derive(Debug, Clone, Serialize)]
 pub struct RouteCandidate {
     pub capability: String,
-    pub group: String,
+    pub usecase: String,
     pub score: f64,
     pub evidence: Vec<String>,
 }
@@ -27,13 +27,13 @@ pub struct RouteCandidate {
 #[derive(Debug, Clone, Serialize)]
 pub struct RouteReport {
     pub candidates: Vec<RouteCandidate>,
-    /// Best-matching group when no capability scores meaningfully.
-    pub suggested_group: Option<String>,
+    /// Best-matching use case when no capability scores meaningfully.
+    pub suggested_usecase: Option<String>,
 }
 
 struct CapabilityInfo {
     name: String,
-    group: String,
+    usecase: String,
     /// subcommand -> invocation count.
     invocations: BTreeMap<String, usize>,
     text: String,
@@ -81,16 +81,20 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
     let specs_root = root.join("givn/specs");
     let mut caps = Vec::new();
     for entry in std::fs::read_dir(&specs_root)? {
-        let group_dir = entry?.path();
-        if !group_dir.is_dir() {
+        let usecase_dir = entry?.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        let group = group_dir
+        let usecase = usecase_dir
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or_default()
             .to_string();
-        for file in std::fs::read_dir(&group_dir)? {
+        for file in std::fs::read_dir(&usecase_dir)? {
             let file = file?.path();
             if file.extension().is_none_or(|e| e != "feature") {
                 continue;
@@ -119,7 +123,7 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
                     .and_then(|n| n.to_str())
                     .unwrap_or_default()
                     .to_string(),
-                group: group.clone(),
+                usecase: usecase.clone(),
                 invocations,
                 text: text.to_lowercase(),
             });
@@ -128,32 +132,36 @@ fn load_capabilities(root: &Path) -> Result<Vec<CapabilityInfo>> {
     Ok(caps)
 }
 
-/// Lexical overlap of the proposal with each group.md's Goal + Interactions
-/// text, used for the `NEW in <group>` fallback.
-fn group_affinity(root: &Path, proposal_words: &[String]) -> Result<BTreeMap<String, f64>> {
+/// Lexical overlap of the proposal with each usecase.md's Goal + Interactions
+/// text, used for the `NEW in <usecase-id>` fallback.
+fn usecase_affinity(root: &Path, proposal_words: &[String]) -> Result<BTreeMap<String, f64>> {
     let specs_root = root.join("givn/specs");
     let mut affinity = BTreeMap::new();
     for entry in std::fs::read_dir(&specs_root)? {
-        let group_dir = entry?.path();
-        if !group_dir.is_dir() {
+        let usecase_dir = entry?.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        let group = group_dir
+        let usecase = usecase_dir
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or_default()
             .to_string();
-        let group_md = group_dir.join("group.md");
+        let usecase_md = usecase_dir.join("usecase.md");
         let mut score = 0.0;
-        if group_md.exists() {
-            let text = std::fs::read_to_string(&group_md)?.to_lowercase();
+        if usecase_md.exists() {
+            let text = std::fs::read_to_string(&usecase_md)?.to_lowercase();
             for word in proposal_words {
                 if text.contains(word.as_str()) {
                     score += 1.0;
                 }
             }
         }
-        affinity.insert(group, score);
+        affinity.insert(usecase, score);
     }
     Ok(affinity)
 }
@@ -215,7 +223,7 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
         if score > 0.0 {
             candidates.push(RouteCandidate {
                 capability: cap.name.clone(),
-                group: cap.group.clone(),
+                usecase: cap.usecase.clone(),
                 score: (score * 100.0).round() / 100.0,
                 evidence,
             });
@@ -230,17 +238,17 @@ pub fn route(root: &Path, proposal_text: &str) -> Result<RouteReport> {
     });
     candidates.truncate(10);
 
-    // 4. Group affinity for the NEW fallback.
-    let affinity = group_affinity(root, &proposal_words)?;
-    let suggested_group = affinity
+    // 4. Use-case affinity for the NEW fallback.
+    let affinity = usecase_affinity(root, &proposal_words)?;
+    let suggested_usecase = affinity
         .into_iter()
         .max_by(|a, b| a.1.partial_cmp(&b.1).unwrap_or(std::cmp::Ordering::Equal))
         .filter(|(_, score)| *score > 0.0)
-        .map(|(group, _)| group);
+        .map(|(usecase, _)| usecase);
 
     Ok(RouteReport {
         candidates,
-        suggested_group,
+        suggested_usecase,
     })
 }
 
@@ -251,26 +259,29 @@ pub fn print_report(report: &RouteReport) {
     match extend {
         Some(top) => {
             println!(
-                "recommendation: EXTEND {} (group '{}', score {:.2})",
-                top.capability, top.group, top.score
+                "recommendation: EXTEND {} (use case '{}', score {:.2})",
+                top.capability, top.usecase, top.score
             );
         }
         None => {
-            match &report.suggested_group {
-                Some(group) => println!("recommendation: NEW in {group}"),
-                None => println!("recommendation: NEW (no group affinity signal)"),
+            match &report.suggested_usecase {
+                Some(usecase) => println!("recommendation: NEW in {usecase}"),
+                None => println!("recommendation: NEW (no use-case affinity signal)"),
             };
             if let Some(top) = top {
                 println!(
-                    "  closest existing capability: {} (group '{}', score {:.2}) — below the extend bar",
-                    top.capability, top.group, top.score
+                    "  closest existing capability: {} (use case '{}', score {:.2}) — below the extend bar",
+                    top.capability, top.usecase, top.score
                 );
             }
         }
     }
     println!("\nranked candidates:");
     for c in &report.candidates {
-        println!("  {:.2}  {} (group {})", c.score, c.capability, c.group);
+        println!(
+            "  {:.2}  {} (use case {})",
+            c.score, c.capability, c.usecase
+        );
         for e in c.evidence.iter().take(3) {
             println!("         - {e}");
         }
@@ -330,7 +341,7 @@ mod tests {
         .unwrap();
         assert!(!report.candidates.is_empty());
         assert_eq!(report.candidates[0].capability, "lint-tool");
-        assert_eq!(report.candidates[0].group, "linters");
+        assert_eq!(report.candidates[0].usecase, "linters");
         assert!(report.candidates[0].score >= 3.0, "extend bar");
     }
 

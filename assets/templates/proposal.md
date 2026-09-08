@@ -1,5 +1,15 @@
 # Proposal: {{CHANGE_ID}}
 
+## Use-Case Context
+
+> Optional. When this change comes from ideation or an existing permanent
+> contract, record the stable use-case ID, source topic, and confirmed Persona
+> IDs. Do not copy Persona biographies into the proposal.
+
+- Use-case ID: <usecase-id or none>
+- Ideation topic: <topic-id or none>
+- Confirmed Personas: <persona-id>, or none
+
 ## Problem / Opportunity
 
 > Describe the problem or opportunity in domain terms. What is currently broken,
@@ -20,7 +30,7 @@
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| | | `EXTEND <cap>` / `NEW in <group>` | |
+| | | `EXTEND <capability>` / `NEW in <usecase-id>` | |
 
 ## Out of Scope
 

@@ -27,6 +27,10 @@ Required branches — cover every one (or explicitly record "no issue found"):
   code? Do the Then-steps assert concrete observable values, not just "it ran"?
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
+- **Use-case and Persona context** — confirm use-case identity, contract,
+  capability ownership, typed relationships, confirmed Persona coverage, and
+  explicit dispositions. Reject invented or silently promoted Personas and
+  any use of Persona biographies as Gherkin actors.
 - **ADR qualification** — delegate the complete qualification procedure to the
   canonical Arc42 addon instruction by running `givn instructions arc42-docs
   --change <id>`. Check only candidates whose structured verdict has all

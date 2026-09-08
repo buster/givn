@@ -1,5 +1,6 @@
 # User Interaction Inventory:
-# TODO: Enumerate normalized distinct user actions against the real interface.
+# TODO: Record these actions in the owning use-case's usecase.md Interactions table.
+# The feature file remains the executable capability contract.
 # Read `givn instructions specs --change <id>` for the canonical E2E policy.
 #
 # Web UI: every button click, form submission, nav link, SSE/WS event.

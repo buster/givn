@@ -302,6 +302,76 @@ fn feature_file_at(world: &mut GivnWorld, path: String, step: &Step) {
         std::fs::create_dir_all(parent).expect("create parent dirs for .feature file");
     }
     std::fs::write(&file_path, content).expect("write .feature file");
+    ensure_fixture_usecase(env, &path, content);
+}
+
+fn ensure_fixture_usecase(env: &common::TestEnv, feature_path: &str, content: &str) {
+    let Some(relative) = feature_path.strip_prefix("givn/specs/") else {
+        return;
+    };
+    let Some(parent) = std::path::Path::new(relative).parent() else {
+        return;
+    };
+    let Some(usecase) = parent.file_name().and_then(|name| name.to_str()) else {
+        return;
+    };
+    let Some(capability) = std::path::Path::new(relative)
+        .file_stem()
+        .and_then(|name| name.to_str())
+    else {
+        return;
+    };
+    let path = env.path(&format!("givn/specs/{usecase}/usecase.md"));
+    if path.exists() {
+        return;
+    }
+    let mut e2e_titles = Vec::new();
+    let mut e2e = false;
+    for line in content.lines() {
+        let trimmed = line.trim();
+        if trimmed.starts_with('@') {
+            e2e = trimmed.split_whitespace().any(|tag| tag == "@e2e");
+        } else if e2e && trimmed.starts_with("Scenario:") {
+            e2e_titles.push(trimmed.trim_start_matches("Scenario:").trim().to_string());
+            e2e = false;
+        } else if !trimmed.is_empty() && !trimmed.starts_with("Scenario:") {
+            e2e = false;
+        }
+    }
+    let mut document = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", capability)
+        .replace("<actor role>", "Fixture operator")
+        .replace("<the domain goal>", "Exercise the fixture behavior.")
+        .replace("<consumer action>", "exercise the capability")
+        .replace(
+            "<scenario title>",
+            e2e_titles
+                .first()
+                .map(String::as_str)
+                .unwrap_or("No E2E interaction"),
+        );
+    let table = "| Capability | Consumer action | E2E scenario |\n|---|---|---|\n";
+    let rows = e2e_titles
+        .iter()
+        .map(|title| format!("| {capability} | exercise the capability | {title} |\n"))
+        .collect::<String>();
+    let original_row = format!(
+        "| {capability} | exercise the capability | {} |\n",
+        e2e_titles
+            .first()
+            .map(String::as_str)
+            .unwrap_or("No E2E interaction")
+    );
+    if e2e_titles.is_empty() {
+        document = document.replace(&format!("{table}{original_row}"), "- none\n");
+    } else {
+        document = document.replace(&format!("{table}{original_row}"), &format!("{table}{rows}"));
+    }
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent).expect("create fixture use-case directory");
+    }
+    std::fs::write(path, document).expect("write fixture use-case document");
 }
 
 #[given(regex = r#"^a feature file with a removed-wip placeholder at "([^"]+)"$"#)]
@@ -317,6 +387,7 @@ fn feature_file_removed_wip_placeholder(world: &mut GivnWorld, path: String) {
         std::fs::create_dir_all(parent).expect("create parent dirs");
     }
     std::fs::write(&file_path, content).expect("write .feature file");
+    ensure_fixture_usecase(env, &path, content);
 }
 
 #[given(
@@ -333,6 +404,7 @@ fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
         std::fs::create_dir_all(parent).expect("create parent dirs");
     }
     std::fs::write(&file_path, content).expect("write .feature file");
+    ensure_fixture_usecase(env, &path, content);
 }
 
 /// Environment overrides for the current subprocess, assembled from the

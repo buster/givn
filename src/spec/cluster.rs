@@ -37,11 +37,11 @@ pub const KNOWN_SUBCOMMANDS: &[&str] = &[
     "run",
 ];
 
-/// The proposed grouping derived from command-surface clustering.
+/// The proposed use cases derived from command-surface clustering.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ClusterProposal {
     /// (dominant subcommand, capability ids sorted alphabetically).
-    pub groups: Vec<(String, Vec<String>)>,
+    pub usecases: Vec<(String, Vec<String>)>,
     /// Capabilities whose steps invoke no givn command — `«include»`
     /// fragment candidates, not use-case candidates.
     pub fragments: Vec<String>,
@@ -99,7 +99,7 @@ fn count_invocations(step_text: &str, counts: &mut BTreeMap<String, usize>) {
     }
 }
 
-/// Cluster all capabilities under `givn/specs/` (grouped or flat layout)
+/// Cluster all capabilities under `givn/specs/` by dominant command surface.
 /// by their dominant command surface.
 pub fn cluster_tree(root: &Path) -> ClusterProposal {
     let specs_root = root.join("givn/specs");
@@ -113,15 +113,13 @@ pub fn cluster_tree(root: &Path) -> ClusterProposal {
         if !path.is_dir() {
             continue;
         }
-        // Flat layout: <cap>/<cap>.feature.
+        // Each use-case directory contains capability feature files.
         let feature_path = path.join(format!(
             "{}.feature",
             path.file_name()
                 .and_then(|n| n.to_str())
                 .unwrap_or_default()
         ));
-        // Grouped layout: <group>/<cap>.feature — a capability file, not a
-        // group dir, has no subdirectories and one or more feature files.
         let candidates: Vec<std::path::PathBuf> = if feature_path.exists() {
             vec![feature_path]
         } else {
@@ -147,7 +145,7 @@ pub fn cluster_tree(root: &Path) -> ClusterProposal {
         }
     }
 
-    let mut groups: BTreeMap<String, Vec<String>> = BTreeMap::new();
+    let mut usecases: BTreeMap<String, Vec<String>> = BTreeMap::new();
     let mut fragments: Vec<String> = Vec::new();
     for surface in &surfaces {
         // Ambiguity: a tie for the top count is left ungrouped for human
@@ -162,16 +160,16 @@ pub fn cluster_tree(root: &Path) -> ClusterProposal {
             fragments.push(surface.capability.clone());
             continue;
         }
-        groups
+        usecases
             .entry(dominant)
             .or_default()
             .push(surface.capability.clone());
     }
-    for members in groups.values_mut() {
+    for members in usecases.values_mut() {
         members.sort();
     }
     ClusterProposal {
-        groups: groups.into_iter().collect(),
+        usecases: usecases.into_iter().collect(),
         fragments: {
             fragments.sort();
             fragments
@@ -274,12 +272,12 @@ Feature: Demo
         let proposal = cluster_tree(root.path());
         assert!(
             proposal
-                .groups
+                .usecases
                 .contains(&("lint".to_string(), vec!["lint-command".to_string()]))
         );
         assert!(
             proposal
-                .groups
+                .usecases
                 .contains(&("spec".to_string(), vec!["spec-duplicates".to_string()]))
         );
         assert_eq!(proposal.fragments, vec!["frag-cap"]);
@@ -296,7 +294,7 @@ mod corpus_dump {
     #[ignore]
     fn cluster_corpus() {
         let proposal = cluster_tree(Path::new("."));
-        for (sub, caps) in &proposal.groups {
+        for (sub, caps) in &proposal.usecases {
             println!("{sub} <- {} : {:?}", caps.len(), caps);
         }
         println!(

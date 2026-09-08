@@ -168,7 +168,7 @@ The archive command executes the following stages:
    per-finding report. No backup is needed at this stage.
 6. Back up `givn/specs/` and `README.md` as needed.
 7. Parse each delta feature, reject WIP, and merge Added/Modified/Removed
-   scenarios into `givn/specs/<group>/<capability>.feature` (the permanent corpus is grouped by use case, one `group.md` per group). A new capability merges into the group its proposal's routing decision declares; when the capability exists nowhere and no `NEW in <group>` decision is recorded, the archive is blocked.
+   scenarios into `givn/specs/<usecase-id>/<capability>.feature` (the permanent corpus is owned by explicit use-case documents). A new capability merges into the use case its proposal's routing decision declares; when the capability exists nowhere and no `NEW in <usecase-id>` decision is recorded, the archive is blocked.
 8. Run `verify.command` against `givn/specs/`. A failure rolls permanent specs
    back from the backup.
 9. Run post-merge E2E only when merged permanent specs contain direct `@e2e`

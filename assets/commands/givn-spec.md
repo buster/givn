@@ -43,25 +43,27 @@ Without `--json`, the command emits the resolved instruction text only.
 Read `givn/changes/<id>/proposal.md`'s `## Capability Routing` table. Each
 row's **Decision** column, not the proposal's free-text description,
 determines what to write:
-- `EXTEND <cap>`: add scenarios into the existing capability's delta (a
-  `@givn.modified` or `@givn.added` delta targeting that capability, in the
-  group where the capability already lives).
-- `NEW in <group>`: create a new capability file inside that group:
-  `givn/changes/<id>/specs/<group>/<capability>.feature`.
+- `EXTEND <capability>`: add scenarios into the existing capability's delta (a
+  `@givn.modified` or `@givn.added` delta targeting that capability, under the
+  use-case ID declared by its `usecase.md`).
+- `NEW in <usecase-id>`: create or update the use-case document and create the
+  capability file under `givn/changes/<id>/specs/<usecase-id>/<capability>.feature`.
 
 If the table is missing rows for a capability you're about to write specs
 for, run `givn spec route` now and fill it in before proceeding — do not
 invent a capability name from the proposal's prose without going through
 routing first.
 
-Also check permanent specs at `givn/specs/<group>/` — existing scenarios for a
-capability are the baseline; delta scenarios extend or modify them. Delta
-files mirror the grouped layout: `givn/changes/<id>/specs/<group>/<cap>.feature`.
+Also check the owning use-case document at `givn/specs/<usecase-id>/usecase.md`.
+Existing scenarios for a capability are the baseline; delta scenarios extend
+or modify them. Read the use-case contract, confirmed Persona references, and
+interaction inventory before writing the feature delta. Gherkin uses actors,
+not Persona biographies.
 
 ### 4. Write delta .feature files
 
 For each capability, create:
-`givn/changes/<id>/specs/<group>/<capability>.feature`
+`givn/changes/<id>/specs/<usecase-id>/<capability>.feature`
 
 **Required tags:**
 - `@givn.delta` on the Feature line (marks this as a delta document)

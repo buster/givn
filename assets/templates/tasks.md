@@ -22,6 +22,15 @@ runner rejects an unimplemented step before any scenario work.
 
 ## Tasks
 
+## Domain Constraints
+
+> Copy the owning use-case guarantees, rules, confirmed Persona constraints,
+> and relevant ideation decisions here before listing scenario tasks.
+
+| Scenario / capability | Use-case guarantee or rule | Persona impact |
+|---|---|---|
+| | | |
+
 - [ ] Set up step definitions (one file per capability) and configure the
       runner in strict mode. Proof-of-strictness above must be filled in first.
 - [ ] Scenario: `{{FIRST_SCENARIO_TITLE}}`

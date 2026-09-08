@@ -13,6 +13,14 @@ Complete the coverage review for change `<change-id>`.
 - Instructions: run `givn instructions review --change <change-id>`
 - Test runner: `./run-tests.sh`
 
+## Use-case and Persona conformance
+
+Verify that implementation preserves the owning use-case contract, guarantees,
+rules, typed relationships, capability ownership, and confirmed Persona-relevant
+outcomes. Confirm the accepted `usecase.md` is represented in the change and
+that no actor was replaced by a Persona biography. Migration changes must also
+account for every ledger entry and preserve E2E evidence.
+
 ## Step 0: fabrication audit (mandatory, before anything else)
 
 A change can reach review with every task checked off, the runner exiting

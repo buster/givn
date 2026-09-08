@@ -203,7 +203,14 @@ fn run_with_root(
             }
             if matches!(
                 finding.kind.as_str(),
-                "group_md_invalid" | "dangling_use_case_ref" | "use_case_cycle"
+                "usecase_invalid"
+                    | "fragment_invalid"
+                    | "dangling_capability_ref"
+                    | "ambiguous_relationship_target"
+                    | "dangling_use_case_ref"
+                    | "use_case_cycle"
+                    | "extend_fragment"
+                    | "interaction_mismatch"
             ) {
                 total_errors += 1;
                 has_use_case_error = true;
@@ -248,7 +255,7 @@ fn render_prose(finding: &Finding) {
         "subset" => "SUBST",
         "long_scenario" => "LONG ",
         "empty_feature" => "EMPTY",
-        "group_md_invalid" => "UCDOC",
+        "usecase_invalid" | "fragment_invalid" => "UCDOC",
         "dangling_use_case_ref" => "UCREF",
         "use_case_cycle" => "UCCYC",
         "parse_error" => "ERROR",
@@ -318,6 +325,29 @@ mod tests {
             let path = project.join(rel);
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
             std::fs::write(path, text).unwrap();
+        }
+        let mut usecases = std::collections::BTreeSet::new();
+        for (rel, _) in files {
+            let path = std::path::Path::new(rel);
+            if path
+                .extension()
+                .is_some_and(|extension| extension == "feature")
+            {
+                if let Some(parent) = path.parent() {
+                    usecases.insert(parent.to_path_buf());
+                }
+            }
+        }
+        for relative in usecases {
+            let usecase = relative.file_name().unwrap().to_string_lossy();
+            let feature = relative
+                .file_name()
+                .map(|name| name.to_string_lossy())
+                .unwrap_or_default();
+            let document = format!(
+                "# Use case: {usecase}\n\n## Level\n\n!\n\n## Actors\n\n- Operator\n\n## Goal\n\nInspect behavior.\n\n## Trigger\n\nThe operator asks.\n\n## Preconditions\n\n- The project exists.\n\n## Main flow\n\n1. Inspect.\n\n## Extensions\n\n- none\n\n## Rules\n\n- The project remains valid.\n\n## Examples\n\n- A project.\n\n## Minimal guarantee\n\nThe project remains inspectable.\n\n## Success guarantee\n\nThe result is visible.\n\n## Personas\n\n- none\n\n## Capabilities\n\n- {feature}\n\n## Interactions\n\n- none\n\n## Includes\n\n- none\n\n## Extends\n\n- none\n\n## Out of scope\n\nNothing.\n\n## Diagram\n\n```mermaid\nflowchart LR\n  A --> B\n```\n"
+            );
+            std::fs::write(project.join(relative).join("usecase.md"), document).unwrap();
         }
         (root, project)
     }

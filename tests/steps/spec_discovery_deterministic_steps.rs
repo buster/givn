@@ -1,7 +1,7 @@
 //! Deterministic spec-discovery step definitions (Phase 4 rebuild).
 //!
 //! These steps drive the compiled givn CLI as a real subprocess against
-//! fixture projects whose permanent corpus uses the grouped layout. They
+//! fixture projects whose permanent corpus uses use-case ownership. They
 //! back the rewritten `spec-duplicates`, `spec-explore-permanent`,
 //! `spec-explore-change`, and `spec-progress-output` capabilities — all
 //! deterministic: no embeddings, no index, no model downloads.
@@ -29,6 +29,26 @@ fn write_feature(env: &TestEnv, rel: &str, body: &str) {
     let path: PathBuf = env.root().join(rel);
     std::fs::create_dir_all(path.parent().unwrap()).unwrap();
     std::fs::write(path, body).unwrap();
+}
+
+fn write_usecase(
+    env: &TestEnv,
+    usecase: &str,
+    capability: &str,
+    actor: &str,
+    goal: &str,
+    scenario: &str,
+) {
+    let text = givn::gherkin::usecase_md::usecase_md_template()
+        .replace("<usecase-id>", usecase)
+        .replace("<capability-id>", capability)
+        .replace("<actor role>", actor)
+        .replace("<the domain goal>", goal)
+        .replace("<consumer action>", "perform the capability")
+        .replace("<scenario title>", scenario);
+    let path = env.root().join(format!("givn/specs/{usecase}/usecase.md"));
+    std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+    std::fs::write(path, text).unwrap();
 }
 
 fn duplicate_pair_feature(title_a: &str, title_b: &str) -> String {
@@ -155,19 +175,22 @@ fn corpus_non_empty(world: &mut GivnWorld) {
     world.env = Some(env);
 }
 
-#[given(regex = r#"^a spec discovery project with two groups and a group\.md narrative$"#)]
-fn two_groups_with_narrative(world: &mut GivnWorld) {
+#[given(regex = r#"^a spec discovery project with two use cases and a usecase\.md narrative$"#)]
+fn two_usecases_with_narrative(world: &mut GivnWorld) {
     let env = make_bare_root();
     write_feature(
         &env,
         "givn/specs/diggers/digging.feature",
         "Feature: Digging\n\n  Scenario: Dig\n    Given a workspace\n    Then the pit exists\n\n  @e2e\n  Scenario: Shovel\n    Given a workspace\n    Then the pit exists\n",
     );
-    std::fs::write(
-        env.root().join("givn/specs/diggers/group.md"),
-        "# Group: diggers\n\n## Actor\n\nA builder digging holes.\n\n## Goal\n\nDig reproducible pits.\n\n## Interactions\n\n- dig a pit\n",
-    )
-    .unwrap();
+    write_usecase(
+        &env,
+        "diggers",
+        "digging",
+        "A builder digging holes.",
+        "Dig reproducible pits.",
+        "Shovel",
+    );
     write_feature(
         &env,
         "givn/specs/fillers/filling.feature",
@@ -186,11 +209,14 @@ fn corpus_with_lint_capability(world: &mut GivnWorld) {
         "givn/specs/gates/lint-tool.feature",
         "Feature: Lint tool\n\n  Scenario: One\n    When the user runs `givn lint`\n    And the user runs `givn lint`\n    Then the command exits 0\n",
     );
-    std::fs::write(
-        env.root().join("givn/specs/gates/group.md"),
-        "# Group: gates\n\n## Actor\n\nA checker.\n\n## Goal\n\nCheck things.\n\n## Interactions\n\n- run lint checks\n",
-    )
-    .unwrap();
+    write_usecase(
+        &env,
+        "gates",
+        "lint-tool",
+        "A checker.",
+        "Check things.",
+        "Lint runs",
+    );
     world.env = Some(env);
 }
 
@@ -338,15 +364,15 @@ fn stdout_has_scenario_title(world: &mut GivnWorld) {
     assert!(stdout(world).contains("The shovelling scenario"));
 }
 
-#[then(regex = r#"^stdout identifies the owning group and capability$"#)]
-fn stdout_has_group_and_capability(world: &mut GivnWorld) {
+#[then(regex = r#"^stdout identifies the owning use case and capability$"#)]
+fn stdout_has_usecase_and_capability(world: &mut GivnWorld) {
     let out = stdout(world);
     assert!(out.contains("workers"), "{out}");
     assert!(out.contains("work"), "{out}");
 }
 
-#[then(regex = r#"^stdout contains both group names$"#)]
-fn tree_has_both_groups(world: &mut GivnWorld) {
+#[then(regex = r#"^stdout contains both use-case names$"#)]
+fn tree_has_both_usecases(world: &mut GivnWorld) {
     let out = stdout(world);
     assert!(out.contains("diggers"), "{out}");
     assert!(out.contains("fillers"), "{out}");
@@ -359,9 +385,9 @@ fn tree_has_counts(world: &mut GivnWorld) {
     assert!(out.contains("1 @e2e"), "{out}");
 }
 
-#[then(regex = r#"^stdout contains the group actor line$"#)]
+#[then(regex = r#"^stdout contains the use-case actor line$"#)]
 fn tree_has_actor(world: &mut GivnWorld) {
-    assert!(stdout(world).contains("actor:"));
+    assert!(stdout(world).contains("actors:"));
 }
 
 #[then(regex = r#"^stdout reports exactly one matching scenario$"#)]

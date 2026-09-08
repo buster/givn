@@ -14,6 +14,14 @@ Write the implementation task breakdown for change `<change-id>`.
 - Design (HOW): `givn/changes/<change-id>/design.md`
 - Test runner: `./run-tests.sh`
 
+## Use-case constraints
+
+Read the owning `usecase.md`, its guarantees and rules, confirmed Persona
+references, and any ideation seed before writing tasks. Copy the relevant
+domain constraints into every scenario task. The feature file remains the
+executable authority, but implementation agents must not lose the use-case
+contract between scenarios.
+
 ## Verify Interaction Coverage before writing tasks (mandatory)
 
 Before writing any task, cross-reference the spec's User Interaction

@@ -658,10 +658,10 @@ fn explore_and_audit_adrs_are_spec_owned(world: &mut GivnWorld) {
     assert!(!file_exists(&active_adr_path("ADR-043")));
     assert!(!file_exists(&active_adr_path("ADR-049")));
     assert!(file_exists(
-        "givn/specs/support/spec-explore-permanent.feature"
+        "givn/specs/fragments/spec-explore-permanent.feature"
     ));
     assert!(file_exists(
-        "givn/specs/spec-discovery/spec-duplicates.feature"
+        "givn/specs/discover-specifications/spec-duplicates.feature"
     ));
 }
 

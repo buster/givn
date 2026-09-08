@@ -19,6 +19,10 @@ language that a non-technical stakeholder can read and validate.
   in `design.md` MUST execute them via a Gherkin/Cucumber runner — never a
   parallel hand-maintained test file. Keep this in mind: every behaviour you
   describe here must be expressible as a runnable Gherkin scenario.
+- **Use-case context.** When a change has a permanent use-case ID or an
+  ideation change seed, read its `usecase.md` and record the ID, source topic,
+  and confirmed affected Persona IDs. Never invent or auto-promote Personas;
+  do not copy Persona biographies into the proposal.
 
 **Structure:**
 1. Problem / Opportunity — what is wrong or missing?

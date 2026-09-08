@@ -22,6 +22,15 @@ Questions that could not be resolved and were flagged explicitly.
 |---|---|---|
 | | | |
 
+## Use-Case And Persona Context
+
+| Check | Finding | User disposition |
+|---|---|---|
+| Use-case contract and capability ownership | | |
+| Typed Includes / Extends relationships | | |
+| Confirmed Persona coverage | | |
+| Actor and Persona distinction | | |
+
 ## Architecture documentation (arc42) check
 
 N/A if the arc42 addon is not enabled (`addons.arc42` in `givn/config.yaml`).

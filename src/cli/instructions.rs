@@ -405,9 +405,12 @@ fn artifact_to_skill(artifact_id: &str) -> String {
 /// whole system every time.
 fn generic_overview() -> String {
     "givn — from Given to done. This project uses givn for spec-driven \
-development: the `.feature` file is the executable specification. Workflow: \
-propose → spec → design → design-review → tasks → implement → review → \
-archive. Skills/slash-commands are named `/givn-<step>` (e.g. `/givn-propose`, \
+ development: the `.feature` file is the executable specification, and its \
+ owning use case supplies the domain contract. Consult `usecase.md` and any \
+ linked ideation topic before changing a capability; consult confirmed \
+ Personas as review lenses, not as Gherkin actors. Workflow: \
+ propose → spec → design → design-review → tasks → implement → review → \
+ archive. Skills/slash-commands are named `/givn-<step>` (e.g. `/givn-propose`, \
 `/givn-implement`). Run `givn status` or `givn status --change <id>` for a \
 full checklist view with pending tasks, or `givn instructions <artifact>` for \
 that artifact's writing instructions."
@@ -459,6 +462,8 @@ mod tests {
         assert!(overview.contains("propose"));
         assert!(overview.contains("archive"));
         assert!(overview.contains("givn status"));
+        assert!(overview.contains("use case"));
+        assert!(overview.contains("Personas"));
     }
 
     #[test]

@@ -76,6 +76,16 @@ with actual scenario counts from running both:
 |---|---|---|---|---|---|
 | | | | | | |
 
+## Use-Case And Persona Conformance
+
+| Contract | Evidence | Pass? |
+|---|---|---|
+| Owning use-case guarantees and rules preserved | | |
+| Capability ownership and typed relationships preserved | | |
+| Confirmed Persona-relevant outcomes preserved | | |
+| Actors remain distinct from Persona biographies | | |
+| Migration ledger and coverage evidence complete, if applicable | | |
+
 **Design.md conformance check** — implementation's actual commands, file
 layout, and framework/driver choices diffed against what design.md
 explicitly named. Any deviation implemented without first updating
