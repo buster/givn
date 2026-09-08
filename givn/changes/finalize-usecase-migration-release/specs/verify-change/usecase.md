@@ -32,8 +32,7 @@ The developer or reviewer runs a Givn check.
 ## Extensions
 
 - A missing review disposition blocks completion.
-- A migration with missing behavior, lost E2E evidence, lower interaction
-  coverage, or lower source coverage blocks completion.
+- A migration with missing behavior, lost E2E evidence, lower interaction coverage, or lower source coverage blocks completion.
 
 ## Rules
 
