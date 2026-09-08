@@ -145,22 +145,30 @@ pub fn compare(before: &CoverageSnapshot, after: &CoverageSnapshot) -> CoverageC
     }
     let mut missing_behavior = Vec::new();
     let mut lost_e2e = Vec::new();
-    let mut used = BTreeSet::new();
+    let mut used: BTreeSet<(&str, &str, &str, usize)> = BTreeSet::new();
     for entry in &before.entries {
         let identity = (entry.behavior_hash.as_str(), entry.scenario.as_str());
         let Some(candidates) = after_by_identity.get(&identity) else {
             missing_behavior.push(format!("{} — {}", entry.feature_path, entry.scenario));
             continue;
         };
-        let Some((index, current)) = candidates
-            .iter()
-            .enumerate()
-            .find(|(index, current)| !used.contains(&(current.feature_path.as_str(), *index)))
-        else {
+        let Some((index, current)) = candidates.iter().enumerate().find(|(index, current)| {
+            !used.contains(&(
+                entry.behavior_hash.as_str(),
+                entry.scenario.as_str(),
+                current.feature_path.as_str(),
+                *index,
+            ))
+        }) else {
             missing_behavior.push(format!("{} — {}", entry.feature_path, entry.scenario));
             continue;
         };
-        used.insert((current.feature_path.as_str(), index));
+        used.insert((
+            entry.behavior_hash.as_str(),
+            entry.scenario.as_str(),
+            current.feature_path.as_str(),
+            index,
+        ));
         if entry.e2e && !current.e2e {
             lost_e2e.push(format!("{} — {}", entry.feature_path, entry.scenario));
         }
