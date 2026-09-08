@@ -45,6 +45,7 @@
 | `README.md` install/build sections (features table, "all features incl. semantic retrieval", "minimal build") | rewrite to the single-binary contract | docs must match the build |
 | `docs/arc42/12-glossary.md` engine terms (E5, BGE/NLI, rulebook, report, remediation-log, model-cache, build-kind rows) | deleted rows recorded in the change's `arc42.md` | glossary truth |
 | `docs/arc42/03-context-and-scope.md`, `05-building-block-view.md`, `08-crosscutting-concepts.md` | remove engine building blocks / stub-env concepts where present | arc42 alignment; recorded in the change's `arc42.md` |
+| `givn/specs/fragments/adr-qualification-gate.feature` migration-history scenario | modified via delta to the post-engine register counts (25 accepted / 0 proposed) and archived-record checks | the ADR supersession changed the register this scenario pins |
 | `givn/specs/discover-specifications/usecase.md` Interactions table | remove the 4 `release-strict-model-overrides` rows | capability retired |
 | `givn/specs/maintain-project/usecase.md` Interactions table | add row: `release-0-3-0` / "invoke a retired engine command" / the new e2e scenario | inventory completeness |
 

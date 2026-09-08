@@ -524,6 +524,12 @@ fn resolve_capability_usecase(
             return Some(usecase_dir);
         }
     }
+    // Fragment capabilities live under givn/specs/fragments/ with
+    // fragment.md as their narrative; retirements and merges must reach them.
+    let fragments = specs_root.join("fragments");
+    if fragments.join(format!("{cap}.feature")).exists() {
+        return Some(fragments);
+    }
     None
 }
 

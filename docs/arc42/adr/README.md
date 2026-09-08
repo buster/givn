@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-22 accepted records. The fifteen semantic-engine records were superseded by
+25 accepted records. The fifteen semantic-engine records were superseded by
 [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
