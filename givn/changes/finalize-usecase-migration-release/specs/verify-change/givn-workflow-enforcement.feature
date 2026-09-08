@@ -7,7 +7,7 @@ Feature: Migration coverage enforcement
     When the user runs `givn check migration --change migration-test`
     Then the command exits 0
     And stdout contains "migration coverage passed"
-    And the file "givn/changes/migration-test/coverage-comparison.json" contains "\"passed\": true"
+    And the migration comparison is marked passed
 
   @givn.added @wip
   Scenario: Missing behavior blocks migration coverage

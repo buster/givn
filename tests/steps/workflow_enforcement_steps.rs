@@ -613,6 +613,15 @@ fn migration_comparison_failed(world: &mut GivnWorld) {
     assert!(content.contains("\"passed\": false"), "comparison was not failed: {content}");
 }
 
+#[then("the migration comparison is marked passed")]
+fn migration_comparison_passed(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(
+        project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
+    )
+    .unwrap();
+    assert!(content.contains("\"passed\": true"), "comparison was not passed: {content}");
+}
+
 #[then("the change directory has been moved to givn/archive/")]
 fn change_moved_to_archive(world: &mut GivnWorld) {
     let id = change_id(world);
