@@ -6,11 +6,10 @@ Feature: Givn 0.3.0 release and legacy project migration
     Then the reported version matches the package version
 
   Scenario: Cargo installation enables every declared feature by default
-    Given the Cargo feature metadata for the Givn release
-    When a maintainer inspects the default Cargo installation features
-    Then the default feature set is empty
-    And every optional model feature is declared for explicit opt-in
-    And a feature-free minimal build remains explicitly available
+    Given  the Cargo feature metadata for the Givn release
+    When  a maintainer inspects the default Cargo installation features
+    Then  the default feature set is empty
+    And  no optional model features are declared
 
   Scenario: The changelog describes the complete 0.3.0 release
     Given the Givn 0.3.0 release files
@@ -92,3 +91,10 @@ Feature: Givn 0.3.0 release and legacy project migration
     When the consumer archives the maintenance migration
     Then the maintenance migration is archived successfully
     And the permanent specification tree contains no migration feature
+  @e2e
+  Scenario: A consumer invoking a retired engine command is told it does not exist
+    Given  an installed Givn binary
+    When  the consumer invokes the retired `givn spec index` command
+    Then  the command exits non-zero
+    And  the error reports "spec index" is not an available command
+    And  the error output stays free of "embedding" and "download" wording
