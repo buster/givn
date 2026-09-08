@@ -45,6 +45,13 @@ Feature: Migration coverage enforcement
     Then the command exits non-zero
     And stderr contains "migration coverage regression"
 
+  @givn.added @wip
+  Scenario: Explicit retirement documents a changed behavior
+    Given a migration evidence change with an explicitly retired behavior
+    When the user runs `givn check migration --change migration-test`
+    Then the command exits 0
+    And stdout contains "migration coverage passed"
+
   @givn.added @e2e @wip
   Scenario: Consumer runs migration coverage check and sees passed evidence
     Given a migration evidence change with matching behavior snapshots

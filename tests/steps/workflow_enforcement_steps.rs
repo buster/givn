@@ -275,6 +275,16 @@ fn lower_branch_migration_snapshot(world: &mut GivnWorld) {
     );
 }
 
+#[given("a migration evidence change with an explicitly retired behavior")]
+fn explicitly_retired_migration_snapshot(world: &mut GivnWorld) {
+    setup_migration(world, r#"{"schema":1,"entries":[]}"#.to_string(), None, None);
+    std::fs::write(
+        project_root(world).join("givn/changes/migration-test/usecase-migration.md"),
+        "| Old entry | Old owner | Operation | New owner |\n|---|---|---|---|\n| old/capability.feature — Preserved behavior | old | RETIRE | none |\n",
+    )
+    .unwrap();
+}
+
 // ---- Given steps ----
 
 #[given("a givn project with a change that has passed design-review")]

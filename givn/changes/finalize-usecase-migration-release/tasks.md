@@ -19,6 +19,13 @@
       `tests/steps/workflow_enforcement_e2e_steps.rs` are registered, and the
       skeleton fails through `unimplemented!()` rather than an empty body.
 
+## E2E Setup
+
+- [x] No external service or digital twin is required; the real CLI subprocess
+      runs in a temporary initialized project.
+- [x] `GIVN_FEATURES=givn/changes/finalize-usecase-migration-release/specs ./run-tests.sh --e2e`
+      passed with `1 feature / 1 scenario (1 passed)`.
+
 ## Scenario: A consumer runs migration coverage and sees a passing receipt
 
 - [x] RED: strict-mode setup established that an unimplemented migration
@@ -86,6 +93,28 @@
       and 4 steps passed; it observed lower branch coverage as non-zero. Added
       focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_branch_coverage_blocks`
+      passed with 1 test passed.
+- [x] COMMIT: pending.
+
+## Scenario: Consumer runs migration coverage check and sees passed evidence
+
+- [x] RED: strict-mode setup established that an unimplemented E2E step fails
+      non-zero before implementation.
+- [x] GREEN: the scoped E2E runner passed with `1 feature / 1 scenario (1
+      passed)` and 4 steps through the real CLI subprocess.
+- [x] REFACTOR: the corrected scoped E2E rerun passed with the same result.
+- [x] COMMIT: `4c42731` — feat(givn-workflow-enforcement): consumer sees
+      migration coverage receipt.
+
+## Scenario: Explicit retirement documents a changed behavior
+
+- [x] RED: strict-mode setup established that an unimplemented migration
+      fixture step fails non-zero before implementation.
+- [x] GREEN: targeted CLI run passed with `1 feature / 1 scenario (1 passed)`
+      and 4 steps; explicit `RETIRE` ledger evidence allowed the documented
+      behavior removal. Files: `src/spec/coverage.rs`, migration steps, and
+      the delta feature.
+- [x] REFACTOR: `cargo test --lib coverage::tests::explicit_retirement_allows_missing_behavior`
       passed with 1 test passed.
 - [x] COMMIT: pending.
 
