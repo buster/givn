@@ -51,24 +51,11 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | FR-20 | Maintain durable Arc42 chapters through the bundled `arc42` addon and fixed `docs/arc42/` output. |
 | FR-21 | Run project commands at explicit gate points and keep binary mandatory checks non-deactivatable. |
 | FR-22 | Keep one normative interaction and E2E authoring policy. |
-| FR-23 | Provide local E5 retrieval over permanent scenarios. |
-| FR-24 | Enforce the fixed E5 similarity gate only in the `spec-similarity-gate` build. |
-| FR-25 | Provide optional BGE and NLI evidence without automatic Givn classification. |
-| FR-26 | Explore exactly one complete draft scenario against permanent scenarios. |
-| FR-27 | Optionally add active change scenarios to Explore request-locally. |
-| FR-28 | Generate a change-local semantic report from blocking `givn check review`. |
-| FR-29 | Verify classified semantic remediation against the projected tree. |
 | FR-30 | Audit the complete permanent corpus through `givn spec duplicates` without writing audit state. |
-| FR-31 | Use complete compact semantic input and actual-tokenizer cap evidence. |
-| FR-32 | Bound second-stage work through the proposed `GIVN_SPEC_MAX_RERANK_PAIRS` setting while retaining unscored tails. |
 | FR-33 | Publish version 0.3.0 with a complete changelog and an LLM-executable 0.2.0-to-0.3.0 migration guide. |
 | FR-34 | Prepare legacy projects through a visible, reviewable migration change without inventing product specifications. |
 | FR-35 | Refresh and commit Givn-owned files for migration-free upgrades without creating a migration change. |
 | FR-36 | Resolve multiple release-owned migration bundles into one ordered aggregate maintenance change. |
-| FR-37 | Enable every currently declared Cargo feature in the normal installation while preserving an explicit feature-free build. |
-| FR-38 | Acquire missing E5, BGE, and NLI model artifacts on explicit semantic use and reuse them from the user-level XDG cache. |
-| FR-39 | Give every semantic surface a consistent missing-index repair hint and actionable model-setup diagnostics. |
-| FR-40 | Control the compute threads of every semantic model stage (E5, BGE, NLI) through one `GIVN_SPEC_THREADS` setting that defaults to the machine's available parallelism and refuses invalid values by name before any model work. |
 | FR-41 | Declare how the built product is started in `givn/commands.yaml` (`run:` block): product type (server, cli, library), start command, exactly one port source for servers (fixed port or `port_env` hand-off), readiness path, and readiness timeout. |
 | FR-42 | Scaffold the run declaration on `givn init`, backfill it through the managed upgrade into existing projects, validate it with deterministic rules, render it into a managed README run block, and block `givn check review` and `givn archive` while it is unconfigured. |
 | FR-43 | Start the declared product with `givn run`: readiness probe against the declared path, one greppable ready line, `--port` and `--print` forms, forwarded child exit codes, and SIGINT/SIGTERM forwarding on unix. |
@@ -78,14 +65,10 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 
 | ID | Requirement |
 |---|---|
-| NFR-1 | The default Cargo installation enables all declared retrieval capabilities; `--no-default-features` provides a native feature-free binary without npm, root, or language runtime requirements. |
+| NFR-1 | The product is a single feature-free native binary without npm, root, or language runtime requirements; no Cargo features are declared. |
 | NFR-2 | Defaults are embedded; project-owned files are not silently overwritten. |
 | NFR-3 | Project configuration and lifecycle state are visible under `givn/`. |
-| NFR-4 | Semantic evidence is deterministic in identity, ordering, hashes, and output format where the current contract specifies it. |
-| NFR-5 | Feature-free and feature-enabled behavior is explicit rather than silently falling back to a false pass. |
 | NFR-6 | Automatic migration commits are narrowly scoped, reproducible, and never mix uncommitted user work with Givn-owned files. |
-| NFR-7 | Large model artifacts are shared through an XDG user cache; project trees contain only project-specific retrieval state unless an explicit override is selected. |
-| NFR-8 | Model acquisition validates complete artifacts and fails with recovery instructions rather than accepting partial or corrupt cache state. |
 
 ## 1.3 Quality Goals
 
@@ -97,13 +80,7 @@ enabled addon settings and scaffolds durable Arc42 chapters.
 | 4 | **Architecture contract clarity** | The active ADR register contains only independent durable decisions; current facts and implementation details have one canonical home. |
 
 Secondary goals are merge correctness, agent ergonomics, interface-fidelity in
-E2E evidence, deterministic semantic evidence, explicit token-cap safety, a
-permanent-only retrieval persistence boundary, and non-redundant architecture
-documentation.
-
-The current second-stage budget work is not yet a completed quality claim. Its
-open tasks and final verification are listed in the active change referenced by
-the [ADR register](adr/README.md).
+E2E evidence, and non-redundant architecture documentation.
 
 ## 1.4 Stakeholders
 
@@ -111,9 +88,9 @@ the [ADR register](adr/README.md).
 |---|---|
 | Tool maintainers | Own the CLI, embedded assets, release path, and architecture. |
 | OSS developers | Need a usable local workflow and project-owned customization. |
-| AI coding agents | Consume instructions, skills, semantic reports, and Arc42 evidence. |
+| AI coding agents | Consume instructions, skills, and Arc42 evidence. |
 | Contributors | Need stable Rust modules, contracts, and review gates. |
-| CI systems | Need deterministic lint, test-runner, archive, and semantic outcomes. |
+| CI systems | Need deterministic lint, test-runner, and archive outcomes. |
 | Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
 | Migrating project maintainers | Need a clean Git boundary and an explicit plan for project-specific 0.3.0 work. |
 | Automation callers around givn (for example the kiekste preview host) | Consume the run declaration and the `givn run` machine contract (ready line, exit codes, port hand-off) to start products without guessing. |

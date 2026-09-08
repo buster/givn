@@ -4,9 +4,7 @@
 
 `givn` is one Rust CLI crate. It reads embedded defaults and project-local
 configuration, changes lifecycle artifacts, invokes configured commands at gate
-points, and optionally uses local retrieval/model artifacts. Retrieval model
-artifacts are user-cache data by default; the semantic index remains project
-data.
+points, and produces deterministic overlap and coverage evidence.
 
 ## 5.2 Level 1 - Crate Structure
 
@@ -16,20 +14,17 @@ flowchart TD
     G --> CFG[config modules]
     G --> GH[gherkin modules]
     G --> O[overlap modules]
-    G --> SPEC[spec retrieval modules]
     G --> HOOK[hooks and integrity]
     G --> STATE[state]
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
+    G --> COV[spec coverage inventory and migration comparison]
     CLI --> CHECK[mandatory check and archive gates]
     CLI --> RUNBLK[run-declaration validation and run executor]
     CFG --> GRAPH[manifest overlay and facet cascade]
     GH --> MERGE[delta parsing and merge]
     O --> FINGER[Fingerprint evidence]
-    SPEC --> E5[E5 index and semantic surfaces]
-    SPEC --> STAGE[BGE/NLI evidence stages]
     GH --> UC[use-case and fragment parser]
-    SPEC --> COV[coverage inventory and migration comparison]
     CLI --> UC
 ```
 
@@ -42,8 +37,8 @@ flowchart TD
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
-| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs overlap/retrieval gates. |
-| `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, run retrieval review when compiled, merge deltas, run post-merge verification/e2e, refresh the development and run managed blocks, run optional coverage, and copy/remove the change to archive. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. |
+| `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, merge deltas, run post-merge verification/e2e, refresh the development and run managed blocks, run optional coverage, and copy/remove the change to archive. |
 | `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
@@ -66,35 +61,7 @@ flowchart TD
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
-| `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run the unified change-scoped rulebook behind all review surfaces plus Explore/audit, apply evidence, generate semantic reports, and verify remediation. The same blocking review path maintains the append-only remediation log (`src/spec/remediation_log.rs`): run records with per-stage durations, candidate entries with verbatim endpoint text, after-state completion, and stamp/reachability validation against Git history. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. Advisory review applies a decision-first reporting policy: default text lists only model-recommended second-stage pairs, `--verbose` lifts every listing limit, `--format json` emits one structured review document, and a failed gate persists that document as the change's findings file. |
 | `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |
-
-## 5.4 Retrieval Building Block
-
-`spec::retrieval` has two persistent boundaries: `.spec-index.json` contains
-permanent vector entries and additive E5 cap metadata; `.spec-pair-cache.json`
-contains recorded per-pair BGE/NLI evidence keyed by endpoint content and
-evidence hashes. Active-delta vectors, classifications, and semantic report
-state are not persisted in either.
-
-`givn spec duplicates` is an exception to ordinary index refresh: it reads the
-persistent index and reuses it only when every endpoint identity and complete
-content hash matches. Otherwise it embeds fitting current permanent scenarios
-transiently. It never writes the index as part of the audit.
-
-The change-scoped review surfaces (`givn spec review`, `givn check review`,
-the archive similarity gate) share one unified rulebook: single E5 admission
-at `0.9000`, hybrid selection (neighbour count per delta scenario, then one
-pair cap), and independent BGE/NLI judgement of the selected pairs. The
-remaining surfaces stay surface-aware: Duplicate Audit BGE uses its endpoint
-top-five union while Duplicate Audit NLI uses the full E5 semantic candidate
-set, and Explore keeps its at-most-five ranked results.
-
-Every environment channel that selects model behavior is read through one
-gated accessor in this building block. In an installed (release) build the
-accessor refuses fixture requests and announces the refusal; model-location
-requests that still run the real models pass through. The development build
-passes every channel through unchanged.
 
 ## 5.5 Dependencies
 
@@ -106,7 +73,6 @@ passes every channel through unchanged.
 | `anyhow`, `thiserror` | Application context and typed errors |
 | `rust-embed` | Embedded defaults and addon assets |
 | `quick-xml` | Cobertura coverage parsing |
-| `fastembed`, `hf-hub`, `ort`, `tokenizers`, `ndarray` | Optional local E5/BGE/NLI retrieval, artifact acquisition, and inference |
 
 ## 5.6 Repository-Owned Acceptance Blocks
 

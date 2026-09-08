@@ -65,10 +65,6 @@ The agent receives stable, actionable candidates and findings.
 | spec-progress-output | request JSON duplicate audit | The JSON duplicate audit is valid JSON without progress wording |
 | spec-duplicates | audit duplicates in one feature | Exact duplicates in one feature are reported together |
 | spec-duplicates | audit duplicates across features | Exact duplicates across features are reported together |
-| release-strict-model-overrides | run installed model refusal | An installed givn refuses a request for simulated embedder output |
-| release-strict-model-overrides | request real model location | An installed givn honours a model-location request that still uses the real models |
-| release-strict-model-overrides | announce refused model requests | An installed givn announces each refused request by name |
-| release-strict-model-overrides | keep review closed without evidence | An installed givn keeps the review gate closed when model evidence is unavailable |
 
 ## Includes
 

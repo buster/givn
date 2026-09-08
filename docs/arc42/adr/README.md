@@ -12,16 +12,6 @@ current architecture contract. `proposed` records describe work in progress and
 are not accepted constraints. `deprecated` and `superseded by ADR-NNNN` records
 are historical context only.
 
-`ADR-063` is deliberately still `proposed`: the current checkout's
-`givn status --change semantic-reranker-budget` reports open implementation and
-final-verification tasks. Its implementation is present in the checkout, but
-the decision is not presented as completed or accepted until that change passes
-its remaining gates.
-
-`ADR-064` is likewise `proposed`, owned by the open `semantic-scoring-throughput`
-change. It records the shared model thread-budget decision while that change is
-between design and review.
-
 ## Qualification Rule
 
 The complete qualification procedure, LLM verdict schema, routing values, and
@@ -37,9 +27,9 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-36 accepted records and the explicitly proposed `ADR-063`, `ADR-064`, and
-`ADR-066` (owned by the open `semantic-reranker-budget`,
-`semantic-scoring-throughput`, and `unified-semantic-rulebook` changes).
+22 accepted records. The fifteen semantic-engine records were superseded by
+[ADR-069](ADR-069-single-feature-free-binary.md) and moved to
+[`archive/`](archive/) by the `drop-embedding-features` change.
 
 | ID | Status | Decision | Qualification basis |
 |---|---|---|---|
@@ -62,47 +52,20 @@ The active register contains only independent durable architecture decisions:
 | [ADR-027](ADR-027-lint-command-name.md) | accepted | Name the static check `givn lint` | public CLI contract |
 | [ADR-028](ADR-028-hooks-and-mandatory-checks.md) | accepted | Separate post hooks from mandatory checks | non-deactivatable gate boundary |
 | [ADR-037](ADR-037-deterministic-overlap-fingerprint.md) | accepted | Use deterministic fingerprints for structural overlap | review evidence boundary |
-| [ADR-039](ADR-039-local-retrieval.md) | accepted | Provide local E5 scenario retrieval | model/index subsystem boundary |
-| [ADR-041](ADR-041-e5-uniqueness-gate.md) | accepted | Enforce a binary-fixed E5 uniqueness boundary | semantic review quality gate |
 | [ADR-044](ADR-044-current-change-explore.md) | accepted | Add active changes request-locally to Explore | persistence boundary |
 | [ADR-045](ADR-045-project-relative-identity.md) | accepted | Use one project-relative scenario identity | identity and filtering contract |
-| [ADR-046](ADR-046-semantic-review-report.md) | accepted | Generate a change-local semantic worklist | blocking report contract |
-| [ADR-047](ADR-047-projected-remediation.md) | accepted | Verify remediation against the projected tree | classification evidence contract |
 | [ADR-048](ADR-048-instruction-json-contract.md) | accepted | Keep effective policy and instruction metadata explicit | agent interface contract |
-| [ADR-052](ADR-052-bge-advisory-evidence.md) | accepted | Use BGE as advisory admission evidence | second-stage model boundary |
 | [ADR-054](ADR-054-versioned-evidence-output.md) | accepted | Version opt-in second-stage evidence output | machine-readable compatibility boundary |
-| [ADR-055](ADR-055-independent-semantic-features.md) | accepted | Keep semantic capabilities independent | Cargo/runtime feature boundary |
-| [ADR-056](ADR-056-bge-approval.md) | accepted | Require matching benchmark approval for default BGE | product admission boundary |
-| [ADR-057](ADR-057-bge-local-artifacts.md) | accepted | Load BGE from preflighted local artifacts | model deployment boundary |
-| [ADR-058](ADR-058-nli-evidence.md) | accepted | Add independent NLI admission evidence | second-stage evidence boundary |
-| [ADR-059](ADR-059-complete-semantic-serialization.md) | accepted | Use one complete semantic serialization and exact E5 hash | model-input/cache boundary |
-| [ADR-060](ADR-060-actual-tokenizer-caps.md) | accepted | Preflight actual tokenizer limits | inference safety boundary |
-| [ADR-061](ADR-061-surface-specific-independent-pools.md) | accepted | Score BGE/NLI independently over each surface's E5 pool | candidate-pool boundary |
-| [ADR-063](ADR-063-reranker-pair-budget.md) | proposed | Bound second-stage inference with an E5-ranked budget | runtime/review decision in open verification |
-| [ADR-064](ADR-064-shared-model-thread-budget.md) | proposed | Share one thread budget across the semantic model stages | computing-resource config boundary in open change |
-| [ADR-066](ADR-066-unified-semantic-rulebook.md) | proposed | Run change-scoped semantic review as one unified rulebook with a pair-score cache | change-scoped review verdict and cache boundary |
 | [ADR-067](ADR-067-givn-declares-and-executes-the-product-start.md) | accepted | Declare and execute the product start in the same tool | start-command contract boundary |
-| [ADR-068](ADR-068-remediation-log.md) | proposed | Keep remediation evidence in an append-only log stamped into Git history | remediation-evidence persistence and gate boundary |
+| [ADR-069](ADR-069-single-feature-free-binary.md) | accepted | Ship one feature-free binary without the semantic retrieval engine | build-contract and dependency boundary |
 
 ## Relationships
 
 | Relationship | Meaning |
 |---|---|
 | ADR-019 -> ADR-027 | ADR-027 supersedes the old `givn verify` naming and carries the final lint contract. |
-| ADR-037 -> ADR-041 | ADR-041 adds the strict E5 layer; ADR-037 still governs deterministic overlap findings. |
-| ADR-039 -> ADR-041 | ADR-041 supersedes the advisory-only semantic review portion; local retrieval and search remain in ADR-039. |
-| ADR-042 -> ADR-052 | ADR-052 supersedes the reranker experiment's classifier/gate interpretation. |
-| ADR-053 -> ADR-063 | ADR-063 supersedes fixed pair-cap refusal; ADR-063 is still proposed until its change is complete. |
-| ADR-054 -> ADR-058 | ADR-058 supersedes ADR-054's NLI deferral while ADR-054 remains the output-compatibility rule. |
-| ADR-061 -> ADR-063 | ADR-063 adds a configurable ordered budget to the surface-specific independent branches. |
-| ADR-063 -> ADR-064 | ADR-064 adds one shared thread budget controlling how many cores the bounded stage work may use. |
-| ADR-061 -> ADR-066 | ADR-066 supersedes the change-scoped surface pools with one unified rulebook; explore/search/audit keep ADR-061. |
-| ADR-041 -> ADR-066 | ADR-066 revises the strict boundary: one `0.9000` admission with deterministic hybrid selection. |
-| ADR-063 -> ADR-066 | ADR-066 reconciles the budget as the emergency ceiling above rulebook selection. |
+| ADR-039, 041, 046, 047, 052, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
-| ADR-055 (amended by 0.3.0) | The independent semantic-capability decision now enables every declared Cargo feature in the normal installation while retaining `--no-default-features` as the explicit minimal path. |
-| ADR-057 (amended by semantic-model-download) | The validated BGE local-artifact boundary now permits explicit-operation acquisition into the shared XDG cache before the unchanged local loader. |
-| ADR-039 (amended by semantic-model-download) | The local retrieval boundary now keeps E5 artifacts in the shared XDG cache while retaining the project-local permanent index. |
 
 ## Evidence
 
@@ -112,17 +75,7 @@ The active register contains only independent durable architecture decisions:
 | Hooks and mandatory checks | [`src/cli/check.rs`](../../../src/cli/check.rs), [`src/hooks.rs`](../../../src/hooks.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs) |
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/0.2.0-to-0.3.0.md`](../../migrations/0.2.0-to-0.3.0.md), and release migration feature scenarios |
-| Retrieval and semantic evidence | [`src/spec/retrieval.rs`](../../../src/spec/retrieval.rs), retrieval feature files under [`givn/specs/`](../../../givn/specs/) |
-| Model availability | [`semantic-model-download/design.md`](../../../givn/changes/semantic-model-download/design.md), XDG cache and artifact-source scenarios |
-| Active decision status | [`semantic-reranker-budget/tasks.md`](../../../givn/changes/semantic-reranker-budget/tasks.md), [`semantic-reranker-budget/design.md`](../../../givn/changes/semantic-reranker-budget/design.md) |
 | PR #27 measurements | [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
-
-The PR #27 report is the current measured evidence available in this checkout:
-`394` permanent scenarios, `1274` E5 candidates, and `795` BGE top-five-union
-pairs. These numbers are report evidence, not an unconditional live invariant;
-the raw model reports are not stored in this repository. Older values such as
-`288/414?`, `385/100`, and `397/1311/803` are historical planning or earlier
-measurement snapshots and must not be used as the current baseline.
 
 ## Archived ADRs
 
@@ -134,6 +87,22 @@ superseded by an explicit replacement. Non-ADR records are not retained there.
 | [ADR-019](archive/ADR-019-lint-contract.md) | superseded by ADR-027 | Original static-check record. |
 | [ADR-042](archive/ADR-042-bge-experiment.md) | superseded by ADR-052 | Experimental BGE gate interpretation. |
 | [ADR-053](archive/ADR-053-bge-pair-cap.md) | superseded by ADR-063 | Fixed pair-cap refusal. |
+| [ADR-039](archive/ADR-039-local-retrieval.md) | superseded by ADR-069 | Local E5 retrieval engine. |
+| [ADR-041](archive/ADR-041-e5-uniqueness-gate.md) | superseded by ADR-069 | E5 uniqueness gate. |
+| [ADR-046](archive/ADR-046-semantic-review-report.md) | superseded by ADR-069 | Blocking semantic worklist report. |
+| [ADR-047](archive/ADR-047-projected-remediation.md) | superseded by ADR-069 | Semantic remediation against the projected tree. |
+| [ADR-052](archive/ADR-052-bge-advisory-evidence.md) | superseded by ADR-069 | BGE advisory evidence. |
+| [ADR-055](archive/ADR-055-independent-semantic-features.md) | superseded by ADR-069 | Independent semantic Cargo features. |
+| [ADR-056](archive/ADR-056-bge-approval.md) | superseded by ADR-069 | Benchmark approval for default BGE. |
+| [ADR-057](archive/ADR-057-bge-local-artifacts.md) | superseded by ADR-069 | BGE local-artifact loader. |
+| [ADR-058](archive/ADR-058-nli-evidence.md) | superseded by ADR-069 | NLI admission evidence. |
+| [ADR-059](archive/ADR-059-complete-semantic-serialization.md) | superseded by ADR-069 | Complete semantic serialization and E5 hash. |
+| [ADR-060](archive/ADR-060-actual-tokenizer-caps.md) | superseded by ADR-069 | Tokenizer preflight limits. |
+| [ADR-061](archive/ADR-061-surface-specific-independent-pools.md) | superseded by ADR-069 | Surface-specific scoring pools. |
+| [ADR-063](archive/ADR-063-reranker-pair-budget.md) | superseded by ADR-069 | Second-stage pair budget. |
+| [ADR-064](archive/ADR-064-shared-model-thread-budget.md) | superseded by ADR-069 | Shared model thread budget. |
+| [ADR-066](archive/ADR-066-unified-semantic-rulebook.md) | superseded by ADR-069 | Unified semantic rulebook. |
+| [ADR-068](archive/ADR-068-remediation-log.md) | superseded by ADR-069 | Append-only remediation log. |
 
 ## Reserved IDs
 

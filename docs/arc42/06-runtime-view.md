@@ -1,8 +1,7 @@
 # 6. Runtime View
 
 This chapter records the runtime order implemented by the current checkout. It
-distinguishes manifest-driven hooks from binary mandatory checks and separates
-the retrieval surfaces instead of presenting them as one pipeline.
+distinguishes manifest-driven hooks from binary mandatory checks.
 
 ## 6.1 `givn init`
 
@@ -114,14 +113,6 @@ For `givn check review`, it runs:
 3. The integrity hook for task hashes, promised files, and enabled Arc42 or
    coverage checks.
 4. For a named change, the overlap disposition gate.
-5. For a named change with retrieval available, the semantic report gate and
-   the configured retrieval review path. The same semantic stage maintains the
-   remediation log: a blocked run appends the run record and before-state
-   candidate entries; after successful remediation verification the gate
-   validates entry completeness and — in a Git repository — that every
-   recorded commit is reachable and carries the
-   `semantic-remediation: <change>/<candidate>` stamp, then the passing run
-   appends the after-state fields and after run record.
 
 These mandatory checks are in `src/cli/check.rs` and cannot be removed by
 removing a `post` entry. Built-in hook names also ignore `allow_failure` when
@@ -138,16 +129,6 @@ E2E command is invoked by the mandatory review path.
 outputs. It does not invoke the explicit `tasks` or `review` mandatory-check
 branch. With the embedded default manifest, standard post lists are empty.
 
-### Semantic report refresh order
-
-The blocking report entrypoint validates the change directory and specs path,
-then refreshes the permanent index, and only after that parses the delta
-scenarios. If delta parsing fails after a valid specs directory was found, this
-ordering can already have rewritten the permanent index. The advisory
-`givn spec review --change` path likewise refreshes the index before collecting
-the delta. Change-aware `givn spec explore --change`, by contrast, parses and
-collects the delta before refreshing the index.
-
 ## 6.7 `givn archive --change <id>`
 
 The archive command executes the following stages:
@@ -156,12 +137,6 @@ The archive command executes the following stages:
 2. Load the effective manifest and ensure every `apply.requires` artifact is
    complete or skipped.
 3. Run configured post hooks for each `apply.requires` artifact.
-4. Run the unified rulebook as the similarity gate when `spec-retrieval` is
-   compiled: the same comparison, selection, and judgement rules as
-   `givn check review`, evaluated against the current permanent tree with
-   cached pair-judgement reuse and carried classifications. The strict gate is
-   active only when `spec-similarity-gate` is compiled; otherwise this path is
-   advisory. A feature-free build skips this retrieval review stage.
 5. When the readme addon is enabled, run the README completeness gate before any
    mutation: open placeholders, legacy scaffold texts, an unmanaged or missing
    README, or development managed block damage block the archive with a
@@ -182,232 +157,10 @@ The archive command executes the following stages:
     README, and coverage files on failure.
 12. Copy the complete change directory to `givn/archive/<id>/`, then remove the
     active directory.
-13. With retrieval enabled, refresh the permanent index as a best-effort step
-    after archive success; this maintenance refresh reuses existing model
-    artifacts and does not initiate a new model download. A refresh failure is
-    reported as a warning.
 
 Archive's post-merge checks are hard-coded in `src/cli/archive.rs`; they are not
 the same thing as configurable artifact `post` hooks. Archive does not call the
 explicit `check review` mandatory branch before these stages.
-
-## 6.8 Retrieval Primitives
-
-All retrieval commands require `spec-retrieval`; without it they return the
-explicit unavailable error.
-
-### 6.8.1 `givn spec index`
-
-The index command scans current permanent `.feature` files under `givn/specs/`,
-serializes complete scenarios, and preflights the E5 tokenizer. Matching
-identity/content-hash entries are reused. Changed or new fitting scenarios are
-embedded; over-cap scenarios become `e5_token_caps` metadata. The resulting
-permanent-only index is written through a temporary file and rename.
-
-Long-running phases report status on stderr: artifact acquisition announces
-its start (with the cache directory) before any download, per-file download
-progress during acquisition, acquisition completion, the pending embedding
-count before batch embedding, and completion after. A warm, validated cache
-produces no download announcements. Disabled evidence layers are never
-announced as downloads.
-
-### 6.8.2 `givn spec search`
-
-Search reads the existing `.spec-index.json`; it does not refresh it. It embeds
-the free-text query with the `query:` role, ranks vector entries by cosine, and
-prints at most five results. This path is advisory and E5-only by default.
-
-With `--evidence`, the same five displayed results are passed to the BGE and,
-when compiled, NLI second stages exactly like Explore: the raw query text is
-the query side of the pair, candidate scenario text is resolved from the
-permanent specs, and per-candidate verdicts plus a layer-availability summary
-are appended to the output. The layer is reported as unavailable (and never as
-filtered) when it cannot score; the flag does not change the E5 ranking.
-
-### 6.8.3 `givn spec explore`
-
-The command accepts exactly one complete scenario from `--file` or `--stdin`.
-It parses that input before any refresh. Without `--change`, it refreshes the
-permanent index, embeds the query with the query role, ranks permanent entries,
-and retains at most five results. A file query excludes only its exact normalized
-`(file, title)` identity; other scenarios in the same file remain eligible.
-
-With `--change <id>`, it validates the id, confirms the change/specs directory,
-parses all delta features, and then refreshes the permanent index. Only active
-Added and Modified scenarios are embedded in memory; Removed scenarios are not
-candidates. Modified scenarios carry both delta-source and projected-target
-identity for self-filtering. The persistent index remains permanent-only.
-
-Explore output adds source scope and owning change. Optional BGE/NLI evidence
-attaches to the five retained results and remains advisory.
-
-### 6.8.4 Advisory `givn spec review --change`
-
-The advisory review path first refreshes the permanent index, reads it, and then
-collects delta scenarios. It runs the unified rulebook (single `0.9000`
-admission, hybrid selection, cached pair judgement) and renders its evidence
-decision-first. This command does not create `semantic-review.md`.
-
-The same-file rules depend on that mode. E5-only advisory review ranks index
-entries without the semantic self-identity filter. The second-stage advisory
-candidate builder excludes the projected target tuple from delta-to-permanent
-neighbors for every delta operation and excludes same-file pairs in its
-projected-permanent neighbor pass. The strict E5 gate and the blocking semantic
-report do not use that projected same-file exclusion: they exclude only a
-Modified delta's own projected target in delta-to-permanent comparisons. The
-Duplicate Audit evaluates same-file pairs, and Explore excludes only the exact
-file/title query identity.
-
-### 6.8.4.1 Decision-first review reporting and corroborated gating
-
-Advisory review applies one visibility policy to every detail listing:
-
-- Default text lists stage status lines, accounting counters, label
-  distributions, token-cap guidance lines (always visible; cap evidence
-  never hides behind a flag), and only those BGE/NLI pairs whose
-  admission is `*_RECOMMENDED`, ordered by model confidence (NLI
-  symmetric entailment, then BGE symmetric raw score) rather than
-  embedding rank. When both second-stage layers participate, the raw E5
-  candidate list is verbose-only detail: an E5 score alone is not
-  actionable signal. In fallback mode (no participating second stage)
-  the output stays byte-identical to today, including the raw list.
-- `--verbose` lifts every listing limit: the full E5 candidate list,
-  filtered and unscored pairs in embedding-score order after the
-  recommended rows, full artifact-resolution detail on stderr, and no
-  truncation disclaimer.
-- `--format json` emits exactly one structured document on stdout that
-  extends the existing duplicate-audit JSON contract (same candidate
-  and run field grammar under ADR-054 versioning) with review-only
-  sections: verdict with the problem outcome and threshold, an `index`
-  summary replacing the banner lines, every candidate with endpoint
-  identities, embedding score, admission labels, evidence scores, and
-  the combined recommendation total. Exit codes and stderr failure
-  messages do not change between formats.
-
-Corroborated gating replaces the threshold-only verdict whenever both
-second-stage layers participate with scored runs: the review fails only
-for the union of BGE- or NLI-recommended pairs, while E5-only hits that
-both models filter remain counters and evidence. If either layer is
-missing, disabled, or unable to score a candidate, that candidate falls
-under the established E5-threshold rule — no silent pass. The blocking
-workflow path (`givn check review`, `givn archive`) applies the same
-rule; its report's unresolved-set already exempts filtered pairs, so
-the classification/remediation contract is unchanged. In fallback mode
-(no participating second stage) the advisory output stays byte-identical
-to today, including the raw E5 candidate list.
-- The authoring command persists the identical document beside the change
-  as `givn/changes/<id>/review-findings.json` when the review flags a
-  problem, overwriting prior runs; successful runs write nothing. Write
-  failures warn on stderr naming the path without masking the failure.
-  The blocking surfaces keep `semantic-review.md` as their persisted
-  evidence and write no findings file.
-- Model artifact resolution chatter collapses so the start and the
-  completion of each stage resolve at most once per run unless
-  `--verbose` is given; download progress stays observable.
-- `GIVN_SPEC_NLI_REPORT_LIMIT` remains parsed but has no effect; it is a
-  deprecated compatibility alias accepted silently.
-
-## 6.9 Blocking Semantic Review Report
-
-Only `givn check review --change <id>` invokes the dedicated semantic report
-entrypoint. It runs the unified rulebook: active Added/Modified delta scenarios
-are compared against permanent indexed entries and against each other at the
-single E5 `0.9000` admission, the surviving pairs are hybrid-selected
-(neighbour count per delta scenario, then the pair cap), and the selected pairs
-are judged independently by BGE and NLI with cached judgement reuse. Two
-scopes remain:
-
-- `delta-to-permanent`: each active delta against permanent indexed entries;
-- `delta-to-delta`: each distinct active pair in the same change, emitted once
-  after canonical endpoint ordering.
-
-Removed scenarios and permanent-permanent pairs are excluded. A Modified delta
-excludes only its own projected `(target file, title)` permanent endpoint;
-another scenario in the same target file remains eligible. The current report
-entrypoint refreshes the index before parsing delta content, as described in
-section 6.6.
-
-### Candidate identity and evidence
-
-The candidate id is the 16-character lowercase hexadecimal FNV-1a hash of:
-
-```text
-scope|left_scope|left_file|left_title|right_scope|right_file|right_title
-```
-
-It does not include the score, endpoint evidence hashes, or report schema. The
-candidate endpoint evidence hash is a separate value containing the canonical
-evidence JSON, operation, projected target, model/index, and evidence schema
-values. Classification carry-forward requires the candidate id and both
-endpoint evidence hashes to match, plus a non-empty rationale.
-
-### Report writing and prior parsing
-
-The writer emits fixed headers, field order, compact JSON values, `null` for
-absent values, and a final newline. It atomically replaces the report before a
-blocked result is returned. The current prior-state extraction is not a strict
-wire-grammar parser: it scans recognized prefixed lines for candidate id,
-classification, rationale, and evidence hashes. It accepts only
-`DUPLICATE`, `VARIANT`, and `VALID-BOUNDARY` for carry-forward, ignores missing
-fields, and disables carry-forward when duplicate candidate-id lines are found.
-Unknown or reordered fields are not generally rejected by that extraction path.
-
-The report's `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, and `UNCERTAIN`
-classifications remain agent-owned. Filtered second-stage evidence is outside
-the blocking classification set; unscored and token-cap findings remain
-blocking. `semantic-review.md` is retained when the existing archive copy/remove
-operation archives the change.
-
-## 6.10 Surface-Specific BGE and NLI Pools
-
-The current code does not use one universal top-five pool:
-
-| Surface | BGE input | NLI input |
-|---|---|---|
-| Duplicate Audit | Union of up to five E5 neighbors for each endpoint, after deterministic exclusions; then E5-score ordering and budget. | Full E5 semantic candidate set remaining after deterministic findings; then independent E5-score ordering and budget. |
-| Explore | The at-most-five ranked Explore results; then budget. | The same at-most-five results; independent scoring and budget. |
-| E5-only advisory review | At most five index-ranked entries per active delta; no semantic self-identity filter. | No NLI branch. |
-| Second-stage advisory review | The existing delta/permanent and projected retrieval pool, with top-five neighbor selection and its projected same-file filter; then budget. | The same advisory pool, independently scored and budgeted. |
-| Blocking review | The rulebook-selected pairs at E5 `0.9000`; then budget. | The same selected pairs, independently budgeted. It is not a Duplicate Audit top-five union. |
-
-BGE scores both directions and averages raw logits. NLI scores both directions,
-reports directional probabilities, and computes a symmetric probability vector
-from averaged logits. In combined mode the recommended view is the intersection
-of participating recommended sets; neither model receives only the other's
-survivors.
-
-## 6.11 Token Budget and Cap States
-
-E5 preflight uses the complete `passage:` or `query:` serialization with the
-actual E5 tokenizer. BGE/NLI preflight uses complete pair encodings with each
-layer's actual tokenizer, without truncation or padding. Pair counts include
-pair special tokens. Exactly `512` fits and `513` is over.
-
-- An over-cap E5 passage is retained as `E5_TOKEN_CAP` metadata, has no vector,
-  and cannot participate in an E5 semantic pair.
-- A selected over-cap BGE/NLI pair receives `BGE_TOKEN_CAP` or `NLI_TOKEN_CAP`
-  with exact left/right/pair/limit counts, null model score/probabilities, and
-  blocking unresolved semantics.
-- A partial second-stage run scores fitting pairs and remains enabled.
-- A layer with no fitting selected pair reports run-level unavailable with
-  reason `token-cap` and retains per-candidate cap evidence.
-- A candidate omitted by the positive pair budget is `BGE_UNSCORED` or
-  `NLI_UNSCORED`; it is not tokenized by that layer and is not filtered.
-
-Production uses real tokenizers and artifacts from the XDG cache or explicit
-local paths. Regular and E2E tests use a deterministic local artifact-source
-fixture and do not contact the live Hugging Face service or construct large
-model artifacts.
-
-### 6.12.1 Benchmark model export and comparison
-
-The benchmark helpers are maintainer-facing shell interfaces, not product
-commands. `export_nli_model.sh` resolves its flat export destination from
-`XDG_CACHE_HOME` or `HOME`; `run_comparison.sh` passes that same default to the
-Python comparison process. `compare.py` keeps its generated index under the
-project's `test-corpus/indexes/` while E5, BGE, and NLI model defaults point to
-the shared user cache. An explicit command argument may override a model path,
-but no default points to the project or `/tmp`.
 
 ## 6.12 Addons, Upgrade, and Completion Commands
 
@@ -454,9 +207,9 @@ project LLM must continue the normal workflow and archive the maintenance plan
 after all project-specific decisions and verification are complete.
 
 At archive time, a maintenance change whose `.givn-skip` lists `specs` has no
-delta to merge or compare semantically. Its global verify and E2E hooks run
-against the permanent project feature path, and the change-specific semantic
-gate is skipped. Tasks, review, and all other archive gates remain required.
+delta to merge. Its global verify and E2E hooks run against the permanent
+project feature path. Tasks, review, and all other archive gates remain
+required.
 
 ## 6.14 Repository-Owned Acceptance Flow
 

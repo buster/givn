@@ -28,29 +28,11 @@ allowlisted managed commit plus a visible aggregate maintenance change when the
 embedded migration catalog declares a route. It does not make Givn responsible
 for semantic project decisions.
 
-ADR-055 is also amended by the release's Cargo installation contract. The four
-semantic capabilities remain independent, but all declared features are enabled
-by the normal installation; `--no-default-features` remains the explicit
-feature-free path.
-
-ADR-057 is amended by the `semantic-model-download` change. The BGE local
-artifact boundary remains validated and admission-controlled, but an explicit
-semantic operation may acquire missing artifacts into the shared XDG user cache
-before the unchanged local loader is invoked. The change does not create a new
-parallel ADR for this refinement.
-
-ADR-039 is amended by the same change. E5 model-cache ownership moves to the
-shared XDG user cache while the permanent index remains project-local; this is a
-retrieval-boundary refinement, not a new decision.
-
-ADR-063 is proposed by the open `semantic-reranker-budget` change (bounded
-second-stage work). ADR-064 is proposed by the open
-`semantic-scoring-throughput` change: one shared `GIVN_SPEC_THREADS` budget
-controls the compute threads of E5, BGE, and NLI. ADR-066 is proposed by the
-open `unified-semantic-rulebook` change: one change-scoped comparison sequence
-(single `0.9000` admission, hybrid selection, pair-score cache) behind all
-three review surfaces. All three are listed as `proposed`
-in the register until their changes pass their remaining gates.
+ADR-069 supersedes the fifteen semantic-engine records: the semantic retrieval
+engine (E5 retrieval, BGE/NLI evidence, model-cache acquisition, and the
+semantic gates) was removed by the `drop-embedding-features` change, leaving a
+single feature-free binary. The register in [`adr/README.md`](adr/README.md)
+is the authoritative list of active decisions, statuses, and relationships.
 
 ADR-067 is accepted by the `run-command` change: the same tool that declares
 the product start (`run:` in `givn/commands.yaml`) also executes it
@@ -58,11 +40,3 @@ the product start (`run:` in `givn/commands.yaml`) also executes it
 port hand-off, and signal forwarding. The record was proposed with the
 change's design and left `proposed` until the full suite and the @e2e scope
 stayed green; the compatibility obligation is carried by R-45 in chapter 11.
-
-ADR-068 is proposed by the open `semantic-remediation-log` change: remediation
-evidence for semantic candidates lives in an append-only
-`semantic-remediation.md` beside the regenerated report, with per-run stage
-durations, verbatim before/after scenario text, and a
-`semantic-remediation: <change>/<candidate>` Git stamp that the review gate
-cross-validates. The record stays `proposed` until the change passes its
-remaining gates.
