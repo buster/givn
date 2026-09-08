@@ -55,6 +55,7 @@ historical measurement is not a current quality claim.
 | R-46 | Ideation topic state (`givn/ideation/`) and promoted personas (`givn/personas/`) are agent-written conventions with no binary validation; a drifting or malformed state silently degrades resume and handoff. | Medium | Medium | The generated skill's contract phrases (phase ladder, persona rules, state paths, handoff safety) are executable-spec asserted at every `skills sync`; state-file structure itself stays convention and is reviewed at handoff, not machine-enforced. |
 | R-47 | A semantic migration can misclassify a mixed domain area as one use case or fragment. | Medium | High | Require a confirmed mapping ledger, stable behavior hashes, explicit operations, and no semantic move without user confirmation. |
 | R-48 | A use-case narrative can be replaced from a stale active change. | Medium | Critical | Record a base SHA-256 revision and reject stale replacement before archive mutation; back up narratives with feature files. |
+| R-49 | A release can claim semantic migration completion without retained Givn self-migration evidence. | Medium | High | Require executable migration-gate scenarios, before/after receipts, a complete ledger, and a concrete release target before publishing the bundle. |
 
 ## 11.2 Deliberate Technical Debt
 

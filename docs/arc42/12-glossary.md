@@ -117,6 +117,8 @@
 | **Migration Commit B** | The second automatic commit containing the maintenance plan and the recorded hash of Upgrade Commit A. |
 | **Migration catalog** | Embedded release policy at `assets/migrations/catalog.yaml` that declares source/target bundle edges and their order. |
 | **Migration bundle** | A release-owned Proposal/Design asset pair describing one project migration phase. |
+| **Migration evidence** | The before/after snapshots, human-readable ledger, and comparison receipts proving that a semantic corpus migration preserved behavior, E2E evidence, interaction coverage, and source coverage. Anti-term: rename proof. |
+| **Migration coverage receipt** | The machine-readable comparison written by `givn check migration`, including behavior, E2E, interaction, line, and branch outcomes. Anti-term: test summary. |
 | **Aggregate migration change** | One visible maintenance change containing all bundle phases required to cross a version gap, with ordered metadata in `migration.yaml`. |
 | **Managed upgrade** | A migration-free upgrade that synchronizes Givn-owned files and creates one allowlist-only commit when needed. |
 | **Default feature set** | Every currently declared Cargo feature activated by `cargo install` unless `--no-default-features` is supplied. |
