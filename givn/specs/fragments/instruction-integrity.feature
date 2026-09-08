@@ -53,11 +53,12 @@ Feature: Instruction and skill guidance remains complete and machine-readable
     Then the response is valid JSON with artifact paths prerequisites and instructions
 
   Scenario: Retrieval guidance distinguishes build capabilities
-    Given retrieval workflow guidance is available
-    When an author compares retrieval-capable and feature-free guidance
-    Then the guidance explains the advisory and blocking retrieval paths
-    And the guidance preserves an explicit unavailable result for feature-free builds
-    And the guidance does not prohibit retrieval in a retrieval-capable build
+    Given  the synchronized agent guidance for the specs workflow
+    When  an author reads the guidance
+    Then  the guidance does not mention engine-backed retrieval commands
+    And  the guidance does not offer advisory or blocking retrieval paths
+    And  the guidance keeps the deterministic spec toolchain wording
+
   Scenario: Review guidance names the deterministic disposition gates
     Given the review instructions are requested
     When the reviewer reads the deterministic gate guidance

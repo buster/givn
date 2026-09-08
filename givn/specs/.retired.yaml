@@ -43,3 +43,6 @@
 - capability: unified-semantic-rulebook
   retired_date: 2026-09-04
   retired_by_change: retire-semantic-capabilities
+- capability: release-strict-model-overrides
+  retired_date: 2026-09-08
+  retired_by_change: drop-embedding-features
