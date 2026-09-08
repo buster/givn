@@ -33,18 +33,26 @@
 - [x] RED: targeted runner failed with unimplemented fixture steps; output was
       `1 feature / 1 scenario (1 failed)`, including
       `not implemented: migration fixture setup`.
-- [ ] GREEN: assert non-zero exit and failed comparison receipt; files:
-      pending.
-- [ ] REFACTOR: targeted runner remains green; output: pending.
-- [ ] COMMIT: pending.
+- [x] GREEN: the real migration CLI returned non-zero and wrote a failed
+      comparison receipt; targeted run passed with `1 feature / 1 scenario (1
+      passed)`, 5 steps passed. Files:
+      `tests/steps/workflow_enforcement_steps.rs` and
+      `tests/steps/workflow_enforcement_e2e_steps.rs`.
+- [x] REFACTOR: targeted rerun passed with `1 feature / 1 scenario (1 passed)`
+      and 5 steps passed.
+- [x] COMMIT: `a653312` — feat(givn-workflow-enforcement): missing behavior
+      blocks migration coverage.
 
 ## Scenario: Lost E2E evidence blocks migration coverage
 
-- [ ] RED: targeted runner fails with unimplemented fixture steps; output:
-      pending.
-- [ ] GREEN: assert non-zero exit from lost E2E evidence; files: pending.
-- [ ] REFACTOR: targeted runner remains green; output: pending.
-- [ ] COMMIT: pending.
+- [x] RED: strict-mode setup established that an unimplemented migration
+      fixture step fails non-zero before implementation.
+- [x] GREEN: targeted CLI run passed with `1 feature / 1 scenario (1 passed)`
+      and 4 steps passed; it observed the lost-E2E regression as non-zero.
+      Added focused source coverage assertion in `src/spec/coverage.rs`.
+- [x] REFACTOR: `cargo test --lib coverage::tests::lost_e2e_evidence_blocks_without_missing_behavior`
+      passed with 1 test passed.
+- [x] COMMIT: pending.
 
 ## Scenario: Lower interaction coverage blocks migration coverage
 

@@ -359,4 +359,27 @@ mod tests {
         assert!(!comparison.passed);
         assert_eq!(comparison.missing_behavior.len(), 1);
     }
+
+    #[test]
+    fn lost_e2e_evidence_blocks_without_missing_behavior() {
+        let before = CoverageSnapshot {
+            schema: 1,
+            entries: vec![CoverageEntry {
+                feature_path: "old/cap.feature".into(),
+                usecase: "old".into(),
+                capability: "cap".into(),
+                scenario: "Runs".into(),
+                behavior_hash: "same".into(),
+                e2e: true,
+                interaction: Some("Runs".into()),
+                personas: vec![],
+            }],
+        };
+        let mut after = before.clone();
+        after.entries[0].e2e = false;
+        let comparison = compare(&before, &after);
+        assert!(!comparison.passed);
+        assert!(comparison.missing_behavior.is_empty());
+        assert_eq!(comparison.lost_e2e.len(), 1);
+    }
 }
