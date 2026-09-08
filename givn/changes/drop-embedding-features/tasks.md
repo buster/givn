@@ -96,22 +96,21 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
 ## Scenario: A consumer invoking a retired engine command is told it does not exist
 (release-0-3-0, @givn.added @e2e)
 
-- [ ] E2E setup: `./run-tests.sh --e2e` scoped to the delta runs strictly
-      fewer scenarios than `./run-tests.sh` scoped to the delta (1 vs 2) —
-      record both counts. No servers/containers; the real interface is the
-      compiled `givn` binary (`CARGO_BIN_EXE_givn`) in a per-scenario
-      TempDir.
-- [ ] RED: remove this scenario's `@wip` only. Target:
-      `GIVN_FEATURES=givn/changes/drop-embedding-features/specs
-      ./run-tests.sh --e2e`. Undefined steps → non-zero. Paste output.
-- [ ] GREEN: implement the e2e steps in
-      `tests/steps/release_0_3_0_steps.rs`: run `givn spec index` through
-      the real binary, assert non-zero exit, unavailable-command error, and
-      stdout free of "embedding"/"download" wording. Add the interaction row
-      to `givn/specs/maintain-project/usecase.md`. Targeted run exits 0.
-      Paste output.
-- [ ] REFACTOR: `cargo fmt`; re-run targeted. Paste output.
-  - [ ] COMMIT: `test(e2e): A consumer invoking a retired engine command is told it does not exist`
+- [x] E2E setup: `./run-tests.sh --e2e` scoped to the delta runs 1 scenario
+      vs 3 in the full delta scope — strictly fewer. No servers/containers;
+      the real interface is the compiled `givn` binary
+      (`CARGO_BIN_EXE_givn`) in a per-scenario TempDir.
+- [x] RED: remove this scenario's `@wip` only. Evidence: RED exit 101
+      (1 scenario failed, undefined steps).
+- [x] GREEN: implemented the e2e steps in
+      `tests/steps/release_0_3_0_steps.rs` (reusing the shared
+      "the command exits non-zero" binding); assert non-zero exit,
+      "unrecognized subcommand 'index'" error, and engine-wording-free
+      error output. Interaction row added to
+      `givn/specs/maintain-project/usecase.md`. Evidence: e2e run exit 0
+      (5 steps passed); full delta scope exit 0 (3 scenarios).
+- [x] REFACTOR: `cargo fmt`; re-run targeted (exit 0).
+  - [x] COMMIT: `42e90da`
 
 ## Teardown (before review)
 

@@ -249,7 +249,7 @@ fn semantic_gate_offline(_world: &mut GivnWorld) {
 
 /// Write a change directory with every artifact complete and no delta specs,
 /// so `givn check review` exercises the mandatory checks without the
-/// retrieval/overlap gates.
+/// overlap gates.
 pub(crate) fn write_reviewable_change(world: &mut GivnWorld, id: &str) {
     let env = world
         .env
