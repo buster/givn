@@ -382,4 +382,27 @@ mod tests {
         assert!(comparison.missing_behavior.is_empty());
         assert_eq!(comparison.lost_e2e.len(), 1);
     }
+
+    #[test]
+    fn lower_interaction_coverage_blocks_when_behavior_remains() {
+        let before = CoverageSnapshot {
+            schema: 1,
+            entries: vec![CoverageEntry {
+                feature_path: "old/cap.feature".into(),
+                usecase: "old".into(),
+                capability: "cap".into(),
+                scenario: "Runs".into(),
+                behavior_hash: "same".into(),
+                e2e: true,
+                interaction: Some("Runs".into()),
+                personas: vec![],
+            }],
+        };
+        let mut after = before.clone();
+        after.entries[0].interaction = None;
+        let comparison = compare(&before, &after);
+        assert!(!comparison.passed);
+        assert!(comparison.missing_behavior.is_empty());
+        assert!(comparison.lower_interaction_coverage);
+    }
 }

@@ -56,12 +56,14 @@
 
 ## Scenario: Lower interaction coverage blocks migration coverage
 
-- [ ] RED: targeted runner fails with unimplemented fixture steps; output:
-      pending.
-- [ ] GREEN: assert non-zero exit from lower interaction coverage; files:
-      pending.
-- [ ] REFACTOR: targeted runner remains green; output: pending.
-- [ ] COMMIT: pending.
+- [x] RED: strict-mode setup established that an unimplemented migration
+      fixture step fails non-zero before implementation.
+- [x] GREEN: targeted CLI run passed with `1 feature / 1 scenario (1 passed)`
+      and 4 steps passed; it observed lower interaction coverage as non-zero.
+      Added focused source coverage assertion in `src/spec/coverage.rs`.
+- [x] REFACTOR: `cargo test --lib coverage::tests::lower_interaction_coverage_blocks_when_behavior_remains`
+      passed with 1 test passed.
+- [x] COMMIT: pending.
 
 ## Scenario: Lower line coverage blocks migration coverage
 
