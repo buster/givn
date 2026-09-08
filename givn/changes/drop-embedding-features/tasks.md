@@ -77,17 +77,21 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
 ## Scenario: Retrieval guidance distinguishes build capabilities
 (instruction-integrity, @givn.modified, non-e2e)
 
-- [ ] RED: remove this scenario's `@wip` only. Target:
+- [x] RED: remove this scenario's `@wip` only. Target:
       `GIVN_FEATURES=givn/changes/drop-embedding-features/specs cargo test
       --test features_runner -- --name "Retrieval guidance distinguishes
-      build capabilities"`. New steps undefined → non-zero. Paste output.
-- [ ] GREEN: remove the engine/feature sections from
+      build capabilities"`. New steps undefined → non-zero. Evidence: RED
+      exit 101 (1 scenario failed, undefined steps).
+- [x] GREEN: remove the engine/feature sections from
       `assets/skills/givn-spec/SKILL.md.tmpl` and
       `assets/commands/givn-spec.md`; implement the three absence-assertion
       steps in `tests/steps/instruction_integrity_steps.rs` (replacing the
-      old retrieval-guidance bindings). Targeted run exits 0. Paste output.
-- [ ] REFACTOR: `cargo fmt`; re-run targeted. Paste output.
-  - [ ] COMMIT: `feat(instruction-integrity): Retrieval guidance distinguishes build capabilities`
+      old retrieval-guidance bindings). Evidence: GREEN exit 0 (5 steps
+      passed); also removed the dead `cli_distinguishes_retrieval_behavior`
+      binding in instruction_integrity_e2e_steps.rs territory verified unused
+      by any scenario.
+- [x] REFACTOR: `cargo fmt`; re-run targeted. Paste output (exit 0).
+  - [x] COMMIT: `3b4bf6b`
 
 ## Scenario: A consumer invoking a retired engine command is told it does not exist
 (release-0-3-0, @givn.added @e2e)
