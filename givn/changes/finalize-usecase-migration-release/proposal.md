@@ -39,7 +39,7 @@ unchanged.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| release and migration verification | EXTEND givn-workflow-enforcement | EXTEND givn-workflow-enforcement | The existing verification capability owns deterministic review and archive protection; the release bundle remains the documented output. |
+| givn-workflow-enforcement | EXTEND givn-workflow-enforcement | EXTEND givn-workflow-enforcement | The existing verification capability owns deterministic review and archive protection; the release bundle remains the documented output. |
 
 ## Out of Scope
 
