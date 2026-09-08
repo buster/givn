@@ -239,7 +239,27 @@ pub fn check_migration(root: &Path, migration_id: &str) -> Result<()> {
     let after_path = migration_dir.join("coverage-after.json");
     let before: CoverageSnapshot = serde_json::from_str(&std::fs::read_to_string(&before_path)?)?;
     let after: CoverageSnapshot = serde_json::from_str(&std::fs::read_to_string(&after_path)?)?;
-    let comparison = compare(&before, &after);
+    let retired = read_retired_entries(&migration_dir)?;
+    let mut comparison = compare(&before, &after);
+    comparison
+        .missing_behavior
+        .retain(|entry| !retired.contains(entry));
+    for entry in &before.entries {
+        let identity = format!("{} — {}", entry.feature_path, entry.scenario);
+        if retired.contains(&identity) {
+            if entry.e2e {
+                comparison.before_e2e = comparison.before_e2e.saturating_sub(1);
+            }
+            if entry.interaction.is_some() {
+                comparison.before_interactions = comparison.before_interactions.saturating_sub(1);
+            }
+        }
+    }
+    comparison.lost_e2e.retain(|entry| !retired.contains(entry));
+    comparison.passed = comparison.missing_behavior.is_empty()
+        && comparison.lost_e2e.is_empty()
+        && comparison.after_e2e >= comparison.before_e2e
+        && comparison.after_interactions >= comparison.before_interactions;
     std::fs::write(
         migration_dir.join("coverage-comparison.json"),
         serde_json::to_string_pretty(&comparison)?,
@@ -283,6 +303,26 @@ fn find_source_evidence(dir: &Path, suffix: &str) -> Option<PathBuf> {
     ]
     .into_iter()
     .find(|path| path.exists())
+}
+
+fn read_retired_entries(dir: &Path) -> Result<BTreeSet<String>> {
+    let path = dir.join("usecase-migration.md");
+    if !path.exists() {
+        return Ok(BTreeSet::new());
+    }
+    let text = std::fs::read_to_string(&path)
+        .with_context(|| format!("failed to read migration ledger {}", path.display()))?;
+    Ok(text
+        .lines()
+        .filter_map(|line| {
+            let columns: Vec<_> = line
+                .split('|')
+                .map(str::trim)
+                .filter(|column| !column.is_empty())
+                .collect();
+            (columns.len() >= 3 && columns[2] == "RETIRE").then(|| columns[0].to_string())
+        })
+        .collect())
 }
 
 fn parse_fragment_id(path: &Path) -> Result<String> {
@@ -442,5 +482,54 @@ mod tests {
             },
         );
         assert!(!comparison.passed);
+    }
+
+    #[test]
+    fn migration_ledger_identifies_explicit_retirements() {
+        let directory = tempfile::tempdir().unwrap();
+        std::fs::write(
+            directory.path().join("usecase-migration.md"),
+            "| Old entry | Old owner | Operation | New owner |\n|---|---|---|---|\n| old/capability.feature — Preserved behavior | old | RETIRE | none |\n",
+        )
+        .unwrap();
+        let retired = read_retired_entries(directory.path()).unwrap();
+        assert!(retired.contains("old/capability.feature — Preserved behavior"));
+    }
+
+    #[test]
+    fn explicit_retirement_allows_missing_behavior() {
+        let directory = tempfile::tempdir().unwrap();
+        let migration = directory.path().join("givn/changes/migration-test");
+        std::fs::create_dir_all(&migration).unwrap();
+        let before = CoverageSnapshot {
+            schema: 1,
+            entries: vec![CoverageEntry {
+                feature_path: "old/capability.feature".into(),
+                usecase: "old".into(),
+                capability: "capability".into(),
+                scenario: "Preserved behavior".into(),
+                behavior_hash: "behavior-hash".into(),
+                e2e: true,
+                interaction: Some("preserve behavior".into()),
+                personas: vec![],
+            }],
+        };
+        std::fs::write(
+            migration.join("coverage-before.json"),
+            serde_json::to_string(&before).unwrap(),
+        )
+        .unwrap();
+        std::fs::write(
+            migration.join("coverage-after.json"),
+            r#"{"schema":1,"entries":[]}"#,
+        )
+        .unwrap();
+        std::fs::write(
+            migration.join("usecase-migration.md"),
+            "| Old entry | Old owner | Operation | New owner |\n|---|---|---|---|\n| old/capability.feature — Preserved behavior | old | RETIRE | none |\n",
+        )
+        .unwrap();
+        let result = check_migration(directory.path(), "migration-test");
+        assert!(result.is_ok(), "migration check failed: {result:?}");
     }
 }
