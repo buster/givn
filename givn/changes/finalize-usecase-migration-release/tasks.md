@@ -35,7 +35,8 @@
       `tests/steps/workflow_enforcement_steps.rs` and the migration delta.
 - [x] REFACTOR: targeted rerun passed with `1 feature / 1 scenario (1 passed)`
       and 5 steps passed.
-- [x] COMMIT: pending.
+- [x] COMMIT: `4c42731` — feat(givn-workflow-enforcement): consumer sees
+      migration coverage receipt.
 
 ## Scenario: Missing behavior blocks migration coverage
 
@@ -61,7 +62,8 @@
       Added focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lost_e2e_evidence_blocks_without_missing_behavior`
       passed with 1 test passed.
-- [x] COMMIT: pending.
+- [x] COMMIT: `1eaf837` — test(givn-workflow-enforcement): lost E2E evidence
+      blocks migration coverage.
 
 ## Scenario: Lower interaction coverage blocks migration coverage
 
@@ -72,7 +74,8 @@
       Added focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_interaction_coverage_blocks_when_behavior_remains`
       passed with 1 test passed.
-- [x] COMMIT: pending.
+- [x] COMMIT: `489b383` — test(givn-workflow-enforcement): lower interaction
+      coverage blocks migration coverage.
 
 ## Scenario: Lower line coverage blocks migration coverage
 
@@ -83,7 +86,8 @@
       focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_line_coverage_blocks`
       passed with 1 test passed.
-- [x] COMMIT: pending.
+- [x] COMMIT: `c356682` — test(givn-workflow-enforcement): lower line coverage
+      blocks migration coverage.
 
 ## Scenario: Lower branch coverage blocks migration coverage
 
@@ -94,7 +98,8 @@
       focused source coverage assertion in `src/spec/coverage.rs`.
 - [x] REFACTOR: `cargo test --lib coverage::tests::lower_branch_coverage_blocks`
       passed with 1 test passed.
-- [x] COMMIT: pending.
+- [x] COMMIT: `65dd478` — test(givn-workflow-enforcement): lower branch coverage
+      blocks migration coverage.
 
 ## Scenario: Consumer runs migration coverage check and sees passed evidence
 
@@ -116,13 +121,21 @@
       the delta feature.
 - [x] REFACTOR: `cargo test --lib coverage::tests::explicit_retirement_allows_missing_behavior`
       passed with 1 test passed.
-- [x] COMMIT: pending.
+- [x] COMMIT: `899607c` — feat(givn-workflow-enforcement): allow explicit
+      migration retirement.
 
 ## Release closure
 
-- [ ] Finalize the `0.5.0` to `0.6.0` migration bundle and catalog.
-- [ ] Record complete active capability ownership in use-case documents.
-- [ ] Update the release plan with actual consolidated workstream history and
-      remaining release boundaries.
-- [ ] Run full and E2E verification for Givn, Watn, and Kiekste; output:
-      pending.
+- [x] Finalize the `0.5.0` to `0.6.0` migration bundle and catalog.
+- [x] Record complete active capability ownership in use-case document deltas.
+- [x] Update the release plan with actual consolidated workstream history and
+      the remaining source-coverage release boundary.
+- [x] Run full and E2E verification for Givn, Watn, and Kiekste. Givn
+      `./run-tests.sh` passed with 41 features, 375 scenarios, and 2056 steps;
+      `./run-tests.sh --e2e` passed with 33 features, 70 scenarios, and 406
+      steps plus the 5 installed-build release-proof scenarios. Watn
+      `./run-tests.sh` and `./run-tests.sh --e2e` passed. Kiekste
+      `KIEKSTE_TEST_JOBS=1 ./run-tests.sh` and its `--e2e` variant passed. The
+      Givn source-coverage gate remains blocked by the measured historical
+      ratio; the migration change is intentionally not archived over that
+      failure.

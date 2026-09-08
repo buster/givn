@@ -1,0 +1,3795 @@
+{
+  "schema": 1,
+  "entries": [
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id with a dot is rejected",
+      "behavior_hash": "023a0d74b2c9e0b72ff8787b9e64a9fcc46e4b21711d2af97c616065931ce5ea",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Review guidance names the deterministic disposition gates",
+      "behavior_hash": "025838c982f9d02f8fb80b0ac4815553f6390102ffe820b4cb0b28893d52be93",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The guidance defines strict qualification as an all-gates contract",
+      "behavior_hash": "02dc9892e9bf408fd048002ccb1abb1116fa411babc6f160be06c87fda80b69f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A server without a readiness path is incomplete",
+      "behavior_hash": "03ad3ce550aab0682d9fef4669897baa23d389fca0f57d43b89e174588a4c3d7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/extract-coverage-gate.feature",
+      "usecase": "archive-change",
+      "capability": "extract-coverage-gate",
+      "scenario": "A line measured by both reports is counted once in the merged report",
+      "behavior_hash": "051b09f1bcdbf5c3de77e46378c28cfb4890d9cee935f2ba2e79417ba0cf0c16",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/coverage-script-workflow.feature",
+      "usecase": "fragment:support",
+      "capability": "coverage-script-workflow",
+      "scenario": "A failed merge command blocks archive and preserves the project",
+      "behavior_hash": "05cbd6389214668d5d4befdf8e31d98cc04eb925d4e9e56c3549b93882ea2aca",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Extras flag is propagated from overlay",
+      "behavior_hash": "067616e4dfe3550d1598e8af01cde432edf6e470819b4ed2916881cbfe75e2fd",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A library may keep the placeholder command",
+      "behavior_hash": "0869d78817330dc49380d056974f2fe97c3bc5f53d14a73fa7df1f3527f54e72",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A duplicate title across two permanent spec files is a hard error",
+      "behavior_hash": "097491d0c7ef5bba6c81c3b01c9fba06a1e3f2bcfc7c7fe45f30b7d4838de6f6",
+      "e2e": true,
+      "interaction": "spec-overlap-gates",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A modified delta whose title exists in a different capability is a hard error",
+      "behavior_hash": "09c0333dc01121088f5cb07cc86420171549f9057ff08bfbd4c8449716d13b42",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Archive re-runs verify against merged permanent specs and passes",
+      "behavior_hash": "0a983d72f8c5eb2b1effe2a577a7038deb4eb893c62f0a97515abe71d1f3cd7c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Archived only — text mode (leading newline)",
+      "behavior_hash": "0b1085d3ca4e50723cb1e97e612cc2634407e13c8cdbd45d7f62dc8f00d81e03",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "An unknown agent name in the --agents flag is dropped with a hint",
+      "behavior_hash": "0b5b5e64f70caa877ed8651715502a4acf48eb93497cda3b7233187b0b3a73f5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "arc42-docs appears in the artifact checklist when the addon is enabled",
+      "behavior_hash": "0bbf4ba5f28d211c0be2d7471bce82d0621233b872347fa998bf9abf4eb36fca",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Check tasks blocked when delta spec has @wip",
+      "behavior_hash": "0bc31e1d22a3a2064da71bef81c9c13684437d06bf6f0c42d955e6ac597e65b3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/skill-rewrites.feature",
+      "usecase": "fragment:support",
+      "capability": "skill-rewrites",
+      "scenario": "Design and step instructions require the Black-Box-First decision",
+      "behavior_hash": "0bea6f11a15bf66fe4dceefb8c123b73372b0f1bc61aab76e51005ab22625b10",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook fails on Step Definitions section that is not a table",
+      "behavior_hash": "0dd1adde4468e3ff24fb1dc9d67fcd9c0a46e49ecf8f7ffcdd1eada2b015c9ff",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "The net-delta receipt counts added, modified, and removed scenarios",
+      "behavior_hash": "0dfba16847c0cb4eabced5be73cd3e764233922acbb6cd2c26cbc8e45951dcf4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review blocks when a long scenario in the delta has no split-or-keep entry",
+      "behavior_hash": "0e55779f0cf7cbbf59fc282ddd07c413a4329cd2e1e8731dc04adb10ac8cafa4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — active change with all required done (text)",
+      "behavior_hash": "0e70981653d81c1ffd882f917809d9825a610a3ed2d5861a4a3dbd4578d6f351",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "The same shape without any extractable facts suggests merging",
+      "behavior_hash": "0eed48ae7a3d06a32d30b5ab24b3b9a9f3cad6aa0201e6b8e376d70ab09154df",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "Shared guidance alone does not qualify an ADR",
+      "behavior_hash": "108e4c35caf90197a2e27847af4a36b57a5ca427f6439518a2a5d8476f50e3c0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/repository-ownership-fixtures.feature",
+      "usecase": "fragment:support",
+      "capability": "repository-ownership-fixtures",
+      "scenario": "Pre-merge archive failure preserves the permanent specification tree",
+      "behavior_hash": "11c204335dfdf71f08213bbcff1b5283fc576e8ac58519fc487f4d534b8f69ac",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Consumer invokes givn status with a path traversal change id and gets a clear error",
+      "behavior_hash": "1219b91673fba71cb20edd38935707ec9fb8ff4ce48949b3d318fe32fb477174",
+      "e2e": true,
+      "interaction": "validate-change-id-input",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "An architectural replacement preserves supersession history",
+      "behavior_hash": "135f25b892038f7fc0d3cacef1997693993b1f140a8a2067acdc1414bf0d973a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A caller port without a port hand-off is refused",
+      "behavior_hash": "136df2f8a46d654b8744d2a281b560dcecc811c87a97901fc16a9c21e59f350d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "New-capability merge failure produces clear recovery instructions",
+      "behavior_hash": "1380089e85fae410473c8b749d3587ada81b95c0af9365d221e6bbb2683e9e67",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — archived change (text)",
+      "behavior_hash": "14d0766e4a8789ef35d94e2f0bf83e9839dc29d12ac58956c9248b55720459f3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review blocks when a delta scenario shape-matches a permanent scenario without disposition",
+      "behavior_hash": "15ee5d1933a5b53ebeb0937874b095c756e964de070a53e68b9f74a2a2b5ced7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/skill-rewrites.feature",
+      "usecase": "fragment:support",
+      "capability": "skill-rewrites",
+      "scenario": "Spec instructions use deterministic gates before retrieval exists",
+      "behavior_hash": "15feaaae3172a234681928629edbb7ff9d6143870d0a62ded08bb8ad939da410",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "Archive is blocked while the run declaration is unconfigured",
+      "behavior_hash": "17e3565949bfe8f92d2cd0af4c597b8cda5e837de303110bbb4e9488a8bcfc28",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "The deterministic audit works without model downloads",
+      "behavior_hash": "18530519b84b2f17b85fa2f35aafd09868a75640dbe862d96a81b980b5040a68",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Cycle in dependency graph is rejected",
+      "behavior_hash": "190d7bb7c20bcbd53a370cc4bfbc5ed7fa0c2615a4224a78102b0a04dec29a5e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/release-strict-model-overrides.feature",
+      "usecase": "discover-specifications",
+      "capability": "release-strict-model-overrides",
+      "scenario": "An installed givn announces each refused request by name",
+      "behavior_hash": "19a8dffb7e83b8849922a98d0ea3e9db9e4a835dad074f10a158dfeef09c353f",
+      "e2e": true,
+      "interaction": "release-strict-model-overrides",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn addons disable when already disabled is idempotent",
+      "behavior_hash": "1ad91b3715140f2b18a2d02c02391d45d07b05df4546e0f27a462ebd686a0421",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay remove is rejected when artifact has dependents",
+      "behavior_hash": "1bf661bd4e727b5f72873efddbc060cb8b8cff7607d5ba99162209b01896c42e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The guidance requires an existing-ADR check before drafting",
+      "behavior_hash": "1bfb1e6f5f3fdf40b04d756034003a234e1b2c881bd9a40298f4c318f7e712d9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/remove-dead-skip-list-code.feature",
+      "usecase": "inspect-change-state",
+      "capability": "remove-dead-skip-list-code",
+      "scenario": "givn status JSON still reports skipped artifacts after dead code removal",
+      "behavior_hash": "1ca90991a11c338428330a5b2bca9e7719dac57768002f3acb1aa4c3dec834d3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "The lint exit-code contract is preserved after refactor",
+      "behavior_hash": "1cc9a38b6ee53f75e3a7be10abf7d0d22fe281344e5d02554fdc022c991f9100",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/remove-dead-skip-list-code.feature",
+      "usecase": "inspect-change-state",
+      "capability": "remove-dead-skip-list-code",
+      "scenario": "Consumer runs givn status on a change with skipped artifacts and sees them correctly",
+      "behavior_hash": "1e12cbaf127e6f5753e9d76f62d376e0c52a33b9a972c8bb66eefd97da4e091a",
+      "e2e": true,
+      "interaction": "remove-dead-skip-list-code",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/prose-consolidation.feature",
+      "usecase": "author-change",
+      "capability": "prose-consolidation",
+      "scenario": "Canonical E2E policy is emitted by specs instructions",
+      "behavior_hash": "1e84f3db05e9ff1ad2c257e754852c46fb42d7ce43669186d0eb9a3ce9b4edc8",
+      "e2e": true,
+      "interaction": "prose-consolidation",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A scenario with more than 14 steps produces a long-scenario warning",
+      "behavior_hash": "1f0e648e353886858fa7f2c8a0677f1cb402b9b007d83c74f46c1992dfb6f7c0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "Arc42 impact does not by itself require an ADR",
+      "behavior_hash": "215e70ccdc07d7a287b01790b7d34d77e2e00d7bdfa84e1400d27ca7f6778fff",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "An explicit archive path still lints its file",
+      "behavior_hash": "216f0ece504b6f59540d7d483d815e64af5b9f5a99cd6c31503b10aaa2b0f433",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review passes when a long scenario has a split-or-keep entry",
+      "behavior_hash": "234deabddc126e98e9a90626cd99512109d1492ea4863c5d84c284bda296c91b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/extract-coverage-gate.feature",
+      "usecase": "archive-change",
+      "capability": "extract-coverage-gate",
+      "scenario": "Archive with coverage addon enabled still runs the coverage gate",
+      "behavior_hash": "24d7597cac942f27d23872074dbc6b4b6dc9268a7aeaa1bdcbad8dfcbb3a2bc3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/preserve-docstrings-on-archive.feature",
+      "usecase": "archive-change",
+      "capability": "preserve-docstrings-on-archive",
+      "scenario": "An added scenario keeps its step docstring after archiving",
+      "behavior_hash": "251f78bdbc86f718a283f16e9a122c3f50dd0e4a342b968ff27a9ba7737e8e49",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "An early product exit is forwarded before readiness",
+      "behavior_hash": "259b15e6d7801009c6fd0da930c989a85b05e3a31647d03f24da4dc0a43865bf",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "An added delta duplicating a permanent spec title is a hard error",
+      "behavior_hash": "25a174775b865fff09def22cc19f42d7631613733032d2a8766ff4618d5e6dc3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "A structural subset is reported as an overlap",
+      "behavior_hash": "279e05eb3bb746592f83d0128a967ecff90edace1140dea2e7a946c307c74d21",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/preserve-docstrings-on-archive.feature",
+      "usecase": "archive-change",
+      "capability": "preserve-docstrings-on-archive",
+      "scenario": "A modified scenario keeps its step data table after archiving",
+      "behavior_hash": "27cb661b78a17bdc58f02556f53f110644a6e7ef6cb1d36b8c09f62ccb2adcfb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "Server-only fields are rejected for a CLI product",
+      "behavior_hash": "283459e1081f689e6a34979d1bdaa5d2af1db6e45208c6492830dddb51f3cd68",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The ubiquitous language is recorded in the project's arc42 glossary",
+      "behavior_hash": "284309f7f9e62bb43ee11a5b71b48808667d99e44221ec52a708a9fe06a442a8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "An unknown product type is rejected when the commands file loads",
+      "behavior_hash": "28a23af2f513b6d39799a562c84fa8f5561b923709b4c1277ada40ae9716ab0b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — active change with proposal only (text)",
+      "behavior_hash": "28b1f697863a9c7035dfa80f746bb2827afe550f469fa9ee54dd9c159964e878",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "A consumer disables an addon the domain-modeling skill needs and the generated domain skill is removed",
+      "behavior_hash": "2a09b30350d273e3ad4ff48f8965fd07e6552bdbc8662ac2caa8dbdba67f11e9",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/remove-dead-skip-list-code.feature",
+      "usecase": "inspect-change-state",
+      "capability": "remove-dead-skip-list-code",
+      "scenario": "givn status still reports skipped artifacts with the skip marker after dead code removal",
+      "behavior_hash": "2a9aeebc743e86c780dac83f5a53658da02ea3ffac3867d5dcd017052578fdf4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Path traversal id is rejected by status",
+      "behavior_hash": "2b3fd4f3a902e4548fa47d28594575251bccb304d8fe4db4fdc20db40872a96f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook fails on placeholder commit hash",
+      "behavior_hash": "2bfdbb993621d784e0080d402d3c5dea1cf123909e4703126403c4100050d3ad",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay marks an existing artifact as optional",
+      "behavior_hash": "2c41ab11ab9c2c6a7779839b3512355e47193185fd4df47a35f30214e5367f9d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/repository-ownership-fixtures.feature",
+      "usecase": "fragment:support",
+      "capability": "repository-ownership-fixtures",
+      "scenario": "Archive publishes consolidated permanent specifications",
+      "behavior_hash": "2d04913a30f8a1dc3a874d9d892ebb39cfd19676722adb9e91efe551b4ac6097",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Quoted strings are masked in the shape comparison",
+      "behavior_hash": "2d05f34dadda6510f67f689314a94fa3c1ba1a5e5bdc16ce8542c1bc693e04e2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "An agent requests next-step guidance and is routed to the domain skill",
+      "behavior_hash": "2d48cd50d44e5fb54869d0e1fe5b7e97daa3764aa47fbd3d69d9478c75aa9c61",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-permanent.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-permanent",
+      "scenario": "Lexical search locates a permanent scenario by a step text token",
+      "behavior_hash": "2d5450253397ae1e0257aff4e1a0e284fb2af46a4bf4c84f6a53ca60057dad34",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Numbers are masked in the shape comparison but exit codes stay facts",
+      "behavior_hash": "2db63d4e2cb0f0fca8a56fb69ed27ba56657aa43a9b28f7cdbfff6b5243d020a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Non-interactive init persists opencode as the default target",
+      "behavior_hash": "2dbb0be4bed0060b5d5c663cccc1f6e0beaedecdac939cefdce3ee10760aff2a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/grouped-merge-for-new-capabilities.feature",
+      "usecase": "archive-change",
+      "capability": "grouped-merge-for-new-capabilities",
+      "scenario": "Archive is blocked when a new capability has no declared routing decision",
+      "behavior_hash": "2df6c97cf3d4dfedd83314d71cbb424cff316ac5154e07c5c7e2e67a9147d23d",
+      "e2e": true,
+      "interaction": "grouped-merge-for-new-capabilities",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Consumer runs init non-interactively and gets opencode skills",
+      "behavior_hash": "2e40e41bf141bf669469b13a988dcbde1b6812f4d5ca1282d2b4b401d3aa1fdb",
+      "e2e": true,
+      "interaction": "init-agent-target-selection",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The design-review skill checks that the ubiquitous language is followed",
+      "behavior_hash": "2ea3859e69f78f816e4f0dc73c2ed9c0024ea359c7cb00d080b9678d8c868351",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/enforce-post-merge-e2e-gate.feature",
+      "usecase": "archive-change",
+      "capability": "enforce-post-merge-e2e-gate",
+      "scenario": "Archive is blocked when merged permanent specs gain @e2e scenarios and e2e_command is unconfigured",
+      "behavior_hash": "2eadc13c200d2240a4c1716ab1e076eb6d8b703ca93e1f875ca8b4a9532de9fb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-change.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-change",
+      "scenario": "Routing never modifies permanent files",
+      "behavior_hash": "2eb44b73079d77438b4f3a9609bf16d358733914905a9d930c613bc6d2755857",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The change assessment records ADR disposition separately from chapter impact",
+      "behavior_hash": "2ecc237b4dbca86206d7e52fdaa1794116b579b1b5121463ae18942ab1596531",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/release-strict-model-overrides.feature",
+      "usecase": "discover-specifications",
+      "capability": "release-strict-model-overrides",
+      "scenario": "An installed givn keeps the review gate closed when model evidence is unavailable",
+      "behavior_hash": "2ff03f63acddb94ca70dcb23430f3d7d90b849d00501ace5da8674498aaa08cd",
+      "e2e": true,
+      "interaction": "release-strict-model-overrides",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A removed placeholder suppresses the @wip warning on itself",
+      "behavior_hash": "323974c32a34180c6426676d566117b82139c087373567300588a97fdaa05c2d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Two scenarios with the same shape but different titles produce a warning",
+      "behavior_hash": "327e024574329c9014b28c477ccac699a69719b3912821f7c6572cbbfc1a281e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook skips arc42 check when slug cannot be resolved",
+      "behavior_hash": "33d126ca62201234e1ca06bcb0871db16ceeebf566e0e1a5a6dfb1bc4f338bc3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The README renders a CLI product",
+      "behavior_hash": "33f8f268e91b7a3857160b811baf581d8ba49a24cb3e2d77dc408b3f809b8f72",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/release-strict-model-overrides.feature",
+      "usecase": "discover-specifications",
+      "capability": "release-strict-model-overrides",
+      "scenario": "A development givn build honours a simulated-embedder request without an installed-build announcement",
+      "behavior_hash": "34ab0032460a323e27d235f009a428ded096171e493b2b1d6a5d44a900cb82c7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Path traversal id is rejected by instructions",
+      "behavior_hash": "35f35aef524d87eba00639b98d30552f7a14f758501c396b0fa8a9cef12f9fc8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook passes when arc42 is disabled",
+      "behavior_hash": "365a627800f395977a35ed3fd1c6023593d34aca10b0482e8dcb6428d564ba57",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "The started server reports readiness and forwards a clean exit",
+      "behavior_hash": "36f20f42369c2ea4f3aa68532313feec5e9a7e3b645ccafb64cacf479e5c19e8",
+      "e2e": true,
+      "interaction": "run-execution",
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The sentinel start command prints setup guidance",
+      "behavior_hash": "3741bb5aab54c9f2bbdd4776019380b5b2a4aaaa5606eea6a2d66b84858447f3",
+      "e2e": true,
+      "interaction": "run-command",
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "Exact duplicates across features are reported together",
+      "behavior_hash": "38affe5c3a1ec985e45e1a7ca8bbbb8b4783eb19a0b1d25c539f417f9649b707",
+      "e2e": true,
+      "interaction": "spec-duplicates",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id ending with a hyphen is rejected",
+      "behavior_hash": "399afcf949d33e45e3df1ab8de462a25db557c32af3fcb2bfb2362fa324e1587",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Valid kebab-case change id is accepted by every command that accepts --change",
+      "behavior_hash": "3a42496cdfacd3e7277ae0c1fc702017b4d46ea779f6c436cf49482744d98098",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "Archived scenarios are excluded from the audit",
+      "behavior_hash": "3a463231dec40dbc49e822d78ac0ea2829359511a3610e9ce07c4f42e61ba9f3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "An unknown agent name in the answer is dropped with a hint listing the valid agents",
+      "behavior_hash": "3aa62163498610debe6dac30e0fd9a138756129998d4d4a97731bac3ac8e6919",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Archiving refreshes the development block",
+      "behavior_hash": "3d4fb21aed7b60e5342d5e90f75d4f06fd27ae98e030a5be9703da1e6f65acfb",
+      "e2e": true,
+      "interaction": "readme-enforcement",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Single-word id is accepted",
+      "behavior_hash": "3e3ebb600665ab29693127d2b257d869b3be44de45f823442e37297d82e3aea9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Instructions surface an unfinished README",
+      "behavior_hash": "3e990bfdd7fabc9cf7ff2f2acbe29a592057283819f35a90b2af82e9b5bc459e",
+      "e2e": true,
+      "interaction": "readme-enforcement",
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "Scaffolding ships an unconfigured run declaration",
+      "behavior_hash": "3eee7684a93cdc398136bf8583ea5893dc22d5325b1f8518e4c5fb731a3722ca",
+      "e2e": true,
+      "interaction": "run-command",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Valid multi-word kebab-case id creates the change scaffold",
+      "behavior_hash": "3f9501a0e4b0addd4b38a36471af0f26d27e6cf3e75f1ba7f940896033c5ed13",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/coverage-readme-example.feature",
+      "usecase": "fragment:support",
+      "capability": "coverage-readme-example",
+      "scenario": "Coverage-enabled project receives a complete README coverage example",
+      "behavior_hash": "3ffeceb223556257bb844b8b33652654b7dbebe2e079671eed95a45e7a9b9192",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A non-existent change id is not surfaced",
+      "behavior_hash": "404f2a13e3e9b01db78fcd2029be3cde1caca9f14bbcc5f8cb1e5878aabb2724",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/arc42-review-alignment.feature",
+      "usecase": "fragment:support",
+      "capability": "arc42-review-alignment",
+      "scenario": "Arc42-enabled review instructions require conformance evidence",
+      "behavior_hash": "407767df5d4ce826fc800d757591482c2a994a936129a4a955a2ade76b6015aa",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "An unmanaged README blocks the archive",
+      "behavior_hash": "4079f79a557540dfb37f23b36f8567e799d347ca110e688f8ad3bf4a6568cc9f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-progress-output.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-progress-output",
+      "scenario": "The JSON duplicate audit is valid JSON without progress wording",
+      "behavior_hash": "409e5f6923999afc697551d2f8ffbf101cb9ada2b30cdeda1ffc884f9a8fe3c1",
+      "e2e": true,
+      "interaction": "spec-progress-output",
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The README renders a library's declared start command",
+      "behavior_hash": "40c0d9f374d3ba71490ffa2c77066c6927df0c8bbf445c354974e42a7b5965a2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "An unconfigured declaration reports only unset findings",
+      "behavior_hash": "40d3d4f9668e583be8933e80f760e360a089ee4c4bbc29da2c660b1de4f84333",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "The check names a damaged managed block",
+      "behavior_hash": "41943057d67dd8b921e292f3a8cc232c1b062d67db53e861d6e9a9a71b13e146",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A zero readiness timeout is rejected",
+      "behavior_hash": "41b99a999f353fdb7e64c7b302bfaed133de060caf53a008faf19099a9d44362",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Arc42 addon is idempotent when already enabled",
+      "behavior_hash": "4264524b4fe1fe5f803d9092215d35258949abdbd28166adaddca83df4a4805c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/grouped-merge-for-new-capabilities.feature",
+      "usecase": "archive-change",
+      "capability": "grouped-merge-for-new-capabilities",
+      "scenario": "Nothing is merged when one delta file of a change has no routing decision",
+      "behavior_hash": "435a35eab0ad1569d3a421ea7d40e9c14e4b6220ae422f9fe0590f21641a2823",
+      "e2e": true,
+      "interaction": "grouped-merge-for-new-capabilities",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-change.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-change",
+      "scenario": "A proposal matching an existing capability surface recommends EXTEND",
+      "behavior_hash": "44d7e7777e85dacfb470b8a9e58993ba7941a5dd50eb436b54572b770d63a028",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — task progress shown for tasks artifact",
+      "behavior_hash": "4533784744e19160c8a30bb925f3b7654e9e8aaa9c535949dd7922981f02be6a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A failing readiness response is retried until ready",
+      "behavior_hash": "4720ba74435065a17cfec8be7fee14d4fc014bdd954d4cd604da6bb2f8585e2a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review blocks with a clear message when review.md is missing",
+      "behavior_hash": "49eec3ffc300c955d428c4b519c7eb5c1e94231b0e89b91b72c3811a7303f278",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/preserve-docstrings-on-archive.feature",
+      "usecase": "archive-change",
+      "capability": "preserve-docstrings-on-archive",
+      "scenario": "Consumer archives a modified scenario and the permanent spec keeps the docstring",
+      "behavior_hash": "4a6a159aa50e764b947dd0c5e26a625e90c6835d2d654863d2485626801c7c85",
+      "e2e": true,
+      "interaction": "preserve-docstrings-on-archive",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id beginning with a hyphen passed after the argument separator is rejected by validation",
+      "behavior_hash": "4b0dd67b2ec5cdc46cc9a9986df64579521f19314cf8ec7ce9c50acaef703187",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Path traversal id is rejected by archive",
+      "behavior_hash": "4b7ae51a103dcbade5a81c9be682df3590e2d27ce63e878bd0247b2123f14fdd",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-permanent.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-permanent",
+      "scenario": "Discovery commands never modify permanent files",
+      "behavior_hash": "4d56199d5fa4c173c0e1d9612c8649754c90d6019ee954b51c8dadc44df8c6d3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id beginning with a hyphen is rejected by argument parsing",
+      "behavior_hash": "4ddba1f4bfb6069c753985d088313c636b3e7506d55c31dd5089720e922d553c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A no-op start command is rejected",
+      "behavior_hash": "4ea6ae02dfd32e8ba670ec7eda24b4609b68f6ba1b0fce71f1a625bd64d90989",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Updated impact decision passes the review",
+      "behavior_hash": "4f58af170a6eb23ea765c182df9cacc1adb5ee4423dc90e5f599c703b2f57b0c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "A legacy README is reported for migration",
+      "behavior_hash": "4f78c87bba1f8c43b435734a1f0e888aeae7ef4a18fd5ee3098443ccfe422f05",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay replaces the verify command",
+      "behavior_hash": "50755b5f45779202bafaab23b0bb847edd10a2ed6527a73387e255d52a2c7e4f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/deduplicate-change-dir-detection.feature",
+      "usecase": "verify-change",
+      "capability": "deduplicate-change-dir-detection",
+      "scenario": "Integrity hook resolves the change directory from a relative features path inside givn/changes",
+      "behavior_hash": "51143332b49b8866252ec193064c2ff46e38c7ded0b98e59d98a4bd4396d7d55",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills sync defaults to opencode when the config has no skills block",
+      "behavior_hash": "515ccd4d01bac90db0017d5ac91f9182f0808b208f18ec99af27968fdbea2a6d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Deltas of two active changes sharing a title are a hard error",
+      "behavior_hash": "51845cb5241a4141b72075617c450d3a6c8f4fa9a7fc5a9e2a9e2e1e5db19ceb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The README renders a library product as nothing to start",
+      "behavior_hash": "53312a67521e046855ee4e4ea547fa4fa65958ad19a61faa5bf6e8e8fa5c403d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The review check reports an unconfigured run declaration",
+      "behavior_hash": "53dae43c89dff10565d284a806d7c0b138c9328df0bacd08bce90e897e49c078",
+      "e2e": true,
+      "interaction": "run-command",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/choose-project-license.feature",
+      "usecase": "fragment:support",
+      "capability": "choose-project-license",
+      "scenario": "Consumer inspects the project license in Cargo.toml and README",
+      "behavior_hash": "5444730dc861d5d8b241c7102aff9d0487ab76f78a4037bc4bebfd3b81a32fe1",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/extract-coverage-gate.feature",
+      "usecase": "archive-change",
+      "capability": "extract-coverage-gate",
+      "scenario": "A line only one report measures counts once and uncovered lines are not dropped",
+      "behavior_hash": "54a6c7fc86c4b2e4ff997cab4a2ef30856f5257743383c6f060e05672d7911fd",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn init --no-addons produces no skill or command addon files",
+      "behavior_hash": "558654709541ac8a5e661821086190bc9795372b46dfb435b3cee458f74e3656",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A relative readiness path is rejected",
+      "behavior_hash": "560a419aa59b4eb5bf9b6ff556e556b29d6d69c1e09faedcbb8d8da58007fe90",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A fixed declared port is used without a port hand-off",
+      "behavior_hash": "578e5df770fc5ea81c82131c5d9b6d9fdc74adc0e568b97840ce80ce50e9d499",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "Archive passes once the run declaration is complete",
+      "behavior_hash": "580c84b9bb43fdfee7ca744deee55b68f956cc8aa54b8f6f569fb2f5e0c2c670",
+      "e2e": true,
+      "interaction": "run-command",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Docstrings are ignored in the shape comparison",
+      "behavior_hash": "587ff450b128399768750c061a518bee90b53a6f40aec164cd8fa0682e7f093d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "The check reports a missing README",
+      "behavior_hash": "58bf0a3f159604d80af4bf7295223ea5c155a70f21fc1387f48ded03d9fb8698",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "A missing permanent specifications directory is an empty corpus",
+      "behavior_hash": "594760bf6dc121f320c80d5f509bfc2f0c471dd51d2812cf7df62f44026b8cb5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "No .feature files under givn/ reports clean and exits 0",
+      "behavior_hash": "595be512110fd992711f33295bf51e43d672686f2029ff1c424a19e132108205",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ideation-skill.feature",
+      "usecase": "fragment:support",
+      "capability": "ideation-skill",
+      "scenario": "The ideation guidance persists topic state, parks unknowns, and keeps handoff from starting changes",
+      "behavior_hash": "59eecac913a23d032ef0da963d563dca3402826fea1c631f8164a2097397fe24",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay deep-merges fields on an existing artifact",
+      "behavior_hash": "5a487c5e1c44179597c1a921ccd4b4b76d006f31e17dd853502dc9d6cf5c5e2a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/validate-artifact-id-input.feature",
+      "usecase": "verify-change",
+      "capability": "validate-artifact-id-input",
+      "scenario": "givn eject instruction with unknown artifact validates against manifest and provides helpful error",
+      "behavior_hash": "5c1e9211f44f0933bd124a8ef9c0c2056c31d3ee11a56ec954af4585f9262336",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Consumer selects agent targets during interactive init",
+      "behavior_hash": "5d1a203ccc5b7ead58c6b30cd531524cf394d6ca146a9eb8a17380b1e3bde499",
+      "e2e": true,
+      "interaction": "init-agent-target-selection",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/skill-rewrites.feature",
+      "usecase": "fragment:support",
+      "capability": "skill-rewrites",
+      "scenario": "Review instructions require deterministic gate dispositions",
+      "behavior_hash": "5e2f68a1baffe743a4fa7e2df2149810911380e2b3666dffe0dc7003610d7bfb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Interactive init installs only the agents the user selects",
+      "behavior_hash": "6043ffa65c06d030cc67035ca221cea5bc411ce1abe2a0a885c07effcd0e89f3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "The release identifies itself as its package version",
+      "behavior_hash": "60969db33c99dc7c5e9d1e142c6a2317882641a771de030ead28ee7b4fd76b84",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/enforce-post-merge-e2e-gate.feature",
+      "usecase": "archive-change",
+      "capability": "enforce-post-merge-e2e-gate",
+      "scenario": "Archive succeeds when merged permanent specs have no @e2e scenarios and e2e_command is unconfigured",
+      "behavior_hash": "6134684dab0052b1a6c046caf502fa92caf75934581697d207c2db107a90aaa9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Arc42 addon expands to arc42-docs artifact when enabled",
+      "behavior_hash": "62c38d1c3bb31cadeb1c6bcaedfa78c1d88a368c9fcf4844d158da5f50100f53",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "Explicit paths lint exactly those files without recursive descent",
+      "behavior_hash": "64519d3941a988ad6ebf7da828073c840d2fe1994330b79dcae761064b8534c8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The review skill checks that the ubiquitous language is followed",
+      "behavior_hash": "645554fa713fab19270ce00dfc6019d40e8808c7075cee5599cdd980c6097dc0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Retrieval guidance distinguishes build capabilities",
+      "behavior_hash": "64a364f38be67a7e5a1bfc1d3a14f17e7e14d9ef1f747b027e4a1998ced910a6",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "The changelog describes the complete 0.3.0 release",
+      "behavior_hash": "650a4f01656632abbb7e4771ae1e7203403660a8b57b77813bd37b90f759c87c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "A consumer enables the addons a generated section needs and the guidance gains it",
+      "behavior_hash": "65afbf7eb183a016931c43ef5c8b5241f7764f5459aae3130ec8a046a8c9cdc6",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills targets add installs the new agent without touching anything else",
+      "behavior_hash": "66489b44a1b147b5732ea92382e6254b49e9611ebd10e20bbefe81575c41d525",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Empty id is rejected",
+      "behavior_hash": "66a74b45b0e472535ee56511ff65a36897a1ebfe905bc53fe1cb852de5f07816",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "Cargo installation enables every declared feature by default",
+      "behavior_hash": "67fac179dd839bc04e7a8672d8e900e267ad468a0437e1652284170fcbb101e3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A parse error is reported on stderr and exits 1",
+      "behavior_hash": "6825277960701320b21934a23f344491e5794f83067450d8946b1bdcf9004889",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn skills sync excludes addon skills and commands when disabled",
+      "behavior_hash": "682fc14365bbd07ee8143b39d2a15b9d9b2534020a7e3f21462b6f0506be054c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "A marker-less README is unmanaged",
+      "behavior_hash": "69da52022904f63e3415f0419b8faa9acbf8bff84a9bfe7f40c617c04a6c617f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "Repeating an unchanged audit produces the same report",
+      "behavior_hash": "69f1f6184398cb9ef2cba356b49ecfc1ab05a45fec28f520f2b72584f831acf8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "The --agents flag accepts the dotted directory form",
+      "behavior_hash": "6b1ca9cdc3a4b5306b6228de261d8fc6df6e99b7e28f34f3380cebf4ca499078",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-change.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-change",
+      "scenario": "Routing requires exactly one input",
+      "behavior_hash": "6b90f3439e5b9a56acea578ed1f9777c8ab0df6c1ce2667e1c2a4739482e86ec",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A half-configured server declaration renders the placeholder",
+      "behavior_hash": "6d1103a661bc69505701d516e3706fec4e9a16bccce236e34e3210716b19758a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A caller-provided port is handed to the product",
+      "behavior_hash": "6d957ef8b82eb34457288b1f0894959a2d1a5f0310723bf0d50207e64585bb0a",
+      "e2e": true,
+      "interaction": "run-execution",
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — unknown change errors",
+      "behavior_hash": "6dab748ca7a958034ec828b2f1bd29b79aa3e9ab3f03a9c33a6c7a8cfe084d0f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "make-usecases-canonical/canonical-usecase-contract.feature",
+      "usecase": "make-usecases-canonical",
+      "capability": "canonical-usecase-contract",
+      "scenario": "Use-case tree reports explicit use-case ownership",
+      "behavior_hash": "6e1a7c487c23e25daa5965013274e01bea32e1327faa5c64ab6989eafe4bec1b",
+      "e2e": true,
+      "interaction": "canonical-usecase-contract",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A parse error outranks a @wip finding",
+      "behavior_hash": "6e4ab3ce0a4e82dc57116457855d22efb2815611bf2e7815fe7af5b624c332c5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Data table contents are compared as facts and can contradict",
+      "behavior_hash": "6fedd570c5d28fcc6449cfae09833e228163f0b15159a4092e1cb1b95935f6de",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "--change with no specs directory reports no files and exits 0",
+      "behavior_hash": "710780f3722d27a50883f1a3b47070f0522318ae54193d28ac9db5bee9278ba4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "Print mode for a library resolves the declared start command",
+      "behavior_hash": "719f3fd231ea197d631f851d390260a9c1207b039f910c6dac7e78b33607dfd8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "An agent requests the design guidance and is routed to the domain skill",
+      "behavior_hash": "72a0d03ca3a6c409471c73e92f502f9d04a3efafbc63ded8a5a35efc1f546f52",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "The migration guide is an executable prompt sequence",
+      "behavior_hash": "731deed6e8c6f37dfa56b4b9f33d7efdd13fb04beec8afeeb11b42c396453601",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/prose-consolidation.feature",
+      "usecase": "author-change",
+      "capability": "prose-consolidation",
+      "scenario": "Design and review instructions defer to the canonical policy",
+      "behavior_hash": "73c8734b74bea0bc974a0b59e9b284d1e430a77e3dcdadf15858082af4c6898e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/coverage-script-workflow.feature",
+      "usecase": "fragment:support",
+      "capability": "coverage-script-workflow",
+      "scenario": "An initialized project documents reusable test and coverage scripts",
+      "behavior_hash": "74b7a9d23d6af153dbfcaad6cc0f7fd63cbba5805871d66bb473f2412d958ab4",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "Route targets are conditional and unused targets stay empty",
+      "behavior_hash": "75031ba9d28c7c44f8719bff4414eebfd6784889d365d1f223f19f6644c5efb9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Design guidance requires the complete E2E setup record",
+      "behavior_hash": "769cde698568fa1cecc4a2687f9ad466fa06a2f0d8503249bf6c6af4c246e985",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Project instruction overrides survive skill synchronization",
+      "behavior_hash": "772de598b0ffb864bec8de14d2e6770541629bb588cc4f7a51551b3f0b5d78e1",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Missing impact decision refuses the review",
+      "behavior_hash": "7731884b9dfdd2e01e862b89709df61fbc4a5e8513067d0a6501f0caeae56819",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A CLI product forwards the product's exit code",
+      "behavior_hash": "774bf1aaed901d37009a69b486e0e22858bd321a005f1e75bb529eac92462122",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/enforce-post-merge-e2e-gate.feature",
+      "usecase": "archive-change",
+      "capability": "enforce-post-merge-e2e-gate",
+      "scenario": "Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured",
+      "behavior_hash": "777ff2d481a8a7b3a054d465b8fba09640a24ab8a89b312073370b51373cf9a7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/deduplicate-change-dir-detection.feature",
+      "usecase": "verify-change",
+      "capability": "deduplicate-change-dir-detection",
+      "scenario": "Verify-e2e hook resolves the change directory from a relative features path inside givn/changes",
+      "behavior_hash": "77985979efe6cf7eff85ec8cb32f1c725757a2447cf702692413ce7502aa39af",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "addon skills are written to the default agent target after sync",
+      "behavior_hash": "77e61b185048d70fda962f10f43d6e6fcf28970d13005a1df218f9c564a61d30",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "An agent requests next-step guidance as JSON and the skill route is machine-readable",
+      "behavior_hash": "79cff526870230e6ae9a3a2ab3be6d1e084fb58b0b266340cc6937369cd791f3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "A project outside Git is protected from a partial automatic migration",
+      "behavior_hash": "7d95c81c877812d83d0a417021c4db52db2bae7991808d293abc685aa5537a8b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "An unconfigured declaration refuses to start",
+      "behavior_hash": "7dec7128a979f66aebae5232ce2c1e4078b024929f63567d98428cde6c13098d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The skill body is an active discipline",
+      "behavior_hash": "7e1773cde4234da5460ea9fa0fea3dfa45f588cc125afdbcae338f87f371221a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/release-strict-model-overrides.feature",
+      "usecase": "discover-specifications",
+      "capability": "release-strict-model-overrides",
+      "scenario": "An installed givn refuses a request for simulated embedder output",
+      "behavior_hash": "7e4f7978036722d57508aab7185c393f45e2ab29459a9a0ee7e2548f93ebddbd",
+      "e2e": true,
+      "interaction": "release-strict-model-overrides",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A PENDING step is reported on stderr and exits 2",
+      "behavior_hash": "7e71879d8f346ccb2c8bcfa01cbbd6a1d2538510417425ee5951ba002c470825",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "An unknown impact value is refused",
+      "behavior_hash": "7f007dc89ee381f92b035d6610bf965e55a0960f334aa34a7e2a764ff1add367",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "The json output reports a parse error as a machine-readable finding",
+      "behavior_hash": "7fa344962cba2db5c70f7e050682e67a64dc2defdb72fbc45d1dabc2bfffce10",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/prose-consolidation.feature",
+      "usecase": "author-change",
+      "capability": "prose-consolidation",
+      "scenario": "Generated guidance points to the canonical E2E policy",
+      "behavior_hash": "7fe13e25cb1587cd33852d4e85e7b039d03bae1efd04352b0ccf172cf9a619cc",
+      "e2e": true,
+      "interaction": "prose-consolidation",
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "A clean project without migration requirements receives one managed upgrade commit",
+      "behavior_hash": "80b8f9506459486770034e892e3d507aa8e9c6625c529e9916f2cfadaf613f69",
+      "e2e": true,
+      "interaction": "release-0-3-0",
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Single active change — auto-defaults to detail view (text)",
+      "behavior_hash": "81f06f2ef53a509e35485e4cdb87d3ab09abf7eadc1380010546421622a74d40",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "addon skills are written to every configured agent target after sync",
+      "behavior_hash": "82e0ced60fb10756c46068eccb34f9e698ac80be7f9a5522f914226b5cb3a5e0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ideation-skill.feature",
+      "usecase": "fragment:support",
+      "capability": "ideation-skill",
+      "scenario": "The ideation skill ships without any addon enabled",
+      "behavior_hash": "84178ca321d8517fbc1dfe699e50e05ca20129c8631ad99661e5b13232b6f9ec",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "A reviewer requests disposition-aware review guidance",
+      "behavior_hash": "857689f83685d49a1327d6fe26762cd916c47db645d5e5dcbf67c017fcecdbbd",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/prose-consolidation.feature",
+      "usecase": "author-change",
+      "capability": "prose-consolidation",
+      "scenario": "Project override replaces the canonical specs instruction",
+      "behavior_hash": "87ee17f697e567ab395c6339c8e4196a67a80904b062f88de3f3a5b3316c9594",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "An author requests the canonical interaction and E2E guidance",
+      "behavior_hash": "88e41098c06d62b2a83c8ecdc9c4c4f9ab7a9be8650d5c9de414006ed4174a5d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "An unknown addon name in a conditional fails the synchronization and names the template",
+      "behavior_hash": "89cbc72470bf9bc1f554fe1ad2339f00dfe07458e031130f1b06a5c3b6504631",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Dangling require reference is rejected",
+      "behavior_hash": "8a0cd941087919a60a6e04add1a0782bf6e77730d4242610e6b5b7f448acdd7a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "An agent requests the specs guidance and is routed to the domain skill",
+      "behavior_hash": "8a8454e6ae5aabdeee4ca295b53d6a79961bf64890fdc6eac6859e4974349b8a",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A complete server declaration validates cleanly",
+      "behavior_hash": "8a86e388bfe213d31b4c88364b1e10cb69ddc405dd1258aec45c8c2145d17d39",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "All clean .feature files report a clean summary on stdout",
+      "behavior_hash": "8b7216aed2aff86d932484baa55228b628a3c5478ba0125f07975f921618afb4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "The json output reports duplicate-title findings machine-readably",
+      "behavior_hash": "8ca11dc480337b5ae50a7b7658a355ffbde0785e510160e918a6aaa9c00f0a9e",
+      "e2e": true,
+      "interaction": "spec-overlap-gates",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Project override at givn/artifacts/proposal/proposal.md is used instead of the built-in template",
+      "behavior_hash": "8ca4e9a518d2428d045503bac5a5553a7f6283129a61cbf77a8f5f0d7b5fe31f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The README renders a complete server declaration",
+      "behavior_hash": "8cd2c8e7e95fce161c6e26552e3339f45faca5a152d66374ec62bbbb8d8d6482",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "The same shape with contradicting facts produces a related-scenario hint",
+      "behavior_hash": "8cd596dd4a123bedab2c89febc0244ba60027e183acb3aca6215e772b69c1d09",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/extract-coverage-gate.feature",
+      "usecase": "archive-change",
+      "capability": "extract-coverage-gate",
+      "scenario": "Consumer archives a change with coverage enabled and the coverage summary appears in README",
+      "behavior_hash": "8cdebd312faa043a750d82003692512728d1e058b0ad7b97bce781451a29d7de",
+      "e2e": true,
+      "interaction": "extract-coverage-gate",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Artifact instructions reject an unsafe change context",
+      "behavior_hash": "8d6845a1ee7014f2fa90109359610802ea4189ea8ed83905a5556d828a4980bd",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Archive allowed when @wip only on a @givn.removed placeholder",
+      "behavior_hash": "8d8382fddc2af8d2fe1cbd456f0fe0e818b1a9ba874069ac779d95e92843432d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn init --force re-applies the default selection",
+      "behavior_hash": "8da9a46f9ea062025b118606a75bab5f1dcf5857df523568b787131f47d73196",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A delta of another active change duplicating a permanent spec title is a hard error",
+      "behavior_hash": "8dde6aaa394493921e062363da168b7b51703d324c312c58e4165338c7f21bf8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "No changes at all — JSON mode",
+      "behavior_hash": "8e079af69a7b0e1bc7b27e37fed9523a44884c510886d312620a0fc96a8ab783",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail view includes stage label and next required step",
+      "behavior_hash": "8e2c50cca904b011f8fd2f0535a43ef2e5b62b4784c70f47e7b1e7f22a7adc53",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "A completed maintenance migration can be archived without a product specification",
+      "behavior_hash": "8e3a76c0c79906973b55418e04f80d0d435e7b9b1b55223304af7587d9b41970",
+      "e2e": true,
+      "interaction": "release-0-3-0",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "An ADR refinement is routed to amendment without duplication",
+      "behavior_hash": "8e57fbc5cd6746ddcc08e941213e4fb9b95f730a4f5011b8a4aaa61ea718cb08",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Active and archived changes — single active auto-defaults to detail (text)",
+      "behavior_hash": "8f749b90bfdd0a426aa07809fd8dd8a766d59f5df88ef637c5d8de6b48504126",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Multiple active changes listed alphabetically — text mode",
+      "behavior_hash": "8f9af48f5339d7da542039e2596bf3e0d440bcb9c202d6fb1f577182be65abd4",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn addons disable errors when givn/ is not initialised",
+      "behavior_hash": "8fa9a16ab56502c4dab116f6b8045aeeebf65b1f05a4926fefd722f7445b45a5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Path traversal id is rejected by graph",
+      "behavior_hash": "8fe55bda552cb2ac1d3aba349c093ad1edc7045e042e438ea6c5e46cb99378c7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills targets add drops an unknown name with a hint",
+      "behavior_hash": "8fecdd1183f70d0c0d5a1fac154ab08808c0e2da1808566285009fba8c61474b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/repository-ownership-fixtures.feature",
+      "usecase": "fragment:support",
+      "capability": "repository-ownership-fixtures",
+      "scenario": "Repository-wide review accepts explicit overlap dispositions",
+      "behavior_hash": "901875249a0aeb0773f0e7d98fba71786b5ca2f459f1d1a63ee71f0d556519b7",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/validate-artifact-id-input.feature",
+      "usecase": "verify-change",
+      "capability": "validate-artifact-id-input",
+      "scenario": "Consumer invokes givn check with an unknown artifact and gets a helpful error",
+      "behavior_hash": "902b51185cd7ae4791d047a751df25b8e282f644dc48ac7f5c8f3a14b0dd04f9",
+      "e2e": true,
+      "interaction": "validate-artifact-id-input",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "Review guidance omits the Arc42 section when the Arc42 addon is disabled",
+      "behavior_hash": "90cd359f63f89889ee4e2d596c60a43cc27d0b76949553152353a4a6222f8027",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/enforce-post-merge-e2e-gate.feature",
+      "usecase": "archive-change",
+      "capability": "enforce-post-merge-e2e-gate",
+      "scenario": "Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner",
+      "behavior_hash": "91c31a6ec9ea676b52edc138b7835b12e2887bf14eba72574897864bcc34d7cb",
+      "e2e": true,
+      "interaction": "enforce-post-merge-e2e-gate",
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "A deleted development block is not re-inserted",
+      "behavior_hash": "91ec541e51dd3a4a61c0797d1438ab607b65ded8c2ee691ec92a577f357cc078",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "Same assertion shape without exact behavior is reported as a structural match",
+      "behavior_hash": "92b0e95cad6ce29f172073e2ebc98cc120cb1a80d52e753eaf955706d805a9c0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Active and archived changes — single active auto-defaults to detail JSON",
+      "behavior_hash": "92c6ec79e8be631f5e73bab0d8bc7f0ea60f5e2acdde41f1fb4c6c705b43a3b3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Design.md template includes Internal Primitives section",
+      "behavior_hash": "92e8a00f8c26708ee0e55eed5982b20ab78ae4aa116e1c6faa64f28fc102c15f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/deduplicate-change-dir-detection.feature",
+      "usecase": "verify-change",
+      "capability": "deduplicate-change-dir-detection",
+      "scenario": "Consumer runs the integrity check on a change inside givn/changes and the correct directory is detected",
+      "behavior_hash": "938eb73ebe4f62093f315b16a5252b0624de4d0d84f49851d06eba0d7af2ca72",
+      "e2e": true,
+      "interaction": "deduplicate-change-dir-detection",
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The backfill appends the run scaffold to an existing commands file",
+      "behavior_hash": "93d5d47cb48a400c7a0109c25ab4303a850749115895a8b0ecc20be00fd2c955",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-permanent.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-permanent",
+      "scenario": "The spec tree reports per-use-case counts and the use-case narrative",
+      "behavior_hash": "943883fe00e219d8e547d8cfbc660e88ac7165e9fae013721aca6d2e3fdbe4df",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/grouped-merge-for-new-capabilities.feature",
+      "usecase": "archive-change",
+      "capability": "grouped-merge-for-new-capabilities",
+      "scenario": "Consumer archives a new capability and the merged spec lands in its declared use case",
+      "behavior_hash": "9545faeb2972be94d61a80c53204e166c8456c38f947adb0620b4da59b25babe",
+      "e2e": true,
+      "interaction": "grouped-merge-for-new-capabilities",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/deduplicate-change-dir-detection.feature",
+      "usecase": "verify-change",
+      "capability": "deduplicate-change-dir-detection",
+      "scenario": "Integrity check detects a placeholder COMMIT hash in tasks.md and fails",
+      "behavior_hash": "954e2c2e9b8c9e77b10acde7287e20418128d1b83b183563b9236185b56add02",
+      "e2e": true,
+      "interaction": "deduplicate-change-dir-detection",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn init defaults to all addons enabled and generates their files",
+      "behavior_hash": "9949e34f5cc5f98f1029b0971f083a0abdfb2b3eed4d362415f8c72167aeeede",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id with spaces is rejected",
+      "behavior_hash": "9967169065651e5d3be9e853f1f74edd43645a39791506656c927c16fd8dcf39",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/prose-consolidation.feature",
+      "usecase": "author-change",
+      "capability": "prose-consolidation",
+      "scenario": "Canonical policy classifies output-affecting flags as variants",
+      "behavior_hash": "9981a41b4e12637508f99b845776902b18045f051ede9800d12650a5b75ed76c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A server rejects two port sources",
+      "behavior_hash": "9abf040f9fe8264033af9920eac85f45ac4a7b54a819785480baecfbc26986df",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A repeated upgrade creates no additional commit",
+      "behavior_hash": "9bbb5e24604d27e4b0784b496e4a30b56ecec3d763c85c326910640355e08b8e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Consecutive And and But steps normalise to the same shape as plain Then steps",
+      "behavior_hash": "9bc73ebdf31106b4bec63e1a3df9a23aa32654dcbad4074480180cc6d48c4612",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id with uppercase letters is rejected",
+      "behavior_hash": "9bf927e8f4fcf2aafa4ed45f012a640688baa01f63f696aafb6c9e15d3ff4c04",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook fails on empty step-definition file",
+      "behavior_hash": "9c013f725a8270408bf1a8e5b2573b3db68ee7abac2b7a3cf8a75199b6f0d247",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "proposal.md content equals the built-in template verbatim",
+      "behavior_hash": "9c26afe409d64539a878775908be00352f49fac0ff51fc7a2e88c8712268b395",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "A consumer synchronizes skills and the generated guidance omits disabled-addon sections",
+      "behavior_hash": "9c27879fc298c041a65f95524f56c76641098322cce1fa29952d2597ebb069ef",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "Repeating the upgrade does not duplicate the migration",
+      "behavior_hash": "9c571fdd46ce92c3717f57317976f819404fbd062b9f335982ce0d3f6401f773",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Background steps are prepended before the comparison",
+      "behavior_hash": "9c638b5c255cbaab6c576344f7b76894ddb6b072582231fb189a7d75eb138493",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Interactive init accepts the default selection with an empty answer",
+      "behavior_hash": "9c6d42860be0da2da0bf1108cbff257ac40be1fabf1fdb8585c3f002045c4137",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id containing digits is accepted",
+      "behavior_hash": "9d00921c82151fc7ca45316f771964472740d83f07f887d0871ebaecd00c7f26",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "Design-review guidance omits Arc42 coverage when the Arc42 addon is disabled",
+      "behavior_hash": "9d01176d2e13728935f5d47b64b824295ac55abc3f081f076820303ad37f7994",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A terminate request is forwarded and the start waits",
+      "behavior_hash": "9e3bca7ffa3d17c7f759ba7d1894f417c047231dee3dce113c6173d4b8390a4a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "A malformed permanent feature reports its path and fails the audit",
+      "behavior_hash": "9f31fea021c2c3722d35ff5602647532e6f5dee604f6d0c370c234277b06cd59",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "Upgrade backfills the run declaration into an existing project",
+      "behavior_hash": "a0a67e4062f91c61d0f75d512bd99dceebcdfc2e27d2234b6368725707116a89",
+      "e2e": true,
+      "interaction": "run-command",
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A server needs exactly one port source",
+      "behavior_hash": "a14190cc925e1e7121871ac068219c9b2ae7f3682441ca4b9fffbbc8ee5db949",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The backfill is idempotent",
+      "behavior_hash": "a16e979cd4dc9ade07f53ad658738d7712dae6a56a3d30513d11740fc3e5fbeb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Machine-readable instructions describe the effective artifact",
+      "behavior_hash": "a1d75c85b46b3fd27695ef8e75bfd778f4542fe46aecfb6bbd618107f7a377b1",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/fix-uppercase-checkbox-parsing.feature",
+      "usecase": "inspect-change-state",
+      "capability": "fix-uppercase-checkbox-parsing",
+      "scenario": "Uppercase [X] checkboxes are counted as done in text mode",
+      "behavior_hash": "a2ccb35474fb9f8e6df0d8eb7a9b7b58f8b5bf9dd93d2293fdb4c5416f624c1b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/preserve-docstrings-on-archive.feature",
+      "usecase": "archive-change",
+      "capability": "preserve-docstrings-on-archive",
+      "scenario": "A modified scenario keeps its step docstring after archiving",
+      "behavior_hash": "a314317ba1c545ee924a29bb8a0773b7a2497a2ed5375cc3afaf10ae6b17b84a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "Print mode omits the port hand-off for a fixed-port declaration",
+      "behavior_hash": "a3d4b0bac4e282e41515118b39861d1fe22be6fde2999b094d4cedc0747a0764",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "apply.requires referencing non-existent artifact is rejected",
+      "behavior_hash": "a3fb9ab6bc258aeedae55940552a20cb91269523259ed5f65c11ed2cb908c170",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills targets add accepts \"all\" as a shorthand for every target",
+      "behavior_hash": "a45d93aab95f3d4337feed4a5f1cf674bcb7430f83ec79107447c24ae4fbce02",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "An author requests the strict ADR guidance through the Givn CLI",
+      "behavior_hash": "a4ecc394abed49d2722301b700934232aab2f43ddc27eeea490070967cd6d66a",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-progress-output.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-progress-output",
+      "scenario": "The text audit keeps model wording off the report channel",
+      "behavior_hash": "a5233dbb08cbece78893aebd60af98255cdb31c5e0d410f0da6cbef2b97e475a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/choose-project-license.feature",
+      "usecase": "fragment:support",
+      "capability": "choose-project-license",
+      "scenario": "Cargo.toml declares dual MIT OR Apache-2.0 license",
+      "behavior_hash": "a54c2f6832d51a99286aea655487222b9d2ab125322e0d601f16a0ce05fdc4e6",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook passes when tasks.md commit hashes are present",
+      "behavior_hash": "a60579649a1a9a1d12da3bdb441ebc702307eeccaab9cc326b9fe7b21cb279dd",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The skill trigger names conversation states",
+      "behavior_hash": "a75abbf616695cee138b5b395b40dbfc4239a9d72e02efc331d295884fe3a5cc",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook passes on edited arc42 chapter",
+      "behavior_hash": "a785afbe80ca1aec866a8d1ad75ab06823a6d6a253edd7423f0aea072b6133d9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A library has nothing to start",
+      "behavior_hash": "a7a664e4b653cc6826c9955a377af6ee4c11aace70289bdc1ca72b70d67d5783",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — archived change (JSON)",
+      "behavior_hash": "a81981fcd8cbf6635e139a0f797ed36db5057b4154fc4140f961dd67795e3bc6",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ideation-skill.feature",
+      "usecase": "fragment:support",
+      "capability": "ideation-skill",
+      "scenario": "A consumer synchronizes skills and every agent target receives the ideation facilitation skill",
+      "behavior_hash": "a8559754e29bd22d214c6c743cea0ff9e7b5b18d363b9f019595fa82bb792c76",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Already-existing change is rejected",
+      "behavior_hash": "a880daea9f3bb11102800acf9cced75f1028ad26dfe14bcc55d21c4b20bad577",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "An agent requests machine-readable artifact guidance",
+      "behavior_hash": "aa5bb16936051fae6ca7133cf5735ea38a4a5d591411d1e648ea01bb4657cf23",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Consumer re-syncs skills after init and the selection is honoured",
+      "behavior_hash": "aa6c1604b9b616c301c560f81a39d0e9f36b9f78cc1da7f6b1ad24400170c71f",
+      "e2e": true,
+      "interaction": "init-agent-target-selection",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/readme-coverage-badge.feature",
+      "usecase": "fragment:support",
+      "capability": "readme-coverage-badge",
+      "scenario": "Coverage-enabled project is guided to place the coverage badge directly after the README title",
+      "behavior_hash": "aa8241aab0553ff699c4a6a15cd4e7b3a4ab40b46ab7858a2fd388c84b0c3639",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "JSON output lists every match with relation and endpoints",
+      "behavior_hash": "aa8994bfb2d76dfba384f7276a3a210a4139cb183c02e3b1d964b5b1e19cc512",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Skills and commands are not installed to an agent excluded from the selection",
+      "behavior_hash": "ab254fa5041b5a6bbc67a06e9f5219dde9fd755122723ec8afad190efe0b3c32",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "A recorded impact decision passes the review",
+      "behavior_hash": "ad458cae024bec1b8ef02e66a70adec283342847658df0515f18dc2c682d6ae3",
+      "e2e": true,
+      "interaction": "readme-enforcement",
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/fix-uppercase-checkbox-parsing.feature",
+      "usecase": "inspect-change-state",
+      "capability": "fix-uppercase-checkbox-parsing",
+      "scenario": "Mixed-case checkboxes are both counted as done in JSON mode",
+      "behavior_hash": "aeb435ac27c04fc0a70603a57056b5ef9b13e58902f613ba9f36ab7d552cad98",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "A disabled addon needs no impact decision",
+      "behavior_hash": "af0316ee2b7692092f82faaf83ab48aea78f7c970461255325a1b20ca14e67d5",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Only proposal.md is created in the change directory",
+      "behavior_hash": "af24710f48904181b0b6b6f63f7c28bf243235b890cc2a96fbd6510e83d4bff8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "An answer without any known agent falls back to the default",
+      "behavior_hash": "afb4c830477877547e30d9b044b8a4c5f97bcfef46bfc627f525801a1a86678d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay removes a leaf artifact via remove true",
+      "behavior_hash": "afca58d729e349e786c99358e014dcbc9dc9df4db89d3add715619c4bf6d148e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Uninitialised project is rejected",
+      "behavior_hash": "b0b2fa65c34536c20550d997e4d6314cc181ccb04d36eb22da22e2bf31a97a37",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Path traversal id is rejected by lint",
+      "behavior_hash": "b0b689dafcda64447734e985be130928934324ba03df9014267bde7e9a97bbf7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The skill requires the arc42 glossary for domain modeling",
+      "behavior_hash": "b2a1a557a54c414cb10930b316bc7c3af7188db1b7c984095fc749201a6b8ea2",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Non-interactive init installs skills to opencode only",
+      "behavior_hash": "b3f99023aad668bc989479a15d989b5ee23527369ddde7fbf9adbb0ddf034f9d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The guidance forbids invented ADR evidence",
+      "behavior_hash": "b4826ad7ff6e2b545466dcdf845188c05c4d03d3d9922f5dfb4060010d8819d9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "An agent synchronizes skills and the domain skill is routed",
+      "behavior_hash": "b5ad6f0bb5656f5c858d0cc085b388533c367ad47ae2dbec42246a71c1bb83d0",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A scenario whose assertion sequence is a subset of another produces a subset warning",
+      "behavior_hash": "b74c6cd75edfb13ef543ffb50861b1d55004a58156987cf0bac0c964e2656b1b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "An unclean project is protected from automatic migration commits",
+      "behavior_hash": "b7d7c1ec2537d723b5f9eb4e12e1d27697389bc1480d2932fc0d08406958bebe",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "No changes at all — text mode",
+      "behavior_hash": "b947fb684d1dc601d2a82105b3e7a3b4aa43722aba8621907c24cc6716040487",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/arc42-review-alignment.feature",
+      "usecase": "fragment:support",
+      "capability": "arc42-review-alignment",
+      "scenario": "The review template includes the Arc42 conformance block",
+      "behavior_hash": "bacf7281c3e8c96d9ea10e5794eede0690257f9f3dbe229bb014697ca29caaa9",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "An interrupt stops the started product",
+      "behavior_hash": "bb06bd6611593f0a887e3d68b89296288e75f357964724b92d511ca1bea3973b",
+      "e2e": true,
+      "interaction": "run-execution",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A removed scenario does not suppress an unrelated later @wip scenario",
+      "behavior_hash": "bb43670d8225539f331fbb80fe999ba3ee8564b3033af609996a21d429a845e7",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/validate-change-id-input.feature",
+      "usecase": "inspect-change-state",
+      "capability": "validate-change-id-input",
+      "scenario": "Path traversal id is rejected by check",
+      "behavior_hash": "bc33649655fa351ea026a6d66eb3b77d0d7401c896b3ae64347555286a6c9c46",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "archive-change/extract-coverage-gate.feature",
+      "usecase": "archive-change",
+      "capability": "extract-coverage-gate",
+      "scenario": "Archive with coverage addon enabled still rolls back specs and README on coverage failure",
+      "behavior_hash": "bde2e642e61ccb1046fb801d0bf103c8f7e3a662893c0398ce54eb48d8541982",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "Lifecycle guidance describes the domain, not the givn change",
+      "behavior_hash": "bdf88050e6016e31c3e91403b9972845af9ec3a2bbd315c47eb0e8e7d0d89428",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Uninitialized project errors",
+      "behavior_hash": "bf404f7ad45707c7d7c61d32851a47752cce2185143837d2da78644548891d15",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Empty overlay returns the base manifest unchanged",
+      "behavior_hash": "c08ebcdda7788100a2e212bc546f949c3d2032495b87710553d4c915859c4ada",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-permanent.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-permanent",
+      "scenario": "Lexical search is parsed from the AST so docstring payload creates no phantom hits",
+      "behavior_hash": "c0a03e59463ec7cfefec6319e5b9315527d993e8c51db259504a85bbd35e7f46",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-change.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-change",
+      "scenario": "A proposal with no matching surface recommends NEW",
+      "behavior_hash": "c1407b6508e34e4a1dcbf8e7de9e1d18e400752398ff6314a28227a7209fde7b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "Scenario outlines sharing a template produce a shape-match warning",
+      "behavior_hash": "c1edb0384f7e1b1d49a261f6132b769eb03ecdc4df33a530608aa0ceba512863",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "A missing README blocks the archive",
+      "behavior_hash": "c1f3c24a9d6599641bbdc9aef10c0daa1e45358eb4debc005e0b014f1f860fb3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The structured verdict has fixed gate and route fields",
+      "behavior_hash": "c25dc3dce5f0a076b620ff04a53ee81f4292ec2a6f019d496aad6067c0ead899",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "A project without the addon is not routed to the domain skill",
+      "behavior_hash": "c28bc3792bee61e296429eb13b5daa932e85feaa673463e6c2b5557aad2ddc9c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "All effective guidance sources use the same ADR policy",
+      "behavior_hash": "c3a76aefedabde5295a8a60cd77a07b799f1627d57d984c112a47aa03bd4161d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The ADR guidance requires an adversarial qualification record",
+      "behavior_hash": "c40409f4d388e74d1980c0e8c7e52df337384024dadc3eec80f02514d7f52a2d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review passes when every shape match is disposed and reports the net-delta receipt",
+      "behavior_hash": "c4417bf5ee3d4b9dcb567c78300e1b0d95aad8d733eccb218a1b0093f6e55aa2",
+      "e2e": true,
+      "interaction": "review-disposition-gates",
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/fix-uppercase-checkbox-parsing.feature",
+      "usecase": "inspect-change-state",
+      "capability": "fix-uppercase-checkbox-parsing",
+      "scenario": "Uppercase checkboxes satisfy the archive gate",
+      "behavior_hash": "c65ccc5bda333bfada3f814fda8c0088df2f1d4112dc170245cfac135d0bf9ac",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn skills sync includes skill and command addons when enabled",
+      "behavior_hash": "c71c3985b562d4dbb7c9f29f1bad30ca77c9fc4192004ba8687ffcc7b934a17c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn addons enable errors when givn/ is not initialised",
+      "behavior_hash": "c834579f0b285c5867d29978493f678b0d15af3aa8fd5de5b7c01b37f405f2a8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay refuses to remove a protected gate artifact",
+      "behavior_hash": "c8c14ff3c621b3a6a311e573de21e848830b8423de38983767dc25f97536b0ed",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ideation-skill.feature",
+      "usecase": "fragment:support",
+      "capability": "ideation-skill",
+      "scenario": "The explore guidance points to ideation for structured domain work",
+      "behavior_hash": "c8dca278ccfd13758e7c4ef8f1138288fa4ad73a8938fa338d60c879709e9a02",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "The migration catalog defines complete release-owned bundles",
+      "behavior_hash": "c8ed844271dc39337b9060e516358a7d5146aed770aa54daf217b2f683cbac8a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "Exact duplicates in one feature are reported together",
+      "behavior_hash": "c9131e12ed2b9710a40296161366154e97392acaa01f2ece7b5bc5021a082c2a",
+      "e2e": true,
+      "interaction": "spec-duplicates",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn addons enable generates skill and command files",
+      "behavior_hash": "c98959c95e35d187caa6b98e5bb97b55ea5f7377a58d45d58180c80a97031d6f",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay adds a new artifact",
+      "behavior_hash": "ca31f0ad54957f6e76c834ce364890f50928227cd6b260fcc25217d03d8ccb79",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/arc42-review-alignment.feature",
+      "usecase": "fragment:support",
+      "capability": "arc42-review-alignment",
+      "scenario": "Arc42-disabled review instructions mark conformance as not applicable",
+      "behavior_hash": "ca541ac0a1ec51e14816d779a7b9a98f371191291a463e534c2260227170d69e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "The --agents flag accepts \"all\" as a shorthand for every target",
+      "behavior_hash": "cb73c1da9154fa2b7021247110199d51f874f93b76363481141476159969c3a3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — active change (JSON)",
+      "behavior_hash": "cbbd2c6973c512cf69abed70250bc0d53a6e3bccf41ac2083393790600ce0956",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/fix-uppercase-checkbox-parsing.feature",
+      "usecase": "inspect-change-state",
+      "capability": "fix-uppercase-checkbox-parsing",
+      "scenario": "Consumer runs givn status on a change with uppercase checkboxes",
+      "behavior_hash": "cdc7b7b3d32857b85282b8e3c8a7d83baee579a3dee517081ddf41a6da725f60",
+      "e2e": true,
+      "interaction": "fix-uppercase-checkbox-parsing",
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Archive blocked when delta spec has non-removed @wip scenario",
+      "behavior_hash": "cfe1cf47e935f171fa430803d0c1dcc49104e0e12616114ff01ad0e7f3b4e4df",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "An author requests the technical E2E design guidance",
+      "behavior_hash": "d00b01b98415f558d3f7204681c97c627cba544d597802e12c368484802d46f8",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-duplicates.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-duplicates",
+      "scenario": "Auditing leaves permanent specifications unchanged",
+      "behavior_hash": "d25f33b46eaf95e8b58d9e59e2e43468cea5c05ebb0171eaf30af43ded811343",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook fails on missing step-definition file",
+      "behavior_hash": "d3ba9fdd3d00810422f1d7a8ce2d774ec62b669283d870a055f2305ac5c08249",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ideation-skill.feature",
+      "usecase": "fragment:support",
+      "capability": "ideation-skill",
+      "scenario": "The ideation guidance binds personas to the artifacts that affect them",
+      "behavior_hash": "d3c9c828cd16401284ac60428fdedcce814333865435fdacd8da407008ce03ec",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The migration preserves independent architecture history across three proposed decisions",
+      "behavior_hash": "d4c57c14f24baff5208e8ab9039ea3a9fa768a38ffbd4f24b2845c9583a60ec9",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Instructions stay silent on a complete README",
+      "behavior_hash": "d6960507cb15381670f6c22952b15af52ad2aa0185be95dee8655a3f52ddf689",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "The next-step guidance names the domain skill during later change phases",
+      "behavior_hash": "d76ef56c4e7ed232640736b1094db93a527506a042cb55a7c7329f1bc0432f0a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "Any success response satisfies the readiness probe",
+      "behavior_hash": "d7c2772e174a2436cdc8c804370889d2de3410bd4889f1e178f075497f7b7afd",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/template-conditional-rendering.feature",
+      "usecase": "fragment:support",
+      "capability": "template-conditional-rendering",
+      "scenario": "An unbalanced conditional in a command template fails the synchronization",
+      "behavior_hash": "d7f0083d8757eaf6057f9a48a1911913b25037a6ba275186433484ebf9fc3cef",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/ideation-skill.feature",
+      "usecase": "fragment:support",
+      "capability": "ideation-skill",
+      "scenario": "The ideation guidance carries the phase ladder and the one-question rule",
+      "behavior_hash": "d8919274c370449ebbd4d7a9b63c4b0da619cff120954b4110ce498f9a1fa480",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/choose-project-license.feature",
+      "usecase": "fragment:support",
+      "capability": "choose-project-license",
+      "scenario": "README.md declares the project license",
+      "behavior_hash": "d8c2fe50d334bcc6302dfd5f8dbd085f0a31cbc1c7226b35b682a87989ff1666",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "Print mode emits the start plan without starting",
+      "behavior_hash": "d9e851e9744d449f6a79ae0da1f59086b030b2f9ece40d6ff640f05ea46d0897",
+      "e2e": true,
+      "interaction": "run-execution",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/coverage-script-workflow.feature",
+      "usecase": "fragment:support",
+      "capability": "coverage-script-workflow",
+      "scenario": "Archiving publishes line and branch badges from the merged report",
+      "behavior_hash": "dc3e023c50c0b67f6734501e582bf2b28df8a8949f12efb5aedd294608c14b24",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/fix-uppercase-checkbox-parsing.feature",
+      "usecase": "inspect-change-state",
+      "capability": "fix-uppercase-checkbox-parsing",
+      "scenario": "Lowercase [x] checkboxes are counted as done in text mode",
+      "behavior_hash": "dd004b8b8796b75383ba6726647d3f265485674267c95a495d390a4f08828b5a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "An unconfigured declaration renders exactly one open placeholder",
+      "behavior_hash": "de297f489bd9a3917a1c9c8b55ad8e65c432eb711ad0db69273fa34859f5860a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "The readiness probe gives up after the timeout",
+      "behavior_hash": "deb43b5cbe30204e7a1455f1e7cf0bb73cdf11b160530a8a505a8f61bc08afac",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Archive blocked when merged permanent specs fail verify",
+      "behavior_hash": "deb8f90433c87eba7391498892b5686f2729242220970b7775442fabd40de996",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "Print mode on an unconfigured declaration reports preflight findings",
+      "behavior_hash": "df80ed238ed2b523531bffa26d0ae548cecdeb3dd459004898497810d761f419",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review blocks when a shape match involving the change's delta is undisposed",
+      "behavior_hash": "e06e46039f3426a3eb7b8f83d52d451387cd41fd77a6627eb17209e62adcbf1c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Interactive init can select the .agents target",
+      "behavior_hash": "e22e966b9977387d4387dfed8ec0fb3e4e6656d4b9c0e7634a28a1a02f24f79b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "A complete CLI declaration validates cleanly",
+      "behavior_hash": "e30b1cd74abbd7636f6393070c73f2f9621f73b0ca124adf01aede780410d103",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills targets add errors when every given name is unknown",
+      "behavior_hash": "e31fba87d2294f882c33f6b3a1482ef0629496ade070e5de92118879f4518cee",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The upgrade commit includes the backfilled run declaration",
+      "behavior_hash": "e374e64dcf864095925a82b742288c834fce9dd2823e8c731336c87135bcfedc",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "A reviewer requests design-review guidance through the Givn CLI",
+      "behavior_hash": "e41aaf8b7f2ca362b70471dd9ef1842ba8ff50949303b942ab0dd4d93f819495",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills targets add errors when givn/ is not initialised",
+      "behavior_hash": "e44a07be178647aed423f3b0e6dba1b42e29a68d4be5e93e864c2d17dbf52734",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn addons disable removes generated skill files",
+      "behavior_hash": "e57a9d03feefbe7711d363b3c1f9f42bc8d9c0ab6ab8ba7bf06afbf55d4c80e0",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/arc42-review-alignment.feature",
+      "usecase": "fragment:support",
+      "capability": "arc42-review-alignment",
+      "scenario": "Generated review guidance stays aligned after skill sync",
+      "behavior_hash": "e7ae86b8b77a3c2715a820df5740e2f76d229b43714ab68fc85a306e75a20143",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "The default scope excludes the archive tree",
+      "behavior_hash": "e82093f5491ba6f054f9b567aa2fff06267ab76675decabab06561d6b7d23454",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Scaffolding marks the unfilled sections",
+      "behavior_hash": "e93ef7fae17a4729d18c909c85bcbb28cdcaaf557337260c9d4df595095b9a13",
+      "e2e": true,
+      "interaction": "readme-enforcement",
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "The migration change remains honest until the project review passes",
+      "behavior_hash": "eab045f3fd0d110354777333bdd3a0a0f2b36037cf2fd1c594a198f4370eea85",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "--change scopes the check to that change's specs directory",
+      "behavior_hash": "eb292eaae6f22b0a2e585b8cfd964498e393b2837cd1b2b1ecefebf60ceaa41c",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "A @wip-tagged scenario is reported on stderr and exits 2",
+      "behavior_hash": "ec397f9cd8b53cbc3fc3690f1826fb456d553fa6fc1148943ff4bc415d1693c1",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id with non-ASCII letters is rejected",
+      "behavior_hash": "eca2366b3f99aea2ab299ea4e441f960a70b9c969d655b663b22389f20eb0017",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-permanent.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-permanent",
+      "scenario": "Lexical search reports an empty result for unknown terms",
+      "behavior_hash": "ecbee0de6bafbc87c74160e60a8c45f036aa400d6a3265f41b6dfd232d40f21a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "An existing migration plan is never overwritten",
+      "behavior_hash": "ecce3be449279e310a9ed1c87e6dbfe4b6eb866e172a83297b3bf4ff77894746",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "The selected agents are persisted in givn/config.yaml",
+      "behavior_hash": "ecfd2de52244dcdd5082bcd95a79900c63c007869be881d265c4e89c5e1b0992",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A removed delta referencing its target by title is allowed",
+      "behavior_hash": "ee2a1dea54792a57ec6092a7f32a579f91a396cbe171cdd9eb3d5d4432541349",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/validate-artifact-id-input.feature",
+      "usecase": "verify-change",
+      "capability": "validate-artifact-id-input",
+      "scenario": "givn check with unknown artifact validates against manifest and provides helpful error",
+      "behavior_hash": "ee5a0dec9938cceba4f1967bee1df7d2b47bb92cfc6088637faea89a81d9331e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A readiness timeout abandons the start",
+      "behavior_hash": "eed1fd04d48f222d7b602555dcf34bae5d1d0521c899494b1a1fbb544eb3af4a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "givn skills sync installs to the persisted selection only",
+      "behavior_hash": "f1049dd0c10454ae80d14a8119917c561e5f7173fdce1ad32594bd3e627a7b2d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/release-strict-model-overrides.feature",
+      "usecase": "discover-specifications",
+      "capability": "release-strict-model-overrides",
+      "scenario": "An installed givn honours a model-location request that still uses the real models",
+      "behavior_hash": "f2853c688272a920a8ca656561edc9bd458f199f959a0c950b0f854964032424",
+      "e2e": true,
+      "interaction": "release-strict-model-overrides",
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/spec-progress-output.feature",
+      "usecase": "discover-specifications",
+      "capability": "spec-progress-output",
+      "scenario": "Repeated audits emit stable output without progress lines",
+      "behavior_hash": "f2e0e9a97ca2d10f5e03e40af1f648540fea49625b74501c80a7e030efe45dca",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-execution.feature",
+      "usecase": "operate-product",
+      "capability": "run-execution",
+      "scenario": "A port that is not listening yet is retried until ready",
+      "behavior_hash": "f30d9981bc5188649017d6b469fb03e5806f6fb487619e075adfcf74588e65f3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/config-overlay.feature",
+      "usecase": "fragment:support",
+      "capability": "config-overlay",
+      "scenario": "Overlay replaces apply requires",
+      "behavior_hash": "f34184015398f8e5b112cdf8e8f8e84775ac8a9ca68838ae42a7eb7e2e6fbe12",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/givn-workflow-enforcement.feature",
+      "usecase": "verify-change",
+      "capability": "givn-workflow-enforcement",
+      "scenario": "Integrity hook fails on unedited arc42 chapter",
+      "behavior_hash": "f363f0a6f11a4a669794e51214394cb1a07b4d6df121ea853049e078c1cd2ddb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The ADR register has one canonical ownership contract",
+      "behavior_hash": "f3fccca90021b712ecc467d2962b5a7efb133bac5d809249e76a63e125b3b5f3",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/release-0-3-0.feature",
+      "usecase": "maintain-project",
+      "capability": "release-0-3-0",
+      "scenario": "A clean 0.2.0 project receives a reviewable aggregate migration plan",
+      "behavior_hash": "f45664d60400e40df41a4393dd57cc0b7773f161c78e69460b1db3b0a3090e78",
+      "e2e": true,
+      "interaction": "release-0-3-0",
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "Open placeholders block the archive",
+      "behavior_hash": "f46bb14b81df3b3c473468834fb7ab806b148ec75bfacfe33c396827c8fdd04a",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/skill-rewrites.feature",
+      "usecase": "fragment:support",
+      "capability": "skill-rewrites",
+      "scenario": "Synchronized guidance explains how to resolve the deterministic gates",
+      "behavior_hash": "f4d56d19a316e8f00140d47e6033757c82ae9ab4a3f7bbd2e45caebabbf8dab8",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/lint-command.feature",
+      "usecase": "verify-change",
+      "capability": "lint-command",
+      "scenario": "Findings across multiple files are aggregated and files are processed in sorted order",
+      "behavior_hash": "f5543cbca4ee5a93b7c8901bab1971f79d0161cef023849abf4a4da78b56f3af",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/review-disposition-gates.feature",
+      "usecase": "verify-change",
+      "capability": "review-disposition-gates",
+      "scenario": "Review passes when a shape match exists only between permanent scenarios",
+      "behavior_hash": "f5a06e9def1072644aa627c37a4a9d2264f86d8d60017c016f9720e8e6e400a6",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "The check passes on a complete README",
+      "behavior_hash": "f6450a10b1e4fa5f62ee835286680d9b380ce022aaf985b7226520f3b9da1f65",
+      "e2e": true,
+      "interaction": "readme-enforcement",
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/new-command.feature",
+      "usecase": "author-change",
+      "capability": "new-command",
+      "scenario": "Id with underscores is rejected",
+      "behavior_hash": "f6e532deab9b530807ec86b327d00798d96d1667b76d51a3d6d6db181a6958ee",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/spec-overlap-gates.feature",
+      "usecase": "verify-change",
+      "capability": "spec-overlap-gates",
+      "scenario": "A modified delta matching its merge target in the same capability is allowed",
+      "behavior_hash": "f81fc33d1a4bbdb5c3c75ff1d003a34abe81a7d4a15aa94cd94188f3a60d3b10",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "Re-running init keeps the persisted selection",
+      "behavior_hash": "f902a42af077ba3d077421f71231eec7a89dc2269a25e0e14fe8433d0d9ede22",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "operate-product/run-command.feature",
+      "usecase": "operate-product",
+      "capability": "run-command",
+      "scenario": "The check names a damaged run managed block",
+      "behavior_hash": "fa01724ddbbf2a1a75413b29f4f0289f05771c53eaf981252d6e82e5ccc5206a",
+      "e2e": true,
+      "interaction": "run-command",
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/instruction-integrity.feature",
+      "usecase": "fragment:support",
+      "capability": "instruction-integrity",
+      "scenario": "Canonical E2E guidance rejects weaker interface evidence",
+      "behavior_hash": "fa39d22853303f4c8b7f1476e56a59216304a48c220327fbf3bff1999687335b",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "verify-change/validate-artifact-id-input.feature",
+      "usecase": "verify-change",
+      "capability": "validate-artifact-id-input",
+      "scenario": "givn check with known artifact proceeds to run hooks",
+      "behavior_hash": "fa3bc5891599038fa0ab36ee0fae75b709abdf96be069eafb326fa14d32a48ef",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "maintain-project/readme-enforcement.feature",
+      "usecase": "maintain-project",
+      "capability": "readme-enforcement",
+      "scenario": "The check names every open placeholder",
+      "behavior_hash": "fabd9dd0e8457bd40092c7bbe17f4650e7f3e20dc0e8499d7ea6ca865eb9ac04",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "discover-specifications/release-strict-model-overrides.feature",
+      "usecase": "discover-specifications",
+      "capability": "release-strict-model-overrides",
+      "scenario": "An installed givn ignores requests to disable or simulate the second-stage models",
+      "behavior_hash": "fb47f939d9f8e0f3e8fd3799b8ab40d45f3e7bebcd123c61ae6453880d848ca8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/adr-qualification-gate.feature",
+      "usecase": "fragment:support",
+      "capability": "adr-qualification-gate",
+      "scenario": "The guidance routes normal design decisions to one canonical artifact",
+      "behavior_hash": "fc005cfab7bea01037d5bc6ef374dc30d2eabbda33992fd6e322b37d036eb2eb",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/init-agent-target-selection.feature",
+      "usecase": "author-change",
+      "capability": "init-agent-target-selection",
+      "scenario": "The --agents flag selects targets non-interactively, no prompt needed",
+      "behavior_hash": "fcb3fdef911feb3f0f1dc5d81b8b314e3680997e463198d976c432f298bf9b55",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/spec-explore-change.feature",
+      "usecase": "fragment:support",
+      "capability": "spec-explore-change",
+      "scenario": "Routing a proposal prints ranked candidates with evidence",
+      "behavior_hash": "fd5cb0e3168b64f5c00f7376c3bfeab33127c8ada13fce8a41e6c5df758b0c90",
+      "e2e": true,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "author-change/install-extras.feature",
+      "usecase": "author-change",
+      "capability": "install-extras",
+      "scenario": "givn addons disable removes generated command files",
+      "behavior_hash": "fe2bb71c2999372a4436f646bf3a8b21199d862ed5b91f685dd829055467f59e",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "inspect-change-state/givn-status-command.feature",
+      "usecase": "inspect-change-state",
+      "capability": "givn-status-command",
+      "scenario": "Detail mode — skipped artifacts shown with skip marker",
+      "behavior_hash": "fe78a4fd53fe027d22320260c1166e8d348d80f288c076fe2d636ecb0148f9b8",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    },
+    {
+      "feature_path": "fragments/domain-skill-trigger.feature",
+      "usecase": "fragment:support",
+      "capability": "domain-skill-trigger",
+      "scenario": "A project without the arc42 glossary is not pointed at the domain skill",
+      "behavior_hash": "ff0b4581c58ae32056ebab1648fabad19eed02a850edaf50477f23d63bee3c4d",
+      "e2e": false,
+      "interaction": null,
+      "personas": []
+    }
+  ]
+}

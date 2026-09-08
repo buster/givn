@@ -239,12 +239,7 @@ fn lost_e2e_migration_snapshot(world: &mut GivnWorld) {
 
 #[given("a migration evidence change with lower interaction coverage")]
 fn lower_interaction_migration_snapshot(world: &mut GivnWorld) {
-    setup_migration(
-        world,
-        behavior_snapshot(true, None),
-        None,
-        None,
-    );
+    setup_migration(world, behavior_snapshot(true, None), None, None);
 }
 
 #[given("a migration evidence change with lower line coverage")]
@@ -252,12 +247,8 @@ fn lower_line_migration_snapshot(world: &mut GivnWorld) {
     setup_migration(
         world,
         behavior_snapshot(true, Some("preserve behavior")),
-        Some(
-            r#"{"lines_covered":90,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#,
-        ),
-        Some(
-            r#"{"lines_covered":89,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#,
-        ),
+        Some(r#"{"lines_covered":90,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#),
+        Some(r#"{"lines_covered":89,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#),
     );
 }
 
@@ -266,18 +257,19 @@ fn lower_branch_migration_snapshot(world: &mut GivnWorld) {
     setup_migration(
         world,
         behavior_snapshot(true, Some("preserve behavior")),
-        Some(
-            r#"{"lines_covered":90,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#,
-        ),
-        Some(
-            r#"{"lines_covered":90,"lines_valid":100,"branches_covered":8,"branches_valid":10}"#,
-        ),
+        Some(r#"{"lines_covered":90,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#),
+        Some(r#"{"lines_covered":90,"lines_valid":100,"branches_covered":8,"branches_valid":10}"#),
     );
 }
 
 #[given("a migration evidence change with an explicitly retired behavior")]
 fn explicitly_retired_migration_snapshot(world: &mut GivnWorld) {
-    setup_migration(world, r#"{"schema":1,"entries":[]}"#.to_string(), None, None);
+    setup_migration(
+        world,
+        r#"{"schema":1,"entries":[]}"#.to_string(),
+        None,
+        None,
+    );
     std::fs::write(
         project_root(world).join("givn/changes/migration-test/usecase-migration.md"),
         "| Old entry | Old owner | Operation | New owner |\n|---|---|---|---|\n| old/capability.feature — Preserved behavior | old | RETIRE | none |\n",
@@ -620,7 +612,10 @@ fn migration_comparison_failed(world: &mut GivnWorld) {
         project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
     )
     .unwrap();
-    assert!(content.contains("\"passed\": false"), "comparison was not failed: {content}");
+    assert!(
+        content.contains("\"passed\": false"),
+        "comparison was not failed: {content}"
+    );
 }
 
 #[then("the migration comparison is marked passed")]
@@ -629,7 +624,10 @@ fn migration_comparison_passed(world: &mut GivnWorld) {
         project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
     )
     .unwrap();
-    assert!(content.contains("\"passed\": true"), "comparison was not passed: {content}");
+    assert!(
+        content.contains("\"passed\": true"),
+        "comparison was not passed: {content}"
+    );
 }
 
 #[then("the change directory has been moved to givn/archive/")]

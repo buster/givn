@@ -320,7 +320,8 @@ fn read_retired_entries(dir: &Path) -> Result<BTreeSet<String>> {
                 .map(str::trim)
                 .filter(|column| !column.is_empty())
                 .collect();
-            (columns.len() >= 3 && columns[2] == "RETIRE").then(|| columns[0].to_string())
+            (columns.len() >= 3 && columns[2] == "RETIRE")
+                .then(|| columns[0].trim_matches('`').to_string())
         })
         .collect())
 }
@@ -489,7 +490,7 @@ mod tests {
         let directory = tempfile::tempdir().unwrap();
         std::fs::write(
             directory.path().join("usecase-migration.md"),
-            "| Old entry | Old owner | Operation | New owner |\n|---|---|---|---|\n| old/capability.feature — Preserved behavior | old | RETIRE | none |\n",
+            "| Old entry | Old owner | Operation | New owner |\n|---|---|---|---|\n| `old/capability.feature — Preserved behavior` | old | RETIRE | none |\n",
         )
         .unwrap();
         let retired = read_retired_entries(directory.path()).unwrap();

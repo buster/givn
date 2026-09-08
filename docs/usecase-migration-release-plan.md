@@ -6,10 +6,28 @@ This document is the implementation handoff for the release that replaces the
 group-oriented specification model with a semantic use-case model and promotes
 ideation, personas, and use-case context through the workflow.
 
-Current Givn package version: `0.5.0`.
+Current Givn package version: `0.6.0`.
 
-The next release version is intentionally left as `<target-version>` until the
-release is cut. Do not invent a future version in migration assets.
+The release target is `0.6.0`. The migration bundle is published under
+`assets/migrations/0.5.0-to-0.6.0/`.
+
+### Current Execution Status
+
+- The canonical use-case model, migration coverage implementation, and
+  ideation/Persona guidance were delivered together and archived as
+  `make-usecases-canonical`; they were not separate archived Changes 1–3.
+- Watn migration is archived and passes behavior, E2E, interaction, and line
+  coverage comparison.
+- Kiekste migration is archived and passes behavior, E2E, interaction, and
+  line comparison; its `run-authority` Handoff remains explicitly pending.
+- The 0.5.0-to-0.6.0 bundle is concrete and cataloged.
+- Release closure is still blocked by the Givn source-coverage comparison:
+  `7162/13704` before versus `7439/18235` after. Branch evidence is `0/0` on
+  both sides and is therefore not materially measured.
+- The Givn self-migration ledger explicitly records four intentional retired
+  vocabulary assertions and one created canonical contract. The machine gate
+  passes behavior/E2E/interaction comparison after applying those retirements;
+  only source coverage remains blocking.
 
 No backward-compatible runtime reader is planned. Existing consumer projects
 must be migrated by the release-owned LLM-guided migration change.
@@ -124,7 +142,7 @@ make-usecases-canonical
         +--> promote-ideation-personas
                        |
                        v
-             add-usecase-release-migration
+              finalize-usecase-migration-release
                        |
                        v
              migrate Watn, then Kiekste
@@ -325,6 +343,12 @@ The specs for this change must cover:
 
 ## Change 2: add-spec-coverage-nonregression
 
+### Actual delivery
+
+Implemented inside `make-usecases-canonical`; no separate Change 2 archive was
+created. The closure change adds the missing regression scenarios and explicit
+retirement handling.
+
 ### Purpose
 
 Make corpus migration coverage machine-checkable rather than an LLM claim.
@@ -424,6 +448,12 @@ Cover:
 
 ## Change 3: promote-ideation-personas
 
+### Actual delivery
+
+Implemented inside `make-usecases-canonical`; no separate Change 3 archive was
+created. Generated source assets and configured targets were synchronized in the
+same delivery.
+
 ### Purpose
 
 Use the same use-case model from ideation through permanent specifications and
@@ -522,16 +552,15 @@ Cover generated guidance that:
 
 ### Purpose
 
-Ship the release-owned LLM migration bundle from Givn `0.5.0` to
-`<target-version>`.
+Ship the release-owned LLM migration bundle from Givn `0.5.0` to `0.6.0`.
 
 ### Assets
 
 Add:
 
 ```text
-assets/migrations/0.5.0-to-<target>/proposal.md
-assets/migrations/0.5.0-to-<target>/design.md
+assets/migrations/0.5.0-to-0.6.0/proposal.md
+assets/migrations/0.5.0-to-0.6.0/design.md
 ```
 
 Add the catalog entry in:
@@ -767,9 +796,9 @@ Do not edit Watn's archived migration history.
 
 ### Session 10: Kiekste dogfood
 
-Kiekste currently has uncommitted ideation and active-change files. Do not run
-the managed upgrade until that work is intentionally resolved and the worktree
-is clean.
+Kiekste's ideation and migration work is intentionally resolved. The worktree
+is clean, the migration is archived, and the `run-authority` topic remains
+Handoff-pending.
 
 Migration tasks:
 
@@ -778,8 +807,9 @@ Migration tasks:
 - use `run-authority/use-case-definitions.md` as confirmed domain evidence;
 - map the six elaborated use cases;
 - split summary use cases into child use cases where confirmed;
-- migrate `change-run-scheduler` before archive;
-- update its proposal, design, and design-review references;
+- `change-run-scheduler` was archived before the migration on the dogfood branch;
+  its historical archive remains untouched as required;
+- the migration ledger records that sequencing deviation;
 - preserve its feature paths and E2E scenarios unless a use-case ID changes;
 - preserve the four confirmed personas in topic state;
 - do not perform Handoff automatically;
@@ -832,8 +862,8 @@ assets/templates/
 assets/skills/
 assets/commands/
 assets/migrations/catalog.yaml
-assets/migrations/0.5.0-to-<target>/proposal.md
-assets/migrations/0.5.0-to-<target>/design.md
+assets/migrations/0.5.0-to-0.6.0/proposal.md
+assets/migrations/0.5.0-to-0.6.0/design.md
 ```
 
 ### Givn corpus and tests
