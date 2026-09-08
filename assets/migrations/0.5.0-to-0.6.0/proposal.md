@@ -34,5 +34,4 @@ decisions.
 
 ## Open Questions
 
-- The release owner must replace `<target-version>` before publishing this
-  bundle.
+- This bundle is published for Givn 0.6.0.
