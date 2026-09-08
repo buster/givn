@@ -112,6 +112,22 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
 - [x] REFACTOR: `cargo fmt`; re-run targeted (exit 0).
   - [x] COMMIT: `42e90da`
 
+## Scenario: The migration preserves independent architecture history across three proposed decisions
+(adr-qualification-gate, @givn.modified, non-e2e — discovered when the archive
+gate's post-merge verify failed on the pre-engine ADR register counts)
+
+- [x] RED: post-merge verify exit 101 — "the final register has 36 accepted
+      decisions and four proposed decisions" no longer holds (register now
+      25 accepted / 0 proposed after superseding 16 engine records and
+      adding ADR-069).
+- [x] GREEN: delta scenario modified to the post-engine counts; new bindings
+      in `tests/steps/adr_qualification_gate_steps.rs` (register counts,
+      absorbed records with the serializer evidence read from the archived
+      ADR-059, superseded semantic-engine records checked against
+      ADR-069). Targeted run exit 0 (11 steps). Routing recorded as
+      `NEW in fragments`; gate support added in commit `6ee01dc`.
+  - [x] COMMIT: (with archive artifacts)
+
 ## Teardown (before review)
 
 - [x] Completion sweep: remaining grep hits are intentional — permanent

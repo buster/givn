@@ -869,3 +869,64 @@ fn madr_checklist_is_evidence_not_escape(world: &mut GivnWorld) {
 fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
     assert!(!marker.trim().is_empty());
 }
+
+#[then("the final register has 25 accepted decisions and no proposed decisions")]
+fn final_register_has_post_engine_counts(world: &mut GivnWorld) {
+    let register = guidance(world);
+    let accepted = register
+        .lines()
+        .filter(|line| line.contains("| accepted |"))
+        .count();
+    let proposed = register
+        .lines()
+        .filter(|line| line.contains("| proposed |"))
+        .count();
+    assert_eq!(accepted, 25, "unexpected accepted ADR count");
+    assert_eq!(proposed, 0, "unexpected proposed ADR count");
+}
+
+#[then("absorbed records are absent and their refinements remain readable")]
+fn absorbed_records_remain_readable(world: &mut GivnWorld) {
+    let register = guidance(world);
+    for id in ["ADR-021", "ADR-025", "ADR-036", "ADR-062"] {
+        assert!(
+            !file_exists(&active_adr_path(id)),
+            "absorbed record remains: {id}"
+        );
+        assert!(
+            !register.contains(&format!("[{id}]")),
+            "register link remains: {id}"
+        );
+    }
+
+    let runner = fs::read_to_string(active_adr_path("ADR-015")).expect("read ADR-015");
+    assert!(runner.contains("missing-testrunner"));
+    let specification = fs::read_to_string(active_adr_path("ADR-011")).expect("read ADR-011");
+    assert!(specification.contains("implementation-independent"));
+    let agent = fs::read_to_string(active_adr_path("ADR-013")).expect("read ADR-013");
+    assert!(agent.contains("Target selection") || agent.contains("target selection"));
+    let serializer = fs::read_to_string(archived_adr_path("ADR-059")).expect("read ADR-059");
+    assert!(serializer.contains("Synthetic markers"));
+}
+
+#[then(
+    "the superseded semantic-engine records remain archived with replacement links to their replacement record"
+)]
+fn engine_records_remain_archived(world: &mut GivnWorld) {
+    let _ = world;
+    for id in [
+        "ADR-039", "ADR-041", "ADR-046", "ADR-047", "ADR-052", "ADR-055", "ADR-056", "ADR-057",
+        "ADR-058", "ADR-059", "ADR-060", "ADR-061", "ADR-063", "ADR-064", "ADR-066", "ADR-068",
+    ] {
+        let path = archived_adr_path(id);
+        let content =
+            fs::read_to_string(&path).unwrap_or_else(|error| panic!("read {path}: {error}"));
+        assert!(content.contains("status: superseded by ADR-069"), "{id}");
+        assert!(content.contains("ADR-069"), "{id}");
+        assert!(
+            !file_exists(&active_adr_path(id)),
+            "active record remains: {id}"
+        );
+    }
+    assert!(file_exists(&active_adr_path("ADR-069")));
+}

@@ -205,11 +205,15 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                 let fragment_path = permanent_root.join("fragments").join("fragment.md");
                 let fragment = std::fs::read_to_string(&fragment_path)
                     .map_err(|error| {
-                        anyhow::anyhow!("decision NEW in fragments: cannot read {fragment_path:?}: {error}")
+                        anyhow::anyhow!(
+                            "decision NEW in fragments: cannot read {fragment_path:?}: {error}"
+                        )
                     })
                     .and_then(|text| {
                         crate::gherkin::usecase_md::parse_fragment_md(&text).map_err(|error| {
-                            anyhow::anyhow!("decision NEW in fragments: invalid fragment.md: {error}")
+                            anyhow::anyhow!(
+                                "decision NEW in fragments: invalid fragment.md: {error}"
+                            )
                         })
                     });
                 match fragment {
