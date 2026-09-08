@@ -41,62 +41,11 @@
 | **README completeness gate** | Archive-level blocking validation that the README contains no open placeholders and its managed blocks are intact, enabled by the readme addon. It mirrors the coverage gate. |
 | **README impact decision** | The machine-checkable review line recording that the README needed no update (`none`) or was updated, naming the sections. Required for review sign-off when the readme addon is enabled. Anti-term: "docs impact". |
 | **README migration** | One-time agent-executed rewrite of a legacy-scaffolded or hand-written README into the marked form while preserving all real content; accepted only when the README check passes. Anti-term: "rescaffold". |
-| **Complete semantic serialization** | Compact deterministic model text containing non-empty parsed Feature/Rule context, backgrounds, scenario data, resolved step roles, tables, docstrings, outline template, and examples. |
-| **Semantic content hash** | Hash of the exact complete E5 passage. A vector is reused only when endpoint identity and this hash match. |
-| **Actual-tokenizer preflight** | Measuring an untruncated, unpadded input with the tokenizer of the model that will consume it before construction or inference. |
-| **Token budget** | The inclusive model-input limit of 512 tokens. Exactly 512 fits; 513 is over. |
-| **Pair token count** | Length of a complete BGE/NLI pair encoding, including pair special tokens; it is not the sum of individual lengths. |
-| **E5 token-cap candidate** | A complete passage over the E5 limit. It has no vector or E5 semantic score and is visible as `E5_TOKEN_CAP` metadata. |
-| **BGE token-cap evidence** | Selected BGE pair evidence whose complete actual-tokenizer encoding exceeds 512. It has no score, remains visible and blocking, and is not filtered. |
-| **NLI token-cap evidence** | Selected NLI pair evidence whose complete actual-tokenizer encoding exceeds 512. It has no probabilities, remains visible and blocking, and is not filtered. |
-| **Second-stage pair budget** | The positive `GIVN_SPEC_MAX_RERANK_PAIRS` setting. Unset means 2048; it truncates only the rulebook-selected set as an emergency ceiling — candidates after the truncated prefix are unscored. |
-| **Unified rulebook** | The single change-scoped comparison sequence: embed, compare (delta↔permanent and delta↔delta), cut at the E5 admission threshold, select, judge, report. All three change-scoped consumers (`givn spec review`, `givn check review`, the archive gate) apply it. Anti-terms: pipeline, pool. |
-| **Pair cap** | The fixed maximum number of pairs the rulebook selects for second-stage judgement in one run (20). Pairs beyond the cap are not candidates. |
-| **Neighbour count** | The fixed maximum number of highest-scored neighbours per delta scenario the rulebook keeps before the pair cap (5). |
-| **Pair-score cache** | The persisted store of per-pair BGE/NLI evidence keyed by endpoint content and evidence hashes. Unchanged endpoints reuse recorded judgements; the run reports reused versus computed counts. Anti-terms: memo, result cache. |
-| **Hybrid selection** | The rulebook's two-stage selection: per-scenario neighbour count first, then one shared pair cap by E5 score with deterministic tie order. |
-| **Unselected pair** | A rulebook pair beyond the neighbour count or the pair cap. It is not a candidate: no evidence, no report entry, no blocking state. Anti-term: unscored candidate (reserved for budget truncation only). |
-| **E5 candidate** | A semantic pair produced at or above the single E5 `0.9000` admission boundary after rulebook selection, before optional BGE/NLI evidence. |
-| **Semantic review candidate** | A blocking-report pair involving an active Added/Modified delta in either `delta-to-permanent` or `delta-to-delta` scope. Removed and permanent-permanent pairs are excluded. |
-| **Semantic report** | `givn/changes/<id>/semantic-review.md`, generated only by blocking `givn check review --change <id>` and retained under archive as historical evidence. |
-| **Semantic report writer** | The code that emits fixed report headers/fields, compact JSON values, `null` absence, and atomic replacement. |
-| **Decision-first reporting** | Advisory review's visibility policy: default text shows status lines, counters, and only recommended second-stage pairs ordered by model confidence; `--verbose` lifts all limits; `--format json` emits one complete document. |
-| **Findings document** | The schema-version-1 JSON review document persisted to `givn/changes/<id>/review-findings.json` when the similarity gate fails; successful reviews write nothing. |
-| **Prior report extraction** | The current line-oriented carry-forward reader for candidate id, classification, rationale, and evidence hashes. It is not a complete strict wire-grammar parser. |
-| **Candidate identity** | A 16-character lowercase hexadecimal FNV-1a hash of scope and canonical endpoint scopes/files/titles. It excludes score, evidence hashes, and report schema. |
-| **Endpoint evidence hash** | A separate 16-character hash over canonical endpoint evidence and model/index/schema metadata. Both endpoint hashes must match for classification carry-forward. |
-| **Semantic classification** | Agent-owned `DUPLICATE`, `VARIANT`, `VALID-BOUNDARY`, or blocking `UNCERTAIN` value in the semantic report. |
-| **Projected remediation** | Read-only application of the active delta to an in-memory permanent view for verifying a previous classification. |
-| **Parameterized variant** | A projected `Scenario Outline` with a non-empty Examples table, required by the current `VARIANT` verifier. |
-| **Observable distinction** | A changed Fingerprint assertion or fact, required by the current `VALID-BOUNDARY` verifier along with a score below `0.9000`. |
-| **Delta-to-delta remediation** | A prior semantic candidate whose endpoints are both current-change entries. The current verifier rejects this scope; it is a known unsupported path. |
 | **Permanent duplicate audit** | `givn spec duplicates`, a complete advisory scan of current `givn/specs/` excluding active changes and archive contents. |
-| **Audit index reuse** | Duplicate Audit reads `.spec-index.json` and reuses vectors/cap metadata only when every current identity and complete hash matches. It does not write or refresh the index. |
 | **Exact duplicate** | Two permanent scenarios with the same canonical behavior body, including relevant backgrounds, steps, tables, docstrings, and examples, independent of title/path. |
 | **Structural overlap** | Equal masked assertion shape or a strict assertion-subset relation with Fingerprint facts. Given/When action structure is not part of the relation. |
-| **Semantic candidate** | A remaining permanent pair whose E5 cosine reaches `0.9500`; it is advisory in Duplicate Audit and only evidence for later review. |
-| **Scenario identity** | A project-relative forward-slash feature file plus scenario title. Modified deltas additionally have a projected target identity. |
-| **Project-relative path identity** | The normalized path form used for permanent, delta-source, projected-target, and file-query comparisons. |
-| **Same-file filter** | A surface-specific rule: Explore removes only the exact file/title identity; second-stage advisory projected comparisons exclude same-file pairs; strict E5, blocking report, and Duplicate Audit retain same-file pairs except for a Modified delta's own projected target where specified. |
-| **Request-local corpus** | Active Added/Modified scenarios and transient vectors merged with permanent candidates for one change-aware Explore or review request. |
-| **BGE evidence** | Bidirectional raw-logit evidence from `rozgo/bge-reranker-v2-m3`; its symmetric average is diagnostic and not a Givn classification. |
-| **BGE_RECOMMENDED** | BGE symmetric raw logit at or above `3.0`; non-authoritative evidence that can enter a model-reduced worklist. |
-| **BGE_FILTERED** | BGE symmetric raw logit below `3.0`; visible non-blocking evidence with no Givn classification. |
-| **BGE_UNSCORED** | A candidate for which the selected BGE path produced no score, including a budget tail or a candidate outside the Duplicate Audit's endpoint top-five union. It has no BGE score and remains visible. |
-| **BGE_UNAVAILABLE** | Selected BGE run state for missing artifact or an all-over-cap selected set. A failed approval or disabled selector instead leaves no BGE evidence object. |
-| **BGE top-five endpoint union** | Duplicate Audit's union of up to five E5 neighbors per endpoint after deterministic exclusions, before budget selection. |
-| **BGE approval** | `givn/.spec-bge-admission.json` metadata checked by the current runtime for schema, model, threshold, top-k, active budget, pipeline version, and `acceptance.pass`. Runtime artifact preflight is separate. |
-| **BGE local artifact set** | `model.onnx`, optional referenced external weights, tokenizer/config/special-token/tokenizer-config files checked before the user-defined loader. |
-| **NLI evidence** | Bidirectional local probabilities for entailment, neutral, and contradiction plus an averaged-logit symmetric vector. |
-| **NLI_RECOMMENDED** | Symmetric NLI entailment probability at or above inclusive `0.5000`; non-authoritative evidence. |
-| **NLI_FILTERED** | Symmetric NLI entailment probability below `0.5000`; visible non-blocking evidence. |
-| **NLI_UNSCORED** | An E5 candidate outside the selected NLI budget. It has no NLI probabilities and is not a model rejection. |
-| **NLI_UNAVAILABLE** | Selected NLI run state for missing artifacts or an all-over-cap selected set. Disabled NLI emits no NLI object. |
-| **Surface-specific pool** | The E5 candidates supplied to a second-stage model by a particular command: Duplicate Audit BGE uses the top-five union, Duplicate Audit NLI uses the full E5 semantic set, and blocking review uses complete report candidates. |
-| **Combined recommendation** | Intersection of participating BGE and NLI recommended states. Filtered, capped, unscored, and unavailable evidence is not silently resolved. |
-| **Permanent-only index boundary** | The persisted index contains permanent entries and E5 cap metadata, not active delta vectors, audit state, classifications, or semantic report state. |
-| **Retrieval feature** | Cargo feature `spec-retrieval`, which provides local E5/index behavior and is required for blocking semantic report generation. |
-| **Strict E5 gate** | Retired by ADR-066: the separate `0.95` boundary was absorbed into the unified rulebook's `0.90` admission; `spec-similarity-gate` still controls whether the E5 layer blocks. |
+| **Scenario identity** | A project-relative forward-slash feature file plus scenario title. |
+| **Project-relative path identity** | The normalized project-relative forward-slash path form used when comparing permanent and delta scenarios. |
 | **Arc42 implementation conformance** | Human evidence review of durable Arc42 chapters and change assessment against design, tasks, and implementation, supplemented by affected-file integrity checks. |
 | **ADR** | Architecture Decision Record. Active records live in `adr/`; historical records live in `adr/archive/`. |
 | **Current architecture contract** | Only an ADR with `status: accepted` and no supersession relationship. Proposed and archived records do not bind the current system. |
@@ -121,17 +70,6 @@
 | **Migration coverage receipt** | The machine-readable comparison written by `givn check migration`, including behavior, E2E, interaction, line, and branch outcomes. Anti-term: test summary. |
 | **Aggregate migration change** | One visible maintenance change containing all bundle phases required to cross a version gap, with ordered metadata in `migration.yaml`. |
 | **Managed upgrade** | A migration-free upgrade that synchronizes Givn-owned files and creates one allowlist-only commit when needed. |
-| **Default feature set** | Every currently declared Cargo feature activated by `cargo install` unless `--no-default-features` is supplied. |
-| **XDG model cache** | User-level cache rooted at `$XDG_CACHE_HOME/givn` or `$HOME/.cache/givn`, containing shared E5, BGE, and NLI artifacts rather than project-specific index state. |
-| **Role cache** | The `e5`, `bge`, or `nli` subdirectory of the XDG model cache, selected by the model layer that needs artifacts. |
-| **Artifact resolver** | The validated acquisition boundary that reuses or downloads complete model files before tokenizer/model construction. |
-| **Missing-index diagnostic** | `spec index is missing at <path>; run \`givn spec index\` first`, emitted when a semantic surface has no persistent index. |
-| **Search evidence** | The opt-in `givn spec search --evidence` report: per-candidate `BGE_*`/`NLI_*` verdict lines over the five displayed results plus a layer-availability summary; it never changes the E5 ranking. |
-| **Benchmark export cache** | The XDG `givn/nli-exported` directory containing a flat NLI ONNX export for the external comparison tooling; it is separate from the product's `givn/nli` Hub snapshot. |
-| **Installed build** | A givn binary built for normal installation (the release profile used by `cargo install`). It always evaluates the semantic gates with the real models and ignores every fixture request. |
-| **Development build** | A givn binary built for development and testing (the debug profile used by `cargo test` and `cargo build`). It honours fixture requests so the fixture suite stays fast and offline. |
-| **Fixture request** | An environment-driven request to substitute simulated model output or to disable a model evidence stage. It is honoured only by a development build; an installed build ignores it, announces the refusal, and runs the real model. |
-| **Model-location request** | An environment-driven request that still runs the real models, but from a chosen local, offline, or custom cache location. It is honoured by both builds; it never substitutes simulated output. |
 | **Run declaration** | The author-owned `run:` block in `givn/commands.yaml`: product type, start command, exactly one server port source, readiness path, and readiness timeout. One replace-whole overlay unit, like `verify` and `coverage`. Anti-terms: "start config", "launch config". |
 | **Product type** | The declared kind of the built product: `server`, `cli`, or `library`. Drives which run-declaration fields apply and how the README block renders. Anti-term: "product kind". |
 | **Start command** | The declared command that starts the built product. Anti-terms: "entrypoint", "launch command". |
@@ -148,13 +86,6 @@
 | **Start plan** | The resolved, printable form of the run declaration produced by `givn run --print`: one sh-eval-able line (`PORT=<port> <command>` with a port hand-off, else `<command>`). Anti-term: "run config". |
 | **Backfill scaffold** | The managed-upgrade append of the run-declaration scaffold into an existing `givn/commands.yaml` when the `run:` key is absent; idempotent. Anti-term: "migration". |
 | **Executor** | The givn subsystem behind `givn run` that resolves the start plan, spawns the product, probes readiness, forwards exit codes, and forwards signals on unix. Anti-terms: "supervisor", "daemon". |
-| **Remediation log** | `givn/changes/<id>/semantic-remediation.md`, the append-only per-change artifact written by blocking `givn check review`; one entry per admitted candidate plus one review-run record per executed run, retained next to the semantic report under archive. Anti-terms: "remediation report", "history file". |
-| **Remediation log entry** | The per-candidate log block: before state (scores, BGE/NLI evidence states, verbatim endpoint text), decision (classification and rationale), fix (remediation text and commits), and after state (verified end state and recomputed score). Anti-term: "candidate record". |
-| **Review run record** | The log block for one executed semantic review run, anchored by its commit and recording per-stage durations (embedding recall, BGE, NLI); `null` only when a stage did not execute — a measured 0 is valid, including cache-only runs. Anti-term: "timing log". |
-| **Git anchor** | The full 40-character SHA commit recorded in a run record or log entry field (`null` without Git history, including an unborn branch); it pins the log's historical facts to reproducible Git states. Anti-term: "short hash". |
-| **Git stamp** | The footer line `semantic-remediation: <change-id>/<candidate-id>` in every remediation commit message, one line per fixed candidate; the review gate cross-validates it against the log entry. Anti-terms: "commit tag", "release stamp". |
-| **Verbatim scenario text** | The exact source lines of an endpoint's Gherkin scenario, recorded 1:1 in the log entry with its content and evidence hashes; it is the reviewed text, not the model-internal serialization. Anti-terms: "normalized evidence", "scenario dump". |
-| **Append-only log** | The remediation log's write discipline: entries are written once at run time and never regenerated; identical endpoint evidence is not duplicated, changed endpoints start a new entry. Anti-term: "rewrite log". |
 | **Ideation** | The facilitation skill that works a vague idea into change-ready use cases through phases, stakeholder personas, and rubric reviews. Anti-terms: brainstorm, discovery, workshop. |
 | **Ideation topic** | One ideation effort whose state persists under `givn/ideation/<topic-id>/` across sessions until handoff. Anti-term: ideation session (a topic spans sessions). |
 | **Frame** | The ideation phase that inventories existing project knowledge or establishes problem, vision, and stakeholders for a new domain. |

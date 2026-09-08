@@ -1,5 +1,5 @@
 ---
-status: proposed
+status: superseded by ADR-069
 date: 2026-09-03
 decision-makers:
   - givn maintainers
