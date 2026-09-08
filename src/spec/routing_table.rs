@@ -199,6 +199,36 @@ pub fn check_routing_consistency(project_root: &Path, change_id: &str) -> Result
                     ));
                 }
             }
+            Decision::NewIn(usecase) if usecase == "fragments" => {
+                // Fragment capabilities live under givn/specs/fragments/ with
+                // fragment.md as their narrative; they carry no interactions.
+                let fragment_path = permanent_root.join("fragments").join("fragment.md");
+                let fragment = std::fs::read_to_string(&fragment_path)
+                    .map_err(|error| {
+                        anyhow::anyhow!("decision NEW in fragments: cannot read {fragment_path:?}: {error}")
+                    })
+                    .and_then(|text| {
+                        crate::gherkin::usecase_md::parse_fragment_md(&text).map_err(|error| {
+                            anyhow::anyhow!("decision NEW in fragments: invalid fragment.md: {error}")
+                        })
+                    });
+                match fragment {
+                    Ok(doc) if doc.capabilities.contains(&delta.capability) => {}
+                    Ok(_) => {
+                        errors.push(format!(
+                            "decision NEW in fragments: fragment.md does not declare capability '{}'",
+                            delta.capability
+                        ));
+                    }
+                    Err(error) => errors.push(error.to_string()),
+                }
+                if delta.usecase.as_deref() != Some("fragments") {
+                    errors.push(
+                        "decision NEW in fragments: the delta must live under specs/fragments/"
+                            .to_string(),
+                    );
+                }
+            }
             Decision::NewIn(usecase) => {
                 if resolve_permanent_usecase(&permanent_root, &delta.capability).is_some() {
                     errors.push(format!(

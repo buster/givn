@@ -60,7 +60,8 @@ capability; decisions below deviate with rationale.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| release-0-3-0 (maintain-project) | — (not ranked) | `EXTEND release-0-3-0` | Owns the pinned build contract; its default-build scenario updates from "four features declared opt-in" to "no opt-in features declared". |
+| release-0-3-0 | — (not ranked) | `EXTEND release-0-3-0` | Owns the pinned build contract; its default-build scenario updates from "four features declared opt-in" to "no opt-in features declared". |
+| instruction-integrity | — (not ranked) | `NEW in fragments` | Support-fragment capability; its permanent scenario is modified to pin the absence of engine-backed retrieval wording. |
 | release-strict-model-overrides (discover-specifications) | — (not ranked) | `RETIRE release-strict-model-overrides` via `@givn.retired` | Engine retired; installed-build strictness has no subject. Precedent: `retire-semantic-capabilities`. |
 | givn-workflow-enforcement (verify-change) | `EXTEND` (7.00) | Not extended | Generic keyword match on `givn check`; no observable workflow-enforcement behaviour changes. |
 

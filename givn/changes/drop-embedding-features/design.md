@@ -70,6 +70,18 @@ similarity-gate hooks, and the `GIVN_SPEC_*` stub environment disappear from
 the binary; `check review` and `archive` keep every deterministic gate with
 unchanged exit semantics.
 
+## Routing-gate extension (discovered during review)
+
+The 0.6.0 routing gate had no path for fragment capabilities: `EXTEND`
+skips `givn/specs/fragments/` and `NEW in <usecase>` demanded a
+`usecase.md`. This change's guidance delta is the first fragment edit
+through the gate. The gate's `NEW in` branch now accepts `NEW in
+fragments`: it validates `givn/specs/fragments/fragment.md`, requires the
+declared capability in its Capabilities list, requires the delta under
+`specs/fragments/`, and applies no interaction requirement (fragments
+declare `Interactions: none` by contract). No other gate behaviour
+changes.
+
 ## Data model changes
 
 - No persisted project state changes.
