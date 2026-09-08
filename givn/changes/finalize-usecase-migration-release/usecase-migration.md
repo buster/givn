@@ -21,8 +21,9 @@ canonical corpus and the archived canonical migration feature.
 
 ## Source evidence
 
-The source coverage receipt records a line-coverage ratio decrease from
-`7162/13704` to `7439/18235`. Branch counters are `0/0` in both reports, so
-the branch dimension is not materially measured. This remains a blocking
-release finding until the source coverage baseline is reconciled or the added
-canonical migration surfaces receive sufficient executable coverage.
+The comparable non-E2E source coverage receipt improves line coverage from
+`6773/13704` to `7159/14478`. Branch counters are `0/0` in both reports, so
+the branch dimension is not materially measured. The historical release-proof
+subprocess could not run in the temporary pre-release worktree because its
+release executable path was unavailable; the current 0.6.0 E2E suite passes
+the release-proof scenarios.

@@ -136,6 +136,5 @@
       steps plus the 5 installed-build release-proof scenarios. Watn
       `./run-tests.sh` and `./run-tests.sh --e2e` passed. Kiekste
       `KIEKSTE_TEST_JOBS=1 ./run-tests.sh` and its `--e2e` variant passed. The
-      Givn source-coverage gate remains blocked by the measured historical
-      ratio; the migration change is intentionally not archived over that
-      failure.
+      comparable non-E2E source receipt passes from `6773/13704` to
+      `7159/14478`; branch evidence is `0/0` on both sides.
