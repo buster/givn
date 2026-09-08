@@ -108,8 +108,7 @@
 - [x] GREEN: the scoped E2E runner passed with `1 feature / 1 scenario (1
       passed)` and 4 steps through the real CLI subprocess.
 - [x] REFACTOR: the corrected scoped E2E rerun passed with the same result.
-- [x] COMMIT: `4c42731` — feat(givn-workflow-enforcement): consumer sees
-      migration coverage receipt.
+- [x] COMMIT: `30cc825` — test(e2e): consumer runs migration coverage check.
 
 ## Scenario: Explicit retirement documents a changed behavior
 
