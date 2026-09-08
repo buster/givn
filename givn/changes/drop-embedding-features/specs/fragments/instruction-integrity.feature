@@ -2,7 +2,7 @@
 
 Feature: Instruction integrity for generated guidance
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Retrieval guidance distinguishes build capabilities
     Given the synchronized agent guidance for the specs workflow
     When an author reads the guidance
