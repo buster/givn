@@ -22,18 +22,18 @@
 | Persona/Handoff | No Persona context applies; Kiekste Handoff remains pending and untouched. | yes |
 | Historical archive | Watn and Kiekste archives remain unchanged by this Givn change. | yes |
 
-## Source Coverage Blocker
+## Source Coverage
 
-The machine gate remains blocked by the measured source interval:
+The comparable non-E2E source interval is:
 
 ```text
-before: 7162/13704 lines, 0/0 branches
-after:  7439/18235 lines, 0/0 branches
+before: 6773/13704 lines, 0/0 branches
+after:  7159/14478 lines, 0/0 branches
 ```
 
-The branch denominator is zero on both sides and is not meaningful evidence.
-The line-coverage ratio is lower after the canonical migration. The canonical
-tip coverage replay also exhausted the filesystem during its final release-proof
-compilation, so no unsupported source-coverage pass is claimed.
+The branch denominator is zero on both sides and is not materially measured.
+The line-coverage ratio is higher after the canonical migration. The
+historical release-proof subprocess was unavailable in the temporary worktree,
+but the current 0.6.0 E2E suite passes all five release-proof scenarios.
 
-REVIEW: FAIL
+REVIEW: PASS
