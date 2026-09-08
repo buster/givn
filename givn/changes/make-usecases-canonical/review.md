@@ -23,6 +23,8 @@ json`. Historical archives are excluded from the active corpus migration.
 
 ## Sign-off
 
+README-IMPACT: none
+
 - [x] Unit suite passes.
 - [x] Feature suite passes.
 - [x] Active corpus has no `group.md` narrative files.
