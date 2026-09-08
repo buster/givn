@@ -36,4 +36,6 @@ The line-coverage ratio is higher after the canonical migration. The
 historical release-proof subprocess was unavailable in the temporary worktree,
 but the current 0.6.0 E2E suite passes all five release-proof scenarios.
 
+README-IMPACT: none
+
 REVIEW: PASS
