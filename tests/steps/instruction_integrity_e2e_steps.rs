@@ -46,13 +46,6 @@ fn cli_contains_complete_policy(world: &mut GivnWorld) {
     assert!(output.contains("Interface obstacle rule"));
 }
 
-#[then("the CLI output distinguishes available and unavailable retrieval behavior")]
-fn cli_distinguishes_retrieval_behavior(world: &mut GivnWorld) {
-    let output = stdout(world);
-    assert!(output.contains("givn spec index"));
-    assert!(output.contains("retrieval-unavailable"));
-}
-
 #[then("the CLI output no longer advertises retrieval commands")]
 fn cli_no_longer_advertises_retrieval(world: &mut GivnWorld) {
     let output = stdout(world);

@@ -297,11 +297,11 @@ fn project_override_remains_unchanged(world: &mut GivnWorld) {
     assert_eq!(content, format!("# {OVERRIDE_SENTINEL}\n"));
 }
 
-fn retrieval_guidance(world: &GivnWorld) -> &str {
+fn specs_guidance(world: &GivnWorld) -> &str {
     world
         .additional_output
         .as_deref()
-        .expect("retrieval guidance was not loaded")
+        .expect("specs guidance was not loaded")
 }
 
 #[given("the synchronized agent guidance for the specs workflow")]
@@ -318,14 +318,14 @@ fn synchronized_specs_guidance(world: &mut GivnWorld) {
 #[when("an author reads the guidance")]
 fn author_reads_guidance(world: &mut GivnWorld) {
     assert!(
-        !retrieval_guidance(world).is_empty(),
+        !specs_guidance(world).is_empty(),
         "guidance must not be empty"
     );
 }
 
 #[then("the guidance does not mention engine-backed retrieval commands")]
 fn guidance_omits_engine_commands(world: &mut GivnWorld) {
-    let content = retrieval_guidance(world);
+    let content = specs_guidance(world);
     for command in [
         "givn spec index",
         "givn spec search",
@@ -341,7 +341,7 @@ fn guidance_omits_engine_commands(world: &mut GivnWorld) {
 
 #[then("the guidance does not offer advisory or blocking retrieval paths")]
 fn guidance_omits_retrieval_paths(world: &mut GivnWorld) {
-    let content = retrieval_guidance(world);
+    let content = specs_guidance(world);
     for marker in [
         "retrieval-unavailable",
         "Retrieval-aware authoring",
@@ -357,7 +357,7 @@ fn guidance_omits_retrieval_paths(world: &mut GivnWorld) {
 
 #[then("the guidance keeps the deterministic spec toolchain wording")]
 fn guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
-    let content = retrieval_guidance(world);
+    let content = specs_guidance(world);
     for marker in ["@givn.delta", "givn lint", "givn/changes/"] {
         assert!(
             content.contains(marker),
