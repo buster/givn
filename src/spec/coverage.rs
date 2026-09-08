@@ -424,4 +424,23 @@ mod tests {
         );
         assert!(!comparison.passed);
     }
+
+    #[test]
+    fn lower_branch_coverage_blocks() {
+        let comparison = compare_source(
+            SourceCoverage {
+                lines_covered: 90,
+                lines_valid: 100,
+                branches_covered: 9,
+                branches_valid: 10,
+            },
+            SourceCoverage {
+                lines_covered: 90,
+                lines_valid: 100,
+                branches_covered: 8,
+                branches_valid: 10,
+            },
+        );
+        assert!(!comparison.passed);
+    }
 }
