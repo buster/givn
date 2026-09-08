@@ -119,20 +119,24 @@ For each artifact:
 - Think about: who benefits, what changes from the user's perspective, what
   constraints or risks exist.
 - **Capability Routing (mandatory, before specs)**: after drafting the
-  proposal, run `givn spec route --change <id>` and fill in the proposal's
-  `## Capability Routing` table — one row per capability the change touches,
-  recording route's recommendation and the decision (`EXTEND <cap>` or
-  `NEW in <group>`). Deviations from route are allowed but must carry a
-  rationale in the table. The specs step reads this table, not the proposal's
-  prose; `givn check review` compares the recorded decision against the delta
-  that was actually authored.
+   proposal, run `givn spec route --change <id>` and fill in the proposal's
+   `## Capability Routing` table — one row per capability the change touches,
+   recording route's recommendation and the decision (`EXTEND <capability>` or
+   `NEW in <usecase-id>`). Deviations from route are allowed but must carry a
+   rationale in the table. The specs step reads this table, not the proposal's
+   prose; `givn check review` compares the recorded decision against the delta
+   that was actually authored.
+- **Use-case context**: when a stable use-case ID or ideation change seed is
+  available, read its `usecase.md` and record the ID, source topic, and
+  confirmed affected Persona IDs. Do not invent Personas or copy Persona
+  biographies into the proposal.
 
 **specs** (specs/**/*.feature):
-- One .feature file per capability, grouped under the capability's use-case
-  group: `givn/changes/<id>/specs/<group>/<capability>.feature` (mirrors the
-  permanent layout `givn/specs/<group>/<capability>.feature`). The group for
-  an existing capability is wherever it already lives; a new capability's
-  group comes from the Capability Routing decision.
+- One .feature file per capability under its use-case ID:
+  `givn/changes/<id>/specs/<usecase-id>/<capability>.feature` (mirrors the
+  permanent layout `givn/specs/<usecase-id>/<capability>.feature`). The owner
+  for an existing capability is wherever its `usecase.md` declares it; a new
+  capability's owner comes from the Capability Routing decision.
 - Tags: `@givn.delta @<capability>` on Feature; `@givn.added` + `@wip` on
   each Scenario (use `@givn.modified` or `@givn.removed` where appropriate).
   Tags go on the line **before** `Scenario:`, never inside the scenario body.

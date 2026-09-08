@@ -193,6 +193,15 @@ the configured E2E command, and the normalized inventory-to-scenario mapping.
 Missing, downgraded, or over-produced coverage is unfinished work and must be
 fixed or classified under the three coverage buckets above.
 
+## Use-case and Persona conformance
+
+Read the owning `usecase.md`, the proposal's use-case context, and any ideation
+change seed. Confirm implementation preserves the use-case guarantees, rules,
+typed relationships, capability ownership, and confirmed Persona-relevant
+outcomes. Actors remain interaction roles; Persona biographies remain review
+context. Record migration-ledger evidence where applicable. Do not sign off
+invented or silently promoted Personas.
+
 ## Deterministic gate dispositions
 
 For every shape match involving the change, complete the **Overlap

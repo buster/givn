@@ -4,6 +4,7 @@ use crate::gherkin::parse::collect_feature_files;
 use crate::state::{ArtifactStatus, ChangeState};
 use anyhow::{Result, bail};
 use gherkin::GherkinEnv;
+use sha2::{Digest, Sha256};
 
 /// Archive a completed change.
 ///
@@ -180,6 +181,11 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         let backup_readme = backup_dir.join("README.md");
         std::fs::copy(&readme_path, &backup_readme)?;
     }
+
+    // Validate complete use-case replacements against their base revisions
+    // before changing either narratives or feature files.
+    validate_usecase_documents(&project_root, change)?;
+    merge_usecase_documents(&project_root, change)?;
 
     // === Merge delta features ===
 
@@ -364,21 +370,168 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     Ok(())
 }
 
-/// Resolve which group directory an existing capability lives in, by
+fn collect_narrative_documents(
+    dir: &std::path::Path,
+    out: &mut Vec<std::path::PathBuf>,
+) -> Result<()> {
+    if !dir.exists() {
+        return Ok(());
+    }
+    for entry in std::fs::read_dir(dir)? {
+        let path = entry?.path();
+        if path.is_dir() {
+            collect_narrative_documents(&path, out)?;
+        } else if path.file_name().is_some_and(|name| name == "usecase.md")
+            || (path.file_name().is_some_and(|name| name == "fragment.md")
+                && path.parent().and_then(|parent| parent.file_name())
+                    == Some(std::ffi::OsStr::new("fragments")))
+        {
+            out.push(path);
+        }
+    }
+    Ok(())
+}
+
+fn content_hash(content: &str) -> String {
+    Sha256::digest(content.as_bytes())
+        .iter()
+        .map(|byte| format!("{byte:02x}"))
+        .collect()
+}
+
+fn base_hash(content: &str) -> Option<&str> {
+    content.lines().find_map(|line| {
+        line.trim()
+            .strip_prefix("<!-- givn:base-sha256:")
+            .and_then(|value| value.strip_suffix("-->"))
+            .map(str::trim)
+    })
+}
+
+fn narrative_target(
+    specs_root: &std::path::Path,
+    relative: &std::path::Path,
+) -> Result<std::path::PathBuf> {
+    if relative == std::path::Path::new("fragments/fragment.md") {
+        return Ok(specs_root.join(relative));
+    }
+    if relative
+        .file_name()
+        .is_some_and(|name| name == "usecase.md")
+    {
+        let Some(usecase) = relative.parent().and_then(|parent| parent.file_name()) else {
+            bail!("usecase.md must be under specs/<usecase-id>/");
+        };
+        return Ok(specs_root.join(usecase).join("usecase.md"));
+    }
+    bail!(
+        "unsupported narrative path '{}'; expected usecase.md or fragments/fragment.md",
+        relative.display()
+    )
+}
+
+fn validate_usecase_documents(project_root: &std::path::Path, change_id: &str) -> Result<()> {
+    let change_specs = project_root
+        .join("givn/changes")
+        .join(change_id)
+        .join("specs");
+    let permanent_specs = project_root.join("givn/specs");
+    let mut documents = Vec::new();
+    collect_narrative_documents(&change_specs, &mut documents)?;
+    for document in documents {
+        let relative = document.strip_prefix(&change_specs)?;
+        let target = narrative_target(&permanent_specs, relative)?;
+        let content = std::fs::read_to_string(&document)?;
+        if relative == std::path::Path::new("fragments/fragment.md") {
+            crate::gherkin::usecase_md::parse_fragment_md(&content).map_err(|error| {
+                anyhow::anyhow!(
+                    "invalid fragment document '{}': {error}",
+                    document.display()
+                )
+            })?;
+        } else {
+            let doc = crate::gherkin::usecase_md::parse_usecase_md(&content).map_err(|error| {
+                anyhow::anyhow!(
+                    "invalid use-case document '{}': {error}",
+                    document.display()
+                )
+            })?;
+            let expected = relative
+                .parent()
+                .and_then(|parent| parent.file_name())
+                .and_then(|name| name.to_str())
+                .unwrap_or_default();
+            if doc.id != expected {
+                bail!(
+                    "use-case document '{}' declares ID '{}' but its path owns '{}',",
+                    document.display(),
+                    doc.id,
+                    expected
+                );
+            }
+        }
+        if target.exists() {
+            let Some(expected_hash) = base_hash(&content) else {
+                bail!(
+                    "archive blocked: '{}' replaces an existing narrative without a base hash",
+                    document.display()
+                );
+            };
+            let actual_hash = content_hash(&std::fs::read_to_string(&target)?);
+            if expected_hash != actual_hash {
+                bail!(
+                    "archive blocked: stale narrative replacement '{}' — expected base {}, current {}",
+                    document.display(),
+                    expected_hash,
+                    actual_hash
+                );
+            }
+        }
+    }
+    Ok(())
+}
+
+fn merge_usecase_documents(project_root: &std::path::Path, change_id: &str) -> Result<()> {
+    let change_specs = project_root
+        .join("givn/changes")
+        .join(change_id)
+        .join("specs");
+    let permanent_specs = project_root.join("givn/specs");
+    let mut documents = Vec::new();
+    collect_narrative_documents(&change_specs, &mut documents)?;
+    for document in documents {
+        let relative = document.strip_prefix(&change_specs)?;
+        let target = narrative_target(&permanent_specs, relative)?;
+        if let Some(parent) = target.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+        std::fs::write(target, std::fs::read_to_string(document)?)?;
+    }
+    Ok(())
+}
+
+/// Resolve which use-case directory an existing capability lives in, by
 /// scanning `givn/specs/*/<cap>.feature`. Returns None if the capability
 /// doesn't exist yet anywhere (a genuinely new capability — the caller
 /// then decides placement; see the `## Capability Routing` section in
 /// proposal.md, Phase 4).
-fn resolve_capability_group(specs_root: &std::path::Path, cap: &str) -> Option<std::path::PathBuf> {
+fn resolve_capability_usecase(
+    specs_root: &std::path::Path,
+    cap: &str,
+) -> Option<std::path::PathBuf> {
     let entries = std::fs::read_dir(specs_root).ok()?;
     for entry in entries.flatten() {
-        let group_dir = entry.path();
-        if !group_dir.is_dir() {
+        let usecase_dir = entry.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        let candidate = group_dir.join(format!("{cap}.feature"));
+        let candidate = usecase_dir.join(format!("{cap}.feature"));
         if candidate.exists() {
-            return Some(group_dir);
+            return Some(usecase_dir);
         }
     }
     None
@@ -408,27 +561,27 @@ fn delta_capability(
     Ok(cap)
 }
 
-/// Resolve the permanent directory a capability's spec lives in: the group
-/// directory it already exists in, or — for a brand-new capability — the
-/// group its proposal's `NEW in <group>` routing decision declares.
+/// Resolve the permanent directory a capability's spec lives in: the use-case
+/// directory it already exists in, or — for a brand-new capability — the use
+/// case its proposal's `NEW in <usecase-id>` routing decision declares.
 fn resolve_permanent_dir(
     project_root: &std::path::Path,
     change_id: &str,
     cap: &str,
 ) -> Result<std::path::PathBuf> {
     let specs_root = project_root.join("givn/specs");
-    if let Some(dir) = resolve_capability_group(&specs_root, cap) {
+    if let Some(dir) = resolve_capability_usecase(&specs_root, cap) {
         return Ok(dir);
     }
-    let group =
-        routing_group_for_new_capability(project_root, change_id, cap).ok_or_else(|| {
+    let usecase =
+        routing_usecase_for_new_capability(project_root, change_id, cap).ok_or_else(|| {
             anyhow::anyhow!(
                 "archive blocked: capability '{cap}' exists nowhere in the \
-             permanent corpus and its proposal records no 'NEW in <group>' \
+             permanent corpus and its proposal records no 'NEW in <usecase-id>' \
              routing decision"
             )
         })?;
-    Ok(specs_root.join(group))
+    Ok(specs_root.join(usecase))
 }
 
 fn process_delta_file(
@@ -441,10 +594,10 @@ fn process_delta_file(
 
     let specs_root = project_root.join("givn/specs");
 
-    // An existing capability lives in the group directory that already
+    // An existing capability lives in the use-case directory that already
     // contains it; a brand-new capability is placed by its proposal's
     // routing decision (the archive blocks when none is recorded).
-    let grouped_dir = resolve_capability_group(&specs_root, &cap);
+    let existing_dir = resolve_capability_usecase(&specs_root, &cap);
 
     if crate::gherkin::delta::is_retired_feature(delta_feature) {
         if !delta_feature.scenarios.is_empty() {
@@ -455,20 +608,10 @@ fn process_delta_file(
                 delta_feature.scenarios.len()
             );
         }
-        match grouped_dir {
-            Some(group_dir) => {
-                // Grouped layout: the capability is one file inside the
-                // group directory. Delete the file, then the group dir if
-                // it became empty — never the whole group (siblings live
-                // there too).
-                let cap_file = group_dir.join(format!("{cap}.feature"));
+        match existing_dir {
+            Some(usecase_dir) => {
+                let cap_file = usecase_dir.join(format!("{cap}.feature"));
                 std::fs::remove_file(&cap_file)?;
-                let now_empty = std::fs::read_dir(&group_dir)
-                    .map(|rd| rd.flatten().count() == 0)
-                    .unwrap_or(false);
-                if now_empty {
-                    std::fs::remove_dir(&group_dir)?;
-                }
                 record_retirement(project_root, &cap, change_id)?;
                 println!(
                     "[{}]   retired → {}",
@@ -476,30 +619,15 @@ fn process_delta_file(
                     cap_file.display()
                 );
             }
-            None => {
-                let flat_dir = specs_root.join(&cap);
-                if !flat_dir.exists() {
-                    bail!(
-                        "archive blocked: '{}' retires capability '{cap}' but \
-                         no such capability exists under givn/specs/",
-                        delta_path.display()
-                    );
-                }
-                // Flat layout (pre-migration corpus): the capability owns a
-                // whole directory — delete it.
-                std::fs::remove_dir_all(&flat_dir)?;
-                record_retirement(project_root, &cap, change_id)?;
-                println!(
-                    "[{}]   retired → {}",
-                    crate::subprocess::local_timestamp(),
-                    flat_dir.display()
-                );
-            }
+            None => bail!(
+                "archive blocked: '{}' retires capability '{cap}' but no such capability exists in the active use-case tree",
+                delta_path.display()
+            ),
         }
         return Ok(());
     }
 
-    let permanent_dir = match grouped_dir {
+    let permanent_dir = match existing_dir {
         Some(dir) => dir,
         None => resolve_permanent_dir(project_root, change_id, &cap)?,
     };
@@ -513,11 +641,11 @@ fn process_delta_file(
     Ok(())
 }
 
-/// The declared group for a new capability, taken from the change's
+/// The declared use case for a new capability, taken from the change's
 /// recorded routing decision. Returns `None` when the proposal is absent,
 /// unparseable, has no row for the capability, or does not declare
-/// `NEW in <group>` — the archive blocks in those cases.
-fn routing_group_for_new_capability(
+/// `NEW in <usecase-id>` — the archive blocks in those cases.
+fn routing_usecase_for_new_capability(
     project_root: &std::path::Path,
     change_id: &str,
     cap: &str,
@@ -533,7 +661,7 @@ fn routing_group_for_new_capability(
         .into_iter()
         .find(|row| row.capability == cap)
         .and_then(|row| match row.decision {
-            crate::spec::routing_table::Decision::NewIn(group) => Some(group),
+            crate::spec::routing_table::Decision::NewIn(usecase) => Some(usecase),
             _ => None,
         })
 }
@@ -686,6 +814,14 @@ Feature: Dead capability
         let cap_dir = project.join("givn/specs/dead-cap");
         std::fs::create_dir_all(&cap_dir).unwrap();
         std::fs::write(cap_dir.join("dead-cap.feature"), PERMANENT_SPEC).unwrap();
+        std::fs::write(
+            cap_dir.join("usecase.md"),
+            crate::gherkin::usecase_md::usecase_md_template()
+                .replace("<usecase-id>", "dead-cap")
+                .replace("<capability-id>", "dead-cap")
+                .replace("<scenario title>", "It does something"),
+        )
+        .unwrap();
         let backup_dir = project.join("givn/.archive-backup-test");
         (root, project, backup_dir)
     }
@@ -705,7 +841,14 @@ Feature: Dead capability
         let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
         process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
 
-        assert!(!cap_dir.exists(), "capability dir should be deleted");
+        assert!(
+            cap_dir.join("usecase.md").exists(),
+            "use-case narrative remains"
+        );
+        assert!(
+            !cap_dir.join("dead-cap.feature").exists(),
+            "capability file should be deleted"
+        );
 
         let tombstone = std::fs::read_to_string(project.join("givn/specs/.retired.yaml")).unwrap();
         assert!(tombstone.contains("dead-cap"), "tombstone: {tombstone}");
@@ -762,7 +905,11 @@ Feature: Dead capability
         let delta_path = project.join("delta.feature");
         let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
         process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
-        assert!(!project.join("givn/specs/dead-cap").exists());
+        assert!(
+            !project
+                .join("givn/specs/dead-cap/dead-cap.feature")
+                .exists()
+        );
         assert!(specs_dir.join(".retired.yaml").exists());
 
         // Post-merge verify fails → rollback. The backup was taken before
@@ -797,13 +944,17 @@ Feature: Dead capability
     #[test]
     fn merge_targets_existing_group_directory() {
         let (_root, project, _backup) = temp_project();
-        // Migrate the capability into a group directory (grouped layout:
-        // givn/specs/<group>/<cap>.feature).
+        // Migrate the capability into another use-case directory.
         let grouped = project.join("givn/specs/some-group");
         std::fs::create_dir_all(&grouped).unwrap();
         std::fs::rename(
             project.join("givn/specs/dead-cap/dead-cap.feature"),
             grouped.join("dead-cap.feature"),
+        )
+        .unwrap();
+        std::fs::rename(
+            project.join("givn/specs/dead-cap/usecase.md"),
+            grouped.join("usecase.md"),
         )
         .unwrap();
         std::fs::remove_dir(project.join("givn/specs/dead-cap")).unwrap();
@@ -832,6 +983,11 @@ Feature: Dead capability
             grouped.join("dead-cap.feature"),
         )
         .unwrap();
+        std::fs::rename(
+            project.join("givn/specs/dead-cap/usecase.md"),
+            grouped.join("usecase.md"),
+        )
+        .unwrap();
         std::fs::remove_dir(project.join("givn/specs/dead-cap")).unwrap();
 
         let delta_path = project.join("delta.feature");
@@ -845,6 +1001,49 @@ Feature: Dead capability
         assert!(
             !project.join("givn/specs/dead-cap").exists(),
             "no flat directory may appear for a grouped capability"
+        );
+    }
+
+    #[test]
+    fn new_usecase_document_is_installed_atomically() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path();
+        let change_specs = project.join("givn/changes/new-usecase/specs/project-run");
+        std::fs::create_dir_all(&change_specs).unwrap();
+        let document = crate::gherkin::usecase_md::usecase_md_template()
+            .replace("<usecase-id>", "project-run")
+            .replace("<capability-id>", "run-project")
+            .replace("<scenario title>", "Consumer runs a project");
+        std::fs::write(change_specs.join("usecase.md"), document).unwrap();
+        validate_usecase_documents(project, "new-usecase").unwrap();
+        merge_usecase_documents(project, "new-usecase").unwrap();
+        assert!(project.join("givn/specs/project-run/usecase.md").exists());
+    }
+
+    #[test]
+    fn stale_usecase_replacement_is_rejected_before_write() {
+        let root = tempfile::TempDir::new().unwrap();
+        let project = root.path();
+        let permanent = project.join("givn/specs/project-run");
+        std::fs::create_dir_all(&permanent).unwrap();
+        let original = crate::gherkin::usecase_md::usecase_md_template()
+            .replace("<usecase-id>", "project-run")
+            .replace("<capability-id>", "run-project")
+            .replace("<scenario title>", "Consumer runs a project");
+        std::fs::write(permanent.join("usecase.md"), &original).unwrap();
+        let change_specs = project.join("givn/changes/replace-usecase/specs/project-run");
+        std::fs::create_dir_all(&change_specs).unwrap();
+        let replacement = format!(
+            "<!-- givn:base-sha256:{} -->\n{}",
+            content_hash("different base"),
+            original
+        );
+        std::fs::write(change_specs.join("usecase.md"), replacement).unwrap();
+        let error = validate_usecase_documents(project, "replace-usecase").unwrap_err();
+        assert!(error.to_string().contains("stale narrative replacement"));
+        assert_eq!(
+            std::fs::read_to_string(permanent.join("usecase.md")).unwrap(),
+            original
         );
     }
 }

@@ -99,10 +99,12 @@ effective manifest and the project-overrides-first instruction cascade.
 givn/
   config.yaml                    # structural overlay, addon flags, targets
   commands.yaml                  # project commands and coverage settings
-  specs/<group>/<cap>.feature  # permanent tag-stripped specification
+  specs/<usecase-id>/usecase.md # permanent use-case contract
+  specs/<usecase-id>/<cap>.feature # permanent tag-stripped specification
+  specs/fragments/fragment.md   # reusable behavior contract
   changes/<id>/                  # active change artifacts and delta features
     proposal.md
-    specs/<group>/<cap>.feature
+    specs/<usecase-id>/<cap>.feature
     design.md
     design-review.md
     tasks.md

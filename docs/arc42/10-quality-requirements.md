@@ -30,6 +30,10 @@ graph TD
     SEMANTIC --> REPORT[Fresh change-local report]
     SEMANTIC --> AUDIT[Read-only permanent audit]
     SEMANTIC --> CACHE[Validated shared model cache]
+    Q --> MIGRATE[Semantic migration safety]
+    MIGRATE --> BEHAVIOR[Behavior hash preservation]
+    MIGRATE --> E2E[Interaction and E2E preservation]
+    MIGRATE --> SOURCE[Line and branch non-regression]
 ```
 
 ## 10.2 Quality Scenarios
@@ -108,6 +112,8 @@ graph TD
 | Q-70 | Gate safety | A change is archived while the `run:` block is unconfigured. | The archive is blocked with labeled findings before any mutation, independent of the readme addon; the change stays active. |
 | Q-71 | Configurability | `givn upgrade` runs twice in a project without a `run:` block. | The first run backfills the scaffold and commits it through the managed allowlist; the second run produces no diff and no commit. |
 | Q-72 | Correctness | A server with `port_env` is started without `--port`. | givn allocates a free port by binding `127.0.0.1:0`, hands it to the product through the declared environment variable, and names it in the ready line. |
+| Q-73 | Migration safety | A capability moves between use-case documents. | The behavior hash remains present, its E2E evidence and interaction mapping remain present, and the migration ledger records the move. |
+| Q-74 | Migration safety | A migration's source coverage decreases. | The migration check blocks and reports covered/total line and branch counters. |
 
 ## 10.3 Verification Signals
 

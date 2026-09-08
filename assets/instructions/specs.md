@@ -49,23 +49,25 @@ What counts as "the real interface" depends on the system type:
 | **Library / SDK** | Public API surface called from real consumer code | Every public function or method a consumer invokes. |
 | **Message/event bus** | Real producer/consumer against running services | Every message type consumed, every side-effect-producing message published. |
 
-Record the inventory in the owning group's `group.md`, under the
-`## Interactions` section — one bullet per interaction:
+Record the inventory in the owning use case's `usecase.md`, under the
+`## Interactions` capability-aware table. Every row names the capability, the
+consumer action, and exactly one matching E2E scenario:
 
 ```
 ## Interactions
 
-- <action description>
-- <action description>
+| Capability | Consumer action | E2E scenario |
+|---|---|---|
+| <capability-id> | <action description> | <scenario title> |
 ```
 
-The group file is the durable home of the inventory: it is never merged
-into a `.feature` file, so it survives the archive merge instead of being
-destroyed the way delta-file comment blocks are. When authoring a delta
-for an existing capability, read the interactions from that capability's
-group's `group.md`; when the change introduces a `NEW in <group>`
-capability (per the proposal's Capability Routing table), update that
-group's `group.md` Interactions section as part of the change.
+The use-case document is the durable home of the inventory: it is never merged
+into a `.feature` file, so it survives the archive merge. When authoring a
+delta for an existing capability, read the owning use case's `usecase.md`; when
+the change introduces a `NEW in <usecase-id>` capability (per the proposal's
+Capability Routing table), create or update that use-case document as part of
+the change. A reusable fragment keeps its own document and its interactions
+are not copied into every including use case.
 
 Each normalized inventory entry MUST have exactly one matching `@e2e` scenario
 in the capability's `.feature` file. If an entry has no corresponding scenario, the
@@ -77,8 +79,8 @@ A `Scenario Outline` tagged `@e2e` counts as the e2e evidence for exactly ONE
 inventory entry: the tag marks that the outline as a whole proves the
 interaction; its Examples rows are input variation, not additional distinct
 interactions. Tagging one Outline with many Examples rows never covers many
-inventory entries. `givn lint` compares the declared interaction count and
-the `@e2e` count per group and reports over- and under-coverage.
+inventory entries. `givn lint` compares the capability-aware inventory with the
+actual `@e2e` titles and reports missing or unlisted mappings per use case.
 
 ## Executable-spec invariant
 
@@ -161,13 +163,14 @@ live in a project-specific location documented in `design.md`. They are
 separate from the unit/integration step definitions because they use
 different infrastructure (browser driver, HTTP client, test harness).
 
-<example caption="Group inventory (in group.md), unit scenarios, and one @e2e per inventory entry">
-<!-- givn/specs/<group>/group.md — ## Interactions section -->
-- submit registration form on /register page
-- navigate to login page
-- submit login form on /login page
+<example caption="Use-case inventory (in usecase.md), unit scenarios, and one @e2e per inventory entry">
+<!-- givn/specs/<usecase-id>/usecase.md — ## Interactions section -->
+| Capability | Consumer action | E2E scenario |
+|---|---|---|
+| user-registration | submit registration form | Consumer submits the registration form |
+| user-registration | navigate to login | Consumer navigates to login and signs in |
 
-<!-- givn/changes/<id>/specs/<group>/user-registration.feature -->
+<!-- givn/changes/<id>/specs/<usecase-id>/user-registration.feature -->
 @givn.delta @user-registration
 
 Feature: User Registration

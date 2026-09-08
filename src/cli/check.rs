@@ -7,6 +7,12 @@ use anyhow::{Result, bail};
 /// `givn check` (no arg) — runs hooks for all artifacts with existing output.
 pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
     let project_root = std::env::current_dir()?;
+    if artifact == Some("migration") {
+        let migration_id = change.ok_or_else(|| {
+            anyhow::anyhow!("givn check migration requires --change <migration-id>")
+        })?;
+        return crate::spec::coverage::check_migration(&project_root, migration_id);
+    }
     let manifest = load_effective()?;
 
     // Determine features_path: active change's features, or default specs.

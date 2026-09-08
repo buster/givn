@@ -6,6 +6,63 @@ pub fn run_index() -> Result<()> {
     crate::spec::retrieval::index(&std::env::current_dir()?)
 }
 
+pub fn run_coverage(baseline: Option<&std::path::Path>, json: bool) -> Result<()> {
+    let root = std::env::current_dir()?;
+    let current = crate::spec::coverage::snapshot(&root)?;
+    if let Some(path) = baseline {
+        let baseline_text = std::fs::read_to_string(path).map_err(|error| {
+            anyhow::anyhow!(
+                "failed to read coverage baseline {}: {error}",
+                path.display()
+            )
+        })?;
+        let before: crate::spec::coverage::CoverageSnapshot = serde_json::from_str(&baseline_text)?;
+        let comparison = crate::spec::coverage::compare(&before, &current);
+        if json {
+            println!("{}", serde_json::to_string_pretty(&comparison)?);
+        } else {
+            println!(
+                "specification coverage: {}",
+                if comparison.passed {
+                    "passed"
+                } else {
+                    "failed"
+                }
+            );
+            println!(
+                "  behavior entries: {} → {}",
+                comparison.before_entries, comparison.after_entries
+            );
+            println!(
+                "  @e2e evidence: {} → {}",
+                comparison.before_e2e, comparison.after_e2e
+            );
+            println!(
+                "  interactions: {} → {}",
+                comparison.before_interactions, comparison.after_interactions
+            );
+            for missing in &comparison.missing_behavior {
+                println!("  missing behavior: {missing}");
+            }
+            for lost in &comparison.lost_e2e {
+                println!("  lost @e2e evidence: {lost}");
+            }
+        }
+        if !comparison.passed {
+            bail!("specification coverage regressed");
+        }
+    } else if json {
+        println!("{}", serde_json::to_string_pretty(&current)?);
+    } else {
+        println!(
+            "specification coverage: {} behavior entries, {} @e2e",
+            current.entries.len(),
+            current.entries.iter().filter(|entry| entry.e2e).count()
+        );
+    }
+    Ok(())
+}
+
 pub fn run_search(query: &str, evidence: bool) -> Result<()> {
     crate::spec::retrieval::search(&std::env::current_dir()?, query, evidence)
 }
@@ -109,7 +166,7 @@ pub fn run_find(query: &str) -> Result<()> {
         println!(
             "  [{}] {} / {} — {}",
             if hit.e2e { "e2e" } else { "   " },
-            hit.group,
+            hit.usecase,
             hit.capability,
             hit.scenario
         );
@@ -128,17 +185,17 @@ pub fn run_tree(json: bool) -> Result<()> {
     Ok(())
 }
 
-/// `givn spec regroup` — print the command-surface clustering proposal.
+/// `givn spec propose-usecases` — print the command-surface proposal.
 /// Never modifies files; a human reviews, confirms, and applies it via the
 /// migration step (retirement plan task 2.5).
-pub fn run_regroup(json: bool) -> Result<()> {
+pub fn run_propose_usecases(json: bool) -> Result<()> {
     let proposal = crate::spec::cluster::cluster_tree(&std::env::current_dir()?);
     if json {
         println!(
             "{}",
             serde_json::to_string_pretty(&serde_json::json!({
-                "groups": proposal
-                    .groups
+                "usecases": proposal
+                    .usecases
                     .iter()
                     .map(|(sub, caps)| serde_json::json!({
                         "dominant_subcommand": sub,
@@ -150,11 +207,11 @@ pub fn run_regroup(json: bool) -> Result<()> {
         );
         return Ok(());
     }
-    println!("Proposed use-case grouping (command-surface clustering)");
-    println!("Rename groups to use-case-flavoured labels before applying.");
+    println!("Proposed use cases (command-surface clustering)");
+    println!("Review and confirm use-case identities before applying.");
     println!("This command never modifies files.\n");
-    for (sub, caps) in &proposal.groups {
-        println!("group '{sub}' ({} capabilities):", caps.len());
+    for (sub, caps) in &proposal.usecases {
+        println!("use case '{sub}' ({} capabilities):", caps.len());
         for cap in caps {
             println!("  - {cap}");
         }

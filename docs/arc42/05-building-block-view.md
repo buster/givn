@@ -28,6 +28,9 @@ flowchart TD
     O --> FINGER[Fingerprint evidence]
     SPEC --> E5[E5 index and semantic surfaces]
     SPEC --> STAGE[BGE/NLI evidence stages]
+    GH --> UC[use-case and fragment parser]
+    SPEC --> COV[coverage inventory and migration comparison]
+    CLI --> UC
 ```
 
 ## 5.3 Production Responsibilities
@@ -55,6 +58,7 @@ flowchart TD
 | `config::overlay` | Apply `givn/config.yaml` and then `givn/commands.yaml`, expand Arc42, and validate graph references/cycles. |
 | `config::cascade` | Resolve project override assets before embedded core or addon assets. |
 | `gherkin::parse` | Parse feature files, collect WIP and E2E tags, and recursively collect `.feature` paths. |
+| `gherkin::usecase_md` | Parse strict `usecase.md` and `fragment.md` documents, identities, goal levels, interactions, Personas, and typed relationships. |
 | `gherkin::delta` | Interpret delta tags, operation defaults, and capability identity. |
 | `gherkin::merge` | Validate all delta preconditions and merge text-level scenario blocks into permanent specs. |
 | `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
@@ -63,6 +67,7 @@ flowchart TD
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
 | `spec::retrieval` | Resolve XDG or explicit model caches, validate/acquire E5/BGE/NLI artifacts, build/read the permanent E5 index, serialize complete scenarios, run the unified change-scoped rulebook behind all review surfaces plus Explore/audit, apply evidence, generate semantic reports, and verify remediation. The same blocking review path maintains the append-only remediation log (`src/spec/remediation_log.rs`): run records with per-stage durations, candidate entries with verbatim endpoint text, after-state completion, and stamp/reachability validation against Git history. Long-running phases (artifact acquisition, embedding) emit phase status and per-file download progress on stderr. Advisory review applies a decision-first reporting policy: default text lists only model-recommended second-stage pairs, `--verbose` lifts every listing limit, `--format json` emits one structured review document, and a failed gate persists that document as the change's findings file. |
+| `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |
 
 ## 5.4 Retrieval Building Block
 

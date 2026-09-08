@@ -13,6 +13,14 @@ Write the proposal for change `<change-id>`.
 - Instructions: run `givn instructions proposal --change <change-id>`
 - Spec will follow: `givn/changes/<change-id>/specs/`
 
+## Use-case context
+
+If the change is linked to a permanent use case or ideation change seed, read
+its `usecase.md` before writing the proposal. Record the stable use-case ID,
+source topic, and confirmed affected Persona IDs in the proposal. Never invent
+or silently promote a Persona, and never copy Persona biographies into the
+proposal.
+
 ## Rules
 
 - Write from the user's perspective. Use domain language (not technical terms).

@@ -87,6 +87,22 @@ pub fn load_catalog() -> Result<MigrationCatalog> {
     let mut sources = HashSet::new();
     for bundle in &catalog.migrations {
         let source = ReleaseVersion::parse(&bundle.source_version)?;
+        if bundle.target_version == "<target-version>" {
+            if !ids.insert(bundle.id.clone()) {
+                bail!(
+                    "migration catalog contains duplicate bundle '{}'",
+                    bundle.id
+                );
+            }
+            if !sources.insert(source) {
+                bail!(
+                    "migration catalog contains multiple bundles from source version '{}'",
+                    bundle.source_version
+                );
+            }
+            validate_bundle_assets(bundle)?;
+            continue;
+        }
         let target = ReleaseVersion::parse(&bundle.target_version)?;
         if target <= source {
             bail!(
@@ -114,22 +130,27 @@ pub fn load_catalog() -> Result<MigrationCatalog> {
         {
             bail!("migration catalog contains an incomplete bundle definition");
         }
-        if crate::config::embedded::Assets::get(&bundle.proposal_asset).is_none() {
-            bail!(
-                "migration bundle '{}' references missing proposal asset '{}'",
-                bundle.id,
-                bundle.proposal_asset
-            );
-        }
-        if crate::config::embedded::Assets::get(&bundle.design_asset).is_none() {
-            bail!(
-                "migration bundle '{}' references missing design asset '{}'",
-                bundle.id,
-                bundle.design_asset
-            );
-        }
+        validate_bundle_assets(bundle)?;
     }
     Ok(catalog)
+}
+
+fn validate_bundle_assets(bundle: &MigrationBundle) -> Result<()> {
+    if crate::config::embedded::Assets::get(&bundle.proposal_asset).is_none() {
+        bail!(
+            "migration bundle '{}' references missing proposal asset '{}'",
+            bundle.id,
+            bundle.proposal_asset
+        );
+    }
+    if crate::config::embedded::Assets::get(&bundle.design_asset).is_none() {
+        bail!(
+            "migration bundle '{}' references missing design asset '{}'",
+            bundle.id,
+            bundle.design_asset
+        );
+    }
+    Ok(())
 }
 
 /// Resolve the declared migration bundles covering a version gap.

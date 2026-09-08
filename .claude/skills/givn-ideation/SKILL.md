@@ -95,6 +95,37 @@ All ideation work lives under `givn/ideation/<topic-id>/`:
 - `domain-terms.md` — domain terms as they crystallize.
 - `changes/<uc-id>.md` — one change seed per use case, written at handoff.
 
+Use-case drafts use the same identity and contract vocabulary as permanent
+specifications. Each `use-cases/<uc-id>.md` uses this stable schema:
+
+```markdown
+# Use case: <use-case-id>
+## Level
+!
+## Actors
+## Goal
+## Trigger
+## Preconditions
+## Main flow
+## Extensions
+## Rules
+## Examples
+## Minimal guarantee
+## Success guarantee
+## Personas
+## Capabilities
+## Interactions
+## Includes
+## Extends
+## Out of scope
+## Diagram
+```
+
+At ideation time `Capabilities` and `Interactions` may be `- none`; Handoff
+maps the same use-case ID into the normal proposal/spec flow. A summary use
+case uses `+` and owns child use-case relationships. A `-` subfunction remains
+inside a flow and does not become a permanent use-case directory.
+
 ## Handoff
 
 The last phase produces the readable record:
@@ -105,6 +136,12 @@ The last phase produces the readable record:
   list; the user decides each one.
 - Offer persona promotion; the user decides per persona file.
 - Write one change seed per use case with a suggested start order.
+- Each change seed records the stable use-case ID, topic source, confirmed
+  Persona IDs, accepted decisions, open questions, and exact handoff status.
+  It is input to `/givn-propose`, not a proposal and not a change.
+- Before publishing, show the use-case-to-permanent mapping, Persona
+  promotion choices, and change seeds. Handoff occurs only after the user
+  confirms those records; never auto-promote or auto-start.
 - Handoff never starts a change — the user runs the normal proposal flow per
   use case when ready.
 

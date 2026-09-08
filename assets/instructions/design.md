@@ -24,6 +24,13 @@ Write the technical design (the HOW layer). Implementation detail belongs here.
   `behave -n "<title>"`.
 - Any other technical decision the implementer needs before writing tasks.
 
+## Use-case traceability
+
+Read the selected `usecase.md` and relevant ideation change seed. Add a table
+mapping use-case guarantees, rules, events, capability ownership, and confirmed
+Persona impact to technical decisions and E2E evidence. Keep Actors in Gherkin
+distinct from Personas, which are stakeholder review lenses.
+
 ## Version freshness (mandatory)
 
 Never write a specific version number for a language, runtime, framework,

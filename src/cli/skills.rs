@@ -37,7 +37,10 @@ pub fn run_targets_add(names: &[String]) -> Result<()> {
 
     let expand_all = names.iter().any(|n| n.trim().eq_ignore_ascii_case("all"));
     let (additions, unknown) = if expand_all {
-        (crate::skills::targets::AgentTarget::ALL.to_vec(), Vec::new())
+        (
+            crate::skills::targets::AgentTarget::ALL.to_vec(),
+            Vec::new(),
+        )
     } else {
         crate::skills::targets::parse_target_names(names.iter().map(String::as_str))
     };
@@ -51,7 +54,10 @@ pub fn run_targets_add(names: &[String]) -> Result<()> {
         );
     }
     if additions.is_empty() {
-        bail!("No valid agent name given. Valid agents: {}", valid.join(", "));
+        bail!(
+            "No valid agent name given. Valid agents: {}",
+            valid.join(", ")
+        );
     }
 
     let updated = crate::skills::targets::add_targets(&project_root, &additions)?;

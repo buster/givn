@@ -12,6 +12,8 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Facets | Project override wins over embedded template/instruction/command asset. |
 | Lifecycle | Manifest `requires` graph; standard order is proposal, specs, design, design-review, tasks, review, archive. |
 | Specification | `.feature` files with `@givn.*` deltas; archive merges and strips givn tags. |
+| Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
+| Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |

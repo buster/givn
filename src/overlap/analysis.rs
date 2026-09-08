@@ -1,6 +1,6 @@
 //! Deterministic scenario-overlap analysis over the whole active tree.
 
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, BTreeSet};
 use std::path::{Path, PathBuf};
 
 use serde::Serialize;
@@ -31,10 +31,10 @@ pub struct ScenarioInfo {
     pub title: String,
     pub file: PathBuf,
     pub capability: Option<String>,
-    /// The group directory the file lives under (grouped layout). Part of
+    /// The use-case directory the file lives under. Part of
     /// the public analysis model; consumed by tooling built on scan_tree.
     #[allow(dead_code)]
-    pub group: Option<String>,
+    pub usecase: Option<String>,
     pub is_delta: bool,
     pub op: DeltaOp,
     pub fingerprint: Fingerprint,
@@ -73,11 +73,11 @@ fn collect_from_file(file: &Path, specs_root: &Path, is_delta: bool, out: &mut V
     // The capability is the file stem — stable regardless of directory depth
     // or grouping scheme.
     let capability = file.file_stem().map(|n| n.to_string_lossy().into_owned());
-    // The group is the immediate parent directory name, one level under
-    // specs_root. This used to be conflated with `capability` — see the
+    // The use case is the immediate parent directory name, one level under
+    // specs_root. This is distinct from `capability` — see the
     // duplicate_title exemption below for why that was a bug once grouping
     // landed.
-    let group = file
+    let usecase = file
         .parent()
         .filter(|p| p.parent() == Some(specs_root))
         .and_then(|p| p.file_name())
@@ -93,7 +93,7 @@ fn collect_from_file(file: &Path, specs_root: &Path, is_delta: bool, out: &mut V
             title: scenario.name.clone(),
             file: file.to_path_buf(),
             capability: capability.clone(),
-            group: group.clone(),
+            usecase: usecase.clone(),
             is_delta,
             op,
             fingerprint,
@@ -112,7 +112,7 @@ pub fn scan_tree(root: &Path) -> Vec<Finding> {
     findings.extend(subsets(&scenarios));
     findings.extend(long_scenarios(&scenarios));
     // Needs the raw filesystem, not the scenario list — call with root.
-    findings.extend(singleton_groups(root));
+    findings.extend(singleton_usecases(root));
     findings.extend(use_case_graph_findings(root));
     findings.extend(crate::gherkin::interaction::interaction_gate_findings(root));
     findings.sort_by(|a, b| {
@@ -131,8 +131,14 @@ fn kind_order(f: &Finding) -> u8 {
         "duplicate_title" => 0,
         "shape_match" => 1,
         "subset" => 2,
-        "singleton_group" => 3,
-        "group_md_invalid" | "dangling_use_case_ref" | "use_case_cycle" => 4,
+        "singleton_usecase" => 3,
+        "usecase_invalid"
+        | "fragment_invalid"
+        | "dangling_capability_ref"
+        | "ambiguous_relationship_target"
+        | "dangling_use_case_ref"
+        | "use_case_cycle"
+        | "extend_fragment" => 4,
         _ => 5,
     }
 }
@@ -271,126 +277,165 @@ fn long_scenarios(scenarios: &[ScenarioInfo]) -> Vec<Finding> {
         .collect()
 }
 
-/// Find group directories containing exactly one capability file — i.e.
-/// `givn/specs/<name>/<name>.feature` where the group name equals the sole
-/// capability name. Such a "singleton group" is functionally identical to
-/// the old flat layout; flagging it (as a warning, never blocking) keeps
-/// `spec regroup` from satisfying the grouping requirement by creating
-/// one-capability groups that move nothing meaningfully.
-/// A group.md relationship bullet must name one target: either a group
-/// directory or a capability file somewhere in the corpus. A parenthetical
-/// annotation after the target is allowed and ignored.
-fn use_case_ref_target(specs_root: &Path, group_name: &str, raw: &str) -> Option<String> {
-    let bullet = raw
-        .trim()
-        .trim_start_matches("- ")
-        .trim_start_matches("* ")
-        .trim();
-    if bullet.is_empty() || bullet.eq_ignore_ascii_case("none") {
-        return None;
-    }
-    // One bullet names one target; a comma means the author listed two
-    // refs in one bullet — reject so the docs stay machine-checkable.
-    let target = bullet
-        .split(" (")
-        .next()
-        .unwrap_or(bullet)
-        .trim()
-        .to_string();
-    if target.contains(',') || target.is_empty() {
-        return Some(target);
-    }
-    // A group directory…
-    if specs_root.join(&target).is_dir() {
-        return Some(target);
-    }
-    // …or a capability file in any group.
-    let mut owned = specs_root.read_dir().ok()?;
-    if owned.any(|entry| {
-        entry
-            .map(|e| e.path().join(format!("{target}.feature")).is_file())
-            .unwrap_or(false)
-    }) {
-        return Some(target);
-    }
-    // A capability owned by the referencing group itself.
-    if specs_root
-        .join(group_name)
-        .join(format!("{target}.feature"))
-        .is_file()
-    {
-        return Some(target);
-    }
-    Some(target) // unresolved — caller reports the dangling reference
-}
-
-/// Machine-check the use-case relationship graph recorded in the group
-/// files (Phase 2/3 vocabulary: use case = group narrative; `«include»` /
-/// `«extend»` = relationship bullets). Findings:
-/// - `group_md_invalid`: the group's group.md does not parse.
-/// - `dangling_use_case_ref`: an Includes/Extends bullet names no existing
-///   group or capability.
-/// - `use_case_cycle`: the include/extend graph between groups has a cycle.
+/// Machine-check the typed relationship graph recorded in active use-case and
+/// fragment documents. Every target resolves to one identity, extensions do
+/// not target fragments, and use-case relationships are acyclic.
 fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
-    use crate::gherkin::group_md::{GroupDoc, parse_group_md};
+    use crate::gherkin::usecase_md::{
+        RelationshipTarget, UsecaseDoc, parse_fragment_md, parse_usecase_md,
+    };
 
     let specs_root = root.join("givn/specs");
     let mut findings = Vec::new();
-    let mut docs: Vec<(String, GroupDoc)> = Vec::new();
-    let group_names: Vec<String> = std::fs::read_dir(&specs_root)
-        .map(|rd| {
-            rd.flatten()
-                .filter(|e| e.path().is_dir())
-                .filter_map(|e| e.file_name().to_str().map(str::to_string))
+    let usecase_names: Vec<String> = std::fs::read_dir(&specs_root)
+        .map(|entries| {
+            entries
+                .flatten()
+                .filter(|entry| entry.path().is_dir() && entry.file_name() != "fragments")
+                .filter_map(|entry| entry.file_name().to_str().map(str::to_string))
                 .collect()
         })
         .unwrap_or_default();
+    let fragment_path = specs_root.join("fragments/fragment.md");
+    let fragment_ids: Vec<String> = if fragment_path.exists() {
+        match std::fs::read_to_string(&fragment_path)
+            .map_err(anyhow::Error::from)
+            .and_then(|text| parse_fragment_md(&text))
+        {
+            Ok(fragment) => {
+                for capability in &fragment.capabilities {
+                    let path = fragment_path
+                        .parent()
+                        .unwrap_or_else(|| {
+                            fragment_path.parent().expect("fragment path has parent")
+                        })
+                        .join(format!("{capability}.feature"));
+                    if !path.exists() {
+                        findings.push(Finding {
+                            kind: "dangling_capability_ref".to_string(),
+                            level: "error".to_string(),
+                            files: vec![fragment_path.display().to_string()],
+                            titles: vec![format!(
+                                "fragment capability '{capability}' is not present at {}",
+                                path.display()
+                            )],
+                            contradiction: false,
+                        });
+                    }
+                }
+                vec![fragment.id]
+            }
+            Err(error) => {
+                findings.push(Finding {
+                    kind: "fragment_invalid".to_string(),
+                    level: "error".to_string(),
+                    files: vec![fragment_path.display().to_string()],
+                    titles: vec![format!("fragment.md does not parse: {error}")],
+                    contradiction: false,
+                });
+                Vec::new()
+            }
+        }
+    } else {
+        Vec::new()
+    };
 
-    for group in &group_names {
-        let group_md = specs_root.join(group).join("group.md");
-        let text = match std::fs::read_to_string(&group_md) {
-            Ok(t) => t,
-            Err(_) => continue, // a group without group.md is not a relationship error
+    let mut docs: Vec<(String, UsecaseDoc)> = Vec::new();
+    for usecase in &usecase_names {
+        let path = specs_root.join(usecase).join("usecase.md");
+        let text = match std::fs::read_to_string(&path) {
+            Ok(text) => text,
+            Err(error) => {
+                findings.push(Finding {
+                    kind: "usecase_invalid".to_string(),
+                    level: "error".to_string(),
+                    files: vec![path.display().to_string()],
+                    titles: vec![format!("usecase.md cannot be read: {error}")],
+                    contradiction: false,
+                });
+                continue;
+            }
         };
-        match parse_group_md(&text) {
-            Ok(doc) => docs.push((group.clone(), doc)),
-            Err(e) => findings.push(Finding {
-                kind: "group_md_invalid".to_string(),
+        match parse_usecase_md(&text) {
+            Ok(doc) if doc.id == *usecase => {
+                for capability in &doc.capabilities {
+                    let path = specs_root
+                        .join(usecase)
+                        .join(format!("{capability}.feature"));
+                    if !path.exists() {
+                        findings.push(Finding {
+                            kind: "dangling_capability_ref".to_string(),
+                            level: "error".to_string(),
+                            files: vec![
+                                specs_root
+                                    .join(usecase)
+                                    .join("usecase.md")
+                                    .display()
+                                    .to_string(),
+                            ],
+                            titles: vec![format!(
+                                "capability '{capability}' is not present at {}",
+                                path.display()
+                            )],
+                            contradiction: false,
+                        });
+                    }
+                }
+                docs.push((usecase.clone(), doc));
+            }
+            Ok(doc) => findings.push(Finding {
+                kind: "usecase_invalid".to_string(),
                 level: "error".to_string(),
-                files: vec![group_md.display().to_string()],
-                titles: vec![format!("group.md does not parse: {e}")],
+                files: vec![path.display().to_string()],
+                titles: vec![format!(
+                    "use-case ID '{}' does not match directory '{usecase}'",
+                    doc.id
+                )],
+                contradiction: false,
+            }),
+            Err(error) => findings.push(Finding {
+                kind: "usecase_invalid".to_string(),
+                level: "error".to_string(),
+                files: vec![path.display().to_string()],
+                titles: vec![format!("usecase.md does not parse: {error}")],
                 contradiction: false,
             }),
         }
     }
 
-    // Dangling references.
-    for (group, doc) in &docs {
-        for (relation, refs) in [("«include»", &doc.includes), ("«extend»", &doc.extends)] {
-            for raw in refs {
-                let resolved = use_case_ref_target(&specs_root, group, raw);
-                let valid = resolved.as_ref().is_some_and(|target| {
-                    specs_root.join(target).is_dir() || group_names.iter().any(|g| g == target) || {
-                        let cap_file = format!("{target}.feature");
-                        specs_root
-                            .read_dir()
-                            .map(|rd| rd.flatten().any(|e| e.path().join(&cap_file).is_file()))
-                            .unwrap_or(false)
-                    }
-                });
-                if !valid {
+    for (usecase, doc) in &docs {
+        for (relation, references) in [("Includes", &doc.includes), ("Extends", &doc.extends)] {
+            for target in references {
+                let is_usecase = usecase_names.iter().any(|name| name == target.id());
+                let is_fragment = fragment_ids.iter().any(|id| id == target.id());
+                let path = specs_root.join(usecase).join("usecase.md");
+                if is_usecase && is_fragment {
+                    findings.push(Finding {
+                        kind: "ambiguous_relationship_target".to_string(),
+                        level: "error".to_string(),
+                        files: vec![path.display().to_string()],
+                        titles: vec![format!(
+                            "{relation} target '{}' resolves as both use case and fragment",
+                            target.id()
+                        )],
+                        contradiction: false,
+                    });
+                } else if target.is_fragment() && relation == "Extends" {
+                    findings.push(Finding {
+                        kind: "extend_fragment".to_string(),
+                        level: "error".to_string(),
+                        files: vec![path.display().to_string()],
+                        titles: vec![format!("{relation} target '{}' is a fragment", target.id())],
+                        contradiction: false,
+                    });
+                } else if !is_usecase && !is_fragment {
                     findings.push(Finding {
                         kind: "dangling_use_case_ref".to_string(),
                         level: "error".to_string(),
-                        files: vec![
-                            specs_root
-                                .join(group)
-                                .join("group.md")
-                                .display()
-                                .to_string(),
-                        ],
+                        files: vec![path.display().to_string()],
                         titles: vec![format!(
-                            "{relation} target '{raw}' names no existing group or capability"
+                            "{relation} target '{}' does not resolve to a use case or fragment",
+                            target.id()
                         )],
                         contradiction: false,
                     });
@@ -399,41 +444,41 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
         }
     }
 
-    // Cycle detection over group-level edges (includes + extends).
     let mut edges: BTreeMap<String, Vec<String>> = BTreeMap::new();
-    for (group, doc) in &docs {
-        for raw in doc.includes.iter().chain(doc.extends.iter()) {
-            if let Some(target) = use_case_ref_target(&specs_root, group, raw)
-                && group_names.contains(&target)
-                && target != *group
-            {
-                edges.entry(group.clone()).or_default().push(target);
+    for (usecase, doc) in &docs {
+        for target in doc.includes.iter().chain(doc.extends.iter()) {
+            if let RelationshipTarget::Usecase(target) = target {
+                if usecase_names.contains(target) {
+                    edges
+                        .entry(usecase.clone())
+                        .or_default()
+                        .push(target.clone());
+                }
             }
         }
     }
-    // DFS from each group; a back-edge to the path means a cycle.
     fn visit(
         node: &str,
         edges: &BTreeMap<String, Vec<String>>,
         path: &mut Vec<String>,
-        done: &mut Vec<String>,
+        done: &mut BTreeSet<String>,
         cycles: &mut Vec<Vec<String>>,
     ) {
         path.push(node.to_string());
         for next in edges.get(node).cloned().unwrap_or_default() {
-            if let Some(pos) = path.iter().position(|n| n == &next) {
-                cycles.push(path[pos..].to_vec());
-            } else if !done.iter().any(|n| n == &next) {
+            if let Some(position) = path.iter().position(|item| item == &next) {
+                cycles.push(path[position..].to_vec());
+            } else if !done.contains(&next) {
                 visit(&next, edges, path, done, cycles);
             }
         }
-        done.push(path.pop().expect("pushed above"));
+        done.insert(path.pop().expect("node was pushed"));
     }
-    let mut cycles: Vec<Vec<String>> = Vec::new();
-    let mut done: Vec<String> = Vec::new();
-    for group in &group_names {
-        if !done.iter().any(|n| n == group) {
-            visit(group, &edges, &mut Vec::new(), &mut done, &mut cycles);
+    let mut done = BTreeSet::new();
+    let mut cycles = Vec::new();
+    for usecase in &usecase_names {
+        if !done.contains(usecase) {
+            visit(usecase, &edges, &mut Vec::new(), &mut done, &mut cycles);
         }
     }
     for cycle in cycles {
@@ -442,7 +487,13 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
             level: "error".to_string(),
             files: cycle
                 .iter()
-                .map(|g| specs_root.join(g).join("group.md").display().to_string())
+                .map(|usecase| {
+                    specs_root
+                        .join(usecase)
+                        .join("usecase.md")
+                        .display()
+                        .to_string()
+                })
                 .collect(),
             titles: vec![format!(
                 "include/extend graph has a cycle: {}",
@@ -451,22 +502,25 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
             contradiction: false,
         });
     }
-
     findings
 }
 
-fn singleton_groups(root: &Path) -> Vec<Finding> {
+fn singleton_usecases(root: &Path) -> Vec<Finding> {
     let specs_root = root.join("givn/specs");
     let mut findings = Vec::new();
     let Ok(entries) = std::fs::read_dir(&specs_root) else {
         return findings;
     };
     for entry in entries.flatten() {
-        let group_dir = entry.path();
-        if !group_dir.is_dir() {
+        let usecase_dir = entry.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        let feature_count = std::fs::read_dir(&group_dir)
+        let feature_count = std::fs::read_dir(&usecase_dir)
             .map(|rd| {
                 rd.flatten()
                     .filter(|e| e.path().extension().is_some_and(|ext| ext == "feature"))
@@ -475,10 +529,10 @@ fn singleton_groups(root: &Path) -> Vec<Finding> {
             .unwrap_or(0);
         if feature_count == 1 {
             findings.push(Finding {
-                kind: "singleton_group".to_string(),
+                kind: "singleton_usecase".to_string(),
                 level: "warning".to_string(),
-                files: vec![group_dir.display().to_string()],
-                titles: vec!["group contains only one capability".to_string()],
+                files: vec![usecase_dir.display().to_string()],
+                titles: vec!["use case contains only one capability".to_string()],
                 contradiction: false,
             });
         }
@@ -610,8 +664,8 @@ mod tests {
         root
     }
 
-    /// Regression test for the capability/group conflation bug: two
-    /// different capabilities sharing a group directory must still be
+    /// Regression test for capability/use-case ownership: two
+    /// different capabilities sharing a use-case directory must still be
     /// compared by title. Before the fix, both resolved `.capability` to
     /// the group name, the duplicate_title exemption wrongly applied, and
     /// the finding was suppressed.
@@ -630,7 +684,7 @@ mod tests {
         let scenarios = collect_tree(root.path());
         assert_eq!(scenarios.len(), 2);
         assert_eq!(scenarios[0].capability.as_deref(), Some("cap-a"));
-        assert_eq!(scenarios[0].group.as_deref(), Some("example-group"));
+        assert_eq!(scenarios[0].usecase.as_deref(), Some("example-group"));
         let findings = title_duplicates(&scenarios);
         assert!(
             findings.iter().any(|f| f.kind == "duplicate_title"),
@@ -667,7 +721,7 @@ mod tests {
         let scenarios = collect_tree(root.path());
         assert_eq!(scenarios.len(), 1);
         assert_eq!(scenarios[0].capability.as_deref(), Some("cap-c"));
-        assert_eq!(scenarios[0].group.as_deref(), Some("example-group"));
+        assert_eq!(scenarios[0].usecase.as_deref(), Some("example-group"));
     }
 }
 
@@ -697,15 +751,15 @@ mod singleton_tests {
             std::fs::create_dir_all(path.parent().unwrap()).unwrap();
             std::fs::write(path, text).unwrap();
         }
-        let findings = singleton_groups(root.path());
+        let findings = singleton_usecases(root.path());
         assert_eq!(findings.len(), 1, "{findings:?}");
-        assert_eq!(findings[0].kind, "singleton_group");
+        assert_eq!(findings[0].kind, "singleton_usecase");
         assert_eq!(findings[0].level, "warning");
         assert!(findings[0].files[0].ends_with("lonely"));
     }
 
     #[test]
-    fn flat_layout_capability_dirs_are_not_flagged_as_singleton_groups() {
+    fn flat_layout_capability_dirs_are_not_flagged_as_singleton_usecases() {
         // Pre-migration layout: givn/specs/<cap>/<cap>.feature — one feature
         // file per directory, but these are capabilities, not groups. The
         // shape is structurally identical to a singleton group, so the
@@ -720,123 +774,7 @@ mod singleton_tests {
             "Feature: Some cap\n\n  Scenario: S\n    Given x\n    Then y\n",
         )
         .unwrap();
-        let findings = singleton_groups(root.path());
+        let findings = singleton_usecases(root.path());
         assert_eq!(findings.len(), 1);
-    }
-}
-
-#[cfg(test)]
-mod use_case_graph_tests {
-    use super::*;
-
-    fn seed(root: &Path, files: &[(&str, &str)]) {
-        for (rel, text) in files {
-            let path = root.join(rel);
-            std::fs::create_dir_all(path.parent().unwrap()).unwrap();
-            std::fs::write(path, text).unwrap();
-        }
-    }
-
-    const GROUP_MD: &str = "# Group: G\n\n## Actor\n\nA.\n\n## Goal\n\nG.\n\n## Interactions\n\n- x\n\n## Includes\n\n- none\n\n## Extends\n\n- none\n";
-
-    #[test]
-    fn dangling_include_ref_is_an_error() {
-        let root = tempfile::TempDir::new().unwrap();
-        seed(
-            root.path(),
-            &[(
-                "givn/specs/alpha/group.md",
-                &GROUP_MD.replace("- none\n\n## Extends", "- ghost-group\n\n## Extends"),
-            )],
-        );
-        let findings = use_case_graph_findings(root.path());
-        assert!(
-            findings
-                .iter()
-                .any(|f| f.kind == "dangling_use_case_ref" && f.level == "error"),
-            "{findings:?}"
-        );
-    }
-
-    #[test]
-    fn references_to_groups_and_capabilities_resolve() {
-        let root = tempfile::TempDir::new().unwrap();
-        seed(
-            root.path(),
-            &[
-                (
-                    "givn/specs/alpha/group.md",
-                    &GROUP_MD.replace("- none\n\n## Extends", "- beta\n\n## Extends"),
-                ),
-                ("givn/specs/beta/group.md", GROUP_MD),
-                (
-                    "givn/specs/beta/helper.feature",
-                    "Feature: H\n\n  Scenario: S\n    Given x\n    Then y\n",
-                ),
-            ],
-        );
-        let findings = use_case_graph_findings(root.path());
-        assert!(
-            findings.is_empty(),
-            "group and capability refs must resolve: {findings:?}"
-        );
-    }
-
-    #[test]
-    fn mutual_include_is_a_cycle() {
-        let root = tempfile::TempDir::new().unwrap();
-        seed(
-            root.path(),
-            &[
-                (
-                    "givn/specs/alpha/group.md",
-                    &GROUP_MD.replace("- none\n\n## Extends", "- beta\n\n## Extends"),
-                ),
-                (
-                    "givn/specs/beta/group.md",
-                    &GROUP_MD.replace("- none\n\n## Extends", "- alpha\n\n## Extends"),
-                ),
-            ],
-        );
-        let findings = use_case_graph_findings(root.path());
-        assert!(
-            findings.iter().any(|f| f.kind == "use_case_cycle"),
-            "{findings:?}"
-        );
-    }
-
-    #[test]
-    fn parenthetical_annotations_are_allowed() {
-        let root = tempfile::TempDir::new().unwrap();
-        seed(
-            root.path(),
-            &[(
-                "givn/specs/alpha/group.md",
-                &GROUP_MD.replace(
-                    "- none\n\n## Extends",
-                    "- beta (config storage is contributed there)\n\n## Extends",
-                ),
-            )],
-        );
-        seed(root.path(), &[("givn/specs/beta/group.md", GROUP_MD)]);
-        let findings = use_case_graph_findings(root.path());
-        assert!(findings.is_empty(), "{findings:?}");
-    }
-
-    #[test]
-    fn unparseable_group_md_is_an_error() {
-        let root = tempfile::TempDir::new().unwrap();
-        seed(
-            root.path(),
-            &[(
-                "givn/specs/alpha/group.md",
-                "# broken\n\nno sections here\n",
-            )],
-        );
-        let findings = use_case_graph_findings(root.path());
-        assert!(
-            findings.iter().any(|f| f.kind == "group_md_invalid"),
-            "{findings:?}"
-        );
     }
 }

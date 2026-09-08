@@ -6,16 +6,16 @@ Feature: Explore permanent scenarios before creation
     When the user searches the permanent corpus for "shovel-unique-token" with `givn spec find`
     Then the command exits 0
     And stdout contains the matching scenario title
-    And stdout identifies the owning group and capability
+    And stdout identifies the owning use case and capability
 
   @e2e
-  Scenario: The spec tree reports per-group counts and the group narrative
-    Given a spec discovery project with two groups and a group.md narrative
+  Scenario: The spec tree reports per-use-case counts and the use-case narrative
+    Given a spec discovery project with two use cases and a usecase.md narrative
     When the user inspects the corpus with `givn spec tree`
     Then the command exits 0
-    And stdout contains both group names
+    And stdout contains both use-case names
     And stdout contains the scenario count and the e2e count per capability
-    And stdout contains the group actor line
+    And stdout contains the use-case actor line
 
   Scenario: Lexical search is parsed from the AST so docstring payload creates no phantom hits
     Given a spec discovery project whose corpus embeds literal Gherkin with a "Scenario:" line inside a docstring
@@ -30,7 +30,7 @@ Feature: Explore permanent scenarios before creation
     And stdout contains "no scenarios match"
 
   Scenario: Discovery commands never modify permanent files
-    Given a spec discovery project with two groups and a group.md narrative
+    Given a spec discovery project with two use cases and a usecase.md narrative
     And the permanent specifications are snapshotted
     When the user inspects the corpus with `givn spec tree`
     And the user searches the permanent corpus for "anything" with `givn spec find`

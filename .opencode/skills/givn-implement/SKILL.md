@@ -15,6 +15,14 @@ Implement change `<change-id>` using scenario-by-scenario TDD.
 - Test runner: `./run-tests.sh`
 - Features path: `GIVN_FEATURES=givn/specs`
 
+## Use-case context
+
+Read the selected use-case `usecase.md`, the proposal's Persona impact, and any
+ideation source before implementing. Preserve approved domain terms and
+guarantees. Treat the Gherkin feature as executable authority when prose and
+implementation context disagree; Persona biographies are review context, not
+Gherkin actors.
+
 ## Before starting
 
 1. Run `givn instructions --change <change-id>` to confirm what to do

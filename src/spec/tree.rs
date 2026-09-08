@@ -1,7 +1,7 @@
 //! `givn spec tree` — deterministic discovery over the permanent corpus
 //! (Phase 4.1). No embeddings, no network, no score. Walks
-//! `givn/specs/<group>/<cap>.feature`, reports per-group Actor/Goal from
-//! `group.md`, per-capability scenario and `@e2e` counts, and the per-group
+//! `givn/specs/<usecase>/<capability>.feature`, reports per-use-case Actor/Goal from
+//! `usecase.md`, per-capability scenario and `@e2e` counts, and the per-use-case
 //! phrasing reuse ratio (the measurement approach from the retirement plan,
 //! reported only — never gated).
 
@@ -20,14 +20,14 @@ pub struct CapabilityRow {
     pub e2e: usize,
 }
 
-/// One group's summary in the tree output.
+/// One use case's summary in the tree output.
 #[derive(Debug, Clone, Serialize)]
-pub struct GroupRow {
+pub struct UsecaseRow {
     pub name: String,
     pub actor: Option<String>,
     pub goal: Option<String>,
     pub capabilities: Vec<CapabilityRow>,
-    /// pooled phrasing reuse ratio for the group (steps / distinct), 0.0
+    /// pooled phrasing reuse ratio for the use case (steps / distinct), 0.0
     /// when there are no steps.
     pub reuse_ratio: f64,
 }
@@ -72,40 +72,44 @@ pub fn reuse_ratio(step_phrasings: &[String]) -> f64 {
 }
 
 /// Walk the permanent corpus and build the tree report.
-pub fn build_tree(root: &Path) -> Result<Vec<GroupRow>> {
+pub fn build_tree(root: &Path) -> Result<Vec<UsecaseRow>> {
     let specs_root = root.join("givn/specs");
-    let mut groups: BTreeMap<String, GroupRow> = BTreeMap::new();
+    let mut usecases: BTreeMap<String, UsecaseRow> = BTreeMap::new();
 
     for entry in std::fs::read_dir(&specs_root)? {
-        let group_dir = entry?.path();
-        if !group_dir.is_dir() {
+        let usecase_dir = entry?.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        let group_name = group_dir
+        let usecase_name = usecase_dir
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or_default()
             .to_string();
-        let group = groups
-            .entry(group_name.clone())
-            .or_insert_with(|| GroupRow {
-                name: group_name.clone(),
+        let usecase = usecases
+            .entry(usecase_name.clone())
+            .or_insert_with(|| UsecaseRow {
+                name: usecase_name.clone(),
                 actor: None,
                 goal: None,
                 capabilities: Vec::new(),
                 reuse_ratio: 0.0,
             });
 
-        // Parse group.md for Actor/Goal when present.
-        let group_md_path = group_dir.join("group.md");
-        if group_md_path.exists() {
-            let text = std::fs::read_to_string(&group_md_path)?;
-            if let Ok(doc) = crate::gherkin::group_md::parse_group_md(&text) {
-                if !doc.actor.is_empty() {
-                    group.actor = Some(doc.actor);
+        // Parse usecase.md for Actors/Goal when present.
+        let usecase_md_path = usecase_dir.join("usecase.md");
+        if usecase_md_path.exists() {
+            let text = std::fs::read_to_string(&usecase_md_path)?;
+            if let Ok(doc) = crate::gherkin::usecase_md::parse_usecase_md(&text) {
+                if !doc.actors.is_empty() {
+                    usecase.actor = Some(doc.actors.join(", "));
                 }
                 if !doc.goal.is_empty() {
-                    group.goal = Some(doc.goal);
+                    usecase.goal = Some(doc.goal);
                 }
             }
         }
@@ -113,7 +117,7 @@ pub fn build_tree(root: &Path) -> Result<Vec<GroupRow>> {
         // Per-capability rows.
         let mut phrasings: Vec<String> = Vec::new();
         let mut caps: Vec<CapabilityRow> = Vec::new();
-        for file in std::fs::read_dir(&group_dir)? {
+        for file in std::fs::read_dir(&usecase_dir)? {
             let file = file?.path();
             if file.extension().is_none_or(|e| e != "feature") {
                 continue;
@@ -142,33 +146,33 @@ pub fn build_tree(root: &Path) -> Result<Vec<GroupRow>> {
             });
         }
         caps.sort_by(|a, b| a.name.cmp(&b.name));
-        group.capabilities = caps;
-        group.reuse_ratio = (reuse_ratio(&phrasings) * 100.0).round() / 100.0;
+        usecase.capabilities = caps;
+        usecase.reuse_ratio = (reuse_ratio(&phrasings) * 100.0).round() / 100.0;
     }
 
-    Ok(groups.into_values().collect())
+    Ok(usecases.into_values().collect())
 }
 
 /// Print the tree in human-readable text.
-pub fn print_tree(rows: &[GroupRow]) {
-    for group in rows {
-        let total: usize = group.capabilities.iter().map(|c| c.scenarios).sum();
-        let e2e: usize = group.capabilities.iter().map(|c| c.e2e).sum();
+pub fn print_tree(rows: &[UsecaseRow]) {
+    for usecase in rows {
+        let total: usize = usecase.capabilities.iter().map(|c| c.scenarios).sum();
+        let e2e: usize = usecase.capabilities.iter().map(|c| c.e2e).sum();
         println!(
-            "group '{}' — {} capabilities, {} scenarios, {} @e2e, reuse {:.2}x",
-            group.name,
-            group.capabilities.len(),
+            "use case '{}' — {} capabilities, {} scenarios, {} @e2e, reuse {:.2}x",
+            usecase.name,
+            usecase.capabilities.len(),
             total,
             e2e,
-            group.reuse_ratio
+            usecase.reuse_ratio
         );
-        if let Some(actor) = &group.actor {
-            println!("  actor: {actor}");
+        if let Some(actor) = &usecase.actor {
+            println!("  actors: {actor}");
         }
-        if let Some(goal) = &group.goal {
+        if let Some(goal) = &usecase.goal {
             println!("  goal:  {goal}");
         }
-        for cap in &group.capabilities {
+        for cap in &usecase.capabilities {
             println!(
                 "  - {} ({} scenarios, {} @e2e)",
                 cap.name, cap.scenarios, cap.e2e
@@ -181,7 +185,7 @@ pub fn print_tree(rows: &[GroupRow]) {
 /// contains the (lowercased) query.
 #[derive(Debug, Clone, Serialize)]
 pub struct FindHit {
-    pub group: String,
+    pub usecase: String,
     pub capability: String,
     pub file: String,
     pub scenario: String,
@@ -220,16 +224,20 @@ pub fn duplicate_matches(root: &Path) -> Result<Vec<DuplicateMatch>> {
     }
     let mut entries: Vec<Entry> = Vec::new();
     // A missing specs directory is an empty corpus, not an error.
-    let group_entries = match std::fs::read_dir(&specs_root) {
+    let usecase_entries = match std::fs::read_dir(&specs_root) {
         Ok(rd) => rd,
         Err(_) => return Ok(Vec::new()),
     };
-    for entry in group_entries {
-        let group_dir = entry?.path();
-        if !group_dir.is_dir() {
+    for entry in usecase_entries {
+        let usecase_dir = entry?.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        for file in std::fs::read_dir(&group_dir)
+        for file in std::fs::read_dir(&usecase_dir)
             .into_iter()
             .flatten()
             .flatten()
@@ -316,16 +324,20 @@ pub fn find_scenarios(root: &Path, query: &str) -> Result<Vec<FindHit>> {
     let specs_root = root.join("givn/specs");
     let mut hits = Vec::new();
     for entry in std::fs::read_dir(&specs_root)? {
-        let group_dir = entry?.path();
-        if !group_dir.is_dir() {
+        let usecase_dir = entry?.path();
+        if !usecase_dir.is_dir()
+            || usecase_dir
+                .file_name()
+                .is_some_and(|name| name == "fragments")
+        {
             continue;
         }
-        let group = group_dir
+        let usecase = usecase_dir
             .file_name()
             .and_then(|n| n.to_str())
             .unwrap_or_default()
             .to_string();
-        for file in std::fs::read_dir(&group_dir)? {
+        for file in std::fs::read_dir(&usecase_dir)? {
             let file = file?.path();
             if file.extension().is_none_or(|e| e != "feature") {
                 continue;
@@ -345,7 +357,7 @@ pub fn find_scenarios(root: &Path, query: &str) -> Result<Vec<FindHit>> {
                     .any(|s| s.value.to_lowercase().contains(&needle));
                 if title_match || step_match {
                     hits.push(FindHit {
-                        group: group.clone(),
+                        usecase: usecase.clone(),
                         capability: capability.clone(),
                         file: file.display().to_string(),
                         scenario: scenario.name.clone(),
@@ -395,7 +407,7 @@ mod tests {
         .unwrap();
         let by_title = find_scenarios(root.path(), "Unique shovelling title").unwrap();
         assert_eq!(by_title.len(), 1, "{by_title:?}");
-        assert_eq!(by_title[0].group, "workers");
+        assert_eq!(by_title[0].usecase, "workers");
         assert_eq!(by_title[0].capability, "digging");
         assert!(!by_title[0].e2e);
         let by_step = find_scenarios(root.path(), "shovel-unique-token").unwrap();
@@ -413,13 +425,13 @@ mod tests {
     }
 
     #[test]
-    fn build_tree_reports_groups_capabilities_and_e2e_counts() {
+    fn build_tree_reports_usecases_capabilities_and_e2e_counts() {
         let root = tempfile::TempDir::new().unwrap();
         let base = root.path().join("givn/specs");
         std::fs::create_dir_all(base.join("workers")).unwrap();
         std::fs::write(
-            base.join("workers/group.md"),
-            "# Group: workers\n\n## Actor\n\nA builder.\n\n## Goal\n\nBuild things.\n\n## Interactions\n\n- build\n",
+            base.join("workers/usecase.md"),
+            "# Use case: workers\n\n## Level\n\n!\n\n## Actors\n\n- A builder.\n\n## Goal\n\nBuild things.\n\n## Trigger\n\nA request.\n\n## Preconditions\n\n- A project exists.\n\n## Main flow\n\n1. Build.\n\n## Extensions\n\n- none\n\n## Rules\n\n- Build once.\n\n## Examples\n\n- A project.\n\n## Minimal guarantee\n\nThe project remains.\n\n## Success guarantee\n\nThe project is built.\n\n## Personas\n\n- none\n\n## Capabilities\n\n- digging\n\n## Interactions\n\n| Capability | Consumer action | E2E scenario |\n|---|---|---|\n| digging | shovel | Shovel |\n\n## Includes\n\n- none\n\n## Extends\n\n- none\n\n## Out of scope\n\nNothing.\n\n## Diagram\n\n```mermaid\nflowchart LR\n  A --> B\n```\n",
         )
         .unwrap();
         std::fs::write(

@@ -5,6 +5,11 @@ RED→GREEN→REFACTOR→COMMIT loop.
 
 ## Setup task (first task, always)
 
+Before writing scenario tasks, read the owning `usecase.md`, its guarantees and
+rules, confirmed Persona references, and any ideation seed. Copy relevant domain
+constraints into every scenario task so implementation cannot lose use-case
+context between artifacts.
+
 - Install/configure the Gherkin runner from design.md. It MUST execute
   `.feature` files under `givn/specs/` and the change's `specs/` — a bare
   unit-test runner is not sufficient.

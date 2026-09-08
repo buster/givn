@@ -14,6 +14,14 @@ Archive change `<change-id>`.
 - Permanent specs: `givn/specs/`
 - Test runner: `./run-tests.sh`
 
+## Use-case archive behavior
+
+A specs artifact owns both feature deltas and use-case documents. Archive a new
+use case atomically with its capabilities; a replacement must carry a base
+revision and must be rejected before mutation when stale. Preserve accepted
+Persona references and migration evidence. A feature-only change does not need
+to replace a use-case document.
+
 ## Archive gate
 
 `givn archive` automatically checks:

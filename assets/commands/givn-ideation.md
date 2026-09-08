@@ -48,4 +48,12 @@ Frame → Event Storming → Use Case Definition → Use Case Elaboration → Ha
 - Never write givn change artifacts — change seeds only, at handoff.
 - Handoff never starts a change — the user runs the normal proposal flow.
 - Never invent a persona the user has not confirmed.
+- Draft use cases with the permanent `usecase.md` schema and stable kebab-case
+  use-case IDs. The same ID must survive topic state, change seed, change-side
+  `usecase.md`, and permanent archive.
+- Keep confirmed Persona IDs separate from Actors. Actors appear in Gherkin;
+  Persona biographies remain human-reviewed Markdown under `givn/personas/`.
+- Handoff presents the use-case mapping, Persona promotion decisions, source
+  topic, open questions, and change seeds for explicit confirmation. It never
+  silently promotes a Persona or performs Handoff as a side effect.
 - One question at a time; never batch.

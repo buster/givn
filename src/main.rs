@@ -222,6 +222,15 @@ enum ReadmeCommands {
 
 #[derive(Subcommand)]
 enum SpecCommands {
+    /// Emit the machine-readable specification coverage inventory.
+    Coverage {
+        /// Compare the current inventory against a prior JSON snapshot.
+        #[arg(long)]
+        baseline: Option<PathBuf>,
+        /// Output JSON instead of a summary.
+        #[arg(long)]
+        format: Option<String>,
+    },
     /// Build or refresh the permanent-scenario index.
     Index,
     /// Search the local index for related scenarios.
@@ -268,10 +277,11 @@ enum SpecCommands {
     /// Emit the Rust production candidate-pipeline attestation for benchmark approval.
     #[command(name = "bge-parity", hide = true)]
     BgeParity,
-    /// Propose a use-case grouping for the current spec tree from command-
+    /// Propose use cases for the current spec tree from command-
     /// surface clustering. Never modifies files — prints a proposal for a
     /// human to review, confirm, and then apply via the migration step.
-    Regroup {
+    #[command(name = "propose-usecases")]
+    ProposeUsecases {
         /// Output format.
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
@@ -373,6 +383,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             } => cli::skills::run_targets_add(&agents),
         },
         Commands::Spec { command } => match command {
+            SpecCommands::Coverage { baseline, format } => {
+                cli::spec::run_coverage(baseline.as_deref(), format.as_deref() == Some("json"))
+            }
             SpecCommands::Index => cli::spec::run_index(),
             SpecCommands::Search { query, evidence } => cli::spec::run_search(&query, evidence),
             SpecCommands::Explore {
@@ -395,8 +408,8 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
                 cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
             }
             SpecCommands::BgeParity => cli::spec::run_bge_parity(),
-            SpecCommands::Regroup { format } => {
-                cli::spec::run_regroup(matches!(format, SpecFormat::Json))
+            SpecCommands::ProposeUsecases { format } => {
+                cli::spec::run_propose_usecases(matches!(format, SpecFormat::Json))
             }
             SpecCommands::Tree { format } => {
                 cli::spec::run_tree(matches!(format, SpecFormat::Json))

@@ -4,6 +4,20 @@
 
 > How will we implement this change? Summarise the approach.
 
+## Use-Case Traceability
+
+> Owning use-case ID: <usecase-id or none>
+> Ideation source: <topic-id or none>
+> Confirmed Persona IDs: <ids or none>
+>
+> Map the use-case guarantees, rules, events, capability ownership, and Persona
+> impact to technical decisions and E2E evidence. Actors remain distinct from
+> Personas.
+
+| Use-case contract element | Technical decision | Capability / E2E evidence |
+|---|---|---|
+| | | |
+
 ## Technology Decisions
 
 > What language, framework, libraries, or patterns will be used?

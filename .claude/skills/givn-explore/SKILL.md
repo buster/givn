@@ -64,3 +64,8 @@ exists and the exploration revealed updates, suggest the matching command:
 givn status                    # see active changes
 givn status --change <id>      # read a specific change's state
 ```
+
+If exploration is becoming durable domain work with stable use cases, confirmed
+Personas, or several future changes, route explicitly to `/givn-ideation`.
+Ideation owns the topic state and Handoff; exploration never creates a use case
+or silently starts a change.
