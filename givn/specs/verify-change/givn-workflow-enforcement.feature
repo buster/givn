@@ -150,3 +150,53 @@ Feature: givn Workflow Enforcement
     When the user runs `givn check tasks --change wip-check-change`
     Then the command exits non-zero
     And stderr contains "@wip"
+  Scenario: A consumer runs migration coverage and sees a passing receipt
+    Given  a migration evidence change with matching behavior snapshots
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits 0
+    And  stdout contains "migration coverage passed"
+    And  the migration comparison is marked passed
+
+  Scenario: Missing behavior blocks migration coverage
+    Given  a migration evidence change whose after snapshot is missing one behavior
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits non-zero
+    And  stderr contains "migration coverage regression"
+    And  the migration comparison is marked failed
+
+  Scenario: Lost E2E evidence blocks migration coverage
+    Given  a migration evidence change that loses E2E evidence
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits non-zero
+    And  stderr contains "migration coverage regression"
+
+  Scenario: Lower interaction coverage blocks migration coverage
+    Given  a migration evidence change with lower interaction coverage
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits non-zero
+    And  stderr contains "migration coverage regression"
+
+  Scenario: Lower line coverage blocks migration coverage
+    Given  a migration evidence change with lower line coverage
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits non-zero
+    And  stderr contains "migration coverage regression"
+
+  Scenario: Lower branch coverage blocks migration coverage
+    Given  a migration evidence change with lower branch coverage
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits non-zero
+    And  stderr contains "migration coverage regression"
+
+  Scenario: Explicit retirement documents a changed behavior
+    Given  a migration evidence change with an explicitly retired behavior
+    When  the user runs `givn check migration --change migration-test`
+    Then  the command exits 0
+    And  stdout contains "migration coverage passed"
+
+  @e2e
+  Scenario: Consumer runs migration coverage check and sees passed evidence
+    Given  a migration evidence change with matching behavior snapshots
+    When  the consumer runs the migration coverage check
+    Then  the command exits 0
+    And  stdout contains "migration coverage passed"

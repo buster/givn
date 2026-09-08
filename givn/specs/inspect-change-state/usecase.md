@@ -15,38 +15,38 @@ by hand.
 
 ## Trigger
 
-The developer requests status for a project or change.
+The developer requests change status.
 
 ## Preconditions
 
-- The project has a valid Givn directory.
+- A Givn project exists.
 
 ## Main flow
 
-1. Resolve the requested change identity.
-2. Derive artifact state from the filesystem.
-3. Report the next required action.
+1. Discover active and archived changes.
+2. Read artifact completion and task progress.
+3. Report the next required workflow action.
 
 ## Extensions
 
-- Unsafe identities are rejected without reading outside the project.
+- Invalid change identities are rejected.
 
 ## Rules
 
-- Skipped artifacts are visible as intentionally skipped.
-- Uppercase and lowercase completed checkboxes count equally.
+- Skipped artifacts remain visible in status output.
+- Uppercase and lowercase completed task markers are equivalent.
 
 ## Examples
 
-- A developer sees task progress and the next workflow step.
+- A path traversal change identity is rejected before filesystem access.
 
 ## Minimal guarantee
 
-An invalid request does not mutate the project.
+Status inspection does not mutate change artifacts.
 
 ## Success guarantee
 
-The developer receives an accurate text or JSON status report.
+The developer can identify the current stage and next action.
 
 ## Personas
 
@@ -57,6 +57,7 @@ The developer receives an accurate text or JSON status report.
 - validate-change-id-input
 - remove-dead-skip-list-code
 - fix-uppercase-checkbox-parsing
+- givn-status-command
 
 ## Interactions
 
@@ -86,3 +87,5 @@ flowchart LR
   Developer((Developer)) --> Status[[Request status]]
   Status --> Next[[Show next action]]
 ```
+
+<!-- givn:base-sha256:751e981971d4de799e24fba084feb6e481516fb1ae780e2df529a2fa58937ef2 -->
