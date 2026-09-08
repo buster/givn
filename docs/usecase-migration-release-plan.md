@@ -16,18 +16,25 @@ The release target is `0.6.0`. The migration bundle is published under
 - The canonical use-case model, migration coverage implementation, and
   ideation/Persona guidance were delivered together and archived as
   `make-usecases-canonical`; they were not separate archived Changes 1–3.
+- The release-closure change `finalize-usecase-migration-release` is archived.
+  It contains the migration receipts, explicit retirement ledger, use-case
+  narrative ownership corrections, release assets, and final review evidence.
 - Watn migration is archived and passes behavior, E2E, interaction, and line
   coverage comparison.
 - Kiekste migration is archived and passes behavior, E2E, interaction, and
   line comparison; its `run-authority` Handoff remains explicitly pending.
-- The 0.5.0-to-0.6.0 bundle is concrete and cataloged.
-- Release closure is still blocked by the Givn source-coverage comparison:
-  `7162/13704` before versus `7439/18235` after. Branch evidence is `0/0` on
-  both sides and is therefore not materially measured.
+- The 0.5.0-to-0.6.0 bundle is concrete, cataloged, and retained in the
+  archived release-closure evidence.
+- The comparable Givn source-coverage receipt improves from `6773/13704` lines
+  before migration to `7159/14478` after migration. Branch evidence is `0/0`
+  on both sides and is therefore not materially measured.
 - The Givn self-migration ledger explicitly records four intentional retired
   vocabulary assertions and one created canonical contract. The machine gate
-  passes behavior/E2E/interaction comparison after applying those retirements;
-  only source coverage remains blocking.
+  passes behavior, E2E, interaction, and source-coverage comparison after
+  applying those retirements.
+- Post-archive self-dogfood passed: `41` features and `383` scenarios in the
+  full suite, `34` features and `71` scenarios in the E2E suite, and installed
+  binary version `givn 0.6.0`.
 
 No backward-compatible runtime reader is planned. Existing consumer projects
 must be migrated by the release-owned LLM-guided migration change.
@@ -132,25 +139,27 @@ Migration has three hard non-regression dimensions:
 
 ## Release Workstreams
 
-The release is implemented through four ordered Givn changes:
+The plan defined four conceptual workstreams. Execution consolidated the
+coverage and ideation/persona workstreams into `make-usecases-canonical`, then
+completed release closure in `finalize-usecase-migration-release` before the
+Watn and Kiekste consumer migrations:
 
 ```text
 make-usecases-canonical
         |
-        +--> add-spec-coverage-nonregression
+        v
+finalize-usecase-migration-release
         |
-        +--> promote-ideation-personas
-                       |
-                       v
-              finalize-usecase-migration-release
-                       |
-                       v
-             migrate Watn, then Kiekste
+        +--> migrate Watn
+        |
+        +--> migrate Kiekste
 ```
 
-Each workstream is a normal Givn change with proposal, specs, design,
-design-review, tasks, implementation, review, and archive. Each scenario is
-implemented in its own RED/GREEN/REFACTOR/COMMIT cycle.
+Each delivered Givn change used the normal proposal, specs, design,
+design-review, tasks, implementation, review, and archive workflow. The planned
+coverage and ideation/persona workstreams were implemented inside the canonical
+change rather than creating duplicate change records. Each authored scenario
+was implemented in its own RED/GREEN/REFACTOR/COMMIT cycle.
 
 Do not implement multiple workstreams concurrently when they touch the same
 production files or asset contracts.
@@ -161,6 +170,12 @@ production files or asset contracts.
 
 Make `usecase.md`, use-case IDs, capability ownership, fragments, and typed
 relationships the only active specification model.
+
+### Actual delivery
+
+The canonical corpus and runtime contract were delivered and archived in
+`make-usecases-canonical`. The planned coverage and ideation/persona workstreams
+were implemented in that same change rather than as separate archived changes.
 
 ### Production surfaces
 
@@ -353,9 +368,9 @@ retirement handling.
 
 Make corpus migration coverage machine-checkable rather than an LLM claim.
 
-### New commands
+### Delivered commands
 
-Add:
+The delivered contract includes:
 
 ```text
 givn spec coverage --format json
@@ -548,22 +563,30 @@ Cover generated guidance that:
 - never performs Handoff automatically;
 - never teaches `group.md`.
 
-## Change 4: add-usecase-release-migration
+## Change 4: finalize-usecase-migration-release
 
 ### Purpose
 
 Ship the release-owned LLM migration bundle from Givn `0.5.0` to `0.6.0`.
 
+### Actual delivery
+
+The release-closure change was archived after its migration, review, archive,
+and coverage gates passed. It retains the migration ledger, before/after
+receipts, source-coverage evidence, release bundle, catalog entry, and final
+review evidence. The bundle and catalog target `0.6.0`; no compatibility reader
+for the retired group model was added.
+
 ### Assets
 
-Add:
+Published:
 
 ```text
 assets/migrations/0.5.0-to-0.6.0/proposal.md
 assets/migrations/0.5.0-to-0.6.0/design.md
 ```
 
-Add the catalog entry in:
+The catalog entry is published in:
 
 ```text
 assets/migrations/catalog.yaml
@@ -779,18 +802,16 @@ Exit criteria:
 
 ### Session 9: Watn dogfood
 
-Watn is currently clean and has no active changes.
+Watn is clean, has no active changes, and its migration is archived.
 
-Migration tasks:
+Completed migration evidence:
 
-- classify `corpus-infra` as fragments or split its capabilities;
-- determine whether the remaining directories are leaf or summary use cases;
-- create the mapping ledger;
-- move capabilities with `git mv`;
-- create proper use-case documents;
-- preserve all scenarios and `@e2e` evidence;
-- run source and spec coverage comparisons;
-- archive the migration change.
+- `migrate-usecases-watn` is archived with explicit use-case and fragment
+  documents.
+- Feature text and tags were preserved; no product source or step definitions
+  were changed.
+- Behavior, E2E, interaction, and line-coverage comparisons passed.
+- Watn's historical archive was not rewritten.
 
 Do not edit Watn's archived migration history.
 
@@ -800,33 +821,35 @@ Kiekste's ideation and migration work is intentionally resolved. The worktree
 is clean, the migration is archived, and the `run-authority` topic remains
 Handoff-pending.
 
-Migration tasks:
+Completed migration evidence:
 
-- baseline the permanent and active corpus;
-- classify `run-a-project`, `follow-the-run`, and `runtime-boundary`;
-- use `run-authority/use-case-definitions.md` as confirmed domain evidence;
-- map the six elaborated use cases;
-- split summary use cases into child use cases where confirmed;
-- `change-run-scheduler` was archived before the migration on the dogfood branch;
-  its historical archive remains untouched as required;
-- the migration ledger records that sequencing deviation;
-- preserve its feature paths and E2E scenarios unless a use-case ID changes;
-- preserve the four confirmed personas in topic state;
-- do not perform Handoff automatically;
-- run all three coverage comparisons.
+- `migrate-usecases-kiekste` is archived with `run-a-project` and
+  `follow-the-run` owning current behavior and `runtime-boundary` classified as
+  a fragment.
+- Behavior, E2E, interaction, and source-coverage comparisons passed.
+- `change-run-scheduler` was archived before the migration on the dogfood
+  branch; its historical archive remains untouched, and the sequencing
+  deviation is recorded in the migration ledger.
+- The four confirmed Personas remain in topic state, and `run-authority`
+  remains Handoff-pending with Q1 unresolved and Q2/Q4 parked.
 
 ### Session 11: Release verification
 
-Run the full Givn suite, generated-target checks, migration tests, Watn suite,
-and Kiekste suite.
+The full Givn suite, generated-target checks, migration tests, Watn suite, and
+Kiekste suite passed.
 
-Then follow the repository dogfood sequence after each archived Givn change:
+The post-archive repository dogfood sequence was completed:
 
 ```text
 cargo install --path . --locked --force
+givn skills sync
+givn instructions
 ./run-tests.sh
 ./run-tests.sh --e2e
 ```
+
+The installed binary reports `givn 0.6.0`; the final repository state has no
+active changes and the release closure is archived.
 
 ## Complete File Inventory
 
@@ -928,6 +951,12 @@ $HOME/projects/kiekste/.claude/
 $HOME/projects/kiekste/.opencode/
 ```
 
+## Final Outcome
+
+The completion definition below was met by the archived release-closure change
+and the Watn/Kiekste consumer migrations. The final Givn archive commit is
+`4d3ed8b`.
+
 ## Completion Definition
 
 The release is complete only when:
@@ -942,7 +971,8 @@ The release is complete only when:
 - personas are referenced and reviewed without being invented;
 - migration bundles can split, merge, move, create, classify, and retire;
 - Watn migration passes;
-- Kiekste migration passes after its worktree is clean;
+- Kiekste migration passes with a clean worktree; its `run-authority` Handoff
+  remains explicitly pending;
 - no behavior scenario is lost;
 - no E2E evidence is lost;
 - no interaction coverage is lost;
