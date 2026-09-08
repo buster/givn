@@ -24,6 +24,13 @@ static SIGNUM: AtomicI32 = AtomicI32::new(0);
 
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
+    if args.iter().any(|a| a == "--list") {
+        // cargo-nextest discovery: single-unit harness, nothing ignored.
+        if !args.iter().any(|a| a == "--ignored") {
+            println!("ready_fixture: test");
+        }
+        return;
+    }
     if args.is_empty() {
         return;
     }
