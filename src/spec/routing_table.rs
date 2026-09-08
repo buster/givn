@@ -382,7 +382,7 @@ flowchart LR
         let change = project.join("givn/changes/my-change");
         std::fs::create_dir_all(change.join("specs/other")).unwrap();
         std::fs::write(
-            &change.join("proposal.md"),
+            change.join("proposal.md"),
             "## Capability Routing\n\n| Proposed capability | Route's recommendation | Decision | Rationale |\n|---|---|---|---|\n| gate-a | EXTEND gate-a | EXTEND gate-a | |\n",
         )
         .unwrap();

@@ -36,8 +36,6 @@ pub mod readme_enforcement_e2e_steps;
 pub mod readme_enforcement_steps;
 pub mod release_0_3_0_e2e_steps;
 pub mod release_0_3_0_steps;
-pub mod release_strict_overrides_e2e_steps;
-pub mod release_strict_overrides_steps;
 pub mod remove_dead_skip_list_code_steps;
 pub mod repository_ownership_fixtures_steps;
 pub mod repository_ownership_fixtures_support;
@@ -87,42 +85,6 @@ pub struct GivnWorld {
     license_state: choose_project_license_steps::LicenseState,
     /// Combined output captured by a multi-command guidance scenario.
     pub(crate) additional_output: Option<String>,
-    /// Optional retrieval backend override for the current subprocess.
-    pub(crate) retrieval_embedder: Option<String>,
-    /// Optional BGE backend override for the current subprocess.
-    pub(crate) retrieval_bge: Option<String>,
-    /// Explicit local BGE artifact directory for the current subprocess.
-    pub(crate) retrieval_bge_model_dir: Option<String>,
-    /// Chosen E5 model-cache location for the installed-build scenarios.
-    pub(crate) release_model_cache: Option<std::path::PathBuf>,
-    /// Optional maximum BGE/NLI pair budget for the current subprocess.
-    pub(crate) retrieval_max_rerank_pairs: Option<String>,
-    /// Deterministic E5 passage token-budget fixture selector.
-    pub(crate) retrieval_e5_token_budget: Option<String>,
-    /// Optional pair-reranker backend override for the current subprocess.
-    pub(crate) retrieval_reranker: Option<String>,
-    /// Optional deterministic semantic-report score overrides for fixtures.
-    pub(crate) retrieval_stub_scores: Option<String>,
-    /// Optional deterministic duplicate-audit score overrides for fixtures.
-    pub(crate) retrieval_duplicate_scores: Option<String>,
-    /// Optional deterministic directional BGE score overrides for fixtures.
-    pub(crate) retrieval_bge_scores: Option<String>,
-    /// Deterministic bounded-pool fixture selector for BGE scenarios.
-    pub(crate) retrieval_bge_test_pool: Option<String>,
-    /// Deterministic bounded-pool fixture selector for NLI scenarios.
-    pub(crate) retrieval_nli_test_pool: Option<String>,
-    /// Deterministic directional NLI logits for fixtures.
-    pub(crate) retrieval_nli_scores: Option<String>,
-    /// Deterministic BGE token-budget fixture selector.
-    pub(crate) retrieval_bge_token_budget: Option<String>,
-    /// Deterministic NLI token-budget fixture selector.
-    pub(crate) retrieval_nli_token_budget: Option<String>,
-    /// Isolated XDG cache root used by semantic model-download fixtures.
-    pub(crate) xdg_cache_home: Option<std::path::PathBuf>,
-    /// Local HF-compatible artifact source for compiled-CLI scenarios.
-    pub(crate) artifact_server: Option<common::ArtifactFixtureServer>,
-    /// Explicit dead-end HF endpoint for unreachable-source scenarios.
-    pub(crate) hf_endpoint_override: Option<String>,
     /// Findings from the last run-declaration validation.
     pub(crate) run_findings: Vec<givn::cli::run_block::RunFinding>,
     /// Reserved fixed port written into the fixture's run declaration.
@@ -408,75 +370,11 @@ fn feature_file_removed_and_wip(world: &mut GivnWorld, path: String) {
     ensure_fixture_usecase(env, &path, content);
 }
 
-/// Environment overrides for the current subprocess, assembled from the
-/// world's retrieval fixture fields. Used by every retrieval command step.
-pub(crate) fn world_envs(world: &GivnWorld) -> Vec<(&'static str, &str)> {
-    let mut environments = Vec::new();
-    if let Some(value) = world.retrieval_embedder.as_deref() {
-        environments.push(("GIVN_SPEC_EMBEDDER", value));
-    }
-    if let Some(value) = world.retrieval_bge.as_deref() {
-        environments.push(("GIVN_SPEC_BGE", value));
-    }
-    if let Some(value) = world.retrieval_bge_model_dir.as_deref() {
-        environments.push(("GIVN_SPEC_BGE_MODEL_DIR", value));
-    }
-    if let Some(value) = world.retrieval_max_rerank_pairs.as_deref() {
-        environments.push(("GIVN_SPEC_MAX_RERANK_PAIRS", value));
-    }
-    if let Some(value) = world.retrieval_e5_token_budget.as_deref() {
-        environments.push(("GIVN_SPEC_E5_TOKEN_BUDGET", value));
-    }
-    if let Some(value) = world.retrieval_reranker.as_deref() {
-        environments.push(("GIVN_SPEC_RERANKER", value));
-    }
-    if let Some(value) = world.retrieval_stub_scores.as_deref() {
-        environments.push(("GIVN_SPEC_STUB_PAIR_SCORES", value));
-    }
-    if let Some(value) = world.retrieval_duplicate_scores.as_deref() {
-        environments.push(("GIVN_SPEC_DUPLICATES_TEST_SCORES", value));
-    }
-    if let Some(value) = world.retrieval_bge_scores.as_deref() {
-        environments.push(("GIVN_SPEC_BGE_DIRECTIONAL_SCORES", value));
-    }
-    if let Some(value) = world.retrieval_bge_test_pool.as_deref() {
-        environments.push(("GIVN_SPEC_BGE_TEST_POOL", value));
-    }
-    if let Some(value) = world.retrieval_nli_test_pool.as_deref() {
-        environments.push(("GIVN_SPEC_NLI_TEST_POOL", value));
-    }
-    if let Some(value) = world.retrieval_nli_scores.as_deref() {
-        environments.push(("GIVN_SPEC_NLI_DIRECTIONAL_SCORES", value));
-    }
-    if let Some(value) = world.retrieval_bge_token_budget.as_deref() {
-        environments.push(("GIVN_SPEC_BGE_TOKEN_BUDGET", value));
-    }
-    if let Some(value) = world.retrieval_nli_token_budget.as_deref() {
-        environments.push(("GIVN_SPEC_NLI_TOKEN_BUDGET", value));
-    }
-    if let Some(value) = world
-        .xdg_cache_home
-        .as_deref()
-        .and_then(|path| path.to_str())
-    {
-        environments.push(("XDG_CACHE_HOME", value));
-    }
-    if let Some(server) = world.artifact_server.as_ref() {
-        environments.push(("HF_ENDPOINT", server.endpoint()));
-    }
-    if let Some(endpoint) = world.hf_endpoint_override.as_deref() {
-        environments.push(("HF_ENDPOINT", endpoint));
-    }
-    environments
-}
-
-/// Run the givn binary with the world's assembled retrieval environment.
-pub(crate) fn run_givn(
-    env: &common::TestEnv,
-    argv: &[&str],
-    world: &GivnWorld,
-) -> std::process::Output {
-    common::run_givn_with_envs(env, argv, &world_envs(world))
+/// Extra environment overrides for the current subprocess. The
+/// deterministic binary needs none; the helper exists so step definitions
+/// share one subprocess-invocation path.
+pub(crate) fn world_envs(_world: &GivnWorld) -> Vec<(&'static str, &'static str)> {
+    Vec::new()
 }
 
 // --- When ------------------------------------------------------------------

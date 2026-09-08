@@ -236,13 +236,13 @@ coverage:
 }
 
 #[given("the semantic gate is offline")]
-fn semantic_gate_offline(world: &mut GivnWorld) {
-    // The subprocess drives the blocking semantic gate during archive; these
-    // world fields flow into `world_envs` so the gate runs stubbed and
-    // offline instead of downloading model artifacts.
-    world.retrieval_embedder = Some("stub".to_string());
-    world.retrieval_bge = Some("stub".to_string());
-    world.retrieval_reranker = Some("disabled".to_string());
+fn semantic_gate_offline(_world: &mut GivnWorld) {
+    // The semantic gate was removed with the engine; assert that no engine
+    // stub environment leaks into the subprocess from the outer suite.
+    assert!(
+        std::env::var("GIVN_SPEC_EMBEDDER").is_err(),
+        "engine stub environments must not leak into scenarios"
+    );
 }
 
 // --- Change fixtures ---------------------------------------------------------

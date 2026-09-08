@@ -65,8 +65,8 @@ fn default_feature_set_is_empty(world: &mut GivnWorld) {
     );
 }
 
-#[then("every optional model feature is declared for explicit opt-in")]
-fn optional_model_features_declared(world: &mut GivnWorld) {
+#[then("no optional model features are declared")]
+fn no_optional_model_features_declared(world: &mut GivnWorld) {
     let metadata = world.additional_output.as_deref().expect("Cargo metadata");
     let document: serde_json::Value = serde_json::from_str(metadata).expect("parse Cargo metadata");
     let package = document["packages"]
@@ -75,27 +75,15 @@ fn optional_model_features_declared(world: &mut GivnWorld) {
         .expect("givn package metadata");
     let features = package["features"]
         .as_object()
-        .expect("feature declarations");
-    for feature in [
-        "spec-retrieval",
-        "spec-similarity-gate",
-        "cross-encoder-reranker",
-        "nli-evidence",
-    ] {
-        assert!(
-            features.contains_key(feature),
-            "optional feature {feature} is not declared"
-        );
-    }
-}
-
-#[then("a feature-free minimal build remains explicitly available")]
-fn feature_free_build_remains_available(world: &mut GivnWorld) {
-    let _metadata = world.additional_output.as_deref().expect("Cargo metadata");
-    let readme =
-        std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("README.md"))
-            .expect("read README.md");
-    assert!(readme.contains("--no-default-features"), "{readme}");
+        .expect("feature declarations must exist");
+    let optional: Vec<&String> = features
+        .keys()
+        .filter(|feature| feature.as_str() != "default")
+        .collect();
+    assert!(
+        optional.is_empty(),
+        "no optional features may be declared, got {optional:?}"
+    );
 }
 
 #[given("the Givn 0.3.0 release files")]
