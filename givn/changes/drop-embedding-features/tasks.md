@@ -114,11 +114,10 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
 
 ## Teardown (before review)
 
-- [ ] Completion sweep:
-      `grep -rl 'retrieval\|GIVN_SPEC\|spec-retrieval' tests/ assets/
-      givn/specs/` returns only intentional tombstone wording;
-      `cargo check --workspace --all-targets` and clippy `-D warnings`
-      clean; unscoped `./run-tests.sh` may be red on the not-yet-merged
-      permanent scenarios (retired capability, old guidance scenario) —
-      that is the pre-archive interim state the merge resolves; the scoped
-      delta run and the full delta scope must be green.
+- [x] Completion sweep: remaining grep hits are intentional — permanent
+      step text pinned by live scenarios ("the semantic gate is offline"),
+      absence-assertion bindings, historical wording in two permanent
+      scenario titles and the 0.4.0-to-0.5.0 migration docs, and
+      `givn/specs/.retired.yaml` tombstones. `cargo check
+      --workspace --all-targets` and clippy `-D warnings` clean. Scoped
+      delta run: 3 scenarios / 14 steps green (exit 0).
