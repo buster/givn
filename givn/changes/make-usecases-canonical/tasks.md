@@ -16,7 +16,7 @@ RED→GREEN→REFACTOR→COMMIT per scenario.
   - RED/GREEN/REFACTOR: implemented use-case parser, tree output, and migrated
     corpus; `cargo test --test features_runner` passed.
   - Files: `src/gherkin/usecase_md.rs`, `src/spec/tree.rs`, corpus documents.
-  - COMMIT: `92975e3e694e04475e84ae9ab71b4fb522e4311f` — `feat: promote use-case specifications and ideation`
+  - [x] COMMIT: 92975e3e694e04475e84ae9ab71b4fb522e4311f — feat: promote use-case specifications and ideation
 
 ## Follow-up implementation sessions
 
