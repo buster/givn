@@ -15,7 +15,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
       the arc42 chapter sweep + ADR-069 supersession + register update, the
       `discover-specifications/usecase.md` interaction-row removals.
   - [x] COMMIT: `5f3e5c7`
-- [ ] Strictness proof is delivered by task 1's RED (undefined steps must exit
+- [x] Strictness proof is delivered by task 1's RED (undefined steps must exit
       non-zero); e2e subset proof is delivered by task 4 (e2e run count <
       full delta count).
 
@@ -30,7 +30,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
 - [x] GREEN (the engine deletion — compile-forced completeness):
   - [x] `Cargo.toml`: delete the `[features]` block and the optional deps
         (`fastembed`, `hf-hub`, `ndarray`, `ort`, `tokenizers`).
-  - [ ] Delete `src/spec/retrieval.rs`, `src/spec/remediation_log.rs`;
+  - [x] Delete `src/spec/retrieval.rs`, `src/spec/remediation_log.rs`;
         reduce `src/spec/mod.rs` to `cluster`, `coverage`, `route`,
         `routing_table`, `tree`.
   - [x] `src/cli/spec.rs`: delete `run_index`, `run_search`, `run_explore`,
