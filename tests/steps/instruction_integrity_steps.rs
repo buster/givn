@@ -304,8 +304,8 @@ fn retrieval_guidance(world: &GivnWorld) -> &str {
         .expect("retrieval guidance was not loaded")
 }
 
-#[given("retrieval workflow guidance is available")]
-fn retrieval_workflow_guidance_available(world: &mut GivnWorld) {
+#[given("the synchronized agent guidance for the specs workflow")]
+fn synchronized_specs_guidance(world: &mut GivnWorld) {
     let specs =
         std::fs::read_to_string("assets/instructions/specs.md").expect("read specs instruction");
     let command =
@@ -315,30 +315,53 @@ fn retrieval_workflow_guidance_available(world: &mut GivnWorld) {
     world.additional_output = Some(format!("{specs}\n{command}\n{skill}"));
 }
 
-#[when("an author compares retrieval-capable and feature-free guidance")]
-fn author_compares_retrieval_guidance(world: &mut GivnWorld) {
+#[when("an author reads the guidance")]
+fn author_reads_guidance(world: &mut GivnWorld) {
     assert!(
         !retrieval_guidance(world).is_empty(),
-        "retrieval guidance must not be empty"
+        "guidance must not be empty"
     );
 }
 
-#[then("the guidance explains the advisory and blocking retrieval paths")]
-fn guidance_explains_retrieval_paths(world: &mut GivnWorld) {
+#[then("the guidance does not mention engine-backed retrieval commands")]
+fn guidance_omits_engine_commands(world: &mut GivnWorld) {
     let content = retrieval_guidance(world);
-    assert!(content.contains("givn spec search"));
-    assert!(content.contains("givn check review"));
+    for command in [
+        "givn spec index",
+        "givn spec search",
+        "givn spec explore",
+        "givn spec review",
+    ] {
+        assert!(
+            !content.contains(command),
+            "guidance still mentions retired engine command `{command}`"
+        );
+    }
 }
 
-#[then("the guidance preserves an explicit unavailable result for feature-free builds")]
-fn guidance_preserves_unavailable_result(world: &mut GivnWorld) {
-    assert!(retrieval_guidance(world).contains("retrieval-unavailable"));
+#[then("the guidance does not offer advisory or blocking retrieval paths")]
+fn guidance_omits_retrieval_paths(world: &mut GivnWorld) {
+    let content = retrieval_guidance(world);
+    for marker in [
+        "retrieval-unavailable",
+        "Retrieval-aware authoring",
+        "BGE_TOKEN_CAP",
+        "NLI_TOKEN_CAP",
+    ] {
+        assert!(
+            !content.contains(marker),
+            "guidance still offers a retrieval path via `{marker}`"
+        );
+    }
 }
 
-#[then("the guidance does not prohibit retrieval in a retrieval-capable build")]
-fn guidance_does_not_prohibit_retrieval(world: &mut GivnWorld) {
+#[then("the guidance keeps the deterministic spec toolchain wording")]
+fn guidance_keeps_deterministic_toolchain(world: &mut GivnWorld) {
     let content = retrieval_guidance(world);
-    assert!(content.contains("givn spec index"));
-    assert!(content.contains("givn spec explore"));
-    assert!(!content.contains("Until the retrieval change exists"));
+    for marker in ["@givn.delta", "givn lint", "givn/changes/"] {
+        assert!(
+            content.contains(marker),
+            "guidance lost the deterministic toolchain wording `{marker}`"
+        );
+    }
 }
