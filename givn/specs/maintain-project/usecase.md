@@ -68,6 +68,7 @@ The project is documented and the upgrade work is explicit.
 | readme-enforcement | request unfinished README guidance | Instructions surface an unfinished README |
 | release-0-3-0 | plan a release migration | A clean 0.2.0 project receives a reviewable aggregate migration plan |
 | release-0-3-0 | run a managed upgrade | A clean project without migration requirements receives one managed upgrade commit |
+| release-0-3-0 | invoke a retired engine command | A consumer invoking a retired engine command is told it does not exist |
 | release-0-3-0 | archive a maintenance migration | A completed maintenance migration can be archived without a product specification |
 
 ## Includes
