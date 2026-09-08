@@ -405,4 +405,23 @@ mod tests {
         assert!(comparison.missing_behavior.is_empty());
         assert!(comparison.lower_interaction_coverage);
     }
+
+    #[test]
+    fn lower_line_coverage_blocks() {
+        let comparison = compare_source(
+            SourceCoverage {
+                lines_covered: 90,
+                lines_valid: 100,
+                branches_covered: 9,
+                branches_valid: 10,
+            },
+            SourceCoverage {
+                lines_covered: 89,
+                lines_valid: 100,
+                branches_covered: 9,
+                branches_valid: 10,
+            },
+        );
+        assert!(!comparison.passed);
+    }
 }
