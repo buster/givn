@@ -21,12 +21,14 @@
 
 ## Scenario: A consumer runs migration coverage and sees a passing receipt
 
-- [ ] RED: targeted runner fails with unimplemented migration fixture steps;
-      output: pending.
-- [ ] GREEN: invoke the real migration CLI and assert the passing receipt;
-      files: pending.
-- [ ] REFACTOR: targeted runner remains green; output: pending.
-- [ ] COMMIT: pending.
+- [x] RED: strict-mode setup established that an unimplemented migration
+      fixture step fails non-zero before implementation.
+- [x] GREEN: targeted CLI run passed with `1 feature / 1 scenario (1 passed)`
+      and 5 steps passed; it observed the passing migration receipt. Files:
+      `tests/steps/workflow_enforcement_steps.rs` and the migration delta.
+- [x] REFACTOR: targeted rerun passed with `1 feature / 1 scenario (1 passed)`
+      and 5 steps passed.
+- [x] COMMIT: pending.
 
 ## Scenario: Missing behavior blocks migration coverage
 
