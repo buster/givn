@@ -2,7 +2,7 @@
 
 Feature: Strict qualification and canonical routing of architecture decisions
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: The migration preserves independent architecture history across three proposed decisions
     Given the remediation case carries the distinguishing marker "harness jib mandrel nozzle oboe yacht yarn zither"
     Given the consolidated ADR register and canonical sources are available
