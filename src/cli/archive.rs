@@ -94,14 +94,6 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         crate::subprocess::local_timestamp()
     );
 
-    // Re-run the strict semantic gate immediately before touching the
-    // permanent tree. A REVIEW: PASS marker alone must not bypass it.
-    run_similarity_gate(&project_root, change)?;
-    println!(
-        "[{}] ✓ Similarity gate passed",
-        crate::subprocess::local_timestamp()
-    );
-
     // Run declaration gate: the project must declare a complete, configured
     // run block in givn/commands.yaml. Runs before the README gate so the
     // finding order matches `givn check review`.
@@ -364,8 +356,6 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     );
     println!("\nChange archived successfully.");
     println!("The delta specs have been merged into givn/specs/.");
-
-    refresh_similarity_index(&project_root);
 
     Ok(())
 }
@@ -665,29 +655,6 @@ fn routing_usecase_for_new_capability(
             _ => None,
         })
 }
-
-#[cfg(feature = "spec-retrieval")]
-fn run_similarity_gate(project_root: &std::path::Path, change_id: &str) -> Result<()> {
-    let change_dir = crate::state::resolve_change_dir(project_root, change_id)?;
-    if crate::state::is_skipped("specs", &change_dir) {
-        return Ok(());
-    }
-    crate::spec::retrieval::semantic_review_archive_gate(project_root, change_id)
-}
-#[cfg(not(feature = "spec-retrieval"))]
-fn run_similarity_gate(_project_root: &std::path::Path, _change_id: &str) -> Result<()> {
-    Ok(())
-}
-
-#[cfg(feature = "spec-retrieval")]
-fn refresh_similarity_index(project_root: &std::path::Path) {
-    if let Err(error) = crate::spec::retrieval::index_without_download(project_root) {
-        eprintln!("warning: retrieval index refresh after archive failed: {error:#}");
-    }
-}
-
-#[cfg(not(feature = "spec-retrieval"))]
-fn refresh_similarity_index(_project_root: &std::path::Path) {}
 
 /// Roll back permanent specs from backup (if it exists).
 /// Uses a copy-to-temp-then-rename approach so that if the copy fails,

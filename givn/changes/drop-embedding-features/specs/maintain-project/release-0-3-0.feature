@@ -2,7 +2,7 @@
 
 Feature: Givn 0.3.0 release and legacy project migration
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Cargo installation enables every declared feature by default
     Given the Cargo feature metadata for the Givn release
     When a maintainer inspects the default Cargo installation features

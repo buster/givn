@@ -137,7 +137,6 @@ fn run_mandatory_checks(
             println!("  ✓ run declaration passed");
             if let Some(id) = change {
                 crate::overlap::analysis::run_review_overlap_gate(project_root, id)?;
-                run_retrieval_gate(project_root, id)?;
                 check_retirement_disclosed(project_root, id)?;
                 crate::spec::routing_table::check_routing_consistency(project_root, id)?;
             } else {
@@ -196,27 +195,6 @@ fn check_retirement_disclosed(
                 .join(", ")
         );
     }
-    Ok(())
-}
-
-#[cfg(feature = "spec-retrieval")]
-fn run_retrieval_gate(project_root: &std::path::Path, change_id: &str) -> anyhow::Result<()> {
-    if !project_root
-        .join("givn/changes")
-        .join(change_id)
-        .join("specs")
-        .exists()
-    {
-        return Ok(());
-    }
-    crate::spec::retrieval::report_missing_index(project_root);
-    // One unified rulebook run: comparison, selection, judgement, and the
-    // blocking classification worklist come from the same evaluation.
-    crate::spec::retrieval::semantic_review_without_index_notice(project_root, change_id)
-}
-
-#[cfg(not(feature = "spec-retrieval"))]
-fn run_retrieval_gate(_project_root: &std::path::Path, _change_id: &str) -> anyhow::Result<()> {
     Ok(())
 }
 

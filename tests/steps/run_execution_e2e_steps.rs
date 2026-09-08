@@ -49,7 +49,6 @@ fn interrupt_after_ready_line(world: &mut GivnWorld) {
         .arg("run")
         .current_dir(&root)
         .env_remove("GIVN_FEATURES")
-        .env_remove("GIVN_SPEC_MAX_RERANK_PAIRS")
         .stdout(Stdio::piped())
         .spawn()
         .expect("spawn givn run");

@@ -447,13 +447,13 @@ fn use_case_graph_findings(root: &Path) -> Vec<Finding> {
     let mut edges: BTreeMap<String, Vec<String>> = BTreeMap::new();
     for (usecase, doc) in &docs {
         for target in doc.includes.iter().chain(doc.extends.iter()) {
-            if let RelationshipTarget::Usecase(target) = target {
-                if usecase_names.contains(target) {
-                    edges
-                        .entry(usecase.clone())
-                        .or_default()
-                        .push(target.clone());
-                }
+            if let RelationshipTarget::Usecase(target) = target
+                && usecase_names.contains(target)
+            {
+                edges
+                    .entry(usecase.clone())
+                    .or_default()
+                    .push(target.clone());
             }
         }
     }

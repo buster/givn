@@ -332,10 +332,9 @@ mod tests {
             if path
                 .extension()
                 .is_some_and(|extension| extension == "feature")
+                && let Some(parent) = path.parent()
             {
-                if let Some(parent) = path.parent() {
-                    usecases.insert(parent.to_path_buf());
-                }
+                usecases.insert(parent.to_path_buf());
             }
         }
         for relative in usecases {

@@ -1,10 +1,4 @@
-use std::path::PathBuf;
-
 use anyhow::{Result, bail};
-
-pub fn run_index() -> Result<()> {
-    crate::spec::retrieval::index(&std::env::current_dir()?)
-}
 
 pub fn run_coverage(baseline: Option<&std::path::Path>, json: bool) -> Result<()> {
     let root = std::env::current_dir()?;
@@ -62,51 +56,6 @@ pub fn run_coverage(baseline: Option<&std::path::Path>, json: bool) -> Result<()
     }
     Ok(())
 }
-
-pub fn run_search(query: &str, evidence: bool) -> Result<()> {
-    crate::spec::retrieval::search(&std::env::current_dir()?, query, evidence)
-}
-
-pub fn run_explore(
-    file: Option<PathBuf>,
-    stdin: bool,
-    change: Option<&str>,
-    json: bool,
-) -> Result<()> {
-    if file.is_some() == stdin {
-        bail!("spec explore requires exactly one input: use --file or --stdin");
-    }
-
-    crate::spec::retrieval::explore(
-        &std::env::current_dir()?,
-        file.as_deref(),
-        stdin,
-        change,
-        json,
-    )
-}
-
-#[cfg(feature = "spec-retrieval")]
-pub fn run_review(change_id: &str, verbose: bool, json: bool) -> Result<()> {
-    crate::spec::retrieval::review_with_options(
-        &std::env::current_dir()?,
-        change_id,
-        crate::spec::retrieval::ReviewOptions {
-            verbose,
-            json,
-            findings: true,
-        },
-    )
-}
-
-#[cfg(not(feature = "spec-retrieval"))]
-pub fn run_review(change_id: &str, _verbose: bool, _json: bool) -> Result<()> {
-    let _ = change_id;
-    anyhow::bail!(
-        "spec retrieval is unavailable in this build; rebuild with --features spec-retrieval"
-    )
-}
-
 pub fn run_duplicates(json: bool) -> Result<()> {
     // Deterministic path only (Phase 4.3): exact/structural matches from
     // the parsed AST + overlap fingerprint. No embeddings, no score.
@@ -129,11 +78,6 @@ pub fn run_duplicates(json: bool) -> Result<()> {
     Ok(())
 }
 
-pub fn run_bge_parity() -> Result<()> {
-    crate::spec::retrieval::bge_parity(&std::env::current_dir()?)
-}
-
-/// `givn spec route` — ranked routing candidates for a proposal (Phase 4.5).
 pub fn run_route(change: Option<&str>, file: Option<&std::path::Path>) -> Result<()> {
     if change.is_some() == file.is_some() {
         bail!("spec route requires exactly one input: use --change or --file");

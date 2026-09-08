@@ -14,7 +14,7 @@ tests/features_runner.rs:20) via `./run-tests.sh` / `./run-tests.sh --e2e`
       the `@givn.retired` tombstone delta for `release-strict-model-overrides`,
       the arc42 chapter sweep + ADR-069 supersession + register update, the
       `discover-specifications/usecase.md` interaction-row removals.
-  - [x] COMMIT: see setup commit below
+  - [x] COMMIT: `5f3e5c7`
 - [ ] Strictness proof is delivered by task 1's RED (undefined steps must exit
       non-zero); e2e subset proof is delivered by task 4 (e2e run count <
       full delta count).

@@ -6,16 +6,8 @@
 //! it is removed automatically on drop, including on panic.
 
 use std::fs;
-use std::io::{Read as _, Write as _};
-use std::net::{TcpListener, TcpStream};
 use std::path::PathBuf;
 use std::process::{Command, Output};
-use std::sync::{
-    Arc,
-    atomic::{AtomicBool, Ordering},
-};
-use std::thread::{self, JoinHandle};
-use std::time::Duration;
 use tempfile::TempDir;
 
 /// Handle carrying the per-test temp directory. Drop removes the directory.
@@ -34,153 +26,6 @@ impl TestEnv {
     pub fn path(&self, rel: &str) -> PathBuf {
         self.root().join(rel)
     }
-}
-
-/// A local Hugging Face-compatible source used by model acquisition scenarios.
-/// It serves deterministic small artifacts and is never used by production code.
-#[derive(Debug)]
-pub struct ArtifactFixtureServer {
-    endpoint: String,
-    stop: Arc<AtomicBool>,
-    thread: Option<JoinHandle<()>>,
-}
-
-impl ArtifactFixtureServer {
-    pub fn start() -> Self {
-        let listener = TcpListener::bind(("127.0.0.1", 0)).expect("bind artifact fixture");
-        listener
-            .set_nonblocking(true)
-            .expect("configure artifact fixture listener");
-        let endpoint = format!(
-            "http://{}",
-            listener
-                .local_addr()
-                .expect("read artifact fixture address")
-        );
-        let stop = Arc::new(AtomicBool::new(false));
-        let stop_thread = Arc::clone(&stop);
-        let thread = thread::spawn(move || {
-            while !stop_thread.load(Ordering::Relaxed) {
-                match listener.accept() {
-                    Ok((stream, _)) => serve_artifact_request(stream),
-                    Err(error) if error.kind() == std::io::ErrorKind::WouldBlock => {
-                        thread::sleep(Duration::from_millis(2));
-                    }
-                    Err(_) => break,
-                }
-            }
-        });
-        Self {
-            endpoint,
-            stop,
-            thread: Some(thread),
-        }
-    }
-
-    pub fn endpoint(&self) -> &str {
-        &self.endpoint
-    }
-}
-
-impl Drop for ArtifactFixtureServer {
-    fn drop(&mut self) {
-        self.stop.store(true, Ordering::Relaxed);
-        if let Some(thread) = self.thread.take() {
-            thread.join().expect("join artifact fixture server");
-        }
-    }
-}
-
-fn serve_artifact_request(mut stream: TcpStream) {
-    let mut request = [0u8; 8192];
-    let Ok(size) = stream.read(&mut request) else {
-        return;
-    };
-    let request = String::from_utf8_lossy(&request[..size]);
-    let Some(path) = request
-        .lines()
-        .next()
-        .and_then(|line| line.split_whitespace().nth(1))
-    else {
-        return;
-    };
-    let payload = artifact_fixture_payload(path);
-    let metadata = request.contains("bytes=0-0");
-    let body = if metadata {
-        &payload[..payload.len().min(1)]
-    } else {
-        payload.as_slice()
-    };
-    let end = body.len().saturating_sub(1);
-    let response = format!(
-        "HTTP/1.1 206 Partial Content\r\nContent-Length: {}\r\nContent-Range: bytes 0-{end}/{}\r\netag: \"fixture-{}\"\r\nx-repo-commit: {}\r\nConnection: close\r\n\r\n",
-        body.len(),
-        payload.len(),
-        stable_fixture_hash(path),
-        fixture_revision(path),
-    );
-    let _ = stream.write_all(response.as_bytes());
-    let _ = stream.write_all(body);
-}
-
-fn fixture_revision(path: &str) -> &str {
-    path.split_once("/resolve/")
-        .and_then(|(_, rest)| rest.split_once('/'))
-        .map(|(revision, _)| revision)
-        .unwrap_or("fixture")
-}
-
-fn stable_fixture_hash(value: &str) -> String {
-    let mut hash = 0xcbf29ce484222325u64;
-    for byte in value.as_bytes() {
-        hash ^= u64::from(*byte);
-        hash = hash.wrapping_mul(0x100000001b3);
-    }
-    format!("{hash:016x}")
-}
-
-fn artifact_fixture_payload(path: &str) -> Vec<u8> {
-    if path.ends_with("tokenizer.json") {
-        return br#"{
-            "version": "1.0",
-            "truncation": null,
-            "padding": null,
-            "added_tokens": [],
-            "normalizer": null,
-            "pre_tokenizer": null,
-            "post_processor": null,
-            "decoder": null,
-            "model": {
-                "type": "BPE",
-                "dropout": null,
-                "unk_token": "[UNK]",
-                "fuse_unk": false,
-                "byte_fallback": false,
-                "vocab": {"[UNK]": 0, "[PAD]": 1, "hello": 2},
-                "merges": []
-            }
-        }"#
-        .to_vec();
-    }
-    if path.ends_with("config.json") && path.contains("mDeBERTa") {
-        return br#"{"id2label":{"0":"entailment","1":"neutral","2":"contradiction"},"pad_token_id":0}"#.to_vec();
-    }
-    if path.ends_with("config.json") {
-        return br#"{"pad_token_id":0}"#.to_vec();
-    }
-    if path.ends_with("tokenizer_config.json") {
-        return br#"{"model_max_length":512,"pad_token":"[PAD]"}"#.to_vec();
-    }
-    if path.ends_with("special_tokens_map.json") {
-        return b"{}".to_vec();
-    }
-    if path.ends_with("model.onnx.data") {
-        return b"fixture-onnx-external-data".to_vec();
-    }
-    if path.ends_with("model.onnx") {
-        return b"fixture-onnx-model".to_vec();
-    }
-    b"fixture-artifact".to_vec()
 }
 
 /// A bare temp directory with no `givn/` subtree — for the uninitialised
@@ -418,7 +263,6 @@ pub fn run_givn_with_envs(env: &TestEnv, args: &[&str], environments: &[(&str, &
         .current_dir(env.root())
         // Runner-scoped variables describe the outer suite invocation and
         // must never leak into fixture projects.
-        .env_remove("GIVN_SPEC_MAX_RERANK_PAIRS")
         .env_remove("GIVN_FEATURES");
     for (key, value) in environments {
         command.env(key, value);
@@ -447,7 +291,6 @@ pub fn run_givn_with_stdin_and_envs(
     let mut child = Command::new(bin)
         .args(args)
         .current_dir(env.root())
-        .env_remove("GIVN_SPEC_MAX_RERANK_PAIRS")
         .env_remove("GIVN_FEATURES")
         .envs(environments.iter().copied())
         .stdin(Stdio::piped())
@@ -473,61 +316,4 @@ pub fn write_override(env: &TestEnv, artifact: &str, file: &str, content: &str) 
     let dir = env.path(&format!("givn/artifacts/{artifact}"));
     fs::create_dir_all(&dir).expect("create artifacts override dir");
     fs::write(dir.join(file), content).expect("write override file");
-}
-
-// --- Installed-build (release) binary ---------------------------------------
-
-/// Resolve the release givn binary used by the installed-build fixtures.
-///
-/// If `GIVN_RELEASE_BIN` is set (CI/operator prebuild), it is used verbatim.
-/// Otherwise the release binary is built once — `cargo build --release
-/// --features spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence
-/// --bin givn` — rooted at `CARGO_MANIFEST_DIR` and cached for the process.
-/// The repo's dogfood loop already performs a full release build, so this
-/// does not introduce a new kind of build.
-pub fn release_givn_binary() -> &'static std::path::Path {
-    static BINARY: std::sync::OnceLock<std::path::PathBuf> = std::sync::OnceLock::new();
-    BINARY.get_or_init(|| {
-        if let Some(path) = std::env::var_os("GIVN_RELEASE_BIN") {
-            return std::path::PathBuf::from(path);
-        }
-        let manifest_dir = env!("CARGO_MANIFEST_DIR");
-        let status = Command::new("cargo")
-            .arg("build")
-            .arg("--release")
-            .arg("--features")
-            .arg("spec-retrieval,spec-similarity-gate,cross-encoder-reranker,nli-evidence")
-            .arg("--bin")
-            .arg("givn")
-            .current_dir(manifest_dir)
-            .status()
-            .expect("spawn cargo release build");
-        assert!(
-            status.success(),
-            "cargo build --release --bin givn failed (status {status:?})"
-        );
-        std::path::Path::new(manifest_dir)
-            .join("target/release/givn")
-            .to_path_buf()
-    })
-}
-
-/// Invoke the release givn binary with `env`'s temp dir as current directory
-/// and exactly the given environment. The subprocess is clean-spawned
-/// (`env_clear()` plus `PATH`/`HOME`) so no ambient `GIVN_SPEC_*` from the
-/// outer suite can leak a spurious installed-build announcement, and the
-/// caller supplies the cache-location/envs the scenario owns.
-pub fn run_release_givn(env: &TestEnv, args: &[&str], environments: &[(&str, &str)]) -> Output {
-    let bin = release_givn_binary();
-    let mut command = Command::new(bin);
-    command
-        .args(args)
-        .current_dir(env.root())
-        .env_clear()
-        .env("PATH", std::env::var("PATH").unwrap_or_default())
-        .env("HOME", std::env::var("HOME").unwrap_or_default());
-    for (key, value) in environments {
-        command.env(key, value);
-    }
-    command.output().expect("spawn release givn subprocess")
 }

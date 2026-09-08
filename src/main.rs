@@ -231,52 +231,12 @@ enum SpecCommands {
         #[arg(long)]
         format: Option<String>,
     },
-    /// Build or refresh the permanent-scenario index.
-    Index,
-    /// Search the local index for related scenarios.
-    Search {
-        /// Behavior description or completed scenario text.
-        query: String,
-        /// Also run BGE and NLI cross-encoder evidence on the listed candidates.
-        #[arg(long)]
-        evidence: bool,
-    },
-    /// Explore one complete draft scenario against permanent scenarios.
-    Explore {
-        /// Complete Gherkin file containing exactly one scenario.
-        #[arg(long)]
-        file: Option<PathBuf>,
-        /// Read one complete Gherkin scenario from standard input.
-        #[arg(long)]
-        stdin: bool,
-        /// Also compare against active scenarios in this change.
-        #[arg(long)]
-        change: Option<String>,
-        /// Output format.
-        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
-        format: SpecFormat,
-    },
-    /// Refresh the permanent index and report advisory candidates for a change.
-    Review {
-        /// Active change identifier.
-        #[arg(long)]
-        change: String,
-        /// List every scored second-stage pair instead of recommendations only.
-        #[arg(long)]
-        verbose: bool,
-        /// Output format.
-        #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
-        format: SpecFormat,
-    },
     /// Report duplicate and related permanent scenarios.
     Duplicates {
         /// Output format.
         #[arg(long, value_enum, default_value_t = SpecFormat::Text)]
         format: SpecFormat,
     },
-    /// Emit the Rust production candidate-pipeline attestation for benchmark approval.
-    #[command(name = "bge-parity", hide = true)]
-    BgeParity,
     /// Propose use cases for the current spec tree from command-
     /// surface clustering. Never modifies files — prints a proposal for a
     /// human to review, confirm, and then apply via the migration step.
@@ -386,28 +346,9 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             SpecCommands::Coverage { baseline, format } => {
                 cli::spec::run_coverage(baseline.as_deref(), format.as_deref() == Some("json"))
             }
-            SpecCommands::Index => cli::spec::run_index(),
-            SpecCommands::Search { query, evidence } => cli::spec::run_search(&query, evidence),
-            SpecCommands::Explore {
-                file,
-                stdin,
-                change,
-                format,
-            } => cli::spec::run_explore(
-                file,
-                stdin,
-                change.as_deref(),
-                matches!(format, SpecFormat::Json),
-            ),
-            SpecCommands::Review {
-                change,
-                verbose,
-                format,
-            } => cli::spec::run_review(&change, verbose, matches!(format, SpecFormat::Json)),
             SpecCommands::Duplicates { format } => {
                 cli::spec::run_duplicates(matches!(format, SpecFormat::Json))
             }
-            SpecCommands::BgeParity => cli::spec::run_bge_parity(),
             SpecCommands::ProposeUsecases { format } => {
                 cli::spec::run_propose_usecases(matches!(format, SpecFormat::Json))
             }
