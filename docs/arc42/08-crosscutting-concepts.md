@@ -496,6 +496,22 @@ and merged reports, updates only its named README blocks, and restores specs,
 README, and coverage files if the pipeline fails. A zero branch denominator is
 rendered as `n/a`, not as a measured zero percent.
 
+### 8.9b Semantic Migration Evidence
+
+Corpus migrations use a deterministic receipt separate from the permanent
+specification tree. `givn spec coverage --format json` records behavior hashes,
+use-case ownership, capability, E2E state, interaction mapping, and declared
+Persona impact. `givn check migration --change <id>` compares before and after
+snapshots, writes `coverage-comparison.json`, and blocks missing behavior, lost
+E2E evidence, or lower interaction coverage.
+
+When source evidence is present, the same check compares line and branch
+coverage ratios and writes `source-coverage-comparison.json`. All evidence stays
+with the active migration change until archive, where it becomes historical
+review evidence. A migration ledger remains the human-readable explanation for
+every move, split, merge, fragment classification, creation, rename, or
+retirement.
+
 ## 8.9a README Completeness Gate and the Development Managed Block
 
 When the readme addon is enabled, the README is a givn-managed document:

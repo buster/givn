@@ -114,6 +114,9 @@ graph TD
 | Q-72 | Correctness | A server with `port_env` is started without `--port`. | givn allocates a free port by binding `127.0.0.1:0`, hands it to the product through the declared environment variable, and names it in the ready line. |
 | Q-73 | Migration safety | A capability moves between use-case documents. | The behavior hash remains present, its E2E evidence and interaction mapping remain present, and the migration ledger records the move. |
 | Q-74 | Migration safety | A migration's source coverage decreases. | The migration check blocks and reports covered/total line and branch counters. |
+| Q-75 | Migration safety | A migration loses a behavior, E2E entry, or interaction mapping. | `givn check migration` writes a failed comparison receipt and exits non-zero before archive. |
+| Q-76 | Migration safety | A migration preserves specification evidence and source coverage. | The check writes passing behavior and source comparison receipts containing before/after counters. |
+| Q-77 | Release safety | The 0.5.0-to-0.6.0 bundle is inspected before release. | The catalog resolves one target version and the proposal/design describe semantic moves, confirmation, coverage, Handoff safety, and archive protection. |
 
 ## 10.3 Verification Signals
 

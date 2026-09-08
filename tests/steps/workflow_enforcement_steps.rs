@@ -164,6 +164,117 @@ fn change_dir_for(world: &GivnWorld, id: &str) -> std::path::PathBuf {
     project_root(world).join(format!("givn/changes/{id}"))
 }
 
+fn behavior_snapshot(e2e: bool, interaction: Option<&str>) -> String {
+    let e2e = if e2e { "true" } else { "false" };
+    let interaction = interaction
+        .map(|value| format!("\"{value}\""))
+        .unwrap_or_else(|| "null".to_string());
+    format!(
+        r#"{{
+  "schema": 1,
+  "entries": [{{
+    "feature_path": "old/capability.feature",
+    "usecase": "old-usecase",
+    "capability": "capability",
+    "scenario": "Preserved behavior",
+    "behavior_hash": "behavior-hash",
+    "e2e": {e2e},
+    "interaction": {interaction},
+    "personas": []
+  }}]
+}}"#
+    )
+}
+
+fn setup_migration(
+    world: &mut GivnWorld,
+    after: String,
+    source_before: Option<&str>,
+    source_after: Option<&str>,
+) {
+    world.env = Some(common::make_init_root());
+    let migration_dir = project_root(world).join("givn/changes/migration-test");
+    std::fs::create_dir_all(&migration_dir).unwrap();
+    std::fs::write(
+        migration_dir.join("coverage-before.json"),
+        behavior_snapshot(true, Some("preserve behavior")),
+    )
+    .unwrap();
+    std::fs::write(migration_dir.join("coverage-after.json"), after).unwrap();
+    if let (Some(before), Some(after)) = (source_before, source_after) {
+        std::fs::write(migration_dir.join("source-coverage-before.json"), before).unwrap();
+        std::fs::write(migration_dir.join("source-coverage-after.json"), after).unwrap();
+    }
+}
+
+#[given("a migration evidence change with matching behavior snapshots")]
+fn matching_migration_snapshots(world: &mut GivnWorld) {
+    setup_migration(
+        world,
+        behavior_snapshot(true, Some("preserve behavior")),
+        None,
+        None,
+    );
+}
+
+#[given("a migration evidence change whose after snapshot is missing one behavior")]
+fn missing_behavior_migration_snapshot(world: &mut GivnWorld) {
+    setup_migration(
+        world,
+        r#"{"schema":1,"entries":[]}"#.to_string(),
+        None,
+        None,
+    );
+}
+
+#[given("a migration evidence change that loses E2E evidence")]
+fn lost_e2e_migration_snapshot(world: &mut GivnWorld) {
+    setup_migration(
+        world,
+        behavior_snapshot(false, Some("preserve behavior")),
+        None,
+        None,
+    );
+}
+
+#[given("a migration evidence change with lower interaction coverage")]
+fn lower_interaction_migration_snapshot(world: &mut GivnWorld) {
+    setup_migration(
+        world,
+        behavior_snapshot(true, None),
+        None,
+        None,
+    );
+}
+
+#[given("a migration evidence change with lower line coverage")]
+fn lower_line_migration_snapshot(world: &mut GivnWorld) {
+    setup_migration(
+        world,
+        behavior_snapshot(true, Some("preserve behavior")),
+        Some(
+            r#"{"lines_covered":90,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#,
+        ),
+        Some(
+            r#"{"lines_covered":89,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#,
+        ),
+    );
+}
+
+#[given("a migration evidence change with lower branch coverage")]
+fn lower_branch_migration_snapshot(world: &mut GivnWorld) {
+    setup_migration(
+        world,
+        behavior_snapshot(true, Some("preserve behavior")),
+        Some(
+            r#"{"lines_covered":90,"lines_valid":100,"branches_covered":9,"branches_valid":10}"#,
+        ),
+        Some(
+            r#"{"lines_covered":90,"lines_valid":100,"branches_covered":8,"branches_valid":10}"#,
+        ),
+    );
+}
+
 // ---- Given steps ----
 
 #[given("a givn project with a change that has passed design-review")]
@@ -491,6 +602,15 @@ fn delta_merged(world: &mut GivnWorld) {
             }
         });
     assert!(has_feature, "no .feature files found under givn/specs/");
+}
+
+#[then("the migration comparison is marked failed")]
+fn migration_comparison_failed(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(
+        project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
+    )
+    .unwrap();
+    assert!(content.contains("\"passed\": false"), "comparison was not failed: {content}");
 }
 
 #[then("the change directory has been moved to givn/archive/")]
