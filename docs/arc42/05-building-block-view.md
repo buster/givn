@@ -44,6 +44,7 @@ flowchart TD
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
 | `cli::skills` | Synchronize selected skill targets and opencode commands. |
+| `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
 | `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight Git state, calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration commits, and write the aggregate maintenance plan. |
 | `cli::run_block` | Validate the `run:` declaration with the deterministic rules (R1–R10) and produce labeled findings for `check review` and the archive gate. |
@@ -59,6 +60,7 @@ flowchart TD
 | `overlap::fingerprint` | Produce masked assertion sequences and best-effort exit/contains/table/DONE/TTY facts. |
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
+| Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and generated OpenCode/Claude harness integrations. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
 | `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |

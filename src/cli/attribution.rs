@@ -1,0 +1,1 @@
+//! Commit-attribution command implementation.

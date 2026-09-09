@@ -23,10 +23,34 @@ The sequence is:
 7. Synchronize skills and opencode commands to the selected targets. The sync
    updates only givn-owned fenced blocks in `AGENTS.md` and leaves all other
    content unchanged.
+8. Materialize the checked-in commit-attribution hook and, when a Git worktree
+   exists, install or refresh the local dispatcher without replacing an
+   existing `commit-msg` hook.
 
 The embedded default manifest has addon flags disabled, but initialized projects
 normally receive enabled addon settings because the current `init` command
 enables them. Existing Arc42 files are not overwritten by addon scaffolding.
+
+## 6.1a Commit attribution
+
+The commit flow is:
+
+1. An OpenCode or Claude Code integration provides optional attribution values
+   to the shell process that invokes Git.
+2. Git resolves the committer identity from that process environment and starts
+   the commit operation.
+3. The local dispatcher runs an existing `commit-msg` hook first, preserving its
+   failure result.
+4. The checked-in Givn hook invokes the attribution stamper after the existing
+   hook succeeds.
+5. The stamper appends normalized Givn trailers when context exists. Missing
+   context or stamper errors leave the user's message and successful commit
+   path unchanged.
+6. Git writes the commit object with the available committer identity and final
+   message.
+
+Model and harness changes update only the next agent shell's process-scoped
+values. No model selection is written to project configuration.
 
 ## 6.2 `givn new <change-id>`
 

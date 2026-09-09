@@ -1,0 +1,287 @@
+# Tasks: llm-attribution
+
+Scenario-by-scenario RED→GREEN→REFACTOR→COMMIT per
+`specs/support/llm-attribution.feature`. Non-E2E scenarios are implemented
+before the two `@e2e` scenarios.
+
+The support use case guarantees remain in force for every scenario: attribution
+is best effort, missing context never blocks a commit, human message editing is
+preserved, the checked-in hook is shared, and an existing `commit-msg` hook is
+preserved and chained before Givn attribution.
+
+## Setup: runner, strict mode, step skeletons, e2e filter proof
+
+- [x] Use the existing cucumber-rs runner in `tests/features_runner.rs`, which
+      already calls `.fail_on_skipped()`. Register the one-file-per-capability
+      step modules required by design:
+      `tests/steps/llm_attribution_steps.rs` and
+      `tests/steps/llm_attribution_e2e_steps.rs`. New RED bodies use
+      `unimplemented!()`.
+- [x] Strictness proof: run one change scenario with an unimplemented step and
+      paste the non-zero command/output here:
+
+  ```text
+  command: GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "A human commit remains usable without attribution context"
+  output: 1 feature, 1 scenario, 1 failed; the first step panicked with "not implemented" from llm_attribution_steps.rs
+  exit: 101
+  ```
+
+- [ ] `verify.command` is `./run-tests.sh`; `verify.e2e_command` is
+      `./run-tests.sh --e2e`. Run both and paste the full-suite and E2E-only
+      scenario counts here, proving the E2E count is smaller:
+
+  ```text
+  full command/output:
+  e2e command/output:
+  count comparison:
+  ```
+
+- [ ] No services or digital twins are required. Confirm isolated temporary
+      project directories and local Git repositories are sufficient.
+
+## Scenario 1: A human commit remains usable without attribution context
+
+- [ ] RED — remove `@wip` from this scenario only, implement the named steps
+      with `unimplemented!()`, and run:
+      `GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "A human commit remains usable without attribution context"`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] GREEN — create a real temporary Git repository, activate the checked-in
+      hook, run `git commit` without attribution variables, and assert success,
+      unchanged message, and unchanged human committer.
+
+  Production/test files:
+  - `src/cli/attribution.rs`
+  - `src/cli/git.rs`
+  - `src/main.rs`
+  - `src/cli/mod.rs`
+  - `assets/hooks/commit-msg`
+  - `tests/steps/llm_attribution_steps.rs`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+      `feat(llm-attribution): A human commit remains usable without attribution context`.
+
+  ```text
+  commit hash:
+  ```
+
+## Scenario 2: A partial attribution context does not block a commit
+
+- [ ] RED — remove `@wip` from this scenario only, run the named scenario, and
+      paste the non-zero output:
+
+  ```text
+  command:
+  output:
+  exit:
+  ```
+
+- [ ] GREEN — stamp a partial context with explicit unavailable values and
+      `partial` status while allowing the real commit to complete.
+
+  Production/test files:
+  - `src/cli/attribution.rs`
+  - `assets/hooks/commit-msg`
+  - `tests/steps/llm_attribution_steps.rs`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+      `feat(llm-attribution): A partial attribution context does not block a commit`.
+
+  ```text
+  commit hash:
+  ```
+
+## Scenario 3: An existing commit hook runs before Givn attribution
+
+- [ ] RED — remove `@wip` from this scenario only, run the named scenario, and
+      paste the non-zero output:
+
+  ```text
+  command:
+  output:
+  exit:
+  ```
+
+- [ ] GREEN — install an idempotent local dispatcher that preserves an unknown
+      existing hook as `.givn-original`, runs it first, preserves its failure
+      result, and invokes the checked-in hook only after success.
+
+  Production/test files:
+  - `src/cli/git.rs`
+  - `src/cli/init.rs`
+  - `src/skills/targets.rs`
+  - `assets/hooks/git-commit-msg-launcher`
+  - `tests/steps/llm_attribution_steps.rs`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+      `feat(llm-attribution): An existing commit hook runs before Givn attribution`.
+
+  ```text
+  commit hash:
+  ```
+
+## Scenario 4: Attribution follows a model change between commits
+
+- [ ] RED — remove `@wip` from this scenario only, run the named scenario, and
+      paste the non-zero output:
+
+  ```text
+  command:
+  output:
+  exit:
+  ```
+
+- [ ] GREEN — ensure each real Git commit reads only the current process-scoped
+      attribution environment and replaces managed trailers without carrying
+      stale values from the previous commit.
+
+  Production/test files:
+  - `src/cli/attribution.rs`
+  - `assets/hooks/commit-msg`
+  - `tests/steps/llm_attribution_steps.rs`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+      `feat(llm-attribution): Attribution follows a model change between commits`.
+
+  ```text
+  commit hash:
+  ```
+
+## Scenario 5: Consumer initializes a project and receives shared attribution plumbing
+
+- [ ] E2E setup — read the canonical specs policy, create
+      `tests/steps/llm_attribution_e2e_steps.rs`, and confirm the existing
+      `./run-tests.sh --e2e` filter selects only `@e2e` scenarios. No local
+      service startup is required.
+
+- [ ] RED — remove `@wip` from this E2E scenario only and run the exact E2E
+      scenario command; paste the non-zero output:
+
+  ```text
+  command:
+  output:
+  exit:
+  ```
+
+- [ ] GREEN — invoke the compiled CLI through a real subprocess with
+      `givn init --agents opencode,claude` in a temporary Git repository and
+      assert the checked-in hook, local activation, OpenCode plugin, Claude
+      hook, and Claude settings entry.
+
+  Production/test files:
+  - `src/skills/targets.rs`
+  - `src/cli/git.rs`
+  - `assets/agent-integrations/opencode/givn-attribution.js`
+  - `assets/agent-integrations/claude/givn-attribution.sh`
+  - `tests/steps/llm_attribution_e2e_steps.rs`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] REFACTOR — rerun the exact E2E scenario and paste the passing output:
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+      `test(e2e): Consumer initializes a project and receives shared attribution plumbing`.
+
+  ```text
+  commit hash:
+  ```
+
+## Scenario 6: An attributed commit exposes the current LLM and harness
+
+- [ ] RED — remove `@wip` from this E2E scenario only and run the exact E2E
+      scenario command; paste the non-zero output:
+
+  ```text
+  command:
+  output:
+  exit:
+  ```
+
+- [ ] GREEN — invoke real Git with complete runtime attribution and committer
+      environment, then assert through `git show` that the LLM/harness are in
+      the committer identity and that the final message ends with normalized
+      Givn version, LLM, reasoning, harness, and status trailers.
+
+  Production/test files:
+  - `src/cli/attribution.rs`
+  - `assets/hooks/commit-msg`
+  - `tests/steps/llm_attribution_e2e_steps.rs`
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] REFACTOR — rerun the exact E2E scenario and paste the passing output:
+
+  ```text
+  output:
+  exit:
+  ```
+
+- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+      `test(e2e): An attributed commit exposes the current LLM and harness`.
+
+  ```text
+  commit hash:
+  ```

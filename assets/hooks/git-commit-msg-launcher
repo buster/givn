@@ -1,0 +1,12 @@
+#!/bin/sh
+set -u
+
+# givn commit-attribution launcher
+
+original="$0.givn-original"
+if [ -x "$original" ]; then
+    "$original" "$@" || exit $?
+fi
+
+root=$(git rev-parse --show-toplevel 2>/dev/null) || exit 0
+exec "$root/.githooks/commit-msg" "$@"

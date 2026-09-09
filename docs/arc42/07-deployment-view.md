@@ -34,6 +34,10 @@ givn/commands.yaml
 givn/specs/
 givn/changes/
 givn/archive/
+.githooks/commit-msg                 # checked-in shared commit hook
+.opencode/plugins/givn-attribution.js # when opencode is selected
+.claude/hooks/givn-attribution.sh    # when claude is selected
+.claude/settings.json                # merged Givn hook entry when claude is selected
 ```
 
 The Arc42 addon currently enabled by default during `init` scaffolds the fixed
@@ -42,6 +46,11 @@ The Arc42 addon currently enabled by default during `init` scaffolds the fixed
 Generated skills are written only to the persisted target selection. Givn may
 maintain its own fenced blocks in root `AGENTS.md`; all content outside those
 blocks remains user-owned.
+
+The checked-in `.githooks/commit-msg` is shared through normal version control.
+The local dispatcher under the Git hooks directory is machine-local and is
+recreated by `givn init` or `givn skills sync`; Git clones do not activate a
+project hook merely because the source file is checked in.
 
 ## 7.5 Distribution Work
 

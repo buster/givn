@@ -6,6 +6,15 @@
 | **Addon-aware generation** | Generation that includes only the template sections whose declared addon condition matches the current effective addon set; an addon that is off leaves no trace in the generated skill or slash command. |
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, or `claude`, represented by `.opencode/`, `.agents/`, or `.claude/`. |
+| **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
+| **Commit attribution** | The best-effort LLM and harness identification visible through a commit's committer identity and message trailers. |
+| **Harness** | The agent runtime that executes project commands, such as OpenCode or Claude Code. Anti-term: agent target. |
+| **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
+| **Attribution trailer** | A managed Git message trailer containing one commit-attribution field, such as `LLM-Harness` or `Givn-Version`. |
+| **Attribution status** | The message trailer value `complete` or `partial`, indicating whether the active attribution context supplied every expected field. |
+| **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. |
+| **Commit-attribution hook** | The checked-in `commit-msg` hook that appends best-effort attribution trailers without blocking a commit. Anti-term: post-artifact hook. |
+| **Hook activation launcher** | The machine-local Git hook that preserves an existing `commit-msg` hook and delegates to the checked-in commit-attribution hook. |
 | **arc42-docs** | The effective lifecycle artifact added when the Arc42 addon is enabled. Its marker is `arc42.md`; durable chapters are scaffolded at fixed `docs/arc42/`. |
 | **Artifact** | A lifecycle document or generated path described by the effective manifest. It may have `requires`, `optional`, and configurable `post` hooks. |
 | **Capability** | A named behavior unit, represented by one `.feature` file under a use case. A capability is not itself a use case; it is owned by one. |
