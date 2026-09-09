@@ -2,9 +2,9 @@
 
 use cucumber::{given, then};
 
-use crate::common;
 use super::GivnWorld;
 use super::llm_attribution_installation_steps::git;
+use crate::common;
 
 #[then("stdout reports the shared Git commit attribution hook")]
 fn then_stdout_reports_hook(world: &mut GivnWorld) {
@@ -32,18 +32,24 @@ fn given_upgrade_project(world: &mut GivnWorld) {
     let env = common::make_bare_root();
     let root = env.root();
     assert!(git(&root, &["init"]).status.success());
-    assert!(git(&root, &["config", "user.name", "Human Developer"])
-        .status
-        .success());
-    assert!(git(&root, &["config", "user.email", "human@example.test"])
-        .status
-        .success());
+    assert!(
+        git(&root, &["config", "user.name", "Human Developer"])
+            .status
+            .success()
+    );
+    assert!(
+        git(&root, &["config", "user.email", "human@example.test"])
+            .status
+            .success()
+    );
     let init = common::run_givn(&env, &["init", "--agents", "opencode,claude"]);
     assert!(init.status.success());
     assert!(git(&root, &["add", "."]).status.success());
-    assert!(git(&root, &["commit", "-m", "initial Givn project"])
-        .status
-        .success());
+    assert!(
+        git(&root, &["commit", "-m", "initial Givn project"])
+            .status
+            .success()
+    );
 
     for path in [
         ".githooks/commit-msg",
@@ -53,17 +59,18 @@ fn given_upgrade_project(world: &mut GivnWorld) {
     ] {
         let _ = std::fs::remove_file(root.join(path));
     }
-    let hooks_dir = String::from_utf8_lossy(
-        &git(&root, &["rev-parse", "--git-path", "hooks"]).stdout,
-    )
-    .trim()
-    .to_string();
+    let hooks_dir =
+        String::from_utf8_lossy(&git(&root, &["rev-parse", "--git-path", "hooks"]).stdout)
+            .trim()
+            .to_string();
     let _ = std::fs::remove_file(root.join(&hooks_dir).join("commit-msg"));
     let _ = std::fs::remove_file(root.join(&hooks_dir).join("commit-msg.givn-original"));
     assert!(git(&root, &["add", "."]).status.success());
-    assert!(git(&root, &["commit", "-m", "remove attribution plumbing"])
-        .status
-        .success());
+    assert!(
+        git(&root, &["commit", "-m", "remove attribution plumbing"])
+            .status
+            .success()
+    );
     world.env = Some(env);
 }
 

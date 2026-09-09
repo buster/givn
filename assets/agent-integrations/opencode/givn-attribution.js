@@ -1,16 +1,26 @@
 const sessions = new Map()
 
+const rememberModel = (sessionID, model, variant) => {
+  const previous = sessions.get(sessionID) ?? {}
+  sessions.set(sessionID, {
+    providerID: model?.providerID ?? previous.providerID,
+    modelID: model?.modelID ?? previous.modelID,
+    variant: variant ?? previous.variant,
+  })
+}
+
 export const GivnAttributionPlugin = async () => {
   return {
     "chat.message": async (input) => {
-      sessions.set(input.sessionID, {
-        providerID: input.providerID,
-        modelID: input.modelID,
-        variant: input.variant,
-      })
+      rememberModel(input.sessionID, input.model, input.variant)
+    },
+    "chat.params": async (input) => {
+      rememberModel(input.sessionID, input.model)
     },
     "shell.env": async (input, output) => {
       output.env.GIVN_ATTRIBUTION_ACTIVE = "1"
+      output.env.GIVN_ATTRIBUTION_LLM = "unavailable"
+      output.env.GIVN_ATTRIBUTION_REASONING = "unavailable"
       output.env.GIVN_ATTRIBUTION_HARNESS = "opencode"
 
       const model = sessions.get(input.sessionID)

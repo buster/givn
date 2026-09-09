@@ -341,6 +341,18 @@ Arc42 files.
 
 There are two distinct mechanisms.
 
+### 8.12a Commit attribution environment
+
+OpenCode and Claude integrations set the process-scoped Givn attribution
+variables for every shell command they prepare. The values identify the active
+model, reasoning mode, and harness, using `unavailable` where a harness has no
+value. Claude exports these variables for the complete Bash command so compound
+commands and shell wrappers such as RTK preserve them. The checked-in Git
+`commit-msg` hook consumes the variables only when `GIVN_ATTRIBUTION_ACTIVE` is
+present, stamps only the managed co-author attribution, removes stale legacy
+Givn attribution trailers, and never blocks a commit when context or the
+installed binary is absent.
+
 ### Configurable post hooks
 
 An artifact may declare `post` entries. Entries can name `verify`,

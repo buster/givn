@@ -72,6 +72,8 @@ graph TD
 | Q-75 | Migration safety | A migration loses a behavior, E2E entry, or interaction mapping. | `givn check migration` writes a failed comparison receipt and exits non-zero before archive. |
 | Q-76 | Migration safety | A migration preserves specification evidence and source coverage. | The check writes passing behavior and source comparison receipts containing before/after counters. |
 | Q-77 | Release safety | The 0.5.0-to-0.6.0 bundle is inspected before release. | The catalog resolves one target version and the proposal/design describe semantic moves, confirmation, coverage, Handoff safety, and archive protection. |
+| Q-78 | Commit attribution | OpenCode supplies a selected provider and model in chat parameters before a shell execution. | The generated integration returns the provider/model identity, OpenCode harness, and committer name in the shell environment used for Git. |
+| Q-79 | Commit attribution | Claude supplies a current model in the session transcript before a Bash command that uses an RTK shell wrapper. | The generated hook exports context for the complete command so the resulting Git committer and message identify that model, reasoning mode, Claude Code harness, and managed co-author attribution. |
 
 ## 10.3 Verification Signals
 

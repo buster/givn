@@ -34,6 +34,9 @@ historical measurement is not a current quality claim.
 | R-47 | A semantic migration can misclassify a mixed domain area as one use case or fragment. | Medium | High | Require a confirmed mapping ledger, stable behavior hashes, explicit operations, and no semantic move without user confirmation. |
 | R-48 | A use-case narrative can be replaced from a stale active change. | Medium | Critical | Record a base SHA-256 revision and reject stale replacement before archive mutation; back up narratives with feature files. |
 | R-49 | A release can claim semantic migration completion without retained Givn self-migration evidence. | Medium | High | Require executable migration-gate scenarios, before/after receipts, a complete ledger, and a concrete release target before publishing the bundle. |
+| R-50 | OpenCode changes the plugin payload shape and model attribution becomes partial without a compile-time error. | Medium | High | Read the documented nested model payload, keep missing metadata non-blocking, and execute the generated plugin against the current payload shape in the attribution E2E scenario. |
+| R-51 | Claude changes transcript record shape or records model changes asynchronously, causing the hook to use a stale or unavailable model. | Medium | High | Read the latest assistant record defensively, retain environment fallbacks, and execute the generated hook with a real transcript fixture and Git commit regression scenario. |
+| R-52 | A shell wrapper such as RTK drops a command-prefix environment and the Git hook receives no attribution context. | Medium | High | Export context for the complete Bash command and keep the Git hook responsible for consuming process-scoped variables; exercise compound command execution through the Claude regression scenario. |
 
 ## 11.2 Deliberate Technical Debt
 

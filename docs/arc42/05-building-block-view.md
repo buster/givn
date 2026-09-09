@@ -1,5 +1,15 @@
 # 5. Building Block View
 
+## 5.4 Commit Attribution Model Extraction
+
+The existing attribution CLI owns the Claude PreToolUse transformation. It
+reads the latest assistant model from the transcript named by the hook payload,
+then composes an exported environment prefix before the complete Bash command.
+The generated Claude shell hook remains a thin launcher. OpenCode model
+extraction remains in its generated plugin asset. The same attribution CLI
+stamps only the managed co-author line at the Git commit boundary and removes
+stale legacy Givn attribution trailers.
+
 ## 5.1 Level 0 - System
 
 `givn` is one Rust CLI crate. It reads embedded defaults and project-local

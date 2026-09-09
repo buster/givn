@@ -7,10 +7,12 @@
 | **AGENTS.md ownership** | Givn owns only the content between its own named fenced markers. All other `AGENTS.md` content is user-owned and preserved. |
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, or `claude`, represented by `.opencode/`, `.agents/`, or `.claude/`. |
 | **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
+| **Model identity** | The provider and model pair selected by the harness for the current attribution context. Anti-terms: model name, model label. |
 | **Commit attribution** | The best-effort LLM and harness identification visible through a commit's committer identity and message trailers. |
 | **Harness** | The agent runtime that executes project commands, such as OpenCode or Claude Code. Anti-term: agent target. |
 | **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
-| **Attribution trailer** | A managed Git message trailer containing one commit-attribution field, such as `LLM-Harness` or `Givn-Version`. |
+| **Attribution trailer** | The managed Git `Co-Authored-By` message trailer containing the commit-attribution context. |
+| **Managed co-author attribution** | The Givn-owned `Co-Authored-By` trailer formatted as `<model>/<reasoning>@<harness> with Givn <version>`; ordinary human co-author trailers remain user-owned. |
 | **Attribution status** | The message trailer value `complete` or `partial`, indicating whether the active attribution context supplied every expected field. |
 | **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. |
 | **Commit-attribution hook** | The checked-in `commit-msg` hook that appends best-effort attribution trailers without blocking a commit. Anti-term: post-artifact hook. |

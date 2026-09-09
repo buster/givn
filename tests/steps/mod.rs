@@ -29,9 +29,9 @@ pub mod grouped_merge_steps;
 pub mod init_agent_target_selection_steps;
 pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
+pub mod llm_attribution_e2e_steps;
 pub mod llm_attribution_installation_e2e_steps;
 pub mod llm_attribution_installation_steps;
-pub mod llm_attribution_e2e_steps;
 pub mod llm_attribution_steps;
 pub mod preserve_docstrings_on_archive_steps;
 pub mod prose_consolidation_steps;
@@ -69,6 +69,10 @@ pub struct GivnWorld {
     env: Option<common::TestEnv>,
     /// State for the commit-attribution scenarios.
     pub(crate) git_attribution: Option<llm_attribution_steps::GitAttributionState>,
+    /// State for the generated OpenCode attribution integration scenario.
+    pub(crate) opencode_plugin: Option<llm_attribution_e2e_steps::OpencodePluginState>,
+    /// State for the generated Claude attribution integration scenario.
+    pub(crate) claude_attribution: Option<llm_attribution_e2e_steps::ClaudeAttributionState>,
     /// Captured stdout/stderr/exit of the last `givn` invocation.
     last_output: Option<Output>,
     /// Output from the previous command in a parity scenario.

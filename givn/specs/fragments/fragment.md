@@ -16,6 +16,7 @@
 - instruction-integrity
 - choose-project-license
 - adr-qualification-gate
+- llm-attribution
 
 ## Interactions
 
