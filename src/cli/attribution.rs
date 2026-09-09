@@ -12,6 +12,7 @@ const TRAILER_PREFIXES: [&str; 5] = [
     "LLM-Harness:",
     "Givn-Attribution-Status:",
 ];
+const UNAVAILABLE: &str = "unavailable";
 
 pub fn stamp_message(path: &Path) -> Result<()> {
     if std::env::var_os("GIVN_ATTRIBUTION_ACTIVE").is_none() {
@@ -45,7 +46,7 @@ fn stamp_message_values(
         .trim_end()
         .to_string();
 
-    let status = if llm != "unavailable" && reasoning != "unavailable" && harness != "unavailable" {
+    let status = if llm != UNAVAILABLE && reasoning != UNAVAILABLE && harness != UNAVAILABLE {
         "complete"
     } else {
         "partial"
@@ -63,7 +64,7 @@ fn stamp_message_values(
 fn attribution_value(name: &str) -> String {
     match std::env::var(name) {
         Ok(value) if !value.trim().is_empty() && !value.contains(['\n', '\r']) => value,
-        _ => "unavailable".to_string(),
+        _ => UNAVAILABLE.to_string(),
     }
 }
 
