@@ -12,6 +12,7 @@ use crate::common;
 pub(crate) struct GitAttributionState {
     pub(crate) last_output: Option<Output>,
     pub(crate) context: Option<AttributionContext>,
+    pub(crate) commits: Vec<String>,
 }
 
 #[derive(Debug, Clone, Default)]
@@ -85,8 +86,34 @@ fn given_partial_context(world: &mut GivnWorld, harness: String) {
 }
 
 #[given("a Givn project with an existing commit hook that writes a marker")]
-fn given_existing_hook(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_existing_hook(world: &mut GivnWorld) {
+    let env = common::make_bare_root();
+    let root = env.root();
+    assert!(git(&root, &["init"]).status.success());
+    assert!(
+        git(&root, &["config", "user.name", "Human Developer"])
+            .status
+            .success()
+    );
+    assert!(
+        git(&root, &["config", "user.email", "human@example.test"])
+            .status
+            .success()
+    );
+    let hooks = String::from_utf8_lossy(&git(&root, &["rev-parse", "--git-path", "hooks"]).stdout)
+        .trim()
+        .to_string();
+    let hooks = root.join(hooks);
+    std::fs::create_dir_all(&hooks).expect("create hooks directory");
+    let hook = hooks.join("commit-msg");
+    std::fs::write(
+        &hook,
+        "#!/bin/sh\nprintf marker > \"$(git rev-parse --show-toplevel)/existing-hook.marker\"\n",
+    )
+    .expect("write existing hook");
+    make_executable(&hook);
+    world.env = Some(env);
+    world.git_attribution = Some(GitAttributionState::default());
 }
 
 #[when(regex = r##"^the consumer creates a commit with message "([^"]+)"$"##)]
@@ -110,23 +137,47 @@ fn when_consumer_creates_commit(world: &mut GivnWorld, message: String) {
         .as_mut()
         .expect("attribution state")
         .last_output = Some(output);
+    if world
+        .git_attribution
+        .as_ref()
+        .and_then(|state| state.last_output.as_ref())
+        .is_some_and(|output| output.status.success())
+    {
+        let hash = git(&root, &["rev-parse", "HEAD"]);
+        assert!(hash.status.success());
+        world
+            .git_attribution
+            .as_mut()
+            .expect("attribution state")
+            .commits
+            .push(String::from_utf8_lossy(&hash.stdout).trim().to_string());
+    }
 }
 
 #[when(
     regex = r##"^the current attribution context changes to LLM "([^"]+)", reasoning mode "([^"]+)", and harness "([^"]+)"$"##
 )]
-fn when_context_changes(
-    _world: &mut GivnWorld,
-    _llm: String,
-    _reasoning: String,
-    _harness: String,
-) {
-    unimplemented!()
+fn when_context_changes(world: &mut GivnWorld, llm: String, reasoning: String, harness: String) {
+    world
+        .git_attribution
+        .as_mut()
+        .expect("attribution state")
+        .context = Some(AttributionContext {
+        llm: Some(llm),
+        reasoning: Some(reasoning),
+        harness: Some(harness),
+    });
 }
 
 #[when("the consumer initializes Givn in the project")]
-fn when_consumer_initializes_givn(_world: &mut GivnWorld) {
-    unimplemented!()
+fn when_consumer_initializes_givn(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let output = common::run_givn(env, &["init", "--agents", "opencode,claude"]);
+    assert!(
+        output.status.success(),
+        "givn init failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
 }
 
 #[then("the commit succeeds")]
@@ -182,33 +233,65 @@ fn then_message_marks_missing(world: &mut GivnWorld) {
 }
 
 #[then("the existing hook marker is present")]
-fn then_existing_marker_present(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_existing_marker_present(world: &mut GivnWorld) {
+    let root = world.env.as_ref().expect("project root").root();
+    assert_eq!(
+        std::fs::read_to_string(root.join("existing-hook.marker")).expect("existing marker"),
+        "marker"
+    );
 }
 
 #[then("the commit message contains the Givn attribution trailers")]
-fn then_message_contains_trailers(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_message_contains_trailers(world: &mut GivnWorld) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains("Givn-Version:"));
+    assert!(message.contains("LLM-Harness: opencode"));
 }
 
 #[then(regex = r##"^the first commit identifies "([^"]+)", "([^"]+)", and "([^"]+)"$"##)]
 fn then_first_commit_identifies(
-    _world: &mut GivnWorld,
-    _llm: String,
-    _reasoning: String,
-    _harness: String,
+    world: &mut GivnWorld,
+    llm: String,
+    reasoning: String,
+    harness: String,
 ) {
-    unimplemented!()
+    assert_commit_attribution(world, 0, &llm, &reasoning, &harness);
 }
 
 #[then(regex = r##"^the second commit identifies "([^"]+)", "([^"]+)", and "([^"]+)"$"##)]
 fn then_second_commit_identifies(
-    _world: &mut GivnWorld,
-    _llm: String,
-    _reasoning: String,
-    _harness: String,
+    world: &mut GivnWorld,
+    llm: String,
+    reasoning: String,
+    harness: String,
 ) {
-    unimplemented!()
+    assert_commit_attribution(world, 1, &llm, &reasoning, &harness);
+}
+
+fn assert_commit_attribution(
+    world: &mut GivnWorld,
+    index: usize,
+    llm: &str,
+    reasoning: &str,
+    harness: &str,
+) {
+    let root = world.env.as_ref().expect("project root").root();
+    let hash = world
+        .git_attribution
+        .as_ref()
+        .expect("attribution state")
+        .commits
+        .get(index)
+        .expect("commit hash");
+    let output = git(&root, &["show", "-s", "--format=%B", hash]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains(&format!("LLM: {llm}")));
+    assert!(message.contains(&format!("LLM-Reasoning: {reasoning}")));
+    assert!(message.contains(&format!("LLM-Harness: {harness}")));
 }
 
 fn git(root: &std::path::Path, args: &[&str]) -> Output {
@@ -217,6 +300,18 @@ fn git(root: &std::path::Path, args: &[&str]) -> Output {
         .current_dir(root)
         .output()
         .expect("run git")
+}
+
+fn make_executable(path: &std::path::Path) {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let mut permissions = std::fs::metadata(path)
+            .expect("hook metadata")
+            .permissions();
+        permissions.set_mode(0o755);
+        std::fs::set_permissions(path, permissions).expect("make hook executable");
+    }
 }
 
 fn git_with_givn_path(
