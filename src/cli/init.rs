@@ -106,6 +106,18 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     println!("\nInstalled:\n");
     println!("  givn/config.yaml, givn/{{specs,changes,archive}}");
     println!("  core skills and commands");
+    println!("  commit attribution: .githooks/commit-msg (best effort)");
+    if let Ok(targets) = crate::config::overlay::load_skills_targets(&project_root) {
+        for target in targets {
+            match target.as_str() {
+                "opencode" => println!("  attribution integration: .opencode/plugins/givn-attribution.js"),
+                "claude" => println!(
+                    "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.json"
+                ),
+                _ => {}
+            }
+        }
+    }
     if no_addons {
         println!("  addons:  disabled (--no-addons)");
     } else {

@@ -29,6 +29,8 @@ pub mod grouped_merge_steps;
 pub mod init_agent_target_selection_steps;
 pub mod instruction_integrity_e2e_steps;
 pub mod instruction_integrity_steps;
+pub mod llm_attribution_installation_e2e_steps;
+pub mod llm_attribution_installation_steps;
 pub mod llm_attribution_e2e_steps;
 pub mod llm_attribution_steps;
 pub mod preserve_docstrings_on_archive_steps;

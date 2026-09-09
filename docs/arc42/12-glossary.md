@@ -15,6 +15,8 @@
 | **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. |
 | **Commit-attribution hook** | The checked-in `commit-msg` hook that appends best-effort attribution trailers without blocking a commit. Anti-term: post-artifact hook. |
 | **Hook activation launcher** | The machine-local Git hook that preserves an existing `commit-msg` hook and delegates to the checked-in commit-attribution hook. |
+| **Installation report** | The `givn init` or `givn upgrade` output that names installed or refreshed shared plumbing and selected agent integrations. |
+| **Attribution retrofit** | Refreshing commit-attribution files in an existing project during `givn upgrade`, including the files needed to share the behavior. |
 | **arc42-docs** | The effective lifecycle artifact added when the Arc42 addon is enabled. Its marker is `arc42.md`; durable chapters are scaffolded at fixed `docs/arc42/`. |
 | **Artifact** | A lifecycle document or generated path described by the effective manifest. It may have `requires`, `optional`, and configurable `post` hooks. |
 | **Capability** | A named behavior unit, represented by one `.feature` file under a use case. A capability is not itself a use case; it is owned by one. |
