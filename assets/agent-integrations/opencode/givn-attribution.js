@@ -1,4 +1,5 @@
 const sessions = new Map()
+const UNAVAILABLE = "unavailable"
 
 const rememberModel = (sessionID, model, variant) => {
   const previous = sessions.get(sessionID) ?? {}
@@ -19,8 +20,8 @@ export const GivnAttributionPlugin = async () => {
     },
     "shell.env": async (input, output) => {
       output.env.GIVN_ATTRIBUTION_ACTIVE = "1"
-      output.env.GIVN_ATTRIBUTION_LLM = "unavailable"
-      output.env.GIVN_ATTRIBUTION_REASONING = "unavailable"
+      output.env.GIVN_ATTRIBUTION_LLM = UNAVAILABLE
+      output.env.GIVN_ATTRIBUTION_REASONING = UNAVAILABLE
       output.env.GIVN_ATTRIBUTION_HARNESS = "opencode"
 
       const model = sessions.get(input.sessionID)
