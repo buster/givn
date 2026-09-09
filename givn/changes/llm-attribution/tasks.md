@@ -275,14 +275,14 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_e2e_steps.rs`
 
   ```text
-  output: 1 feature, 1 scenario, 6 passed; Git committer and final message trailers asserted
+  output: 1 feature, 1 scenario, 5 passed; dedicated E2E Git steps asserted the committer and final message trailers
   exit: 0
   ```
 
 - [x] REFACTOR — rerun the exact E2E scenario and paste the passing output:
 
   ```text
-  output: 1 feature, 1 scenario, 6 passed
+  output: 1 feature, 1 scenario, 5 passed
   exit: 0
   ```
 
@@ -290,5 +290,5 @@ preserved and chained before Givn attribution.
       `test(e2e): An attributed commit exposes the current LLM and harness`.
 
   ```text
-  commit hash: 981d4b9
+  commit hash: 981d4b9; follow-up E2E binding correction pending
   ```

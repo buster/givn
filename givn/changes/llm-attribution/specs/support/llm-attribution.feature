@@ -14,12 +14,11 @@ Feature: Commit attribution
 
   @givn.added @e2e
   Scenario: An attributed commit exposes the current LLM and harness
-    Given a Givn project with the shared commit-attribution hook active
-    And the current attribution context has LLM "openai/gpt-5.6-luna", reasoning mode "high", and harness "opencode"
-    When the consumer creates a commit with message "fix parser"
-    Then the commit succeeds
-    And the commit committer identifies "openai/gpt-5.6-luna" and "opencode"
-    And the commit message ends with the current Givn version, LLM, reasoning mode, and harness
+    Given a Git project with complete commit attribution context
+    When the consumer creates an attributed Git commit with message "fix parser"
+    Then the attributed commit succeeds
+    And its committer identifies "openai/gpt-5.6-luna" and "opencode"
+    And its message ends with the current Givn version, LLM, reasoning mode, and harness
 
   @givn.added
   Scenario: A human commit remains usable without attribution context
