@@ -13,6 +13,7 @@ const LEGACY_TRAILER_PREFIXES: [&str; 5] = [
     "Givn-Attribution-Status:",
 ];
 const UNAVAILABLE: &str = "unavailable";
+const CLAUDE_HARNESS: &str = "claude-code";
 
 pub fn stamp_message(path: &Path) -> Result<()> {
     if std::env::var_os("GIVN_ATTRIBUTION_ACTIVE").is_none() {
@@ -106,8 +107,11 @@ fn claude_updated_command(payload: &Value) -> Option<String> {
         ("GIVN_ATTRIBUTION_ACTIVE", "1".to_string()),
         ("GIVN_ATTRIBUTION_LLM", llm.clone()),
         ("GIVN_ATTRIBUTION_REASONING", reasoning),
-        ("GIVN_ATTRIBUTION_HARNESS", "claude-code".to_string()),
-        ("GIT_COMMITTER_NAME", format!("LLM: {llm} via claude-code")),
+        ("GIVN_ATTRIBUTION_HARNESS", CLAUDE_HARNESS.to_string()),
+        (
+            "GIT_COMMITTER_NAME",
+            format!("LLM: {llm} via {CLAUDE_HARNESS}"),
+        ),
     ]
     .into_iter()
     .map(|(name, value)| format!("{name}={}", shell_quote(&value)))
