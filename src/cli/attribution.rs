@@ -18,6 +18,19 @@ pub fn stamp_message(path: &Path) -> Result<()> {
         return Ok(());
     }
 
+    let llm = attribution_value("GIVN_ATTRIBUTION_LLM");
+    let reasoning = attribution_value("GIVN_ATTRIBUTION_REASONING");
+    let harness = attribution_value("GIVN_ATTRIBUTION_HARNESS");
+    stamp_message_values(path, env!("CARGO_PKG_VERSION"), &llm, &reasoning, &harness)
+}
+
+fn stamp_message_values(
+    path: &Path,
+    version: &str,
+    llm: &str,
+    reasoning: &str,
+    harness: &str,
+) -> Result<()> {
     let original = std::fs::read_to_string(path)
         .with_context(|| format!("read commit message {}", path.display()))?;
     let body = original
@@ -32,9 +45,6 @@ pub fn stamp_message(path: &Path) -> Result<()> {
         .trim_end()
         .to_string();
 
-    let llm = attribution_value("GIVN_ATTRIBUTION_LLM");
-    let reasoning = attribution_value("GIVN_ATTRIBUTION_REASONING");
-    let harness = attribution_value("GIVN_ATTRIBUTION_HARNESS");
     let status = if llm != "unavailable" && reasoning != "unavailable" && harness != "unavailable" {
         "complete"
     } else {
@@ -43,7 +53,7 @@ pub fn stamp_message(path: &Path) -> Result<()> {
 
     let stamped = format!(
         "{body}\n\nGivn-Version: {}\nLLM: {llm}\nLLM-Reasoning: {reasoning}\nLLM-Harness: {harness}\nGivn-Attribution-Status: {status}\n",
-        env!("CARGO_PKG_VERSION")
+        version
     );
     std::fs::write(path, stamped)
         .with_context(|| format!("write commit message {}", path.display()))?;
@@ -63,15 +73,29 @@ pub fn claude_pre_tool_use() -> Result<()> {
     let Ok(payload) = serde_json::from_str::<Value>(&input) else {
         return Ok(());
     };
-    let Some(command) = payload
-        .get("tool_input")
-        .and_then(|tool_input| tool_input.get("command"))
-        .and_then(Value::as_str)
-    else {
+    let Some(updated) = claude_updated_command(&payload) else {
         return Ok(());
     };
+
+    println!(
+        "{}",
+        serde_json::json!({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "updatedInput": {"command": updated}
+            }
+        })
+    );
+    Ok(())
+}
+
+fn claude_updated_command(payload: &Value) -> Option<String> {
+    let command = payload
+        .get("tool_input")
+        .and_then(|tool_input| tool_input.get("command"))
+        .and_then(Value::as_str)?;
     if !command.contains("git commit") {
-        return Ok(());
+        return None;
     }
 
     let llm = std::env::var("CLAUDE_MODEL")
@@ -101,19 +125,52 @@ pub fn claude_pre_tool_use() -> Result<()> {
     .collect::<Vec<_>>()
     .join(" ");
 
-    let updated = format!("env {prefix} {command}");
-    println!(
-        "{}",
-        serde_json::json!({
-            "hookSpecificOutput": {
-                "hookEventName": "PreToolUse",
-                "updatedInput": {"command": updated}
-            }
-        })
-    );
-    Ok(())
+    Some(format!("env {prefix} {command}"))
 }
 
 fn shell_quote(value: &str) -> String {
     format!("'{}'", value.replace('\'', "'\"'\"'"))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn stamp_replaces_managed_trailers_and_marks_partial_context() {
+        let directory = tempfile::tempdir().expect("temp directory");
+        let path = directory.path().join("message");
+        std::fs::write(
+            &path,
+            "subject\n\nGivn-Version: old\nLLM: old\nUser-Trailer: keep\n",
+        )
+        .expect("write message");
+
+        stamp_message_values(&path, "test-version", "unavailable", "high", "opencode")
+            .expect("stamp message");
+
+        let message = std::fs::read_to_string(path).expect("read message");
+        assert!(message.contains("Givn-Version: test-version"));
+        assert!(message.contains("LLM: unavailable"));
+        assert!(message.contains("LLM-Reasoning: high"));
+        assert!(message.contains("LLM-Harness: opencode"));
+        assert!(message.contains("User-Trailer: keep"));
+        assert!(message.ends_with("Givn-Attribution-Status: partial\n"));
+        assert!(!message.contains("Givn-Version: old"));
+    }
+
+    #[test]
+    fn claude_payload_updates_only_git_commit_commands() {
+        let commit = serde_json::json!({
+            "tool_input": {"command": "git commit -m 'subject'"},
+            "effort": {"level": "high"}
+        });
+        let updated = claude_updated_command(&commit).expect("updated commit command");
+        assert!(updated.contains("GIVN_ATTRIBUTION_LLM='claude-code'"));
+        assert!(updated.contains("GIVN_ATTRIBUTION_REASONING='high'"));
+        assert!(updated.ends_with("git commit -m 'subject'"));
+
+        let read = serde_json::json!({"tool_input": {"command": "git status"}});
+        assert!(claude_updated_command(&read).is_none());
+    }
 }
