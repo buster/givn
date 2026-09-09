@@ -116,21 +116,21 @@ preserved and chained before Givn attribution.
       `feat(llm-attribution): A partial attribution context does not block a commit`.
 
   ```text
-  commit hash: pending
+  commit hash: f65d0c2
   ```
 
 ## Scenario 3: An existing commit hook runs before Givn attribution
 
-- [ ] RED — remove `@wip` from this scenario only, run the named scenario, and
+- [x] RED — remove `@wip` from this scenario only, run the named scenario, and
       paste the non-zero output:
 
   ```text
-  command:
-  output:
-  exit:
+  command: GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "An existing commit hook runs before Givn attribution"
+  output: 1 feature, 1 scenario, 1 failed; the existing-hook setup step panicked with "not implemented"
+  exit: 101
   ```
 
-- [ ] GREEN — install an idempotent local dispatcher that preserves an unknown
+- [x] GREEN — install an idempotent local dispatcher that preserves an unknown
       existing hook as `.givn-original`, runs it first, preserves its failure
       result, and invokes the checked-in hook only after success.
 
@@ -142,36 +142,36 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_steps.rs`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 7 passed; existing marker and attribution trailers asserted
+  exit: 0
   ```
 
-- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+- [x] REFACTOR — rerun the same named scenario and paste the passing output:
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 7 passed
+  exit: 0
   ```
 
 - [ ] COMMIT — commit RED+GREEN+REFACTOR with message
       `feat(llm-attribution): An existing commit hook runs before Givn attribution`.
 
   ```text
-  commit hash:
+  commit hash: pending
   ```
 
 ## Scenario 4: Attribution follows a model change between commits
 
-- [ ] RED — remove `@wip` from this scenario only, run the named scenario, and
+- [x] RED — remove `@wip` from this scenario only, run the named scenario, and
       paste the non-zero output:
 
   ```text
-  command:
-  output:
-  exit:
+  command: GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --tags 'not @e2e'
+  output: 1 feature, 4 scenarios, 3 passed, 1 failed; the context-change step panicked with "not implemented"
+  exit: 101
   ```
 
-- [ ] GREEN — ensure each real Git commit reads only the current process-scoped
+- [x] GREEN — ensure each real Git commit reads only the current process-scoped
       attribution environment and replaces managed trailers without carrying
       stale values from the previous commit.
 
@@ -181,15 +181,15 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_steps.rs`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 7 passed; both commit messages carry their own context
+  exit: 0
   ```
 
-- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+- [x] REFACTOR — rerun the same named scenario and paste the passing output:
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 7 passed
+  exit: 0
   ```
 
 - [ ] COMMIT — commit RED+GREEN+REFACTOR with message

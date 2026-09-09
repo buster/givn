@@ -38,7 +38,7 @@ Feature: Commit attribution
     And the commit message identifies the harness as "opencode"
     And the commit message marks the LLM and reasoning mode as unavailable
 
-  @givn.added @wip
+  @givn.added
   Scenario: An existing commit hook runs before Givn attribution
     Given a Givn project with an existing commit hook that writes a marker
     And the current attribution context has LLM "openai/gpt-5.6-luna", reasoning mode "high", and harness "opencode"
