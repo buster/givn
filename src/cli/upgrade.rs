@@ -64,7 +64,7 @@ pub fn run() -> Result<()> {
         &commit_message,
     )? {
         Some(hash) => println!(
-            "Updated managed Givn files for {target_version} in commit {hash}; no migration change was required."
+            "Refreshed commit attribution plumbing and managed Givn files for {target_version} in commit {hash}; no migration change was required."
         ),
         None => {
             println!("Managed Givn files are already up to date for {target_version} (no changes).")

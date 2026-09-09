@@ -26,7 +26,7 @@
 
 - [x] REFACTOR — reran the named scenario with the same passing result.
 
-- [x] COMMIT: pending -- Consumer sees the commit attribution installation report
+- [x] COMMIT: c8a80540 -- Consumer sees the commit attribution installation report
 
 ## Scenario 2: Consumer upgrades an existing project with attribution plumbing missing
 
