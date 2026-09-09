@@ -247,6 +247,9 @@ jobs:
             exit 1
           fi
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@637df09687b2092ca3bdba3f1af641e2806e1356 # nextest
+
       - name: Run formatting and validation checks
         shell: bash
         run: |
@@ -254,7 +257,7 @@ jobs:
           cargo fmt --all -- --check
           cargo check --locked --all-targets
           cargo clippy --locked --all-targets -- -D warnings
-          cargo test --locked --lib
+          cargo nextest run --locked --lib --no-tests=warn
 
       - name: Run repository acceptance suites
         shell: bash

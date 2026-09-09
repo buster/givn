@@ -1,8 +1,10 @@
 //! Gherkin runner for givn's executable specs.
 //!
 //! This is the single source of truth for the `.feature` files under
-//! `givn/specs/`. It is invoked via `verify.command` (`cargo test --test
-//! features_runner`). There is no parallel hand-maintained `#[test]` file —
+//! `givn/specs/`. It is invoked via `verify.command` (`./run-tests.sh`,
+//! which runs `cargo nextest run --test features_runner` by default and
+//! falls back to `cargo test --test features_runner` under
+//! `GIVN_TEST_RUNNER=cargo`). There is no parallel hand-maintained `#[test]` file —
 //! the `.feature` file is the cucumber test, and step definitions live in
 //! `tests/steps/`.
 //!

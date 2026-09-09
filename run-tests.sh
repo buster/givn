@@ -17,8 +17,10 @@ run_cucumber() {
     shift
     if [ "$runner" = nextest ]; then
         GIVN_CUCUMBER_TAGS="$tags" cargo nextest run --no-tests=warn --locked "$@" --test features_runner
-    else
+    elif [ -n "$tags" ]; then
         cargo test --locked "$@" --test features_runner -- --tags "$tags"
+    else
+        cargo test --locked "$@" --test features_runner
     fi
 }
 
