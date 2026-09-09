@@ -52,6 +52,11 @@ The commit flow is:
 Model and harness changes update only the next agent shell's process-scoped
 values. No model selection is written to project configuration.
 
+Initialization and managed upgrade output explicitly reports the shared hook,
+local activation result, and selected agent integrations. Managed upgrades
+stage the Claude settings entry alongside the other attribution paths so the
+retrofit is represented in the upgrade commit.
+
 ## 6.2 `givn new <change-id>`
 
 1. Validate the id as non-empty ASCII lowercase letters, digits, and hyphens,

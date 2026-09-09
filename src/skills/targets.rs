@@ -370,6 +370,7 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
     }
 
     if targets.contains(&AgentTarget::Claude) {
+        paths.push(project_root.join(".claude/settings.json"));
         paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
     }
 
@@ -386,6 +387,7 @@ fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Resu
             "agent-integrations/opencode/givn-attribution.js",
             false,
         )?;
+        println!("  attribution integration: .opencode/plugins/givn-attribution.js");
     }
 
     if targets.contains(&AgentTarget::Claude) {
@@ -396,6 +398,9 @@ fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Resu
             true,
         )?;
         merge_claude_settings(project_root)?;
+        println!(
+            "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.json"
+        );
     }
 
     Ok(())

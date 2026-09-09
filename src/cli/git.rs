@@ -16,10 +16,14 @@ pub fn install(project_root: &Path) -> Result<()> {
     std::fs::create_dir_all(&shared_dir)
         .with_context(|| format!("create {}", shared_dir.display()))?;
     write_executable(&shared_dir.join("commit-msg"), &asset("hooks/commit-msg")?)?;
+    println!("  commit attribution: .githooks/commit-msg");
 
     let hooks_dir = match git_hooks_dir(project_root) {
         Some(path) => path,
-        None => return Ok(()),
+        None => {
+            println!("  Git activation: unavailable (no Git worktree)");
+            return Ok(());
+        }
     };
     std::fs::create_dir_all(&hooks_dir)
         .with_context(|| format!("create Git hooks directory {}", hooks_dir.display()))?;
@@ -39,11 +43,13 @@ pub fn install(project_root: &Path) -> Result<()> {
             // Do not overwrite a hook or an existing backup that Givn cannot
             // identify safely. The checked-in hook remains available for a
             // later explicit activation decision.
+            println!("  Git activation: unchanged (existing hook path preserved)");
             return Ok(());
         }
     }
 
     write_executable(&launcher, &asset("hooks/git-commit-msg-launcher")?)?;
+    println!("  Git activation: local commit-msg dispatcher installed");
     Ok(())
 }
 
