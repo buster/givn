@@ -173,6 +173,23 @@ enum Commands {
         /// Shell to generate completions for.
         shell: Shell,
     },
+    /// Internal commit-attribution helpers used by generated integrations.
+    #[command(hide = true)]
+    Attribution {
+        #[command(subcommand)]
+        command: AttributionCommands,
+    },
+}
+
+#[derive(Subcommand)]
+enum AttributionCommands {
+    /// Best-effort stamp of a Git commit message file.
+    Stamp {
+        #[arg(long)]
+        message_file: PathBuf,
+    },
+    /// Convert a Claude Code Bash hook payload into an optional command update.
+    ClaudePreToolUse,
 }
 
 #[derive(Subcommand)]
@@ -369,5 +386,11 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             generate(shell, &mut cmd, "givn", &mut std::io::stdout());
             Ok(())
         }
+        Commands::Attribution { command } => match command {
+            AttributionCommands::Stamp { message_file } => {
+                cli::attribution::stamp_message(&message_file)
+            }
+            AttributionCommands::ClaudePreToolUse => cli::attribution::claude_pre_tool_use(),
+        },
     }
 }

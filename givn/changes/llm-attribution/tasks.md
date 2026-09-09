@@ -41,16 +41,16 @@ preserved and chained before Givn attribution.
 
 ## Scenario 1: A human commit remains usable without attribution context
 
-- [ ] RED — remove `@wip` from this scenario only, implement the named steps
+- [x] RED — remove `@wip` from this scenario only, implement the named steps
       with `unimplemented!()`, and run:
       `GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "A human commit remains usable without attribution context"`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 1 failed; the first step panicked with "not implemented"
+  exit: 101
   ```
 
-- [ ] GREEN — create a real temporary Git repository, activate the checked-in
+- [x] GREEN — create a real temporary Git repository, activate the checked-in
       hook, run `git commit` without attribution variables, and assert success,
       unchanged message, and unchanged human committer.
 
@@ -63,36 +63,36 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_steps.rs`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 5 passed; real Git commit and unchanged message asserted
+  exit: 0
   ```
 
-- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+- [x] REFACTOR — rerun the same named scenario and paste the passing output:
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 5 passed
+  exit: 0
   ```
 
-- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+- [x] COMMIT — commit RED+GREEN+REFACTOR with message
       `feat(llm-attribution): A human commit remains usable without attribution context`.
 
   ```text
-  commit hash:
+  commit hash: 7445dad
   ```
 
 ## Scenario 2: A partial attribution context does not block a commit
 
-- [ ] RED — remove `@wip` from this scenario only, run the named scenario, and
+- [x] RED — remove `@wip` from this scenario only, run the named scenario, and
       paste the non-zero output:
 
   ```text
-  command:
-  output:
-  exit:
+  command: GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "A partial attribution context does not block a commit"
+  output: 1 feature, 1 scenario, 2 steps passed, 1 failed; the partial-context step panicked with "not implemented"
+  exit: 101
   ```
 
-- [ ] GREEN — stamp a partial context with explicit unavailable values and
+- [x] GREEN — stamp a partial context with explicit unavailable values and
       `partial` status while allowing the real commit to complete.
 
   Production/test files:
@@ -101,22 +101,22 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_steps.rs`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 6 passed; real Git commit contains harness and unavailable trailers
+  exit: 0
   ```
 
-- [ ] REFACTOR — rerun the same named scenario and paste the passing output:
+- [x] REFACTOR — rerun the same named scenario and paste the passing output:
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 6 passed
+  exit: 0
   ```
 
 - [ ] COMMIT — commit RED+GREEN+REFACTOR with message
       `feat(llm-attribution): A partial attribution context does not block a commit`.
 
   ```text
-  commit hash:
+  commit hash: pending
   ```
 
 ## Scenario 3: An existing commit hook runs before Givn attribution
