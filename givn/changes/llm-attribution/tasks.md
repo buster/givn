@@ -208,7 +208,7 @@ preserved and chained before Givn attribution.
 
   ```text
   GIVN_FEATURES=givn/changes/llm-attribution/specs ./run-tests.sh --non-e2e -> 4 scenarios, 4 passed
-  GIVN_FEATURES=givn/changes/llm-attribution/specs ./run-tests.sh --e2e -> 2 scenarios, 1 passed, 1 failed at the next scenario's unimplemented committer step
+  GIVN_FEATURES=givn/changes/llm-attribution/specs ./run-tests.sh --e2e -> 2 scenarios, 2 passed
   2 < 6 total change scenarios; the E2E filter is a strict subset.
   ```
 
@@ -249,21 +249,21 @@ preserved and chained before Givn attribution.
       `test(e2e): Consumer initializes a project and receives shared attribution plumbing`.
 
   ```text
-  commit hash: pending
+  commit hash: 3962dbc
   ```
 
 ## Scenario 6: An attributed commit exposes the current LLM and harness
 
-- [ ] RED — remove `@wip` from this E2E scenario only and run the exact E2E
+- [x] RED — remove `@wip` from this E2E scenario only and run the exact E2E
       scenario command; paste the non-zero output:
 
   ```text
-  command:
-  output:
-  exit:
+  command: GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "An attributed commit exposes the current LLM and harness"
+  output: 1 feature, 1 scenario, 4 passed, 1 failed; the committer assertion panicked with "not implemented"
+  exit: 101
   ```
 
-- [ ] GREEN — invoke real Git with complete runtime attribution and committer
+- [x] GREEN — invoke real Git with complete runtime attribution and committer
       environment, then assert through `git show` that the LLM/harness are in
       the committer identity and that the final message ends with normalized
       Givn version, LLM, reasoning, harness, and status trailers.
@@ -274,15 +274,15 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_e2e_steps.rs`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 6 passed; Git committer and final message trailers asserted
+  exit: 0
   ```
 
-- [ ] REFACTOR — rerun the exact E2E scenario and paste the passing output:
+- [x] REFACTOR — rerun the exact E2E scenario and paste the passing output:
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 6 passed
+  exit: 0
   ```
 
 - [ ] COMMIT — commit RED+GREEN+REFACTOR with message

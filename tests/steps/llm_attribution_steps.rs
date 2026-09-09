@@ -195,13 +195,29 @@ fn then_commit_succeeds(world: &mut GivnWorld) {
 }
 
 #[then(regex = r##"^the commit committer identifies "([^"]+)" and "([^"]+)"$"##)]
-fn then_committer_identifies(_world: &mut GivnWorld, _llm: String, _harness: String) {
-    unimplemented!()
+fn then_committer_identifies(world: &mut GivnWorld, llm: String, harness: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%cn", "HEAD"]);
+    assert!(output.status.success());
+    let committer = String::from_utf8_lossy(&output.stdout);
+    assert!(committer.contains(&format!("LLM: {llm} via {harness}")));
 }
 
 #[then("the commit message ends with the current Givn version, LLM, reasoning mode, and harness")]
-fn then_message_has_complete_attribution(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_message_has_complete_attribution(world: &mut GivnWorld) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains(&format!("Givn-Version: {}", env!("CARGO_PKG_VERSION"))));
+    assert!(message.contains("LLM: openai/gpt-5.6-luna"));
+    assert!(message.contains("LLM-Reasoning: high"));
+    assert!(message.contains("LLM-Harness: opencode"));
+    assert!(
+        message
+            .trim_end()
+            .ends_with("Givn-Attribution-Status: complete")
+    );
 }
 
 #[then(regex = r##"^the commit message remains "([^"]+)"$"##)]

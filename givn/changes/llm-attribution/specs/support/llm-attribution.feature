@@ -12,7 +12,7 @@ Feature: Commit attribution
     And the OpenCode attribution integration exists
     And the Claude Code attribution integration exists
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: An attributed commit exposes the current LLM and harness
     Given a Givn project with the shared commit-attribution hook active
     And the current attribution context has LLM "openai/gpt-5.6-luna", reasoning mode "high", and harness "opencode"
