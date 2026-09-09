@@ -186,6 +186,8 @@ pub fn add_targets(project_root: &Path, additions: &[AgentTarget]) -> Result<Vec
 
 /// Regenerate all skills and commands in the project.
 pub fn sync(project_root: &Path) -> Result<()> {
+    crate::cli::git::install(project_root)?;
+
     let manifest = load_effective()?;
     let verify_command = &manifest.verify.command;
     let features_path = &manifest.verify.features_path;

@@ -16,6 +16,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
+| Commit attribution | A checked-in Git message hook consumes optional process-scoped attribution; OpenCode and Claude adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
 | Product start | One author-owned `run:` declaration in `givn/commands.yaml` documents and gates how the built product starts; `givn run` executes it with a std-only readiness probe, a greppable ready line, a spec'd exit-code contract, and unix signal forwarding. ADR-067 records the declare-and-execute boundary. |
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |

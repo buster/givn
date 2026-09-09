@@ -1,11 +1,13 @@
 pub mod absolute_mode;
 pub mod addons;
 pub mod agents_block;
+pub mod attribution;
 
 pub mod archive;
 pub mod check;
 pub mod coverage_gate;
 pub mod eject;
+pub mod git;
 pub mod graph;
 pub mod init;
 pub mod instructions;
