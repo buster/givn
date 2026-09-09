@@ -49,13 +49,16 @@ fn given_givn_project_with_hook(world: &mut GivnWorld) {
 #[given(
     regex = r##"^the current attribution context has LLM "([^"]+)", reasoning mode "([^"]+)", and harness "([^"]+)"$"##
 )]
-fn given_complete_context(
-    _world: &mut GivnWorld,
-    _llm: String,
-    _reasoning: String,
-    _harness: String,
-) {
-    unimplemented!()
+fn given_complete_context(world: &mut GivnWorld, llm: String, reasoning: String, harness: String) {
+    world
+        .git_attribution
+        .as_mut()
+        .expect("attribution state")
+        .context = Some(AttributionContext {
+        llm: Some(llm),
+        reasoning: Some(reasoning),
+        harness: Some(harness),
+    });
 }
 
 #[given("no current attribution context")]
@@ -70,8 +73,15 @@ fn given_no_context(_world: &mut GivnWorld) {
 #[given(
     regex = r##"^the current attribution context has harness "([^"]+)" but no LLM or reasoning mode$"##
 )]
-fn given_partial_context(_world: &mut GivnWorld, _harness: String) {
-    unimplemented!()
+fn given_partial_context(world: &mut GivnWorld, harness: String) {
+    world
+        .git_attribution
+        .as_mut()
+        .expect("attribution state")
+        .context = Some(AttributionContext {
+        harness: Some(harness),
+        ..AttributionContext::default()
+    });
 }
 
 #[given("a Givn project with an existing commit hook that writes a marker")]
@@ -152,13 +162,23 @@ fn then_message_remains(world: &mut GivnWorld, expected: String) {
 }
 
 #[then(regex = r##"^the commit message identifies the harness as "([^"]+)"$"##)]
-fn then_message_identifies_harness(_world: &mut GivnWorld, _harness: String) {
-    unimplemented!()
+fn then_message_identifies_harness(world: &mut GivnWorld, harness: String) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains(&format!("LLM-Harness: {harness}")));
 }
 
 #[then("the commit message marks the LLM and reasoning mode as unavailable")]
-fn then_message_marks_missing(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_message_marks_missing(world: &mut GivnWorld) {
+    let root = world.env.as_ref().expect("project root").root();
+    let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
+    assert!(output.status.success());
+    let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains("LLM: unavailable"));
+    assert!(message.contains("LLM-Reasoning: unavailable"));
+    assert!(message.contains("Givn-Attribution-Status: partial"));
 }
 
 #[then("the existing hook marker is present")]
@@ -223,6 +243,9 @@ fn git_with_givn_path(
         }
         if let Some(value) = &context.harness {
             command.env("GIVN_ATTRIBUTION_HARNESS", value);
+        }
+        if let (Some(llm), Some(harness)) = (&context.llm, &context.harness) {
+            command.env("GIT_COMMITTER_NAME", format!("LLM: {llm} via {harness}"));
         }
     }
     command.output().expect("run git with givn")

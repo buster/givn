@@ -29,7 +29,7 @@ Feature: Commit attribution
     Then the commit succeeds
     And the commit message remains "document manual setup"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A partial attribution context does not block a commit
     Given a Givn project with the shared commit-attribution hook active
     And the current attribution context has harness "opencode" but no LLM or reasoning mode
