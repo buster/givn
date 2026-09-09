@@ -67,7 +67,7 @@ the Git-side protocol or blocking shell execution.
       -- --check`, the targeted scenario, the change-scoped full run, and the
       change-scoped E2E run pass.
 
-- [x] COMMIT: `95f4b3e9` -- `fix(llm-attribution): keep only co-author trailer`
+- [x] COMMIT: `25de68da` -- `test(e2e): cover OpenCode unavailable attribution defaults`
 
 ### Claude attributes a commit using its current model
 
@@ -96,7 +96,7 @@ Domain constraint: the Claude harness supplies the current model in its session
        and normalized the managed co-author line while removing stale legacy
        Givn trailers, preserving ordinary human co-author trailers and fallback
        semantics.
-- [x] COMMIT: `95f4b3e9` -- `fix(llm-attribution): keep only co-author trailer`
+- [x] COMMIT: `55cc9b05` -- `test(e2e): preserve Claude co-author attribution`
 
 ## Verification
 
