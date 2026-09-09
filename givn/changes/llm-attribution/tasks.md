@@ -196,26 +196,32 @@ preserved and chained before Givn attribution.
       `feat(llm-attribution): Attribution follows a model change between commits`.
 
   ```text
-  commit hash: pending
+  commit hash: f1bcbb6
   ```
 
 ## Scenario 5: Consumer initializes a project and receives shared attribution plumbing
 
-- [ ] E2E setup — read the canonical specs policy, create
+- [x] E2E setup — read the canonical specs policy, create
       `tests/steps/llm_attribution_e2e_steps.rs`, and confirm the existing
       `./run-tests.sh --e2e` filter selects only `@e2e` scenarios. No local
       service startup is required.
 
-- [ ] RED — remove `@wip` from this E2E scenario only and run the exact E2E
+  ```text
+  GIVN_FEATURES=givn/changes/llm-attribution/specs ./run-tests.sh --non-e2e -> 4 scenarios, 4 passed
+  GIVN_FEATURES=givn/changes/llm-attribution/specs ./run-tests.sh --e2e -> 2 scenarios, 1 passed, 1 failed at the next scenario's unimplemented committer step
+  2 < 6 total change scenarios; the E2E filter is a strict subset.
+  ```
+
+- [x] RED — remove `@wip` from this E2E scenario only and run the exact E2E
       scenario command; paste the non-zero output:
 
   ```text
-  command:
-  output:
-  exit:
+  command: GIVN_FEATURES=givn/changes/llm-attribution/specs cargo test --test features_runner -- --name "Consumer initializes a project and receives shared attribution plumbing"
+  output: 1 feature, 1 scenario, 1 failed; the first E2E step panicked with "not implemented"
+  exit: 101
   ```
 
-- [ ] GREEN — invoke the compiled CLI through a real subprocess with
+- [x] GREEN — invoke the compiled CLI through a real subprocess with
       `givn init --agents opencode,claude` in a temporary Git repository and
       assert the checked-in hook, local activation, OpenCode plugin, Claude
       hook, and Claude settings entry.
@@ -228,22 +234,22 @@ preserved and chained before Givn attribution.
   - `tests/steps/llm_attribution_e2e_steps.rs`
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 7 passed; real CLI and project filesystem assertions passed
+  exit: 0
   ```
 
-- [ ] REFACTOR — rerun the exact E2E scenario and paste the passing output:
+- [x] REFACTOR — rerun the exact E2E scenario and paste the passing output:
 
   ```text
-  output:
-  exit:
+  output: 1 feature, 1 scenario, 7 passed
+  exit: 0
   ```
 
 - [ ] COMMIT — commit RED+GREEN+REFACTOR with message
       `test(e2e): Consumer initializes a project and receives shared attribution plumbing`.
 
   ```text
-  commit hash:
+  commit hash: pending
   ```
 
 ## Scenario 6: An attributed commit exposes the current LLM and harness
