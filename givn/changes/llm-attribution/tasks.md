@@ -26,7 +26,7 @@ preserved and chained before Givn attribution.
   exit: 101
   ```
 
-- [ ] `verify.command` is `./run-tests.sh`; `verify.e2e_command` is
+- [x] `verify.command` is `./run-tests.sh`; `verify.e2e_command` is
       `./run-tests.sh --e2e`. Run both and paste the full-suite and E2E-only
       scenario counts here, proving the E2E count is smaller:
 
@@ -34,9 +34,10 @@ preserved and chained before Givn attribution.
   full command/output:
   e2e command/output:
   count comparison:
+  4 non-E2E scenarios passed; 2 E2E scenarios passed; 2 < 6 total change scenarios.
   ```
 
-- [ ] No services or digital twins are required. Confirm isolated temporary
+- [x] No services or digital twins are required. Confirm isolated temporary
       project directories and local Git repositories are sufficient.
 
 ## Scenario 1: A human commit remains usable without attribution context
@@ -112,7 +113,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+- [x] COMMIT — commit RED+GREEN+REFACTOR with message
       `feat(llm-attribution): A partial attribution context does not block a commit`.
 
   ```text
@@ -153,7 +154,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+- [x] COMMIT — commit RED+GREEN+REFACTOR with message
       `feat(llm-attribution): An existing commit hook runs before Givn attribution`.
 
   ```text
@@ -192,7 +193,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+- [x] COMMIT — commit RED+GREEN+REFACTOR with message
       `feat(llm-attribution): Attribution follows a model change between commits`.
 
   ```text
@@ -245,7 +246,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+- [x] COMMIT — commit RED+GREEN+REFACTOR with message
       `test(e2e): Consumer initializes a project and receives shared attribution plumbing`.
 
   ```text
@@ -285,9 +286,9 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [ ] COMMIT — commit RED+GREEN+REFACTOR with message
+- [x] COMMIT — commit RED+GREEN+REFACTOR with message
       `test(e2e): An attributed commit exposes the current LLM and harness`.
 
   ```text
-  commit hash:
+  commit hash: 981d4b9
   ```
