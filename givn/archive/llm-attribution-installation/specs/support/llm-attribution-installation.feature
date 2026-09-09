@@ -2,7 +2,7 @@
 
 Feature: Commit attribution installation
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer sees the commit attribution installation report
     Given a project root without a givn/ directory and with a Git repository
     When the consumer runs `givn init --agents opencode,claude`
@@ -11,7 +11,7 @@ Feature: Commit attribution installation
     And stdout reports the OpenCode attribution integration
     And stdout reports the Claude Code attribution integration
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer upgrades an existing project with attribution plumbing missing
     Given an initialized Git project with attribution plumbing removed after its initial commit
     When the consumer runs `givn upgrade`
