@@ -75,8 +75,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [x] COMMIT — commit RED+GREEN+REFACTOR with message
-      `feat(llm-attribution): A human commit remains usable without attribution context`.
+- [x] COMMIT: 7445dad -- A human commit remains usable without attribution context
 
   ```text
   commit hash: 7445dad
@@ -113,8 +112,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [x] COMMIT — commit RED+GREEN+REFACTOR with message
-      `feat(llm-attribution): A partial attribution context does not block a commit`.
+- [x] COMMIT: f65d0c2 -- A partial attribution context does not block a commit
 
   ```text
   commit hash: f65d0c2
@@ -154,11 +152,11 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [x] COMMIT — commit RED+GREEN+REFACTOR with message
-      `feat(llm-attribution): An existing commit hook runs before Givn attribution`.
+- [x] COMMIT: 483c56d -- An existing commit hook runs before Givn attribution
+- [x] COMMIT: 7c663c3e -- Centralize existing hook backup naming
 
   ```text
-  commit hash: 483c56d
+  commit hash: 483c56d, 7c663c3e
   ```
 
 ## Scenario 4: Attribution follows a model change between commits
@@ -193,11 +191,11 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [x] COMMIT — commit RED+GREEN+REFACTOR with message
-      `feat(llm-attribution): Attribution follows a model change between commits`.
+- [x] COMMIT: f1bcbb6 -- Attribution follows a model change between commits
+- [x] COMMIT: 62ea6540 -- Centralize unavailable attribution values
 
   ```text
-  commit hash: f1bcbb6
+  commit hash: f1bcbb6, 62ea6540
   ```
 
 ## Scenario 5: Consumer initializes a project and receives shared attribution plumbing
@@ -246,8 +244,7 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [x] COMMIT — commit RED+GREEN+REFACTOR with message
-      `test(e2e): Consumer initializes a project and receives shared attribution plumbing`.
+- [x] COMMIT: 3962dbc -- Consumer initializes a project and receives shared attribution plumbing
 
   ```text
   commit hash: 3962dbc
@@ -286,9 +283,9 @@ preserved and chained before Givn attribution.
   exit: 0
   ```
 
-- [x] COMMIT — commit RED+GREEN+REFACTOR with message
-      `test(e2e): An attributed commit exposes the current LLM and harness`.
+- [x] COMMIT: 981d4b9 -- An attributed commit exposes the current LLM and harness
+- [x] COMMIT: 6f6052a -- Keep attributed commits on dedicated E2E steps
 
   ```text
-  commit hash: 981d4b9; follow-up E2E binding correction pending
+  commit hash: 981d4b9, 6f6052a
   ```

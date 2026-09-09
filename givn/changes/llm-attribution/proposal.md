@@ -54,7 +54,7 @@ the project so that every checkout receives the same attribution plumbing.
 
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
-| Commit attribution | EXTEND spec-explore-change (support) | NEW in support | The route is a heuristic match on the support fragment; commit attribution is a separate cross-cutting support capability. |
+| llm-attribution | EXTEND spec-explore-change (support) | NEW in support | The route is a heuristic match on the support fragment; commit attribution is a separate cross-cutting support capability. |
 
 ## Out of Scope
 
