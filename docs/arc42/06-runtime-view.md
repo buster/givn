@@ -43,14 +43,31 @@ The commit flow is:
    failure result.
 4. The checked-in Givn hook invokes the attribution stamper after the existing
    hook succeeds.
-5. The stamper appends normalized Givn trailers when context exists. Missing
-   context or stamper errors leave the user's message and successful commit
-   path unchanged.
+5. The stamper appends the managed `Co-Authored-By` line and normalized Givn
+   trailers when context exists. Missing context or stamper errors leave the
+   user's message and successful commit path unchanged.
 6. Git writes the commit object with the available committer identity and final
    message.
 
 Model and harness changes update only the next agent shell's process-scoped
 values. No model selection is written to project configuration.
+
+The OpenCode path is ordered as follows: `chat.message` may receive the
+selected model and variant, then `chat.params` receives the selected model
+under its required `model` object and caches its provider/model identity by
+session; OpenCode then invokes `shell.env` for a shell execution; the plugin
+looks up the same session and returns the existing Givn environment protocol.
+If the payload has no usable model, the harness marker remains available and
+the missing attribution fields retain their best-effort fallback behavior.
+
+The Claude path is ordered as follows: Claude invokes the generated
+PreToolUse Bash hook with a Bash command and `transcript_path`; the Givn
+attribution command reads the latest assistant transcript entry and extracts
+its model; it exports the attribution environment for the complete command;
+and Claude executes that updated command. The environment therefore survives
+compound commands and shell wrappers such as RTK until Git invokes the shared
+hook. If the transcript is missing, unreadable, or has no model, the command
+uses the existing environment fallbacks and remains non-blocking.
 
 Initialization and managed upgrade output explicitly reports the shared hook,
 local activation result, and selected agent integrations. Managed upgrades

@@ -110,7 +110,9 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
     if let Ok(targets) = crate::config::overlay::load_skills_targets(&project_root) {
         for target in targets {
             match target.as_str() {
-                "opencode" => println!("  attribution integration: .opencode/plugins/givn-attribution.js"),
+                "opencode" => {
+                    println!("  attribution integration: .opencode/plugins/givn-attribution.js")
+                }
                 "claude" => println!(
                     "  attribution integration: .claude/hooks/givn-attribution.sh + .claude/settings.json"
                 ),

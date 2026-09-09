@@ -209,15 +209,20 @@ fn then_message_has_complete_attribution(world: &mut GivnWorld) {
     let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
     assert!(output.status.success());
     let message = String::from_utf8_lossy(&output.stdout);
-    assert!(message.contains(&format!("Givn-Version: {}", env!("CARGO_PKG_VERSION"))));
-    assert!(message.contains("LLM: openai/gpt-5.6-luna"));
-    assert!(message.contains("LLM-Reasoning: high"));
-    assert!(message.contains("LLM-Harness: opencode"));
-    assert!(
-        message
-            .trim_end()
-            .ends_with("Givn-Attribution-Status: complete")
-    );
+    assert!(message.trim_end().ends_with(&format!(
+        "Co-Authored-By: openai/gpt-5.6-luna/high@opencode with Givn {}",
+        env!("CARGO_PKG_VERSION")
+    )));
+    assert!(!message.contains("Givn-Version:"));
+    assert!(!message.contains("LLM:"));
+    assert!(!message.contains("LLM-Reasoning:"));
+    assert!(!message.contains("LLM-Harness:"));
+    assert!(!message.contains("Givn-Attribution-Status:"));
+}
+
+#[then("the commit message contains only the managed co-author attribution")]
+fn then_message_has_only_coauthor_attribution(world: &mut GivnWorld) {
+    then_message_has_complete_attribution(world);
 }
 
 #[then(regex = r##"^the commit message remains "([^"]+)"$"##)]
@@ -234,7 +239,7 @@ fn then_message_identifies_harness(world: &mut GivnWorld, harness: String) {
     let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
     assert!(output.status.success());
     let message = String::from_utf8_lossy(&output.stdout);
-    assert!(message.contains(&format!("LLM-Harness: {harness}")));
+    assert!(message.contains(&format!("@{harness} with Givn ")));
 }
 
 #[then("the commit message marks the LLM and reasoning mode as unavailable")]
@@ -243,9 +248,12 @@ fn then_message_marks_missing(world: &mut GivnWorld) {
     let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
     assert!(output.status.success());
     let message = String::from_utf8_lossy(&output.stdout);
-    assert!(message.contains("LLM: unavailable"));
-    assert!(message.contains("LLM-Reasoning: unavailable"));
-    assert!(message.contains("Givn-Attribution-Status: partial"));
+    assert!(message.contains("Co-Authored-By: unavailable/unavailable@"));
+    assert!(!message.contains("Givn-Version:"));
+    assert!(!message.contains("LLM:"));
+    assert!(!message.contains("LLM-Reasoning:"));
+    assert!(!message.contains("LLM-Harness:"));
+    assert!(!message.contains("Givn-Attribution-Status:"));
 }
 
 #[then("the existing hook marker is present")]
@@ -263,8 +271,9 @@ fn then_message_contains_trailers(world: &mut GivnWorld) {
     let output = git(&root, &["show", "-s", "--format=%B", "HEAD"]);
     assert!(output.status.success());
     let message = String::from_utf8_lossy(&output.stdout);
-    assert!(message.contains("Givn-Version:"));
-    assert!(message.contains("LLM-Harness: opencode"));
+    assert!(message.contains("Co-Authored-By:"));
+    assert!(!message.contains("Givn-Version:"));
+    assert!(!message.contains("LLM-Harness:"));
 }
 
 #[then(regex = r##"^the first commit identifies "([^"]+)", "([^"]+)", and "([^"]+)"$"##)]
@@ -302,13 +311,23 @@ fn assert_commit_attribution(
         .commits
         .get(index)
         .expect("commit hash");
-    let output = git(&root, &["show", "-s", "--format=%cn%n%B", hash]);
+    let committer_output = git(&root, &["show", "-s", "--format=%cn", hash]);
+    assert!(committer_output.status.success());
+    let committer = String::from_utf8_lossy(&committer_output.stdout);
+    assert!(committer.contains(&format!("LLM: {llm} via {harness}")));
+
+    let output = git(&root, &["show", "-s", "--format=%B", hash]);
     assert!(output.status.success());
     let message = String::from_utf8_lossy(&output.stdout);
-    assert!(message.contains(&format!("LLM: {llm} via {harness}")));
-    assert!(message.contains(&format!("LLM: {llm}")));
-    assert!(message.contains(&format!("LLM-Reasoning: {reasoning}")));
-    assert!(message.contains(&format!("LLM-Harness: {harness}")));
+    assert!(message.contains(&format!(
+        "Co-Authored-By: {llm}/{reasoning}@{harness} with Givn {}",
+        env!("CARGO_PKG_VERSION")
+    )));
+    assert!(!message.contains("Givn-Version:"));
+    assert!(!message.contains("LLM:"));
+    assert!(!message.contains("LLM-Reasoning:"));
+    assert!(!message.contains("LLM-Harness:"));
+    assert!(!message.contains("Givn-Attribution-Status:"));
 }
 
 pub(crate) fn git(root: &std::path::Path, args: &[&str]) -> Output {

@@ -26,6 +26,8 @@ register](adr/README.md).
 | TC-26 | givn never derives run-declaration content from repository sources, build manifests, container files, or framework conventions; the declaration is author-owned configuration validated only by deterministic rules. | `src/cli/run_block.rs`, run-command feature specs |
 | TC-27 | Shared commit attribution is checked into `.githooks/`; local Git activation preserves and chains an existing `commit-msg` hook, while attribution failures never block a commit. | `givn/changes/llm-attribution/design.md`, commit-attribution feature specs |
 | TC-28 | Runtime attribution is process-scoped and optional; it is never persisted as model selection in `givn/config.yaml`. | OpenCode/Claude integrations and commit-attribution protocol |
+| TC-29 | The OpenCode attribution integration reads the selected provider and model from the required `chat.params` payload's `model` object, with optional `chat.message` enrichment; payload drift remains a best-effort compatibility risk. | `assets/agent-integrations/opencode/givn-attribution.js`, OpenCode plugin scenario |
+| TC-30 | The Claude attribution integration resolves the latest assistant model from the PreToolUse payload's transcript before using process fallbacks, exports context for the complete Bash command, and remains non-blocking when transcript metadata is missing or unreadable. | `src/cli/attribution.rs`, Claude attribution scenario |
 
 ## 2.2 Configuration and Gate Constraints
 

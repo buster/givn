@@ -5,7 +5,7 @@ use serde_json::Value;
 use std::io::Read;
 use std::path::Path;
 
-const TRAILER_PREFIXES: [&str; 5] = [
+const LEGACY_TRAILER_PREFIXES: [&str; 5] = [
     "Givn-Version:",
     "LLM:",
     "LLM-Reasoning:",
@@ -36,29 +36,24 @@ fn stamp_message_values(
         .with_context(|| format!("read commit message {}", path.display()))?;
     let body = original
         .lines()
-        .filter(|line| {
-            !TRAILER_PREFIXES
-                .iter()
-                .any(|prefix| line.starts_with(prefix))
-        })
+        .filter(|line| !is_managed_trailer(line))
         .collect::<Vec<_>>()
         .join("\n")
         .trim_end()
         .to_string();
 
-    let status = if llm != UNAVAILABLE && reasoning != UNAVAILABLE && harness != UNAVAILABLE {
-        "complete"
-    } else {
-        "partial"
-    };
-
-    let stamped = format!(
-        "{body}\n\nGivn-Version: {}\nLLM: {llm}\nLLM-Reasoning: {reasoning}\nLLM-Harness: {harness}\nGivn-Attribution-Status: {status}\n",
-        version
-    );
+    let stamped =
+        format!("{body}\n\nCo-Authored-By: {llm}/{reasoning}@{harness} with Givn {version}\n",);
     std::fs::write(path, stamped)
         .with_context(|| format!("write commit message {}", path.display()))?;
     Ok(())
+}
+
+fn is_managed_trailer(line: &str) -> bool {
+    line.starts_with("Co-Authored-By:") && line.contains(" with Givn ")
+        || LEGACY_TRAILER_PREFIXES
+            .iter()
+            .any(|prefix| line.starts_with(prefix))
 }
 
 fn attribution_value(name: &str) -> String {
@@ -95,14 +90,7 @@ fn claude_updated_command(payload: &Value) -> Option<String> {
         .get("tool_input")
         .and_then(|tool_input| tool_input.get("command"))
         .and_then(Value::as_str)?;
-    if !command.contains("git commit") {
-        return None;
-    }
-
-    let llm = std::env::var("CLAUDE_MODEL")
-        .ok()
-        .filter(|value| !value.trim().is_empty())
-        .unwrap_or_else(|| "claude-code".to_string());
+    let llm = claude_model(payload);
     let reasoning = std::env::var("CLAUDE_CODE_EFFORT_LEVEL")
         .ok()
         .filter(|value| !value.trim().is_empty())
@@ -126,7 +114,42 @@ fn claude_updated_command(payload: &Value) -> Option<String> {
     .collect::<Vec<_>>()
     .join(" ");
 
-    Some(format!("env {prefix} {command}"))
+    Some(format!("export {prefix}; {command}"))
+}
+
+fn claude_model(payload: &Value) -> String {
+    claude_transcript_model(payload)
+        .or_else(|| {
+            std::env::var("CLAUDE_MODEL")
+                .ok()
+                .filter(|value| !value.trim().is_empty() && !value.contains(['\n', '\r']))
+        })
+        .unwrap_or_else(|| "claude-code".to_string())
+}
+
+fn claude_transcript_model(payload: &Value) -> Option<String> {
+    let path = payload.get("transcript_path").and_then(Value::as_str)?;
+    let transcript = std::fs::read_to_string(path).ok()?;
+
+    transcript.lines().rev().find_map(|line| {
+        let entry = serde_json::from_str::<Value>(line).ok()?;
+        let is_assistant = entry.get("type").and_then(Value::as_str) == Some("assistant")
+            || entry
+                .get("message")
+                .and_then(|message| message.get("role"))
+                .and_then(Value::as_str)
+                == Some("assistant");
+        if !is_assistant {
+            return None;
+        }
+
+        let model = entry
+            .get("message")
+            .and_then(|message| message.get("model"))
+            .and_then(Value::as_str)
+            .or_else(|| entry.get("model").and_then(Value::as_str))?;
+        (!model.trim().is_empty() && !model.contains(['\n', '\r'])).then(|| model.to_string())
+    })
 }
 
 fn shell_quote(value: &str) -> String {
@@ -138,12 +161,12 @@ mod tests {
     use super::*;
 
     #[test]
-    fn stamp_replaces_managed_trailers_and_marks_partial_context() {
+    fn stamp_replaces_managed_trailers_with_only_the_coauthor_line() {
         let directory = tempfile::tempdir().expect("temp directory");
         let path = directory.path().join("message");
         std::fs::write(
             &path,
-            "subject\n\nGivn-Version: old\nLLM: old\nUser-Trailer: keep\n",
+            "subject\n\nCo-Authored-By: Human Developer <human@example.test>\nCo-Authored-By: old/high@old-harness with Givn old\nGivn-Version: old\nLLM: old\nUser-Trailer: keep\n",
         )
         .expect("write message");
 
@@ -151,27 +174,53 @@ mod tests {
             .expect("stamp message");
 
         let message = std::fs::read_to_string(path).expect("read message");
-        assert!(message.contains("Givn-Version: test-version"));
-        assert!(message.contains("LLM: unavailable"));
-        assert!(message.contains("LLM-Reasoning: high"));
-        assert!(message.contains("LLM-Harness: opencode"));
+        assert!(
+            message.contains("Co-Authored-By: unavailable/high@opencode with Givn test-version")
+        );
         assert!(message.contains("User-Trailer: keep"));
-        assert!(message.ends_with("Givn-Attribution-Status: partial\n"));
+        assert!(message.contains("Co-Authored-By: Human Developer <human@example.test>"));
+        assert!(!message.contains("Givn-Version:"));
+        assert!(!message.contains("LLM:"));
+        assert!(!message.contains("LLM-Reasoning:"));
+        assert!(!message.contains("LLM-Harness:"));
+        assert!(!message.contains("Givn-Attribution-Status:"));
         assert!(!message.contains("Givn-Version: old"));
+        assert!(!message.contains("Co-Authored-By: old/high@old-harness with Givn old"));
     }
 
     #[test]
-    fn claude_payload_updates_only_git_commit_commands() {
+    fn claude_payload_exports_context_for_compound_bash_commands() {
         let commit = serde_json::json!({
-            "tool_input": {"command": "git commit -m 'subject'"},
+            "tool_input": {"command": "echo before && git commit -m 'subject'"},
             "effort": {"level": "high"}
         });
         let updated = claude_updated_command(&commit).expect("updated commit command");
+        assert!(updated.starts_with("export GIVN_ATTRIBUTION_ACTIVE='1'"));
         assert!(updated.contains("GIVN_ATTRIBUTION_LLM='claude-code'"));
         assert!(updated.contains("GIVN_ATTRIBUTION_REASONING='high'"));
-        assert!(updated.ends_with("git commit -m 'subject'"));
+        assert!(updated.ends_with("; echo before && git commit -m 'subject'"));
 
         let read = serde_json::json!({"tool_input": {"command": "git status"}});
-        assert!(claude_updated_command(&read).is_none());
+        let updated = claude_updated_command(&read).expect("updated Bash command");
+        assert!(updated.ends_with("; git status"));
+    }
+
+    #[test]
+    fn claude_payload_prefers_the_latest_assistant_model_from_transcript() {
+        let directory = tempfile::tempdir().expect("temp directory");
+        let transcript = directory.path().join("transcript.jsonl");
+        std::fs::write(
+            &transcript,
+            "{\"type\":\"assistant\",\"message\":{\"role\":\"assistant\",\"model\":\"claude-opus-5\"}}\n",
+        )
+        .expect("write transcript");
+        let payload = serde_json::json!({
+            "transcript_path": transcript,
+            "tool_input": {"command": "git commit -m 'subject'"}
+        });
+
+        let updated = claude_updated_command(&payload).expect("updated commit command");
+        assert!(updated.contains("GIVN_ATTRIBUTION_LLM='claude-opus-5'"));
+        assert!(updated.contains("GIT_COMMITTER_NAME='LLM: claude-opus-5 via claude-code'"));
     }
 }
