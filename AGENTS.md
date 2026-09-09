@@ -4,7 +4,7 @@
 
 - Build with `cargo check` (preferred) or `cargo build --release`.
 - Format via `cargo fmt` and lint with `cargo clippy` before committing.
-- Run tests with `cargo nextest run` or `cargo test <name> -- --nocapture`.
+- Run tests with `cargo nextest run` (the default runner behind `./run-tests.sh`); set `GIVN_TEST_RUNNER=cargo` for the plain `cargo test` fallback.
 
 ## Self-dogfood after each change
 
@@ -38,7 +38,7 @@ binary.
 
 ## Testing
 
-- Rust suite: `cargo nextest run` for speed, or `cargo test` for targeted fallback.
+- Rust suite: `cargo nextest run` (default), `GIVN_TEST_RUNNER=cargo ./run-tests.sh` for the libtest fallback.
 - Run `cargo clippy --workspace --all-targets -- -D warnings` for lint coverage.
 
 ## Performance & simplicity

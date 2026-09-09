@@ -45,8 +45,11 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --locked --all-targets -- -D warnings
 
+      - name: Install cargo-nextest
+        uses: taiki-e/install-action@637df09687b2092ca3bdba3f1af641e2806e1356 # nextest
+
       - name: Run library tests
-        run: cargo test --locked --lib
+        run: cargo nextest run --locked --lib --no-tests=warn
 
       - name: Run repository acceptance suites
         run: |
