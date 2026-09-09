@@ -157,7 +157,7 @@ preserved and chained before Givn attribution.
       `feat(llm-attribution): An existing commit hook runs before Givn attribution`.
 
   ```text
-  commit hash: pending
+  commit hash: 483c56d
   ```
 
 ## Scenario 4: Attribution follows a model change between commits
@@ -196,7 +196,7 @@ preserved and chained before Givn attribution.
       `feat(llm-attribution): Attribution follows a model change between commits`.
 
   ```text
-  commit hash:
+  commit hash: pending
   ```
 
 ## Scenario 5: Consumer initializes a project and receives shared attribution plumbing

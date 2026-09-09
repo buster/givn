@@ -286,9 +286,10 @@ fn assert_commit_attribution(
         .commits
         .get(index)
         .expect("commit hash");
-    let output = git(&root, &["show", "-s", "--format=%B", hash]);
+    let output = git(&root, &["show", "-s", "--format=%cn%n%B", hash]);
     assert!(output.status.success());
     let message = String::from_utf8_lossy(&output.stdout);
+    assert!(message.contains(&format!("LLM: {llm} via {harness}")));
     assert!(message.contains(&format!("LLM: {llm}")));
     assert!(message.contains(&format!("LLM-Reasoning: {reasoning}")));
     assert!(message.contains(&format!("LLM-Harness: {harness}")));

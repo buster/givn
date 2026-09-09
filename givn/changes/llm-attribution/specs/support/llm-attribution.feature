@@ -48,7 +48,7 @@ Feature: Commit attribution
     And the existing hook marker is present
     And the commit message contains the Givn attribution trailers
 
-  @givn.added @wip
+  @givn.added
   Scenario: Attribution follows a model change between commits
     Given a Givn project with the shared commit-attribution hook active
     And the current attribution context has LLM "model-a", reasoning mode "high", and harness "opencode"
