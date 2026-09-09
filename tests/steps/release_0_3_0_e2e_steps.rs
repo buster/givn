@@ -220,7 +220,9 @@ fn first_commit_has_managed_paths(world: &mut GivnWorld) {
                 || path.starts_with(".agents/skills/")
                 || path.starts_with(".claude/skills/")
                 || path.starts_with(".opencode/skills/")
-                || path.starts_with(".opencode/commands/"),
+                || path.starts_with(".opencode/commands/")
+                || path.starts_with(".opencode/plugins/")
+                || path == ".githooks/commit-msg",
             "Commit A staged an unmanaged path: {path}"
         );
     }
