@@ -311,7 +311,7 @@ fn assert_commit_attribution(
     assert!(message.contains(&format!("LLM-Harness: {harness}")));
 }
 
-fn git(root: &std::path::Path, args: &[&str]) -> Output {
+pub(crate) fn git(root: &std::path::Path, args: &[&str]) -> Output {
     Command::new("git")
         .args(args)
         .current_dir(root)
@@ -331,7 +331,7 @@ fn make_executable(path: &std::path::Path) {
     }
 }
 
-fn git_with_givn_path(
+pub(crate) fn git_with_givn_path(
     root: &std::path::Path,
     args: &[&str],
     context: Option<&AttributionContext>,

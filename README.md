@@ -100,6 +100,12 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 /givn-archive
 ```
 
+`givn init` also checks in shared Git commit-attribution plumbing and activates
+it locally when the project is a Git worktree. OpenCode and Claude Code targets
+receive best-effort runtime integrations; when an agent exposes attribution
+context, the commit committer and message show the LLM, reasoning mode, harness,
+and Givn version. Missing context never blocks a human commit.
+
 ## Default workflow
 
 ![Givn change lifecycle: proposal to archive](docs/workflow.svg)
