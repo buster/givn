@@ -212,6 +212,8 @@ pub fn sync(project_root: &Path) -> Result<()> {
         givn_version: version,
     };
 
+    sync_agent_integrations(project_root, &targets)?;
+
     for name in &skill_names {
         let template = resolve_skill_template_for(name)?;
         let rendered = render_template(&template, &ctx, &addons)
@@ -328,7 +330,10 @@ fn reconcile_addon_artifacts(
 pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::PathBuf>> {
     let manifest = load_effective()?;
     let targets = configured_targets(project_root)?;
-    let mut paths = vec![project_root.join("AGENTS.md")];
+    let mut paths = vec![
+        project_root.join("AGENTS.md"),
+        project_root.join(".githooks/commit-msg"),
+    ];
 
     let mut skill_names = default_skill_names();
     if domain_modeling_present(&manifest) {
@@ -351,6 +356,7 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
     }
 
     if targets.contains(&AgentTarget::Opencode) {
+        paths.push(project_root.join(".opencode/plugins/givn-attribution.js"));
         let mut command_names = default_command_names();
         if manifest.addons.grill_me {
             command_names.push("grill-me");
@@ -363,9 +369,110 @@ pub fn managed_generated_paths(project_root: &Path) -> Result<Vec<std::path::Pat
         }
     }
 
+    if targets.contains(&AgentTarget::Claude) {
+        paths.push(project_root.join(".claude/hooks/givn-attribution.sh"));
+    }
+
     paths.sort();
     paths.dedup();
     Ok(paths)
+}
+
+fn sync_agent_integrations(project_root: &Path, targets: &[AgentTarget]) -> Result<()> {
+    if targets.contains(&AgentTarget::Opencode) {
+        write_embedded_file(
+            project_root,
+            ".opencode/plugins/givn-attribution.js",
+            "agent-integrations/opencode/givn-attribution.js",
+            false,
+        )?;
+    }
+
+    if targets.contains(&AgentTarget::Claude) {
+        write_embedded_file(
+            project_root,
+            ".claude/hooks/givn-attribution.sh",
+            "agent-integrations/claude/givn-attribution.sh",
+            true,
+        )?;
+        merge_claude_settings(project_root)?;
+    }
+
+    Ok(())
+}
+
+fn write_embedded_file(
+    project_root: &Path,
+    relative: &str,
+    asset_path: &str,
+    executable: bool,
+) -> Result<()> {
+    let path = project_root.join(relative);
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let content = crate::config::embedded::Assets::get_str(asset_path)
+        .ok_or_else(|| anyhow::anyhow!("embedded agent integration missing: {asset_path}"))?;
+    std::fs::write(&path, content)?;
+    if executable {
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut permissions = std::fs::metadata(&path)?.permissions();
+            permissions.set_mode(0o755);
+            std::fs::set_permissions(&path, permissions)?;
+        }
+    }
+    Ok(())
+}
+
+fn merge_claude_settings(project_root: &Path) -> Result<()> {
+    let path = project_root.join(".claude/settings.json");
+    let mut settings = if path.exists() {
+        let content = std::fs::read_to_string(&path)?;
+        serde_json::from_str::<serde_json::Value>(&content)
+            .with_context(|| format!("parse {}", path.display()))?
+    } else {
+        serde_json::json!({})
+    };
+
+    let root = settings
+        .as_object_mut()
+        .ok_or_else(|| anyhow::anyhow!("Claude settings must contain a JSON object"))?;
+    let hooks = root.entry("hooks").or_insert_with(|| serde_json::json!({}));
+    let hooks = hooks
+        .as_object_mut()
+        .ok_or_else(|| anyhow::anyhow!("Claude settings hooks must contain a JSON object"))?;
+    let pre_tool_use = hooks
+        .entry("PreToolUse")
+        .or_insert_with(|| serde_json::json!([]));
+    let entries = pre_tool_use
+        .as_array_mut()
+        .ok_or_else(|| anyhow::anyhow!("Claude PreToolUse hooks must be an array"))?;
+
+    let command = "${CLAUDE_PROJECT_DIR}/.claude/hooks/givn-attribution.sh";
+    let already_present = entries.iter().any(|entry| {
+        entry
+            .get("hooks")
+            .and_then(serde_json::Value::as_array)
+            .is_some_and(|commands| {
+                commands.iter().any(|hook| {
+                    hook.get("command").and_then(serde_json::Value::as_str) == Some(command)
+                })
+            })
+    });
+    if !already_present {
+        entries.push(serde_json::json!({
+            "matcher": "Bash",
+            "hooks": [{"type": "command", "command": command}]
+        }));
+    }
+
+    if let Some(parent) = path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    std::fs::write(path, serde_json::to_string_pretty(&settings)? + "\n")?;
+    Ok(())
 }
 
 /// Write a rendered SKILL.md to the configured skill target locations.
