@@ -1,6 +1,8 @@
 //! Commit-attribution command implementation.
 
 use anyhow::{Context, Result};
+use serde_json::Value;
+use std::io::Read;
 use std::path::Path;
 
 const TRAILER_PREFIXES: [&str; 5] = [
@@ -56,7 +58,62 @@ fn attribution_value(name: &str) -> String {
 }
 
 pub fn claude_pre_tool_use() -> Result<()> {
-    // The Claude integration is implemented by its scenario. Malformed hook
-    // input must remain non-blocking for the Bash command.
+    let mut input = String::new();
+    std::io::stdin().read_to_string(&mut input)?;
+    let Ok(payload) = serde_json::from_str::<Value>(&input) else {
+        return Ok(());
+    };
+    let Some(command) = payload
+        .get("tool_input")
+        .and_then(|tool_input| tool_input.get("command"))
+        .and_then(Value::as_str)
+    else {
+        return Ok(());
+    };
+    if !command.contains("git commit") {
+        return Ok(());
+    }
+
+    let llm = std::env::var("CLAUDE_MODEL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .unwrap_or_else(|| "claude-code".to_string());
+    let reasoning = std::env::var("CLAUDE_CODE_EFFORT_LEVEL")
+        .ok()
+        .filter(|value| !value.trim().is_empty())
+        .or_else(|| {
+            payload
+                .get("effort")
+                .and_then(|effort| effort.get("level"))
+                .and_then(Value::as_str)
+                .map(str::to_string)
+        })
+        .unwrap_or_else(|| "unavailable".to_string());
+    let prefix = [
+        ("GIVN_ATTRIBUTION_ACTIVE", "1".to_string()),
+        ("GIVN_ATTRIBUTION_LLM", llm.clone()),
+        ("GIVN_ATTRIBUTION_REASONING", reasoning),
+        ("GIVN_ATTRIBUTION_HARNESS", "claude-code".to_string()),
+        ("GIT_COMMITTER_NAME", format!("LLM: {llm} via claude-code")),
+    ]
+    .into_iter()
+    .map(|(name, value)| format!("{name}={}", shell_quote(&value)))
+    .collect::<Vec<_>>()
+    .join(" ");
+
+    let updated = format!("env {prefix} {command}");
+    println!(
+        "{}",
+        serde_json::json!({
+            "hookSpecificOutput": {
+                "hookEventName": "PreToolUse",
+                "updatedInput": {"command": updated}
+            }
+        })
+    );
     Ok(())
+}
+
+fn shell_quote(value: &str) -> String {
+    format!("'{}'", value.replace('\'', "'\"'\"'"))
 }
