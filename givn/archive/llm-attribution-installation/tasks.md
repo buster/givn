@@ -45,4 +45,4 @@
 
 - [x] REFACTOR — reran the named scenario with the same passing result.
 
-- [x] COMMIT: pending -- Consumer upgrades an existing project with attribution plumbing missing
+- [x] COMMIT: 64b496f8 -- Consumer upgrades an existing project with attribution plumbing missing
