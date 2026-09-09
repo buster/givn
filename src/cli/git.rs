@@ -7,6 +7,7 @@ use std::process::Command;
 use crate::config::embedded::Assets;
 
 const LAUNCHER_MARKER: &str = "# givn commit-attribution launcher";
+const ORIGINAL_HOOK_SUFFIX: &str = ".givn-original";
 
 /// Materialize the shared commit hook and activate it for the current worktree
 /// without replacing an existing local commit hook.
@@ -24,7 +25,7 @@ pub fn install(project_root: &Path) -> Result<()> {
         .with_context(|| format!("create Git hooks directory {}", hooks_dir.display()))?;
 
     let launcher = hooks_dir.join("commit-msg");
-    let backup = hooks_dir.join("commit-msg.givn-original");
+    let backup = hooks_dir.join(format!("commit-msg{ORIGINAL_HOOK_SUFFIX}"));
     if launcher.exists() && !contains_marker(&launcher)? {
         if !backup.exists() {
             std::fs::rename(&launcher, &backup).with_context(|| {
