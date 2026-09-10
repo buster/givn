@@ -24,7 +24,13 @@
 | **Capability** | A named behavior unit, represented by one `.feature` file under a use case. A capability is not itself a use case; it is owned by one. |
 | **Cascade** | Project-overrides-first lookup for an individual template, instruction, skill, or command asset, with embedded content as fallback. |
 | **Conditional section** | A marked region of a template retained only when its declared addon condition matches the current effective addon set; it is dropped from the generated file otherwise. |
-| **Change** | A unit of work under `givn/changes/<id>/`, later copied to `givn/archive/<id>/`. |
+| **Change** | A unit of work under `givn/changes/<id>/` that, once archived, moves to `givn/archive/<id>/`. |
+| **Archive candidate** | A change whose accepted material has been merged into the permanent corpus at its archive location and committed, but which has not yet passed archive verification. Anti-terms: pending change, merged change. |
+| **Proven archive** | An archive candidate whose full suite and coverage passed for its tested commit, recorded by a verification receipt. Only a proven archive is complete and safe to publish. Anti-term: finished archive. |
+| **Verification receipt** | The durable machine-readable record binding a proven archive to the commit that was tested, the per-scope scenario counts, the coverage outputs, and the timing. Anti-terms: verification manifest, evidence cache. |
+| **Verification scope** | One runner execution's declared boundary: the regular scenarios or the end-to-end scenarios. Each scope reports its own scenario counts. |
+| **Runner result** | The machine-readable scenario counts a verification scope's runner writes for Givn; a missing or non-reconciling result blocks proof. Anti-term: test summary. |
+| **Forward repair** | Repairing a failed archive on the current branch and rerunning the archive against the new committed state; the failed candidate is kept, never silently discarded. Anti-terms: rollback, restore. |
 | **Delta** | An active Gherkin feature marked `@givn.delta` that describes Added, Modified, or Removed scenarios. |
 | **Disposition** | A review entry for a deterministic overlap finding involving a change delta. |
 | **Fingerprint** | A deterministic masked assertion sequence plus best-effort facts: exit code, `contains` polarity, table values, `[DONE]`, and TTY mention. |
