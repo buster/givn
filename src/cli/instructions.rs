@@ -119,10 +119,11 @@ fn run_generic(change: Option<&str>, json: bool) -> Result<()> {
     // No change named: derive from current project state.
     let changes = list_changes(&project_root, &manifest);
     let archived = list_archived(&project_root);
+    let unproven = crate::state::list_unproven_archives(&project_root);
     let readme_hint = readme_nudge(&project_root, &manifest);
 
     match changes.len() {
-        0 => report_no_active_changes(&archived, json, readme_hint),
+        0 => report_no_active_changes(&archived, &unproven, json, readme_hint),
         1 => report_change(
             &changes[0],
             manifest.addons.domain_modeling,
@@ -179,11 +180,22 @@ fn report_not_initialised(json: bool) -> Result<()> {
 
 fn report_no_active_changes(
     archived: &[String],
+    unproven: &[String],
     json: bool,
     readme_hint: Option<String>,
 ) -> Result<()> {
-    let next_command = "givn new <change-id>".to_string();
-    let summary = if archived.is_empty() {
+    let next_command = if let Some(id) = unproven.first() {
+        format!("givn archive --change {id}")
+    } else {
+        "givn new <change-id>".to_string()
+    };
+    let summary = if !unproven.is_empty() {
+        format!(
+            "No active changes. {} unproven archive candidate(s): {}.",
+            unproven.len(),
+            unproven.join(", ")
+        )
+    } else if archived.is_empty() {
         "No changes exist yet.".to_string()
     } else {
         format!(
@@ -206,12 +218,22 @@ fn report_no_active_changes(
         println!();
         println!("Status: {summary}");
         println!();
+        for id in unproven {
+            println!("Unproven archive candidate '{id}' — resume with `givn archive --change {id}`.");
+        }
+        if !unproven.is_empty() {
+            println!();
+        }
         if let Some(hint) = readme_hint {
             println!("{hint}");
             println!();
         }
-        println!("Next: run `{next_command}` to start one, or `/givn-propose <description>`");
-        println!("(as a skill) to plan and scaffold it in one pass.");
+        if unproven.is_empty() {
+            println!("Next: run `{next_command}` to start one, or `/givn-propose <description>`");
+            println!("(as a skill) to plan and scaffold it in one pass.");
+        } else {
+            println!("Next: run `{next_command}` to resume the candidate.");
+        }
         Ok(())
     }
 }
@@ -254,6 +276,29 @@ fn report_multiple_changes(changes: &[ChangeState], json: bool) -> Result<()> {
 }
 
 fn report_archived_change(id: &str, json: bool) -> Result<()> {
+    let pending = std::env::current_dir()
+        .ok()
+        .is_some_and(|root| crate::proof::read_status(&root, id) == crate::proof::ArchiveProof::Pending);
+    if pending {
+        let summary = format!("Change '{id}' has an unproven archive candidate.");
+        let next_command = format!("givn archive --change {id}");
+        if json {
+            return print_json(
+                "unproven-archive",
+                &summary,
+                &next_command,
+                None,
+                &generic_overview(),
+            );
+        }
+        println!("{}", generic_overview());
+        println!();
+        println!("Status: {summary}");
+        println!();
+        println!("Next: run `{next_command}` to resume and prove it.");
+        return Ok(());
+    }
+
     let summary = format!("Change '{id}' is archived. Nothing further to do on it.");
     if json {
         print_json(

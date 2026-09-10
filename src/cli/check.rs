@@ -79,8 +79,10 @@ pub fn run(artifact: Option<&str>, change: Option<&str>) -> Result<()> {
 ///
 /// These are not user-configurable post hooks — they are required gates
 /// baked into the binary. For `tasks`: verify (test suite). For `review`:
-/// verify, verify-e2e, and integrity. All other artifacts have no
-/// mandatory checks; their behavior comes from post hooks only.
+/// integrity. Scenario execution is proven once per archive by the
+/// verification receipt; review does not re-run the suite. All other
+/// artifacts have no mandatory checks; their behavior comes from post hooks
+/// only.
 fn run_mandatory_checks(
     artifact_id: &str,
     manifest: &crate::config::manifest::Manifest,
@@ -114,10 +116,6 @@ fn run_mandatory_checks(
         }
         "review" => {
             println!("Mandatory checks for 'review':");
-            crate::hooks::run_verify_hook(manifest, features_path)?;
-            println!("  ✓ verify passed");
-            crate::hooks::run_verify_e2e_hook(manifest, features_path)?;
-            println!("  ✓ verify-e2e passed");
             crate::integrity_hook::run_integrity_hook(
                 features_path,
                 manifest.addons.arc42,

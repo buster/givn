@@ -51,10 +51,35 @@ async fn main() {
         return;
     }
     let features_path = features_path();
-    GivnWorld::cucumber()
+    let writer = GivnWorld::cucumber()
         .fail_on_skipped()
-        .run_and_exit(features_path)
+        .run(features_path)
         .await;
+    let stats = writer.scenarios_stats();
+    if let Ok(path) = std::env::var("GIVN_RESULT_FILE") {
+        write_result_file(&path, stats);
+    }
+    if stats.failed > 0 || stats.skipped > 0 {
+        std::process::exit(1);
+    }
+}
+
+/// Write the fail-closed scope result Givn reconciles. The scope is provided
+/// by the project runner (`GIVN_RESULT_SCOPE`), never injected by Givn; Givn
+/// validates it against the expected scope.
+fn write_result_file(path: &str, stats: &cucumber::writer::summarize::Stats) {
+    let scope = std::env::var("GIVN_RESULT_SCOPE").unwrap_or_else(|_| "regular".to_string());
+    let payload = serde_json::json!({
+        "scope": scope,
+        "total": stats.total(),
+        "passed": stats.passed,
+        "failed": stats.failed,
+        "skipped": stats.skipped,
+    });
+    if let Err(error) = std::fs::write(path, format!("{payload}\n")) {
+        eprintln!("failed to write GIVN_RESULT_FILE {path}: {error}");
+        std::process::exit(2);
+    }
 }
 
 fn features_path() -> String {

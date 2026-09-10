@@ -443,6 +443,16 @@ pub fn list_archived(project_root: &Path) -> Vec<String> {
     ids
 }
 
+/// Find archived changes that are unproven candidates (a pending receipt).
+pub fn list_unproven_archives(project_root: &Path) -> Vec<String> {
+    list_archived(project_root)
+        .into_iter()
+        .filter(|id| {
+            crate::proof::read_status(project_root, id) == crate::proof::ArchiveProof::Pending
+        })
+        .collect()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

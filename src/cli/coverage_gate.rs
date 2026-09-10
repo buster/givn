@@ -5,24 +5,21 @@ const COVERAGE_SENTINEL: &str = "givn missing-coverage";
 
 /// Run the archive-level coverage pipeline: measure, merge, validate, and
 /// publish the merged result in the README.
+///
+/// A failure leaves the archive candidate unproven in place; there is no
+/// backup or rollback in the forward-only publication model.
 pub(crate) fn run_coverage_gate(
     project_root: &Path,
     manifest: &crate::config::manifest::Manifest,
-    backup_dir: &Path,
-) -> Result<()> {
-    let result = run_coverage_gate_inner(project_root, manifest, backup_dir);
-    if let Err(error) = result {
-        let _ = rollback_specs_and_readme(project_root, backup_dir);
-        return Err(error);
-    }
-    Ok(())
+) -> Result<crate::proof::CoverageOutcome> {
+    let merged = run_coverage_gate_inner(project_root, manifest)?;
+    Ok(crate::proof::CoverageOutcome::passed(&merged))
 }
 
 fn run_coverage_gate_inner(
     project_root: &Path,
     manifest: &crate::config::manifest::Manifest,
-    backup_dir: &Path,
-) -> Result<()> {
+) -> Result<crate::cobertura::CoberturaReport> {
     let cov = &manifest.coverage;
 
     println!("Running coverage gate...");
@@ -40,13 +37,11 @@ fn run_coverage_gate_inner(
     {
         bail!(
             "archive blocked: coverage commands are not configured. Set coverage.measure_command \
-             and coverage.merge_command in givn/commands.yaml. Specs, README, and coverage \
-             files have been rolled back."
+             and coverage.merge_command in givn/commands.yaml."
         );
     }
 
     let paths = CoveragePaths::new(project_root, cov)?;
-    backup_coverage_files(&paths, backup_dir)?;
 
     if let Some((non_e2e_command, e2e_command)) = legacy_commands {
         println!("  Running legacy non-e2e coverage: {non_e2e_command}");
@@ -117,7 +112,7 @@ fn run_coverage_gate_inner(
     );
     println!("  updated README.md with merged line and branch coverage");
     println!("✓ Coverage gate passed");
-    Ok(())
+    Ok(merged)
 }
 
 struct CoveragePaths {
@@ -204,8 +199,7 @@ fn run_command(
 
     if !status.success() {
         bail!(
-            "archive blocked: {label} command failed (exit code {}). Specs, README, and coverage \
-             files have been rolled back.",
+            "archive blocked: {label} command failed (exit code {}).",
             status.code().unwrap_or(-1)
         );
     }
@@ -243,85 +237,5 @@ fn write_legacy_merged_report(
         branches_valid = merged.branches_valid,
     );
     std::fs::write(output, xml)?;
-    Ok(())
-}
-
-fn backup_coverage_files(paths: &CoveragePaths, backup_dir: &Path) -> Result<()> {
-    let backup_root = backup_dir.join("coverage");
-    let mut state = String::new();
-    for (source, relative) in [
-        (&paths.non_e2e, &paths.non_e2e_relative),
-        (&paths.e2e, &paths.e2e_relative),
-        (&paths.output, &paths.output_relative),
-    ] {
-        state.push_str(relative);
-        state.push('\t');
-        state.push_str(if source.exists() { "present" } else { "absent" });
-        state.push('\n');
-        if source.exists() {
-            let destination = backup_root.join(relative);
-            if let Some(parent) = destination.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            std::fs::copy(source, destination)?;
-        }
-    }
-    std::fs::write(backup_dir.join("coverage-state"), state)?;
-    Ok(())
-}
-
-fn rollback_coverage_files(project_root: &Path, backup_dir: &Path) -> Result<()> {
-    let state_path = backup_dir.join("coverage-state");
-    if !state_path.exists() {
-        return Ok(());
-    }
-
-    let backup_root = backup_dir.join("coverage");
-    for line in std::fs::read_to_string(state_path)?.lines() {
-        let Some((relative, state)) = line.split_once('\t') else {
-            continue;
-        };
-        let destination = project_root.join(relative);
-        if state == "present" {
-            let source = backup_root.join(relative);
-            if let Some(parent) = destination.parent() {
-                std::fs::create_dir_all(parent)?;
-            }
-            std::fs::copy(source, destination)?;
-        } else if destination.exists() {
-            std::fs::remove_file(destination)?;
-        }
-    }
-    Ok(())
-}
-
-/// Roll back specs, README, and coverage files to pre-archive state.
-fn rollback_specs_and_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
-    let backup_specs = backup_dir.join("specs");
-    if let Err(e) = crate::cli::archive::rollback_specs(
-        &project_root.join("givn/specs"),
-        &backup_specs,
-        backup_dir,
-    ) {
-        eprintln!("  warning: spec rollback failed: {e}");
-    }
-    if let Err(e) = rollback_readme(project_root, backup_dir) {
-        eprintln!("  warning: README rollback failed: {e}");
-    }
-    if let Err(e) = rollback_coverage_files(project_root, backup_dir) {
-        eprintln!("  warning: coverage rollback failed: {e}");
-    }
-    Ok(())
-}
-
-/// Restore the README bytes that existed before the archive transaction.
-pub(crate) fn rollback_readme(project_root: &Path, backup_dir: &Path) -> Result<()> {
-    let readme_path = project_root.join("README.md");
-    let backup_readme = backup_dir.join("README.md");
-    if backup_readme.exists() {
-        std::fs::copy(backup_readme, readme_path)?;
-    } else if readme_path.exists() {
-        std::fs::remove_file(readme_path)?;
-    }
     Ok(())
 }

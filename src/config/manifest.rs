@@ -297,8 +297,8 @@ pub struct Addons {
     pub readme: bool,
     /// Enable the archive-level coverage gate. When true, givn measures
     /// full-project coverage during archive (runs coverage.*_command, merges
-    /// Cobertura XML, updates README). The archive will be blocked and
-    /// rolled back if coverage fails.
+    /// Cobertura XML, updates README). A coverage failure leaves the archive
+    /// candidate unproven.
     #[serde(default)]
     pub coverage: bool,
     /// Skill — model a change's domain (ubiquitous language, aggregates,
