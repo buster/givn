@@ -4,10 +4,16 @@ All notable changes to Givn are documented in this file.
 
 The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
-## [Unreleased]
+## [0.7.0] - 2026-09-10
 
 ### Changed
 
+- Release 0.7.0 ships the `migrate-0-6-0-to-0-7-0` migration bundle for
+  projects created with 0.6.0: it walks the project LLM through making each
+  verification scope write the fail-closed `GIVN_RESULT_FILE`, confirming the
+  project is a Git worktree rooted at the project root, and proving the first
+  archive under the receipt model. The managed refresh and
+  `givn_config_version` bump remain with `givn upgrade`.
 - Archive publication is now forward-only and Git-backed: the merged archive
   candidate is committed before verification, each verification scope runs
   once with a fail-closed machine-readable result, and a verification receipt
