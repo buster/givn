@@ -62,3 +62,35 @@ and modified scenario is intentionally `@wip` until its step definitions and
 implementation exist).
 
 DESIGN-REVIEW: PASS
+
+## Re-review: scope additions (implementation phase)
+
+A second fresh-context review covered the three permanent scenarios outside
+the routed capabilities that required deltas (`coverage-script-workflow`,
+`deduplicate-change-dir-detection`, `adr-qualification-gate`). Findings and
+resolutions:
+
+- **ADR-070 acceptance timing** — the register scenario is archive-verified
+  and asserts no `proposed` records, so accepting ADR-070 before the archive
+  is forced. Chapter 09 now records the deliberate departure from the
+  ADR-067 precedent and the design owns the decision. Resolved.
+- **tasks.md coverage** — RED/GREEN/REFACTOR/COMMIT sections added for all
+  three scope additions; the flip task now records the forced timing.
+- **Coverage scenario title** — the retained `@givn.modified` title claimed
+  the project was preserved while the body asserted mutation; converted to
+  `@givn.removed` + `@givn.added` with a truthful title.
+- **Dead rollback/backup step definitions** — all removed from
+  `workflow_enforcement_steps.rs`, `coverage_script_workflow_steps.rs`, and
+  `enforce_post_merge_e2e_gate_steps.rs`; the new archive-proof binding that
+  asserts a missing backup is kept.
+- **Stale arc42 8.9a and manifest comment** — updated to finalization
+  ordering and the no-restore contract.
+- **Review assets** — `assets/instructions/review.md` and
+  `assets/templates/review.md` no longer require suite execution or
+  instrumented coverage in review; they consume the archive receipt.
+
+All deltas bind, titles match byte-for-byte, and the delta-scope suite
+(`GIVN_FEATURES=givn/changes/archive-proof/specs`) passes 43/43 scenarios
+plus 4/4 e2e scenarios. No blocker remains.
+
+DESIGN-REVIEW: PASS

@@ -13,7 +13,7 @@ Feature: Extract Coverage Gate
 
   @givn.removed @wip
   Scenario: Archive with coverage addon enabled still rolls back specs and README on coverage failure
-    Given the scenario is retired
+    Given a placeholder step
 
   @givn.added @wip
   Scenario: A coverage failure leaves the archive candidate unproven

@@ -275,10 +275,10 @@ When the readme addon is enabled, the README is a givn-managed document:
   managed block damage (exactly one begin/end marker present). It exits
   non-zero while any finding remains.
 - The archive completeness gate runs the same check before any mutation and
-  blocks with a per-finding report. The development managed block is refreshed
-  from the effective command file after the post-merge verify gates and before
-  the coverage gate; refresh happens only when both markers are present, and a
-  failure restores the README from the pre-archive backup.
+  blocks with a per-finding report. The development and run managed blocks are
+  refreshed during finalization, after verification and coverage; refresh
+  happens only when both markers are present, and a failure leaves the archive
+  candidate unproven without restoring the previous README.
 - The review artifact records a machine-checkable README impact decision:
   `README-IMPACT: none` or `README-IMPACT: updated - <sections>`. The
   integrity check refuses review sign-off without it while the readme addon is

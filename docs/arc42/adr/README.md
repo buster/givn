@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-26 accepted or proposed records. The fifteen semantic-engine records were
+26 accepted records. The fifteen semantic-engine records were
 superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -58,7 +58,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | [ADR-054](ADR-054-versioned-evidence-output.md) | accepted | Version opt-in second-stage evidence output | machine-readable compatibility boundary |
 | [ADR-067](ADR-067-givn-declares-and-executes-the-product-start.md) | accepted | Declare and execute the product start in the same tool | start-command contract boundary |
 | [ADR-069](ADR-069-single-feature-free-binary.md) | accepted | Ship one feature-free binary without the semantic retrieval engine | build-contract and dependency boundary |
-| [ADR-070](ADR-070-forward-only-archive-proof.md) | proposed | Publish archives forward-only and bind proof to a committed candidate | publication boundary and durable receipt contract |
+| [ADR-070](ADR-070-forward-only-archive-proof.md) | accepted | Publish archives forward-only and bind proof to a committed candidate | publication boundary and durable receipt contract |
 
 ## Relationships
 
