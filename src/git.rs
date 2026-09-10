@@ -34,7 +34,8 @@ impl Worktree {
             );
         }
         let top_level = String::from_utf8_lossy(&top.stdout).trim().to_string();
-        let top_path = std::fs::canonicalize(&top_level).unwrap_or_else(|_| PathBuf::from(&top_level));
+        let top_path =
+            std::fs::canonicalize(&top_level).unwrap_or_else(|_| PathBuf::from(&top_level));
         let root_canonical = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
         if top_path != root_canonical {
             bail!(
@@ -141,10 +142,10 @@ fn parse_porcelain_z(bytes: &[u8]) -> Vec<PathBuf> {
         }
         let (status, path) = entry.split_at(3);
         paths.push(PathBuf::from(path));
-        if status.starts_with('R') || status.starts_with('C') {
-            if let Some(original) = fields.next() {
-                paths.push(PathBuf::from(original));
-            }
+        if (status.starts_with('R') || status.starts_with('C'))
+            && let Some(original) = fields.next()
+        {
+            paths.push(PathBuf::from(original));
         }
     }
     paths

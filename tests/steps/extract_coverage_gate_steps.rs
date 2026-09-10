@@ -342,7 +342,9 @@ fn coverage_addon_enabled_alias(world: &mut GivnWorld) {
     with_run_declaration(world);
 }
 
-#[given("a givn project with the coverage addon enabled but the non-e2e coverage command exits non-zero")]
+#[given(
+    "a givn project with the coverage addon enabled but the non-e2e coverage command exits non-zero"
+)]
 fn coverage_command_fails_alias(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     coverage_command_fails(world);
@@ -351,7 +353,10 @@ fn coverage_command_fails_alias(world: &mut GivnWorld) {
 
 /// Append the complete run declaration to the fixture's commands file.
 fn with_run_declaration(world: &GivnWorld) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     let path = env.path("givn/commands.yaml");
     let content = std::fs::read_to_string(&path).expect("read commands.yaml");
     let updated =

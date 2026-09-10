@@ -21,7 +21,9 @@ fn ready_change(world: &mut GivnWorld, id: String) {
     support::ready_change(world, &id, false, "pass");
 }
 
-#[given(regex = r#"^a givn project with a completed change "([^"]+)" whose delta adds an @e2e scenario$"#)]
+#[given(
+    regex = r#"^a givn project with a completed change "([^"]+)" whose delta adds an @e2e scenario$"#
+)]
 fn ready_change_with_e2e(world: &mut GivnWorld, id: String) {
     support::ready_change(world, &id, true, "record");
 }
@@ -132,12 +134,12 @@ fn unproven_candidate_failed_suite(world: &mut GivnWorld, id: String) {
 fn unproven_candidate_failed_coverage(world: &mut GivnWorld, id: String) {
     support::ensure_env(world);
     let env = support::env(world);
-    support::enable_coverage(&env);
-    support::write_coverage_scripts(&env, true, false);
-    support::write_result_runner(&env, "pass");
-    support::configure_commands(&env);
-    support::write_change_artifacts(&env, &id, false);
-    common::commit_fixture(&env);
+    support::enable_coverage(env);
+    support::write_coverage_scripts(env, true, false);
+    support::write_result_runner(env, "pass");
+    support::configure_commands(env);
+    support::write_change_artifacts(env, &id, false);
+    common::commit_fixture(env);
     let out = support::run_archive(world, &id);
     assert!(
         !out.status.success(),
@@ -162,9 +164,9 @@ fn full_suite_now_passes(world: &mut GivnWorld) {
 fn coverage_now_succeeds(world: &mut GivnWorld) {
     support::ensure_env(world);
     let env = support::env(world);
-    support::enable_coverage(&env);
-    support::write_coverage_scripts(&env, false, false);
-    common::git_commit_all(&env, "fix: coverage commands");
+    support::enable_coverage(env);
+    support::write_coverage_scripts(env, false, false);
+    common::git_commit_all(env, "fix: coverage commands");
 }
 
 #[given(regex = r#"^a proven archive "([^"]+)"$"#)]
@@ -187,27 +189,27 @@ fn legacy_archive(world: &mut GivnWorld, id: String) {
     let dir = env.path(&format!("givn/archive/{id}"));
     fs::create_dir_all(&dir).expect("create legacy archive dir");
     fs::write(dir.join("proposal.md"), "# legacy\n").expect("write legacy file");
-    common::git_commit_all(&env, "fixture: legacy archive");
+    common::git_commit_all(env, "fixture: legacy archive");
 }
 
 #[given(regex = r#"^a change "([^"]+)" that exists both under givn/changes/ and givn/archive/$"#)]
 fn both_active_and_archived(world: &mut GivnWorld, id: String) {
     support::ensure_env(world);
     let env = support::env(world);
-    support::write_change_artifacts(&env, &id, false);
+    support::write_change_artifacts(env, &id, false);
     let dir = env.path(&format!("givn/archive/{id}"));
     fs::create_dir_all(&dir).expect("create archive dir");
     fs::write(dir.join("proposal.md"), "# archived\n").expect("write archived file");
-    common::git_commit_all(&env, "fixture: corrupt state");
+    common::git_commit_all(env, "fixture: corrupt state");
 }
 
 #[given("the coverage command writes an undeclared source file")]
 fn coverage_writes_undeclared(world: &mut GivnWorld) {
     support::ensure_env(world);
     let env = support::env(world);
-    support::enable_coverage(&env);
-    support::write_coverage_scripts(&env, false, true);
-    common::git_commit_all(&env, "fixture: coverage writes undeclared file");
+    support::enable_coverage(env);
+    support::write_coverage_scripts(env, false, true);
+    common::git_commit_all(env, "fixture: coverage writes undeclared file");
 }
 
 // ─── Then: assertions ──────────────────────────────────────────────────────
@@ -419,7 +421,9 @@ fn merged_state_staged(world: &mut GivnWorld) {
     );
 }
 
-#[then(regex = r#"^the runner was invoked once for the regular scope with features path "([^"]+)"$"#)]
+#[then(
+    regex = r#"^the runner was invoked once for the regular scope with features path "([^"]+)"$"#
+)]
 fn invoked_once_regular(world: &mut GivnWorld, features: String) {
     assert_invocations(world, "regular", &features, 1);
 }
@@ -496,7 +500,9 @@ fn receipt_records_coverage(world: &mut GivnWorld) {
 fn finalization_commit_after_tested(world: &mut GivnWorld) {
     let env = support::env(world);
     let head_subject = common::git(env, &["log", "-1", "--format=%s"]);
-    let subject = String::from_utf8_lossy(&head_subject.stdout).trim().to_string();
+    let subject = String::from_utf8_lossy(&head_subject.stdout)
+        .trim()
+        .to_string();
     assert!(
         subject.contains("prove archive"),
         "HEAD is not the finalization commit: {subject}"
@@ -508,7 +514,10 @@ fn finalization_commit_after_tested(world: &mut GivnWorld) {
         .clone()
         .expect("a change id is required");
     let receipt = support::receipt(world, &id);
-    assert_eq!(receipt["tested_commit"].as_str().unwrap_or_default(), parent);
+    assert_eq!(
+        receipt["tested_commit"].as_str().unwrap_or_default(),
+        parent
+    );
 }
 
 #[then("each merged scenario appears exactly once in the permanent specs")]
@@ -521,7 +530,11 @@ fn merged_scenario_once(world: &mut GivnWorld) {
 #[then(regex = r#"^no archive backup exists for "([^"]+)"$"#)]
 fn no_archive_backup(world: &mut GivnWorld, id: String) {
     let backup = support::root(world).join(format!("givn/.archive-backup-{id}"));
-    assert!(!backup.exists(), "backup directory exists: {}", backup.display());
+    assert!(
+        !backup.exists(),
+        "backup directory exists: {}",
+        backup.display()
+    );
 }
 
 #[then(regex = r#"^stdout lists "([^"]+)" as an unproven archive$"#)]
@@ -530,7 +543,10 @@ fn stdout_lists_unproven(world: &mut GivnWorld, id: String) {
     let listed = stdout
         .lines()
         .any(|line| line.contains("Unproven archives") && line.contains(&id));
-    assert!(listed, "stdout does not list unproven archive {id}: {stdout}");
+    assert!(
+        listed,
+        "stdout does not list unproven archive {id}: {stdout}"
+    );
 }
 
 #[then(regex = r"^stdout routes the developer to `givn archive --change ([^`]+)`$")]
@@ -556,8 +572,8 @@ fn stdout_routes_resume_instructions(world: &mut GivnWorld, id: String) {
 fn set_runner_kind(world: &mut GivnWorld, kind: &str) {
     support::ensure_env(world);
     let env = support::env(world);
-    support::write_result_runner(&env, kind);
-    common::git_commit_all(&env, "fixture: runner change");
+    support::write_result_runner(env, kind);
+    common::git_commit_all(env, "fixture: runner change");
 }
 
 fn read_permanent_specs(world: &GivnWorld) -> String {
@@ -572,10 +588,10 @@ fn read_permanent_specs(world: &GivnWorld) -> String {
             let path = entry.path();
             if path.is_dir() {
                 stack.push(path);
-            } else if path.extension().is_some_and(|e| e == "feature") {
-                if let Ok(content) = fs::read_to_string(&path) {
-                    text.push_str(&content);
-                }
+            } else if path.extension().is_some_and(|e| e == "feature")
+                && let Ok(content) = fs::read_to_string(&path)
+            {
+                text.push_str(&content);
             }
         }
     }
@@ -587,8 +603,7 @@ fn assert_invocations(world: &GivnWorld, scope: &str, features: &str, expected: 
         .last_change_id
         .clone()
         .expect("a change id is required");
-    let log = support::archive_dir(world, &id)
-        .join("results/invocations.log");
+    let log = support::archive_dir(world, &id).join("results/invocations.log");
     let content = fs::read_to_string(&log)
         .unwrap_or_else(|e| panic!("read invocation log {}: {e}", log.display()));
     let count = content
