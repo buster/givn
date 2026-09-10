@@ -7,7 +7,7 @@ Feature: Enforce Post-Merge E2E Gate
     And a completed change "configured-e2e" whose delta contains an @e2e-tagged scenario and is ready to archive
     When the user runs `givn archive --change configured-e2e`
     Then the command exits 0
-    And stdout contains "Running post-merge verify-e2e"
+    And stdout contains "Running e2e verification"
     And the verification receipt records the end-to-end scope scenario counts
 
   @givn.added @wip

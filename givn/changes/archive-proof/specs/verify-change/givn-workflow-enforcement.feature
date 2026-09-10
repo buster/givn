@@ -21,8 +21,8 @@ Feature: givn Workflow Enforcement
     And the project declares a complete run declaration
     When the user runs `givn archive --change integrity-hook-and-archive-gate`
     Then the command exits non-zero
-    And stderr contains "verify"
-    And stderr contains "permanent"
+    And stderr contains "regular verification failed"
+    And stderr contains "unproven"
     And the change directory has been moved to givn/archive/
     And the archive at givn/archive/integrity-hook-and-archive-gate/ is unproven
     And the merged permanent spec preserves the merged delta
@@ -30,7 +30,7 @@ Feature: givn Workflow Enforcement
 
   @givn.removed @wip
   Scenario: New-capability merge failure produces clear recovery instructions
-    Given the scenario is retired
+    Given a placeholder step
 
   @givn.added @wip
   Scenario: A failed new-capability candidate tells the developer how to repair it

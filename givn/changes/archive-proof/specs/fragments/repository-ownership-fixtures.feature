@@ -3,7 +3,7 @@ Feature: Repository-wide ownership fixtures
 
   @givn.removed @wip
   Scenario: Pre-merge archive failure preserves the permanent specification tree
-    Given the scenario is retired
+    Given a placeholder step
 
   @givn.added @wip
   Scenario: A failed archive preserves the merged candidate unproven

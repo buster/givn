@@ -376,6 +376,29 @@ delivered by a new fragment delta
 `specs/fragments/repository-ownership-fixtures.feature` (removed + added
 scenario) and mirrored in `tests/steps/repository_ownership_fixtures_steps.rs`.
 
+### Scope additions found during implementation
+
+Three permanent scenarios outside the routed capabilities assert the old
+rollback or suite-in-review behavior and cannot stay green under the new
+contract. They get deltas too, merged by the same forward-only archive:
+
+- `coverage-script-workflow`: the merge-failure scenario now asserts the
+  unproven candidate instead of the restored change directory.
+- `deduplicate-change-dir-detection`: review no longer executes the suite, so
+  the relative-path scenario asserts an exiting-0 integrity check instead of a
+  verify failure.
+- `adr-qualification-gate`: the consolidated-register scenario asserts 26
+  accepted decisions and no proposed decisions after ADR-070 is flipped to
+  `accepted` before the archive. Because the register scenario is itself
+  verified by the archive, a `proposed` record could never satisfy the merged
+  corpus; chapter 09 records this deliberate departure from the ADR-067
+  precedent, and the register scenario's title is kept (the count is the only
+  changed value).
+
+These are consequences of the approved design (review without the suite,
+forward repair, and the new ADR), not new behavior decisions; their step
+definitions live in the existing capability files.
+
 ## Runner command, strict mode, single scenario
 
 | Field | Value |

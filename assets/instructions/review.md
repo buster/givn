@@ -63,12 +63,13 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
    literally. If they are identical strings, the "e2e run" re-runs the
    entire suite and proves nothing about e2e isolation specifically — this
    is always a fabrication-audit finding, never an acceptable
-   configuration, regardless of whether both currently exit 0. Confirm by
-   running each and comparing reported scenario counts: `verify.e2e_command`
-   MUST report strictly fewer scenarios than `verify.command`, unless
-   literally every in-scope scenario is tagged `@e2e` (state this
-   explicitly if so). If the counts are equal without that justification,
-   the tag filter is missing or broken — reopen as a fabrication finding.
+   configuration. The archive verification receipt records the per-scope
+   scenario counts; read it and confirm the e2e scope count is strictly
+   smaller than the regular scope count, unless literally every in-scope
+   scenario is tagged `@e2e` (state this explicitly if so). If the counts
+   are equal without that justification, the tag filter is missing or
+   broken — reopen as a fabrication finding. Do not re-run the suite in
+   review; the receipt is the execution evidence.
 10. **Diff the implementation against design.md's stated commands, file
     layout, and framework choices — do not just check they exist.**
     design.md names specific things: the exact `verify.e2e_command` value
@@ -156,14 +157,13 @@ implementation ignores or contradicts.
 
 ## Coverage
 
-Record the percentage (line/branch) and raw tool output as a fact, not a
-gate. Coverage MUST include the Gherkin runner binary — a run that
-instruments only unit tests undercounts and misleads classification below.
-
-Coverage marked "not measured", "NOT_CONFIGURED", "N/A", or any other
-placeholder text where measurement was possible is a fabrication-audit
-finding. Do not proceed through the review gate without instrumented
-coverage output. Classification without measurement is guessing.
+Coverage is measured once by the archive against the committed candidate and
+published in the verification receipt and README. Review does not run an
+instrumented pass. Use the most recent available coverage evidence (the last
+archive receipt or published report) and static inspection to classify gaps;
+do not write "not measured" as a substitute for classification. If no
+coverage evidence exists yet for this change, say so explicitly and classify
+from inspection — the archive receipt will carry the measured result.
 
 Redundant unit tests (behaviour already covered by a `.feature` scenario
 through the black-box boundary) are removed — the `.feature` file is the
@@ -222,8 +222,10 @@ are review evidence, not score thresholds.
 - Every checked task has a verified commit touching production code.
 - Every promised component exists.
 - Strict-mode proof present and passing.
-- `verify.command` and `verify.e2e_command` both exit 0.
-- Coverage measured across all test binaries, including the Gherkin runner.
+- Scenario execution evidence is recorded per scope in the archive
+  verification receipt; review does not re-run the suite.
+- Coverage classification uses the most recent available measured evidence;
+  the archive receipt will carry the merged result.
 - Every coverage gap classified and resolved.
 - Dead code deleted. Missing tests added. Hard-to-test gaps justified.
 - Redundant unit tests removed.
@@ -238,9 +240,9 @@ are review evidence, not score thresholds.
 - The exact file(s) `verify.e2e_command` invokes were identified and read;
   the tree (including untracked files) was searched for a second/parallel
   e2e implementation before accepting a weaker one.
-- `verify.e2e_command` is not identical to `verify.command`; its scenario
-  count was proven strictly smaller (or "all scenarios are @e2e" was
-  stated explicitly).
+- `verify.e2e_command` is not identical to `verify.command`; the archive
+  receipt's per-scope counts prove the e2e scope is strictly smaller (or
+  "all scenarios are @e2e" was stated explicitly).
 - Implementation (commands, file layout, framework/driver) matches what
   design.md explicitly named — any deviation was resolved by updating
   design.md and re-running design-review, never left as a silent shortcut.

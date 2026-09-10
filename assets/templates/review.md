@@ -70,9 +70,10 @@ cleanly:
 **E2e isolation check** — `verify.command` and `verify.e2e_command` read
 literally from `givn/config.yaml`; if identical, this is always a finding
 (the "e2e run" is not isolating `@e2e` scenarios at all). Prove isolation
-with actual scenario counts from running both:
+with the per-scope scenario counts recorded in the archive verification
+receipt (`givn/archive/<id>/verification.json`):
 
-| `verify.command` value | `verify.e2e_command` value | Identical? | Full-suite scenario count | E2e-only scenario count | E2e count strictly smaller (or all scenarios @e2e)? |
+| `verify.command` value | `verify.e2e_command` value | Identical? | Regular scope scenario count | E2e scope scenario count | E2e count strictly smaller (or all scenarios @e2e)? |
 |---|---|---|---|---|---|
 | | | | | | |
 
@@ -156,16 +157,17 @@ continuing this review).
 
 ## Coverage
 
-**Coverage result:** <!-- paste line/branch percentages from the merged report produced by coverage.measure_command and coverage.merge_command. If either command is still the sentinel (givn missing-coverage), leave this section empty — the review gate will block until measurement is configured. -->
+Coverage is measured once by the archive against the committed candidate and
+recorded in the verification receipt. Review does not run an instrumented
+pass; classify gaps from the most recent measured evidence plus static
+inspection, and say explicitly when no measured evidence exists yet.
+
+**Coverage result:** <!-- paste line/branch percentages from the merged report recorded in givn/archive/<id>/verification.json and README, or state explicitly that no receipt exists yet. -->
 
 ```
-<!-- paste coverage summary from the merged coverage report here.
-
-     coverage.measure_command and coverage.merge_command are configured in
-     givn/commands.yaml. Run both and paste the merged summary below.
-     Coverage must be measured — do not write "not measured" or any
-     placeholder text. Classification without instrumented data is
-     guessing, not review. -->
+<!-- paste the coverage summary from the archive receipt or the last
+     published merged report. The archive receipt is the durable measured
+     result; review classification uses it rather than re-running the suite. -->
 
 ## Coverage gap classification
 
@@ -188,18 +190,19 @@ There is no minimum percentage; a high number is a side effect, not the target.
 
 ---
 
-## Test suite result
+## Scenario execution evidence
 
-Run `{{VERIFY_COMMAND}}` and paste the summary below. Extract coverage data
-from this output (if the runner is coverage-instrumented).
+Review does not re-run the suite. Record the last archive verification receipt
+for this change (or state that the change has not been archived yet):
 
 ```
-<!-- paste runner output + coverage summary here -->
+<!-- paste the receipt's per-scope status and counts from
+     givn/archive/<id>/verification.json, or state "unproven candidate — no
+     receipt yet". Never paste a fresh manual full-suite run here: the
+     archive is the single full-suite authority. -->
 ```
 
-**Result:** PASS / FAIL
-
-**Coverage measured:** YES / NO (YES = verify.command is coverage-instrumented and output contained coverage data)
+**Receipt status:** proven / unproven / not archived yet
 
 ## Overlap dispositions
 
@@ -224,8 +227,10 @@ For every scenario longer than the lint threshold, one row: `split` or `keep`.
       all promised components exist, no downgraded e2e scenarios, no e2e
       scenario driven via HTTP/fetch() in place of real browser interaction,
       no over-produced e2e scope).
-- [ ] All scenarios pass (`{{VERIFY_COMMAND}}` exits 0).
-- [ ] Every coverage gap is classified and resolved (or justified).
+- [ ] Scenario execution evidence recorded per scope in the archive
+      verification receipt (review does not run the suite).
+- [ ] Every coverage gap is classified and resolved (or justified) from the
+      most recent measured evidence plus static inspection.
 - [ ] No `@wip` tags remain in the delta spec.
 - [ ] The delta spec contains no implementation-layer detail.
 - [ ] Local run command starts the full stack, including digital twins,
