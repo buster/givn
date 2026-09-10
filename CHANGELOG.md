@@ -6,6 +6,20 @@ The release sections are generated with [git-cliff](https://git-cliff.org/).
 Versions are selected manually and use annotated `vX.Y.Z` Git tags.
 ## [Unreleased]
 
+### Changed
+
+- Archive publication is now forward-only and Git-backed: the merged archive
+  candidate is committed before verification, each verification scope runs
+  once with a fail-closed machine-readable result, and a verification receipt
+  binds the proven archive to the tested commit. A failed candidate stays in
+  place for forward repair and `givn archive` resumes it; the backup/rollback
+  pipeline is removed. `givn archive` now requires a Git worktree whose root is
+  the project root and a committed project state.
+- `givn check review` no longer executes `verify.command` or
+  `verify.e2e_command`; the archive verification receipt is the execution
+  evidence, and the review sign-off is based on the fabrication audit, static
+  checks, and the receipt.
+
 ## [0.4.0] - 2026-08-27
 
 ### Features

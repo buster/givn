@@ -51,7 +51,10 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   delta document, the executable test your runner executes, and — after
   archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
 - **One change lifecycle.** propose → spec → design → design-review → tasks →
-  implement → review → archive. On archive, tagged delta scenarios merge into
+  implement → review → archive. Archive is forward-only and Git-backed: it
+  commits the merged archive candidate, runs each verification scope once
+  against that commit, and records a verification receipt; a failed candidate
+  stays in place and is repaired forward. Tagged delta scenarios merge into
   the permanent specs and the tags are stripped. Optionally preceded by
   `/givn-ideation` — a domain-driven event storming flow that turns a vague
   idea into change-ready use cases.

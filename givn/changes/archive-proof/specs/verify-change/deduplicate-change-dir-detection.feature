@@ -1,7 +1,7 @@
 @givn.delta @deduplicate-change-dir-detection
 Feature: Deduplicate Change Directory Detection
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Integrity hook resolves the change directory from a relative features path inside givn/changes
     Given a project root with givn/ initialised
     And a change "detect-demo" exists with artifact "proposal.md"

@@ -193,25 +193,35 @@ the `/givn-spec` skill instructs agents to use `spec index` / `spec search` /
 
 ## 8. Archiving step by step
 
-`givn archive --change <id>` (all-or-nothing, rollback via backup):
+`givn archive --change <id>` (forward-only, Git-backed, two commits):
 
-1. Preconditions: change exists and is active; all `apply.requires` artifacts
-   exist and are complete (`tasks.md` fully checked, `REVIEW: PASS` marker
-   present).
-2. Gate hooks of every required artifact run again (full test suite GREEN).
-3. Strict similarity gate re-runs immediately before the merge — a
-   `REVIEW: PASS` marker alone does not bypass it.
-4. Backup of `givn/specs` and `README.md` into `givn/.archive-backup-<id>/`.
-5. Each delta feature merges into `givn/specs/<group>/<cap>.feature`;
-   `@givn.*` tags stripped, `@e2e` preserved. Title collisions or missing
-   modified/removed titles abort.
-6. Post-merge `verify.command` against the permanent specs; then
-   `verify.e2e_command` if the merged tree contains `@e2e`. Failure rolls back.
-7. Coverage gate (if enabled): measure → validate Cobertura → merge → update
-   managed README badge/blocks. Failure rolls back specs and README.
-8. Change directory moves to `givn/archive/<id>/` (report retained as
-   historical evidence), backup deleted.
-9. Retrieval index refreshes incrementally (warning-only on failure).
+1. Preconditions: a Git worktree whose root is the project root; a committed
+   worktree (only declared evidence paths may be dirty); the change exists and
+   is active; all `apply.requires` artifacts exist and are complete
+   (`tasks.md` fully checked, `REVIEW: PASS` marker present).
+2. Structural gates run before any mutation: configured archive hooks, the
+   run-declaration gate, the README completeness gate, use-case/delta
+   prevalidation, and the E2E-runner configuration check.
+3. The accepted use-case narratives and delta features merge into the
+   permanent specs; `@givn.*` tags are stripped, `@e2e` preserved. Title
+   collisions or missing modified/removed titles abort.
+4. The merged state is published as the **archive candidate commit** with a
+   pending `verification.json`, and the change directory moves to
+   `givn/archive/<id>/`.
+5. Each verification scope runs once against that commit and must write a
+   fail-closed runner result (`GIVN_RESULT_FILE`): reconciling counts, at least
+   one scenario, zero failures, zero skips. The E2E scope is `not_applicable`
+   when the merged corpus has no `@e2e` scenario.
+6. Coverage gate (if enabled): measure → validate Cobertura → merge → update
+   managed README blocks. A failure leaves the candidate unproven; nothing is
+   rolled back.
+7. Finalization guards `HEAD == tested commit` and that every dirty path is a
+   declared evidence path; then the proven receipt is written and committed as
+   the **evidence-only finalization commit**.
+
+A failure after the candidate commit leaves the unproven candidate in place;
+repair the committed state and rerun `givn archive --change <id>` to resume
+without repeating the merge. An already proven archive is refused.
 
 Afterwards, before starting the next change, rebuild and resync the tooling
 (see [`reference.md`](reference.md#repository-development-scripts)).

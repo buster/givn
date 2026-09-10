@@ -1,5 +1,5 @@
-use crate::steps::GivnWorld;
-use cucumber::{given, when};
+use crate::steps::{GivnWorld, stderr, stdout};
+use cucumber::{given, then, when};
 
 #[given("a givn project with a failing coverage merge command")]
 fn project_with_failing_merge(world: &mut GivnWorld) {
@@ -50,4 +50,14 @@ fn make_executable(path: &std::path::Path) {
     use std::os::unix::fs::PermissionsExt;
     std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
         .expect("make script executable");
+}
+
+#[then("the archive fails because coverage merging failed")]
+fn archive_fails_at_merge(world: &mut GivnWorld) {
+    assert!(!crate::steps::output(world).status.success());
+    let combined = format!("{}{}", stdout(world), stderr(world));
+    assert!(
+        combined.contains("coverage merge command failed"),
+        "archive output did not identify merge failure: {combined}"
+    );
 }

@@ -15,7 +15,7 @@ repository's development scripts.
 | `givn check [<artifact>] [--change <id>]` | Run an artifact's `post` hooks on demand; blocking `givn check review --change <id>` also runs the semantic report gate. |
 | `givn status [--change <id>] [--json]` | Lifecycle state: artifact checklist, current stage, task progress with pending task descriptions, next required/optional steps. Filesystem-derived, no separate state file. |
 | `givn graph [--change <id>] [--json]` | Show the artifact workflow graph: nodes, `requires` edges, optional/gates-archive flags, post hooks; overlays live status with `--change`. |
-| `givn archive --change <id>` | Archive a completed change. Gated: `apply.requires` artifacts must exist, `REVIEW: PASS` present, all their hooks pass; the run declaration must be complete. |
+| `givn archive --change <id>` | Archive a completed change, forward-only and Git-backed. Requires a clean committed worktree; commits the merged candidate, runs the regular and E2E verification scopes once with fail-closed runner results, runs the optional coverage gate, and commits the verification receipt (`givn/archive/<id>/verification.json`). A failed candidate remains unproven and resumable; an already proven archive is refused. |
 | `givn run [--port <n>] [--print]` | Start the product declared in the `run:` block of `givn/commands.yaml`. Hands the port to the product through `port_env` (ephemeral port when the caller passes none), prints `givn run: ready at <url>` once readiness is observed, forwards SIGINT/SIGTERM (exit 130/143), and forwards the product's exit code. `--print` emits one sh-eval-able start line without starting. |
 | `givn eject <target> [--force]` | Write an embedded default facet into the project for editing (`design:template`, `review:instruction`, `skill:givn-propose`, `manifest`). |
 | `givn addons list` / `enable <name>` / `disable <name>` | Manage opt-in addon artifact/policy sets. |
@@ -120,7 +120,7 @@ givn/
 │   ├── design.md  tasks.md  design-review.md  review.md
 │   ├── semantic-review.md            # generated evidence/classification worklist
 │   └── arc42.md                      # optional: arc42 addon marker (STATUS: DONE)
-├── archive/<id>/                     # archived changes, reports retained
+├── archive/<id>/                     # archived changes: report, verification.json, results/
 └── (ejected overrides, on demand)
     artifacts/<id>/template.*
     artifacts/<id>/instructions.md

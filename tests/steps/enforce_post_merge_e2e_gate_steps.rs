@@ -381,3 +381,55 @@ fn completed_change_with_e2e_ready(world: &mut GivnWorld, id: String) {
         .expect("a project root is required first");
     common::git_commit_all(env, "fixture: e2e change artifacts");
 }
+
+#[given(
+    regex = r#"^a change "([^"]+)" with all artifacts done, whose delta spec has an @e2e scenario$"#
+)]
+fn e2e_given_change_with_e2e_delta(world: &mut GivnWorld, id: String) {
+    use std::io::Write;
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let change_dir = env.path(&format!("givn/changes/{}", id));
+    let out = crate::common::run_givn(env, &["new", &id]);
+    assert!(
+        out.status.success(),
+        "givn new {} failed: {}",
+        id,
+        String::from_utf8_lossy(&out.stderr)
+    );
+    for file in &[
+        "proposal.md",
+        "design.md",
+        "design-review.md",
+        "tasks.md",
+        "review.md",
+    ] {
+        if *file == "proposal.md" {
+            std::fs::write(
+                change_dir.join(file),
+                crate::steps::fixture_routing_proposal("example"),
+            )
+            .expect("write proposal");
+            continue;
+        }
+        let mut f = std::fs::File::create(change_dir.join(file)).expect("create artifact");
+        if *file == "design-review.md" {
+            writeln!(f, "DESIGN-REVIEW: PASS").ok();
+        } else if *file == "review.md" {
+            writeln!(f, "REVIEW: PASS\nREADME-IMPACT: none").ok();
+        } else if *file == "tasks.md" {
+            writeln!(f, "- [x] all done").ok();
+        }
+    }
+    let specs_dir = change_dir.join("specs/e2e-check");
+    std::fs::create_dir_all(&specs_dir).expect("create specs dir");
+    std::fs::write(
+        specs_dir.join("example.feature"),
+        "@givn.delta\nFeature: example\n\n  @e2e\n  Scenario: e2e test\n    Given a placeholder step\n",
+    )
+    .unwrap();
+    std::fs::write(change_dir.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+    world.last_change_id = Some(id);
+}
