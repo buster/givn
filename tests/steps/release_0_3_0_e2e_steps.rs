@@ -36,7 +36,7 @@ pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
 
     common::write_commands_yaml(
         &env.path("givn/commands.yaml"),
-        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
+        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
     );
     std::fs::write(env.path(".gitignore"), ".opencode/\nAGENTS.md\n")
         .expect("ignore generated agent files");
@@ -73,7 +73,7 @@ fn current_git_project_with_stale_integration() -> crate::common::TestEnv {
     std::fs::write(generated_skill, skill).expect("mark generated skill as stale");
     common::write_commands_yaml(
         &env.path("givn/commands.yaml"),
-        "verify:\n  command: \"true\"\n  e2e_command: \"true\"\n",
+        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
     );
 
     git(&env, &["init"]);
@@ -518,6 +518,8 @@ fn completed_automatic_migration(world: &mut GivnWorld) {
 #[when("the consumer archives the maintenance migration")]
 fn archive_maintenance_migration(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("completed migration fixture");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
+    common::commit_fixture(env);
     let id = find_migration_change_id(env);
     world.last_output = Some(crate::common::run_givn(env, &["archive", "--change", &id]));
 }

@@ -870,6 +870,21 @@ fn remediation_case_marker(_world: &mut GivnWorld, marker: String) {
     assert!(!marker.trim().is_empty());
 }
 
+#[then("the final register has 26 accepted decisions and no proposed decisions")]
+fn final_register_has_forward_only_adr(world: &mut GivnWorld) {
+    let register = guidance(world);
+    let accepted = register
+        .lines()
+        .filter(|line| line.contains("| accepted |"))
+        .count();
+    let proposed = register
+        .lines()
+        .filter(|line| line.contains("| proposed |"))
+        .count();
+    assert_eq!(accepted, 26, "unexpected accepted ADR count");
+    assert_eq!(proposed, 0, "unexpected proposed ADR count");
+}
+
 #[then("the final register has 25 accepted decisions and no proposed decisions")]
 fn final_register_has_post_engine_counts(world: &mut GivnWorld) {
     let register = guidance(world);

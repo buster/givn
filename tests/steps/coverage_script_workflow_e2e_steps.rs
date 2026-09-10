@@ -12,6 +12,7 @@ fn fresh_project(world: &mut GivnWorld) {
 fn script_based_project(world: &mut GivnWorld) {
     world.env = Some(crate::common::make_init_root());
     let env = world.env.as_ref().expect("environment is set");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     write_measure_script(env);
     let merge = r##"#!/bin/sh
 set -eu
@@ -20,7 +21,7 @@ printf '%s\n' '<?xml version="1.0"?><coverage line-rate="0.95" branch-rate="0.95
 "##;
     std::fs::write(env.path("merge-coverages.sh"), merge).expect("write merge script");
     make_executable(&env.path("merge-coverages.sh"));
-    let yaml = "verify:\n  command: \"true\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"./measure-coverage.sh\"\n  merge_command: \"./merge-coverages.sh\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  coverage: true\n";
+    let yaml = "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"./measure-coverage.sh\"\n  merge_command: \"./merge-coverages.sh\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  readme: true\n  coverage: true\n";
     common::write_commands_yaml(&env.path("givn/commands.yaml"), yaml);
 }
 

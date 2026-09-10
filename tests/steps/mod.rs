@@ -12,6 +12,9 @@ use crate::common;
 
 pub mod adr_qualification_gate_e2e_steps;
 pub mod adr_qualification_gate_steps;
+pub mod archive_proof_e2e_steps;
+pub mod archive_proof_steps;
+pub mod archive_proof_support;
 pub mod arc42_review_alignment_steps;
 /// Per-scenario state for the cucumber runner. A fresh `Default` instance is
 /// constructed for each scenario.
@@ -80,8 +83,6 @@ pub struct GivnWorld {
     /// The change id parsed from the last `givn new <id>` command, for steps
     /// that refer to "the proposal.md" without naming the path.
     last_change_id: Option<String>,
-    /// Snapshot used by the repository-ownership fixture rollback scenario.
-    pub(crate) ownership_before_tree: Option<Vec<(String, Vec<u8>)>>,
     /// Override content written by the override Given step, for the
     /// "equals the project override content byte for byte" step.
     override_content: Option<String>,
@@ -119,6 +120,12 @@ pub struct GivnWorld {
     pub(crate) run_backfill_applied: Option<bool>,
     /// Git commit hash captured before a second upgrade.
     pub(crate) run_prev_commit: Option<String>,
+    /// Working directory override for the next `givn` invocation (nested
+    /// project scenario); `None` means the fixture root.
+    pub(crate) cwd_override: Option<std::path::PathBuf>,
+    /// Skip the generic archive auto-commit for fixtures that intentionally
+    /// present a dirty or hook-rejecting worktree.
+    pub(crate) skip_auto_commit: bool,
 }
 
 /// A readiness probe running on a background thread.
@@ -396,9 +403,18 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    // The archive starts from a committed project state; generic fixtures
+    // emulate the developer's commit. Dirty-tree scenarios use a dedicated
+    // step that skips this.
+    if args.first().is_some_and(|arg| arg == "archive") && !world.skip_auto_commit {
+        common::commit_fixture(env);
+    }
     let argv: Vec<&str> = args.iter().map(|s| s.as_str()).collect();
     let environments = world_envs(world);
-    let out = common::run_givn_with_envs(env, &argv, &environments);
+    let out = match world.cwd_override.clone() {
+        Some(cwd) => common::run_givn_with_envs_in(env, &cwd, &argv, &environments),
+        None => common::run_givn_with_envs(env, &argv, &environments),
+    };
     if let Some(id) = change_id_from_args(&args) {
         world.last_change_id = Some(id);
     }

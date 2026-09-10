@@ -86,7 +86,9 @@ fn set_verify_command_in_config(world: &GivnWorld, cmd: &str) {
 }
 
 fn set_verify_true(world: &GivnWorld) {
-    set_verify_command_in_config(world, "true");
+    let env = world.env.as_ref().expect("a project root is required first");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
+    set_verify_command_in_config(world, "./emit-result.sh regular");
     let commands_path = project_root(world).join("givn/commands.yaml");
     if commands_path.exists() {
         let content = std::fs::read_to_string(&commands_path).unwrap();
@@ -94,7 +96,7 @@ fn set_verify_true(world: &GivnWorld) {
             .lines()
             .map(|line| {
                 if line.trim_start().starts_with("e2e_command:") {
-                    "  e2e_command: \"true\"".to_string()
+                    "  e2e_command: \"./emit-result.sh e2e\"".to_string()
                 } else {
                     line.to_string()
                 }
@@ -135,10 +137,7 @@ fn disable_coverage_addon(world: &GivnWorld) {
 
 fn set_verify_fails_post_merge(world: &GivnWorld) {
     let script_path = project_root(world).join(".verify_gate.sh");
-    std::fs::write(
-        &script_path,
-        "#!/bin/sh\ncase \"$GIVN_FEATURES\" in *changes*) exit 0 ;; *) exit 1 ;; esac\n",
-    )
+    std::fs::write(&script_path, "#!/bin/sh\nexit 1\n")
     .unwrap();
     std::fs::set_permissions(
         &script_path,
@@ -502,7 +501,7 @@ fn change_complete_for_archive(world: &mut GivnWorld) {
 
 #[given("the project's verify.command exits 0 on the current permanent specs")]
 fn verify_passes(world: &mut GivnWorld) {
-    set_verify_command_in_config(world, "true");
+    set_verify_true(world);
 }
 
 #[given("the delta spec introduces a scenario that conflicts with an existing permanent scenario")]
@@ -517,179 +516,6 @@ fn verify_fails_after_merge(world: &mut GivnWorld) {
     set_verify_fails_post_merge(world);
 }
 
-#[given("a givn project with a completed change that introduces a brand-new capability")]
-fn change_new_capability(world: &mut GivnWorld) {
-    scaffold_init_root_change(world, "integrity-hook-and-archive-gate");
-    disable_coverage_addon(world);
-    let root = project_root(world);
-
-    // Remove any auto-created specs.
-    let specs_root = root.join("givn/specs");
-    if specs_root.exists() {
-        std::fs::remove_dir_all(&specs_root).unwrap();
-    }
-    std::fs::create_dir_all(&specs_root).unwrap();
-
-    let change = root.join("givn/changes/integrity-hook-and-archive-gate");
-    std::fs::write(
-        change.join("proposal.md"),
-        crate::steps::fixture_routing_proposal("new-cap"),
-    )
-    .unwrap();
-
-    // Delta for a new capability.
-    let specs_dir = change.join("specs").join("new-cap");
-    std::fs::create_dir_all(&specs_dir).unwrap();
-    std::fs::write(
-        specs_dir.join("new-cap.feature"),
-        "@givn.delta @new-cap\nFeature: New Capability\n\n  @givn.added\n  Scenario: New scenario\n    Given x\n    Then y\n",
-    ).unwrap();
-
-    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
-    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
-    std::fs::write(
-        change.join("tasks.md"),
-        "- [x] COMMIT: a1b2c3d4 -- Implement new capability\n",
-    )
-    .unwrap();
-    std::fs::write(
-        change.join("review.md"),
-        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
-    )
-    .unwrap();
-    std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
-
-    // Set verify to fail after merge (pass during gate hooks, fail post-merge).
-    set_verify_fails_post_merge(world);
-}
-
-// ---- When steps (reuse existing) ----
-
-// ---- Then steps ----
-
-#[allow(dead_code)]
-fn stdout_integrity(world: &mut GivnWorld) {
-    let s = stdout(world);
-    assert!(s.contains("integrity"), "stdout missing 'integrity': {}", s);
-}
-#[then(regex = r"^the backup directory (.+) does not exist$")]
-fn backup_dir_not_exists(world: &mut GivnWorld, rel: String) {
-    let p = project_root(world).join(&rel);
-    assert!(!p.exists(), "backup directory should not exist: {:?}", p);
-}
-
-#[then("the delta scenarios have been merged into givn/specs/")]
-fn delta_merged(world: &mut GivnWorld) {
-    let p = project_root(world).join("givn/specs");
-    assert!(p.is_dir(), "givn/specs does not exist");
-    // Check at least one .feature file exists under givn/specs/
-    let has_feature = std::fs::read_dir(&p)
-        .expect("read givn/specs")
-        .filter_map(|e| e.ok())
-        .any(|e| {
-            if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
-                std::fs::read_dir(e.path())
-                    .ok()
-                    .map(|rd| {
-                        rd.filter_map(|f| f.ok()).any(|f| {
-                            f.path()
-                                .extension()
-                                .map(|ext| ext == "feature")
-                                .unwrap_or(false)
-                        })
-                    })
-                    .unwrap_or(false)
-            } else {
-                false
-            }
-        });
-    assert!(has_feature, "no .feature files found under givn/specs/");
-}
-
-#[then("the migration comparison is marked failed")]
-fn migration_comparison_failed(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(
-        project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
-    )
-    .unwrap();
-    assert!(
-        content.contains("\"passed\": false"),
-        "comparison was not failed: {content}"
-    );
-}
-
-#[then("the migration comparison is marked passed")]
-fn migration_comparison_passed(world: &mut GivnWorld) {
-    let content = std::fs::read_to_string(
-        project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
-    )
-    .unwrap();
-    assert!(
-        content.contains("\"passed\": true"),
-        "comparison was not passed: {content}"
-    );
-}
-
-#[then("the change directory has been moved to givn/archive/")]
-fn change_moved_to_archive(world: &mut GivnWorld) {
-    let id = change_id(world);
-    let archive_p = project_root(world).join(format!("givn/archive/{id}"));
-    let changes_p = project_root(world).join(format!("givn/changes/{id}"));
-    assert!(
-        archive_p.is_dir(),
-        "change not in givn/archive/: {:?}",
-        archive_p
-    );
-    assert!(
-        !changes_p.exists(),
-        "change still in givn/changes/: {:?}",
-        changes_p
-    );
-}
-
-#[then("the change directory still exists under givn/changes/")]
-fn change_still_in_changes(world: &mut GivnWorld) {
-    let id = change_id(world);
-    let p = project_root(world).join(format!("givn/changes/{id}"));
-    assert!(p.is_dir(), "change missing from givn/changes/: {:?}", p);
-}
-
-#[then(regex = r"^the backup directory (.+) exists with the pre-merge permanent specs$")]
-fn backup_exists_with_specs(world: &mut GivnWorld, rel: String) {
-    let p = project_root(world).join(&rel);
-    assert!(p.is_dir(), "backup directory does not exist: {:?}", p);
-}
-
-#[then("the merged permanent spec has been rolled back to its pre-archive state")]
-fn merged_spec_rolled_back(world: &mut GivnWorld) {
-    let p = project_root(world).join("givn/specs/test-cap/test-cap.feature");
-    let content = std::fs::read_to_string(&p).unwrap();
-    assert!(
-        !content.contains("Test scenario"),
-        "spec was not rolled back: contains delta scenario: {content}"
-    );
-    assert!(
-        content.contains("Feature: Test Capability"),
-        "spec was not rolled back: missing original content: {content}"
-    );
-}
-
-#[then("stderr says the specs have been rolled back")]
-fn stderr_says_rolled_back(world: &mut GivnWorld) {
-    let s = stderr(world);
-    assert!(
-        s.contains("rolled back"),
-        "stderr missing 'rolled back': {}",
-        s
-    );
-}
-
-#[then("the backup directory exists")]
-fn backup_dir_exists(world: &mut GivnWorld) {
-    let id = change_id(world);
-    let p = project_root(world).join(format!("givn/.archive-backup-{id}"));
-    assert!(p.is_dir(), "backup directory does not exist: {:?}", p);
-}
 
 #[then("the change's design.md template contains a section named \"Internal Primitives\"")]
 fn design_has_primitives_section(_world: &mut GivnWorld) {
@@ -829,4 +655,66 @@ fn change_with_wip_spec(world: &mut GivnWorld) {
     .unwrap();
     std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
     set_verify_true(world);
+}
+
+// ─── forward-only archive and review bindings ─────────────────────────────
+
+#[then("the merged permanent spec preserves the merged delta")]
+fn merged_spec_preserves_delta(world: &mut GivnWorld) {
+    let specs = project_root(world).join("givn/specs");
+    let mut stack = vec![specs];
+    let mut found = false;
+    while let Some(dir) = stack.pop() {
+        let Ok(entries) = std::fs::read_dir(&dir) else {
+            continue;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                stack.push(path);
+            } else if path.extension().is_some_and(|e| e == "feature") {
+                if let Ok(content) = std::fs::read_to_string(&path) {
+                    if content.contains("Test scenario") {
+                        found = true;
+                    }
+                }
+            }
+        }
+    }
+    assert!(found, "merged delta scenario missing from permanent specs");
+}
+
+#[then("stderr says the candidate is unproven and can be repaired in place")]
+fn stderr_says_candidate_unproven(world: &mut GivnWorld) {
+    let s = stderr(world);
+    assert!(
+        s.contains("unproven") && (s.contains("repair") || s.contains("repairable")),
+        "stderr missing forward-repair message: {s}"
+    );
+}
+
+#[given("the project records whether its verify commands run")]
+fn project_records_verify(world: &mut GivnWorld) {
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
+    let script = env.path("record-verify.sh");
+    std::fs::write(&script, "#!/bin/sh\ntouch verify-ran.marker\nexit 0\n").unwrap();
+    std::fs::set_permissions(
+        &script,
+        std::os::unix::fs::PermissionsExt::from_mode(0o755),
+    )
+    .unwrap();
+    set_verify_command_in_config(world, "./record-verify.sh");
+}
+
+#[then("the verify command did not run")]
+fn verify_command_did_not_run(world: &mut GivnWorld) {
+    let marker = project_root(world).join("verify-ran.marker");
+    assert!(
+        !marker.exists(),
+        "verify command ran during review: {}",
+        marker.display()
+    );
 }

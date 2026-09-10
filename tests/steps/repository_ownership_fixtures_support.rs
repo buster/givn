@@ -14,6 +14,7 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
         "givn init failed: {}",
         String::from_utf8_lossy(&init.stderr)
     );
+    crate::steps::archive_proof_support::write_result_runner(&env, "pass");
 
     let root = env.root();
     write_feature(
@@ -49,15 +50,15 @@ pub(crate) fn setup_fixture(world: &mut GivnWorld, failing: bool) {
         "## Overlap dispositions\n\n| Scenario A | Scenario B | Disposition |\n|---|---|---|\n| `Obsolete behavior` | `Canonical retained behavior` | merge |\n\nREVIEW: PASS\n",
     )
     .expect("write review");
-    let verify = if failing { "false" } else { "true" };
+    let verify = if failing { "false" } else { "./emit-result.sh regular" };
     common::write_commands_yaml(
         &root.join("givn/commands.yaml"),
-        &format!("verify:\n  command: \"{verify}\"\n  e2e_command: \"true\"\n"),
+        &format!("verify:\n  command: \"{verify}\"\n  e2e_command: \"\"\n"),
     );
 
+    common::git_init(&env);
     world.env = Some(env);
     world.last_change_id = Some("fixture-consolidation".to_string());
-    world.ownership_before_tree = Some(snapshot_tree(&fixture_specs(world)));
 }
 
 fn write_feature(path: &Path, content: &str) {
@@ -72,15 +73,6 @@ pub(crate) fn invoke_givn(world: &mut GivnWorld, args: &[&str]) {
 
 pub(crate) fn invoke_archive(world: &mut GivnWorld) {
     invoke_givn(world, &["archive", "--change", "fixture-consolidation"]);
-}
-
-pub(crate) fn assert_tree_unchanged(world: &GivnWorld, root: PathBuf) {
-    let before = world
-        .ownership_before_tree
-        .as_ref()
-        .expect("fixture snapshot");
-    let after = snapshot_tree(&root);
-    assert_eq!(after, *before, "archive changed the fixture after failure");
 }
 
 fn fixture_root(world: &GivnWorld) -> PathBuf {

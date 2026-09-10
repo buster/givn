@@ -4,8 +4,7 @@ use cucumber::{given, then, when};
 
 use super::GivnWorld;
 use super::repository_ownership_fixtures_support::{
-    assert_tree_unchanged, duplicate_titles, feature_text, fixture_specs, invoke_archive,
-    invoke_givn, setup_fixture,
+    duplicate_titles, feature_text, fixture_specs, invoke_archive, invoke_givn, setup_fixture,
 };
 
 #[given("an isolated ownership fixture with dispositions for every overlap finding")]
@@ -13,7 +12,7 @@ fn isolated_fixture(world: &mut GivnWorld) {
     setup_fixture(world, false);
 }
 
-#[given("an isolated ownership fixture with a failing pre-merge archive hook")]
+#[given("an isolated ownership fixture with a failing verification command")]
 fn failing_fixture(world: &mut GivnWorld) {
     setup_fixture(world, true);
 }
@@ -81,7 +80,12 @@ fn command_fails(world: &mut GivnWorld) {
     assert!(!output.status.success(), "archive unexpectedly succeeded");
 }
 
-#[then("the fixture permanent specification tree remains unchanged")]
-fn permanent_tree_unchanged(world: &mut GivnWorld) {
-    assert_tree_unchanged(world, fixture_specs(world));
+#[then(regex = r##"^the fixture archive candidate for "([^"]+)" is unproven$"##)]
+fn fixture_candidate_unproven(world: &mut GivnWorld, id: String) {
+    let root = world.env.as_ref().expect("fixture project").root();
+    let receipt = root.join(format!("givn/archive/{id}/verification.json"));
+    let text = std::fs::read_to_string(&receipt)
+        .unwrap_or_else(|e| panic!("read receipt {}: {e}", receipt.display()));
+    let value: serde_json::Value = serde_json::from_str(&text).expect("receipt JSON");
+    assert_eq!(value["status"], "pending", "receipt: {value}");
 }

@@ -47,6 +47,14 @@ pub fn make_bare_root() -> TestEnv {
 /// Scenario-specific states override via the shared declaration Givens
 /// (`declare_run`/`strip_run` in `run_declaration_fixtures_support`).
 pub fn make_init_root() -> TestEnv {
+    let env = make_init_root_without_git();
+    git_init(&env);
+    env
+}
+
+/// The default fixture without the final Git initialization — for scenarios
+/// that need a non-Git project or a repository one level above the project.
+pub fn make_init_root_without_git() -> TestEnv {
     let env = make_bare_root();
     let out = run_givn(&env, &["init"]);
     assert!(
@@ -256,11 +264,22 @@ pub fn run_givn_with_env(
 
 /// Invoke the `givn` binary with multiple optional environment overrides.
 pub fn run_givn_with_envs(env: &TestEnv, args: &[&str], environments: &[(&str, &str)]) -> Output {
+    run_givn_with_envs_in(env, &env.root(), args, environments)
+}
+
+/// Invoke the `givn` binary from a specific working directory inside the
+/// fixture (nested-project scenarios).
+pub fn run_givn_with_envs_in(
+    _env: &TestEnv,
+    cwd: &std::path::Path,
+    args: &[&str],
+    environments: &[(&str, &str)],
+) -> Output {
     let bin = env!("CARGO_BIN_EXE_givn");
     let mut command = Command::new(bin);
     command
         .args(args)
-        .current_dir(env.root())
+        .current_dir(cwd)
         // Runner-scoped variables describe the outer suite invocation and
         // must never leak into fixture projects.
         .env_remove("GIVN_FEATURES");
@@ -316,4 +335,71 @@ pub fn write_override(env: &TestEnv, artifact: &str, file: &str, content: &str) 
     let dir = env.path(&format!("givn/artifacts/{artifact}"));
     fs::create_dir_all(&dir).expect("create artifacts override dir");
     fs::write(dir.join(file), content).expect("write override file");
+}
+
+// ─── Git fixtures ──────────────────────────────────────────────────────────
+
+/// Run a Git command in the fixture root.
+pub fn git(env: &TestEnv, args: &[&str]) -> Output {
+    Command::new("git")
+        .args(args)
+        .current_dir(env.root())
+        .output()
+        .expect("spawn git subprocess")
+}
+
+/// Whether the fixture has a Git worktree.
+pub fn is_git_repo(env: &TestEnv) -> bool {
+    env.path(".git").exists()
+}
+
+/// Initialize the fixture as a Git repository with a deterministic identity
+/// and one commit of the current tree.
+pub fn git_init(env: &TestEnv) {
+    let init = git(env, &["init", "-q"]);
+    assert!(
+        init.status.success(),
+        "git init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    for args in [
+        ["config", "user.email", "fixture@example.com"],
+        ["config", "user.name", "Givn Fixture"],
+        ["config", "commit.gpgsign", "false"],
+    ] {
+        let out = git(env, &args);
+        assert!(
+            out.status.success(),
+            "git {} failed: {}",
+            args.join(" "),
+            String::from_utf8_lossy(&out.stderr)
+        );
+    }
+    git_commit_all(env, "fixture: initial state");
+}
+
+/// Stage everything and commit. Used to model a developer who committed the
+/// fixture setup before running a gate.
+pub fn git_commit_all(env: &TestEnv, message: &str) {
+    let add = git(env, &["add", "-A"]);
+    assert!(
+        add.status.success(),
+        "git add failed: {}",
+        String::from_utf8_lossy(&add.stderr)
+    );
+    let commit = git(env, &["commit", "-q", "-m", message, "--allow-empty"]);
+    assert!(
+        commit.status.success(),
+        "git commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
+}
+
+/// Commit any pending fixture writes when the project is a Git worktree.
+/// The archive starts from a committed state, so generic fixtures emulate
+/// the developer's commit; dirty-tree scenarios invoke `givn` directly.
+pub fn commit_fixture(env: &TestEnv) {
+    if is_git_repo(env) {
+        git_commit_all(env, "fixture: archive input");
+    }
 }
