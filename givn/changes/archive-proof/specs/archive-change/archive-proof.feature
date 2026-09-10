@@ -113,6 +113,12 @@ Feature: Archive Proof
     And stdout routes the developer to `givn archive --change proof-demo`
 
   @givn.added @wip
+  Scenario: Instructions route an unproven archive candidate to its resume command
+    Given an unproven archive candidate "proof-demo" whose full suite failed
+    When the user runs `givn instructions`
+    Then stdout routes the developer to `givn archive --change proof-demo`
+
+  @givn.added @wip
   Scenario: Finalization refuses a tree change outside the declared evidence
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite passes against the merged permanent specs
@@ -122,8 +128,7 @@ Feature: Archive Proof
     And stderr says the tested tree changed
     And the archive candidate is recorded as unproven
 
-  @e2e
-  @givn.added @wip
+  @givn.added @e2e @wip
   Scenario: Consumer archives a completed change and receives a proven archive
     Given a committed givn project with a completed change "proof-real" ready to archive
     And the project reports scenario counts for every verification scope
@@ -131,8 +136,7 @@ Feature: Archive Proof
     Then the command succeeds
     And the archive at givn/archive/proof-real/ carries a proven verification receipt
 
-  @e2e
-  @givn.added @wip
+  @givn.added @e2e @wip
   Scenario: Consumer repairs a blocked archive and the rerun proves it
     Given a committed givn project with an unproven archive candidate "proof-repair"
     And the developer commits a repair
@@ -141,8 +145,7 @@ Feature: Archive Proof
     Then the command succeeds
     And the archive at givn/archive/proof-repair/ carries a proven verification receipt
 
-  @e2e
-  @givn.added @wip
+  @givn.added @e2e @wip
   Scenario: Consumer inspects an unproven archive candidate
     Given a committed givn project with an unproven archive candidate "proof-pending"
     When the user invokes `givn status`
