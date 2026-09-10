@@ -122,10 +122,11 @@ bound to that commit makes the green-corpus claim falsifiable.
 The executable `archive-proof` scenarios confirm the contract: a dirty
 worktree blocks and names files; a suite failure leaves a committed candidate
 with a pending receipt; a repair rerun proves the candidate without repeating
-the merge; a missing, failed, skipped, zero, or non-reconciling scope result
-blocks proof; finalization refuses a tested-tree change. The archive-proof
-review gate checks the receipt file and the finalization guard in the
-implementation.
+the merge; a missing, failed, skipped, zero, malformed, or non-reconciling
+scope result blocks proof; finalization refuses a tested-tree change. The
+archive gate verifies the receipt status and the finalization guards; the
+change review independently checks the step-definition table, fabrication
+audit, and arc42 conformance.
 
 ## Pros and Cons of the Options
 

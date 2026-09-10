@@ -31,6 +31,15 @@ Feature: Archive Proof
     And the change directory still exists under givn/changes/
 
   @givn.added @wip
+  Scenario: Archive requires the project root to be the repository root
+    Given a givn project nested inside a larger Git repository
+    And a completed change "proof-demo" ready to archive
+    When the user runs `givn archive --change proof-demo`
+    Then the command exits non-zero
+    And stderr says the project root must be the repository root
+    And the change directory still exists under givn/changes/
+
+  @givn.added @wip
   Scenario: Archive publishes the merged candidate before running the full suite
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite fails against the merged permanent specs
@@ -63,10 +72,22 @@ Feature: Archive Proof
     Examples:
       | result                        |
       | missing                       |
+      | malformed                     |
       | declaring failed scenarios    |
       | declaring skipped scenarios   |
       | whose counts do not reconcile |
       | declaring zero scenarios      |
+      | declaring the wrong scope     |
+
+  @givn.added @wip
+  Scenario: A rejected candidate commit leaves the merge staged and unproven
+    Given a givn project with a completed change "proof-demo" ready to archive
+    And a commit hook rejects the archive candidate commit
+    When the user runs `givn archive --change proof-demo`
+    Then the command exits non-zero
+    And stderr names the candidate commit rejection
+    And the merged state is staged but not committed
+    And the archive candidate is recorded as unproven
 
   @givn.added @wip
   Scenario: A proven archive records a verification receipt binding the tested commit
@@ -104,6 +125,20 @@ Feature: Archive Proof
     When the user runs `givn archive --change proof-demo`
     Then the command exits non-zero
     And stderr says the archive is already proven
+
+  @givn.added @wip
+  Scenario: A legacy archive without a receipt refuses another archive run
+    Given a legacy archive "proof-demo" without a verification receipt
+    When the user runs `givn archive --change proof-demo`
+    Then the command exits non-zero
+    And stderr says the archive is already archived
+
+  @givn.added @wip
+  Scenario: A change present as both active and archived is refused as corrupt
+    Given a change "proof-demo" that exists both under givn/changes/ and givn/archive/
+    When the user runs `givn archive --change proof-demo`
+    Then the command exits non-zero
+    And stderr says the project state is corrupt
 
   @givn.added @wip
   Scenario: An unproven archive candidate is surfaced by project status
