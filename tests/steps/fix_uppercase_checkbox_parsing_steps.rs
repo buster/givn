@@ -112,10 +112,11 @@ fn change_all_complete_with_tasks_content(
     // Override commands.yaml so verify and coverage gates pass in test environment.
     // The temp project root has no Rust project or coverage tooling, so we set
     // everything to simple `true` commands and write dummy Cobertura XML files.
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let commands_path = env.path("givn/commands.yaml");
     let commands_yaml = "\
 verify:
-  command: \"true\"
+  command: \"./emit-result.sh regular\"
   e2e_command: \"\"
 coverage:
   measure_command: \"true\"

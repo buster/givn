@@ -10,10 +10,11 @@ fn coverage_addon_enabled(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let commands_path = env.path("givn/commands.yaml");
     let yaml = "\
 verify:
-  command: \"true\"
+  command: \"./emit-result.sh regular\"
   e2e_command: \"\"
 coverage:
   measure_command: \"true\"
@@ -59,10 +60,11 @@ fn coverage_command_fails(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let commands_path = env.path("givn/commands.yaml");
     let yaml = "\
 verify:
-  command: \"true\"
+  command: \"./emit-result.sh regular\"
   e2e_command: \"\"
 coverage:
   measure_command: \"false\"
@@ -106,10 +108,11 @@ addons:
 fn e2e_given_coverage_project(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root());
     let env = world.env.as_ref().unwrap();
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let commands_path = env.path("givn/commands.yaml");
     let yaml = "\
 verify:
-  command: \"true\"
+  command: \"./emit-result.sh regular\"
   e2e_command: \"\"
 coverage:
   measure_command: \"true\"
@@ -240,10 +243,11 @@ fn fixture_report_xml(hits: &[(u64, u64)]) -> String {
 fn legacy_coverage_project(world: &mut GivnWorld, non_e2e: &[(u64, u64)], e2e: &[(u64, u64)]) {
     world.env = Some(common::make_init_root());
     let env = world.env.as_ref().unwrap();
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let commands_path = env.path("givn/commands.yaml");
     let yaml = "\
 verify:
-  command: \"true\"
+  command: \"./emit-result.sh regular\"
   e2e_command: \"\"
 coverage:
   measure_command: \"givn missing-coverage\"
@@ -329,4 +333,28 @@ fn merged_report_has_line_counters(world: &mut GivnWorld, covered: u64, valid: u
         report.contains(&format!("lines-valid=\"{valid}\"")),
         "merged report does not claim lines-valid=\"{valid}\": {report}"
     );
+}
+
+#[given("a givn project with the coverage addon enabled and valid coverage commands")]
+fn coverage_addon_enabled_alias(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    coverage_addon_enabled(world);
+    with_run_declaration(world);
+}
+
+#[given("a givn project with the coverage addon enabled but the non-e2e coverage command exits non-zero")]
+fn coverage_command_fails_alias(world: &mut GivnWorld) {
+    world.env = Some(common::make_init_root());
+    coverage_command_fails(world);
+    with_run_declaration(world);
+}
+
+/// Append the complete run declaration to the fixture's commands file.
+fn with_run_declaration(world: &GivnWorld) {
+    let env = world.env.as_ref().expect("a project root is required first");
+    let path = env.path("givn/commands.yaml");
+    let content = std::fs::read_to_string(&path).expect("read commands.yaml");
+    let updated =
+        common::replace_top_level_key(&content, "run", &common::complete_run_declaration("cli"));
+    std::fs::write(&path, updated).expect("write commands.yaml");
 }

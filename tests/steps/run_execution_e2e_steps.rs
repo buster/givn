@@ -141,10 +141,11 @@ fn verify_noops_with_server_run(world: &mut GivnWorld) {
         .env
         .as_ref()
         .expect("a project root is required first");
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let yaml = "\
 verify:
-  command: \"true\"
-  e2e_command: \"true\"
+  command: \"./emit-result.sh regular\"
+  e2e_command: \"./emit-result.sh e2e\"
 coverage:
   measure_command: \"true\"
   merge_command: \"true\"

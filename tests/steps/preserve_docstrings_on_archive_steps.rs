@@ -9,10 +9,11 @@ use cucumber::{given, then};
 /// `true`, dummy Cobertura XMLs) so every archive gate passes in the temp
 /// project, which has no Rust runner.
 fn write_command_overrides(env: &common::TestEnv) {
+    crate::steps::archive_proof_support::write_result_runner(env, "pass");
     let commands_path = env.path("givn/commands.yaml");
     let yaml = "\
 verify:
-  command: \"true\"
+  command: \"./emit-result.sh regular\"
   e2e_command: \"\"
 coverage:
   measure_command: \"true\"
