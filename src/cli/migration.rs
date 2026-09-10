@@ -478,6 +478,7 @@ fn write_aggregate_migration_plan(
 
     let result = write_aggregate_migration_files(
         &temporary_dir,
+        change_id,
         commit_a,
         source_version,
         target_version,
@@ -514,6 +515,7 @@ struct AggregateBundleMetadata<'a> {
 
 fn write_aggregate_migration_files(
     migration_dir: &Path,
+    change_id: &str,
     commit_a: &str,
     source_version: &str,
     target_version: &str,
@@ -549,10 +551,7 @@ fn write_aggregate_migration_files(
     std::fs::write(
         migration_dir.join("proposal.md"),
         aggregate_migration_proposal(
-            migration_dir
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("migration"),
+            change_id,
             source_version,
             target_version,
             commit_a,
@@ -563,10 +562,7 @@ fn write_aggregate_migration_files(
     std::fs::write(
         migration_dir.join("design.md"),
         aggregate_migration_design(
-            migration_dir
-                .file_name()
-                .and_then(|name| name.to_str())
-                .unwrap_or("migration"),
+            change_id,
             source_version,
             target_version,
             commit_a,
@@ -936,6 +932,35 @@ mod tests {
         let second = design.find("### Phase 2: second").unwrap();
         assert!(first < second, "{design}");
         assert!(design.contains("## Prompt 1: Inventory"));
+    }
+
+    #[test]
+    fn aggregate_titles_use_the_change_id_not_the_staging_dir() {
+        let root = tempfile::tempdir().unwrap();
+        let staging = root.path().join(".migrate-0-6-0-to-0-7-0.tmp-1");
+        std::fs::create_dir(&staging).unwrap();
+        let bundles = vec![bundle("migrate-0-6-0-to-0-7-0", "0.6.0", "0.7.0", 50)];
+        write_aggregate_migration_files(
+            &staging,
+            "migrate-0-6-0-to-0-7-0",
+            "commit-a",
+            "0.6.0",
+            "0.7.0",
+            &bundles,
+        )
+        .unwrap();
+        let proposal = std::fs::read_to_string(staging.join("proposal.md")).unwrap();
+        let design = std::fs::read_to_string(staging.join("design.md")).unwrap();
+        assert!(
+            proposal.starts_with("# Proposal: migrate-0-6-0-to-0-7-0"),
+            "{proposal}"
+        );
+        assert!(
+            design.starts_with("# Design: migrate-0-6-0-to-0-7-0"),
+            "{design}"
+        );
+        assert!(!proposal.contains(".tmp-"), "{proposal}");
+        assert!(!design.contains(".tmp-"), "{design}");
     }
 
     #[test]

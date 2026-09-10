@@ -18,6 +18,7 @@ deliverables are versioned assets and documentation.
 | `assets/migrations/0.6.0-to-0.7.0/proposal.md` | consumer-facing migration proposal (new) |
 | `assets/migrations/0.6.0-to-0.7.0/design.md` | self-contained consumer migration procedure (new) |
 | `CHANGELOG.md` | 0.7.0 section with the bundle and the breaking archive contract |
+| `src/cli/migration.rs` | pass the final change id into the aggregate renderer so generated proposal/design titles no longer leak the staging directory name |
 
 No Rust code changes. The catalog is data; the route resolves through the
 existing `src/cli/migration.rs` logic, so no version-specific conditional is
@@ -60,11 +61,12 @@ the 0.6.0 release change (`df028683`).
   design contains the `GIVN_RESULT_FILE` procedure; Commit A/B hashes were
   recorded. A second `givn upgrade` reported the change already exists.
 - The bundle assets are embedded; `cargo check --locked` validates the build
-  and the lock.
+  and the lock. A scratch 0.6.0 project's aggregate proposal/design titles use
+  the final `migrate-0-6-0-to-0-7-0` id, not a `.tmp-<pid>` staging name.
 - The repository suite (`./run-tests.sh`) and the E2E scope
   (`./run-tests.sh --e2e`) run against the unchanged permanent corpus; the
   existing upgrade scenarios tolerate catalog additions by construction
-  (`tests/steps/release_0_3_0_steps.rs`).
+  (`tests/steps/release_0_3_0_e2e_steps.rs`).
 - Archive: the maintenance change archives with `specs` skipped; its
   verification scopes run against the permanent corpus.
 

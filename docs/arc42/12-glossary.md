@@ -142,7 +142,7 @@
   the finalization guard in `cli::archive`).
 - A verification scope result must declare its scope and reconcile
   `passed + failed + skipped == total`, with at least one scenario and zero
-  failures or skips (enforcement site: `proof::RunnerResult::validate`).
+  failures or skips (enforcement site: `proof::RunnerResult::read`).
 - Finalization changes only the tested commit's declared evidence paths
   (enforcement site: `proof::is_evidence_path`).
 - A resumed candidate does not repeat the merge (enforcement site: pending

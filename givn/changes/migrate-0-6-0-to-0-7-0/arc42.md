@@ -13,7 +13,7 @@
 | 7 | 07 deployment-view | No | Distribution and packaging are unchanged; only the version string moves. | |
 | 8 | 08 crosscutting-concepts | No | Configuration versioning and the migration catalog are already documented in 8.10; adding a bundle is data. | |
 | 9 | 09 architecture-decisions | No | ADR-070 (archive-proof) already records the decision; this release adds no new decision boundary. | |
-| 10 | 10 quality-requirements | No | No new quality scenario; upgrade safety is already covered by Q-49..Q-57. | |
+| 10 | 10 quality-requirements | No | No new quality scenario; upgrade safety is already covered by Q-49..Q-57 and the release-bundle inspection requirement Q-77. | |
 | 11 | 11 risks-and-technical-debt | No | The release closes an upgrade-safety gap rather than creating a new risk; R-53..R-55 already track the contract's consequences. | |
 | 12 | 12 glossary | No | No new domain term; the release uses the existing migration-bundle vocabulary. | |
 
