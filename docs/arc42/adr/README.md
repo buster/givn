@@ -27,8 +27,8 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-25 accepted records. The fifteen semantic-engine records were superseded by
-[ADR-069](ADR-069-single-feature-free-binary.md) and moved to
+26 accepted or proposed records. The fifteen semantic-engine records were
+superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
 | ID | Status | Decision | Qualification basis |
@@ -58,6 +58,7 @@ The active register contains only independent durable architecture decisions:
 | [ADR-054](ADR-054-versioned-evidence-output.md) | accepted | Version opt-in second-stage evidence output | machine-readable compatibility boundary |
 | [ADR-067](ADR-067-givn-declares-and-executes-the-product-start.md) | accepted | Declare and execute the product start in the same tool | start-command contract boundary |
 | [ADR-069](ADR-069-single-feature-free-binary.md) | accepted | Ship one feature-free binary without the semantic retrieval engine | build-contract and dependency boundary |
+| [ADR-070](ADR-070-forward-only-archive-proof.md) | proposed | Publish archives forward-only and bind proof to a committed candidate | publication boundary and durable receipt contract |
 
 ## Relationships
 
@@ -73,6 +74,7 @@ The active register contains only independent durable architecture decisions:
 |---|---|
 | Manifest and addons | [`src/config/overlay.rs`](../../../src/config/overlay.rs), [`src/config/manifest.rs`](../../../src/config/manifest.rs), [`src/cli/init.rs`](../../../src/cli/init.rs), [`givn/commands.yaml`](../../../givn/commands.yaml) |
 | Hooks and mandatory checks | [`src/cli/check.rs`](../../../src/cli/check.rs), [`src/hooks.rs`](../../../src/hooks.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs) |
+| Archive proof | [`src/git.rs`](../../../src/git.rs), [`src/proof.rs`](../../../src/proof.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs), [`givn/changes/archive-proof/`](../../../givn/changes/archive-proof/) |
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/0.2.0-to-0.3.0.md`](../../migrations/0.2.0-to-0.3.0.md), and release migration feature scenarios |
 | PR #27 measurements | [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |

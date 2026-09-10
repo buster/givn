@@ -154,20 +154,24 @@ For `givn check tasks`, the binary runs the non-configurable mandatory checks:
 
 For `givn check review`, it runs:
 
-1. `verify.command`.
-2. `verify-e2e` using `verify.e2e_command`.
-3. The integrity hook for task hashes, promised files, and enabled Arc42 or
+1. The integrity hook for task hashes, promised files, and enabled Arc42 or
    coverage checks.
-4. For a named change, the overlap disposition gate.
+2. The deterministic run-declaration check.
+3. For a named change, the overlap disposition gate.
+
+Review does not execute `verify.command` or `verify.e2e_command`. Scenario
+execution is proven once per archive by the verification receipt; review
+inspects the static artifacts and the fabrication audit instead.
 
 These mandatory checks are in `src/cli/check.rs` and cannot be removed by
 removing a `post` entry. Built-in hook names also ignore `allow_failure` when
 they are configured in a post list.
 
-`verify-e2e` skips only when its sentinel is effective, there are no direct
-`@e2e` scenarios in scope, and `tasks.md` contains no E2E intent. If the
-sentinel is effective while E2E is present or planned, it fails. A non-sentinel
-E2E command is invoked by the mandatory review path.
+The `verify-e2e` built-in used by configured post hooks skips only when its
+sentinel is effective, there are no direct `@e2e` scenarios in scope, and
+`tasks.md` contains no E2E intent. If the sentinel is effective while E2E is
+present or planned, it fails. The archive E2E scope applies the same sentinel
+rule when deciding that the scope is not applicable.
 
 ### No artifact argument
 
@@ -177,36 +181,73 @@ branch. With the embedded default manifest, standard post lists are empty.
 
 ## 6.7 `givn archive --change <id>`
 
-The archive command executes the following stages:
+The archive is forward-only and runs in two committed stages against a Git
+worktree, using the state model below:
 
-1. Validate the change id and active directory.
-2. Load the effective manifest and ensure every `apply.requires` artifact is
-   complete or skipped.
-3. Run configured post hooks for each `apply.requires` artifact.
-5. When the readme addon is enabled, run the README completeness gate before any
-   mutation: open placeholders, legacy scaffold texts, an unmanaged or missing
-   README, or development managed block damage block the archive with a
-   per-finding report. No backup is needed at this stage.
-6. Back up `givn/specs/` and `README.md` as needed.
-7. Parse each delta feature, reject WIP, and merge Added/Modified/Removed
-   scenarios into `givn/specs/<usecase-id>/<capability>.feature` (the permanent corpus is owned by explicit use-case documents). A new capability merges into the use case its proposal's routing decision declares; when the capability exists nowhere and no `NEW in <usecase-id>` decision is recorded, the archive is blocked.
-8. Run `verify.command` against `givn/specs/`. A failure rolls permanent specs
-   back from the backup.
-9. Run post-merge E2E only when merged permanent specs contain direct `@e2e`
-   scenarios. An empty or sentinel E2E command blocks in that case; a configured
-   command must pass.
-10. When the readme addon is enabled and both development managed block markers
-    are present, refresh the block content from the effective command file; a
-    failure restores the README from the backup.
-11. If coverage is enabled, run the project measurement/merge pipeline, validate
-    Cobertura reports, update managed README blocks, and roll back specs,
-    README, and coverage files on failure.
-12. Copy the complete change directory to `givn/archive/<id>/`, then remove the
-    active directory.
+| Archive directory state | Meaning | Command behavior |
+|---|---|---|
+| absent | no publication yet | fresh archive |
+| present, no receipt | pre-receipt legacy archive | refuse: already archived |
+| receipt `status: pending` | unproven candidate | resume verification |
+| receipt `status: proven` | proven archive | refuse: already proven |
 
-Archive's post-merge checks are hard-coded in `src/cli/archive.rs`; they are not
-the same thing as configurable artifact `post` hooks. Archive does not call the
-explicit `check review` mandatory branch before these stages.
+```mermaid
+sequenceDiagram
+    participant D as Developer
+    participant A as givn archive
+    participant G as Git
+    participant R as Runner
+    D->>A: givn archive --change id
+    A->>G: worktree prerequisite + clean-state witness
+    alt fresh archive
+        A->>A: structural gates (artifacts, hooks, run declaration, README, merge preconditions)
+        A->>A: merge use-case docs and deltas, move change to givn/archive/id
+        A->>A: write pending verification.json
+        A->>G: commit candidate (givn/specs, givn/archive/id, givn/changes/id)
+    end
+    A->>R: verify.command with GIVN_RESULT_FILE=results/regular.json
+    R-->>A: fail-closed scope result
+    A->>R: verify.e2e_command with results/e2e.json, or not_applicable
+    A->>A: coverage gate when the addon is enabled
+    A->>A: write proven receipt (tested commit, scope counts, coverage, timing)
+    A->>G: HEAD == tested commit and dirty files subset of evidence paths?
+    A->>G: commit finalization (receipt, results, README, coverage output)
+    A-->>D: proven archive
+```
+
+Stages:
+
+1. Validate the change id, open the Git worktree (a non-Git project is
+   refused), and read the archive provenance.
+2. Clean-state witness: modified tracked files and untracked non-ignored files
+   block the archive by name, except the declared evidence paths (the target
+   archive directory, `README.md`, and the configured coverage paths), which
+   keep a failed attempt resumable.
+3. Fresh only — structural gates before any mutation: `apply.requires`
+   completeness, configured archive hooks, the run-declaration gate, the
+   README completeness gate, use-case and delta prevalidation, and the
+   e2e-runner configuration check. An `@e2e` merge with an unconfigured
+   `verify.e2e_command` blocks here, leaving the change active.
+4. Fresh only — merge and publish the candidate: parse and merge every delta,
+   merge use-case narratives, copy the change directory to `givn/archive/<id>/`,
+   remove the active directory, write the pending receipt, and commit exactly
+   those paths as the candidate commit. A rejected commit is reported as an
+   unproven, staged tree for forward repair.
+5. Verification against the committed HEAD: the regular scope (`verify.command`)
+   and the E2E scope (`verify.e2e_command`, only when merged permanent specs
+   contain `@e2e`; otherwise `not_applicable`) each run once and must write a
+   reconciling runner result with scenarios, no failures, and no skips.
+6. Coverage when enabled: measure, validate, and publish once against the
+   candidate, with no backup or rollback path.
+7. Finalization: refresh managed README blocks, write the proven receipt,
+   verify that `HEAD` still equals the tested commit and that every dirty path
+   is a declared evidence path, then commit the evidence-only finalization.
+
+Any failure after the candidate commit leaves the candidate unproven in place
+and prints the forward-repair instruction (`givn archive --change <id>` after
+repairing the committed state). Archive's checks are hard-coded in
+`src/cli/archive.rs`; they are not configurable artifact `post` hooks, and
+archive does not call the explicit `check review` mandatory branch.
 
 ## 6.12 Addons, Upgrade, and Completion Commands
 
@@ -253,16 +294,18 @@ project LLM must continue the normal workflow and archive the maintenance plan
 after all project-specific decisions and verification are complete.
 
 At archive time, a maintenance change whose `.givn-skip` lists `specs` has no
-delta to merge. Its global verify and E2E hooks run against the permanent
-project feature path. Tasks, review, and all other archive gates remain
-required.
+delta to merge. Its verification scopes run against the permanent project
+feature path, and its candidate commit contains only the moved change
+directory and the pending receipt. Tasks, review, and all other archive gates
+remain required.
 
 ## 6.14 Repository-Owned Acceptance Flow
 
 The Cucumber test binary creates an isolated temporary project, invokes the
 compiled CLI, captures exit status and stdout/stderr, and performs secondary
 filesystem assertions. Review/archive success cases assert the CLI receipt
-first. Failure cases snapshot permanent specs and verify rollback. No consumer
+first. Failure cases assert the unproven candidate and its pending receipt
+survive the failure. No consumer
 repository or external service participates. The `ready_fixture` test target
 plays the started product in `givn run` scenarios: it binds a port, answers a
 readiness path, and can self-exit, fail early, answer failure forever, or trap

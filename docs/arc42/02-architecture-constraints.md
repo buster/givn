@@ -28,6 +28,7 @@ register](adr/README.md).
 | TC-28 | Runtime attribution is process-scoped and optional; it is never persisted as model selection in `givn/config.yaml`. | OpenCode/Claude integrations and commit-attribution protocol |
 | TC-29 | The OpenCode attribution integration reads the selected provider and model from the required `chat.params` payload's `model` object, with optional `chat.message` enrichment; payload drift remains a best-effort compatibility risk. | `assets/agent-integrations/opencode/givn-attribution.js`, OpenCode plugin scenario |
 | TC-30 | The Claude attribution integration resolves the latest assistant model from the PreToolUse payload's transcript before using process fallbacks, exports context for the complete Bash command, and remains non-blocking when transcript metadata is missing or unreadable. | `src/cli/attribution.rs`, Claude attribution scenario |
+| TC-31 | Archive publication is forward-only and requires a Git worktree. Givn commits the merged archive candidate before verification, records the pending/proven state in `givn/archive/<id>/verification.json`, and never rolls the permanent corpus back. | `src/git.rs`, `src/proof.rs`, `src/cli/archive.rs`, archive-proof feature specs |
 
 ## 2.2 Configuration and Gate Constraints
 
@@ -44,15 +45,18 @@ Artifact `post` lists are configurable additional hooks. They do not replace
 the binary's mandatory behavior:
 
 - `givn check tasks` runs WIP protection and `verify.command`.
-- `givn check review` runs `verify.command`, `verify-e2e`, `integrity`, the
-  run-declaration check, and, for a named change, the overlap disposition gate.
+- `givn check review` runs `integrity`, the run-declaration check, and, for a
+  named change, the overlap disposition gate. Scenario execution is proven once
+  per archive by the verification receipt, not re-run in review.
 - Built-in hook names cannot be made best-effort with `allow_failure`.
 - `givn check` without an artifact runs only configured `post` hooks; it does
   not call the artifact-specific mandatory path.
 - `givn archive` runs configured hooks for `apply.requires` and then its own
-  archive stages, including post-merge verification. The run-declaration gate
-  runs before the README completeness gate and independently of the readme
-  addon.
+  two-stage pipeline: it commits the merged archive candidate, runs each
+  verification scope once with a fail-closed runner result, runs the optional
+  coverage gate, and commits the verification receipt as the finalization.
+  The run-declaration gate runs before the README completeness gate and
+  independently of the readme addon.
 
 The embedded manifest has empty `post` lists for the standard `tasks` and
 `review` artifacts. Documentation in an older generated config may still show

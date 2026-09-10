@@ -18,6 +18,10 @@ graph TD
     CORRECT --> MERGE[All-or-nothing delta merge]
     CORRECT --> STATE[Filesystem-derived state]
     CORRECT --> GATE[Explicit gate failures]
+    Q --> ARCHIVE[Archive proof]
+    ARCHIVE --> CANDIDATE[Forward-only committed candidate]
+    ARCHIVE --> RECEIPT[Receipt binds the tested commit]
+    ARCHIVE --> FAITHFUL[Fail-closed runner results]
     Q --> AGENT[Agent ergonomics]
     AGENT --> POLICY[One normative authoring policy]
     AGENT --> TARGETS[Selected targets and owned blocks]
@@ -74,6 +78,11 @@ graph TD
 | Q-77 | Release safety | The 0.5.0-to-0.6.0 bundle is inspected before release. | The catalog resolves one target version and the proposal/design describe semantic moves, confirmation, coverage, Handoff safety, and archive protection. |
 | Q-78 | Commit attribution | OpenCode supplies a selected provider and model in chat parameters before a shell execution. | The generated integration returns the provider/model identity, OpenCode harness, and committer name in the shell environment used for Git. |
 | Q-79 | Commit attribution | Claude supplies a current model in the session transcript before a Bash command that uses an RTK shell wrapper. | The generated hook exports context for the complete command so the resulting Git committer and message identify that model, reasoning mode, Claude Code harness, and managed co-author attribution. |
+| Q-80 | Archive proof | The project has uncommitted work when archive starts. | The archive refuses, names the offending files, and leaves the change active with no candidate created. |
+| Q-81 | Archive proof | The full suite fails against the merged candidate. | The candidate commit and pending receipt remain in `givn/archive/<id>/`; the permanent tree is not rolled back. |
+| Q-82 | Archive proof | A later archive run resumes an unproven candidate. | The merge is not repeated; the rerun verifies the current committed repair and records a proven receipt naming the tested commit. |
+| Q-83 | Archive proof | A verification scope writes no result, declares failures, skips, or non-reconciling counts. | Proof is blocked fail-closed and the candidate stays unproven. |
+| Q-84 | Archive proof | Finalization would change a path outside the declared evidence. | The archive refuses with a tested-tree-changed error and the candidate stays unproven. |
 
 ## 10.3 Verification Signals
 

@@ -133,3 +133,16 @@
   R4/R5; executor preflight for `--port`).
 - givn never derives the product type or start command from repository
   content (enforcement site: product boundary — no derivation code exists).
+
+### Archive-proof invariants
+
+- The permanent corpus is written only by a proven archive; an unproven
+  candidate is never reported as proven (enforcement site: receipt status and
+  the finalization guard in `cli::archive`).
+- A verification scope result must declare its scope and reconcile
+  `passed + failed + skipped == total`, with at least one scenario and zero
+  failures or skips (enforcement site: `proof::RunnerResult::validate`).
+- Finalization changes only the tested commit's declared evidence paths
+  (enforcement site: `proof::is_evidence_path`).
+- A resumed candidate does not repeat the merge (enforcement site: pending
+  receipt mode in `cli::archive`).

@@ -18,6 +18,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
 | Commit attribution | A checked-in Git message hook consumes optional process-scoped attribution; OpenCode and Claude adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
+| Archive publication | Forward-only and Git-backed: the merged archive candidate is committed before verification, each verification scope runs once and reports fail-closed counts, and the verification receipt is committed as finalization. A failed candidate is repaired forward, never rolled back. ADR-070 records the boundary. |
 | Product start | One author-owned `run:` declaration in `givn/commands.yaml` documents and gates how the built product starts; `givn run` executes it with a std-only readiness probe, a greppable ready line, a spec'd exit-code contract, and unix signal forwarding. ADR-067 records the declare-and-execute boundary. |
 | Gate safety | `givn check tasks|review` contains non-deactivatable mandatory checks; `post` is additive customization. |
 | Arc42 | `givn init` enables addons by default unless `--no-addons`; Arc42 chapters are scaffolded at fixed `docs/arc42/`. |
@@ -37,14 +38,15 @@ blocks.
 mandatory checks for explicit `givn check tasks` and `givn check review`:
 
 - tasks: WIP protection for a change delta and `verify.command`;
-- review: `verify.command`, `verify-e2e`, `integrity`, the deterministic
-  run-declaration check, and, for a named change, the overlap disposition gate.
+- review: `integrity`, the deterministic run-declaration check, and, for a
+  named change, the overlap disposition gate. The full suite is not re-run in
+  review; the archive verification receipt is the execution proof.
 
 Built-in hook names cannot be downgraded with `allow_failure`. Custom shell
 hooks can be configured and may be allowed to fail. A no-argument `givn check`
 only runs configured post hooks and does not call the explicit artifact
-mandatory-check path. Archive has its own hard-coded post-merge verify/e2e and
-optional coverage stages in addition to configured archive hooks.
+mandatory-check path. Archive has its own hard-coded candidate, verification,
+and finalization stages in addition to configured archive hooks.
 
 ## 4.4 Quality Goals
 
