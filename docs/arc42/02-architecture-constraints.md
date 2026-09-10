@@ -29,6 +29,7 @@ register](adr/README.md).
 | TC-29 | The OpenCode attribution integration reads the selected provider and model from the required `chat.params` payload's `model` object, with optional `chat.message` enrichment; payload drift remains a best-effort compatibility risk. | `assets/agent-integrations/opencode/givn-attribution.js`, OpenCode plugin scenario |
 | TC-30 | The Claude attribution integration resolves the latest assistant model from the PreToolUse payload's transcript before using process fallbacks, exports context for the complete Bash command, and remains non-blocking when transcript metadata is missing or unreadable. | `src/cli/attribution.rs`, Claude attribution scenario |
 | TC-31 | Archive publication is forward-only and requires a Git worktree. Givn commits the merged archive candidate before verification, records the pending/proven state in `givn/archive/<id>/verification.json`, and never rolls the permanent corpus back. | `src/git.rs`, `src/proof.rs`, `src/cli/archive.rs`, archive-proof feature specs |
+| TC-32 | The givn project must be the Git repository root; the archive refuses a project nested inside a larger repository. | `src/git.rs`, archive-proof nested-project scenario |
 
 ## 2.2 Configuration and Gate Constraints
 

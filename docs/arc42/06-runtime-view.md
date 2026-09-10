@@ -209,16 +209,18 @@ sequenceDiagram
     R-->>A: fail-closed scope result
     A->>R: verify.e2e_command with results/e2e.json, or not_applicable
     A->>A: coverage gate when the addon is enabled
-    A->>A: write proven receipt (tested commit, scope counts, coverage, timing)
+    A->>A: refresh managed README blocks
     A->>G: HEAD == tested commit and dirty files subset of evidence paths?
+    A->>A: write proven receipt (candidate = tested commit, scope counts, coverage, timing)
     A->>G: commit finalization (receipt, results, README, coverage output)
     A-->>D: proven archive
 ```
 
 Stages:
 
-1. Validate the change id, open the Git worktree (a non-Git project is
-   refused), and read the archive provenance.
+1. Validate the change id, open the Git worktree (a non-Git project, or a
+   project nested below the repository root, is refused), and read the
+   archive provenance.
 2. Clean-state witness: modified tracked files and untracked non-ignored files
    block the archive by name, except the declared evidence paths (the target
    archive directory, `README.md`, and the configured coverage paths), which
@@ -239,9 +241,9 @@ Stages:
    reconciling runner result with scenarios, no failures, and no skips.
 6. Coverage when enabled: measure, validate, and publish once against the
    candidate, with no backup or rollback path.
-7. Finalization: refresh managed README blocks, write the proven receipt,
-   verify that `HEAD` still equals the tested commit and that every dirty path
-   is a declared evidence path, then commit the evidence-only finalization.
+7. Finalization: refresh managed README blocks, verify that `HEAD` still
+   equals the tested commit and that every dirty path is a declared evidence
+   path, write the proven receipt, then commit the evidence-only finalization.
 
 Any failure after the candidate commit leaves the candidate unproven in place
 and prints the forward-repair instruction (`givn archive --change <id>` after

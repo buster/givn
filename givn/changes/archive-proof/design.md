@@ -18,7 +18,7 @@ those exact terms.
 |---|---|---|
 | Git access | Shell out to the `git` CLI from a small wrapper (`src/git.rs`) | The project already depends on the host Git CLI (`src/cli/git.rs` installs hooks); no new crate, no linking a Git library. |
 | Receipt/result format | JSON via the existing `serde_json` dependency | Already used across the CLI; human-readable and machine-stable. |
-| Timestamps | `SystemTime` + `local_timestamp()` reuse | `src/subprocess.rs` already provides local timestamps for stage logging. |
+| Timestamps | Unix epoch seconds from `SystemTime::now()` | The receipt is machine-readable evidence; epoch seconds need no date crate and no timezone rendering. `local_timestamp()` stays for stage logging only. |
 | New dependencies | None | Correctness and simplicity: the change is a workflow restructure, not a library need. |
 | Commit strategy | Normal `git commit` (hooks run) with scoped `git add` | A9: no `--no-verify`, no `git add -A`; attribution and user hooks keep working. |
 
@@ -60,7 +60,8 @@ Changed modules:
   propagate so the candidate stays unproven.
 - `src/cli/status.rs`, `src/cli/instructions.rs` — surface pending archives.
 - `src/state.rs` — archive provenance helpers next to `list_archived`.
-- `src/lib.rs` — register `git` and `proof`.
+- `src/lib.rs` and `src/main.rs` — register `git` and `proof` in both crate
+  roots.
 - `tests/features_runner.rs`, `run-tests.sh` — write `GIVN_RESULT_FILE`.
 
 ## Git integration (`src/git.rs`)
@@ -80,6 +81,11 @@ impl Worktree {
 }
 ```
 
+- `open` resolves `git rev-parse --show-toplevel` and requires it to equal
+  the project root; a project nested in a larger repository is refused with a
+  named constraint (the givn project must be the repository root; a monorepo
+  with the project at the repo root remains supported). This keeps
+  project-relative evidence paths and scoped staging unambiguous.
 - `dirty_entries` uses `--porcelain -z` so paths with spaces and rename
   entries survive intact; it reports both modified tracked files and
   untracked non-ignored files (A5).
@@ -92,7 +98,8 @@ impl Worktree {
 
 ### State detection
 
-`proof::read_status(archive_dir)`:
+`proof::read_status(project_root, id)` also receives the project root so it
+can detect the corrupt both-directories-present state:
 
 | Filesystem | Status | Archive behavior |
 |---|---|---|
@@ -155,11 +162,16 @@ Ordered steps of `cli::archive::run`:
      configuration gap, not a verification result.
 5. Fresh only — merge and publish the candidate:
    - `merge_usecase_documents` + `process_delta_file` per file;
-   - copy `givn/changes/<id>` → `givn/archive/<id>`, remove the change dir;
-   - write `verification.json` with `status: "pending"`, the first-parent
-     `candidate_commit` set after the commit, empty scopes;
+   - copy `givn/changes/<id>` → `givn/archive/<id>`, write
+     `verification.json` with `status: "pending"`, null `candidate_commit`
+     and `tested_commit`, and empty scopes, then remove the active
+     directory;
    - `Worktree::commit("chore(<id>): publish archive candidate", scoped
-     paths)`. Scoped paths: `givn/specs`, `givn/archive/<id>`,
+     paths)`. The pending receipt is committed inside the candidate commit,
+     so it cannot name that commit's own hash; `candidate_commit` stays null
+     until finalization sets both it and `tested_commit` to the verified
+     HEAD (guard A makes them equal).
+     Scoped paths: `givn/specs`, `givn/archive/<id>`,
      `givn/changes/<id>`.
      If the commit is rejected (e.g. a user commit hook), the error explains
      that the merge is staged but uncommitted and the archive is not proven;
@@ -175,12 +187,12 @@ Ordered steps of `cli::archive::run`:
      rollback.
 7. Finalization:
    - refresh the managed README development/run blocks (readme addon);
-   - write the proven `verification.json` (tested commit, scope outcomes,
-     coverage outcome, timings);
    - guard A: `HEAD == tested_commit` — otherwise refuse ("the tested tree
      changed");
    - guard B: every line of `dirty_entries` is an evidence path — otherwise
      refuse and name the offending path;
+   - write the proven `verification.json` only after both guards pass, so a
+     guard failure never leaves a false `proven` receipt on disk;
    - commit the evidence paths (receipt/results under the archive dir,
      README, coverage outputs). Hooks run.
 
@@ -246,12 +258,14 @@ Every rejection is fail-closed and names the offending file.
   },
   "coverage": { "status": "passed", "line_covered": 6461,
                 "line_valid": 18713, "line_percent": 35 },
-  "started_at": "2026-09-10T12:00:00+02:00",
-  "finished_at": "2026-09-10T12:05:00+02:00"
+  "started_at_unix": 1786442400,
+  "finished_at_unix": 1786442700
 }
 ```
 
 - `status`: `pending` | `proven`; only `pending` and `proven` are recognized.
+- A pending receipt carries `candidate_commit: null` and `tested_commit:
+  null`; finalization sets both to the verified HEAD after the guards pass.
 - scope entries: `passed` | `not_applicable`. A failed run does not rewrite
   the pending receipt, so the candidate commit stays exactly the tested tree.
 - `coverage`: `passed` | `not_enabled` (disabled addon). A coverage failure
@@ -271,6 +285,12 @@ converting to forward slashes; a path is evidence when it starts with
 - `coverage.non_e2e_path`, `coverage.e2e_path`, `coverage.output_path`
   (coverage addon).
 
+Evidence paths are outputs, not inputs: the receipt binds the tested commit
+for the code and specs, while README, coverage reports, and the receipt itself
+are derived evidence committed by the finalization. Leftover evidence from a
+failed attempt is therefore the resume path, not a tree mutation, and it keeps
+the candidate resumable. Both guards run before the proven receipt is written.
+
 ## Module / function map
 
 | Unit | Responsibility |
@@ -279,16 +299,16 @@ converting to forward slashes; a path is evidence when it starts with
 | `git::Worktree::dirty_entries` | `git status --porcelain -z` parsing |
 | `git::Worktree::head` | `git rev-parse HEAD` |
 | `git::Worktree::commit` | scoped `git add` + `git commit` |
-| `proof::read_status` | classify archive provenance from `verification.json` |
+| `proof::read_status(project_root, id)` | classify archive provenance, including the corrupt both-directories state |
 | `proof::is_evidence_path` | shared allowed-path predicate |
 | `proof::RunnerResult::{parse,validate}` | fail-closed scope-result contract |
 | `proof::Receipt::{write_pending,write_proven,read}` | receipt persistence |
 | `cli::archive::run` | two-stage pipeline, resume mode, finalization guards |
-| `cli::archive::finalize` | guard + receipt + finalization commit |
+| `cli::archive::finalize` | guards before receipt write, then finalization commit |
 | `cli::coverage_gate::run_coverage_gate` | coverage pipeline, no backup/rollback |
 | `cli::check::run_mandatory_checks` | review branch without verify/verify-e2e |
 | `cli::status::run` | list pending archives and route to resume |
-| `cli::instructions` | `report_archived_change` routes pending archives |
+| `cli::instructions` | `report_no_active_changes` (bare command) and `report_archived_change` (`--change`) route pending archives |
 | `state::list_unproven_archives` | filesystem view for status/instructions |
 
 ## Step Definitions
@@ -321,14 +341,40 @@ committed state and a dirty worktree blocks.
 
 ### Fixture migration (blast radius)
 
-All existing archive-flow fixtures currently use `verify.command: "true"`
-(and often `e2e_command: "true"`); these are replaced with
-`./emit-result.sh regular` / `./emit-result.sh e2e`, or with commands that
-intentionally omit the result for the fail-closed scenario. Failing fixtures
-keep failing commands (exit code already blocks). The shared helpers are
-updated once in `tests/common/mod.rs` and
-`tests/steps/repository_ownership_fixtures_support.rs`, then the ~12 step
-files that configure archive projects are updated mechanically.
+Two cross-cutting fixture changes precede the per-scenario edits:
+
+1. Git: `tests/common/mod.rs` gains `git_init` (runs `git init`, configures
+   `user.name`/`user.email`, stages and commits the scaffold),
+   `git_commit_all(env, msg)`, `git_head`, and a `git_output` helper.
+   `make_init_root` calls `git_init`, and every archive-flow Given that
+   mutates the tree after init ends with `git_commit_all`, because the
+   clean-tree witness now blocks otherwise. Bare temp repositories need the
+   explicit identity or `git commit` fails.
+2. Result contract: fixtures that archive with a passing command must write
+   a runner result. `write_result_runner` emits an executable
+   `emit-result.sh` used as `./emit-result.sh regular` /
+   `./emit-result.sh e2e`; the existing `disable_coverage_addon` stays the
+   default unless the scenario exercises coverage.
+
+Files that configure archive projects and need the helper updates:
+`tests/common/mod.rs`, `tests/steps/repository_ownership_fixtures_support.rs`,
+`tests/steps/preserve_docstrings_on_archive_steps.rs`,
+`tests/steps/readme_enforcement_steps.rs`,
+`tests/steps/coverage_script_workflow_steps.rs`,
+`tests/steps/run_execution_e2e_steps.rs`,
+`tests/steps/release_0_3_0_e2e_steps.rs`,
+`tests/steps/fix_uppercase_checkbox_parsing_steps.rs`,
+`tests/steps/grouped_merge_steps.rs`,
+`tests/steps/run_declaration_fixtures_support.rs`,
+`tests/steps/extract_coverage_gate_steps.rs`,
+`tests/steps/enforce_post_merge_e2e_gate_steps.rs`,
+`tests/steps/workflow_enforcement_steps.rs`.
+
+The behavior change to the permanent
+`givn/specs/fragments/repository-ownership-fixtures.feature` scenario is
+delivered by a new fragment delta
+`specs/fragments/repository-ownership-fixtures.feature` (removed + added
+scenario) and mirrored in `tests/steps/repository_ownership_fixtures_steps.rs`.
 
 ## Runner command, strict mode, single scenario
 
@@ -355,6 +401,11 @@ scenario failed. The scope value is written by the runner, never injected by
 Givn; Givn validates it against the expected scope, which keeps the
 reconciliation honest.
 
+The existing zero-scenario early exit in `run-tests.sh` keeps its behavior but,
+when `GIVN_RESULT_FILE` is set, it writes a `total: 0` result instead of
+silently exiting, so the archive reports the zero-scenario contract failure
+rather than a misleading missing result.
+
 ## Interaction Coverage Matrix
 
 | Inventory entry | @e2e scenario title | Real interface | Driving mechanism |
@@ -362,6 +413,12 @@ reconciliation honest.
 | archive a completed change | Consumer archives a completed change and receives a proven archive | CLI subprocess | `common::run_givn(env, ["archive", "--change", "proof-real"])` against a committed fixture |
 | repair a blocked archive | Consumer repairs a blocked archive and the rerun proves it | CLI subprocess | `common::run_givn(env, ["archive", "--change", "proof-repair"])` after a fixture repair commit |
 | inspect an unproven archive candidate | Consumer inspects an unproven archive candidate | CLI subprocess | `common::run_givn(env, ["status"])` reading the pending receipt |
+| archive a new capability | Consumer archives a new capability and the merged spec lands in its declared use case | CLI subprocess | `common::run_givn(env, ["archive", "--change", ...])` with a routed delta |
+| archive without routing | Archive is blocked when a new capability has no declared routing decision | CLI subprocess | same invocation with no routing row; asserts the block |
+| archive a multi-file change | Nothing is merged when one delta file of a change has no routing decision | CLI subprocess | same invocation with two delta files, one unrouted |
+| archive a modified scenario | Consumer archives a modified scenario and the permanent spec keeps the docstring | CLI subprocess | same invocation against a docstring-bearing delta |
+| archive with coverage | Consumer archives a change with coverage enabled and the coverage summary appears in README | CLI subprocess | same invocation with valid Cobertura-emitting coverage commands |
+| archive an E2E delta | Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner | CLI subprocess | same invocation with an `@e2e` delta and an unconfigured runner |
 
 The `givn instructions` route to the same inspection action is covered by a
 regular scenario (agent-facing projection of the same status).

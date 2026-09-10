@@ -3,7 +3,7 @@ Feature: Enforce Post-Merge E2E Gate
 
   @givn.modified @wip
   Scenario: Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured
-    Given a givn project with the e2e_command set to "true"
+    Given a givn project whose e2e_command reports scenario counts
     And a completed change "configured-e2e" whose delta contains an @e2e-tagged scenario and is ready to archive
     When the user runs `givn archive --change configured-e2e`
     Then the command exits 0
@@ -28,4 +28,5 @@ Feature: Enforce Post-Merge E2E Gate
     When the user invokes `givn archive --change real-e2e-merge`
     Then the command fails
     And stderr says the e2e runner is not configured for permanent specs with @e2e coverage
-    And the archived candidate at givn/archive/real-e2e-merge/ preserves the merged scenarios unproven
+    And the change directory still exists under givn/changes/
+    And no archive candidate exists for "real-e2e-merge"

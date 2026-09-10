@@ -5,7 +5,7 @@
 | # | Chapter | Affected? | Reason | Summary of change (if Yes) |
 |---|---|---|---|---|
 | 1 | 01 introduction-and-goals | No | The change does not alter product goals, stakeholders, or quality goals. | |
-| 2 | 02 architecture-constraints | Yes | Archive gains a Git prerequisite and a forward-only publication contract. | Added TC-31 and rewrote the archive gate bullet list. |
+| 2 | 02 architecture-constraints | Yes | Archive gains a Git prerequisite and a forward-only publication contract. | Added TC-31 (forward-only Git-backed publication) and TC-32 (project must be the repository root); rewrote the archive gate bullet list. |
 | 3 | 03 context-and-scope | Yes | Local Git becomes a first-class external entity and the runner gains `GIVN_RESULT_FILE`; the archive directory output includes the receipt. | External-entities, interface, and output rows updated. |
 | 4 | 04 solution-strategy | Yes | The archive publication strategy and the review gate strategy change. | Added the archive-publication strategy row; updated the review mandatory checks. |
 | 5 | 05 building-block-view | Yes | New `git` and `proof` modules; archive/check/status/state responsibilities change. | Added two building blocks and updated the responsibility table. |

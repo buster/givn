@@ -25,3 +25,12 @@ Feature: Extract Coverage Gate
     And the archive at givn/archive/cov-fail/ is unproven
     And the merged permanent specs preserve the delta scenarios
     And no archive backup exists for "cov-fail"
+
+  @givn.added @wip
+  Scenario: A coverage failure proves on rerun after the repair
+    Given an unproven archive candidate "cov-repair" whose coverage gate failed
+    And the developer commits a repair
+    And the coverage commands now succeed
+    When the user runs `givn archive --change cov-repair`
+    Then the command exits 0
+    And the archive at givn/archive/cov-repair/ is proven
