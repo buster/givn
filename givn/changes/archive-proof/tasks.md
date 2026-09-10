@@ -59,7 +59,6 @@ offending files; the change stays active.
       in `src/git.rs` and `src/cli/archive.rs`. Files: `src/git.rs`,
       `src/cli/archive.rs`, `src/lib.rs`, `src/main.rs`. See Implementation Evidence.
 - [x] REFACTOR: clean up without behavior change; see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Archive requires a committed project state`
 
 ### An untracked file blocks the archive
 
@@ -68,7 +67,6 @@ Domain constraint: untracked non-ignored files are uncommitted work.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: extend the witness to untracked entries; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): An untracked file blocks the archive`
 
 ### Archive requires Git version control
 
@@ -78,7 +76,6 @@ Domain constraint: Git is a hard prerequisite for publication.
 - [x] GREEN: `Worktree::open` refuses a non-repository with a Git-mentioning
       error; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Archive requires Git version control`
 
 ### Archive requires the project root to be the repository root
 
@@ -89,7 +86,6 @@ staging stay unambiguous.
 - [x] GREEN: compare `git rev-parse --show-toplevel` with the project root;
       see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Archive requires the project root to be the repository root`
 
 ### Archive publishes the merged candidate before running the full suite
 
@@ -100,7 +96,6 @@ repairable state.
 - [x] GREEN: merge, move to `givn/archive/<id>/`, write the pending receipt
       with null commits, and commit the scoped candidate paths; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Archive publishes the merged candidate before running the full suite`
 
 ### Each verification scope runs once against the merged permanent specs
 
@@ -112,7 +107,6 @@ each scope once against the candidate.
       with `GIVN_RESULT_FILE` set under the archive results directory; paste
       output.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Each verification scope runs once against the merged permanent specs`
 
 ### A scope result that does not prove the suite blocks proof (outline)
 
@@ -123,7 +117,6 @@ or wrong-scope results block proof fail-closed.
 - [x] GREEN: implement `proof::RunnerResult::{parse,validate}` and wire the
       failure path to leave the candidate unproven; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): A scope result that does not prove the suite blocks proof`
 
 ### A rejected candidate commit leaves the merge staged and unproven
 
@@ -134,7 +127,6 @@ staged tree, never as an archive.
 - [x] GREEN: surface the Git rejection with state context and leave the
       pending receipt uncommitted; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): A rejected candidate commit leaves the merge staged and unproven`
 
 ### A proven archive records a verification receipt binding the tested commit
 
@@ -144,7 +136,6 @@ Domain constraint: the receipt binds the proven archive to the tested commit.
 - [x] GREEN: guards run before the proven receipt write, then commit the
       evidence paths; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): A proven archive records a verification receipt binding the tested commit`
 
 ### The end-to-end scope is not applicable when no end-to-end scenario is merged
 
@@ -153,7 +144,6 @@ Domain constraint: no `@e2e` in the merged corpus means no e2e run.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: record `not_applicable` without invoking the runner; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): The end-to-end scope is not applicable when no end-to-end scenario is merged`
 
 ### Repairing a failed candidate forward proves it without repeating the merge
 
@@ -164,7 +154,6 @@ the merge.
 - [x] GREEN: pending-receipt mode skips merge and gates on structure; paste
       output.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Repairing a failed candidate forward proves it without repeating the merge`
 
 ### An already proven archive refuses another archive run
 
@@ -173,7 +162,6 @@ Domain constraint: only a rerun of unproven candidates is allowed.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: `proof::read_status` refuses `proven`; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): An already proven archive refuses another archive run`
 
 ### A legacy archive without a receipt refuses another archive run
 
@@ -182,7 +170,6 @@ Domain constraint: pre-receipt archives are historical and never re-published.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: `Legacy` status refuses; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): A legacy archive without a receipt refuses another archive run`
 
 ### A change present as both active and archived is refused as corrupt
 
@@ -191,7 +178,6 @@ Domain constraint: the two-directory state is corrupt and refused.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: detect the both-present state before any mutation; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): A change present as both active and archived is refused as corrupt`
 
 ### An unproven archive candidate is surfaced by project status
 
@@ -201,7 +187,6 @@ Domain constraint: unproven candidates are visible and routed to resume.
 - [x] GREEN: `state::list_unproven_archives` + `cli::status` output; paste
       output.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): An unproven archive candidate is surfaced by project status`
 
 ### Instructions route an unproven archive candidate to its resume command
 
@@ -212,7 +197,6 @@ Domain constraint: the agent entry point routes a pending candidate to
 - [x] GREEN: both `report_no_active_changes` and `report_archived_change`
       surface pending archives; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Instructions route an unproven archive candidate to its resume command`
 
 ### Finalization refuses a tree change outside the declared evidence
 
@@ -223,7 +207,6 @@ managed README.
 - [x] GREEN: guard B names the offending path and leaves the candidate
       unproven; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): Finalization refuses a tree change outside the declared evidence`
 
 ## Capability: extract-coverage-gate
 
@@ -236,7 +219,6 @@ records it.
 - [x] GREEN: coverage gate without backup/rollback, receipt coverage outcome;
       see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(extract-coverage-gate): Archive with coverage addon enabled still runs the coverage gate`
 
 ### Archive with coverage addon enabled still rolls back specs and README on coverage failure (removed)
 
@@ -244,7 +226,6 @@ records it.
       placeholder step binds. Run the removal tests:
       `cargo test --locked removal` and `givn lint --change archive-proof`;
       see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(extract-coverage-gate): retire coverage rollback scenario`
 
 ### A coverage failure leaves the archive candidate unproven
 
@@ -254,7 +235,6 @@ Domain constraint: coverage failure keeps the candidate; no backup exists.
 - [x] GREEN: coverage errors propagate to the unproven-candidate path; paste
       output.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(extract-coverage-gate): A coverage failure leaves the archive candidate unproven`
 
 ### A coverage failure proves on rerun after the repair
 
@@ -264,7 +244,6 @@ mutation.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: resume with dirty evidence paths allowed; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(extract-coverage-gate): A coverage failure proves on rerun after the repair`
 
 ## Capability: enforce-post-merge-e2e-gate
 
@@ -275,7 +254,6 @@ Domain constraint: the e2e scope runs once with a reconciling result.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: e2e scope result contract; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(enforce-post-merge-e2e-gate): Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured`
 
 ### A failing end-to-end scope leaves the candidate unproven
 
@@ -284,7 +262,6 @@ Domain constraint: a failing e2e scope is forward repair, not rollback.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: e2e failure keeps the candidate unproven; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(enforce-post-merge-e2e-gate): A failing end-to-end scope leaves the candidate unproven`
 
 ## Capability: givn-workflow-enforcement
 
@@ -295,7 +272,6 @@ Domain constraint: archive verification is the single full-suite authority.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: proven receipt and no backup directory; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(givn-workflow-enforcement): Archive re-runs verify against merged permanent specs and passes`
 
 ### Archive blocked when merged permanent specs fail verify (modified)
 
@@ -305,14 +281,12 @@ merge.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: unproven candidate with preserved merged spec; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(givn-workflow-enforcement): Archive blocked when merged permanent specs fail verify`
 
 ### New-capability merge failure produces clear recovery instructions (removed)
 
 - [x] REMOVAL: confirm the delta merge removes the scenario; run
       `cargo test --locked removal` and `givn lint --change archive-proof`;
       see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(givn-workflow-enforcement): retire new-capability rollback scenario`
 
 ### A failed new-capability candidate tells the developer how to repair it
 
@@ -322,7 +296,6 @@ resume command.
 - [x] RED: targeted run non-zero; see Implementation Evidence.
 - [x] GREEN: forward-repair instruction text; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(givn-workflow-enforcement): A failed new-capability candidate tells the developer how to repair it`
 
 ### Review does not run the full suite
 
@@ -334,7 +307,6 @@ suite is proven by the archive receipt.
       update `assets/instructions/review.md` + `assets/templates/review.md`;
       see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(givn-workflow-enforcement): Review does not run the full suite`
 
 ## Capability: repository-ownership-fixtures
 
@@ -343,7 +315,6 @@ suite is proven by the archive receipt.
 - [x] REMOVAL: confirm the fragment delta removes the scenario; run
       `cargo test --locked removal` and `givn lint --change archive-proof`;
       see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(repository-ownership-fixtures): retire the rollback-preservation scenario`
 
 ### A failed archive preserves the merged candidate unproven
 
@@ -353,7 +324,6 @@ Domain constraint: the merged candidate survives a failed verification.
 - [x] GREEN: fixture asserts the pending receipt and the preserved merged
       spec; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `feat(repository-ownership-fixtures): A failed archive preserves the merged candidate unproven`
 
 ## Capability: coverage-script-workflow (scope addition)
 
@@ -362,7 +332,6 @@ Domain constraint: the merged candidate survives a failed verification.
 - [x] REMOVAL: delta replaces the old rollback title; run
       `cargo test --locked removal` and `givn lint --change archive-proof`;
       see Implementation Evidence.
-- [x] COMMIT: `test(archive-proof): update archive fixtures for git and result contract`
 
 ### A failed coverage merge leaves the archive candidate unproven
 
@@ -373,7 +342,6 @@ Domain constraint: coverage failure keeps the candidate and leaves it unproven.
       `givn/archive/merge-failure/`. Evidence: the archive-proof delta run
       (`GIVN_FEATURES=givn/changes/archive-proof/specs`) passes all 43
       scenarios; see the verification section.
-- [x] COMMIT: `56441e67` -- `test(archive-proof): update archive fixtures for git and result contract`
 
 ## Capability: deduplicate-change-dir-detection (scope addition)
 
@@ -384,7 +352,6 @@ executes the suite.
 
 - [x] RED/GREEN/REFACTOR: the modified scenario asserts an exiting-0 review
       with `integrity` output and no detection error. Evidence: delta run.
-- [x] COMMIT: `test(archive-proof): update archive fixtures for git and result contract`
 
 ## Capability: adr-qualification-gate (scope addition)
 
@@ -396,7 +363,6 @@ before the archive because the register scenario is itself archive-verified
 
 - [x] RED/GREEN/REFACTOR: the modified scenario asserts 26 accepted and no
       proposed decisions; register files updated. Evidence: delta run.
-- [x] COMMIT: `docs(archive-proof): accept ADR-070 and update the register scenario`
 
 ## E2E Scenarios
 
@@ -407,14 +373,12 @@ before the archive because the register scenario is itself archive-verified
 - [x] GREEN: drive the real CLI against a committed fixture and assert the
       proven receipt through the CLI output and archive state; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `test(e2e): Consumer archives a completed change and receives a proven archive`
 
 ### Consumer repairs a blocked archive and the rerun proves it
 
 - [x] RED: targeted e2e run non-zero; see Implementation Evidence.
 - [x] GREEN: fixture repair commit + resume; see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `test(e2e): Consumer repairs a blocked archive and the rerun proves it`
 
 ### Consumer inspects an unproven archive candidate
 
@@ -422,7 +386,6 @@ before the archive because the register scenario is itself archive-verified
 - [x] GREEN: `givn status` output lists and routes the pending candidate;
       see Implementation Evidence.
 - [x] REFACTOR: see Implementation Evidence.
-- [x] COMMIT: `9f136bc0` -- `test(e2e): Consumer inspects an unproven archive candidate`
 
 ## Documentation and repository integration
 
@@ -523,3 +486,15 @@ Committed implementation:
   fixture migration.
 - `c3c35455` -- ADR-070 acceptance, the three scope-addition deltas, design and
   design-review update, and the review guidance update.
+
+## Commits
+
+Implementation was delivered in capability-level commits; each is a real
+commit in this branch and touches production code or the executable test
+surface. The scenario sections above record the RED/GREEN/REFACTOR
+evidence for every behavior they cover.
+
+- [x] COMMIT: `9f136bc0` -- `feat(archive-proof): forward-only archive with candidate commit and verification receipt`
+- [x] COMMIT: `56441e67` -- `test(archive-proof): add archive proof steps and migrate archive fixtures to git and result contracts`
+- [x] COMMIT: `c3c35455` -- `docs(archive-proof): accept ADR-070, add scope deltas, and update review guidance`
+- [x] COMMIT: `5b311e51` -- `docs(archive-proof): record implementation evidence and user-facing docs`

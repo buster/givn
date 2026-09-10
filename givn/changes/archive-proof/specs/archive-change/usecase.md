@@ -45,8 +45,7 @@ The developer archives a reviewed change.
 
 - A use-case replacement must match its recorded base revision.
 - Feature behavior is never silently dropped.
-- Only a proven archive is complete; an unproven candidate is never reported
-  as proven.
+- Only a proven archive is complete; an unproven candidate is never reported as proven.
 - A rerun resumes an unproven candidate and refuses a proven archive.
 
 ## Examples
