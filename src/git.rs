@@ -80,8 +80,27 @@ impl Worktree {
         if paths.is_empty() {
             bail!("archive blocked: refusing to commit with no paths");
         }
+        // Evidence may legitimately be gitignored (for example coverage
+        // reports). Stage only paths that exist and are not ignored.
+        let mut stageable = Vec::new();
+        for path in paths {
+            if !self.root.join(path).exists() {
+                continue;
+            }
+            let ignore = run_git(&self.root, &["check-ignore", "-q", "--", path])?;
+            if ignore.status.success() {
+                continue;
+            }
+            stageable.push(path.clone());
+        }
+        if stageable.is_empty() {
+            bail!(
+                "archive blocked: no stageable evidence paths (all missing or gitignored): {}",
+                paths.join(", ")
+            );
+        }
         let mut add = vec!["add".to_string(), "--".to_string()];
-        add.extend(paths.iter().cloned());
+        add.extend(stageable);
         let add_refs: Vec<&str> = add.iter().map(String::as_str).collect();
         let add_output = run_git(&self.root, &add_refs)?;
         if !add_output.status.success() {
@@ -154,6 +173,51 @@ mod tests {
         assert_eq!(
             paths,
             vec![PathBuf::from("new.md"), PathBuf::from("old.md")]
+        );
+    }
+
+    #[test]
+    fn commit_skips_gitignored_evidence_paths() {
+        let root = tempfile::TempDir::new().unwrap();
+        let run = |args: &[&str]| {
+            let out = Command::new("git")
+                .args(args)
+                .current_dir(root.path())
+                .output()
+                .unwrap();
+            assert!(
+                out.status.success(),
+                "git {} failed: {}",
+                args.join(" "),
+                String::from_utf8_lossy(&out.stderr)
+            );
+        };
+        run(&["init", "-q"]);
+        run(&["config", "user.email", "t@example.com"]);
+        run(&["config", "user.name", "T"]);
+        std::fs::write(root.path().join(".gitignore"), "coverage/\n").unwrap();
+        std::fs::write(root.path().join("README.md"), "readme\n").unwrap();
+        run(&["add", "-A"]);
+        run(&["commit", "-q", "-m", "init"]);
+
+        std::fs::create_dir_all(root.path().join("coverage")).unwrap();
+        std::fs::write(root.path().join("coverage/report.xml"), "x").unwrap();
+        std::fs::write(root.path().join("README.md"), "updated\n").unwrap();
+
+        let worktree = Worktree::open(root.path()).unwrap();
+        worktree
+            .commit(
+                "chore: evidence",
+                &["README.md".to_string(), "coverage/report.xml".to_string()],
+            )
+            .unwrap();
+
+        let names = run_git(root.path(), &["show", "--name-only", "--format=", "HEAD"]).unwrap();
+        let names = String::from_utf8_lossy(&names.stdout);
+        assert!(names.contains("README.md"));
+        assert!(
+            !names.contains("coverage/report.xml"),
+            "ignored evidence must not be committed: {names}"
         );
     }
 }
