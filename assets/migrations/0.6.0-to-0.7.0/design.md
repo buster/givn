@@ -1,7 +1,7 @@
 # Migration Design: 0.6.0 to 0.7.0 (archive proof)
 
-This bundle is the project-specific phase of the {{SOURCE_VERSION}} →
-{{TARGET_VERSION}} upgrade. Managed preparation was recorded in Commit A
+This bundle is the project-specific 0.6.0 → 0.7.0 phase (Phase N in the
+aggregate plan). Managed preparation was recorded in Commit A
 `{{UPGRADE_COMMIT}}`. Read this file completely before editing anything.
 
 ## When this applies
@@ -35,10 +35,11 @@ row per scope:
 | regular | `verify.command` | | |
 | e2e | `verify.e2e_command` (if configured) | | |
 
-Skip the e2e row only when `verify.e2e_command` is empty or the sentinel, and
-state that explicitly. An `@e2e` scenario with no configured runner still
-blocks the archive; if the project has `@e2e` scenarios, configure the runner
-as part of this migration.
+Skip the e2e row only when `verify.e2e_command` is empty or the sentinel
+(`givn missing-e2e-runner`), and state that explicitly. An `@e2e` scenario
+with no configured runner still blocks the archive before any change is
+published; if the project has `@e2e` scenarios, configure the runner as part
+of this migration.
 
 ## Phase 2: emit the runner result
 
@@ -70,11 +71,14 @@ How to get counts per runner family:
 - **cucumber-rs**: run the world with the default `Summarize` writer and read
   `scenarios_stats()` (`total()`, `passed`, `failed`, `skipped`) after the run;
   write the JSON before exiting with the failure code.
-- **cucumber-js**: run with `--format json:<file>`, then count scenario
-  statuses from the JSON report in a small Node script and write the result.
-- **behave**: run with `--format json --outfile <file>`, map the per-scenario
-  `status` values (`passed`/`failed`/`skipped`), and write the result. Do not
-  use `--format plain` and count lines.
+- **cucumber-js**: run with `--format json:<file>`, then derive scenario
+  statuses from the report's step results (a scenario is `passed` when every
+  step passed, `failed` when any step failed, `skipped` when it was not
+  executed) in a small Node script and write the result.
+- **behave**: run with `--format json --outfile <file>` and derive each
+  scenario's status from its steps (a scenario is `passed` when every step
+  passed, `failed` when any step failed, `skipped` when it was not executed),
+  then write the result. Do not use `--format plain` and count lines.
 - **pytest / unittest**: run with `--junitxml` or the JSON reporter, parse the
   report, and write the result.
 - **Other runners**: switch the invocation to the runner's machine-readable
@@ -86,7 +90,9 @@ the project's real count source):
 
 ```sh
 #!/bin/sh
+scope=regular  # use e2e in the script behind verify.e2e_command
 # ... existing runner invocation, captured so counts can be read ...
+runner_status=$?
 result_file="${GIVN_RESULT_FILE:-}"
 if [ -n "$result_file" ]; then
     # TODO: replace with the runner's real counts (never hardcode).
@@ -111,8 +117,9 @@ commands file and the README development managed block through the normal
 
 - The project root must equal `git rev-parse --show-toplevel`.
 - Commit the migration work; the archive starts from a committed state. Only
-  declared evidence paths (the target archive directory, `README.md`, and the
-  configured coverage paths) may be dirty.
+  declared evidence paths may be dirty: the target archive directory always,
+  `README.md` when the readme addon is enabled, and the configured coverage
+  paths when the coverage addon is enabled.
 - Legacy archives without `verification.json` stay historical and are never
   re-published; do not fabricate receipts for them.
 - `givn check review` no longer runs the suite. Record the review evidence
@@ -144,8 +151,11 @@ commands file and the README development managed block through the normal
 - The project is a Git worktree whose root is the project root, and the
   migration work is committed.
 - No specification or product behavior changed in this migration.
-- The first archive after the migration is proven, or its failure is repaired
-  forward and the receipt records the tested commit.
+- The first archive after the migration is proven. If it fails after the
+  candidate commit, the change is already in `givn/archive/<id>/` with a
+  `pending` receipt: repair the committed state, then rerun
+  `givn archive --change <id>` (do not recreate the merge). `givn status`
+  lists the unproven candidate and routes to the resume command.
 
 ## Evidence files
 
