@@ -19,9 +19,9 @@ Feature: Project-owned coverage workflow
     And the README coverage summary contains line coverage `95% (95/100)` and branch coverage `95% (19/20)`
     And the README coverage summary links the merged report and names the configured scripts
 
-  Scenario: A failed merge command blocks archive and preserves the project
-    Given a givn project with a failing coverage merge command
-    And a completed change "merge-failure" with all required artifacts
-    When the user archives the change
-    Then the archive fails because coverage merging failed
-    And the change remains under givn/changes/
+  Scenario: A failed coverage merge leaves the archive candidate unproven
+    Given  a givn project with a failing coverage merge command
+    And  a completed change "merge-failure" with all required artifacts
+    When  the user archives the change
+    Then  the archive fails because coverage merging failed
+    And  the archive at givn/archive/merge-failure/ is unproven

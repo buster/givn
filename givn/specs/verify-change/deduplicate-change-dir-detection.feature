@@ -1,12 +1,14 @@
 Feature: Deduplicate Change Directory Detection
 
   Scenario: Integrity hook resolves the change directory from a relative features path inside givn/changes
-    Given a project root with givn/ initialised
-    And a change "detect-demo" exists with artifact "proposal.md"
-    And a change "detect-demo" exists with specs under "specs/"
-    And the project declares a complete run declaration
-    When the user runs `givn check review --change detect-demo`
-    Then the command exits non-zero
+    Given  a project root with givn/ initialised
+    And  a change "detect-demo" exists with artifact "proposal.md"
+    And  a change "detect-demo" exists with specs under "specs/"
+    And  the project declares a complete run declaration
+    When  the user runs `givn check review --change detect-demo`
+    Then  the command exits 0
+    And  stdout contains "integrity"
+    And  stdout does not contain "the change directory could not be detected"
 
   Scenario: Verify-e2e hook resolves the change directory from a relative features path inside givn/changes
     Given a project root with givn/ initialised

@@ -18,10 +18,10 @@ Feature: Repository-wide ownership fixtures
     And the fixture permanent specification tree contains "Canonical retained behavior"
     And the fixture permanent specification tree does not contain "Obsolete behavior"
 
-  @e2e
-  Scenario: Pre-merge archive failure preserves the permanent specification tree
-    Given an isolated ownership fixture with a failing pre-merge archive hook
-    And the project declares a complete run declaration
-    When the maintainer runs `givn archive --change fixture-consolidation`
-    Then the fixture command fails
-    And the fixture permanent specification tree remains unchanged
+  Scenario: A failed archive preserves the merged candidate unproven
+    Given  an isolated ownership fixture with a failing verification command
+    And  the project declares a complete run declaration
+    When  the maintainer runs `givn archive --change fixture-consolidation`
+    Then  the fixture command fails
+    And  the fixture archive candidate for "fixture-consolidation" is unproven
+    And  the fixture permanent specification tree contains "Canonical retained behavior"
