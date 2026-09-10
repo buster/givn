@@ -70,6 +70,10 @@ place."
 | extract-coverage-gate | flat ranking | `EXTEND extract-coverage-gate` | Coverage failure changes from corpus rollback to an unproven candidate; coverage still runs once at archive. |
 | enforce-post-merge-e2e-gate | flat ranking | `EXTEND enforce-post-merge-e2e-gate` | The post-merge E2E scope now runs against the archive candidate; rollback is replaced by forward repair. |
 | givn-workflow-enforcement | flat ranking | `EXTEND givn-workflow-enforcement` | Archive verification moves to the candidate model and `givn check review` no longer runs the full suite. |
+| repository-ownership-fixtures | flat ranking | `NEW in fragments` | The fixture's rollback-preservation scenario is replaced by candidate preservation. |
+| coverage-script-workflow | flat ranking | `NEW in fragments` | The merge-failure scenario now asserts the unproven candidate. |
+| deduplicate-change-dir-detection | flat ranking | `EXTEND deduplicate-change-dir-detection` | The review scenario no longer expects suite execution. |
+| adr-qualification-gate | flat ranking | `NEW in fragments` | The consolidated-register scenario counts the accepted ADR-070. |
 
 ## Out of Scope
 
