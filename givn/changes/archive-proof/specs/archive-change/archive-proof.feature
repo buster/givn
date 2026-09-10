@@ -1,7 +1,7 @@
 @givn.delta @archive-proof
 Feature: Archive Proof
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive requires a committed project state
     Given a givn project with a completed change "proof-demo" ready to archive
     And the project has an uncommitted change to "src/lib.rs"
@@ -11,7 +11,7 @@ Feature: Archive Proof
     And the change directory still exists under givn/changes/
     And no archive candidate exists for "proof-demo"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An untracked file blocks the archive
     Given a givn project with a completed change "proof-demo" ready to archive
     And the project has an untracked file "notes.txt"
@@ -20,7 +20,7 @@ Feature: Archive Proof
     And stderr names "notes.txt"
     And the change directory still exists under givn/changes/
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive requires Git version control
     Given a givn project without Git version control
     And a completed change "proof-demo" with all required artifacts
@@ -30,7 +30,7 @@ Feature: Archive Proof
     And stderr mentions Git
     And the change directory still exists under givn/changes/
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive requires the project root to be the repository root
     Given a givn project nested inside a larger Git repository
     And a completed change "proof-demo" ready to archive
@@ -39,7 +39,7 @@ Feature: Archive Proof
     And stderr says the project root must be the repository root
     And the change directory still exists under givn/changes/
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive publishes the merged candidate before running the full suite
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite fails against the merged permanent specs
@@ -50,7 +50,7 @@ Feature: Archive Proof
     And the archive candidate is recorded as unproven
     And the candidate state is committed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Each verification scope runs once against the merged permanent specs
     Given a givn project with a completed change "proof-demo" whose delta adds an @e2e scenario
     And the runner records every invocation with its scope and features path
@@ -59,7 +59,7 @@ Feature: Archive Proof
     And the runner was invoked once for the regular scope with features path "givn/specs"
     And the runner was invoked once for the e2e scope with features path "givn/specs"
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A scope result that does not prove the suite blocks proof
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite passes but its runner result is <result>
@@ -79,7 +79,7 @@ Feature: Archive Proof
       | declaring zero scenarios      |
       | declaring the wrong scope     |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rejected candidate commit leaves the merge staged and unproven
     Given a givn project with a completed change "proof-demo" ready to archive
     And a commit hook rejects the archive candidate commit
@@ -89,7 +89,7 @@ Feature: Archive Proof
     And the merged state is staged but not committed
     And the archive candidate is recorded as unproven
 
-  @givn.added @wip
+  @givn.added
   Scenario: A proven archive records a verification receipt binding the tested commit
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite passes against the merged permanent specs
@@ -100,7 +100,7 @@ Feature: Archive Proof
     And the verification receipt records the regular scope scenario counts
     And the git history has a finalization commit after the tested commit
 
-  @givn.added @wip
+  @givn.added
   Scenario: The end-to-end scope is not applicable when no end-to-end scenario is merged
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite passes against the merged permanent specs
@@ -108,7 +108,7 @@ Feature: Archive Proof
     Then the command exits 0
     And the verification receipt records the end-to-end scope as not applicable
 
-  @givn.added @wip
+  @givn.added
   Scenario: Repairing a failed candidate forward proves it without repeating the merge
     Given an unproven archive candidate "proof-demo" whose full suite failed
     And the developer commits a repair
@@ -119,41 +119,41 @@ Feature: Archive Proof
     And each merged scenario appears exactly once in the permanent specs
     And the verification receipt names the repaired commit
 
-  @givn.added @wip
+  @givn.added
   Scenario: An already proven archive refuses another archive run
     Given a proven archive "proof-demo"
     When the user runs `givn archive --change proof-demo`
     Then the command exits non-zero
     And stderr says the archive is already proven
 
-  @givn.added @wip
+  @givn.added
   Scenario: A legacy archive without a receipt refuses another archive run
     Given a legacy archive "proof-demo" without a verification receipt
     When the user runs `givn archive --change proof-demo`
     Then the command exits non-zero
     And stderr says the archive is already archived
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change present as both active and archived is refused as corrupt
     Given a change "proof-demo" that exists both under givn/changes/ and givn/archive/
     When the user runs `givn archive --change proof-demo`
     Then the command exits non-zero
     And stderr says the project state is corrupt
 
-  @givn.added @wip
+  @givn.added
   Scenario: An unproven archive candidate is surfaced by project status
     Given an unproven archive candidate "proof-demo" whose full suite failed
     When the user runs `givn status`
     Then stdout lists "proof-demo" as an unproven archive
     And stdout routes the developer to `givn archive --change proof-demo`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Instructions route an unproven archive candidate to its resume command
     Given an unproven archive candidate "proof-demo" whose full suite failed
     When the user runs `givn instructions`
     Then stdout routes the developer to `givn archive --change proof-demo`
 
-  @givn.added @wip
+  @givn.added
   Scenario: Finalization refuses a tree change outside the declared evidence
     Given a givn project with a completed change "proof-demo" ready to archive
     And the full suite passes against the merged permanent specs
@@ -163,7 +163,7 @@ Feature: Archive Proof
     And stderr says the tested tree changed
     And the archive candidate is recorded as unproven
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer archives a completed change and receives a proven archive
     Given a committed givn project with a completed change "proof-real" ready to archive
     And the project reports scenario counts for every verification scope
@@ -171,7 +171,7 @@ Feature: Archive Proof
     Then the command succeeds
     And the archive at givn/archive/proof-real/ carries a proven verification receipt
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer repairs a blocked archive and the rerun proves it
     Given a committed givn project with an unproven archive candidate "proof-repair"
     And the developer commits a repair
@@ -180,7 +180,7 @@ Feature: Archive Proof
     Then the command succeeds
     And the archive at givn/archive/proof-repair/ carries a proven verification receipt
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Consumer inspects an unproven archive candidate
     Given a committed givn project with an unproven archive candidate "proof-pending"
     When the user invokes `givn status`

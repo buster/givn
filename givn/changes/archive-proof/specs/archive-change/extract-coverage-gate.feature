@@ -1,7 +1,7 @@
 @givn.delta @extract-coverage-gate
 Feature: Extract Coverage Gate
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive with coverage addon enabled still runs the coverage gate
     Given a givn project with the coverage addon enabled and valid coverage commands
     And a completed change "cov-demo" ready to archive
@@ -11,11 +11,11 @@ Feature: Extract Coverage Gate
     And the archive at givn/archive/cov-demo/ is proven
     And the verification receipt records the coverage result
 
-  @givn.removed @wip
+  @givn.removed
   Scenario: Archive with coverage addon enabled still rolls back specs and README on coverage failure
     Given a placeholder step
 
-  @givn.added @wip
+  @givn.added
   Scenario: A coverage failure leaves the archive candidate unproven
     Given a givn project with the coverage addon enabled but the non-e2e coverage command exits non-zero
     And a completed change "cov-fail" ready to archive
@@ -26,7 +26,7 @@ Feature: Extract Coverage Gate
     And the merged permanent specs preserve the delta scenarios
     And no archive backup exists for "cov-fail"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A coverage failure proves on rerun after the repair
     Given an unproven archive candidate "cov-repair" whose coverage gate failed
     And the developer commits a repair

@@ -1,7 +1,7 @@
 @givn.delta @enforce-post-merge-e2e-gate
 Feature: Enforce Post-Merge E2E Gate
 
-  @givn.modified @wip
+  @givn.modified
   Scenario: Archive runs e2e_command when merged permanent specs contain @e2e and e2e_command is configured
     Given a givn project whose e2e_command reports scenario counts
     And a completed change "configured-e2e" whose delta contains an @e2e-tagged scenario and is ready to archive
@@ -10,7 +10,7 @@ Feature: Enforce Post-Merge E2E Gate
     And stdout contains "Running e2e verification"
     And the verification receipt records the end-to-end scope scenario counts
 
-  @givn.added @wip
+  @givn.added
   Scenario: A failing end-to-end scope leaves the candidate unproven
     Given a givn project with the e2e_command set to "false"
     And a completed change "failing-e2e" whose delta contains an @e2e-tagged scenario and is ready to archive
@@ -20,7 +20,7 @@ Feature: Enforce Post-Merge E2E Gate
     And the archive at givn/archive/failing-e2e/ is unproven
     And the merged permanent specs preserve the delta scenarios
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario: Consumer archives a delta that adds e2e scenarios and is blocked without a configured runner
     Given a committed givn project with verify.e2e_command unconfigured in givn/config.yaml
     And a change "real-e2e-merge" with all artifacts done, whose delta spec has an @e2e scenario

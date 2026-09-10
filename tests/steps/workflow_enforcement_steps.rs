@@ -718,3 +718,101 @@ fn verify_command_did_not_run(world: &mut GivnWorld) {
         marker.display()
     );
 }
+
+#[given("a givn project with a completed change that introduces a brand-new capability")]
+fn change_new_capability(world: &mut GivnWorld) {
+    scaffold_init_root_change(world, "integrity-hook-and-archive-gate");
+    disable_coverage_addon(world);
+    let root = project_root(world);
+
+    // Remove any auto-created specs.
+    let specs_root = root.join("givn/specs");
+    if specs_root.exists() {
+        std::fs::remove_dir_all(&specs_root).unwrap();
+    }
+    std::fs::create_dir_all(&specs_root).unwrap();
+
+    let change = root.join("givn/changes/integrity-hook-and-archive-gate");
+    std::fs::write(
+        change.join("proposal.md"),
+        crate::steps::fixture_routing_proposal("new-cap"),
+    )
+    .unwrap();
+
+    // Delta for a new capability.
+    let specs_dir = change.join("specs").join("new-cap");
+    std::fs::create_dir_all(&specs_dir).unwrap();
+    std::fs::write(
+        specs_dir.join("new-cap.feature"),
+        "@givn.delta @new-cap\nFeature: New Capability\n\n  @givn.added\n  Scenario: New scenario\n    Given x\n    Then y\n",
+    ).unwrap();
+
+    std::fs::write(change.join("design.md"), "# Design\n").unwrap();
+    std::fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").unwrap();
+    std::fs::write(
+        change.join("tasks.md"),
+        "- [x] COMMIT: a1b2c3d4 -- Implement new capability\n",
+    )
+    .unwrap();
+    std::fs::write(
+        change.join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: noneREADME-IMPACT: none",
+    )
+    .unwrap();
+    std::fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").unwrap();
+
+    // Set verify to fail after merge (pass during gate hooks, fail post-merge).
+    set_verify_fails_post_merge(world);
+}
+
+#[then("the delta scenarios have been merged into givn/specs/")]
+fn delta_merged(world: &mut GivnWorld) {
+    let p = project_root(world).join("givn/specs");
+    assert!(p.is_dir(), "givn/specs does not exist");
+    // Check at least one .feature file exists under givn/specs/
+    let has_feature = std::fs::read_dir(&p)
+        .expect("read givn/specs")
+        .filter_map(|e| e.ok())
+        .any(|e| {
+            if e.file_type().map(|t| t.is_dir()).unwrap_or(false) {
+                std::fs::read_dir(e.path())
+                    .ok()
+                    .map(|rd| {
+                        rd.filter_map(|f| f.ok()).any(|f| {
+                            f.path()
+                                .extension()
+                                .map(|ext| ext == "feature")
+                                .unwrap_or(false)
+                        })
+                    })
+                    .unwrap_or(false)
+            } else {
+                false
+            }
+        });
+    assert!(has_feature, "no .feature files found under givn/specs/");
+}
+
+#[then("the migration comparison is marked failed")]
+fn migration_comparison_failed(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(
+        project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
+    )
+    .unwrap();
+    assert!(
+        content.contains("\"passed\": false"),
+        "comparison was not failed: {content}"
+    );
+}
+
+#[then("the migration comparison is marked passed")]
+fn migration_comparison_passed(world: &mut GivnWorld) {
+    let content = std::fs::read_to_string(
+        project_root(world).join("givn/changes/migration-test/coverage-comparison.json"),
+    )
+    .unwrap();
+    assert!(
+        content.contains("\"passed\": true"),
+        "comparison was not passed: {content}"
+    );
+}
