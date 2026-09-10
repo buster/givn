@@ -1,301 +1,306 @@
 use crate::config::overlay::load_effective;
 use crate::gherkin::merge::merge_file;
 use crate::gherkin::parse::collect_feature_files;
+use crate::proof::{ArchiveProof, SCOPE_E2E, SCOPE_REGULAR};
 use crate::state::{ArtifactStatus, ChangeState};
-use anyhow::{Result, bail};
+use anyhow::{Context, Result, bail};
 use gherkin::GherkinEnv;
 use sha2::{Digest, Sha256};
+use std::path::{Path, PathBuf};
 
-/// Archive a completed change.
+/// Which dirty-path message the witness uses.
+#[derive(Clone, Copy)]
+enum Witness {
+    /// Before publication: the project must be committed.
+    Project,
+    /// Before finalization: only evidence may be dirty.
+    Tested,
+}
+
+/// Archive a completed change (ADR-070, arc42 ch.6.7).
 ///
-/// Gate (ADR-028, arc42 ch.8.6):
-/// 1. Check apply.requires: all required artifacts must exist.
-/// 2. Check tasks complete (all [x]).
-/// 3. Check review PASS (if review is in apply.requires).
-/// 4. Run hooks of every apply.requires artifact.
-/// 5. Merge delta .feature files into givn/specs/.
-/// 6. Run coverage gate (if addons.coverage: true) — measures full-project
-///    coverage, updates README with a fenced coverage block. Auto-rollback
-///    if any step in the coverage pipeline fails.
-/// 7. Move change to givn/archive/<id>/.
+/// Forward-only publication:
+/// 1. Git worktree prerequisite and clean-state witness (evidence paths are
+///    exempt so a failed attempt stays resumable).
+/// 2. Fresh only: structural gates, merge, publish the candidate, and commit
+///    it with a pending receipt.
+/// 3. Run each verification scope once against the committed candidate and
+///    validate its fail-closed runner result.
+/// 4. Run the optional coverage gate.
+/// 5. Guard the tested commit, write the proven receipt, and commit the
+///    evidence-only finalization.
 ///
-/// All-or-nothing: if any step fails, abort and roll back.
+/// A failure after the candidate commit leaves the candidate unproven; the
+/// developer repairs the committed state and reruns the command.
 pub fn run(change: &str, verbose: bool) -> Result<()> {
     crate::subprocess::set_verbose(verbose);
     let project_root = std::env::current_dir()?;
-    let change_dir = crate::state::resolve_change_dir(&project_root, change)?;
-
-    if !change_dir.exists() {
-        bail!("change '{}' not found under givn/changes/", change);
-    }
-
-    // Check not already archived.
-    let archive_target = project_root.join("givn/archive").join(change);
-    if archive_target.exists() {
-        bail!("change '{}' is already archived", change);
-    }
-
     let manifest = load_effective()?;
-    let state = ChangeState::from_manifest(&change_dir, &manifest);
+    let change_dir = crate::state::resolve_change_dir(&project_root, change)?;
+    let archive_target = project_root.join("givn/archive").join(change);
+    let specs_dir = project_root.join("givn/specs");
 
-    println!(
-        "[{}] Archiving change '{change}'...",
-        crate::subprocess::local_timestamp()
-    );
+    let worktree = crate::git::Worktree::open(&project_root)?;
 
-    // === Gate checks (manifest-aware) ===
+    let fresh = match crate::proof::read_status(&project_root, change) {
+        ArchiveProof::Corrupt => bail!(
+            "archive blocked: project state is corrupt — 'givn/changes/{change}' and \
+             'givn/archive/{change}' both exist"
+        ),
+        ArchiveProof::Proven => bail!("archive blocked: '{change}' is already proven"),
+        ArchiveProof::Legacy => bail!("change '{change}' is already archived"),
+        ArchiveProof::Pending => {
+            println!(
+                "[{}] Resuming unproven archive candidate '{change}'...",
+                crate::subprocess::local_timestamp()
+            );
+            false
+        }
+        ArchiveProof::None => {
+            if !change_dir.exists() {
+                bail!("change '{}' not found under givn/changes/", change);
+            }
+            true
+        }
+    };
 
-    // 1. Check all apply.requires artifacts are Done (or Skipped).
-    for req in &manifest.apply.requires {
-        let artifact_state = state.artifacts.iter().find(|a| a.id == *req);
-        match artifact_state {
-            None => bail!(
-                "archive blocked: required artifact '{}' not found in manifest",
-                req
-            ),
-            Some(a) if a.status == ArtifactStatus::Skipped => {}
-            Some(a) if a.status == ArtifactStatus::Pending => bail!(
-                "archive blocked: required artifact '{}' does not exist for change '{}'",
-                req,
-                change
-            ),
-            Some(a) if a.status == ArtifactStatus::Partial => {
-                if let Some(ref p) = a.tasks_progress {
+    // Clean-state witness: evidence paths left by a failed attempt stay
+    // resumable; anything else is uncommitted work.
+    ensure_clean(
+        &worktree,
+        &project_root,
+        change,
+        &manifest,
+        Witness::Project,
+    )?;
+
+    if fresh {
+        println!(
+            "[{}] Archiving change '{change}'...",
+            crate::subprocess::local_timestamp()
+        );
+
+        // 1. Every apply.requires artifact must be Done (or Skipped).
+        let state = ChangeState::from_manifest(&change_dir, &manifest);
+        for req in &manifest.apply.requires {
+            let artifact_state = state.artifacts.iter().find(|a| a.id == *req);
+            match artifact_state {
+                None => bail!(
+                    "archive blocked: required artifact '{}' not found in manifest",
+                    req
+                ),
+                Some(a) if a.status == ArtifactStatus::Skipped => {}
+                Some(a) if a.status == ArtifactStatus::Pending => bail!(
+                    "archive blocked: required artifact '{}' does not exist for change '{}'",
+                    req,
+                    change
+                ),
+                Some(a) if a.status == ArtifactStatus::Partial => {
+                    if let Some(ref p) = a.tasks_progress {
+                        bail!(
+                            "archive blocked: tasks not complete ({}/{} done)",
+                            p.done,
+                            p.total
+                        );
+                    }
                     bail!(
-                        "archive blocked: tasks not complete ({}/{} done)",
-                        p.done,
-                        p.total
+                        "archive blocked: artifact '{}' is incomplete. \
+                         Ensure the sign-off marker is present \
+                         (e.g. 'DESIGN-REVIEW: PASS' or 'REVIEW: PASS').",
+                        req
+                    );
+                }
+                _ => {}
+            }
+        }
+
+        // 2. Configured archive hooks.
+        let features_path = if crate::state::is_skipped("specs", &change_dir) {
+            manifest.verify.features_path.clone()
+        } else {
+            change_dir.join("specs").to_string_lossy().into_owned()
+        };
+        println!(
+            "[{}] Running archive gate hooks...",
+            crate::subprocess::local_timestamp()
+        );
+        crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
+        println!(
+            "[{}] ✓ Gate hooks passed",
+            crate::subprocess::local_timestamp()
+        );
+
+        // 3. Run declaration gate, before the README gate.
+        {
+            let findings = crate::cli::run_block::check_run(&manifest);
+            if !findings.is_empty() {
+                println!(
+                    "archive blocked: run declaration has {} finding(s):",
+                    findings.len()
+                );
+                for finding in &findings {
+                    println!(
+                        "  [{}] {}",
+                        crate::cli::run_block::label(finding.kind),
+                        finding.message
                     );
                 }
                 bail!(
-                    "archive blocked: artifact '{}' is incomplete. \
-                     Ensure the sign-off marker is present \
-                     (e.g. 'DESIGN-REVIEW: PASS' or 'REVIEW: PASS').",
-                    req
+                    "archive blocked: finish the run declaration in givn/commands.yaml — \
+                     see the findings above"
                 );
             }
-            _ => {}
-        }
-    }
-
-    // 4. Run hooks of all apply.requires artifacts.
-    let features_path = if crate::state::is_skipped("specs", &change_dir) {
-        manifest.verify.features_path.clone()
-    } else {
-        change_dir.join("specs").to_string_lossy().into_owned()
-    };
-    println!(
-        "[{}] Running archive gate hooks...",
-        crate::subprocess::local_timestamp()
-    );
-    crate::hooks::run_archive_gate_hooks(&manifest, &features_path)?;
-    println!(
-        "[{}] ✓ Gate hooks passed",
-        crate::subprocess::local_timestamp()
-    );
-
-    // Run declaration gate: the project must declare a complete, configured
-    // run block in givn/commands.yaml. Runs before the README gate so the
-    // finding order matches `givn check review`.
-    {
-        let findings = crate::cli::run_block::check_run(&manifest);
-        if !findings.is_empty() {
             println!(
-                "archive blocked: run declaration has {} finding(s):",
-                findings.len()
+                "[{}] ✓ run declaration passed",
+                crate::subprocess::local_timestamp()
             );
-            for finding in &findings {
+        }
+
+        // 4. README completeness gate.
+        if manifest.addons.readme {
+            let findings = crate::cli::readme::check_readme(&project_root);
+            if !findings.is_empty() {
                 println!(
-                    "  [{}] {}",
-                    crate::cli::run_block::label(finding.kind),
-                    finding.message
+                    "archive blocked: README check found {} finding(s):",
+                    findings.len()
+                );
+                for finding in &findings {
+                    println!("  [{}] {}", finding_label(finding.kind), finding.message);
+                }
+                bail!(
+                    "archive blocked: finish the README before archiving — see the README\
+                     check report above"
                 );
             }
-            bail!(
-                "archive blocked: finish the run declaration in givn/commands.yaml — \
-                 see the findings above"
-            );
-        }
-        println!(
-            "[{}] ✓ run declaration passed",
-            crate::subprocess::local_timestamp()
-        );
-    }
-
-    // README completeness gate (readme addon enabled): no open placeholders,
-    // no remnants, no managed-block damage, an existing managed README. Runs
-    // before any mutation, so a blocked archive needs no rollback.
-    if manifest.addons.readme {
-        let findings = crate::cli::readme::check_readme(&project_root);
-        if !findings.is_empty() {
             println!(
-                "archive blocked: README check found {} finding(s):",
-                findings.len()
-            );
-            for finding in &findings {
-                println!("  [{}] {}", finding_label(finding.kind), finding.message);
-            }
-            bail!(
-                "archive blocked: finish the README before archiving — see the README check report above"
+                "[{}] ✓ README completeness gate passed",
+                crate::subprocess::local_timestamp()
             );
         }
-        println!(
-            "[{}] ✓ README completeness gate passed",
-            crate::subprocess::local_timestamp()
-        );
-    }
 
-    // Backup permanent specs and README before merge/coverage.
-    // Always create a backup marker even if specs_dir doesn't exist yet,
-    // so rollback can distinguish "nothing to restore" from "merge created
-    // specs_dir and then failed".
-    let specs_dir = project_root.join("givn/specs");
-    let readme_path = project_root.join("README.md");
-    let backup_id = format!(".archive-backup-{change}");
-    let backup_dir = project_root.join("givn").join(&backup_id);
-    let backup_specs = backup_dir.join("specs");
-    let backup_marker = backup_dir.join(".backup-state");
-    std::fs::create_dir_all(&backup_dir)?;
+        // 5. Merge preconditions: use-case base revisions and delta parsing.
+        validate_usecase_documents(&project_root, change)?;
 
-    if specs_dir.exists() {
-        std::fs::create_dir_all(&backup_specs)?;
-        copy_dir_all(&specs_dir, &backup_specs)?;
-        std::fs::write(&backup_marker, "present")?;
-        println!(
-            "  backed up {} → {}",
-            specs_dir.display(),
-            backup_specs.display()
-        );
-    } else {
-        std::fs::write(&backup_marker, "absent")?;
-    }
-    if readme_path.exists() {
-        let backup_readme = backup_dir.join("README.md");
-        std::fs::copy(&readme_path, &backup_readme)?;
-    }
+        let delta_feature_dir = change_dir.join("specs");
+        let mut parsed: Vec<(PathBuf, gherkin::Feature)> = Vec::new();
+        if delta_feature_dir.exists() {
+            for delta_path in collect_feature_files(&delta_feature_dir) {
+                let env = GherkinEnv::default();
+                let delta_feature = gherkin::Feature::parse_path(&delta_path, env).map_err(|e| {
+                    anyhow::anyhow!(
+                        "failed to parse delta feature '{}': {}",
+                        delta_path.display(),
+                        e
+                    )
+                })?;
+                if let Some(wip_msg) = crate::gherkin::delta::find_wip_in_feature(&delta_feature) {
+                    bail!(
+                        "archive blocked: {} in '{}' — remove @wip from completed scenarios",
+                        wip_msg,
+                        delta_path.display(),
+                    );
+                }
+                parsed.push((delta_path, delta_feature));
+            }
+            for (delta_path, delta_feature) in &parsed {
+                if crate::gherkin::delta::is_retired_feature(delta_feature) {
+                    continue;
+                }
+                let cap = delta_capability(delta_path, delta_feature)?;
+                resolve_permanent_dir(&project_root, change, &cap)?;
+            }
+        }
 
-    // Validate complete use-case replacements against their base revisions
-    // before changing either narratives or feature files.
-    validate_usecase_documents(&project_root, change)?;
-    merge_usecase_documents(&project_root, change)?;
+        // 6. E2E runner configuration is a configuration gap, not a
+        //    verification result: block before any mutation.
+        let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&delta_feature_dir)
+            || crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
+        ensure_e2e_configured(&manifest, merged_has_e2e, &specs_dir)?;
 
-    // === Merge delta features ===
+        // 7. Merge the accepted narratives and deltas into the permanent
+        //    corpus, then publish the candidate.
+        merge_usecase_documents(&project_root, change)?;
+        if delta_feature_dir.exists() {
+            println!("Merging {} delta feature file(s)...", parsed.len());
+            for (delta_path, delta_feature) in &parsed {
+                process_delta_file(&project_root, change, delta_path, delta_feature)?;
+            }
+        }
 
-    let delta_feature_dir = change_dir.join("specs");
-    if delta_feature_dir.exists() {
-        let delta_files = collect_feature_files(&delta_feature_dir);
-        println!("Merging {} delta feature file(s)...", delta_files.len());
+        std::fs::create_dir_all(&archive_target)?;
+        copy_dir_all(&change_dir, &archive_target)?;
+        crate::proof::Receipt::write_pending(&archive_target, change, crate::proof::unix_now())?;
+        std::fs::remove_dir_all(&change_dir)?;
 
-        // Prevalidation pass: parse, WIP-check, and resolve every merge
-        // target before writing anything, so a blocked archive leaves no
-        // partially merged permanent specs behind.
-        let mut parsed: Vec<(&std::path::Path, gherkin::Feature)> = Vec::new();
-        for delta_path in &delta_files {
-            let env = GherkinEnv::default();
-            let delta_feature = gherkin::Feature::parse_path(delta_path, env).map_err(|e| {
-                anyhow::anyhow!(
-                    "failed to parse delta feature '{}': {}",
-                    delta_path.display(),
-                    e
+        let candidate_paths = vec![
+            "givn/specs".to_string(),
+            format!("givn/archive/{change}"),
+            format!("givn/changes/{change}"),
+        ];
+        worktree
+            .commit(
+                &format!("chore({change}): publish archive candidate"),
+                &candidate_paths,
+            )
+            .with_context(|| {
+                format!(
+                    "archive blocked: the candidate commit was rejected. The merged state is \
+                     staged but not committed; the archive is not proven. Resolve the Git error \
+                     and rerun `givn archive --change {change}`."
                 )
             })?;
-
-            if let Some(wip_msg) = crate::gherkin::delta::find_wip_in_feature(&delta_feature) {
-                bail!(
-                    "archive blocked: {} in '{}' — remove @wip from completed scenarios",
-                    wip_msg,
-                    delta_path.display(),
-                );
-            }
-
-            parsed.push((delta_path, delta_feature));
-        }
-        for (delta_path, delta_feature) in &parsed {
-            if crate::gherkin::delta::is_retired_feature(delta_feature) {
-                continue;
-            }
-            let cap = delta_capability(delta_path, delta_feature)?;
-            resolve_permanent_dir(&project_root, change, &cap)?;
-        }
-        for (delta_path, delta_feature) in &parsed {
-            process_delta_file(&project_root, change, delta_path, delta_feature)?;
-        }
+        println!(
+            "[{}] ✓ Candidate committed",
+            crate::subprocess::local_timestamp()
+        );
+    } else {
+        // Resume: the merge is already committed. Re-check the e2e
+        // precondition against the permanent corpus before re-running.
+        let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
+        ensure_e2e_configured(&manifest, merged_has_e2e, &specs_dir)?;
     }
 
-    // === Post-merge verify gate ===
+    // 8. Verification scopes run once against the committed candidate.
+    let tested_commit = worktree.head()?;
+    let started_at_unix = crate::proof::unix_now();
+    let mut scopes = std::collections::BTreeMap::new();
 
-    let verify_command = &manifest.verify.command;
-    println!(
-        "[{}] Running post-merge verify: {verify_command}",
-        crate::subprocess::local_timestamp()
+    let regular_path = crate::proof::result_path(&archive_target, SCOPE_REGULAR);
+    let (regular, regular_seconds) =
+        run_scope(&project_root, &manifest.verify.command, SCOPE_REGULAR, &regular_path)?;
+    scopes.insert(
+        SCOPE_REGULAR.to_string(),
+        crate::proof::ScopeOutcome::passed(&regular, regular_seconds),
     );
-    let verify_status = crate::subprocess::sh_streamed(
-        verify_command,
-        &[("GIVN_FEATURES", "givn/specs")],
-        None,
-        "post-merge verify",
-    )?;
 
-    if !verify_status.success() {
-        rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
-        bail!(
-            "archive blocked: merged permanent specs failed verify (exit code {}). \
-             Specs have been rolled back to their pre-archive state.",
-            verify_status.code().unwrap_or(-1)
+    let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
+    if merged_has_e2e {
+        let e2e_path = crate::proof::result_path(&archive_target, SCOPE_E2E);
+        let (e2e, e2e_seconds) =
+            run_scope(&project_root, &manifest.verify.e2e_command, SCOPE_E2E, &e2e_path)?;
+        scopes.insert(
+            SCOPE_E2E.to_string(),
+            crate::proof::ScopeOutcome::passed(&e2e, e2e_seconds),
+        );
+    } else {
+        scopes.insert(
+            SCOPE_E2E.to_string(),
+            crate::proof::ScopeOutcome::not_applicable(),
         );
     }
-    println!(
-        "[{}] ✓ Post-merge verify passed",
-        crate::subprocess::local_timestamp()
-    );
 
-    // === Post-merge verify-e2e gate ===
-
-    let e2e_command = &manifest.verify.e2e_command;
-    if e2e_command.is_empty() || e2e_command == "givn missing-e2e-runner" {
-        let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
-        if merged_has_e2e {
-            rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
-            bail!(
-                "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
-                 configured in givn/config.yaml. An @e2e scenario without a configured \
-                 e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.",
-                specs_dir.display()
-            );
-        }
+    // 9. Coverage runs once against the candidate, without rollback.
+    let coverage = if manifest.addons.coverage {
+        Some(crate::cli::coverage_gate::run_coverage_gate(
+            &project_root,
+            &manifest,
+        )?)
     } else {
-        let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
-        if merged_has_e2e {
-            println!(
-                "[{}] Running post-merge verify-e2e: {e2e_command}",
-                crate::subprocess::local_timestamp()
-            );
-            let e2e_status = crate::subprocess::sh_streamed(
-                e2e_command,
-                &[("GIVN_FEATURES", "givn/specs")],
-                None,
-                "post-merge verify-e2e",
-            )?;
+        None
+    };
 
-            if !e2e_status.success() {
-                rollback_specs(&specs_dir, &backup_specs, &backup_dir)?;
-                bail!(
-                    "archive blocked: merged permanent specs failed verify-e2e (exit code {}). \
-                     Specs have been rolled back to their pre-archive state.",
-                    e2e_status.code().unwrap_or(-1)
-                );
-            }
-            println!(
-                "[{}] ✓ Post-merge verify-e2e passed",
-                crate::subprocess::local_timestamp()
-            );
-        }
-    }
-
-    // Development managed block refresh (readme addon enabled): the block
-    // content is rewritten from the effective command file after the
-    // post-merge gates and before the coverage gate. A failure restores the
-    // README from the pre-archive backup.
+    // 10. Finalization: refresh managed blocks, guard the tested commit,
+    //     then write and commit the proven receipt.
     if manifest.addons.readme {
         match crate::cli::readme::refresh_development_block(&project_root) {
             Ok(true) => println!(
@@ -303,13 +308,10 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
                 crate::subprocess::local_timestamp()
             ),
             Ok(false) => {}
-            Err(e) => {
-                let _ = crate::cli::coverage_gate::rollback_readme(&project_root, &backup_dir);
-                bail!(
-                    "archive blocked: development managed block refresh failed: {e:#}. \
-                     README has been restored to its pre-archive state."
-                );
-            }
+            Err(e) => bail!(
+                "archive blocked: development managed block refresh failed: {e:#}. The archive \
+                 candidate is unproven."
+            ),
         }
         match crate::cli::readme::refresh_run_block(&project_root) {
             Ok(true) => println!(
@@ -317,47 +319,160 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
                 crate::subprocess::local_timestamp()
             ),
             Ok(false) => {}
-            Err(e) => {
-                let _ = crate::cli::coverage_gate::rollback_readme(&project_root, &backup_dir);
-                bail!(
-                    "archive blocked: run managed block refresh failed: {e:#}. \
-                     README has been restored to its pre-archive state."
-                );
-            }
+            Err(e) => bail!(
+                "archive blocked: run managed block refresh failed: {e:#}. The archive candidate \
+                 is unproven."
+            ),
         }
     }
 
-    // === Coverage gate (archive-level, only if addon enabled) ===
-
-    if manifest.addons.coverage {
-        crate::cli::coverage_gate::run_coverage_gate(&project_root, &manifest, &backup_dir)?;
-    }
-
-    // Clean up backup (all gates passed).
-    if backup_dir.exists() {
-        std::fs::remove_dir_all(&backup_dir)?;
-        println!(
-            "[{}]   removed backup: {}",
-            crate::subprocess::local_timestamp(),
-            backup_dir.display()
+    let head = worktree.head()?;
+    if head != tested_commit {
+        bail!(
+            "archive blocked: the tested tree changed — HEAD is {head} but {tested_commit} was \
+             verified. Repair the committed state and rerun `givn archive --change {change}`."
         );
     }
+    ensure_clean(
+        &worktree,
+        &project_root,
+        change,
+        &manifest,
+        Witness::Tested,
+    )?;
 
-    // === Move change to archive ===
+    crate::proof::Receipt::write_proven(
+        &archive_target,
+        change,
+        &tested_commit,
+        scopes,
+        coverage,
+        started_at_unix,
+        crate::proof::unix_now(),
+    )?;
 
-    std::fs::create_dir_all(&archive_target)?;
-    copy_dir_all(&change_dir, &archive_target)?;
-    std::fs::remove_dir_all(&change_dir)?;
+    let mut evidence_paths = vec![format!("givn/archive/{change}")];
+    if manifest.addons.readme && project_root.join("README.md").exists() {
+        evidence_paths.push("README.md".to_string());
+    }
+    if manifest.addons.coverage {
+        for candidate in [
+            &manifest.coverage.non_e2e_path,
+            &manifest.coverage.e2e_path,
+            &manifest.coverage.output_path,
+        ] {
+            if project_root.join(candidate).exists() {
+                evidence_paths.push(candidate.trim_start_matches("./").to_string());
+            }
+        }
+    }
+    worktree.commit(&format!("chore({change}): prove archive"), &evidence_paths)?;
 
     println!(
         "[{}] ✓ Archived '{change}' to {}",
         crate::subprocess::local_timestamp(),
         archive_target.display()
     );
+    println!(
+        "Verification receipt: {}",
+        archive_target.join(crate::proof::RECEIPT_FILE).display()
+    );
     println!("\nChange archived successfully.");
     println!("The delta specs have been merged into givn/specs/.");
 
     Ok(())
+}
+
+/// Block unless the dirty worktree contains only evidence paths.
+fn ensure_clean(
+    worktree: &crate::git::Worktree,
+    project_root: &Path,
+    change: &str,
+    manifest: &crate::config::manifest::Manifest,
+    witness: Witness,
+) -> Result<()> {
+    let dirty = worktree.dirty_entries()?;
+    let offending: Vec<String> = dirty
+        .iter()
+        .filter(|path| !crate::proof::is_evidence_path(project_root, change, manifest, path))
+        .map(|path| path.display().to_string())
+        .collect();
+    if offending.is_empty() {
+        return Ok(());
+    }
+    match witness {
+        Witness::Project => bail!(
+            "archive blocked: the project has uncommitted work: {}",
+            offending.join(", ")
+        ),
+        Witness::Tested => bail!(
+            "archive blocked: the tested tree changed outside the declared evidence: {}",
+            offending.join(", ")
+        ),
+    }
+}
+
+/// The E2E runner must be configured when the merged corpus has @e2e
+/// scenarios; otherwise the archive blocks before any mutation.
+fn ensure_e2e_configured(
+    manifest: &crate::config::manifest::Manifest,
+    merged_has_e2e: bool,
+    specs_dir: &Path,
+) -> Result<()> {
+    let configured = !manifest.verify.e2e_command.is_empty()
+        && manifest.verify.e2e_command != "givn missing-e2e-runner";
+    if merged_has_e2e && !configured {
+        bail!(
+            "'{}' contains @e2e-tagged scenario(s) but verify.e2e_command is not \
+             configured in givn/config.yaml. An @e2e scenario without a configured \
+             e2e runner is an unenforced gap, not an optional one — set verify.e2e_command.",
+            specs_dir.display()
+        );
+    }
+    Ok(())
+}
+
+/// Run one verification scope and validate its fail-closed result. Returns
+/// the parsed result and the wall-clock seconds the scope took.
+fn run_scope(
+    project_root: &Path,
+    command: &str,
+    scope: &str,
+    result_path: &Path,
+) -> Result<(crate::proof::RunnerResult, f64)> {
+    if let Some(parent) = result_path.parent() {
+        std::fs::create_dir_all(parent)?;
+    }
+    let _ = std::fs::remove_file(result_path);
+    let absolute = if result_path.is_absolute() {
+        result_path.to_path_buf()
+    } else {
+        project_root.join(result_path)
+    };
+    let result_file = absolute.to_string_lossy().into_owned();
+
+    println!(
+        "[{}] Running {scope} verification: {command}",
+        crate::subprocess::local_timestamp()
+    );
+    let started = std::time::Instant::now();
+    let status = crate::subprocess::sh_streamed(
+        command,
+        &[("GIVN_FEATURES", "givn/specs"), ("GIVN_RESULT_FILE", &result_file)],
+        Some(project_root),
+        &format!("{scope} verification"),
+    )?;
+    let seconds = started.elapsed().as_secs_f64();
+
+    if !status.success() {
+        bail!(
+            "archive blocked: the {scope} verification failed (exit code {}). The archive \
+             candidate is unproven; repair the committed state and rerun the archive.",
+            status.code().unwrap_or(-1)
+        );
+    }
+    let result = crate::proof::RunnerResult::read(&absolute, scope)?;
+    Ok((result, seconds))
 }
 
 fn collect_narrative_documents(
@@ -662,50 +777,6 @@ fn routing_usecase_for_new_capability(
         })
 }
 
-/// Roll back permanent specs from backup (if it exists).
-/// Uses a copy-to-temp-then-rename approach so that if the copy fails,
-/// the original specs_dir is never left deleted.
-pub(crate) fn rollback_specs(
-    specs_dir: &std::path::Path,
-    backup_specs: &std::path::Path,
-    backup_dir: &std::path::Path,
-) -> Result<()> {
-    let marker = backup_dir.join(".backup-state");
-    let was_present =
-        marker.exists() && std::fs::read_to_string(&marker).ok().as_deref() == Some("present");
-
-    if !was_present {
-        // Specs did not exist pre-archive — remove whatever merge left behind.
-        if specs_dir.exists() {
-            std::fs::remove_dir_all(specs_dir)?;
-        }
-        return Ok(());
-    }
-
-    if !backup_specs.exists() {
-        bail!(
-            "backup specs directory '{}' is missing (was present pre-archive)",
-            backup_specs.display()
-        );
-    }
-
-    // Copy backup to a temp location first, then swap.
-    let parent = specs_dir.parent().unwrap();
-    let tmp = parent.join(format!(".rollback-tmp-{}", std::process::id()));
-    if tmp.exists() {
-        std::fs::remove_dir_all(&tmp)?;
-    }
-    copy_dir_all(backup_specs, &tmp)?;
-
-    if specs_dir.exists() {
-        std::fs::remove_dir_all(specs_dir)?;
-    }
-    std::fs::rename(&tmp, specs_dir)?;
-
-    eprintln!("[archive] rolled back specs from backup");
-    Ok(())
-}
-
 /// Re-export the checker's finding labels for the archive gate report.
 use crate::cli::readme::finding_label;
 
@@ -716,11 +787,9 @@ struct RetiredEntry {
     retired_by_change: String,
 }
 
-/// Append a retirement record to `givn/specs/.retired.yaml`. This file
-/// lives *inside* `givn/specs`, so it is covered by the same
-/// backup/rollback as everything else the merge loop touches — a failed
-/// archive after this call rolls the tombstone back along with the
-/// deleted directory.
+/// Append a retirement record to `givn/specs/.retired.yaml`. The tombstone
+/// is part of the merged candidate commit; a failed attempt is repaired
+/// forward, never rolled back.
 fn record_retirement(
     project_root: &std::path::Path,
     capability: &str,
@@ -863,42 +932,6 @@ Feature: Dead capability
         let err = process_delta_file(&project, "c", &delta_path, &delta).unwrap_err();
         assert!(err.to_string().contains("invalid capability tag"), "{err}");
         assert!(project.join("givn/specs/dead-cap").exists());
-    }
-
-    #[test]
-    fn rollback_restores_retired_capability_and_clears_tombstone() {
-        let (_root, project, backup_dir) = temp_project();
-        let specs_dir = project.join("givn/specs");
-        let backup_specs = backup_dir.join("specs");
-        std::fs::create_dir_all(&backup_specs).unwrap();
-        copy_dir_all(&specs_dir, &backup_specs).unwrap();
-        std::fs::write(backup_dir.join(".backup-state"), "present").unwrap();
-
-        // Retire dead-cap (simulating the merge loop running to completion).
-        let delta_path = project.join("delta.feature");
-        let delta = parse_delta("@givn.delta @givn.retired @dead-cap\nFeature: Dead capability\n");
-        process_delta_file(&project, "retire-change", &delta_path, &delta).unwrap();
-        assert!(
-            !project
-                .join("givn/specs/dead-cap/dead-cap.feature")
-                .exists()
-        );
-        assert!(specs_dir.join(".retired.yaml").exists());
-
-        // Post-merge verify fails → rollback. The backup was taken before
-        // the merge loop, so it still holds dead-cap and no tombstone.
-        rollback_specs(&specs_dir, &backup_specs, &backup_dir).unwrap();
-
-        assert!(
-            project
-                .join("givn/specs/dead-cap/dead-cap.feature")
-                .exists(),
-            "rollback must restore the retired capability"
-        );
-        assert!(
-            !specs_dir.join(".retired.yaml").exists(),
-            "rollback must clear the tombstone written after the backup"
-        );
     }
 
     #[test]

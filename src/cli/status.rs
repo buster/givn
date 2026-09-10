@@ -46,6 +46,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
     } else {
         let changes = list_changes(&project_root, &manifest);
         let archived = list_archived(&project_root);
+        let unproven = crate::state::list_unproven_archives(&project_root);
 
         // Auto-default to detail view when exactly one active change exists.
         if changes.len() == 1 {
@@ -53,6 +54,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
                 print_json(&changes[0])?;
             } else {
                 print_detail(&changes[0]);
+                print_unproven_archives(&unproven);
             }
             return Ok(());
         }
@@ -64,6 +66,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
                     serde_json::to_string_pretty(&serde_json::json!({
                         "active": [],
                         "archived": [],
+                        "unproven_archives": [],
                     }))?
                 );
             } else {
@@ -77,6 +80,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
             let out = serde_json::json!({
                 "active": active,
                 "archived": archived,
+                "unproven_archives": unproven,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
         } else {
@@ -89,10 +93,22 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
             if !archived.is_empty() {
                 println!("\nArchived: {}", archived.join(", "));
             }
+            print_unproven_archives(&unproven);
         }
     }
 
     Ok(())
+}
+
+/// Surface unproven archive candidates and route the developer to resume.
+fn print_unproven_archives(unproven: &[String]) {
+    if unproven.is_empty() {
+        return;
+    }
+    println!("\nUnproven archives: {}", unproven.join(", "));
+    for id in unproven {
+        println!("  {id} — resume: givn archive --change {id}");
+    }
 }
 
 // ─── Human-readable output ───────────────────────────────────────────────────
