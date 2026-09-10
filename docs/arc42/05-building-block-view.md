@@ -26,6 +26,8 @@ flowchart TD
     G --> O[overlap modules]
     G --> HOOK[hooks and integrity]
     G --> STATE[state]
+    G --> GITMOD[git worktree wrapper]
+    G --> PROOF[proof receipts and runner results]
     G --> ASSET[embedded assets]
     G --> TEST[repository acceptance tests]
     G --> COV[spec coverage inventory and migration comparison]
@@ -47,9 +49,9 @@ flowchart TD
 | `cli::new` | Validate change id, create a change directory, scaffold proposal unless skipped, and write `.givn-skip` when requested. |
 | `cli::instructions` | Resolve effective artifact instructions and optional JSON metadata; provide context-aware generic guidance without an artifact id. |
 | `cli::lint` | Parse features, report WIP/PENDING, and run the default tree-wide overlap scan with exit precedence 1, 3, 2, 0. |
-| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. |
-| `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, merge deltas, run post-merge verification/e2e, refresh the development and run managed blocks, run optional coverage, and copy/remove the change to archive. |
-| `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks. |
+| `cli::check` | Run explicit mandatory checks for tasks/review and configured post hooks; named review also runs the overlap gate. Review executes `integrity` and the run-declaration check; scenario execution belongs to the archive verification. |
+| `cli::archive` | Check archive prerequisites, run the run-declaration gate before the README completeness gate (independent of the readme addon), run the README completeness gate when the readme addon is enabled, select permanent verification for no-product-delta maintenance changes, run configured hooks, merge deltas, commit the archive candidate, run the regular and E2E verification scopes once against the candidate, run the optional coverage gate, refresh managed blocks, record the verification receipt, and commit the evidence-only finalization. |
+| `cli::status` and `cli::graph` | Render manifest-aware filesystem state, dependencies, optional flags, gates, and hooks; status and instructions surface unproven archive candidates with their resume command. |
 | `cli::eject` | Materialize an embedded facet, skill, or manifest into project-owned `givn/` content. |
 | `cli::readme` | Scaffold the README from the marked template with the development and run managed blocks, run the deterministic completeness check behind `givn readme check`, and refresh the development and run managed blocks from the effective command file at archive time. |
 | `cli::addons` | Toggle addon flags; Arc42 enable scaffolds fixed `docs/arc42/` files without overwriting existing files. |
@@ -72,7 +74,9 @@ flowchart TD
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and generated OpenCode/Claude harness integrations. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
-| `state` | Derive status from artifact paths, markers, skip files, and the manifest graph. |
+| `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven) from the receipt. |
+| `git` | Root-bound Git wrapper for the archive boundary: worktree prerequisite, clean-state witness, HEAD resolution, and scoped commits. |
+| `proof` | Verification receipt and runner-result contract: archive provenance, fail-closed scope-result parsing, and the single evidence-path predicate shared by the clean witness and the finalization guard. |
 | `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |
 
 ## 5.5 Dependencies

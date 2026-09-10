@@ -168,6 +168,12 @@ observes generated paths:
 `Skipped` as satisfied. `apply.requires` separately determines the archive
 gate. State inference does not edit or repair artifacts.
 
+Archive provenance is a separate, receipt-backed state layer:
+`givn/archive/<id>/verification.json` records `pending` or `proven`, and
+`status`, `instructions`, and the archive itself derive "unproven candidate"
+from it. A legacy archive directory without a receipt is historical and is
+never re-published; it is not an unproven candidate.
+
 ## 8.7 Skill and Rule Generation
 
 `givn skills sync` renders the standard workflow skills and writes them only to
@@ -228,9 +234,10 @@ shared line twice in the denominator. A merge falls back to summed counters
 only when a source report carries no per-line data (aggregate-only reports),
 and branch counters keep their summation because branch identity is not
 retained by the parser (documented limitation). Givn validates the source
-and merged reports, updates only its named README blocks, and restores specs,
-README, and coverage files if the pipeline fails. A zero branch denominator is
-rendered as `n/a`, not as a measured zero percent.
+and merged reports and updates only its named README blocks. A coverage
+failure leaves the archive candidate unproven in place — the permanent
+corpus, README, and coverage files are not rolled back. A zero branch
+denominator is rendered as `n/a`, not as a measured zero percent.
 
 ### 8.9b Semantic Migration Evidence
 
@@ -366,8 +373,9 @@ When an explicit artifact is passed to `givn check`, `src/cli/check.rs` first
 runs mandatory checks:
 
 - `tasks`: change-delta WIP protection and `verify.command`;
-- `review`: `verify.command`, `verify-e2e`, `integrity`, then the named-change
-  overlap gate.
+- `review`: `integrity`, the run-declaration check, and the named-change
+  overlap gate. Review does not execute the test suite; scenario execution is
+  proven by the archive verification receipt.
 
 These checks are not controlled by `post` and cannot be disabled by merely
 removing a hook entry. Removing the `tasks` or `review` artifact changes the

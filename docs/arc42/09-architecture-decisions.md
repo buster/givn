@@ -40,3 +40,11 @@ the product start (`run:` in `givn/commands.yaml`) also executes it
 port hand-off, and signal forwarding. The record was proposed with the
 change's design and left `proposed` until the full suite and the @e2e scope
 stayed green; the compatibility obligation is carried by R-45 in chapter 11.
+
+ADR-070 is proposed by the `archive-proof` change: publication becomes
+forward-only and Git-backed — the merged archive candidate is committed before
+verification, each verification scope runs once with a fail-closed runner
+result, and the verification receipt is committed as the evidence-only
+finalization. The record stays `proposed` until the archive-proof full suite
+and e2e scope are green; the recovery and review-evidence consequences are
+carried by R-53 through R-55 in chapter 11.
