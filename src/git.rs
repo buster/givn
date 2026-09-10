@@ -81,12 +81,10 @@ impl Worktree {
             bail!("archive blocked: refusing to commit with no paths");
         }
         // Evidence may legitimately be gitignored (for example coverage
-        // reports). Stage only paths that exist and are not ignored.
+        // reports). Stage only paths Git can stage; a deleted tracked path
+        // (the moved change directory) stays stageable.
         let mut stageable = Vec::new();
         for path in paths {
-            if !self.root.join(path).exists() {
-                continue;
-            }
             let ignore = run_git(&self.root, &["check-ignore", "-q", "--", path])?;
             if ignore.status.success() {
                 continue;
