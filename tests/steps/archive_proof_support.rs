@@ -21,10 +21,7 @@ pub(crate) fn root(world: &GivnWorld) -> PathBuf {
 /// The project directory the scenario operates on: the nested-project
 /// override when set, otherwise the fixture root.
 pub(crate) fn project_base(world: &GivnWorld) -> PathBuf {
-    world
-        .cwd_override
-        .clone()
-        .unwrap_or_else(|| root(world))
+    world.cwd_override.clone().unwrap_or_else(|| root(world))
 }
 
 pub(crate) fn archive_dir(world: &GivnWorld, id: &str) -> PathBuf {
@@ -84,7 +81,9 @@ printf '{{"scope":"%s","total":%s,"passed":%s,"failed":%s,"skipped":%s}}\n' \
     );
     let path = env.path("emit-result.sh");
     fs::write(&path, script).expect("write result runner");
-    let mut permissions = fs::metadata(&path).expect("result runner metadata").permissions();
+    let mut permissions = fs::metadata(&path)
+        .expect("result runner metadata")
+        .permissions();
     permissions.set_mode(0o755);
     fs::set_permissions(&path, permissions).expect("make result runner executable");
 }
@@ -158,7 +157,9 @@ pub(crate) fn write_coverage_scripts(
     for (name, content) in [("emit-coverage.sh", measure), ("merge-coverage.sh", merge)] {
         let path = env.path(name);
         fs::write(&path, content).expect("write coverage script");
-        let mut permissions = fs::metadata(&path).expect("coverage script metadata").permissions();
+        let mut permissions = fs::metadata(&path)
+            .expect("coverage script metadata")
+            .permissions();
         permissions.set_mode(0o755);
         fs::set_permissions(&path, permissions).expect("make coverage script executable");
     }
@@ -194,9 +195,14 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
     )
     .expect("write delta feature");
     fs::write(change.join("design.md"), "# Design\n").expect("write design");
-    fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n").expect("write design-review");
+    fs::write(change.join("design-review.md"), "DESIGN-REVIEW: PASS\n")
+        .expect("write design-review");
     fs::write(change.join("tasks.md"), "- [x] done\n").expect("write tasks");
-    fs::write(change.join("review.md"), "REVIEW: PASS\nREADME-IMPACT: none\n").expect("write review");
+    fs::write(
+        change.join("review.md"),
+        "REVIEW: PASS\nREADME-IMPACT: none\n",
+    )
+    .expect("write review");
     fs::write(change.join("arc42.md"), "## Status\n\nSTATUS: DONE\n").expect("write arc42");
 }
 

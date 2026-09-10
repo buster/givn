@@ -194,11 +194,9 @@ pub struct CoverageOutcome {
 
 impl CoverageOutcome {
     pub fn passed(report: &crate::cobertura::CoberturaReport) -> Self {
-        let percent = if report.lines_valid == 0 {
-            0
-        } else {
-            report.lines_covered * 100 / report.lines_valid
-        };
+        let percent = (report.lines_covered * 100)
+            .checked_div(report.lines_valid)
+            .unwrap_or(0);
         Self {
             status: "passed".to_string(),
             line_covered: report.lines_covered,

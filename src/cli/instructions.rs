@@ -219,7 +219,9 @@ fn report_no_active_changes(
         println!("Status: {summary}");
         println!();
         for id in unproven {
-            println!("Unproven archive candidate '{id}' — resume with `givn archive --change {id}`.");
+            println!(
+                "Unproven archive candidate '{id}' — resume with `givn archive --change {id}`."
+            );
         }
         if !unproven.is_empty() {
             println!();
@@ -276,9 +278,9 @@ fn report_multiple_changes(changes: &[ChangeState], json: bool) -> Result<()> {
 }
 
 fn report_archived_change(id: &str, json: bool) -> Result<()> {
-    let pending = std::env::current_dir()
-        .ok()
-        .is_some_and(|root| crate::proof::read_status(&root, id) == crate::proof::ArchiveProof::Pending);
+    let pending = std::env::current_dir().ok().is_some_and(|root| {
+        crate::proof::read_status(&root, id) == crate::proof::ArchiveProof::Pending
+    });
     if pending {
         let summary = format!("Change '{id}' has an unproven archive candidate.");
         let next_command = format!("givn archive --change {id}");

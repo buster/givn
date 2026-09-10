@@ -17,7 +17,10 @@ fn workflow_scripts_project(world: &mut GivnWorld) {
         .as_ref()
         .expect("a project root is required first");
     let scripts = [
-        ("run-tests.sh", "#!/bin/sh\nscope=${1#--}\ncase \"$scope\" in e2e) ;; *) scope=regular ;; esac\nif [ -n \"${GIVN_RESULT_FILE:-}\" ]; then\n  printf '{\"scope\":\"%s\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' \"$scope\" > \"$GIVN_RESULT_FILE\"\nfi\nexit 0\n"),
+        (
+            "run-tests.sh",
+            "#!/bin/sh\nscope=${1#--}\ncase \"$scope\" in e2e) ;; *) scope=regular ;; esac\nif [ -n \"${GIVN_RESULT_FILE:-}\" ]; then\n  printf '{\"scope\":\"%s\",\"total\":1,\"passed\":1,\"failed\":0,\"skipped\":0}\\n' \"$scope\" > \"$GIVN_RESULT_FILE\"\nfi\nexit 0\n",
+        ),
         (
             "measure-coverage.sh",
             "#!/bin/sh\nmkdir -p coverage\nprintf '<?xml version=\"1.0\"?>\n<coverage line-rate=\"0.80\" branch-rate=\"0\" lines-covered=\"80\" lines-valid=\"100\" branches-covered=\"0\" branches-valid=\"0\" timestamp=\"0\" version=\"1\">\n  <packages />\n</coverage>\n' > coverage/non-e2e-cobertura.xml\nprintf '<?xml version=\"1.0\"?>\n<coverage line-rate=\"0.90\" branch-rate=\"0\" lines-covered=\"90\" lines-valid=\"100\" branches-covered=\"0\" branches-valid=\"0\" timestamp=\"0\" version=\"1\">\n  <packages />\n</coverage>\n' > coverage/e2e-cobertura.xml\nexit 0\n",

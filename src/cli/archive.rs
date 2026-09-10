@@ -186,13 +186,14 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         if delta_feature_dir.exists() {
             for delta_path in collect_feature_files(&delta_feature_dir) {
                 let env = GherkinEnv::default();
-                let delta_feature = gherkin::Feature::parse_path(&delta_path, env).map_err(|e| {
-                    anyhow::anyhow!(
-                        "failed to parse delta feature '{}': {}",
-                        delta_path.display(),
-                        e
-                    )
-                })?;
+                let delta_feature =
+                    gherkin::Feature::parse_path(&delta_path, env).map_err(|e| {
+                        anyhow::anyhow!(
+                            "failed to parse delta feature '{}': {}",
+                            delta_path.display(),
+                            e
+                        )
+                    })?;
                 if let Some(wip_msg) = crate::gherkin::delta::find_wip_in_feature(&delta_feature) {
                     bail!(
                         "archive blocked: {} in '{}' — remove @wip from completed scenarios",
@@ -266,8 +267,12 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     let mut scopes = std::collections::BTreeMap::new();
 
     let regular_path = crate::proof::result_path(&archive_target, SCOPE_REGULAR);
-    let (regular, regular_seconds) =
-        run_scope(&project_root, &manifest.verify.command, SCOPE_REGULAR, &regular_path)?;
+    let (regular, regular_seconds) = run_scope(
+        &project_root,
+        &manifest.verify.command,
+        SCOPE_REGULAR,
+        &regular_path,
+    )?;
     scopes.insert(
         SCOPE_REGULAR.to_string(),
         crate::proof::ScopeOutcome::passed(&regular, regular_seconds),
@@ -276,8 +281,12 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
     if merged_has_e2e {
         let e2e_path = crate::proof::result_path(&archive_target, SCOPE_E2E);
-        let (e2e, e2e_seconds) =
-            run_scope(&project_root, &manifest.verify.e2e_command, SCOPE_E2E, &e2e_path)?;
+        let (e2e, e2e_seconds) = run_scope(
+            &project_root,
+            &manifest.verify.e2e_command,
+            SCOPE_E2E,
+            &e2e_path,
+        )?;
         scopes.insert(
             SCOPE_E2E.to_string(),
             crate::proof::ScopeOutcome::passed(&e2e, e2e_seconds),
@@ -333,13 +342,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
              verified. Repair the committed state and rerun `givn archive --change {change}`."
         );
     }
-    ensure_clean(
-        &worktree,
-        &project_root,
-        change,
-        &manifest,
-        Witness::Tested,
-    )?;
+    ensure_clean(&worktree, &project_root, change, &manifest, Witness::Tested)?;
 
     crate::proof::Receipt::write_proven(
         &archive_target,
@@ -458,7 +461,10 @@ fn run_scope(
     let started = std::time::Instant::now();
     let status = crate::subprocess::sh_streamed(
         command,
-        &[("GIVN_FEATURES", "givn/specs"), ("GIVN_RESULT_FILE", &result_file)],
+        &[
+            ("GIVN_FEATURES", "givn/specs"),
+            ("GIVN_RESULT_FILE", &result_file),
+        ],
         Some(project_root),
         &format!("{scope} verification"),
     )?;

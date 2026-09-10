@@ -27,7 +27,6 @@ fn archive_change(world: &mut GivnWorld) {
     world.last_output = Some(crate::common::run_givn(env, &["archive", "--change", id]));
 }
 
-
 fn write_commands(env: &crate::common::TestEnv, measure: &str, merge: &str) {
     let yaml = format!(
         "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\ncoverage:\n  measure_command: \"{measure}\"\n  merge_command: \"{merge}\"\n  non_e2e_path: \"coverage/non-e2e-cobertura.xml\"\n  e2e_path: \"coverage/e2e-cobertura.xml\"\n  output_path: \"coverage/cobertura-coverage.xml\"\naddons:\n  readme: true\n  coverage: true\n"

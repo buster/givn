@@ -49,7 +49,6 @@ addons:
     .expect("write e2e xml");
 }
 
-
 #[then("stderr says the e2e runner is not configured for permanent specs with @e2e coverage")]
 fn e2e_stderr_says_not_configured(world: &mut GivnWorld) {
     let s = crate::steps::stderr(world);

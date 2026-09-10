@@ -86,7 +86,10 @@ fn set_verify_command_in_config(world: &GivnWorld, cmd: &str) {
 }
 
 fn set_verify_true(world: &GivnWorld) {
-    let env = world.env.as_ref().expect("a project root is required first");
+    let env = world
+        .env
+        .as_ref()
+        .expect("a project root is required first");
     crate::steps::archive_proof_support::write_result_runner(env, "pass");
     set_verify_command_in_config(world, "./emit-result.sh regular");
     let commands_path = project_root(world).join("givn/commands.yaml");
@@ -137,8 +140,7 @@ fn disable_coverage_addon(world: &GivnWorld) {
 
 fn set_verify_fails_post_merge(world: &GivnWorld) {
     let script_path = project_root(world).join(".verify_gate.sh");
-    std::fs::write(&script_path, "#!/bin/sh\nexit 1\n")
-    .unwrap();
+    std::fs::write(&script_path, "#!/bin/sh\nexit 1\n").unwrap();
     std::fs::set_permissions(
         &script_path,
         std::os::unix::fs::PermissionsExt::from_mode(0o755),
@@ -516,7 +518,6 @@ fn verify_fails_after_merge(world: &mut GivnWorld) {
     set_verify_fails_post_merge(world);
 }
 
-
 #[then("the change's design.md template contains a section named \"Internal Primitives\"")]
 fn design_has_primitives_section(_world: &mut GivnWorld) {
     let content = givn::config::embedded::Assets::get_str("templates/design.md")
@@ -672,12 +673,11 @@ fn merged_spec_preserves_delta(world: &mut GivnWorld) {
             let path = entry.path();
             if path.is_dir() {
                 stack.push(path);
-            } else if path.extension().is_some_and(|e| e == "feature") {
-                if let Ok(content) = std::fs::read_to_string(&path) {
-                    if content.contains("Test scenario") {
-                        found = true;
-                    }
-                }
+            } else if path.extension().is_some_and(|e| e == "feature")
+                && let Ok(content) = std::fs::read_to_string(&path)
+                && content.contains("Test scenario")
+            {
+                found = true;
             }
         }
     }
@@ -701,11 +701,7 @@ fn project_records_verify(world: &mut GivnWorld) {
         .expect("a project root is required first");
     let script = env.path("record-verify.sh");
     std::fs::write(&script, "#!/bin/sh\ntouch verify-ran.marker\nexit 0\n").unwrap();
-    std::fs::set_permissions(
-        &script,
-        std::os::unix::fs::PermissionsExt::from_mode(0o755),
-    )
-    .unwrap();
+    std::fs::set_permissions(&script, std::os::unix::fs::PermissionsExt::from_mode(0o755)).unwrap();
     set_verify_command_in_config(world, "./record-verify.sh");
 }
 
