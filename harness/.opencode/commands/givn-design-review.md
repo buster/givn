@@ -188,6 +188,10 @@ while `arc42.md` claims that chapter was "updated," is a
 
 ## Return format
 
+Phrase every question with artifact names in domain language and identifiers
+in parentheses; give every option a concrete example. Never return a bare
+identifier or an abstract label.
+
 Return a JSON array of objects, ordered by priority (most critical first):
 
 [
@@ -226,7 +230,25 @@ If any `resolved_by_codebase` items were found, report them first:
 - [Branch]: <finding>
 ```
 
-Then work through `questions` one at a time:
+Then work through `questions` one at a time.
+
+**Dialog discipline.** Name every artifact in domain language with its
+identifier in parentheses, and give every option a concrete example. Never
+present a bare identifier or an abstract label as a question.
+
+<bad_example>
+**Q1 (Scope):** Should UC1 use D2 or D3? ADR12 says no.
+</bad_example>
+
+<good_example>
+**Q1 (Scope):** Should the password-reset use case (UC1) store reset tokens in
+the database (D2) or derive them from a signed secret (D3)? The
+stateless-sessions decision (ADR-012) argues against server-side state.
+
+D2 in practice: a reset_tokens row is written on request and deleted on use.
+D3 in practice: the token is an HMAC of the user id and expiry; nothing is
+stored.
+</good_example>
 
 For each question:
 1. Present it to the user:

@@ -36,6 +36,24 @@ the relevant codebase, then returns a ranked question list with recommended
 answers. The orchestrator presents questions to the user one at a time — waiting
 for each answer before the next.
 
+When presenting a question, name every artifact in domain language with its
+identifier in parentheses, and give every option a concrete example. Never
+present a bare identifier or an abstract label as a question.
+
+<bad_example>
+Q1: Should UC1 use D2 or D3? ADR12 says no.
+</bad_example>
+
+<good_example>
+Q1: Should the password-reset use case (UC1) store reset tokens in the
+database (D2) or derive them from a signed secret (D3)? The stateless-sessions
+decision (ADR-012) argues against server-side state.
+
+D2 in practice: a reset_tokens row is written on request and deleted on use.
+D3 in practice: the token is an HMAC of the user id and expiry; nothing is
+stored.
+</good_example>
+
 Required branches:
 - **Scope** — spec matches proposal exactly?
 - **Tech choices** — right stack for these scenarios? Simpler alternatives?
