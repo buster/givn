@@ -363,7 +363,16 @@ pub(crate) fn git_with_givn_path(
     }
     let path = std::env::join_paths(paths).expect("join Git hook PATH");
     let mut command = Command::new("git");
-    command.args(args).current_dir(root).env("PATH", path);
+    command
+        .args(args)
+        .current_dir(root)
+        .env("PATH", path)
+        .env_remove("GIVN_ATTRIBUTION_ACTIVE")
+        .env_remove("GIVN_ATTRIBUTION_LLM")
+        .env_remove("GIVN_ATTRIBUTION_REASONING")
+        .env_remove("GIVN_ATTRIBUTION_HARNESS")
+        .env_remove("GIT_COMMITTER_NAME")
+        .env_remove("GIT_COMMITTER_EMAIL");
     if let Some(context) = context {
         command.env("GIVN_ATTRIBUTION_ACTIVE", "1");
         if let Some(value) = &context.llm {
