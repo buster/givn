@@ -181,6 +181,11 @@ These are ordinary scenario assertions, not a separate tool. They run at every
 assertion of a visual capability, so a mid-flow defect cannot hide behind a
 clean final state.
 
+For a terminal interface, each `@e2e` scenario commits a captured transcript
+instead of screenshots, and the same baseline applies to the text the consumer
+reads. API-only capabilities are exempt from visual evidence: the HTTP
+response is their interface, and its assertions already cover it.
+
 The design's `## Visual Design Contract` names the viewports and the evidence
 kind. This policy owns the evidence rule, not the design's format: see
 `givn instructions design` for the contract and capture mechanics.

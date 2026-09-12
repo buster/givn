@@ -23,7 +23,7 @@ Feature: prose-consolidation
     And stdout contains "configured language"
     And stdout contains "reduced-motion"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy uses transcripts for terminal interfaces
     Given a givn project
     When the user runs `givn instructions specs --change visual-ui-review`
