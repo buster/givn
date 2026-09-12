@@ -208,25 +208,20 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
         );
     }
     let review = std::fs::read_to_string(&review_path)?;
-    let pass = review.contains("VISUAL-REVIEW: PASS");
-    let unverified = review.contains("VISUAL-REVIEW: UNVERIFIED");
-    if pass && unverified {
-        bail!(
+    match visual_verdict(&review) {
+        VisualVerdict::Pass => {}
+        VisualVerdict::Ambiguous => bail!(
             "review.md carries both VISUAL-REVIEW: PASS and VISUAL-REVIEW: UNVERIFIED — \
              record exactly one visual verdict"
-        );
-    }
-    if unverified {
-        bail!(
+        ),
+        VisualVerdict::Unverified => bail!(
             "visual review is VISUAL-REVIEW: UNVERIFIED — a human sign-off must resolve it \
              to VISUAL-REVIEW: PASS before review can pass"
-        );
-    }
-    if !pass {
-        bail!(
+        ),
+        VisualVerdict::Missing => bail!(
             "review.md is missing the visual verdict — add \
              'VISUAL-REVIEW: PASS' for a declared visual interface"
-        );
+        ),
     }
 
     check_visual_evidence(change_dir, &contract)
@@ -247,6 +242,26 @@ pub fn collect_e2e_scenario_titles(specs_dir: &Path) -> Result<Vec<String>> {
         }
     }
     Ok(titles)
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum VisualVerdict {
+    Pass,
+    Unverified,
+    Ambiguous,
+    Missing,
+}
+
+fn visual_verdict(review: &str) -> VisualVerdict {
+    match (
+        review.contains("VISUAL-REVIEW: PASS"),
+        review.contains("VISUAL-REVIEW: UNVERIFIED"),
+    ) {
+        (true, true) => VisualVerdict::Ambiguous,
+        (false, true) => VisualVerdict::Unverified,
+        (true, false) => VisualVerdict::Pass,
+        (false, false) => VisualVerdict::Missing,
+    }
 }
 
 /// A zero-byte evidence file counts as missing.
