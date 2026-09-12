@@ -202,6 +202,17 @@ outcomes. Actors remain interaction roles; Persona biographies remain review
 context. Record migration-ledger evidence where applicable. Do not sign off
 invented or silently promoted Personas.
 
+## Visual review (conditional)
+
+Run this block when the change's design declares a visual interface (a
+`## Visual Design Contract` section whose `Interface:` is not `none`).
+
+- No pixel-level or coordinate findings: every finding names a contract rule
+  or a failed Persona goal. A finding that only says "2px off" is invalid.
+- A style improvement that stays within the contract updates the contract in
+  the same change; it is not a review failure, and the code is never rolled
+  back to match a stale reference.
+
 ## Deterministic gate dispositions
 
 For every shape match involving the change, complete the **Overlap

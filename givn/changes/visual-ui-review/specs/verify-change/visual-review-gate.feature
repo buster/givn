@@ -75,7 +75,7 @@ Feature: Visual Review Gate
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance treats style improvements as contract updates
     Given a givn project
     When the user runs `givn instructions review --change visual-ui-review`
