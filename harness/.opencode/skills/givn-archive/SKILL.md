@@ -14,6 +14,14 @@ Archive change `<change-id>`.
 - Permanent specs: `givn/specs/`
 - Test runner: `./run-tests.sh`
 
+## Use-case archive behavior
+
+A specs artifact owns both feature deltas and use-case documents. Archive a new
+use case atomically with its capabilities; a replacement must carry a base
+revision and must be rejected before mutation when stale. Preserve accepted
+Persona references and migration evidence. A feature-only change does not need
+to replace a use-case document.
+
 ## Archive gate
 
 `givn archive` automatically checks:
@@ -25,6 +33,12 @@ Archive change `<change-id>`.
    catch it and block archive anyway.
 3. `review.md` contains `REVIEW: PASS`.
 4. Hooks of all `apply.requires` artifacts pass (runs `./run-tests.sh`).
+5. **README completeness gate**: with the readme addon enabled, the README
+   must carry no `<!-- givn:todo: ... -->` open placeholders, no scaffold
+   remnants, no damaged managed block, and must not be missing or
+   marker-less. A blocked archive names every unfinished section — fill each
+   one with real content before re-attempting. `givn readme check` reports
+   the same findings any time.
 
 If any gate fails, the archive is refused with a clear error. Do **not**
 bypass a gate failure by mass-checking boxes — go back, genuinely

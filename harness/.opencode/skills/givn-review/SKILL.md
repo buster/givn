@@ -13,6 +13,14 @@ Complete the coverage review for change `<change-id>`.
 - Instructions: run `givn instructions review --change <change-id>`
 - Test runner: `./run-tests.sh`
 
+## Use-case and Persona conformance
+
+Verify that implementation preserves the owning use-case contract, guarantees,
+rules, typed relationships, capability ownership, and confirmed Persona-relevant
+outcomes. Confirm the accepted `usecase.md` is represented in the change and
+that no actor was replaced by a Persona biography. Migration changes must also
+account for every ledger entry and preserve E2E evidence.
+
 ## Step 0: fabrication audit (mandatory, before anything else)
 
 A change can reach review with every task checked off, the runner exiting
@@ -120,10 +128,9 @@ when clean.
   </example>
 </coverage-boundary-examples>
 
-## Arc42 implementation conformance (conditional)
+## Arc42 implementation conformance
 
-If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled` in
-review.md. Otherwise, run this mandatory check before coverage classification.
+Run this mandatory check before coverage classification.
 Read the durable `docs/arc42/` chapters and the change-level `arc42.md`, then
 independently derive the affected chapters and architecture facts from the
 completed implementation, `design.md`, and `tasks.md`. For every chapter or
@@ -137,6 +144,36 @@ a finding. Fix the affected artifact and repeat the comparison; if design.md
 changes, re-run design-review. Record `ARC42 CONFORMANCE: CLEAN` only when all
 rows match. Do not write `REVIEW: PASS` while an Arc42 finding remains.
 
+## Ubiquitous language conformance
+
+Before sign-off, run this mandatory
+check: confirm that the specs, design, and code reuse the durable glossary's
+exact terms — the ubiquitous language is used consistently everywhere and
+recorded in the project's arc42 glossary. Every spec or design term the
+glossary does not hold, or any inconsistent reuse, is a finding: fix the
+affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
+Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
+
+## Visual review (conditional)
+
+Run this block when the change's design declares a visual interface (a
+`## Visual Design Contract` section whose `Interface:` is not `none`).
+
+- Confirm the evidence is complete: every delta `@e2e` scenario has one
+  committed final-state screenshot per contract viewport, or a transcript for
+  a terminal interface.
+- Spawn one fresh-context vision subagent per confirmed Persona. The subagent
+  sees the committed screenshots and judges whether that Persona can reach
+  its goal with what is shown. Record every finding with a disposition; never
+  invent a Persona.
+- Every finding names a contract rule or a failed Persona goal: no pixel-level
+  or coordinate finding is accepted.
+- A style improvement inside the contract updates the contract; it is not a
+  review failure. Without a vision-capable harness, record
+  `VISUAL-REVIEW: UNVERIFIED` and require a human sign-off.
+- End the block with `VISUAL-REVIEW: PASS` only when the evidence is complete,
+  the baseline holds, and every Persona finding is dispositioned.
+
 ## Deterministic gate dispositions
 
 Before sign-off, inspect the deterministic overlap findings. Complete the
@@ -144,6 +181,24 @@ Before sign-off, inspect the deterministic overlap findings. Complete the
 decision for every long scenario, and explain every removed+added pair as
 supersession or unrelated work. Do not use scores as a substitute for a human
 disposition.
+
+## README impact decision (readme addon enabled)
+
+When the readme addon is enabled, review.md must record the machine-checkable
+README impact decision — the review gate refuses sign-off without it:
+
+- `README-IMPACT: none` — this change did not touch the project's public face.
+- `README-IMPACT: updated - <comma-separated sections>` — the named README
+  sections (Description, Quick start, Prerequisites, Usage, Configuration,
+  Contributing, License) were refreshed to match this change.
+
+Make the decision consciously before sign-off: if the change introduced,
+changed, or removed anything a consumer observes (commands, flags, config,
+output), the corresponding README sections belong in the updated list, and the
+README must actually be edited — not just declared updated. An open
+placeholder in the README blocks the archive gate regardless of this line, so
+filling the scaffold sections during the change that made the project usable
+is the cheap path.
 
 ## Coverage gate (completeness, not percentage)
 
@@ -167,7 +222,8 @@ Coverage is complete when every gap is classified and resolved (or justified).
 1. Run `./run-tests.sh` — confirm all non-@e2e tests pass.
    Coverage data is embedded in the output if the runner is configured
     with coverage instrumentation. Extract the summary from the merged report
-    produced by `coverage.measure_command` and `coverage.merge_command`.
+    produced by the measurement and merge commands configured in
+    `givn/commands.yaml`.
 2. Run `verify.e2e_command` — confirm all @e2e tests pass.
 3. Run the configured measurement command and then merge command. Apply check
    14 before extracting gaps.

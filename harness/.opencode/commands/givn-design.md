@@ -42,7 +42,7 @@ Without `--json`, the command emits the resolved instruction text only.
 
 Read:
 - `givn/changes/<id>/proposal.md` — WHAT and WHY
-- `givn/changes/<id>/specs/<capability>/<capability>.feature` — observable behaviours
+- `givn/changes/<id>/specs/<group>/<capability>.feature` — observable behaviours
 - Relevant existing code (architecture, patterns, integration points)
 
 ### 4. Write the design

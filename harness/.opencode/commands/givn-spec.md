@@ -38,18 +38,32 @@ When `--json` is supplied, parse the documented object:
 
 Without `--json`, the command emits the resolved instruction text only.
 
-### 3. Read the proposal
+### 3. Read the proposal's Capability Routing table
 
-Read `givn/changes/<id>/proposal.md`. The capabilities/features listed there
-determine how many `.feature` files to create (one per capability).
+Read `givn/changes/<id>/proposal.md`'s `## Capability Routing` table. Each
+row's **Decision** column, not the proposal's free-text description,
+determines what to write:
+- `EXTEND <capability>`: add scenarios into the existing capability's delta (a
+  `@givn.modified` or `@givn.added` delta targeting that capability, under the
+  use-case ID declared by its `usecase.md`).
+- `NEW in <usecase-id>`: create or update the use-case document and create the
+  capability file under `givn/changes/<id>/specs/<usecase-id>/<capability>.feature`.
 
-Also check permanent specs at `givn/specs/` — existing scenarios for a
-capability are the baseline; delta scenarios extend or modify them.
+If the table is missing rows for a capability you're about to write specs
+for, run `givn spec route` now and fill it in before proceeding — do not
+invent a capability name from the proposal's prose without going through
+routing first.
+
+Also check the owning use-case document at `givn/specs/<usecase-id>/usecase.md`.
+Existing scenarios for a capability are the baseline; delta scenarios extend
+or modify them. Read the use-case contract, confirmed Persona references, and
+interaction inventory before writing the feature delta. Gherkin uses actors,
+not Persona biographies.
 
 ### 4. Write delta .feature files
 
 For each capability, create:
-`givn/changes/<id>/specs/<capability>/<capability>.feature`
+`givn/changes/<id>/specs/<usecase-id>/<capability>.feature`
 
 **Required tags:**
 - `@givn.delta` on the Feature line (marks this as a delta document)
@@ -91,11 +105,8 @@ Feature: My Capability
 the inventory, real-interface, and one-E2E-per-distinct-action rules. This
 command only choreographs the spec-writing steps and must not restate them.
 
-Retrieval-aware authoring is feature-dependent. In a retrieval-capable build,
-use `givn spec index` to refresh permanent scenarios and `givn spec search` or
-`givn spec explore` for advisory authoring evidence. The blocking path is
-`givn check review --change <id>`. In a feature-free build, preserve the
-explicit `retrieval-unavailable` failure rather than passing silently.
+
+rerun review; do not chunk or edit scenarios automatically.
 
 ### 5. Validate syntax
 
@@ -124,7 +135,7 @@ Read `next_required.id` from the output and report it as the next step
 ## Spec written: <id>
 
 **Files created:**
-- givn/changes/<id>/specs/<capability>/<capability>.feature  (N scenarios)
+- givn/changes/<id>/specs/<group>/<capability>.feature  (N scenarios)
 
 **Lint:** clean (N @wip scenarios — expected)
 
@@ -138,5 +149,7 @@ Read `next_required.id` from the output and report it as the next step
 - Keep all scenarios `@wip` — step definitions are not written yet.
 - Never add implementation detail to the spec (belongs in design.md).
 - Run `givn lint` and fix parse errors before finishing.
-- One `.feature` file per capability. Do not put all scenarios in one file.
+- One `.feature` file per capability, under the capability's group
+  directory (`givn/changes/<id>/specs/<group>/<cap>.feature`). Do not put
+  all scenarios in one file.
 - `givn lint` exit 2 (@wip present) is expected and correct at this stage.

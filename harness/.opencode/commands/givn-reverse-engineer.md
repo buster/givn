@@ -136,7 +136,7 @@ proceed with the existing change rather than creating a new one.
 
 ### 5. Write the descriptive spec directly
 
-Write `givn/changes/<id>/specs/<capability>/<capability>.feature`:
+Write `givn/changes/<id>/specs/<group>/<capability>.feature`:
 
 - Tag the Feature: `@givn.delta @<capability>`.
 - Tag each Scenario: `@givn.added @wip` (all scenarios are added — the
@@ -253,7 +253,7 @@ givn status --change <id>
 **Black-box boundary:** <boundary>
 
 **Spec written:**
-- givn/changes/<id>/specs/<cap>/<cap>.feature  (N scenarios, all @givn.added @wip)
+- givn/changes/<id>/specs/<group>/<cap>.feature  (N scenarios, all @givn.added @wip)
 
 **Tasks written:**
 - givn/changes/<id>/tasks.md  (N+1 tasks: 1 setup + N characterization cycles)

@@ -14,6 +14,14 @@ Write the implementation task breakdown for change `<change-id>`.
 - Design (HOW): `givn/changes/<change-id>/design.md`
 - Test runner: `./run-tests.sh`
 
+## Use-case constraints
+
+Read the owning `usecase.md`, its guarantees and rules, confirmed Persona
+references, and any ideation seed before writing tasks. Copy the relevant
+domain constraints into every scenario task. The feature file remains the
+executable authority, but implementation agents must not lose the use-case
+contract between scenarios.
+
 ## Verify Interaction Coverage before writing tasks (mandatory)
 
 Before writing any task, cross-reference the spec's User Interaction
@@ -121,8 +129,10 @@ Then move to the next @e2e scenario.
   reusing one step file design.md split into two, or pointing
   `verify.e2e_command` at the same string as `verify.command`), STOP —
   do not implement the shortcut. Update design.md with the corrected
-  decision, re-run design-review (and reassess arc42 chapters if
-  structural), then resume. A shortcut that never touches design.md is an
+  decision, re-run design-review, then resume.
+  When the design.md fix is structural, reassess the affected arc42 chapters
+  before resuming.
+  A shortcut that never touches design.md is an
   unreviewed design decision made by the wrong artifact, and review.md's
   fabrication audit is built to catch it.
 - Every scenario task ends in a COMMIT sub-task with a recorded hash. A

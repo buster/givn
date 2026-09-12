@@ -117,8 +117,8 @@ Mechanical check, before trusting anything else:
     re-running design-review is a fabrication-audit finding: an unreviewed
     design decision made silently by the tasks/implementation phase. Fix
     by conforming to design.md as reviewed, or by updating design.md and
-    re-running design-review (reassess arc42 chapters if structural)
-    before accepting the deviation.
+    re-running design-review before accepting the deviation.
+    Reassess the affected arc42 chapters when the design.md fix is structural.
 12. Any finding from 1-11 is unfinished implementation, not a coverage gap.
     Uncheck the task, drive it through RED→GREEN→REFACTOR→COMMIT for real —
     fixing the real-interface obstacle per design.md, never by leaving the
@@ -127,10 +127,9 @@ Mechanical check, before trusting anything else:
 
 Paste the result into review.md's Fabrication Audit section even when clean.
 
-### Arc42 implementation conformance (conditional)
-If `addons.arc42` is disabled, record `N/A when the arc42 addon is disabled`.
-If it is enabled, read the durable `docs/arc42/` chapters and the change-level
-`arc42.md`, independently derive the affected chapters and architecture facts,
+### Arc42 implementation conformance
+Read the durable `docs/arc42/` chapters and the change-level `arc42.md`,
+independently derive the affected chapters and architecture facts,
 and compare each one against `design.md`, its mapped task(s) in `tasks.md`, and
 evidence from the completed implementation. Fill review.md's **Arc42
 implementation conformance** table.
@@ -144,18 +143,12 @@ row matches. Do not write `REVIEW: PASS` with an unresolved Arc42 finding.
 
 ### Deterministic gate dispositions
 
-Complete the **Overlap dispositions** table for every shape match, add a
-**split-or-keep** decision for every long scenario, and explain every
-removed+added pair as supersession or unrelated work before sign-off.
-
-### Semantic review classifications
-
-When `semantic-review.md` exists, classify every candidate as `DUPLICATE`,
-`VARIANT`, or `VALID-BOUNDARY` and write a rationale. `UNCERTAIN` or a missing
-rationale blocks `givn check review --change <id>`. There is no `UNRELATED`
-escape classification. A seemingly unrelated pair that remains above the
-active boundary requires sharper domain vocabulary and observable invariants,
-followed by a fresh review run.
+Complete the **Overlap dispositions** table for every shape match (section
+heading exactly `## Overlap dispositions`; the Decision column must be one
+of `duplicate`, `variant`, or `boundary` — an empty or unrecognised word
+does not clear the finding), add a **split-or-keep** decision (section
+heading exactly `## Split-or-keep`) for every long scenario, and explain
+every removed+added pair as supersession or unrelated work before sign-off.
 
 ### 2. Confirm all tests pass
 Run <verify.command> and <verify.e2e_command>. All scenarios GREEN, no @wip.
@@ -163,7 +156,7 @@ Failures: diagnose infrastructure (fix plumbing only) or coverage gap
 (classify below). Never change production code to force a pass.
 
 ### 3. Measure and record coverage
-Run `coverage.measure_command`, then `coverage.merge_command` from
+Run the configured measurement command, then the merge command, from
 `givn/commands.yaml`. Record the merged line and branch percentages and raw
 report counters in review.md — a fact, not a threshold gate.
 

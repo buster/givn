@@ -42,7 +42,7 @@ prerequisite artifacts; do not copy instruction prose into the file. Without
 ### 3. Read the inputs
 
 `givn/changes/<id>/design.md` (step def locations, strict-mode config, stub
-pattern), `.../specs/<capability>/<capability>.feature`, `.../proposal.md`.
+pattern), `.../specs/<group>/<capability>.feature`, `.../proposal.md`.
 
 ### 4. Write the task list
 
@@ -146,8 +146,11 @@ not a second E2E policy.
   (e.g. one shared step file instead of the two design.md split, or
   `verify.e2e_command` == `verify.command` because a real tag filter is
   more work), STOP — do not implement the shortcut as a task. Update
-  design.md with the corrected decision and re-run design-review (reassess
-  arc42 chapters if structural) before resuming. review.md's fabrication
+  design.md with the corrected decision and re-run design-review before
+  resuming.
+  When the design.md fix is structural, reassess the affected arc42 chapters
+  before resuming.
+  review.md's fabrication
   audit diffs the built system against design.md's stated decisions
   specifically to catch an unreviewed shortcut like this.
 
