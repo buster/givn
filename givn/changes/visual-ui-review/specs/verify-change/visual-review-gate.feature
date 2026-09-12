@@ -2,7 +2,7 @@
 
 Feature: Visual Review Gate
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A visual change with complete evidence passes review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
