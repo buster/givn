@@ -94,10 +94,41 @@ A Web UI must be usable at two default viewports: mobile in the Samsung S24
 class (360x780 CSS pixels) and desktop in Full HD (1920x1080 CSS pixels). The
 `## Visual Design Contract` may add viewports; it may not drop these two.
 
-A style improvement that stays within the contract is not an error: it
-updates the contract (tokens, primitives, or reference views) in the same
-change. Record the improvement and the contract update together; never
-silently keep a deviation and never reject a conforming improvement.
+## Visual Design Contract (mandatory for new or changed screens)
+
+A change that introduces or visibly changes a screen records this section in
+its design. The contract is style-level, not pixel-level: it names the rules,
+not the pixels.
+
+```
+- Interface: web | terminal | none
+- Viewports: mobile (360x780), desktop (1920x1080)
+- Design system: docs/design/design-system.md
+```
+
+- **design tokens**: color roles, spacing scale, typography scale, radii,
+  elevation.
+- **Component primitives**: each primitive with its component states —
+  default, hover, focus, disabled, loading, empty, error.
+- **Screens covered**: one line per screen the change introduces or visibly
+  changes.
+- **rendered reference**: at least one rendered reference view for the
+  screens covered.
+- **Capture mechanism and evidence path**: every `@e2e` scenario commits a
+  final-state screenshot per viewport under
+  `givn/changes/<id>/evidence/visual/<scenario-slug>/<viewport>.png`, or a
+  transcript under `.../transcript.txt` for a terminal interface.
+  Intermediate captures live under `reports/visual/` and are not review
+  evidence.
+- **Motion**: record the motion rules; screenshots do not show motion, so
+  `prefers-reduced-motion` is asserted and motion-heavy changes may add a
+  human-reviewed video.
+
+The durable design system lives in `docs/design/` and is updated when the
+contract changes. A style improvement that stays within the contract is not
+an error: it updates the contract (tokens, primitives, or reference views) in
+the same change. Record the improvement and the contract update together;
+never silently keep a deviation and never reject a conforming improvement.
 
 ## E2E smoke test infrastructure
 
