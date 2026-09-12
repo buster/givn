@@ -2,7 +2,7 @@
 
 Feature: Visual Design Contract
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Author requests the visual design contract guidance
     Given a givn project
     When the user runs `givn instructions design --change visual-ui-review`
