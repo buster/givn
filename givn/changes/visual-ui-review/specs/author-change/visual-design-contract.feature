@@ -30,7 +30,7 @@ Feature: Visual Design Contract
     Then stdout contains "improvement"
     And stdout contains "updates the contract"
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Synchronized guidance defines the contract approval and capture mechanics
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
