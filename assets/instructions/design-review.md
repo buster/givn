@@ -31,6 +31,13 @@ Required branches — cover every one (or explicitly record "no issue found"):
   capability ownership, typed relationships, confirmed Persona coverage, and
   explicit dispositions. Reject invented or silently promoted Personas and
   any use of Persona biographies as Gherkin actors.
+- **Visual design contract** — for a change that introduces or visibly changes
+  a screen, `design.md` must contain the `## Visual Design Contract` section
+  with its `Interface:` line and viewports. When no approved design exists,
+  the agent must propose two or three rendered options (style tiles or an
+  equivalent rendered reference) and the user approves one; the approved
+  direction is recorded in `design.md`. Without an approved contract,
+  design-review does not sign off.
 - **ADR qualification** — delegate the complete qualification procedure to the
   canonical Arc42 addon instruction by running `givn instructions arc42-docs
   --change <id>`. Check only candidates whose structured verdict has all
