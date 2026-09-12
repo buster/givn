@@ -23,7 +23,7 @@ Feature: Visual Review Gate
     And stdout contains "vision"
     And stdout contains "transcript"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A visual change without a visual verdict fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
