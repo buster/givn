@@ -23,7 +23,7 @@ Feature: Visual Design Contract
     And stdout contains "Full HD"
     And stdout contains "1920x1080"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance keeps improvements inside the style
     Given a givn project
     When the user runs `givn instructions design --change visual-ui-review`

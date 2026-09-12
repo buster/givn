@@ -94,6 +94,11 @@ A Web UI must be usable at two default viewports: mobile in the Samsung S24
 class (360x780 CSS pixels) and desktop in Full HD (1920x1080 CSS pixels). The
 `## Visual Design Contract` may add viewports; it may not drop these two.
 
+A style improvement that stays within the contract is not an error: it
+updates the contract (tokens, primitives, or reference views) in the same
+change. Record the improvement and the contract update together; never
+silently keep a deviation and never reject a conforming improvement.
+
 ## E2E smoke test infrastructure
 
 Every capability with `@e2e` scenarios MUST document:
