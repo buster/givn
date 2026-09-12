@@ -63,6 +63,8 @@ pub mod template_conditional_rendering_steps;
 pub mod template_conditional_rendering_support;
 pub mod validate_artifact_id_input_steps;
 pub mod validate_change_id_input_steps;
+pub mod visual_design_contract_steps;
+pub mod visual_review_gate_steps;
 pub mod workflow_enforcement_e2e_steps;
 pub mod workflow_enforcement_steps;
 
