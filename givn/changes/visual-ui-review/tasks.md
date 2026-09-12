@@ -181,38 +181,60 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `57cfd9b7` -- `feat(visual-design-contract): Design-review guidance requires an approved contract`
 
-- [ ] Scenario: `The design template carries the visual contract section`
-  - [ ] RED: remove `@wip` for this scenario only; implement the ejected
-        design template step as a stub. Run → non-zero. Evidence:
+- [x] Scenario: `The design template carries the visual contract section`
+  - [x] RED: removed `@wip` for this scenario only; the ejected-template
+        step stub failed. Run → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the `## Visual Design Contract` section (with the
-        `Interface:` line) to `assets/templates/design.md` and implement the
-        `the ejected design template contains` step. Run → zero. Evidence:
+  - [x] GREEN: added the `## Visual Design Contract` section (with the
+        `Interface:` line) to `assets/templates/design.md` and implemented
+        the `the ejected design template contains` step. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `The design template carries the visual contract section`
+  - [x] COMMIT: `7b0649e9` -- `feat(visual-design-contract): The design template carries the visual contract section`
 
 ### visual-review-gate
 
-- [ ] Scenario: `A visual change without a visual verdict fails review`
-  - [ ] RED: remove `@wip` for this scenario only; implement the contract and
-        review.md fixture steps as stubs. Run → non-zero. Evidence:
+- [x] Scenario: `A visual change without a visual verdict fails review`
+  - [x] RED: removed `@wip` for this scenario only; ran with the fixture
+        steps stubbed → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: implement `parse_visual_contract` and the verdict check in
-        `src/integrity_hook.rs`, wired into `run_integrity_hook`, plus the
-        fixture steps. Files: `src/integrity_hook.rs`,
-        `tests/steps/visual_review_gate_steps.rs`. Run → zero. Evidence:
+  - [x] GREEN: implemented `parse_visual_contract` (fence-aware) and the
+        verdict check in `src/integrity_hook.rs`, wired into
+        `run_integrity_hook`, plus the fixture steps. Files:
+        `src/integrity_hook.rs`, `tests/steps/visual_review_gate_steps.rs`.
+        Run → zero; parser unit tests 16 passed. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        test result: ok. 16 passed; 0 failed
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `A visual change without a visual verdict fails review`
+  - [x] COMMIT: `abb09415` -- `feat(visual-review-gate): A visual change without a visual verdict fails review`
 
 - [ ] Scenario: `A change without a visual contract is exempt from the visual gate`
   - [ ] RED: remove `@wip` for this scenario only; implement the
