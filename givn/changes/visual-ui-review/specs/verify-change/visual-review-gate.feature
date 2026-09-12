@@ -128,3 +128,11 @@ Feature: Visual Review Gate
     Then the command succeeds
     And the ejected review template contains "VISUAL-REVIEW: PASS"
     And the ejected review template contains "persona"
+
+  @givn.added
+  Scenario: Synchronized review guidance carries the visual block
+    Given a givn project with all agent skill targets enabled
+    When the user runs `givn skills sync`
+    Then the generated givn-review guidance contains "VISUAL-REVIEW: PASS"
+    And the generated givn-review guidance contains "confirmed Persona"
+    And the generated givn-review guidance contains "no pixel-level"
