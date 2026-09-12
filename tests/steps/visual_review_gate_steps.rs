@@ -61,13 +61,28 @@ fn design_declares_web_without_viewports(world: &mut GivnWorld) {
 }
 
 #[given(regex = r##"^the change's delta spec contains an @e2e scenario "([^"]+)"$"##)]
-fn delta_spec_contains_e2e(_world: &mut GivnWorld, _title: String) {
-    unimplemented!()
+fn delta_spec_contains_e2e(world: &mut GivnWorld, title: String) {
+    let dir = change_dir(world).join("specs/fixture");
+    std::fs::create_dir_all(&dir).expect("create delta specs dir");
+    let feature = format!(
+        "@givn.delta @fixture-capability\n\nFeature: Fixture capability\n\n  @givn.added @e2e\n  Scenario: {title}\n    Given the fixture universe is ready\n    When the fixture observer looks\n    Then the fixture records a unique observation\n"
+    );
+    std::fs::write(dir.join("fixture-capability.feature"), feature)
+        .expect("write delta feature");
+}
+
+fn evidence_path(world: &GivnWorld, title: &str, file: &str) -> PathBuf {
+    change_dir(world)
+        .join("evidence/visual")
+        .join(givn::integrity_hook::scenario_slug(title))
+        .join(file)
 }
 
 #[given(regex = r##"^the change has a final-state screenshot for "([^"]+)" at viewport "([^"]+)"$"##)]
-fn has_final_state_screenshot(_world: &mut GivnWorld, _title: String, _viewport: String) {
-    unimplemented!()
+fn has_final_state_screenshot(world: &mut GivnWorld, title: String, viewport: String) {
+    let path = evidence_path(world, &title, &format!("{viewport}.png"));
+    std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+    std::fs::write(&path, b"final-state screenshot bytes").expect("write screenshot");
 }
 
 #[given(regex = r##"^the change has an empty screenshot file for "([^"]+)" at viewport "([^"]+)"$"##)]

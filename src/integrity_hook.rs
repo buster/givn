@@ -141,6 +141,26 @@ pub fn parse_visual_contract(design: &str) -> Option<VisualContract> {
     })
 }
 
+/// Deterministic scenario-title slug: lowercase ASCII; every run of
+/// non-alphanumeric characters becomes one `-`; leading/trailing `-` removed.
+/// "Consumer opens the dashboard" -> "consumer-opens-the-dashboard".
+pub fn scenario_slug(title: &str) -> String {
+    let mut slug = String::new();
+    let mut pending_dash = false;
+    for character in title.chars().flat_map(char::to_lowercase) {
+        if character.is_ascii_alphanumeric() {
+            if pending_dash && !slug.is_empty() {
+                slug.push('-');
+            }
+            pending_dash = false;
+            slug.push(character);
+        } else {
+            pending_dash = true;
+        }
+    }
+    slug
+}
+
 /// Remove fenced code blocks (``` or ~~~) so examples are never parsed.
 fn strip_fenced_blocks(text: &str) -> String {
     let mut out = String::new();
@@ -188,13 +208,72 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
         );
     }
     let review = std::fs::read_to_string(&review_path)?;
-    if review.contains("VISUAL-REVIEW: PASS") {
-        return Ok(());
+    if !review.contains("VISUAL-REVIEW: PASS") {
+        bail!(
+            "review.md is missing the visual verdict — add \
+             'VISUAL-REVIEW: PASS' for a declared visual interface"
+        );
     }
-    bail!(
-        "review.md is missing the visual verdict — add \
-         'VISUAL-REVIEW: PASS' for a declared visual interface"
-    );
+
+    check_visual_evidence(change_dir, &contract)
+}
+
+/// Collect every delta `@e2e` scenario title that still needs visual evidence.
+pub fn collect_e2e_scenario_titles(specs_dir: &Path) -> Result<Vec<String>> {
+    let mut titles = Vec::new();
+    for path in crate::gherkin::parse::collect_feature_files(specs_dir) {
+        let feature = gherkin::Feature::parse_path(&path, gherkin::GherkinEnv::default())
+            .map_err(|error| anyhow::anyhow!("failed to parse {}: {error}", path.display()))?;
+        for scenario in &feature.scenarios {
+            let is_e2e = scenario.tags.iter().any(|tag| tag == "e2e");
+            let is_removed = scenario.tags.iter().any(|tag| tag == "givn.removed");
+            if is_e2e && !is_removed {
+                titles.push(scenario.name.clone());
+            }
+        }
+    }
+    Ok(titles)
+}
+
+/// Check that every delta `@e2e` scenario has the declared evidence.
+fn check_visual_evidence(change_dir: &Path, contract: &VisualContract) -> Result<()> {
+    let titles = collect_e2e_scenario_titles(&change_dir.join("specs"))?;
+    let evidence_root = change_dir.join("evidence/visual");
+    let mut errors = Vec::new();
+    for title in &titles {
+        let slug = scenario_slug(title);
+        match contract.interface {
+            VisualInterface::Web => {
+                for viewport in &contract.viewports {
+                    let path = evidence_root.join(&slug).join(format!("{viewport}.png"));
+                    if !path.is_file() {
+                        errors.push(format!(
+                            "visual evidence missing for scenario '{title}' at viewport \
+                             '{viewport}' (expected {})",
+                            path.display()
+                        ));
+                    }
+                }
+            }
+            VisualInterface::Terminal => {
+                let path = evidence_root.join(&slug).join("transcript.txt");
+                if !path.is_file() {
+                    errors.push(format!(
+                        "visual evidence missing for scenario '{title}' (expected {})",
+                        path.display()
+                    ));
+                }
+            }
+            VisualInterface::None => {}
+        }
+    }
+    if !errors.is_empty() {
+        for error in &errors {
+            eprintln!("[integrity] {error}");
+        }
+        bail!("integrity check failed: visual evidence");
+    }
+    Ok(())
 }
 
 /// Check that coverage commands are configured when the addon is enabled.
@@ -644,6 +723,15 @@ mod tests {
     #[test]
     fn absent_section_is_exempt() {
         assert_eq!(parse_visual_contract("# Design\n\nNo contract here.\n"), None);
+    }
+
+    #[test]
+    fn scenario_slug_matches_the_documented_rule() {
+        assert_eq!(
+            scenario_slug("Consumer opens the dashboard"),
+            "consumer-opens-the-dashboard"
+        );
+        assert_eq!(scenario_slug("C001: Paused -- now!"), "c001-paused-now");
     }
 
     #[test]
