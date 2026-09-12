@@ -121,7 +121,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "Consumer opens the dashboard"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review template carries the visual review section
     Given a project root with givn/ initialised
     When the user runs `givn eject review:template`
