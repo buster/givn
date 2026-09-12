@@ -157,19 +157,29 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `415e8047` -- `feat(visual-design-contract): Design guidance keeps improvements inside the style`
 
-- [ ] Scenario: `Design-review guidance requires an approved contract`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Design-review guidance requires an approved contract`
+  - [x] RED: removed `@wip` for this scenario only. Run → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the visual contract branch (propose rendered options,
+  - [x] GREEN: added the visual contract branch (propose rendered options,
         user approves, record the decision) to
         `assets/instructions/design-review.md`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Design-review guidance requires an approved contract`
+  - [x] COMMIT: `57cfd9b7` -- `feat(visual-design-contract): Design-review guidance requires an approved contract`
 
 - [ ] Scenario: `The design template carries the visual contract section`
   - [ ] RED: remove `@wip` for this scenario only; implement the ejected
