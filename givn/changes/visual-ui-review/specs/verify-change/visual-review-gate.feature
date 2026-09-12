@@ -64,7 +64,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "human sign-off"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A terminal change passes review with a transcript
     Given a givn project with a change that has passed design-review
     And the change's design.md declares a visual design contract for the terminal interface
