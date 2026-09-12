@@ -52,7 +52,7 @@ Feature: Visual Design Contract
     And stdout contains "user approves"
     And stdout contains "rendered options"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design template carries the visual contract section
     Given a project root with givn/ initialised
     When the user runs `givn eject design:template`

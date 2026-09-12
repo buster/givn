@@ -4,6 +4,23 @@
 
 > How will we implement this change? Summarise the approach.
 
+## Visual Design Contract
+
+> Include this section only when the change introduces or visibly changes a
+> screen. Delete it otherwise; a change without this section is exempt from
+> the visual review gate.
+>
+> ```
+> - Interface: web | terminal | none
+> - Viewports: mobile (360x780), desktop (1920x1080)
+> - Design system: docs/design/design-system.md
+> ```
+>
+> Follow with the tokens (color roles, spacing, typography), the component
+> primitives and their states, the screens this contract covers, the capture
+> mechanism, and at least one rendered reference view. The contract is
+> style-level, not pixel-level; a conforming improvement updates it.
+
 ## Use-Case Traceability
 
 > Owning use-case ID: <usecase-id or none>
