@@ -62,6 +62,11 @@ Required branches:
 - **E2E fidelity** — read `givn instructions specs --change <change-id>`
   and verify its normalized action scope, interface type, real driver, and
   primary assertion rules are applied without redefinition.
+- **Visual contract** — for a change that introduces or visibly changes a
+  screen, confirm the `## Visual Design Contract` section exists with its
+  `Interface:` line and viewports. When no approved design exists, propose
+  two or three rendered options and the user approves one; record the
+  approved direction in `design.md`.
 - **Interaction Coverage** — does every entry in the spec's User Interaction
   Inventory correspond to a row in the design's Interaction Coverage Matrix?
   Does every matrix row name a valid, non-empty driving mechanism (real
