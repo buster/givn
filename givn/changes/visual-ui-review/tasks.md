@@ -83,18 +83,28 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `c9d3c4f1` -- `Canonical policy requires the visual baseline at every assertion`
 
-- [ ] Scenario: `Canonical policy uses transcripts for terminal interfaces`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Canonical policy uses transcripts for terminal interfaces`
+  - [x] RED: removed `@wip` for this scenario only. Run → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the terminal transcript rule and the API-only exemption to
-        `assets/instructions/specs.md`. Run → zero. Evidence:
+  - [x] GREEN: added the terminal transcript rule and the API-only exemption
+        to `assets/instructions/specs.md`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Canonical policy uses transcripts for terminal interfaces`
+  - [x] COMMIT: `2de63e96` -- `feat(prose-consolidation): Canonical policy uses transcripts for terminal interfaces`
 
 ### visual-design-contract
 

@@ -88,6 +88,12 @@ interaction inventory, one-E2E-per-action scope, real-interface assertions,
 and flag-variant classification. Design-specific infrastructure and matrix
 details belong here; the policy itself is not restated here.
 
+## Default viewports (mandatory for a Web UI)
+
+A Web UI must be usable at two default viewports: mobile in the Samsung S24
+class (360x780 CSS pixels) and desktop in Full HD (1920x1080 CSS pixels). The
+`## Visual Design Contract` may add viewports; it may not drop these two.
+
 ## E2E smoke test infrastructure
 
 Every capability with `@e2e` scenarios MUST document:
