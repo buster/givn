@@ -21,6 +21,7 @@ pub fn run_integrity_hook(
 
     check_hash_presence(&change_dir)?;
     check_promised_files_exist(&change_dir)?;
+    check_visual_review(&change_dir)?;
     if arc42_enabled {
         check_arc42_conformance(&change_dir)?;
     }
@@ -75,6 +76,119 @@ fn check_readme_impact(change_dir: &Path) -> Result<()> {
         );
     }
     Ok(())
+}
+
+/// A parsed `## Visual Design Contract` section.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct VisualContract {
+    pub interface: VisualInterface,
+    pub viewports: Vec<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VisualInterface {
+    Web,
+    Terminal,
+    None,
+}
+
+/// Parse the `## Visual Design Contract` section from a design document.
+///
+/// Fenced code blocks are removed before scanning so an example contract
+/// inside a fence never triggers the gate. Returns `None` when no section
+/// exists. The interface defaults to `None` when the section carries no
+/// recognized `- Interface:` line.
+pub fn parse_visual_contract(design: &str) -> Option<VisualContract> {
+    let without_fences = strip_fenced_blocks(design);
+    let lines: Vec<&str> = without_fences.lines().collect();
+    let start = lines
+        .iter()
+        .position(|line| line.trim() == "## Visual Design Contract")?;
+    let end = lines[start + 1..]
+        .iter()
+        .position(|line| line.trim_start().starts_with("## "))
+        .map(|offset| start + 1 + offset)
+        .unwrap_or(lines.len());
+
+    let mut interface = VisualInterface::None;
+    let mut viewports = Vec::new();
+    for line in &lines[start + 1..end] {
+        let trimmed = line.trim();
+        if let Some(value) = trimmed.strip_prefix("- Interface:") {
+            interface = match value.trim().to_lowercase().as_str() {
+                "web" => VisualInterface::Web,
+                "terminal" => VisualInterface::Terminal,
+                _ => VisualInterface::None,
+            };
+        } else if let Some(value) = trimmed.strip_prefix("- Viewports:") {
+            viewports = value
+                .split(',')
+                .map(|entry| {
+                    entry
+                        .split('(')
+                        .next()
+                        .unwrap_or_default()
+                        .trim()
+                        .to_lowercase()
+                })
+                .filter(|name| !name.is_empty())
+                .collect();
+        }
+    }
+    Some(VisualContract {
+        interface,
+        viewports,
+    })
+}
+
+/// Remove fenced code blocks (``` or ~~~) so examples are never parsed.
+fn strip_fenced_blocks(text: &str) -> String {
+    let mut out = String::new();
+    let mut in_fence = false;
+    for line in text.lines() {
+        let trimmed = line.trim_start();
+        if trimmed.starts_with("```") || trimmed.starts_with("~~~") {
+            in_fence = !in_fence;
+            continue;
+        }
+        if !in_fence {
+            out.push_str(line);
+            out.push('\n');
+        }
+    }
+    out
+}
+
+/// Check the visual review verdict for a change whose design declares a
+/// visual interface. A change without a contract section is exempt.
+fn check_visual_review(change_dir: &Path) -> Result<()> {
+    let design_path = change_dir.join("design.md");
+    if !design_path.exists() {
+        return Ok(());
+    }
+    let design = std::fs::read_to_string(&design_path)?;
+    let Some(contract) = parse_visual_contract(&design) else {
+        return Ok(());
+    };
+    if contract.interface == VisualInterface::None {
+        return Ok(());
+    }
+
+    let review_path = change_dir.join("review.md");
+    if !review_path.exists() {
+        bail!(
+            "review.md is missing the visual verdict — add \
+             'VISUAL-REVIEW: PASS' or 'VISUAL-REVIEW: UNVERIFIED'"
+        );
+    }
+    let review = std::fs::read_to_string(&review_path)?;
+    if review.contains("VISUAL-REVIEW: PASS") {
+        return Ok(());
+    }
+    bail!(
+        "review.md is missing the visual verdict — add \
+         'VISUAL-REVIEW: PASS' for a declared visual interface"
+    );
 }
 
 /// Check that coverage commands are configured when the addon is enabled.
@@ -496,6 +610,34 @@ mod tests {
         let change = dir.path().join("givn/changes/test-change");
         std::fs::create_dir_all(&change).unwrap();
         (dir, change)
+    }
+
+    #[test]
+    fn fenced_contract_example_is_ignored() {
+        let design = "# Design\n\n```\n## Visual Design Contract\n\n- Interface: web\n- Viewports: mobile (360x780)\n```\n";
+        assert_eq!(parse_visual_contract(design), None);
+    }
+
+    #[test]
+    fn real_change_design_with_fenced_example_is_exempt() {
+        let path = std::path::Path::new("givn/changes/visual-ui-review/design.md");
+        if path.exists() {
+            let design = std::fs::read_to_string(path).unwrap();
+            assert!(parse_visual_contract(&design).is_none());
+        }
+    }
+
+    #[test]
+    fn web_contract_parses_interface_and_viewports() {
+        let design = "## Visual Design Contract\n\n- Interface: web\n- Viewports: mobile (360x780), desktop (1920x1080)\n\nprose\n";
+        let contract = parse_visual_contract(design).unwrap();
+        assert_eq!(contract.interface, VisualInterface::Web);
+        assert_eq!(contract.viewports, vec!["mobile", "desktop"]);
+    }
+
+    #[test]
+    fn absent_section_is_exempt() {
+        assert_eq!(parse_visual_contract("# Design\n\nNo contract here.\n"), None);
     }
 
     #[test]
