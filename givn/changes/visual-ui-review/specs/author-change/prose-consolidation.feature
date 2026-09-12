@@ -12,7 +12,7 @@ Feature: prose-consolidation
     And stdout contains "Samsung S24"
     And stdout contains "Full HD"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy requires the visual baseline at every assertion
     Given a givn project
     When the user runs `givn instructions specs --change visual-ui-review`

@@ -163,6 +163,28 @@ live in a project-specific location documented in `design.md`. They are
 separate from the unit/integration step definitions because they use
 different infrastructure (browser driver, HTTP client, test harness).
 
+## Visual evidence and baseline (Web UI and terminal)
+
+A visual interface is one whose evidence is what the consumer sees or reads.
+For a Web UI, every `@e2e` scenario asserts the visual baseline at every
+interaction, in addition to its primary assertion:
+
+- every control has a visible label;
+- no internal identifier or state name appears in visible text;
+- the page has a real title and heading;
+- no visible content is duplicated;
+- the error state has a heading and a way back;
+- the interface uses the configured language;
+- `prefers-reduced-motion` is honored.
+
+These are ordinary scenario assertions, not a separate tool. They run at every
+assertion of a visual capability, so a mid-flow defect cannot hide behind a
+clean final state.
+
+The design's `## Visual Design Contract` names the viewports and the evidence
+kind. This policy owns the evidence rule, not the design's format: see
+`givn instructions design` for the contract and capture mechanics.
+
 <example caption="Use-case inventory (in usecase.md), unit scenarios, and one @e2e per inventory entry">
 <!-- givn/specs/<usecase-id>/usecase.md — ## Interactions section -->
 | Capability | Consumer action | E2E scenario |
