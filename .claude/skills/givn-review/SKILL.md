@@ -154,6 +154,26 @@ glossary does not hold, or any inconsistent reuse, is a finding: fix the
 affected artifact and record the resolved term in `docs/arc42/12-glossary.md`.
 Do not write `REVIEW: PASS` while a ubiquitous-language finding remains.
 
+## Visual review (conditional)
+
+Run this block when the change's design declares a visual interface (a
+`## Visual Design Contract` section whose `Interface:` is not `none`).
+
+- Confirm the evidence is complete: every delta `@e2e` scenario has one
+  committed final-state screenshot per contract viewport, or a transcript for
+  a terminal interface.
+- Spawn one fresh-context vision subagent per confirmed Persona. The subagent
+  sees the committed screenshots and judges whether that Persona can reach
+  its goal with what is shown. Record every finding with a disposition; never
+  invent a Persona.
+- Every finding names a contract rule or a failed Persona goal: no pixel-level
+  or coordinate finding is accepted.
+- A style improvement inside the contract updates the contract; it is not a
+  review failure. Without a vision-capable harness, record
+  `VISUAL-REVIEW: UNVERIFIED` and require a human sign-off.
+- End the block with `VISUAL-REVIEW: PASS` only when the evidence is complete,
+  the baseline holds, and every Persona finding is dispositioned.
+
 ## Deterministic gate dispositions
 
 Before sign-off, inspect the deterministic overlap findings. Complete the

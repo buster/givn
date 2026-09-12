@@ -70,6 +70,16 @@ assertion, driver-fidelity, and normalized action rules. This skill supplies
 step-writing mechanics and applies the resolved design's concrete driver; it
 does not define another policy.
 
+## Visual capture mechanics
+
+For a visual interface, each `@e2e` scenario captures a final-state
+screenshot per contract viewport after the final assertion. Before every
+capture, animations are frozen (or `prefers-reduced-motion` is emulated) and
+fonts and network are settled, so the evidence is deterministic. Committed
+evidence lives under `evidence/visual/<scenario-slug>/<viewport>.png` — or
+`transcript.txt` for a terminal interface; per-assertion captures live under
+`reports/` and are debug artifacts, not review evidence.
+
 ## Black-Box-First policy
 
 Prefer reused real-interface steps. For an internal step or test that remains,
