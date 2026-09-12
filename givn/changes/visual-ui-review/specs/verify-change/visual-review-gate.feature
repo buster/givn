@@ -83,7 +83,7 @@ Feature: Visual Review Gate
     And stdout contains "improvement"
     And stdout contains "updates the contract"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance records an unverified verdict without vision
     Given a givn project
     When the user runs `givn instructions review --change visual-ui-review`

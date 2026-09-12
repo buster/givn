@@ -212,6 +212,9 @@ Run this block when the change's design declares a visual interface (a
 - A style improvement that stays within the contract updates the contract in
   the same change; it is not a review failure, and the code is never rolled
   back to match a stale reference.
+- When the active harness cannot process images, record
+  `VISUAL-REVIEW: UNVERIFIED`. That verdict blocks until a human sign-off
+  replaces it with `VISUAL-REVIEW: PASS`; it never silently passes.
 
 ## Deterministic gate dispositions
 
