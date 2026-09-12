@@ -486,6 +486,32 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `41ff9dcb` -- `feat(visual-review-gate): The review template carries the visual review section`
 
+- [x] Scenario: `Synchronized review guidance carries the visual block`
+      (added during implementation to cover the promised
+      `assets/skills/givn-review/SKILL.md.tmpl` change)
+  - [x] RED: removed `@wip` for this scenario only; the generated guidance
+        lacked the block → non-zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
+        ```
+  - [x] GREEN: added the visual block to
+        `assets/skills/givn-review/SKILL.md.tmpl`. Run → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        ```
+  - [x] REFACTOR: re-ran → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        ```
+  - [x] COMMIT: `a4e4ef0d` -- `test(visual-review-gate): Synchronized review guidance carries the visual block`
+
 ## E2E scenarios
 
 - [x] Scenario: `Canonical E2E policy is emitted by specs instructions`
@@ -616,8 +642,37 @@ Capabilities and step files:
 
 ## Verification
 
-- [ ] `cargo check --locked` passes; `cargo clippy --workspace --all-targets -- -D warnings` passes.
-- [ ] `givn lint --change visual-ui-review` exits 0 or 2 (no parse errors).
-- [ ] `./run-tests.sh` GREEN with no `@wip` left in the delta.
-- [ ] `./run-tests.sh --e2e` GREEN; e2e scope count strictly smaller than the regular scope.
-- [ ] This change's own `design.md` parses as exempt (fence-aware parser unit test).
+- [x] `cargo check --locked` passes; `cargo clippy --workspace --all-targets -- -D warnings` passes.
+      Evidence:
+      ```
+      Checking givn v0.7.0
+      Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.78s
+      ```
+- [x] `givn lint --change visual-ui-review` exits 0 (no parse errors, no warnings).
+      Evidence:
+      ```
+      givn lint: 3 file(s) checked — clean
+      ```
+- [x] Delta suite GREEN with no `@wip` left in the delta: 23/23 scenarios.
+      Evidence:
+      ```
+      GIVN_FEATURES=givn/changes/visual-ui-review/specs ./run-tests.sh
+      Summary [1.147s] 23 tests run: 23 passed, 0 skipped
+      ```
+- [x] Permanent suite GREEN: `./run-tests.sh` 415/415.
+      Evidence:
+      ```
+      Summary [24.374s] 415 tests run: 415 passed, 0 skipped
+      ```
+- [x] Permanent E2E suite GREEN: `./run-tests.sh --e2e` 79/79; e2e scope count
+      strictly smaller than the regular scope.
+      Evidence:
+      ```
+      Summary [4.686s] 79 tests run: 79 passed, 336 skipped
+      ```
+- [x] This change's own `design.md` parses as exempt (fence-aware parser unit
+      tests, 17 passed).
+      Evidence:
+      ```
+      test result: ok. 17 passed; 0 failed; 0 ignored
+      ```
