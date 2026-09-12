@@ -27,42 +27,61 @@ Capabilities and step files:
 
 ## Setup
 
-- [ ] Confirm strict mode and the runner: `tests/features_runner.rs` uses
+- [x] Confirm strict mode and the runner: `tests/features_runner.rs` uses
       `.fail_on_skipped()`; `verify.command` is `./run-tests.sh` and
       `verify.e2e_command` is `./run-tests.sh --e2e`. No new runner is needed.
-- [ ] Proof-of-strictness: write a temporary `tests/strict-mode-probe.feature`
-      with one undefined step and run
+- [x] Proof-of-strictness: wrote a temporary `tests/strict-mode-probe.feature`
+      with one undefined step and ran
       `GIVN_FEATURES=tests/strict-mode-probe.feature cargo test --test features_runner`.
-      Paste the non-zero output, then delete the probe.
+      Non-zero output, then the probe was deleted.
       Evidence:
       ```
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `--test features_runner`
+      exit status: 1
       ```
-- [ ] Create the step skeletons `tests/steps/visual_review_gate_steps.rs` and
+- [x] Created the step skeletons `tests/steps/visual_review_gate_steps.rs` and
       `tests/steps/visual_design_contract_steps.rs` with `unimplemented!()`
-      bodies for the new steps. Evidence: `cargo check` succeeds.
+      bodies for the new steps; `cargo check --locked --tests` succeeds.
+      Evidence:
       ```
+      Checking givn v0.7.0
+      Finished `dev` profile [unoptimized + debuginfo] target(s) in 6.38s
       ```
-- [ ] COMMIT: `<hash>` -- `test(setup): strict-mode proof and step skeletons`
+- [x] COMMIT: `d9e57752` -- `test(visual-ui-review): strict-mode proof and step skeletons`
 
 ## Scenarios
 
 ### prose-consolidation
 
-- [ ] Scenario: `Canonical policy requires the visual baseline at every assertion`
-  - [ ] RED: remove `@wip` from this scenario only; stub new steps. Run the
-        single-scenario command → non-zero. Evidence:
+- [x] Scenario: `Canonical policy requires the visual baseline at every assertion`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the visual baseline list to `assets/instructions/specs.md`
-        (visible label, internal identifier, no visible content is duplicated,
-        way back, configured language, reduced-motion). Files:
-        `assets/instructions/specs.md`. Run → zero. Evidence:
+  - [x] GREEN: added the visual baseline list to
+        `assets/instructions/specs.md` (visible label, internal identifier,
+        no visible content is duplicated, way back, configured language,
+        reduced-motion). Files: `assets/instructions/specs.md`. Run → zero.
+        Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Canonical policy requires the visual baseline at every assertion`
+  - [x] COMMIT: `c9d3c4f1` -- `Canonical policy requires the visual baseline at every assertion`
 
 - [ ] Scenario: `Canonical policy uses transcripts for terminal interfaces`
   - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
