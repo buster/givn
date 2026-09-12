@@ -207,6 +207,15 @@ invented or silently promoted Personas.
 Run this block when the change's design declares a visual interface (a
 `## Visual Design Contract` section whose `Interface:` is not `none`).
 
+- The evidence is complete: every delta `@e2e` scenario has one committed
+  final-state screenshot per contract viewport, or a transcript for a
+  terminal interface. Missing evidence blocks the review.
+- One fresh-context vision review runs per confirmed Persona: the subagent
+  sees the committed screenshots and judges whether that Persona can reach
+  its goal with what is shown. Record every finding with a disposition, and
+  never invent a Persona.
+- End the block with `VISUAL-REVIEW: PASS` only when the evidence is
+  complete, the baseline holds, and every Persona finding is dispositioned.
 - No pixel-level or coordinate findings: every finding names a contract rule
   or a failed Persona goal. A finding that only says "2px off" is invalid.
 - A style improvement that stays within the contract updates the contract in

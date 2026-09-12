@@ -14,7 +14,7 @@ Feature: Visual Review Gate
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: Review guidance requires the visual verdict and persona lenses
     Given a givn project
     When the user runs `givn instructions review --change visual-ui-review`
