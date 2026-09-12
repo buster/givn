@@ -51,8 +51,8 @@ fn design_declares_no_contract(world: &mut GivnWorld) {
 }
 
 #[given(regex = r##"^the change's design\.md declares the visual interface "([^"]+)"$"##)]
-fn design_declares_interface(_world: &mut GivnWorld, _kind: String) {
-    unimplemented!()
+fn design_declares_interface(world: &mut GivnWorld, kind: String) {
+    write_visual_contract(world, &kind, None);
 }
 
 #[given("the change's design.md declares a web visual contract without viewports")]

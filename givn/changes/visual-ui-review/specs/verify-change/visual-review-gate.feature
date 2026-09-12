@@ -90,7 +90,7 @@ Feature: Visual Review Gate
     Then stdout contains "VISUAL-REVIEW: UNVERIFIED"
     And stdout contains "human sign-off"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change that declares no visual interface is exempt
     Given a givn project with a change that has passed design-review
     And the change's design.md declares the visual interface "none"
