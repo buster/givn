@@ -18,6 +18,14 @@ before the README completeness gate, independently of the readme addon, so a
 project without a README addon is still held to declaring how its product
 starts. This is an extension of ADR-028's existing boundary, not a new record.
 
+ADR-028 is amended again by the `visual-ui-review` change. The integrity
+mandatory check gains the visual review gate: when a change's `design.md`
+declares a visual interface, `givn check review` requires the visual verdict
+(`VISUAL-REVIEW: PASS`, with `VISUAL-REVIEW: UNVERIFIED` blocking until a
+human signs off) and complete per-viewport evidence. The check lives inside
+the existing integrity member, so it cannot be disabled by a `post` hook
+entry. This is a further extension of the same boundary, not a new record.
+
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

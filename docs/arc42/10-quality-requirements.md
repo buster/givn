@@ -83,6 +83,9 @@ graph TD
 | Q-82 | Archive proof | A later archive run resumes an unproven candidate. | The merge is not repeated; the rerun verifies the current committed repair and records a proven receipt naming the tested commit. |
 | Q-83 | Archive proof | A verification scope writes no result, declares failures, skips, or non-reconciling counts. | Proof is blocked fail-closed and the candidate stays unproven. |
 | Q-84 | Archive proof | Finalization would change a path outside the declared evidence. | The archive refuses with a tested-tree-changed error and the candidate stays unproven. |
+| Q-85 | Gate safety | A change declares a visual interface and its review carries no visual verdict. | `givn check review` fails naming the missing `VISUAL-REVIEW` marker. |
+| Q-86 | Gate safety | A declared visual interface lacks a final-state screenshot for one contract viewport. | `givn check review` fails naming the scenario title and the missing viewport. |
+| Q-87 | Gate safety | A change declares no visual contract. | The visual gate is exempt and the review check proceeds unchanged. |
 
 ## 10.3 Verification Signals
 

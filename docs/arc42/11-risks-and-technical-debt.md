@@ -40,6 +40,10 @@ historical measurement is not a current quality claim.
 | R-53 | The archive-proof guarantee assumes permanent specs only change through proven archives; a direct edit or legacy archive would leave a green corpus claim without a receipt. | Medium | High | The archive is the only writer of permanent specs, legacy archives are refused re-publication, and status surfaces unproven candidates; the guarantee is explicit, not inferred from file presence. |
 | R-54 | Review loses fresh instrumented coverage data until the archive receipt exists, weakening review-time classification. | High | Medium | Review classifies from the most recent available evidence and static inspection; the archive receipt is the durable execution and coverage proof, and the review instruction records the boundary. |
 | R-55 | An automated candidate or finalization commit is rejected by a user commit hook, leaving a staged tree that the developer must resolve. | Low | Medium | Normal commits run hooks; a rejection is reported as an unproven staged tree with the Git error and the forward-repair instruction, never as a successful archive. |
+| R-56 | Visual review drifts into subjective pixel or taste judgments and blocks conforming work. | Medium | Medium | The contract is style-level; the review guidance forbids pixel-level and coordinate findings; an improvement inside the contract updates the contract, and a taste note without a failed persona goal is recorded but not blocking. |
+| R-57 | Committed visual evidence bloats the repository over many changes. | Medium | Low | Only one final-state screenshot per `@e2e` scenario and viewport is committed; per-assertion captures stay ephemeral under `reports/`. |
+| R-58 | The persona vision review cannot run on a non-vision harness and silently degrades. | Medium | High | The verdict is recorded as `VISUAL-REVIEW: UNVERIFIED`, which blocks review until a human signs off; the gate never accepts a silent pass. |
+| R-59 | A change visibly adds a screen but omits the visual contract to bypass the gate. | Medium | High | The design instruction mandates the contract for new or visibly changed screens; the review fabrication audit checks the omission, and the review instruction names it as a finding. |
 
 ## 11.2 Deliberate Technical Debt
 
@@ -56,6 +60,7 @@ historical measurement is not a current quality claim.
 | D-9 | Rule-nested WIP/E2E checks use existing direct-scenario traversal limits. | Current parser helper limitation. | Extend traversal and add regression coverage. |
 | D-13 | ADR qualification is guidance-level and the register has no semantic validator. | The LLM/author and design review apply the policy; runtime integrity checks only verify mechanical file conditions. | Add a reviewed semantic register validator only if a future requirement justifies runtime enforcement; until then retain explicit review evidence. |
 | D-17 | The README legacy-matcher list hard-codes the previous scaffold's placeholder sentences. | Detection is exact-text with no false positives, but a future scaffold-text change must keep the list in sync. | Update the matcher list whenever the scaffold template's wording changes, verified by the readme-enforcement scenarios. |
+| D-18 | The visual gate checks the verdict marker and evidence presence; the baseline assertion quality and the persona vision judgment are guidance-level. | The binary cannot infer whether a screenshot is good or whether a project's e2e steps really assert the baseline. | Keep the review fabrication audit authoritative; add semantic checks only if a future requirement justifies runtime enforcement. |
 
 ## 11.4 Resolved Boundaries
 

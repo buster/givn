@@ -121,6 +121,26 @@
 | **Quality review** | A fresh-context, rubric-based advisory review at an ideation phase boundary. Anti-term: gate (binary-owned checks keep that word). |
 | **Open question** | A recorded unknown parked in the topic state instead of being debated. Anti-term: blocker. |
 | **Handoff** | The ideation step that publishes the topic document under the project docs, proposes glossary and persona merges, and writes change seeds. |
+| **Visual interface** | A consumer interface whose evidence is what the consumer sees (web UI) or reads (terminal); API-only and library interfaces are not visual. |
+| **Visual Design Contract** | The style-level contract a design records when a change introduces or visibly changes a screen: tokens, component states, viewports, and the durable design system it follows. Anti-terms: mockup, pixel spec. |
+| **Design system** | The durable project style source under `docs/design/` that visual contracts reference and improve. Anti-term: style guide (reserved for prose advice). |
+| **Visual evidence** | The committed final-state screenshots per end-to-end scenario and viewport — or captured transcripts for a terminal interface — that review inspects. Anti-term: screenshot dump. |
+| **Visual baseline** | The mechanical checks asserted at every visual interaction: labeled controls, no internal identifiers in visible text, a real page title and heading, no duplicated visible content, a designed error state, the configured language, and reduced-motion. Anti-term: UI checklist. |
+| **Visual verdict** | The review's explicit machine-checkable outcome for a visual change: `VISUAL-REVIEW: PASS` or `VISUAL-REVIEW: UNVERIFIED`. Anti-term: visual review note. |
+| **Style tile** | One rendered, concrete design option proposed to the user when no approved design exists. Anti-term: mockup (rejected as pixel-precise). |
+
+### Visual-review invariants
+
+- A change with a visual contract cannot pass review without a visual
+  verdict (enforcement site: `check review`).
+- Every end-to-end scenario has one committed final-state screenshot per
+  contract viewport; missing evidence blocks review (enforcement site:
+  `check review` evidence completeness).
+- An unverified verdict never passes without human sign-off (enforcement
+  site: `check review` marker validation).
+- A style improvement that stays within the contract updates the contract;
+  it is never a review failure (enforcement site: review guidance and
+  fabrication audit).
 
 ### Run-declaration invariants
 
