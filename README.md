@@ -66,6 +66,8 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   never report GREEN.
 - **Blocking gates.** Artifact post hooks (`verify`, `verify-e2e`, `lint`),
   integrity checks (commit hashes, promised files), overlap dispositions, a
+  visual review gate (a declared visual interface needs a `VISUAL-REVIEW`
+  verdict and committed per-viewport evidence), a
   semantic duplicate review (E5 recall at ≥ 0.95 similarity, BGE reranker
   logit ≥ 3.0 and NLI entailment ≥ 0.5 as evidence, human-classified
   worklist), and a README completeness gate: `givn readme check` reports open

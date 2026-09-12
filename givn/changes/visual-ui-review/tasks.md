@@ -614,7 +614,7 @@ Capabilities and step files:
         1 scenario (1 passed)
         9 steps (9 passed)
         ```
-  - [x] COMMIT: `58a2ac0e` -- `test(e2e): A visual change with complete evidence passes review`
+  - [x] COMMIT: `8ffd36ef` -- `refactor(visual-review-gate): extract the visual verdict state` (production refactor carrying this scenario's re-run; the `@wip` activation commit is `58a2ac0e`)
 
 - [x] Scenario: `Review guidance requires the visual verdict and persona lenses`
   - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
