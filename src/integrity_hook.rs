@@ -173,6 +173,12 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
     if contract.interface == VisualInterface::None {
         return Ok(());
     }
+    if contract.interface == VisualInterface::Web && contract.viewports.is_empty() {
+        bail!(
+            "visual design contract declares a web interface without viewports — \
+             name at least one viewport (default: mobile, desktop)"
+        );
+    }
 
     let review_path = change_dir.join("review.md");
     if !review_path.exists() {

@@ -56,8 +56,8 @@ fn design_declares_interface(world: &mut GivnWorld, kind: String) {
 }
 
 #[given("the change's design.md declares a web visual contract without viewports")]
-fn design_declares_web_without_viewports(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_declares_web_without_viewports(world: &mut GivnWorld) {
+    write_visual_contract(world, "web", None);
 }
 
 #[given(regex = r##"^the change's delta spec contains an @e2e scenario "([^"]+)"$"##)]
@@ -81,8 +81,9 @@ fn has_captured_transcript(_world: &mut GivnWorld, _title: String) {
 }
 
 #[given(regex = r##"^the change's review\.md contains "([^"]+)"$"##)]
-fn review_md_contains(_world: &mut GivnWorld, _text: String) {
-    unimplemented!()
+fn review_md_contains(world: &mut GivnWorld, text: String) {
+    let review = format!("# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\n{text}\n");
+    std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }
 
 #[given("the change's review.md contains no visual verdict")]

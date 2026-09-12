@@ -236,33 +236,56 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `abb09415` -- `feat(visual-review-gate): A visual change without a visual verdict fails review`
 
-- [ ] Scenario: `A change without a visual contract is exempt from the visual gate`
-  - [ ] RED: remove `@wip` for this scenario only; implement the
-        "declares no visual design contract" step as a stub. Run → non-zero.
+- [x] Scenario: `A change without a visual contract is exempt from the visual gate`
+  - [x] RED: removed `@wip` for this scenario only; ran with the
+        "declares no visual design contract" fixture step stubbed → non-zero.
         Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: implement the absence exemption (no section → skip). Run →
+  - [x] GREEN: implemented the fixture step; the parser's absent-section
+        exemption (added with `parse_visual_contract` in the verdict
+        scenario) makes the check skip. Run → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        ```
+  - [x] REFACTOR: re-ran → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
+        ```
+  - [x] COMMIT: `cd4e4f92` -- `test(visual-review-gate): A change without a visual contract is exempt from the visual gate`
+
+- [x] Scenario: `A change that declares no visual interface is exempt`
+  - [x] RED: removed `@wip` for this scenario only; ran with the
+        `Interface: none` fixture step stubbed → non-zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        exit status: 1
+        ```
+  - [x] GREEN: implemented the fixture step; the parser's `none` interface
+        path (added with `parse_visual_contract`) exempts the check. Run →
         zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `A change without a visual contract is exempt from the visual gate`
-
-- [ ] Scenario: `A change that declares no visual interface is exempt`
-  - [ ] RED: remove `@wip` for this scenario only; implement the
-        `Interface: none` step as a stub. Run → non-zero. Evidence:
-        ```
-        ```
-  - [ ] GREEN: parse `- Interface: none` as exempt. Run → zero. Evidence:
-        ```
-        ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
-        ```
-        ```
-  - [ ] COMMIT: `<hash>` -- `A change that declares no visual interface is exempt`
+  - [x] COMMIT: `b14b58c3` -- `test(visual-review-gate): A change that declares no visual interface is exempt`
 
 - [ ] Scenario: `A web contract without viewports fails review`
   - [ ] RED: remove `@wip` for this scenario only; implement the
