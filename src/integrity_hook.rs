@@ -208,7 +208,21 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
         );
     }
     let review = std::fs::read_to_string(&review_path)?;
-    if !review.contains("VISUAL-REVIEW: PASS") {
+    let pass = review.contains("VISUAL-REVIEW: PASS");
+    let unverified = review.contains("VISUAL-REVIEW: UNVERIFIED");
+    if pass && unverified {
+        bail!(
+            "review.md carries both VISUAL-REVIEW: PASS and VISUAL-REVIEW: UNVERIFIED — \
+             record exactly one visual verdict"
+        );
+    }
+    if unverified {
+        bail!(
+            "visual review is VISUAL-REVIEW: UNVERIFIED — a human sign-off must resolve it \
+             to VISUAL-REVIEW: PASS before review can pass"
+        );
+    }
+    if !pass {
         bail!(
             "review.md is missing the visual verdict — add \
              'VISUAL-REVIEW: PASS' for a declared visual interface"
