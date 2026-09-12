@@ -494,3 +494,39 @@ server exits and cli products; 130 on SIGINT and 143 on SIGTERM, both forwarded
 to the child first (unix-only). The readiness probe is a blocking
 `std::net::TcpStream` HTTP/1.0 request — 2xx accepts, everything else retries
 until the deadline; no HTTP client dependency is introduced.
+
+## 8.17 Visual Review Discipline
+
+A consumer interface whose evidence is what the consumer sees (web UI) or
+reads (terminal) is a visual interface. A change that introduces or visibly
+changes a screen records a `## Visual Design Contract` section in its
+`design.md`; the contract is style-level, never pixel-level.
+
+The contract declares, in machine-readable lines before its prose:
+
+- `- Interface: web | terminal | none` — `none` or an absent section means no
+  visual contract and the review gate is exempt;
+- `- Viewports: mobile (360x780), desktop (1920x1080)` for web — the default
+  pair is the Samsung S24 class and Full HD;
+- `- Design system: docs/design/design-system.md` — the durable project style
+  source;
+- `- Evidence: givn/changes/<id>/evidence/visual/<scenario-slug>/<viewport>.png`
+  (web) or `.../<scenario-slug>/transcript.txt` (terminal).
+
+The canonical `specs` instruction owns the visual baseline: at every
+interaction, controls are labeled, no internal identifier or state name is
+visible, the page has a real title and heading, no visible content is
+duplicated, the error state has a heading and a way back, the configured
+language is used, and reduced-motion is honored. Every delta `@e2e` scenario
+of a web interface commits one final-state screenshot per contract viewport;
+a terminal interface commits a transcript. Per-assertion captures are debug
+artifacts under `reports/` and are not review evidence.
+
+Review records `VISUAL-REVIEW: PASS` only after the evidence is complete, the
+baseline holds, and a fresh-context vision review per confirmed Persona has
+been dispositioned. `VISUAL-REVIEW: UNVERIFIED` records that the active
+harness cannot process images; it blocks until a human signs off. A style
+improvement that stays within the contract updates the contract instead of
+failing review. The binary enforces the verdict marker and evidence
+completeness in the integrity hook; the persona judgment and the baseline
+assertion quality remain review guidance, not runtime inference.

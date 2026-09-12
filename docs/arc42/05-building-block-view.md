@@ -73,7 +73,7 @@ flowchart TD
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and generated OpenCode/Claude harness integrations. |
-| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, and the review-level README impact decision. |
+| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and — for a declared visual interface — the visual verdict and evidence completeness. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven) from the receipt. |
 | `git` | Root-bound Git wrapper for the archive boundary: worktree prerequisite, clean-state witness, HEAD resolution, and scoped commits. |
 | `proof` | Verification receipt and runner-result contract: archive provenance, fail-closed scope-result parsing, and the single evidence-path predicate shared by the clean witness and the finalization guard. |

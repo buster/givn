@@ -154,10 +154,19 @@ For `givn check tasks`, the binary runs the non-configurable mandatory checks:
 
 For `givn check review`, it runs:
 
-1. The integrity hook for task hashes, promised files, and enabled Arc42 or
-   coverage checks.
+1. The integrity hook for task hashes, promised files, enabled Arc42 or
+   coverage checks, and — when `design.md` declares a visual interface — the
+   visual verdict and evidence completeness.
 2. The deterministic run-declaration check.
 3. For a named change, the overlap disposition gate.
+
+The visual gate reads the `## Visual Design Contract` section from
+`design.md`; an absent section or `Interface: none` exempts the change. For a
+declared `web` interface it requires a committed final-state screenshot for
+every delta `@e2e` scenario at each declared viewport; for `terminal` it
+requires a committed transcript per scenario. `review.md` must carry
+`VISUAL-REVIEW: PASS`; `VISUAL-REVIEW: UNVERIFIED` fails until a human
+resolves it.
 
 Review does not execute `verify.command` or `verify.e2e_command`. Scenario
 execution is proven once per archive by the verification receipt; review
