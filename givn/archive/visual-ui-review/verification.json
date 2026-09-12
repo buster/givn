@@ -1,0 +1,11 @@
+{
+  "schema": 1,
+  "change": "visual-ui-review",
+  "status": "pending",
+  "candidate_commit": null,
+  "tested_commit": null,
+  "scopes": {},
+  "coverage": null,
+  "started_at_unix": 1789244392,
+  "finished_at_unix": null
+}

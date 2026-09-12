@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:e4757e225f9af430f488b320a013210e6ae1a1b60b1b1f9ab2ce3204f1c3940b -->
 # Use case: author-change
 
 ## Level
@@ -59,6 +60,7 @@ The project has the requested change scaffold and generated guidance.
 - new-command
 - init-agent-target-selection
 - install-extras
+- visual-design-contract
 
 ## Interactions
 
@@ -66,6 +68,8 @@ The project has the requested change scaffold and generated guidance.
 |---|---|---|
 | prose-consolidation | request canonical E2E guidance | Canonical E2E policy is emitted by specs instructions |
 | prose-consolidation | inspect generated E2E guidance | Generated guidance points to the canonical E2E policy |
+| visual-design-contract | request the design guidance for a visual interface | Author requests the visual design contract guidance |
+| visual-design-contract | read the synchronized design and step guidance | Synchronized guidance defines the contract approval and capture mechanics |
 | init-agent-target-selection | select agent targets | Consumer selects agent targets during interactive init |
 | init-agent-target-selection | initialize non-interactively | Consumer runs init non-interactively and gets opencode skills |
 | init-agent-target-selection | resynchronize selected targets | Consumer re-syncs skills after init and the selection is honoured |

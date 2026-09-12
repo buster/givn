@@ -1,3 +1,4 @@
+<!-- givn:base-sha256:bf62026e253ae1a6378388e8d6effa65e06830f7c1ae921d398bf8734a41ae65 -->
 # Use case: verify-change
 
 ## Level
@@ -65,12 +66,15 @@ The reviewer receives complete, machine-readable verification evidence.
 - deduplicate-change-dir-detection
 - givn-workflow-enforcement
 - lint-command
+- visual-review-gate
 
 ## Interactions
 
 | Capability | Consumer action | E2E scenario |
 |---|---|---|
 | validate-artifact-id-input | check an unknown artifact | Consumer invokes givn check with an unknown artifact and gets a helpful error |
+| visual-review-gate | run the review check on a visual change | A visual change with complete evidence passes review |
+| visual-review-gate | read the visual review guidance | Review guidance requires the visual verdict and persona lenses |
 | spec-overlap-gates | detect a duplicate title | A duplicate title across two permanent spec files is a hard error |
 | spec-overlap-gates | inspect duplicate JSON | The json output reports duplicate-title findings machine-readably |
 | review-disposition-gates | pass a disposed review | Review passes when every shape match is disposed and reports the net-delta receipt |
@@ -98,5 +102,3 @@ flowchart LR
   Check --> Migration[[Compare migration evidence]]
   Check --> Findings[[Resolve findings]]
 ```
-
-<!-- givn:base-sha256:f156f4eb7621525a8c64642180bf3b42fdc752437519d6be68cab40d2e520966 -->
