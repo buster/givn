@@ -14,7 +14,7 @@ Feature: Visual Design Contract
     And stdout contains "component states"
     And stdout contains "rendered reference"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance names the default viewports
     Given a givn project
     When the user runs `givn instructions design --change visual-ui-review`
