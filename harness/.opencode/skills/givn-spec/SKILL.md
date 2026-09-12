@@ -9,10 +9,19 @@ Write the Gherkin spec delta for change `<change-id>`.
 
 ## Context
 
-- Delta spec location: `givn/changes/<change-id>/specs/<capability>/<capability>.feature`
+- Delta spec location: `givn/changes/<change-id>/specs/<usecase-id>/<capability>.feature`
 - Instructions: run `givn instructions specs --change <change-id>`
 - Proposal (WHY): `givn/changes/<change-id>/proposal.md`
 - Permanent specs: `givn/specs/`
+
+## Use-case context
+
+Before writing a delta, read the owning `givn/specs/<usecase-id>/usecase.md`
+or the ideation change seed that names it. Preserve its goal, guarantees,
+rules, typed relationships, Persona references, and capability interaction
+inventory. Gherkin names domain actors and observable actions; it never embeds
+Persona biographies. If this is a new capability, create or update the
+complete change-side `usecase.md` under the use-case ID selected by routing.
 
 ## Delta tags
 
@@ -47,13 +56,8 @@ real-interface assertions, flag-variant classification, and one-E2E-per-action
 scope. This skill only choreographs when to read it and how to write the delta;
 it does not restate the policy.
 
-## Retrieval-aware authoring
 
-In a retrieval-capable build, use `givn spec index` for the permanent index and
-`givn spec search` or `givn spec explore` for advisory authoring evidence. The
-blocking review path is `givn check review --change <change-id>`. In a
-feature-free build, preserve the explicit `retrieval-unavailable` result;
-never treat unavailable retrieval as a clean blocking review.
+rerun review; do not chunk or edit scenarios automatically.
 
 ## Verify command
 

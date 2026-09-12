@@ -55,7 +55,7 @@ error, fix first.
 Read once, pass to every subagent in full:
 - `givn/changes/<id>/tasks.md` — task list (each task has a "Design
   constraints" block; add it from design.md if missing)
-- `givn/changes/<id>/specs/<capability>/<capability>.feature` — scenarios
+- `givn/changes/<id>/specs/<group>/<capability>.feature` — scenarios
 - `givn/changes/<id>/design.md` — full document, including Strict Mode
   section (stub pattern) and single-scenario run command
 - `givn/config.yaml` — `verify.command` and `verify.e2e_command`

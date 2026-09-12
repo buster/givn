@@ -62,6 +62,9 @@ Think freely. When insights crystallize, offer:
   `add-user-auth`) and suggest it.
 - Or keep exploring — no pressure to formalize.
 
+If the user wants artifacts and several changes out of the domain — not just
+a single proposal — offer `/givn-ideation <topic-id>` instead.
+
 ### When a change exists
 
 1. Read its artifacts (proposal, spec, design, tasks) for context.

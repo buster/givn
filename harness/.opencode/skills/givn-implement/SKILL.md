@@ -15,14 +15,23 @@ Implement change `<change-id>` using scenario-by-scenario TDD.
 - Test runner: `./run-tests.sh`
 - Features path: `GIVN_FEATURES=givn/specs`
 
+## Use-case context
+
+Read the selected use-case `usecase.md`, the proposal's Persona impact, and any
+ideation source before implementing. Preserve approved domain terms and
+guarantees. Treat the Gherkin feature as executable authority when prose and
+implementation context disagree; Persona biographies are review context, not
+Gherkin actors.
+
 ## Before starting
 
 1. Run `givn instructions --change <change-id>` to confirm what to do
    next — do not guess or explore files to determine next steps.
 2. Check progress: `givn status --change <change-id>`
 3. `givn lint` to confirm the spec is well-formed (no tests run).
-4. Read the `givn-steps` skill (RED/GREEN/REFACTOR/COMMIT loop, step reuse,
-   never-empty-body rule, lint-vs-test distinction).
+4. Read the `givn-steps` and `givn-dev-principles` skills in full
+   (RED/GREEN/REFACTOR/COMMIT loop, step reuse, never-empty-body rule,
+   lint-vs-test distinction, engineering principles).
 5. Confirm the setup task is checked AND has pasted proof-of-strictness
    output showing non-zero exit. Missing/zero → do the proof now — every
    later GREEN depends on it.

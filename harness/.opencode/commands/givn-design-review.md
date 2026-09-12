@@ -114,10 +114,8 @@ Read all of these in full before forming any questions:
   modules, patterns). If a question can be answered by exploring the codebase,
   explore it and record the finding as a resolved item — do not include it as
   a question for the user.
-- If the arc42 addon is enabled (check `givn/config.yaml` for `addons.arc42:
-  true`, or the presence of `givn/changes/<id>/arc42.md`): before opening
-  `arc42.md`, walk all 12 rows of the arc42-docs instruction's chapter-
-  selection table (`givn instructions arc42-docs`) yourself against
+- Before opening `arc42.md`, walk all 12 rows of the arc42-docs instruction's
+  chapter-selection table (`givn instructions arc42-docs`) yourself against
   proposal.md/specs/design.md, and form your own Yes/No per row. Only after
   that, open `givn/changes/<id>/arc42.md` and every chapter file under
   fixed `docs/arc42/` path that the marker file claims to have touched. This is
@@ -149,9 +147,7 @@ as "no issue found" if genuinely clean):
   finding.
 - **Risk** — what is the single most likely way this plan fails during
   implementation? What is the mitigation?
-- **Architecture documentation (arc42)** — skip this branch entirely (report
-  "N/A — arc42 addon not enabled") if `addons.arc42` is not `true` in
-  `givn/config.yaml`. Otherwise, this branch is an independent audit, not
+- **Architecture documentation (arc42)** — this branch is an independent audit, not
   a review of `arc42.md`'s self-report — do the steps in this order:
   1. Before opening `arc42.md`, walk all 12 rows of the arc42-docs
      instruction's chapter-selection table yourself against the actual
@@ -173,16 +169,18 @@ as "no issue found" if genuinely clean):
      content actually reflects design.md — not placeholder text, not a
      stale description that contradicts design.md's Architecture Impact or
      Technology Decisions sections. A contradiction is a finding.
-  4. For every non-trivial architecture/technology decision in design.md
-     (a real tradeoff was made, not a default/obvious choice): confirm
-     chapter 09 (architecture-decisions) has a corresponding MADR entry
-     (status/date/decision-makers, considered options, decision outcome,
-     consequences), and that its consequences are reflected in chapter 11
-     (risks-and-technical-debt). A non-trivial decision with no MADR entry,
-     or an MADR whose "Bad, because..." consequences have no counterpart in
-     chapter 11, is a finding.
-  5. A chapter file still containing only its scaffolded placeholder text,
-while `arc42.md` claims that chapter was "updated," is a
+   4. For every ADR candidate in design.md, delegate qualification to the
+      canonical Arc42 ADR instruction and verify its structured verdict. Only
+      a candidate with all mandatory gates `PASS` requires a chapter-09 MADR
+      entry (status/date/decision-makers, considered options, decision outcome,
+      consequences), and its consequences must be reflected in chapter 11.
+      A non-qualifying choice must instead name exactly one canonical feature,
+      design, Arc42, process, project-documentation, or code destination. A
+      refinement must amend an existing ADR; a replacement must supersede it.
+      `Must be shared` is supporting evidence only. A missing MADR is a finding
+      only when a qualified candidate has no corresponding entry.
+   5. A chapter file still containing only its scaffolded placeholder text,
+ while `arc42.md` claims that chapter was "updated," is a
   finding — the same fabrication pattern as an empty step body reported
   as passing.
 
@@ -328,13 +326,13 @@ Write `givn/changes/<id>/design-review.md` following this template structure:
 | # | Question |
 
 ## Architecture documentation (arc42) check
-N/A if the arc42 addon is not enabled. Otherwise fill in all 12 rows — do not
+Fill in all 12 rows — do not
 leave blank and do not only list the rows arc42.md claims:
 | # | Chapter | Grilling subagent's own Yes/No | arc42.md's Yes/No | Match? | Content matches design.md? |
 (one row per chapter, 1-12)
 - [ ] All 12 rows independently assessed against proposal.md/design.md before opening arc42.md.
 - [ ] No row where the subagent said "Yes" and arc42.md said "No"/omitted it (any such row is a blocker, listed in Open questions).
-- [ ] Every non-trivial architecture/technology decision in design.md has a MADR entry in chapter 09.
+- [ ] Every qualified ADR candidate in design.md has a MADR entry in chapter 09.
 - [ ] Every MADR "Bad, because..." consequence has a counterpart in chapter 11.
 - [ ] No chapter claimed as "updated" is still scaffolded placeholder text.
 
@@ -347,8 +345,7 @@ leave blank and do not only list the rows arc42.md claims:
 - [ ] design.md reflects decisions reached.
 - [ ] specs/*.feature updated for any missing scenarios.
 - [ ] givn lint exits 0 or 2.
-- [ ] Architecture documentation (arc42) check completed above, or marked
-      N/A because the addon is not enabled.
+- [ ] Architecture documentation (arc42) check completed above.
 
 DESIGN-REVIEW: PASS
 

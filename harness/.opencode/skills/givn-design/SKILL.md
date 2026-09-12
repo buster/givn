@@ -30,6 +30,14 @@ Everything technical belongs here — do not add implementation details to the s
   scenario, used by every RED/GREEN check in tasks.md.
 - Justify non-obvious technical choices.
 
+## Domain traceability
+
+Read the selected use-case `usecase.md` and any linked ideation change seed.
+Record a traceability table mapping use-case guarantees, rules, events, and
+confirmed Persona impact to technical decisions, capabilities, and E2E
+evidence. Actors in scenarios remain distinct from Personas; Persona impact is
+review context, not a replacement for an actor interaction.
+
 ## Version freshness (mandatory)
 
 Never write a version number for a language, runtime, framework, library,

@@ -62,6 +62,11 @@ Required branches:
 - **E2E fidelity** — read `givn instructions specs --change <change-id>`
   and verify its normalized action scope, interface type, real driver, and
   primary assertion rules are applied without redefinition.
+- **Visual contract** — for a change that introduces or visibly changes a
+  screen, confirm the `## Visual Design Contract` section exists with its
+  `Interface:` line and viewports. When no approved design exists, propose
+  two or three rendered options and the user approves one; record the
+  approved direction in `design.md`.
 - **Interaction Coverage** — does every entry in the spec's User Interaction
   Inventory correspond to a row in the design's Interaction Coverage Matrix?
   Does every matrix row name a valid, non-empty driving mechanism (real
@@ -70,19 +75,31 @@ Required branches:
   against the matrix table in `design.md` — any inventory entry without a
   matching matrix row is a finding.
 - **Risk** — most likely failure mode and mitigation?
-- **Architecture documentation (arc42)** — N/A if `addons.arc42` is not
-  enabled. Otherwise, independently re-derive the expected chapter set
-  before trusting `arc42.md`'s claim: walk all 12 rows of the arc42-docs
-  instruction's selection table yourself against proposal.md/design.md,
-  form your own Yes/No per row, then diff against `arc42.md`'s table. A row
+- **Domain context** — confirm the selected use-case contract, typed
+  relationships, capability ownership, confirmed Persona coverage, and the
+  actor/Persona distinction. Record an explicit disposition for each Persona
+  finding. No Persona may be invented or auto-promoted.
+- **ADR qualification** — use the complete procedure from the canonical Arc42
+  addon instruction. Only a structured verdict with every mandatory gate
+  passing requires a MADR. A non-qualifying choice names exactly one canonical
+  lower-level artifact; a refinement amends an existing ADR and a replacement
+  supersedes it. `Must be shared` is supporting evidence only. This is guidance,
+  not runtime enforcement.
+- **Architecture documentation (arc42)** — independently re-derive the
+  expected chapter set before trusting `arc42.md`'s claim: walk all 12 rows of
+  the arc42-docs instruction's selection table yourself against
+  proposal.md/design.md, form your own Yes/No per row, then diff against
+  `arc42.md`'s table. A row
   you mark "Yes" that `arc42.md` marks "No" or omits is a finding —
   omission is the failure mode that slips through, not just contradiction.
-  For every "Yes" row (either party), confirm the chapter content actually
-  matches design.md, not placeholder text or a stale contradiction. Does
-  chapter 09 have a MADR entry for every non-trivial tech decision in
-  design.md, and does chapter 11 reflect that decision's consequences?
-  `arc42.md`'s `STATUS: DONE` is a self-report, not verification — treat any
-  mismatch, including a missing row, as a finding.
+   For every "Yes" row (either party), confirm the chapter content actually
+   matches design.md, not placeholder text or a stale contradiction. Does
+   chapter 09 have a MADR entry for every qualified ADR candidate in design.md,
+   and does chapter 11 reflect that decision's consequences? A non-qualifying
+   design choice is complete when its canonical destination is recorded.
+   `arc42.md`'s `STATUS: DONE` is a self-report, not verification — treat any
+   mismatch, including a missing row, as a finding.
+- **Ubiquitous language** — confirm that the ubiquitous language is used consistently and recorded in the project's arc42 glossary before sign-off is mandatory: `docs/arc42/12-glossary.md` must already contain the design's agreed terms. If the design introduces a term the glossary does not hold, or reuses an existing term inconsistently, raise it as a question — do not sign off.
 
 If a question can be answered by exploring the codebase, the subagent does that
 and reports the finding instead of asking the user.
