@@ -391,137 +391,228 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `c9eeba7e` -- `feat(visual-review-gate): An unverified visual verdict cannot pass review`
 
-- [ ] Scenario: `A terminal change passes review with a transcript`
-  - [ ] RED: remove `@wip` for this scenario only; implement the terminal
-        contract and transcript fixture steps as stubs. Run → non-zero.
-        Evidence:
+- [x] Scenario: `A terminal change passes review with a transcript`
+  - [x] RED: removed `@wip` with the terminal-contract and transcript
+        fixture steps stubbed → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        2 steps (1 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: implement terminal evidence as
-        `<slug>/transcript.txt` and skip viewport checks. Run → zero. Evidence:
+  - [x] GREEN: implemented the terminal-contract and transcript fixture
+        steps; the terminal evidence path (`<slug>/transcript.txt`) was
+        validated by the evidence check. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        8 steps (8 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `A terminal change passes review with a transcript`
+  - [x] COMMIT: `4d371c9a` -- `test(visual-review-gate): A terminal change passes review with a transcript`
 
-- [ ] Scenario: `Review guidance treats style improvements as contract updates`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Review guidance treats style improvements as contract updates`
+  - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the no-pixel-findings rule and the improvement-updates-
+  - [x] GREEN: added the no-pixel-findings rule and the improvement-updates-
         contract rule to `assets/instructions/review.md`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Review guidance treats style improvements as contract updates`
+  - [x] COMMIT: `b538f410` -- `feat(visual-review-gate): Review guidance treats style improvements as contract updates`
 
-- [ ] Scenario: `Review guidance records an unverified verdict without vision`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Review guidance records an unverified verdict without vision`
+  - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the unverified verdict and human sign-off rule to
+  - [x] GREEN: added the unverified verdict and human sign-off rule to
         `assets/instructions/review.md`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Review guidance records an unverified verdict without vision`
+  - [x] COMMIT: `39178cf1` -- `feat(visual-review-gate): Review guidance records an unverified verdict without vision`
 
-- [ ] Scenario: `The review template carries the visual review section`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `The review template carries the visual review section`
+  - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the `## Visual Review` section with the verdict markers
+  - [x] GREEN: added the `## Visual Review` section with the verdict markers
         and the persona lens to `assets/templates/review.md`. Run → zero.
         Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `The review template carries the visual review section`
+  - [x] COMMIT: `41ff9dcb` -- `feat(visual-review-gate): The review template carries the visual review section`
 
 ## E2E scenarios
 
-- [ ] Scenario: `Canonical E2E policy is emitted by specs instructions`
+- [x] Scenario: `Canonical E2E policy is emitted by specs instructions`
       (`@givn.modified`)
-  - [ ] RED: remove `@wip` from this scenario only. Run → non-zero because the
-        evidence rule is absent. Evidence:
+  - [x] RED: removed `@wip` from this scenario only; the evidence rule was
+        absent → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the final-state screenshot rule and the viewport classes
+  - [x] GREEN: added the final-state screenshot rule and the viewport classes
         to `assets/instructions/specs.md`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Canonical E2E policy is emitted by specs instructions`
+  - [x] COMMIT: `5eec9463` -- `test(e2e): Canonical E2E policy is emitted by specs instructions`
 
-- [ ] Scenario: `Author requests the visual design contract guidance`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Author requests the visual design contract guidance`
+  - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        4 steps (3 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the contract section, style-level/not-pixel rules, the
+  - [x] GREEN: added the contract section, style-level/not-pixel rules, the
         design-system home, and the contract content (design tokens, component
         states, rendered reference) to `assets/instructions/design.md`. Run →
         zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero; the viewport and improvement scenarios
+        stayed green. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Author requests the visual design contract guidance`
+  - [x] COMMIT: `eb1d5f22` -- `test(e2e): Author requests the visual design contract guidance`
 
-- [ ] Scenario: `Synchronized guidance defines the contract approval and capture mechanics`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Synchronized guidance defines the contract approval and capture mechanics`
+  - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the contract approval branch to
+  - [x] GREEN: added the contract approval branch to
         `assets/skills/givn-design-review/SKILL.md.tmpl` and the capture
         mechanics (evidence/visual, final-state, animations are frozen,
         reports/) to `assets/skills/givn-steps/SKILL.md.tmpl`. Run → zero.
         Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Synchronized guidance defines the contract approval and capture mechanics`
+  - [x] COMMIT: `4b893406` -- `test(e2e): Synchronized guidance defines the contract approval and capture mechanics`
 
-- [ ] Scenario: `A visual change with complete evidence passes review`
-  - [ ] RED: remove `@wip` for this scenario only; the pass fixture is not yet
-        green. Run → non-zero. Evidence:
+- [x] Scenario: `A visual change with complete evidence passes review`
+  - [x] RED-equivalent: the fixture steps and gate were implemented by the
+        preceding scenarios; removing `@wip` produced a legitimate immediate
+        GREEN with every step reused. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] GREEN: complete the fixture (verdict, README-IMPACT, unique delta
-        steps) and the gate path for a passing change. Run → zero. Evidence:
+  - [x] GREEN: the complete pass path (contract, delta `@e2e` scenario,
+        mobile and desktop screenshots, `VISUAL-REVIEW: PASS`, run
+        declaration) exits 0. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `A visual change with complete evidence passes review`
+  - [x] COMMIT: `58a2ac0e` -- `test(e2e): A visual change with complete evidence passes review`
 
-- [ ] Scenario: `Review guidance requires the visual verdict and persona lenses`
-  - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
+- [x] Scenario: `Review guidance requires the visual verdict and persona lenses`
+  - [x] RED: removed `@wip` for this scenario only → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        5 steps (4 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the `## Visual review` block (verdict, confirmed Persona
-        vision review, transcript rule) to `assets/instructions/review.md` and
-        the visual block to `assets/skills/givn-review/SKILL.md.tmpl`. Run →
-        zero. Evidence:
+  - [x] GREEN: added the `## Visual review` block (verdict, confirmed Persona
+        vision review, transcript rule) to `assets/instructions/review.md`.
+        Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Review guidance requires the visual verdict and persona lenses`
+  - [x] COMMIT: `5f231882` -- `test(e2e): Review guidance requires the visual verdict and persona lenses`
 
 ## Verification
 
