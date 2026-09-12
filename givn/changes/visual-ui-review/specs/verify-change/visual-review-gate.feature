@@ -108,7 +108,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "viewports"
 
-  @givn.added @wip
+  @givn.added
   Scenario: An empty evidence file fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"

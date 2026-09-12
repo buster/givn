@@ -235,6 +235,11 @@ pub fn collect_e2e_scenario_titles(specs_dir: &Path) -> Result<Vec<String>> {
     Ok(titles)
 }
 
+/// A zero-byte evidence file counts as missing.
+fn is_non_empty_file(path: &Path) -> bool {
+    path.metadata().map(|meta| meta.is_file() && meta.len() > 0).unwrap_or(false)
+}
+
 /// Check that every delta `@e2e` scenario has the declared evidence.
 fn check_visual_evidence(change_dir: &Path, contract: &VisualContract) -> Result<()> {
     let titles = collect_e2e_scenario_titles(&change_dir.join("specs"))?;
@@ -246,7 +251,7 @@ fn check_visual_evidence(change_dir: &Path, contract: &VisualContract) -> Result
             VisualInterface::Web => {
                 for viewport in &contract.viewports {
                     let path = evidence_root.join(&slug).join(format!("{viewport}.png"));
-                    if !path.is_file() {
+                    if !is_non_empty_file(&path) {
                         errors.push(format!(
                             "visual evidence missing for scenario '{title}' at viewport \
                              '{viewport}' (expected {})",
@@ -257,7 +262,7 @@ fn check_visual_evidence(change_dir: &Path, contract: &VisualContract) -> Result
             }
             VisualInterface::Terminal => {
                 let path = evidence_root.join(&slug).join("transcript.txt");
-                if !path.is_file() {
+                if !is_non_empty_file(&path) {
                     errors.push(format!(
                         "visual evidence missing for scenario '{title}' (expected {})",
                         path.display()

@@ -86,8 +86,10 @@ fn has_final_state_screenshot(world: &mut GivnWorld, title: String, viewport: St
 }
 
 #[given(regex = r##"^the change has an empty screenshot file for "([^"]+)" at viewport "([^"]+)"$"##)]
-fn has_empty_screenshot(_world: &mut GivnWorld, _title: String, _viewport: String) {
-    unimplemented!()
+fn has_empty_screenshot(world: &mut GivnWorld, title: String, viewport: String) {
+    let path = evidence_path(world, &title, &format!("{viewport}.png"));
+    std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+    std::fs::write(&path, b"").expect("write empty screenshot");
 }
 
 #[given(regex = r##"^the change has a captured transcript for "([^"]+)"$"##)]

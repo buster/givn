@@ -287,33 +287,59 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `b14b58c3` -- `test(visual-review-gate): A change that declares no visual interface is exempt`
 
-- [ ] Scenario: `A web contract without viewports fails review`
-  - [ ] RED: remove `@wip` for this scenario only; implement the
-        no-viewports fixture step as a stub. Run → non-zero. Evidence:
+- [x] Scenario: `A web contract without viewports fails review`
+  - [x] RED: removed `@wip` and implemented the fixture steps; the check
+        exited 0 because no viewport validation existed → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        6 steps (5 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: fail a web contract with an empty viewport list, naming
-        "viewports". Run → zero. Evidence:
+  - [x] GREEN: failed a web contract with an empty viewport list, naming
+        "viewports". Files: `src/integrity_hook.rs`,
+        `tests/steps/visual_review_gate_steps.rs`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `A web contract without viewports fails review`
+  - [x] COMMIT: `fc313b95` -- `feat(visual-review-gate): A web contract without viewports fails review`
 
-- [ ] Scenario: `A visual change with incomplete evidence fails review`
-  - [ ] RED: remove `@wip` for this scenario only; implement the delta-spec
-        and screenshot fixture steps as stubs. Run → non-zero. Evidence:
+- [x] Scenario: `A visual change with incomplete evidence fails review`
+  - [x] RED: removed `@wip` and implemented the delta-spec and screenshot
+        fixture steps; the check exited 0 because no evidence validation
+        existed → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        8 steps (7 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: implement `scenario_slug`, `collect_e2e_scenario_titles`, and
-        the per-viewport evidence check. Run → zero. Evidence:
+  - [x] GREEN: implemented `scenario_slug`,
+        `collect_e2e_scenario_titles`, and the per-viewport evidence check.
+        Files: `src/integrity_hook.rs`,
+        `tests/steps/visual_review_gate_steps.rs`. Run → zero; 17 lib tests
+        pass. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
+        test result: ok. 17 passed; 0 failed
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `A visual change with incomplete evidence fails review`
+  - [x] COMMIT: `139b13f0` -- `feat(visual-review-gate): A visual change with incomplete evidence fails review`
 
 - [ ] Scenario: `An empty evidence file fails review`
   - [ ] RED: remove `@wip` for this scenario only; implement the empty-file
