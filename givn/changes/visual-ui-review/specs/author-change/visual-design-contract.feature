@@ -43,7 +43,7 @@ Feature: Visual Design Contract
     And the generated givn-steps guidance contains "animations are frozen"
     And the generated givn-steps guidance contains "reports/"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design-review guidance requires an approved contract
     Given a givn project
     When the user runs `givn instructions design-review --change visual-ui-review`
