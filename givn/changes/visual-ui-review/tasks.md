@@ -341,34 +341,55 @@ Capabilities and step files:
         ```
   - [x] COMMIT: `139b13f0` -- `feat(visual-review-gate): A visual change with incomplete evidence fails review`
 
-- [ ] Scenario: `An empty evidence file fails review`
-  - [ ] RED: remove `@wip` for this scenario only; implement the empty-file
-        fixture step as a stub. Run → non-zero. Evidence:
-        ```
-        ```
-  - [ ] GREEN: treat a zero-byte evidence file as missing. Run → zero.
+- [x] Scenario: `An empty evidence file fails review`
+  - [x] RED: removed `@wip` and implemented the empty-file fixture step; the
+        check exited 0 because zero-byte files counted as present → non-zero.
         Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        9 steps (8 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] GREEN: treated a zero-byte evidence file as missing via
+        `is_non_empty_file`. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `An empty evidence file fails review`
+  - [x] REFACTOR: re-ran → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
+        ```
+  - [x] COMMIT: `b98c012f` -- `feat(visual-review-gate): An empty evidence file fails review`
 
-- [ ] Scenario: `An unverified visual verdict cannot pass review`
-  - [ ] RED: remove `@wip` for this scenario only; implement the
-        `VISUAL-REVIEW: UNVERIFIED` fixture step as a stub. Run → non-zero.
-        Evidence:
+- [x] Scenario: `An unverified visual verdict cannot pass review`
+  - [x] RED: removed `@wip`; the check failed with "missing the visual
+        verdict" but the scenario requires the "human sign-off" message →
+        non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        7 steps (6 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: fail an unverified verdict with the human sign-off message,
-        and fail when both markers are present. Run → zero. Evidence:
+  - [x] GREEN: added the UNVERIFIED branch (human sign-off message) and the
+        both-markers ambiguity failure. Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `An unverified visual verdict cannot pass review`
+  - [x] COMMIT: `c9eeba7e` -- `feat(visual-review-gate): An unverified visual verdict cannot pass review`
 
 - [ ] Scenario: `A terminal change passes review with a transcript`
   - [ ] RED: remove `@wip` for this scenario only; implement the terminal

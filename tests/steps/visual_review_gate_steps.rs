@@ -40,8 +40,8 @@ fn design_declares_contract(world: &mut GivnWorld, first: String, second: String
 }
 
 #[given("the change's design.md declares a visual design contract for the terminal interface")]
-fn design_declares_terminal_contract(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_declares_terminal_contract(world: &mut GivnWorld) {
+    write_visual_contract(world, "terminal", None);
 }
 
 #[given("the change's design.md declares no visual design contract")]
@@ -93,8 +93,10 @@ fn has_empty_screenshot(world: &mut GivnWorld, title: String, viewport: String) 
 }
 
 #[given(regex = r##"^the change has a captured transcript for "([^"]+)"$"##)]
-fn has_captured_transcript(_world: &mut GivnWorld, _title: String) {
-    unimplemented!()
+fn has_captured_transcript(world: &mut GivnWorld, title: String) {
+    let path = evidence_path(world, &title, "transcript.txt");
+    std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+    std::fs::write(&path, b"$ givn export\nok\n").expect("write transcript");
 }
 
 #[given(regex = r##"^the change's review\.md contains "([^"]+)"$"##)]
