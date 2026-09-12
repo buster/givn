@@ -166,6 +166,13 @@ different infrastructure (browser driver, HTTP client, test harness).
 ## Visual evidence and baseline (Web UI and terminal)
 
 A visual interface is one whose evidence is what the consumer sees or reads.
+For a Web UI, every `@e2e` scenario commits one final-state screenshot per
+viewport named by the design's `## Visual Design Contract`. The default
+viewports are mobile in the Samsung S24 class (360x780 CSS pixels) and
+desktop in Full HD (1920x1080 CSS pixels). Screenshots are captured after the
+final assertion with animations frozen and fonts and network settled;
+intermediate captures are debug artifacts, not review evidence.
+
 For a Web UI, every `@e2e` scenario asserts the visual baseline at every
 interaction, in addition to its primary assertion:
 
