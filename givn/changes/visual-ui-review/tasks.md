@@ -108,20 +108,30 @@ Capabilities and step files:
 
 ### visual-design-contract
 
-- [ ] Scenario: `Design guidance names the default viewports`
-  - [ ] RED: remove `@wip` for this scenario only; stub the new steps. Run →
-        non-zero. Evidence:
+- [x] Scenario: `Design guidance names the default viewports`
+  - [x] RED: removed `@wip` for this scenario only; ran the single-scenario
+        command → non-zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        exit status: 1
         ```
-  - [ ] GREEN: add the default viewport dimensions (Samsung S24 class,
+  - [x] GREEN: added the default viewport dimensions (Samsung S24 class,
         360x780; Full HD, 1920x1080) to `assets/instructions/design.md`.
         Run → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-run → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `Design guidance names the default viewports`
+  - [x] COMMIT: `420fe734` -- `feat(visual-design-contract): Design guidance names the default viewports`
 
 - [ ] Scenario: `Design guidance keeps improvements inside the style`
   - [ ] RED: remove `@wip` for this scenario only. Run → non-zero. Evidence:
