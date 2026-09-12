@@ -107,6 +107,26 @@ driving mechanism:
 |---|---|---|---|---|---|
 | | | | | | |
 
+## Visual Review
+
+N/A when the change's design declares no visual interface. Otherwise record
+the contract, the evidence completeness, the baseline, and the persona lens
+findings here.
+
+| @e2e Scenario | Viewport | Evidence file | Present and non-empty? |
+|---|---|---|---|
+| | | | |
+
+| confirmed persona | Goal | Finding | Disposition |
+|---|---|---|---|
+| | | | |
+
+**Baseline:** every control labeled, no internal identifier visible, a real
+page title and heading, no duplicated visible content, a designed error state,
+the configured language, reduced-motion honored.
+
+VISUAL-REVIEW: PASS <!-- or VISUAL-REVIEW: UNVERIFIED until a human signs off -->
+
 ## Retirements
 
 For every capability retired by this change (a delta tagged
