@@ -46,7 +46,7 @@ Feature: Visual Review Gate
     And stderr contains "Consumer opens the dashboard"
     And stderr contains "desktop"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A change without a visual contract is exempt from the visual gate
     Given a givn project with a change that has passed design-review
     And the change's design.md declares no visual design contract

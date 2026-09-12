@@ -45,8 +45,9 @@ fn design_declares_terminal_contract(_world: &mut GivnWorld) {
 }
 
 #[given("the change's design.md declares no visual design contract")]
-fn design_declares_no_contract(_world: &mut GivnWorld) {
-    unimplemented!()
+fn design_declares_no_contract(world: &mut GivnWorld) {
+    let design = "# Design: fixture\n\nNo visual contract in this design.\n";
+    std::fs::write(change_dir(world).join("design.md"), design).expect("write design.md");
 }
 
 #[given(regex = r##"^the change's design\.md declares the visual interface "([^"]+)"$"##)]
