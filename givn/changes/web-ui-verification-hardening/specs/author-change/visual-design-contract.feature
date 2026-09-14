@@ -35,6 +35,14 @@ Feature: Visual Design Contract
     And stdout contains "not a valid driving mechanism"
 
   @givn.added @wip
+  Scenario: Design guidance names the user-visible persona boundary
+    Given a givn project
+    When the user runs `givn instructions design --change visual-design-contract`
+    Then stdout contains "user-visible"
+    And stdout contains "CLI text"
+    And stdout contains "reason"
+
+  @givn.added @wip
   Scenario: Design-review guidance tests the opposite interface classification
     Given a givn project
     When the user runs `givn instructions design-review --change visual-design-contract`
@@ -83,6 +91,24 @@ Feature: Visual Design Contract
     Then the command succeeds
     And the ejected proposal template contains "Confirmed Personas"
     And the ejected proposal template contains "operator confirmation"
+
+  @givn.added @wip
+  Scenario: The review template carries the persona disposition and deferral markers
+    Given a project root with givn/ initialised
+    When the user runs `givn eject review:template`
+    Then the command succeeds
+    And the ejected review template contains "PERSONAS:"
+    And the ejected review template contains "DEFERRAL:"
+    And the ejected review template contains "OPERATOR-DECISION:"
+
+  @givn.added @wip
+  Scenario: The design-review template carries the persona disposition table
+    Given a project root with givn/ initialised
+    When the user runs `givn eject design-review:template`
+    Then the command succeeds
+    And the ejected design-review template contains "persona"
+    And the ejected design-review template contains "Relevance"
+    And the ejected design-review template contains "Evidence"
 
   @givn.added @wip
   Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules

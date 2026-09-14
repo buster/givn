@@ -44,6 +44,9 @@ historical measurement is not a current quality claim.
 | R-57 | Committed visual evidence bloats the repository over many changes. | Medium | Low | Only one final-state screenshot per `@e2e` scenario and viewport is committed; per-assertion captures stay ephemeral under `reports/`. |
 | R-58 | The persona vision review cannot run on a non-vision harness and silently degrades. | Medium | High | The verdict is recorded as `VISUAL-REVIEW: UNVERIFIED`, which blocks review until a human signs off; the gate never accepts a silent pass. |
 | R-59 | A change visibly adds a screen but omits the visual contract to bypass the gate. | Medium | High | The design instruction mandates the contract for new or visibly changed screens; the review fabrication audit checks the omission, and the review instruction names it as a finding. |
+| R-60 | The persona requirement is satisfied by a `PERSONAS:` marker without a real operator confirmation. | Medium | High | The design-review grilling asks the operator and records the confirmation; the marker is the durable record, and the review instruction requires the operator confirmation for a reasoned none. |
+| R-61 | A deferral is kept out of `review.md` to avoid the operator decision the gate requires. | Medium | High | The review and design-review instructions name undeclared deferrals as findings; the fabrication audit checks that a mandatory check was not silently weakened. |
+| R-62 | Per-state evidence grows the committed evidence set for every declared state. | Low | Medium | Only states the contract declares are required; intermediate captures stay under `reports/`, and the contract owner chooses the state list. |
 
 ## 11.2 Deliberate Technical Debt
 
@@ -61,6 +64,7 @@ historical measurement is not a current quality claim.
 | D-13 | ADR qualification is guidance-level and the register has no semantic validator. | The LLM/author and design review apply the policy; runtime integrity checks only verify mechanical file conditions. | Add a reviewed semantic register validator only if a future requirement justifies runtime enforcement; until then retain explicit review evidence. |
 | D-17 | The README legacy-matcher list hard-codes the previous scaffold's placeholder sentences. | Detection is exact-text with no false positives, but a future scaffold-text change must keep the list in sync. | Update the matcher list whenever the scaffold template's wording changes, verified by the readme-enforcement scenarios. |
 | D-18 | The visual gate checks the verdict marker and evidence presence; the baseline assertion quality and the persona vision judgment are guidance-level. | The binary cannot infer whether a screenshot is good or whether a project's e2e steps really assert the baseline. | Keep the review fabrication audit authoritative; add semantic checks only if a future requirement justifies runtime enforcement. |
+| D-19 | The state-evidence check is per declared state and viewport across the change, not per traversing scenario; the persona marker records a disposition, not a verified operator sign-off. | The binary cannot know which scenario traverses which state, and it cannot verify a conversation. | The guidance states the per-scenario intent and the design-review grilling records the sign-off; add runtime enforcement only if a future requirement justifies it. |
 
 ## 11.4 Resolved Boundaries
 

@@ -498,7 +498,10 @@ until the deadline; no HTTP client dependency is introduced.
 ## 8.17 Visual Review Discipline
 
 A consumer interface whose evidence is what the consumer sees (web UI) or
-reads (terminal) is a visual interface. A change that introduces or visibly
+reads (terminal) is a visual interface. A capability whose interface renders
+HTML, CSS, or JavaScript in a browser is a Web UI even when it needs only a
+page request and exposes no controls; the browser driver rule then applies and
+an HTTP client is not a valid driver. A change that introduces or visibly
 changes a screen records a `## Visual Design Contract` section in its
 `design.md`; the contract is style-level, never pixel-level.
 
@@ -508,10 +511,13 @@ The contract declares, in machine-readable lines before its prose:
   visual contract and the review gate is exempt;
 - `- Viewports: mobile (360x780), desktop (1920x1080)` for web — the default
   pair is the Samsung S24 class and Full HD;
+- `- States: empty, loading, error` for web — optional; when present, each
+  declared state needs committed evidence;
 - `- Design system: docs/design/design-system.md` — the durable project style
   source;
 - `- Evidence: givn/changes/<id>/evidence/visual/<scenario-slug>/<viewport>.png`
-  (web) or `.../<scenario-slug>/transcript.txt` (terminal).
+  (web), `.../<viewport>--<state>.png` for each declared state, or
+  `.../<scenario-slug>/transcript.txt` (terminal).
 
 The canonical `specs` instruction owns the visual baseline: at every
 interaction, controls are labeled, no internal identifier or state name is
@@ -524,9 +530,14 @@ artifacts under `reports/` and are not review evidence.
 
 Review records `VISUAL-REVIEW: PASS` only after the evidence is complete, the
 baseline holds, and a fresh-context vision review per confirmed Persona has
-been dispositioned. `VISUAL-REVIEW: UNVERIFIED` records that the active
-harness cannot process images; it blocks until a human signs off. A style
-improvement that stays within the contract updates the contract instead of
-failing review. The binary enforces the verdict marker and evidence
-completeness in the integrity hook; the persona judgment and the baseline
-assertion quality remain review guidance, not runtime inference.
+been dispositioned; the disposition is recorded as a `PERSONAS:` line naming
+at least one confirmed Persona for a declared visual interface.
+`VISUAL-REVIEW: UNVERIFIED` records that the active harness cannot process
+images; it blocks until a human signs off. A `DEFERRAL:` line in `review.md`
+requires a matching `OPERATOR-DECISION:` record, so a project constraint
+never silently defers a mandatory check. A style improvement that stays
+within the contract updates the contract instead of failing review. The
+binary enforces the verdict marker, the persona disposition, the deferral
+pair, and the final-state plus per-state evidence completeness in the
+integrity hook; the persona judgment, the classification reasoning, and the
+baseline assertion quality remain review guidance, not runtime inference.

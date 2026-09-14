@@ -156,17 +156,21 @@ For `givn check review`, it runs:
 
 1. The integrity hook for task hashes, promised files, enabled Arc42 or
    coverage checks, and — when `design.md` declares a visual interface — the
-   visual verdict and evidence completeness.
+   visual verdict, the persona disposition, the final-state and per-state
+   evidence, and the operator decision for any recorded deferral.
 2. The deterministic run-declaration check.
 3. For a named change, the overlap disposition gate.
 
 The visual gate reads the `## Visual Design Contract` section from
 `design.md`; an absent section or `Interface: none` exempts the change. For a
 declared `web` interface it requires a committed final-state screenshot for
-every delta `@e2e` scenario at each declared viewport; for `terminal` it
-requires a committed transcript per scenario. `review.md` must carry
-`VISUAL-REVIEW: PASS`; `VISUAL-REVIEW: UNVERIFIED` fails until a human
-resolves it.
+every delta `@e2e` scenario at each declared viewport, plus one
+`<viewport>--<state>.png` for every state the contract declares; for
+`terminal` it requires a committed transcript per scenario. A declared visual
+interface also requires a `PERSONAS:` line in `review.md` naming at least one
+confirmed Persona. `review.md` must carry `VISUAL-REVIEW: PASS`;
+`VISUAL-REVIEW: UNVERIFIED` fails until a human resolves it. A `DEFERRAL:`
+line anywhere in `review.md` requires a matching `OPERATOR-DECISION:` record.
 
 Review does not execute `verify.command` or `verify.e2e_command`. Scenario
 execution is proven once per archive by the verification receipt; review
