@@ -25,39 +25,6 @@ impl Worktree {
 
     /// Open the worktree, refusing a non-repository and a project nested
     /// inside a larger repository.
-    pub fn open(root: &Path) -> Result<Self> {
-        let inside = run_git(root, &["rev-parse", "--is-inside-work-tree"])?;
-        if !inside.status.success() {
-            bail!(
-                "archive blocked: Git is required to archive a change — '{}' is not a Git work tree",
-                root.display()
-            );
-        }
-
-        let top = run_git(root, &["rev-parse", "--show-toplevel"])?;
-        if !top.status.success() {
-            bail!(
-                "archive blocked: Git is required to archive a change — cannot resolve the repository root from '{}'",
-                root.display()
-            );
-        }
-        let top_level = String::from_utf8_lossy(&top.stdout).trim().to_string();
-        let top_path =
-            std::fs::canonicalize(&top_level).unwrap_or_else(|_| PathBuf::from(&top_level));
-        let root_canonical = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
-        if top_path != root_canonical {
-            bail!(
-                "archive blocked: the project root must be the repository root — '{}' is nested inside '{}'",
-                root.display(),
-                top_path.display()
-            );
-        }
-
-        Ok(Self {
-            root: root.to_path_buf(),
-        })
-    }
-
     /// The current `HEAD` commit id.
     pub fn head(&self) -> Result<String> {
         let output = run_git(&self.root, &["rev-parse", "HEAD"])?;
@@ -253,7 +220,7 @@ mod tests {
         std::fs::write(root.path().join("coverage/report.xml"), "x").unwrap();
         std::fs::write(root.path().join("README.md"), "updated\n").unwrap();
 
-        let worktree = Worktree::open(root.path()).unwrap();
+        let worktree = Worktree::at(root.path());
         worktree
             .commit(
                 "chore: evidence",

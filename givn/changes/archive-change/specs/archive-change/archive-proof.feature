@@ -37,7 +37,7 @@ Feature: Archive Proof
       | Git     |
       | Fossil  |
 
-  @givn.modified @e2e @wip
+  @givn.modified @e2e
   Scenario Outline: Consumer archives a completed change and receives a proven archive
     Given  a committed <backend> project with a completed change "proof-real" ready to archive
     And  the project reports scenario counts for every verification scope

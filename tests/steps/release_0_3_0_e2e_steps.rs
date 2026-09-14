@@ -325,7 +325,7 @@ fn command_fails_before_file_changes(world: &mut GivnWorld) {
     assert!(!output.status.success(), "upgrade unexpectedly succeeded");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("clean Git worktree")
+        stderr.contains("clean checkout")
             || stderr.contains("requires a Git repository")
             || stderr.contains("version-controlled project"),
         "{stderr}"
