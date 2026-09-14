@@ -104,7 +104,7 @@ Feature: Archive Proof
     And  the merged state is present in the checkout but not committed
     And  the archive candidate is recorded as unproven
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Fossil EXTRA file blocks the archive
     Given  a Fossil project with a completed change "proof-demo" ready to archive
     And  the project has an EXTRA file "notes.txt"
@@ -114,7 +114,7 @@ Feature: Archive Proof
     And  the change directory still exists under givn/changes/
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Fossil edited file blocks the archive
     Given  a Fossil project with a completed change "proof-demo" ready to archive
     And  the project has an edited file "src/lib.rs"

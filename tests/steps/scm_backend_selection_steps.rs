@@ -51,7 +51,7 @@ fn given_fossil_checkout(world: &mut GivnWorld) {
     let env = common::make_init_root_without_git();
     std::fs::write(env.path(".fslckout"), b"fossil checkout fixture\n")
         .expect("write Fossil checkout marker");
-    world.scm_fixture.snapshot = Some(snapshot_tree(&env.root()));
+    world.snapshot_on_run = true;
     world.env = Some(env);
 }
 
@@ -179,10 +179,28 @@ fn then_no_file_changed(world: &mut GivnWorld) {
         .as_ref()
         .expect("a project snapshot is required first");
     let after = snapshot_tree(&root);
-    assert_eq!(before, &after, "the refusal must not change any file");
+    if before == &after {
+        return;
+    }
+    let before_map: std::collections::BTreeMap<_, _> = before.iter().cloned().collect();
+    let after_map: std::collections::BTreeMap<_, _> = after.iter().cloned().collect();
+    let mut changed = Vec::new();
+    for (path, content) in &after_map {
+        match before_map.get(path) {
+            Some(old) if old == content => {}
+            Some(_) => changed.push(format!("modified: {}", path.display())),
+            None => changed.push(format!("added: {}", path.display())),
+        }
+    }
+    for path in before_map.keys() {
+        if !after_map.contains_key(path) {
+            changed.push(format!("removed: {}", path.display()));
+        }
+    }
+    panic!("the refusal must not change any file; changed: {changed:?}");
 }
 
-fn snapshot_tree(root: &std::path::Path) -> Vec<(PathBuf, Vec<u8>)> {
+pub(crate) fn snapshot_tree(root: &std::path::Path) -> Vec<(PathBuf, Vec<u8>)> {
     let mut entries = Vec::new();
     collect_tree(root, root, &mut entries);
     entries.sort();
@@ -195,6 +213,16 @@ fn collect_tree(root: &std::path::Path, dir: &std::path::Path, out: &mut Vec<(Pa
     };
     for entry in read.flatten() {
         let path = entry.path();
+        let name = entry.file_name();
+        // Backend bookkeeping is not a project file: Fossil rewrites
+        // `.fslckout` while merely reporting changes, and Git refreshes its
+        // index metadata on read commands.
+        if matches!(
+            name.to_str(),
+            Some(".git") | Some(".fslckout") | Some("_FOSSIL_")
+        ) {
+            continue;
+        }
         if path.is_dir() {
             collect_tree(root, &path, out);
         } else if let Ok(content) = std::fs::read(&path) {
