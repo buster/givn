@@ -120,13 +120,23 @@ fn design_declares_ui_states(world: &mut GivnWorld, states: String) {
 }
 
 #[given(regex = r##"^the change has final-state screenshots for "([^"]+)" at both viewports$"##)]
-fn has_final_state_screenshots_both(_world: &mut GivnWorld, _title: String) {
-    unimplemented!()
+fn has_final_state_screenshots_both(world: &mut GivnWorld, title: String) {
+    for viewport in ["mobile", "desktop"] {
+        let path = evidence_path(world, &title, &format!("{viewport}.png"));
+        std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+        std::fs::write(&path, b"final-state screenshot bytes").expect("write screenshot");
+    }
 }
 
 #[given(regex = r##"^the change has state screenshots for "([^"]+)" at both viewports for states "([^"]+)"$"##)]
-fn has_state_screenshots_both(_world: &mut GivnWorld, _title: String, _states: String) {
-    unimplemented!()
+fn has_state_screenshots_both(world: &mut GivnWorld, title: String, states: String) {
+    for viewport in ["mobile", "desktop"] {
+        for state in states.split(',').map(str::trim).filter(|state| !state.is_empty()) {
+            let path = evidence_path(world, &title, &format!("{viewport}--{state}.png"));
+            std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+            std::fs::write(&path, b"state screenshot bytes").expect("write screenshot");
+        }
+    }
 }
 
 #[given(regex = r##"^the change has a state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]

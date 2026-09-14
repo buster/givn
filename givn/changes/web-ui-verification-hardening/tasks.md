@@ -608,26 +608,33 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `148a2a93` -- `feat(visual-review-gate): Review guidance names the state screenshots the vision review saw`
 
-- [ ] Scenario: `A web contract with missing state evidence fails review`
-  - [ ] RED: removed `@wip` for this scenario only; added the fixture steps
-        (declared UI states, state screenshots) with `unimplemented!()`. Run →
-        non-zero. Evidence:
+- [x] Scenario: `A web contract with missing state evidence fails review`
+  - [x] RED: removed `@wip` for this scenario only; the declared-UI-states
+        fixture step was an `unimplemented!()` stub; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        not implemented
+        exit status: 1
         ```
-  - [ ] GREEN: implemented `- States:` parsing and the state-evidence check in
-        `src/integrity_hook.rs`; implemented the fixture steps. Files:
-        `src/integrity_hook.rs`, `tests/steps/visual_review_gate_steps.rs`.
-        Run → zero (the scenario expects non-zero from `givn check review`,
-        which the step asserts). Evidence:
+  - [x] GREEN: implemented `- States:` parsing and the state-evidence check in
+        `src/integrity_hook.rs`; implemented the declared-UI-states fixture
+        step. Files: `src/integrity_hook.rs`,
+        `tests/steps/visual_review_gate_steps.rs`. Run → zero (the scenario
+        expects non-zero from `givn check review`). Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        11 steps (11 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: added parser and state-evidence unit tests (including the
+        empty state file and the fenced-example exemption). Files:
+        `src/integrity_hook.rs`. `cargo test --lib integrity_hook` → 20 passed.
+        Evidence:
         ```
-        <paste output>
+        test result: ok. 20 passed; 0 failed; 0 ignored; 0 measured; 237 filtered out
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A web contract with missing state evidence fails review`
+  - [x] COMMIT: `642e0c33` -- `feat(visual-review-gate): A web contract with missing state evidence fails review`
 
 - [ ] Scenario: `A web contract with complete state evidence passes review`
   - [ ] RED: paired with the negative scenario above; the positive scenario
