@@ -16,7 +16,7 @@ Feature: givn Workflow Enforcement
     When the user runs `givn check review --change test-change`
     Then the command exits non-zero
     And stderr contains "placeholder"
-    And stderr contains "commit hash"
+    And stderr contains "revision identifier"
 
   Scenario: Integrity hook fails on missing step-definition file
     Given a givn project with a change that has passed design-review
