@@ -125,8 +125,10 @@ JSON output is a findings array; it is not test-runner output.
 ## 6.5 `givn status` and `givn graph`
 
 Both commands load the effective manifest and derive state from the change
-filesystem. `status` reports artifact paths, task checkbox progress, sign-off
-markers, optionality, next required artifact, and skipped artifacts. `graph`
+filesystem. `status` opens with the selected backend line (`SCM: git`,
+`SCM: fossil`, or `SCM: none` with the unavailable note) and reports artifact
+paths, task checkbox progress, sign-off markers, optionality, next required
+artifact, and skipped artifacts. `graph`
 adds dependency edges, archive-gate flags, and configured post-hook names.
 
 The state rules are:

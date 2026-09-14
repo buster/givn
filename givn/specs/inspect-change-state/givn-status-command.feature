@@ -28,8 +28,8 @@ Feature: givn-status-command
     And a change "a-feature" exists with artifact "proposal.md"
     When the user runs `givn status`
     Then the command exits 0
-    And stdout line 3 matches "a-feature"
-    And stdout line 4 matches "z-feature"
+    And stdout line 4 matches "a-feature"
+    And stdout line 5 matches "z-feature"
 
   Scenario: Active and archived changes — single active auto-defaults to detail (text)
     Given a project root with givn/ initialised

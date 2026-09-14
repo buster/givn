@@ -17,6 +17,10 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
 
     let manifest = load_effective()?;
 
+    if !json {
+        print_scm_line(&project_root);
+    }
+
     if let Some(id) = change {
         let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
         if !change_dir.exists() {
@@ -98,6 +102,17 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// Report the version-control backend that owns the project (A19: any
+/// selection failure reports `none` with the unavailable note; the specific
+/// reason surfaces from the command that needs the backend).
+fn print_scm_line(project_root: &std::path::Path) {
+    match crate::scm::select(project_root) {
+        Ok(crate::scm::Backend::Git(_)) => println!("SCM: git"),
+        Ok(crate::scm::Backend::Fossil(_)) => println!("SCM: fossil"),
+        Err(_) => println!("SCM: none (archive and managed upgrade are unavailable)"),
+    }
 }
 
 /// Surface unproven archive candidates and route the developer to resume.
