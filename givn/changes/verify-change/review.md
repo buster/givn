@@ -39,6 +39,9 @@ code (clippy clean).
 
 | Scenario A | Scenario B | Decision |
 |---|---|---|
+| `Review blocks when a long scenario in the delta has no split-or-keep entry` | `Integrity hook fails on placeholder commit hash` | variant |
+| `Review blocks when a delta scenario shape-matches a permanent scenario without disposition` | `Integrity hook fails on placeholder commit hash` | variant |
+| `A visual change with incomplete evidence fails review` | `Integrity hook fails on placeholder commit hash` | variant |
 
 ### Removed + added pairs
 
