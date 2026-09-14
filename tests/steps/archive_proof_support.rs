@@ -319,6 +319,23 @@ pub(crate) fn parent_revision(world: &GivnWorld) -> String {
     }
 }
 
+/// The comment of the most recent Fossil check-in.
+pub(crate) fn fossil_latest_comment(env: &common::TestEnv) -> String {
+    let out = common::fossil(
+        env,
+        &["sql", "select comment from event where type='ci' order by mtime desc limit 1"],
+    );
+    assert!(
+        out.status.success(),
+        "fossil sql failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    String::from_utf8_lossy(&out.stdout)
+        .trim()
+        .trim_matches('\'')
+        .replace("\\n", "\n")
+}
+
 /// Changed paths in the checkout, including untracked/`EXTRA` entries.
 pub(crate) fn dirty_entries(world: &GivnWorld) -> Vec<String> {
     let env = env(world);
