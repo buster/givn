@@ -97,66 +97,143 @@ unproven.
 Domain constraint: the published candidate stays in place; the repair adds a
 revision; the rerun proves without re-merging.
 
-- [ ] RED: removed `@wip`; bound the backend-parameterized Given and the
-      repaired-revision Then; targeted run exited non-zero. Paste output.
-- [ ] GREEN: resume uses the committed revision only
-      (`git cat-file -e HEAD:<path>`, `fossil cat <path>`), skips the merge,
-      and proves the repaired revision on both backends. Targeted run exited
-      zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the backend-parameterized Given and the
+      repaired-revision Then (`unimplemented!()`), and the Fossil example
+      failed on the Git-only repair step. Targeted run exited non-zero:
+
+      ```text
+      2 scenarios (2 failed), 10 steps (8 passed, 2 failed)
+      Step panicked. Captured output: git add failed: ... Kein Git-Repository
+      Step panicked. Captured output: not implemented
+      exit 1
+      ```
+
+- [x] GREEN: `the developer commits a repair` uses `commit_fixture` (backend
+      aware); `support::parent_revision` reads `git rev-parse HEAD~1` or the
+      `fossil info` `parent:` line; `receipt_names_tested_commit` and the new
+      repaired-revision Then assert the receipt against it. Targeted run:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "Repairing a failed candidate forward proves it without repeating the merge"
+      1 feature, 2 scenarios (2 passed), 16 steps (16 passed)
+      exit 0
+      ```
+
+- [x] REFACTOR: formatted the touched step files; targeted run still exited
+      zero (2 scenarios, 16 steps passed).
+- [x] COMMIT: `aaffbd71 feat(archive-proof): Repairing a failed candidate forward proves it without repeating the merge`.
 
 ## Scenario: A proven archive records a verification receipt binding the tested revision
 
 Domain constraint: the receipt binds the tested revision; the finalization
 revision contains only the resolved evidence paths.
 
-- [ ] RED: removed `@wip`; bound the revision/finalization Thens; targeted run
-      exited non-zero. Paste output.
-- [ ] GREEN: renamed the receipt fields to `candidate_revision`/`tested_revision`
-      (`src/proof.rs`, `src/cli/archive.rs`, step readers); the finalization
-      assertion lists the revision's paths on both backends. Targeted run
-      exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the revision/finalization Thens with
+      `unimplemented!()`; targeted run exited non-zero:
+
+      ```text
+      Step panicked. Captured output: not implemented
+      2 scenarios (2 failed), 12 steps (10 passed, 2 failed)
+      exit 1
+      ```
+
+- [x] GREEN: renamed the receipt fields to `candidate_revision` /
+      `tested_revision` (`src/proof.rs`, step readers); `support::current_revision`
+      and the new Thens assert the receipt against the parent revision and the
+      finalization revision's paths. Targeted run:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "A proven archive records a verification receipt binding the tested revision"
+      1 feature, 2 scenarios (2 passed), 18 steps (18 passed)
+      exit 0
+      ```
+
+- [x] REFACTOR: the permanent scenarios' old step texts (`must be the
+      repository root`, `candidate commit rejection`) were re-bound to the new
+      backend-neutral messages so the pre-archive corpus stays green; the
+      permanent archive-change feature passes 44 scenarios. Targeted run still
+      exited zero.
+- [x] COMMIT: `f76e4f0a feat(archive-proof): A proven archive records a verification receipt binding the tested revision`.
 
 ## Scenario: A rejected candidate revision leaves the archive unproven and repairable
 
 Domain constraint: a rejected publication leaves the archive unproven and
 repairable; the rerun publishes the on-disk candidate again and proves it.
 
-- [ ] RED: removed `@wip`; bound the hook Givens/Whens and the tested-revision
-      Then; targeted run exited non-zero. Paste output.
-- [ ] GREEN: on resume, when the current revision does not contain the pending
-      receipt, republish the on-disk candidate (no merge, no gates, no Project
-      witness) and rely on `Backend::publish` validation. Both examples pass.
-      Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the hook Givens/Whens and the tested-revision
+      Then with `unimplemented!()`; targeted run exited non-zero:
+
+      ```text
+      Step panicked. Captured output: not implemented
+      2 scenarios (2 failed), 4 steps (2 passed, 2 failed)
+      exit 1
+      ```
+
+- [x] GREEN: backend-aware hook fixtures (Git `.git/hooks/commit-msg`, Fossil
+      `hook add --command "exit 1" --type before-commit` / `hook delete all`);
+      `publish_candidate` extracted; on resume the archive checks
+      `backend.revision_contains(pending receipt)`, republishes the on-disk
+      merged state when it is absent, and keeps the Project witness only when
+      the candidate is published. Targeted run:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "A rejected candidate revision leaves the archive unproven and repairable"
+      1 feature, 2 scenarios (2 passed), 22 steps (22 passed)
+      exit 0
+      ```
+
+- [x] REFACTOR: formatted; the permanent archive-change feature passes 44
+      scenarios (the witness move does not disturb the fresh path). Targeted
+      run still exited zero.
+- [x] COMMIT: `15fe4422 feat(archive-proof): A rejected candidate revision leaves the archive unproven and repairable`.
 
 ## Scenario: A rejected candidate revision on Git leaves the merge staged
 
 Domain constraint: the Git intermediate state is staged but uncommitted; the
 archive is unproven.
 
-- [ ] RED: removed `@wip`; bound the staged-state Then; targeted run exited
-      non-zero. Paste output.
-- [ ] GREEN: the Git rejection message names the staged merge and the unproven
-      archive. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED/GREEN: removed `@wip`; every step was already bound (the Git hook
+      Given/Whens from the repairable scenario and the permanent staged-state
+      Then), so this is a legitimate immediate GREEN with no new production
+      code. Targeted run:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "A rejected candidate revision on Git leaves the merge staged"
+      1 feature, 1 scenario (1 passed), 6 steps (6 passed)
+      exit 0
+      ```
+
+- [x] REFACTOR: no change needed; permanent archive-change feature stays green
+      (44 scenarios).
+- [x] COMMIT: `2065204d` (shared with the Fossil intermediate-state scenario).
 
 ## Scenario: A rejected candidate revision on Fossil leaves the merged state uncommitted
 
 Domain constraint: the Fossil intermediate state is present in the checkout but
 uncommitted; the archive is unproven.
 
-- [ ] RED: removed `@wip`; bound the checkout-state Then; targeted run exited
-      non-zero. Paste output.
-- [ ] GREEN: the Fossil rejection message names the uncommitted checkout state
-      and the unproven archive. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the checkout-state Then with
+      `unimplemented!()`; targeted run exited non-zero:
+
+      ```text
+      Step panicked. Captured output: not implemented
+      1 scenario (1 failed), 5 steps (4 passed, 1 failed)
+      exit 1
+      ```
+
+- [x] GREEN: `support::dirty_entries` reports Git porcelain and Fossil
+      `changes --differ` paths; the Then asserts a merged spec is dirty and the
+      pending receipt is not in the current revision. Targeted run:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "A rejected candidate revision on Fossil leaves the merged state uncommitted"
+      1 feature, 1 scenario (1 passed), 6 steps (6 passed)
+      exit 0
+      ```
+
+- [x] REFACTOR: formatted; both backend intermediate-state scenarios pass
+      together (2 scenarios, 12 steps).
+- [x] COMMIT: `2065204d feat(archive-proof): A rejected candidate revision on Git leaves the merge staged and on Fossil leaves the merged state uncommitted`.
 
 ## Scenario: A Fossil EXTRA file blocks the archive
 
