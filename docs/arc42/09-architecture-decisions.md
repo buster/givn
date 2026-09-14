@@ -45,6 +45,14 @@ Fossil backend and for moving the archive publication onto the same contract.
 The mixed-setup and missing-executable consequences are carried by R-63 and
 R-64 in chapter 11.
 
+ADR-071 is amended by the `maintain-project` change: the managed upgrade and
+the migration bundles consume the selection seam on both backends. The Fossil
+backend gained the upgrade-side operations (allowlist staging with
+`fossil add [--force]`, pending-change detection, and commit), the temporary
+managed-upgrade refusal was removed, and the plan revision records the
+upgrade revision identifier on either backend. This refines ADR-071's
+boundary; it introduces no new decision.
+
 ADR-072 is accepted by the `archive-change` change: publication through the SCM
 seam is witness-bounded. Givn resolves the publication paths, validates the
 exact dirty set against them, and then records only that set — Git stages the

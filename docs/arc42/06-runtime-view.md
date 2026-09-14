@@ -292,9 +292,12 @@ script to stdout.
 The command selects a declared migration path from the active config marker to
 the installed package version. It first selects the project's version-control
 backend through the SCM seam (section 6.16) and verifies that the checkout is
-clean. A Fossil checkout is refused by name here — before any file changes —
-until the managed-upgrade path supports it; the archive already supports
-Fossil. A failed preflight returns before changing any project file.
+clean on that backend; a dirty checkout or a missing backend executable is
+refused before any file changes. Managed staging records exactly the
+calculated allowlist on both backends — `git add [-f]` on Git, `fossil add
+[--force]` on Fossil — and the managed and plan revisions are committed
+through the same seam. A failed preflight returns before changing any project
+file.
 
 The command then refreshes `givn/config.yaml`, backfills the `run:` scaffold
 into `givn/commands.yaml` when the file exists and has no top-level `run:` key
