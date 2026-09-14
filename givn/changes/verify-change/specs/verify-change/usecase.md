@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:bf62026e253ae1a6378388e8d6effa65e06830f7c1ae921d398bf8734a41ae65 -->
+
 # Use case: verify-change
 
 ## Level
