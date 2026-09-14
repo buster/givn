@@ -37,8 +37,12 @@ fn given_project_without_backend(world: &mut GivnWorld) {
 }
 
 #[given("a Fossil checkout whose project root is the checkout root")]
-fn given_fossil_checkout(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_fossil_checkout(world: &mut GivnWorld) {
+    let env = common::make_init_root_without_git();
+    std::fs::write(env.path(".fslckout"), b"fossil checkout fixture\n")
+        .expect("write Fossil checkout marker");
+    world.scm_fixture.snapshot = Some(snapshot_tree(&env.root()));
+    world.env = Some(env);
 }
 
 #[given("a project root that is both a Git worktree and a Fossil checkout")]
@@ -76,8 +80,17 @@ fn then_no_backend_refusal(world: &mut GivnWorld) {
 }
 
 #[then("stderr names the Fossil checkout and the unavailable Fossil backend")]
-fn then_fossil_refusal(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_fossil_refusal(world: &mut GivnWorld) {
+    let root = world.env.as_ref().expect("project root").root();
+    let stderr = stderr(world);
+    assert!(
+        stderr.contains("Fossil checkout") && stderr.contains(&root.display().to_string()),
+        "stderr does not name the Fossil checkout at the project root: {stderr}"
+    );
+    assert!(
+        stderr.contains("not available"),
+        "stderr does not name the unavailable Fossil backend: {stderr}"
+    );
 }
 
 #[then("stderr names the Git marker and the Fossil marker")]

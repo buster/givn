@@ -28,13 +28,23 @@ impl Backend {
 
 /// Select the backend that owns `project_root`, or refuse by name.
 pub fn select(project_root: &Path) -> Result<Backend> {
-    if !git_worktree(project_root)? {
-        bail!(
+    let git = git_worktree(project_root)?;
+    let fossil = fossil_marker(project_root);
+    match (git, fossil) {
+        (true, None) => Ok(Backend::Git(crate::git::Worktree::open(project_root)?)),
+        (true, Some(marker)) => bail!(
+            "ambiguous version control at '{}': both a Git worktree marker and a Fossil checkout marker ({marker}) are present",
+            project_root.display()
+        ),
+        (false, Some(_)) => bail!(
+            "Fossil checkout detected at '{}'; the Fossil backend is not available in this version",
+            project_root.display()
+        ),
+        (false, None) => bail!(
             "no Git worktree or Fossil checkout found at '{}'; a version-controlled project is required",
             project_root.display()
-        );
+        ),
     }
-    Ok(Backend::Git(crate::git::Worktree::open(project_root)?))
 }
 
 /// Whether the project root is inside a Git worktree.
@@ -45,4 +55,11 @@ fn git_worktree(project_root: &Path) -> Result<bool> {
         .output()
         .with_context(|| format!("run `git rev-parse` in '{}'", project_root.display()))?;
     Ok(output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "true")
+}
+
+/// The Fossil checkout marker at the project root, when present.
+fn fossil_marker(project_root: &Path) -> Option<&'static str> {
+    [".fslckout", "_FOSSIL_"]
+        .into_iter()
+        .find(|name| project_root.join(name).exists())
 }
