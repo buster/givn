@@ -1015,7 +1015,7 @@ mod tests {
             "- [x] COMMIT: a1b2c3d4 -- Scenario one\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_ok());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]
@@ -1026,28 +1026,28 @@ mod tests {
             "- [x] COMMIT: ___ -- Scenario one\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_fails_with_empty_hash() {
         let (_dir, change) = make_change_dir();
         std::fs::write(change.join("tasks.md"), "- [x] COMMIT: \n").unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_fails_with_no_commit_lines() {
         let (_dir, change) = make_change_dir();
         std::fs::write(change.join("tasks.md"), "- [x] Some other task\n").unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
     fn hash_presence_skips_when_no_tasks_md() {
         let (_dir, change) = make_change_dir();
         // Don't create tasks.md
-        assert!(check_hash_presence(&change).is_ok());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]
@@ -1058,7 +1058,7 @@ mod tests {
             "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: a1b2c3d4 -- Scenario two\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_err());
+        assert!(check_revision_identifier_presence(&change).is_err());
     }
 
     #[test]
@@ -1069,7 +1069,7 @@ mod tests {
             "- [x] COMMIT: a1b2c3d4 -- Scenario one\n- [x] COMMIT: e5f6g7h8 -- Scenario two\n",
         )
         .unwrap();
-        assert!(check_hash_presence(&change).is_ok());
+        assert!(check_revision_identifier_presence(&change).is_ok());
     }
 
     #[test]
