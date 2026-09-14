@@ -17,6 +17,7 @@
 - choose-project-license
 - adr-qualification-gate
 - llm-attribution
+- scm-backend-selection
 
 ## Interactions
 

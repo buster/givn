@@ -60,7 +60,7 @@ signal, so the decision below is made on capability boundaries.
 |---|---|---|---|
 | scm-backend-selection | EXTEND archive-proof (top of a flat 7.50 ranking) | `NEW in fragments` | No existing capability owns backend detection or refusal; `archive-proof` only consumes it. Detection is reusable behavior with no independent user goal, so it belongs to the `support` fragment. |
 | release-0-3-0 | EXTEND release-0-3-0 | `EXTEND release-0-3-0` | The managed upgrade's no-version-control refusal changes from "requires a Git repository" to the backend-neutral named refusal; the protected-migration scenario records the new wording. |
-| adr-qualification-gate | EXTEND adr-qualification-gate | `EXTEND adr-qualification-gate` | ADR-071 is a new accepted record, so the consolidated-register scenario's accepted count moves from 26 to 27. |
+| adr-qualification-gate | EXTEND adr-qualification-gate | `NEW in fragments` | ADR-071 is a new accepted record, so the consolidated-register scenario's accepted count moves from 26 to 27. The capability lives in the reusable support fragment, which the EXTEND route cannot resolve. |
 
 ## Out of Scope
 
