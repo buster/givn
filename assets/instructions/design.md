@@ -106,6 +106,10 @@ not the pixels.
 - Design system: docs/design/design-system.md
 ```
 
+**Interface classification (fail-closed):** a screen that renders HTML, CSS, or JavaScript in a browser is a Web UI.
+Record `- Interface: web` for it even when it needs only a page request and exposes no controls.
+`- Interface: none` is reserved for a change with no rendered screen.
+
 - **design tokens**: color roles, spacing scale, typography scale, radii,
   elevation.
 - **Component primitives**: each primitive with its component states —

@@ -2,7 +2,7 @@
 
 Feature: Visual Design Contract
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance classifies a browser-rendered screen as a Web UI
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`
