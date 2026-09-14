@@ -69,23 +69,12 @@ The developer archives a reviewed change.
 
 ## Examples
 
-- Git candidate: a change with merged specs and a clean worktree publishes
-  candidate `a1b2c3d4e5f6...`; both scopes pass; the finalization revision
-  contains the archive directory and the README; the proven receipt records
-  `tested_revision: a1b2c3d4e5f6...`.
-- Fossil candidate: the same change in a Fossil checkout whose `EXTRA` files
-  are clean publishes a candidate check-in; both scopes pass; the finalization
-  check-in contains the archive directory; the proven receipt binds the
-  candidate check-in.
-- Failed scope: the candidate stays published; `givn status` reports the
-  unproven candidate; the developer repairs with a new revision; the rerun
-  proves the archive without repeating the merge.
-- Hook rejection, Git: a commit hook exits non-zero; the merge stays staged;
-  the archive is unproven.
-- Hook rejection, Fossil: a commit hook exits non-zero; the merged state stays
-  in the checkout uncommitted; the archive is unproven.
-- No SCM: `givn archive --change multi-scm-support` in a plain directory exits
-  non-zero with a named refusal and mutates nothing.
+- Git candidate: a change with merged specs and a clean worktree publishes candidate `a1b2c3d4e5f6...`; both scopes pass; the finalization revision contains the archive directory and the README; the proven receipt records `tested_revision: a1b2c3d4e5f6...`.
+- Fossil candidate: the same change in a Fossil checkout whose `EXTRA` files are clean publishes a candidate check-in; both scopes pass; the finalization check-in contains the archive directory; the proven receipt binds the candidate check-in.
+- Failed scope: the candidate stays published; `givn status` reports the unproven candidate; the developer repairs with a new revision; the rerun proves the archive without repeating the merge.
+- Hook rejection, Git: a commit hook exits non-zero; the merge stays staged; the archive is unproven.
+- Hook rejection, Fossil: a commit hook exits non-zero; the merged state stays in the checkout uncommitted; the archive is unproven.
+- No SCM: `givn archive --change multi-scm-support` in a plain directory exits non-zero with a named refusal and mutates nothing.
 
 ## Minimal guarantee
 
