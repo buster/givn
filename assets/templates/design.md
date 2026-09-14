@@ -13,12 +13,15 @@
 > ```
 > - Interface: web | terminal | none
 > - Viewports: mobile (360x780), desktop (1920x1080)
+> - States: empty, loading, error
 > - Design system: docs/design/design-system.md
 > ```
 >
 > Follow with the tokens (color roles, spacing, typography), the component
 > primitives and their states, the screens this contract covers, the capture
-> mechanism, and at least one rendered reference view. The contract is
+> mechanism, and at least one rendered reference view. Name the Breakpoints
+> and the Accessibility checks (contrast, keyboard focus, semantics), each
+> with how it is verified. The contract is
 > style-level, not pixel-level; a conforming improvement updates it.
 
 ## Use-Case Traceability

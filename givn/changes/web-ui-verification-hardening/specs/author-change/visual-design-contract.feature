@@ -74,7 +74,7 @@ Feature: Visual Design Contract
     And stdout contains "operator confirmation"
     And stdout contains "reason"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design template carries the state, breakpoint, and accessibility lines
     Given a project root with givn/ initialised
     When the user runs `givn eject design:template`
