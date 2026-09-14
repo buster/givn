@@ -26,6 +26,16 @@ human signs off) and complete per-viewport evidence. The check lives inside
 the existing integrity member, so it cannot be disabled by a `post` hook
 entry. This is a further extension of the same boundary, not a new record.
 
+ADR-028 is amended a third time by the `web-ui-verification-hardening`
+change. The same integrity member gains the persona disposition, the
+per-state evidence, and the deferral pair: a declared visual interface
+requires a `PERSONAS:` line naming at least one confirmed Persona, every
+declared UI state requires committed `<viewport>--<state>.png` evidence, and
+a `DEFERRAL:` line requires a matching `OPERATOR-DECISION:` record. The
+classification reasoning and the quality of a persona disposition stay
+guidance-level. This remains an extension of the same boundary, not a new
+record.
+
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

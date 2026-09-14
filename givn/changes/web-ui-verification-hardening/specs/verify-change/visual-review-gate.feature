@@ -53,14 +53,8 @@ Feature: Visual Review Gate
     And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
     And the change's design.md declares the UI states "empty, loading, error"
     And the change's delta spec contains an @e2e scenario "Consumer opens the dashboard"
-    And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "mobile"
-    And the change has a final-state screenshot for "Consumer opens the dashboard" at viewport "desktop"
-    And the change has a state screenshot for "Consumer opens the dashboard" at viewport "mobile" in state "empty"
-    And the change has a state screenshot for "Consumer opens the dashboard" at viewport "desktop" in state "empty"
-    And the change has a state screenshot for "Consumer opens the dashboard" at viewport "mobile" in state "loading"
-    And the change has a state screenshot for "Consumer opens the dashboard" at viewport "desktop" in state "loading"
-    And the change has a state screenshot for "Consumer opens the dashboard" at viewport "mobile" in state "error"
-    And the change has a state screenshot for "Consumer opens the dashboard" at viewport "desktop" in state "error"
+    And the change has final-state screenshots for "Consumer opens the dashboard" at both viewports
+    And the change has state screenshots for "Consumer opens the dashboard" at both viewports for states "empty, loading, error"
     And the change's review.md contains "VISUAL-REVIEW: PASS"
     And the project declares a complete run declaration
     When the user runs `givn check review --change test-change`

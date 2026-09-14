@@ -86,6 +86,10 @@ graph TD
 | Q-85 | Gate safety | A change declares a visual interface and its review carries no visual verdict. | `givn check review` fails naming the missing `VISUAL-REVIEW` marker. |
 | Q-86 | Gate safety | A declared visual interface lacks a final-state screenshot for one contract viewport. | `givn check review` fails naming the scenario title and the missing viewport. |
 | Q-87 | Gate safety | A change declares no visual contract. | The visual gate is exempt and the review check proceeds unchanged. |
+| Q-88 | Gate safety | A web contract declares a UI state and the change has no state screenshot for one viewport. | `givn check review` fails naming the state and the viewport. |
+| Q-89 | Gate safety | A declared visual interface has no `PERSONAS:` line, or the line names `none`. | `givn check review` fails naming the persona disposition. |
+| Q-90 | Gate safety | `review.md` records a `DEFERRAL:` without an `OPERATOR-DECISION:`. | `givn check review` fails naming the missing operator decision. |
+| Q-91 | Gate safety | A capability renders HTML/CSS/JS in a browser without controls or server state. | The emitted specs and design guidance classify it as a Web UI and require a browser driver; review rejects an HTTP-only step as a downgraded e2e scenario. |
 
 ## 10.3 Verification Signals
 
