@@ -408,38 +408,55 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `db7678ed` -- `feat(visual-design-contract): The design template carries the state, breakpoint, and accessibility lines`
 
-- [ ] Scenario: `The proposal template carries the persona confirmation line`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The proposal template carries the persona confirmation line`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        exit status: 1 (unimplemented!() stub for the ejected-proposal step)
         ```
-  - [ ] GREEN: updated the `Confirmed Personas` line in
+  - [x] GREEN: implemented the ejected-proposal then-step in
+        `tests/steps/visual_design_contract_steps.rs` and updated the
+        `Confirmed Personas` line in `assets/templates/proposal.md`. Files:
+        `tests/steps/visual_design_contract_steps.rs`,
         `assets/templates/proposal.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): The proposal template carries the persona confirmation line`
+  - [x] COMMIT: `d8471eca` -- `feat(visual-design-contract): The proposal template carries the persona confirmation line`
 
-- [ ] Scenario: `The review template carries the persona disposition and deferral markers`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The review template carries the persona disposition and deferral markers`
+  - [x] RED: removed `@wip` for this scenario only; temporarily restored the
+        previous review template; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        ejected review template missing "PERSONAS:"
+        exit status: 1
         ```
-  - [ ] GREEN: added the fenced `PERSONAS:`, `DEFERRAL:`, and
-        `OPERATOR-DECISION:` scaffold to `assets/templates/review.md`. Run →
-        zero. Evidence:
+  - [x] GREEN: added the fenced `PERSONAS:`, `DEFERRAL:`, and
+        `OPERATOR-DECISION:` scaffold to `assets/templates/review.md`. Files:
+        `assets/templates/review.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): The review template carries the persona disposition and deferral markers`
+  - [x] COMMIT: `9591a6e3` -- `feat(visual-design-contract): The review template carries the persona disposition and deferral markers`
 
 - [ ] Scenario: `The design-review template carries the persona disposition table`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
