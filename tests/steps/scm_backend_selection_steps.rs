@@ -46,8 +46,12 @@ fn given_fossil_checkout(world: &mut GivnWorld) {
 }
 
 #[given("a project root that is both a Git worktree and a Fossil checkout")]
-fn given_ambiguous_root(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_ambiguous_root(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    std::fs::write(env.path(".fslckout"), b"fossil checkout fixture\n")
+        .expect("write Fossil checkout marker");
+    world.scm_fixture.snapshot = Some(snapshot_tree(&env.root()));
+    world.env = Some(env);
 }
 
 #[given("a Git project whose project root is nested inside the worktree top level")]
@@ -94,8 +98,16 @@ fn then_fossil_refusal(world: &mut GivnWorld) {
 }
 
 #[then("stderr names the Git marker and the Fossil marker")]
-fn then_ambiguity_refusal(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_ambiguity_refusal(world: &mut GivnWorld) {
+    let stderr = stderr(world);
+    assert!(
+        stderr.contains("Git") && stderr.contains(".fslckout"),
+        "stderr does not name both markers: {stderr}"
+    );
+    assert!(
+        stderr.contains("ambiguous"),
+        "stderr does not refuse the ambiguity: {stderr}"
+    );
 }
 
 #[then("stderr names the project root and the worktree top level")]

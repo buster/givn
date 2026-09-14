@@ -28,7 +28,7 @@ Feature: SCM backend selection
     And  stderr names the Fossil checkout and the unavailable Fossil backend
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project root with both markers is refused as ambiguous
     Given  a project root that is both a Git worktree and a Fossil checkout
     When  the user runs `givn upgrade`
