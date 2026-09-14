@@ -65,10 +65,12 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     };
 
     // Clean-state witness: evidence paths left by a failed attempt stay
-    // resumable; anything else is uncommitted work.
-    ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
-
+    // resumable; anything else is uncommitted work. A resume whose candidate
+    // publication was rejected is exempt: its merged state is intentionally
+    // dirty, and `publish_candidate` republishes it after validating the
+    // exact dirty set.
     if fresh {
+        ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
         println!(
             "[{}] Archiving change '{change}'...",
             crate::subprocess::local_timestamp()
@@ -227,30 +229,28 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         crate::proof::Receipt::write_pending(&archive_target, change, crate::proof::unix_now())?;
         std::fs::remove_dir_all(&change_dir)?;
 
-        let candidate_paths = vec![
-            "givn/specs".to_string(),
-            format!("givn/archive/{change}"),
-            format!("givn/changes/{change}"),
-        ];
-        backend
-            .publish(
-                &candidate_paths,
-                &format!("chore({change}): publish archive candidate"),
-            )
-            .with_context(|| {
-                format!(
-                    "archive blocked: the candidate revision was rejected. {}. The archive is \
-                     not proven. Resolve the error and rerun `givn archive --change {change}`.",
-                    rejection_state(&backend)
-                )
-            })?;
+        publish_candidate(&backend, change)?;
         println!(
             "[{}] ✓ Candidate committed",
             crate::subprocess::local_timestamp()
         );
     } else {
-        // Resume: the merge is already committed. Re-check the e2e
-        // precondition against the permanent corpus before re-running.
+        // Resume: when the pending receipt is not in the current revision, a
+        // backend hook rejected the candidate publication and the merged
+        // on-disk state must be published again; otherwise the merge is
+        // already committed.
+        let receipt_path = format!("givn/archive/{change}/verification.json");
+        if backend.revision_contains(&receipt_path)? {
+            ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
+        } else {
+            println!(
+                "[{}] Resuming rejected candidate '{change}' — publishing the merged state...",
+                crate::subprocess::local_timestamp()
+            );
+            publish_candidate(&backend, change)?;
+        }
+        // Re-check the e2e precondition against the permanent corpus before
+        // re-running.
         let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
         ensure_e2e_configured(&manifest, merged_has_e2e, &specs_dir)?;
     }
@@ -377,6 +377,29 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     println!("\nChange archived successfully.");
     println!("The delta specs have been merged into givn/specs/.");
 
+    Ok(())
+}
+
+/// Publish the merged candidate revision, validating the exact paths and
+/// reporting a rejection as an unproven, repairable state.
+fn publish_candidate(backend: &crate::scm::Backend, change: &str) -> Result<()> {
+    let candidate_paths = vec![
+        "givn/specs".to_string(),
+        format!("givn/archive/{change}"),
+        format!("givn/changes/{change}"),
+    ];
+    backend
+        .publish(
+            &candidate_paths,
+            &format!("chore({change}): publish archive candidate"),
+        )
+        .with_context(|| {
+            format!(
+                "archive blocked: the candidate revision was rejected. {}. The archive is \
+                 not proven. Resolve the error and rerun `givn archive --change {change}`.",
+                rejection_state(backend)
+            )
+        })?;
     Ok(())
 }
 

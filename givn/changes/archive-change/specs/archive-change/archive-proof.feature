@@ -67,7 +67,7 @@ Feature: Archive Proof
       | Git     |
       | Fossil  |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A rejected candidate revision leaves the archive unproven and repairable
     Given  a <backend> project with a completed change "proof-demo" ready to archive
     And  a commit hook rejects the archive candidate revision

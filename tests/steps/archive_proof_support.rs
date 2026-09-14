@@ -321,12 +321,24 @@ pub(crate) fn parent_revision(world: &GivnWorld) -> String {
 
 /// Whether the current revision contains `path`.
 pub(crate) fn revision_contains(world: &GivnWorld, path: &str) -> bool {
+    match env(world).backend() {
+        common::BackendKind::Git => revision_contains_at(world, "HEAD", path),
+        common::BackendKind::Fossil => revision_contains_at(world, "current", path),
+    }
+}
+
+/// Whether `path` is present in the named revision.
+pub(crate) fn revision_contains_at(world: &GivnWorld, revision: &str, path: &str) -> bool {
     let env = env(world);
     match env.backend() {
-        common::BackendKind::Git => common::git(env, &["cat-file", "-e", &format!("HEAD:{path}")])
+        common::BackendKind::Git => {
+            common::git(env, &["cat-file", "-e", &format!("{revision}:{path}")])
+                .status
+                .success()
+        }
+        common::BackendKind::Fossil => common::fossil(env, &["cat", "-r", revision, path])
             .status
             .success(),
-        common::BackendKind::Fossil => common::fossil(env, &["cat", path]).status.success(),
     }
 }
 
