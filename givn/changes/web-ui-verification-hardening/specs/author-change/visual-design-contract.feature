@@ -109,7 +109,7 @@ Feature: Visual Design Contract
     And the ejected design-review template contains "Relevance"
     And the ejected design-review template contains "Evidence"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Synchronized authoring guidance carries the classification, driver, and persona rules
     Given a givn project with all agent skill targets enabled
     When the user runs `givn skills sync`
