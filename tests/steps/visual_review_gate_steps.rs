@@ -20,7 +20,8 @@ fn change_dir(world: &GivnWorld) -> PathBuf {
 }
 
 fn write_visual_contract(world: &GivnWorld, interface: &str, viewports: Option<&str>) {
-    let mut contract = format!("# Design: fixture\n\n## Visual Design Contract\n\n- Interface: {interface}\n");
+    let mut contract =
+        format!("# Design: fixture\n\n## Visual Design Contract\n\n- Interface: {interface}\n");
     if let Some(viewports) = viewports {
         contract.push_str(&format!("- Viewports: {viewports}\n"));
     }
@@ -67,8 +68,7 @@ fn delta_spec_contains_e2e(world: &mut GivnWorld, title: String) {
     let feature = format!(
         "@givn.delta @fixture-capability\n\nFeature: Fixture capability\n\n  @givn.added @e2e\n  Scenario: {title}\n    Given the fixture universe is ready\n    When the fixture observer looks\n    Then the fixture records a unique observation\n"
     );
-    std::fs::write(dir.join("fixture-capability.feature"), feature)
-        .expect("write delta feature");
+    std::fs::write(dir.join("fixture-capability.feature"), feature).expect("write delta feature");
 }
 
 fn evidence_path(world: &GivnWorld, title: &str, file: &str) -> PathBuf {
@@ -78,14 +78,18 @@ fn evidence_path(world: &GivnWorld, title: &str, file: &str) -> PathBuf {
         .join(file)
 }
 
-#[given(regex = r##"^the change has a final-state screenshot for "([^"]+)" at viewport "([^"]+)"$"##)]
+#[given(
+    regex = r##"^the change has a final-state screenshot for "([^"]+)" at viewport "([^"]+)"$"##
+)]
 fn has_final_state_screenshot(world: &mut GivnWorld, title: String, viewport: String) {
     let path = evidence_path(world, &title, &format!("{viewport}.png"));
     std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
     std::fs::write(&path, b"final-state screenshot bytes").expect("write screenshot");
 }
 
-#[given(regex = r##"^the change has an empty screenshot file for "([^"]+)" at viewport "([^"]+)"$"##)]
+#[given(
+    regex = r##"^the change has an empty screenshot file for "([^"]+)" at viewport "([^"]+)"$"##
+)]
 fn has_empty_screenshot(world: &mut GivnWorld, title: String, viewport: String) {
     let path = evidence_path(world, &title, &format!("{viewport}.png"));
     std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
@@ -130,10 +134,16 @@ fn has_final_state_screenshots_both(world: &mut GivnWorld, title: String) {
     }
 }
 
-#[given(regex = r##"^the change has state screenshots for "([^"]+)" at both viewports for states "([^"]+)"$"##)]
+#[given(
+    regex = r##"^the change has state screenshots for "([^"]+)" at both viewports for states "([^"]+)"$"##
+)]
 fn has_state_screenshots_both(world: &mut GivnWorld, title: String, states: String) {
     for viewport in ["mobile", "desktop"] {
-        for state in states.split(',').map(str::trim).filter(|state| !state.is_empty()) {
+        for state in states
+            .split(',')
+            .map(str::trim)
+            .filter(|state| !state.is_empty())
+        {
             let path = evidence_path(world, &title, &format!("{viewport}--{state}.png"));
             std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
             std::fs::write(&path, b"state screenshot bytes").expect("write screenshot");
@@ -141,14 +151,18 @@ fn has_state_screenshots_both(world: &mut GivnWorld, title: String, states: Stri
     }
 }
 
-#[given(regex = r##"^the change has a state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]
+#[given(
+    regex = r##"^the change has a state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##
+)]
 fn has_state_screenshot(world: &mut GivnWorld, title: String, viewport: String, state: String) {
     let path = evidence_path(world, &title, &format!("{viewport}--{state}.png"));
     std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
     std::fs::write(&path, b"state screenshot bytes").expect("write screenshot");
 }
 
-#[given(regex = r##"^the change has an empty state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]
+#[given(
+    regex = r##"^the change has an empty state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##
+)]
 fn has_empty_state_screenshot(
     world: &mut GivnWorld,
     title: String,

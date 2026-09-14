@@ -67,6 +67,9 @@ Required branches:
   `Interface:` line and viewports. When no approved design exists, propose
   two or three rendered options and the user approves one; record the
   approved direction in `design.md`.
+- **Interface classification** — test the opposite classification before accepting a non-browser interface: a screen rendered in a browser is a Web UI, so a design that declares no browser driver must say why the opposite does not hold.
+- **Persona disposition** — record, per persona, the relevance and evidence; when no persona is confirmed, record the reason and the operator confirmation. A user-visible surface requires at least one confirmed Persona.
+- **Deferrals** — a mandatory check may be deferred only after an operator question; record the operator's decision, otherwise do not sign off.
 - **Interaction Coverage** — does every entry in the spec's User Interaction
   Inventory correspond to a row in the design's Interaction Coverage Matrix?
   Does every matrix row name a valid, non-empty driving mechanism (real

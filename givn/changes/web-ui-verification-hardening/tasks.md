@@ -636,133 +636,189 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `642e0c33` -- `feat(visual-review-gate): A web contract with missing state evidence fails review`
 
-- [ ] Scenario: `A web contract with complete state evidence passes review`
-  - [ ] RED: paired with the negative scenario above; the positive scenario
-        failed before the state check existed only as a fixture gap, so RED is
-        recorded together with the negative. Evidence:
+- [x] Scenario: `A web contract with complete state evidence passes review`
+  - [x] RED: paired with the negative scenario above (A10); the negative
+        scenario drove the production check, the positive proves the complete
+        artifact passes. Evidence:
         ```
-        <paste output>
+        paired: 642e0c33 (missing state evidence fails review)
         ```
-  - [ ] GREEN: added the state screenshots fixture and confirmed exit 0 with
-        the implemented check. Run → zero. Evidence:
+  - [x] GREEN: implemented the both-viewports final-state and state-screenshot
+        fixture steps and confirmed exit 0 with the implemented check. Files:
+        `tests/steps/visual_review_gate_steps.rs`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A web contract with complete state evidence passes review`
+  - [x] COMMIT: `8d7f5f94` -- `feat(visual-review-gate): A web contract with complete state evidence passes review`
 
-- [ ] Scenario: `A visual change without a persona disposition fails review`
-  - [ ] RED: removed `@wip` for this scenario only; added the
-        no-persona fixture with `unimplemented!()`. Run → non-zero. Evidence:
+- [x] Scenario: `A visual change without a persona disposition fails review`
+  - [x] RED: removed `@wip` for this scenario only; the no-persona fixture
+        step was an `unimplemented!()` stub. Run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        not implemented
+        exit status: 1
         ```
-  - [ ] GREEN: implemented the persona-disposition check in
+  - [x] GREEN: implemented the persona-disposition check in
         `src/integrity_hook.rs` and updated the shared `review_md_contains`
         fixture with `PERSONAS: fixture-persona`. Files:
         `src/integrity_hook.rs`, `tests/steps/visual_review_gate_steps.rs`.
         Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: added persona unit tests (confirmed, none, empty, fenced
+        scaffold). `cargo test --lib integrity_hook` → 22 passed. Evidence:
         ```
-        <paste output>
+        test result: ok. 22 passed; 0 failed; 0 ignored; 0 measured; 237 filtered out
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A visual change without a persona disposition fails review`
+  - [x] COMMIT: `5d4e9d3e` -- `feat(visual-review-gate): A visual change without a persona disposition fails review`
 
-- [ ] Scenario: `A visual change with a confirmed persona disposition passes review`
-  - [ ] RED: paired with the negative scenario above. Evidence:
+- [x] Scenario: `A visual change with a confirmed persona disposition passes review`
+  - [x] RED: paired with the negative scenario above (A10). Evidence:
         ```
-        <paste output>
+        paired: 5d4e9d3e (without a persona disposition fails review)
         ```
-  - [ ] GREEN: confirmed exit 0 with the fixture's `PERSONAS: fixture-persona`.
+  - [x] GREEN: confirmed exit 0 with the fixture's `PERSONAS: fixture-persona`.
         Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        9 steps (9 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A visual change with a confirmed persona disposition passes review`
+  - [x] COMMIT: `cdc99ebd` -- `feat(visual-review-gate): A visual change with a confirmed persona disposition passes review`
 
-- [ ] Scenario: `A visual interface with an empty persona disposition fails review`
-  - [ ] RED: removed `@wip` for this scenario only; the empty-value fixture
-        step is new. Run → non-zero. Evidence:
+- [x] Scenario: `A visual interface with an empty persona disposition fails review`
+  - [x] RED: removed `@wip` for this scenario only; the empty-value fixture
+        step was an `unimplemented!()` stub. Run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        not implemented
+        exit status: 1
         ```
-  - [ ] GREEN: the persona check rejects an empty value. Run → zero. Evidence:
+  - [x] GREEN: implemented the persona-disposition fixture step; the check
+        rejects an empty value. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        10 steps (10 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A visual interface with an empty persona disposition fails review`
+  - [x] COMMIT: `9dd24f65` -- `feat(visual-review-gate): A visual interface with an empty persona disposition fails review`
 
-- [ ] Scenario: `An empty state screenshot fails review`
-  - [ ] RED: removed `@wip` for this scenario only; added the empty-state
-        fixture step with `unimplemented!()`. Run → non-zero. Evidence:
+- [x] Scenario: `An empty state screenshot fails review`
+  - [x] RED: removed `@wip` for this scenario only; the single-state and
+        empty-state fixture steps were `unimplemented!()` stubs. Run →
+        non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        not implemented
+        exit status: 1
         ```
-  - [ ] GREEN: the state-evidence check counts a zero-byte file as missing.
-        Run → zero. Evidence:
+  - [x] GREEN: implemented the single-state and empty-state fixture steps; the
+        state-evidence check counts a zero-byte file as missing. Run → zero.
+        Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        12 steps (12 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        12 steps (12 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): An empty state screenshot fails review`
+  - [x] COMMIT: `befb6bd1` -- `feat(visual-review-gate): An empty state screenshot fails review`
 
-- [ ] Scenario: `A deferral without an operator decision fails review`
-  - [ ] RED: removed `@wip` for this scenario only; added the `also contains`
-        fixture step with `unimplemented!()`. Run → non-zero. Evidence:
+- [x] Scenario: `A deferral without an operator decision fails review`
+  - [x] RED: removed `@wip` for this scenario only; the run showed the review
+        passing without the deferral check. Run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        expected failure, got exit Some(0)
+        exit status: 1
         ```
-  - [ ] GREEN: implemented `check_deferrals` in `src/integrity_hook.rs`,
+  - [x] GREEN: implemented `check_deferrals` in `src/integrity_hook.rs`,
         wired into `run_integrity_hook`, with fenced-block stripping. Files:
-        `src/integrity_hook.rs`. Run → zero. Evidence:
-        ```
-        <paste output>
-        ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
-        ```
-        <paste output>
-        ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A deferral without an operator decision fails review`
-
-- [ ] Scenario: `A deferral with an operator decision passes review`
-  - [ ] RED: paired with the negative scenario above. Evidence:
-        ```
-        <paste output>
-        ```
-  - [ ] GREEN: confirmed exit 0 with the paired `OPERATOR-DECISION:` line.
+        `src/integrity_hook.rs`, `tests/steps/visual_review_gate_steps.rs`.
         Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: added deferral unit tests (missing decision, paired
+        decision, no deferrals, fenced scaffold). `cargo test --lib
+        integrity_hook` → 24 passed. Evidence:
         ```
-        <paste output>
+        test result: ok. 24 passed; 0 failed; 0 ignored; 0 measured; 237 filtered out
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): A deferral with an operator decision passes review`
+  - [x] COMMIT: `dbd68e52` -- `feat(visual-review-gate): A deferral without an operator decision fails review`
+
+- [x] Scenario: `A deferral with an operator decision passes review`
+  - [x] RED: paired with the negative scenario above (A10). Evidence:
+        ```
+        paired: dbd68e52 (without an operator decision fails review)
+        ```
+  - [x] GREEN: implemented the `also contains` fixture step and confirmed exit
+        0 with the paired `OPERATOR-DECISION:` line. Run → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        ```
+  - [x] REFACTOR: re-ran → zero. Evidence:
+        ```
+        1 feature
+        1 scenario (1 passed)
+        7 steps (7 passed)
+        ```
+  - [x] COMMIT: `170c5b4e` -- `feat(visual-review-gate): A deferral with an operator decision passes review`
 
 ## Finalization
 
-- [ ] Remove every `@wip` tag from the delta features and confirm
+- [x] Removed every `@wip` tag from the delta features;
       `givn lint --change web-ui-verification-hardening` exits 0.
-- [ ] Run the full regular suite and the e2e suite; paste the summaries.
-- [ ] Sync the generated agent integrations (`givn skills sync`) and commit
-      the regenerated trees.
-- [ ] Update `assumptions.md` with any new assumption discovered during
-      implementation.
+- [x] Ran the full regular suite and the e2e suite. Evidence:
+      ```
+      GIVN_FEATURES=givn/changes/web-ui-verification-hardening/specs ./run-tests.sh
+        -> 30 tests run: 30 passed, 0 skipped
+      ./run-tests.sh
+        -> 437 tests run: 437 passed, 0 skipped
+      ./run-tests.sh --e2e
+        -> 83 tests run: 83 passed, 354 skipped
+      cargo test --lib integrity_hook
+        -> 24 passed; 0 failed
+      cargo clippy --workspace --all-targets -- -D warnings
+        -> Finished, no warnings
+      ```
+- [x] Synced the generated agent integrations (`givn skills sync`) and
+      committed the regenerated trees.
+- [x] Updated `assumptions.md` with the assumptions discovered during
+      implementation (A15, A16, A17).

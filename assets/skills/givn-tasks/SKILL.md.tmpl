@@ -34,7 +34,10 @@ Inventory against the design's Interaction Coverage Matrix:
 4. Confirm every matrix row names a valid driving mechanism (real browser
    driver for Web UI; real HTTP client for HTTP API; real subprocess for
    CLI). For a Web UI, the mechanism must read like "Playwright: click X" or
-   "Selenium: fill Y" — not "reqwest" or "HTTP client".
+   "Selenium: fill Y" — not "reqwest" or "HTTP client". A capability that
+   renders HTML, CSS, or JavaScript in a browser is a Web UI row and needs a
+   browser driver; when the contract declares UI states, each declared state
+   needs per-viewport evidence.
 5. Confirm every matrix row's @e2e scenario title appears in the `.feature`
    file as a `@e2e` scenario.
 

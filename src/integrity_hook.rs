@@ -334,7 +334,9 @@ fn visual_verdict(review: &str) -> VisualVerdict {
 
 /// A zero-byte evidence file counts as missing.
 fn is_non_empty_file(path: &Path) -> bool {
-    path.metadata().map(|meta| meta.is_file() && meta.len() > 0).unwrap_or(false)
+    path.metadata()
+        .map(|meta| meta.is_file() && meta.len() > 0)
+        .unwrap_or(false)
 }
 
 /// Check that every delta `@e2e` scenario has the declared evidence.
@@ -887,9 +889,21 @@ mod tests {
         assert!(check_visual_evidence(&change, &contract).is_err());
 
         write_evidence(&change, "Consumer opens the dashboard", "mobile--empty.png");
-        write_evidence(&change, "Consumer opens the dashboard", "desktop--empty.png");
-        write_evidence(&change, "Consumer opens the dashboard", "mobile--loading.png");
-        write_evidence(&change, "Consumer opens the dashboard", "desktop--loading.png");
+        write_evidence(
+            &change,
+            "Consumer opens the dashboard",
+            "desktop--empty.png",
+        );
+        write_evidence(
+            &change,
+            "Consumer opens the dashboard",
+            "mobile--loading.png",
+        );
+        write_evidence(
+            &change,
+            "Consumer opens the dashboard",
+            "desktop--loading.png",
+        );
         assert!(check_visual_evidence(&change, &contract).is_ok());
     }
 
@@ -959,7 +973,10 @@ mod tests {
 
     #[test]
     fn absent_section_is_exempt() {
-        assert_eq!(parse_visual_contract("# Design\n\nNo contract here.\n"), None);
+        assert_eq!(
+            parse_visual_contract("# Design\n\nNo contract here.\n"),
+            None
+        );
     }
 
     #[test]

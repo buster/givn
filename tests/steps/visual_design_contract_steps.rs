@@ -35,8 +35,12 @@ fn ejected_template_contains(world: &mut GivnWorld, artifact: &str, file: &str, 
     );
 
     let path = project_root(world).join(&expected);
-    let content = std::fs::read_to_string(&path)
-        .unwrap_or_else(|error| panic!("read ejected {artifact} template {}: {error}", path.display()));
+    let content = std::fs::read_to_string(&path).unwrap_or_else(|error| {
+        panic!(
+            "read ejected {artifact} template {}: {error}",
+            path.display()
+        )
+    });
     assert!(
         content.contains(needle),
         "ejected {artifact} template missing {needle:?}: {content}"
