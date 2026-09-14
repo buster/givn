@@ -27,27 +27,41 @@ new ADR-072; the permanent scenario and the delta both assert 28.
 
 ## Setup
 
-- [ ] Runner contract confirmed: `./run-tests.sh` executes the repository
+- [x] Runner contract confirmed: `./run-tests.sh` executes the repository
       feature suite plus the active change when `GIVN_FEATURES` is set;
       `./run-tests.sh --e2e` executes the `@e2e` subset.
       `verify.e2e_command` is `./run-tests.sh --e2e`, strictly narrower than
       `verify.command`.
-- [ ] Step skeletons updated, one file per capability plus its E2E companion:
+- [x] Step skeletons updated, one file per capability plus its E2E companion:
       `tests/steps/archive_proof_steps.rs`,
       `tests/steps/archive_proof_e2e_steps.rs`,
       `tests/steps/archive_proof_support.rs`, and the
       `adr_qualification_gate_steps.rs` count binding. New step bodies start
       as `unimplemented!()`.
-- [ ] Strict mode proven with a targeted run of the first scenario: the
+- [x] Strict mode proven with a targeted run of the first scenario: the
       cucumber runner sets `.fail_on_skipped()` in
-      `tests/features_runner.rs`; the first RED run must exit non-zero with
-      `not implemented`. Paste command and output.
-- [ ] Fossil test dependency present: `fossil version` resolves; the CI
-      workflow gains `sudo apt-get update && sudo apt-get install -y
-      --no-install-recommends fossil` before the acceptance suites, and
-      `AGENTS.md` records the prerequisite.
+      `tests/features_runner.rs`; the first RED run exited non-zero with
+      `not implemented`:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "Archive publishes the merged candidate before running the full suite"
+      Scenario Outline: Archive publishes the merged candidate before running the full suite
+       ✘  Given a Git project with a completed change "proof-demo" ready to archive
+          Step panicked. Captured output: not implemented
+      1 feature
+      2 scenarios (2 failed)
+      2 steps (2 failed)
+      error: test failed, to rerun pass `--test features_runner`
+      exit 1
+      ```
+
+- [x] Fossil test dependency present: `fossil version` resolves to
+      2.26 `[611144ddd9]`; `.github/workflows/ci.yml` installs the package
+      (`apt-get update && apt-get install -y --no-install-recommends fossil`)
+      before the acceptance suites, and `AGENTS.md` records the prerequisite.
 - [ ] E2E count proof: the change scope runs the full set and the `@e2e`
-      scope a strictly smaller set. Paste both outputs.
+      scope a strictly smaller set. Paste both outputs. (Recorded once the
+      e2e scenario is implemented.)
 
 ## Scenario: Archive publishes the merged candidate before running the full suite
 
@@ -55,20 +69,28 @@ Domain constraint: the candidate revision contains exactly the merged corpus
 paths and the pending receipt; on a failed suite it stays published and
 unproven.
 
-- [ ] RED: removed `@wip` from this scenario only; bound the
+- [x] RED: removed `@wip` from this scenario only; bound the
       backend-parameterized Given, the publication Thens, and the exact-content
-      Then with `unimplemented!()` where not reused. Targeted run exited
-      non-zero. Paste output.
-- [ ] GREEN: `src/scm.rs` returns `Backend::Fossil` for a Fossil checkout with
+      Then with `unimplemented!()`. Targeted run exited non-zero with
+      `not implemented` (output above). Files: `archive_proof_steps.rs`.
+- [x] GREEN: `src/scm.rs` returns `Backend::Fossil` for a Fossil checkout with
       the executable available; new `src/fossil.rs` implements `revision`,
       `dirty_entries`, `publish`, `revision_contains`; `src/cli/archive.rs`
-      moves onto `scm::select` and `Backend::publish`; the fixtures gain a real
-      Fossil checkout (`tests/common/mod.rs`, `archive_proof_support.rs`).
-      List production files touched. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up without behavior change; targeted run still exited
-      zero. Paste output.
-- [ ] COMMIT: one atomic commit referencing the scenario title; hash recorded:
-      `<hash>`
+      moves onto `scm::select` and `Backend::publish`; `src/git.rs` gains
+      `revision_contains`; `src/cli/migration.rs` refuses the Fossil managed
+      upgrade by name; `src/lib.rs`/`src/main.rs` register the module; the
+      fixtures gain a real Fossil checkout (`tests/common/mod.rs`,
+      `archive_proof_support.rs`). Targeted run:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "Archive publishes the merged candidate before running the full suite"
+      Summary: 1 feature, 2 scenarios (2 passed), 18 steps (18 passed)
+      exit 0
+      ```
+
+- [x] REFACTOR: neutralized the archive doc comment and formatted the touched
+      files; targeted run still exited zero (2 scenarios, 18 steps passed).
+- [x] COMMIT: `5a9eceb7 feat(archive-proof): Archive publishes the merged candidate before running the full suite` (planning and architecture artifacts in `7e755cfa`).
 
 ## Scenario: Repairing a failed candidate forward proves it without repeating the merge
 
