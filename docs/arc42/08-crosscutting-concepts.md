@@ -564,8 +564,8 @@ any write. The Git backend exposes clean-state witness, revision identity,
 scoped staging (force only for the calculated managed allowlist), and scoped
 commits; the managed upgrade consumes them. The Fossil backend exposes the
 clean-state witness (including `EXTRA` entries), revision identity,
-witness-bounded publication, and revision-content checks; the archive consumes
-them, and the managed upgrade refuses a Fossil checkout by name until its path
-exists. Publication is witness-bounded on both backends (ADR-072): the exact
-dirty set is validated against the resolved publication paths before anything
-is recorded.
+witness-bounded publication, allowlist staging (`fossil add [--force]`, force
+only for the calculated managed allowlist), and revision-content checks; the
+archive and the managed upgrade consume them. Publication is witness-bounded
+on both backends (ADR-072): the exact dirty set is validated against the
+resolved publication paths before anything is recorded.

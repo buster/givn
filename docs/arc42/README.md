@@ -31,6 +31,11 @@ checkout) and refuse absence, ambiguity, a nested root, or a missing executable
 by name. Durable facts live in chapters 2 (TC-21, TC-33), 3, 4, 5, 6.13/6.16,
 8.18, 10 (Q-50), and 11 (R-63, R-64, D-20).
 
+The `maintain-project` change amends ADR-071: the managed upgrade and
+migration bundles run on Git and Fossil through the same seam, with
+allowlist-only force staging on both. Durable facts live in chapters 2
+(TC-21), 3, 4, 5, 6.13, 8.18, and the glossary; D-20 is repaid.
+
 The `archive-change` change records ADR-072: publication through the seam is
 witness-bounded, the archive runs on Git and Fossil, and a candidate whose
 publication a hook rejected is republished on resume. Durable facts live in

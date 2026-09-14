@@ -68,6 +68,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 |---|---|
 | ADR-019 -> ADR-027 | ADR-027 supersedes the old `givn verify` naming and carries the final lint contract. |
 | ADR-039, 041, 046, 047, 052, 055-061, 063, 064, 066, 068 -> ADR-069 | ADR-069 supersedes the semantic-engine records; the deterministic overlap boundary of ADR-037 remains current. |
+| ADR-071 (amended by maintain-project) | The seam decision now also governs the managed upgrade and migration bundles on Fossil: allowlist staging, pending-change detection, and commit run on both backends. |
 | ADR-023 (amended by 0.3.0) | The versioned-config decision now also governs managed-only commits, catalog-selected migrations, aggregate plans, and their clean-worktree boundary. |
 
 ## Evidence

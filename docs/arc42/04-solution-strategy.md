@@ -15,7 +15,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
-| SCM backend | One selection seam probes the project root: a Git worktree selects Git; a Fossil checkout selects Fossil; both markers, no version control, a nested root, or a missing executable are refused by name before mutation. No configuration key declares the backend. ADR-071 records the boundary. |
+| SCM backend | One selection seam probes the project root: a Git worktree selects Git; a Fossil checkout selects Fossil; both markers, no version control, a nested root, or a missing executable are refused by name before mutation. The archive and the managed upgrade run on the selected backend. No configuration key declares the backend. ADR-071 records the boundary. |
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
 | Commit attribution | A checked-in Git message hook consumes optional process-scoped attribution; OpenCode and Claude adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |

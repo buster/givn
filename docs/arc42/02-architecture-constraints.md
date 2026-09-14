@@ -20,7 +20,7 @@ register](adr/README.md).
 | TC-10 | Delta tags use the `@givn.*` namespace. | `src/gherkin/delta.rs`, `src/gherkin/merge.rs` |
 | TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
 | TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
-| TC-21 | Automatic managed upgrades and declared migrations require a version-controlled project selected at the project root and a clean checkout; the managed upgrade is Git-only in this version, while the archive runs on Git and Fossil. | `src/scm.rs`, `src/cli/migration.rs`, migration E2E scenarios |
+| TC-21 | Automatic managed upgrades and declared migrations require a version-controlled project selected at the project root and a clean checkout; they run on Git and Fossil with the same guarantees. | `src/scm.rs`, `src/cli/migration.rs`, migration E2E scenarios |
 | TC-22 | Ignored generated paths are force-staged only through the calculated Givn-owned allowlist. | `src/cli/migration.rs`, ignored-path migration E2E fixture |
 | TC-25 | `givn run` signal forwarding (SIGINT/SIGTERM) is unix-only via a direct `libc` dependency; on other platforms server products refuse to start at preflight while cli/library products work. | `Cargo.toml` `[target.'cfg(unix)'.dependencies]`, `src/cli/run.rs` |
 | TC-26 | givn never derives run-declaration content from repository sources, build manifests, container files, or framework conventions; the declaration is author-owned configuration validated only by deterministic rules. | `src/cli/run_block.rs`, run-command feature specs |

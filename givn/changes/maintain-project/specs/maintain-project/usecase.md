@@ -1,0 +1,106 @@
+# Use case: maintain-project
+
+## Level
+
+!
+
+## Actors
+
+- Project maintainer
+
+## Goal
+
+Keep a project current, documented, and able to cross a release migration without fabricated completion evidence.
+
+## Trigger
+
+The maintainer checks project documentation or upgrades Givn.
+
+## Preconditions
+
+- The project configuration and repository state are available.
+- The active SCM backend is selected and its clean-state witness is available.
+
+## Main flow
+
+1. Inspect documentation completeness.
+2. Apply a managed upgrade when required: witness the clean state, synchronize the managed scaffold, and publish the allowlist-only upgrade revision on the active backend.
+3. Preserve a reviewable migration plan when the upgrade carries migration requirements: publish the plan revision on the active backend, recording the upgrade revision.
+
+## Extensions
+
+- An unclean repository blocks automatic migration commits.
+- No SCM backend is selected: the upgrade is refused by name before writing anything.
+- Migration bundles run on the active backend with the same guarantees as the managed upgrade: clean preflight, calculated allowlist, and reviewable revisions.
+
+## Rules
+
+- Historical migration evidence remains reviewable.
+- Open documentation placeholders block completion.
+- Ignored managed paths are force-staged only through the calculated allowlist, on both backends.
+- The plan revision records the upgrade revision identifier.
+- The managed upgrade and migration bundles run on both backends with the same guarantees. A migration-free managed upgrade publishes exactly one revision and no plan revision.
+
+## Examples
+
+- Git: a clean project without migration requirements receives one allowlist-only upgrade revision `a1b2c3d4e5f6...`.
+- Git migration: a project crossing a version gap receives the upgrade revision and then a plan revision recording it.
+- Fossil: the same project receives the allowlist-only check-in `c8d9e0f1a2b3...`; a migration-bearing upgrade adds the plan check-in. Ignored managed paths are recorded only when the allowlist names them.
+- Dirty project: `givn upgrade` refuses before writing, naming the dirty paths.
+- No SCM: `givn upgrade` refuses by name before writing.
+
+## Minimal guarantee
+
+The project is protected from partial automatic migration.
+
+## Success guarantee
+
+The project is documented and the upgrade work is explicit in the active backend's history.
+
+## Personas
+
+- developer--primary-user
+- givn-maintainer--owner
+
+## Capabilities
+
+- readme-enforcement
+- release-0-3-0
+
+## Interactions
+
+| Capability | Consumer action | E2E scenario |
+|---|---|---|
+| readme-enforcement | scaffold README placeholders | Scaffolding marks the unfilled sections |
+| readme-enforcement | check a complete README | The check passes on a complete README |
+| readme-enforcement | archive and refresh documentation | Archiving refreshes the development block |
+| readme-enforcement | record documentation impact | A recorded impact decision passes the review |
+| readme-enforcement | request unfinished README guidance | Instructions surface an unfinished README |
+| release-0-3-0 | plan a release migration | A clean 0.2.0 project receives a reviewable aggregate migration plan |
+| release-0-3-0 | run a managed upgrade | A clean project without migration requirements receives one managed upgrade commit |
+| release-0-3-0 | upgrade a Fossil project | A clean Fossil project receives the same managed upgrade revision shape |
+| release-0-3-0 | invoke a retired engine command | A consumer invoking a retired engine command is told it does not exist |
+| release-0-3-0 | archive a maintenance migration | A completed maintenance migration can be archived without a product specification |
+
+## Includes
+
+- fragment: support
+
+## Extends
+
+- none
+
+## Out of scope
+
+Changing product specifications as part of routine project maintenance.
+
+## Diagram
+
+```mermaid
+flowchart LR
+  Maintainer((Maintainer)) --> Check[[Check documentation]]
+  Maintainer --> Upgrade[[Apply managed upgrade]]
+  Upgrade --> Evidence[[Review migration evidence]]
+```
+
+<!-- givn:base-sha256:faec7016cf59b890d6c48f0cdd4718666cbfaa53a22500b3fbbb0482498c97bf -->
