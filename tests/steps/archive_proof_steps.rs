@@ -192,6 +192,60 @@ fn receipt_names_repaired_revision(world: &mut GivnWorld) {
     receipt_names_tested_commit(world);
 }
 
+#[then("the verification receipt names the tested revision")]
+fn receipt_names_tested_revision(world: &mut GivnWorld) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let receipt = support::receipt(world, &id);
+    let tested = receipt["tested_revision"].as_str().unwrap_or_default();
+    assert!(
+        !tested.is_empty(),
+        "the receipt does not name the tested revision: {receipt}"
+    );
+    assert_eq!(tested, support::parent_revision(world));
+}
+
+#[then("the history has a finalization revision after the tested revision")]
+fn history_has_finalization_revision(world: &mut GivnWorld) {
+    let current = support::current_revision(world);
+    let parent = support::parent_revision(world);
+    assert_ne!(
+        current, parent,
+        "the current revision is not a finalization revision after the tested revision"
+    );
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let receipt = support::receipt(world, &id);
+    assert_eq!(
+        receipt["tested_revision"].as_str().unwrap_or_default(),
+        parent
+    );
+}
+
+#[then("the finalization revision contains only the resolved evidence paths")]
+fn finalization_revision_only_evidence(world: &mut GivnWorld) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let archive_prefix = format!("givn/archive/{id}/");
+    let paths = support::revision_paths(world);
+    assert!(
+        !paths.is_empty(),
+        "the finalization revision changed no paths"
+    );
+    for path in &paths {
+        assert!(
+            path.starts_with(&archive_prefix) || path == "README.md",
+            "the finalization revision contains a path outside the resolved evidence: {path}"
+        );
+    }
+}
+
 #[given(regex = r#"^an unproven archive candidate "([^"]+)" whose coverage gate failed$"#)]
 fn unproven_candidate_failed_coverage(world: &mut GivnWorld, id: String) {
     support::ensure_env(world);
@@ -298,8 +352,8 @@ fn stderr_mentions_git(world: &mut GivnWorld) {
 fn stderr_says_repo_root(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world);
     assert!(
-        stderr.contains("must be the repository root"),
-        "stderr missing repository-root message: {stderr}"
+        stderr.contains("must be the worktree top level") && stderr.contains("nested inside"),
+        "stderr missing the boundary message: {stderr}"
     );
 }
 
@@ -334,7 +388,7 @@ fn stderr_says_corrupt(world: &mut GivnWorld) {
 fn stderr_names_candidate_rejection(world: &mut GivnWorld) {
     let stderr = crate::steps::stderr(world);
     assert!(
-        stderr.contains("candidate commit") && stderr.contains("rejected"),
+        stderr.contains("candidate revision") && stderr.contains("rejected"),
         "stderr missing candidate rejection: {stderr}"
     );
 }
@@ -502,7 +556,7 @@ fn receipt_names_tested_commit(world: &mut GivnWorld) {
         .clone()
         .expect("a change id is required");
     let receipt = support::receipt(world, &id);
-    let tested = receipt["tested_commit"].as_str().unwrap_or_default();
+    let tested = receipt["tested_revision"].as_str().unwrap_or_default();
     let parent = support::parent_revision(world);
     assert_eq!(tested, parent);
 }
@@ -576,7 +630,7 @@ fn finalization_commit_after_tested(world: &mut GivnWorld) {
         .expect("a change id is required");
     let receipt = support::receipt(world, &id);
     assert_eq!(
-        receipt["tested_commit"].as_str().unwrap_or_default(),
+        receipt["tested_revision"].as_str().unwrap_or_default(),
         parent
     );
 }

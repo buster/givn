@@ -50,7 +50,7 @@ Feature: Archive Proof
       | Git     |
       | Fossil  |
 
-  @givn.added @wip
+  @givn.added
   Scenario Outline: A proven archive records a verification receipt binding the tested revision
     Given  a <backend> project with a completed change "proof-demo" ready to archive
     And  the full suite passes against the merged permanent specs
