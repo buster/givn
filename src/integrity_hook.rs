@@ -233,7 +233,37 @@ fn check_visual_review(change_dir: &Path) -> Result<()> {
         ),
     }
 
+    check_persona_disposition(&review)?;
     check_visual_evidence(change_dir, &contract)
+}
+
+/// A declared visual interface requires a `PERSONAS:` line naming at least
+/// one confirmed Persona. Fenced examples in the review template do not
+/// satisfy the check.
+fn check_persona_disposition(review: &str) -> Result<()> {
+    let stripped = strip_fenced_blocks(review);
+    let Some(value) = persona_disposition(&stripped) else {
+        bail!(
+            "visual review is missing the persona disposition — add \
+             'PERSONAS: <confirmed persona>' to review.md"
+        );
+    };
+    if value.is_empty() || value.eq_ignore_ascii_case("none") {
+        bail!(
+            "a declared visual interface requires at least one confirmed Persona — \
+             'PERSONAS: {value}' is not a confirmed persona"
+        );
+    }
+    Ok(())
+}
+
+/// Extract the value of the first `PERSONAS:` line.
+fn persona_disposition(review: &str) -> Option<String> {
+    review.lines().find_map(|line| {
+        line.trim()
+            .strip_prefix("PERSONAS:")
+            .map(|value| value.trim().to_string())
+    })
 }
 
 /// Collect every delta `@e2e` scenario title that still needs visual evidence.
@@ -850,6 +880,24 @@ mod tests {
         let design = std::fs::read_to_string(change.join("design.md")).unwrap();
         let contract = parse_visual_contract(&design).unwrap();
         assert!(check_visual_evidence(&change, &contract).is_err());
+    }
+
+    #[test]
+    fn persona_disposition_requires_a_confirmed_persona() {
+        assert_eq!(
+            persona_disposition("PERSONAS: shopper-anna\n"),
+            Some("shopper-anna".to_string())
+        );
+        assert!(check_persona_disposition("PERSONAS: shopper-anna\n").is_ok());
+        assert!(check_persona_disposition("PERSONAS: none\n").is_err());
+        assert!(check_persona_disposition("PERSONAS:\n").is_err());
+        assert!(check_persona_disposition("no marker\n").is_err());
+    }
+
+    #[test]
+    fn fenced_persona_scaffold_does_not_count() {
+        let review = "```\nPERSONAS: fixture-persona\n```\n";
+        assert!(check_persona_disposition(review).is_err());
     }
 
     #[test]

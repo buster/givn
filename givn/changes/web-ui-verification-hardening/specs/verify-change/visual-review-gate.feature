@@ -60,7 +60,7 @@ Feature: Visual Review Gate
     When the user runs `givn check review --change test-change`
     Then the command exits 0
 
-  @givn.added @wip
+  @givn.added
   Scenario: A visual change without a persona disposition fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
