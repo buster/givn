@@ -63,7 +63,7 @@ impl Worktree {
         let output = run_git(&self.root, &["rev-parse", "HEAD"])?;
         if !output.status.success() {
             bail!(
-                "archive blocked: cannot resolve HEAD in '{}': {}",
+                "cannot resolve the current revision in '{}': {}",
                 self.root.display(),
                 String::from_utf8_lossy(&output.stderr).trim()
             );
@@ -77,7 +77,7 @@ impl Worktree {
         let output = run_git(&self.root, &["status", "--porcelain", "-z", "-uall"])?;
         if !output.status.success() {
             bail!(
-                "archive blocked: cannot read the Git worktree state: {}",
+                "cannot read the checkout state: {}",
                 String::from_utf8_lossy(&output.stderr).trim()
             );
         }
