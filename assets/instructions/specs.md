@@ -135,6 +135,9 @@ client is the correct interface.
 reason to weaken the assertion or switch to a lower-level boundary. Apply the
 concrete fix documented in `design.md` before implementing the scenario.
 
+**Rendered state:** at least one `@e2e` scenario of a Web UI asserts a value the browser produced by rendering and observes that the rendered state changes between two observations — a clock that advances, a counter that increments, or content that appears after a request.
+A successful page request and a static heading are not rendered-state evidence.
+
 **Canonical scope: one E2E evidence scenario per distinct real user action.**
 Each normalized inventory entry has exactly one matching `@e2e` scenario that
 exercises that action through the real interface. A capability gets one
