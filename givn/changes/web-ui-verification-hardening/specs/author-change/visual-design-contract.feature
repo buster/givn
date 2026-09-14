@@ -58,7 +58,7 @@ Feature: Visual Design Contract
     And stdout contains "relevance and evidence"
     And stdout contains "operator confirmation"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design-review guidance requires an operator question before a deferral
     Given a givn project
     When the user runs `givn instructions design-review --change visual-design-contract`
