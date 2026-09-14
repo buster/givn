@@ -24,8 +24,9 @@ flowchart LR
 | AI coding agent | Reads effective instructions, generated skills, review reports, and Arc42 docs; edits project artifacts and source. |
 | Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
 | Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and `GIVN_RESULT_FILE` and executes feature scenarios, reporting per-scope scenario counts. |
-| Git CLI | Answers backend selection (`rev-parse --is-inside-work-tree`), stores the archive candidate and finalization commits, reports the worktree state for the committed-state witness, and provides the recovery history for forward repair. |
-| Fossil checkout marker | `.fslckout` or `_FOSSIL_` at the project root identifies a Fossil checkout; the Fossil backend is refused by name until it is implemented. |
+| Git CLI | Answers backend selection (`rev-parse --is-inside-work-tree`), stores the archive candidate and finalization revisions, reports the worktree state for the committed-state witness, and provides the recovery history for forward repair. |
+| Fossil CLI | Answers checkout discovery and revision identity (`info`), reports the checkout state including `EXTRA` files for the committed-state witness, records and commits the archive candidate and finalization revisions, and provides the recovery history for forward repair. |
+| Fossil checkout marker | `.fslckout` or `_FOSSIL_` at the project root identifies a Fossil checkout; the archive runs on it through the selected backend, while the managed upgrade is refused by name until its Fossil path exists. |
 | Started product | Spawned by `givn run` from the declared start command; its output is inherited, its exit code forwarded, and its signals forwarded on unix. |
 | Automation caller around givn (for example the kiekste preview host) | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
@@ -85,8 +86,9 @@ not alter other content.
   deterministic overlap fingerprints and per-use-case narrative files.
 - Repository-owned compiled-CLI acceptance fixtures.
 - Version-control backend selection at the project root through one seam: Git
-  is implemented; a Fossil checkout, both markers, no version control, a nested
-  root, and a missing executable are refused by name before mutation.
+  and Fossil are implemented for the archive; the managed upgrade is Git-only
+  for now; both markers, no version control, a nested root, and a missing
+  executable are refused by name before mutation.
 - Strict ADR qualification guidance and canonical routing of architecture rationale.
 - Version 0.3.0 release metadata and the 0.2.0-to-0.3.0 LLM migration path.
 

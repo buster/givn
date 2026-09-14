@@ -45,6 +45,15 @@ Fossil backend and for moving the archive publication onto the same contract.
 The mixed-setup and missing-executable consequences are carried by R-63 and
 R-64 in chapter 11.
 
+ADR-072 is accepted by the `archive-change` change: publication through the SCM
+seam is witness-bounded. Givn resolves the publication paths, validates the
+exact dirty set against them, and then records only that set — Git stages the
+candidate paths, Fossil records all changes and commits the witnessed dirty set
+because it has no index and cannot name a directory that contains missing
+files. The archive consumes the Fossil backend, and the resume path republishes
+a candidate whose publication a backend hook rejected. The witness-bounded
+consequence is carried by R-65 in chapter 11.
+
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

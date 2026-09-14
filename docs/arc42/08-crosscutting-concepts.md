@@ -551,17 +551,21 @@ Repository-state commands do not assume Git. A single seam
 a named refusal:
 
 - a Git worktree selects Git;
-- a Fossil checkout is recognized and refused because the Fossil backend is not
-  implemented in this version;
+- a Fossil checkout selects Fossil when the `fossil` executable is available;
 - both markers at the root are refused as ambiguous;
 - no marker is refused as "no version-controlled project";
 - a project root nested inside a larger Git worktree is refused by name;
-- a Git marker without the `git` executable is refused by name.
+- a Git or Fossil marker without its executable is refused by name.
 
 Detection order is fixed (Git first, then Fossil); ancestor Fossil markers are
 ignored. No configuration key declares the backend (ADR-071). Refusals name the
 project root and the missing prerequisite, mutate nothing, and return before
 any write. The Git backend exposes clean-state witness, revision identity,
 scoped staging (force only for the calculated managed allowlist), and scoped
-commits; the archive publication still uses its own Git boundary until it moves
-onto the seam.
+commits; the managed upgrade consumes them. The Fossil backend exposes the
+clean-state witness (including `EXTRA` entries), revision identity,
+witness-bounded publication, and revision-content checks; the archive consumes
+them, and the managed upgrade refuses a Fossil checkout by name until its path
+exists. Publication is witness-bounded on both backends (ADR-072): the exact
+dirty set is validated against the resolved publication paths before anything
+is recorded.

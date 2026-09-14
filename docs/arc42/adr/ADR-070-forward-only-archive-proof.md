@@ -111,9 +111,11 @@ bound to that commit makes the green-corpus claim falsifiable.
   full-suite authority.
 - Bad, because review-time coverage classification loses its fresh
   instrumented run until an archive receipt exists (chapter 11, R-54).
-- Bad, because archive now requires a Git worktree and writes commits, adding
-  a hard prerequisite and hook interaction to the publication path
-  (chapter 11, R-55).
+- Bad, because archive now requires a version-controlled project and writes
+  revisions, adding a hard prerequisite and hook interaction to the
+  publication path (chapter 11, R-55). The Git-specific wording of this
+  consequence is generalized by ADR-072, which puts the publication on the
+  backend seam.
 - Neutral, because legacy archives without a receipt keep the existing
   already-archived behavior and are never re-published.
 

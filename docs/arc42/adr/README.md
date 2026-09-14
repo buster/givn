@@ -27,7 +27,7 @@ owning documents.
 ## Active Register
 
 The active register contains only independent durable architecture decisions:
-27 accepted records. The fifteen semantic-engine records were
+28 accepted records. The fifteen semantic-engine records were
 superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 [`archive/`](archive/) by the `drop-embedding-features` change.
 
@@ -60,6 +60,7 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 | [ADR-069](ADR-069-single-feature-free-binary.md) | accepted | Ship one feature-free binary without the semantic retrieval engine | build-contract and dependency boundary |
 | [ADR-070](ADR-070-forward-only-archive-proof.md) | accepted | Publish archives forward-only and bind proof to a committed candidate | publication boundary and durable receipt contract |
 | [ADR-071](ADR-071-scm-backend-selection.md) | accepted | Select the SCM backend from project markers through one seam | component boundary and backend-selection contract |
+| [ADR-072](ADR-072-witness-bounded-publication.md) | accepted | Publish revisions through the SCM seam with witness-bounded commits | publication contract and candidate-exactness invariant |
 
 ## Relationships
 

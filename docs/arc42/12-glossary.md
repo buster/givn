@@ -142,11 +142,13 @@
 | **Marker** | The project-root entry that identifies a version-control system: a `.git` entry (file or directory) for Git, or `.fslckout`/`_FOSSIL_` for Fossil. |
 | **Named refusal** | A command's failure that names the reason, the project root, and the missing prerequisite, exits non-zero, and mutates nothing. Anti-term: generic error. |
 | **Version-controlled project** | A project whose root carries a recognized backend marker and whose executable is available; a project without one is refused by name. |
+| **Witness-bounded publication** | The publication contract: resolve the publication paths, validate the exact dirty set against them, and record only that set. Git stages the paths; Fossil records all changes and commits the witnessed dirty set. |
+| **Unpublished candidate** | A pending candidate whose publication a backend hook rejected: the receipt exists on disk but the current revision does not contain it, so a rerun publishes the on-disk merged state again. |
 
 Fossil-specific clauses in this glossary (Fossil `EXTRA` dirty semantics,
 attribution through `givn commit`, the Fossil backend itself) describe the
-agreed target contract. The Fossil backend is not implemented yet; D-20 in
-chapter 11 tracks it.
+agreed target contract. The archive runs on Fossil; the managed upgrade is
+still refused by name, and D-20 in chapter 11 tracks that remainder.
 
 ### Visual-review invariants
 
