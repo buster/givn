@@ -2,7 +2,7 @@
 
 Feature: prose-consolidation
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy classifies a browser-rendered page as a Web UI
     Given a givn project
     When the user runs `givn instructions specs --change prose-consolidation`

@@ -38,22 +38,29 @@ negative counterpart; the negative scenario is the RED driver.
 
 ## Setup
 
-- [ ] Confirm strict mode and the runner: `tests/features_runner.rs` uses
+- [x] Confirm strict mode and the runner: `tests/features_runner.rs` uses
       `.fail_on_skipped()`; `verify.command` is `./run-tests.sh` and
       `verify.e2e_command` is `./run-tests.sh --e2e`. No new runner is needed.
-- [ ] Proof-of-strictness: write a temporary probe feature with one undefined
-      step, run it, confirm non-zero exit, then delete the probe. Evidence:
+- [x] Proof-of-strictness: wrote a temporary `tests/strict-mode-probe.feature`
+      with one undefined step, ran it, confirmed non-zero exit, then deleted
+      the probe. Evidence:
       ```
-      <paste command + output>
+      GIVN_FEATURES=tests/strict-mode-probe.feature cargo test --test features_runner
+      1 feature
+      1 scenario (1 failed)
+      1 step (1 failed)
+      error: test failed, to rerun pass `--test features_runner`
+      exit status: 1
       ```
-- [ ] Create the step skeletons in `tests/steps/visual_review_gate_steps.rs`
+- [x] Created the step skeletons in `tests/steps/visual_review_gate_steps.rs`
       and `tests/steps/visual_design_contract_steps.rs` with `unimplemented!()`
       bodies for the new steps; `cargo check --locked --tests` succeeds.
       Evidence:
       ```
-      <paste output>
+      Checking givn v0.7.0 ($HOME/projects/givn)
+      Finished `dev` profile [unoptimized + debuginfo] target(s) in 10.72s
       ```
-- [ ] COMMIT: `<hash>` -- `test(web-ui-verification-hardening): strict-mode proof and step skeletons`
+- [x] COMMIT: `3c62d3be` -- `test(web-ui-verification-hardening): strict-mode proof and step skeletons`
 
 ## Scenarios
 
