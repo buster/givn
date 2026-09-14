@@ -276,6 +276,28 @@ pub(crate) fn revision_paths(world: &GivnWorld) -> Vec<String> {
     }
 }
 
+/// The revision before the current one (the tested revision when the current
+/// revision is the evidence-only finalization).
+pub(crate) fn parent_revision(world: &GivnWorld) -> String {
+    let env = env(world);
+    match env.backend() {
+        common::BackendKind::Git => {
+            let out = common::git(env, &["rev-parse", "HEAD~1"]);
+            String::from_utf8_lossy(&out.stdout).trim().to_string()
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(env, &["info"]);
+            let stdout = String::from_utf8_lossy(&out.stdout);
+            stdout
+                .lines()
+                .find_map(|line| line.strip_prefix("parent:"))
+                .and_then(|rest| rest.split_whitespace().next())
+                .unwrap_or_default()
+                .to_string()
+        }
+    }
+}
+
 /// Whether the current revision contains `path`.
 pub(crate) fn revision_contains(world: &GivnWorld, path: &str) -> bool {
     let env = env(world);
