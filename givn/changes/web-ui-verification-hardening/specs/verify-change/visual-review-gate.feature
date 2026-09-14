@@ -123,7 +123,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "OPERATOR-DECISION"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A deferral with an operator decision passes review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares no visual design contract
