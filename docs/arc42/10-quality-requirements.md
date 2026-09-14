@@ -59,7 +59,7 @@ graph TD
 | Q-47 | Architecture documentation | Effective and generated guidance are compared. | The canonical Arc42 instruction owns the procedure; derived guidance uses the same policy without claiming runtime enforcement, and project overrides remain effective. |
 | Q-48 | Release | A clean project marked 0.2.0 runs the 0.3.0 upgrade. | Managed config/integrations are updated, Commit A contains only the allowlist, and a maintenance plan with Commit A evidence is committed separately. |
 | Q-49 | Release safety | A project has uncommitted or untracked work. | Upgrade fails before writing or committing and preserves the worktree byte-for-byte. |
-| Q-50 | Release safety | A project is not a Git repository. | The automatic route fails before writing and explains the required Git boundary. |
+| Q-50 | Release safety | A project has no usable version-control backend. | The automatic route fails before writing and names the project root and the missing version-controlled project. |
 | Q-51 | Release safety | A migration plan already exists. | Upgrade reports it and never overwrites or duplicates the plan. |
 | Q-52 | Migration guidance | An LLM opens the generated maintenance change. | Proposal and design provide ordered project-specific prompts; no synthetic product spec or fabricated pass evidence exists. |
 | Q-53 | Maintenance archive | A completed migration change intentionally skips `specs`. | Global verification uses permanent specs, archive succeeds, and no migration feature is added to permanent specs. |

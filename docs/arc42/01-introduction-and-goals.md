@@ -92,7 +92,7 @@ E2E evidence, and non-redundant architecture documentation.
 | Contributors | Need stable Rust modules, contracts, and review gates. |
 | CI systems | Need deterministic lint, test-runner, and archive outcomes. |
 | Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
-| Migrating project maintainers | Need a clean Git boundary and an explicit plan for project-specific 0.3.0 work. |
+| Migrating project maintainers | Need a clean version-control boundary and an explicit plan for project-specific 0.3.0 work. |
 | Automation callers around givn (for example the kiekste preview host) | Consume the run declaration and the `givn run` machine contract (ready line, exit codes, port hand-off) to start products without guessing. |
 
 ## 1.5 Acceptance Ownership

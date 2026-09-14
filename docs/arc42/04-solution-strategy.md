@@ -15,6 +15,7 @@ is in the [ADR register](adr/README.md); mechanics are in [chapter 8](08-crosscu
 | Domain ownership | Explicit `usecase.md` documents own capabilities; reusable behavior is represented by typed fragments. |
 | Ideation continuity | Stable use-case IDs, confirmed Persona references, and explicit Handoff connect topic state to proposals and permanent specs. |
 | State | Filesystem-derived from effective artifact paths, markers, and `.givn-skip`. |
+| SCM backend | One selection seam probes the project root: a Git worktree selects Git; a Fossil checkout, both markers, no version control, a nested root, or a missing executable are refused by name before mutation. No configuration key declares the backend. ADR-071 records the boundary. |
 | Agent integration | Selected `.opencode`, `.agents`, and `.claude` targets; only givn-owned fenced blocks may be changed in `AGENTS.md`. |
 | Commit attribution | A checked-in Git message hook consumes optional process-scoped attribution; OpenCode and Claude adapters provide best-effort runtime values without making human commits a gate. |
 | Test execution | `verify.command` and `verify.e2e_command` come from `givn/commands.yaml`; lint is separate. |
@@ -66,7 +67,8 @@ model dependencies exist.
 
 `givn upgrade` refreshes the managed configuration scaffold while preserving
 uncommented project values. For the exact 0.2.0-to-0.3.0 route it first requires
-a clean Git worktree, refreshes managed generated integrations, commits only
-the allowlisted Givn paths, and creates a migration maintenance change that
-records the first commit. Ejected facets, durable docs, specs, and user-owned
-files remain project-owned and are handled by the LLM through that change.
+a clean checkout of the selected backend, refreshes managed generated
+integrations, commits only the allowlisted Givn paths, and creates a migration
+maintenance change that records the first commit. Ejected facets, durable docs,
+specs, and user-owned files remain project-owned and are handled by the LLM
+through that change.
