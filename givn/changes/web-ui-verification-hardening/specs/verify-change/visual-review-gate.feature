@@ -18,7 +18,7 @@ Feature: Visual Review Gate
     And stdout contains "operator decision"
     And stdout contains "fails the review"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance records the persona disposition
     Given a givn project
     When the user runs `givn instructions review --change visual-review-gate`

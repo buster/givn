@@ -208,6 +208,8 @@ outcomes. Actors remain interaction roles; Persona biographies remain review
 context. Record migration-ledger evidence where applicable. Do not sign off
 invented or silently promoted Personas.
 
+Record the disposition for every confirmed Persona; when none is confirmed, record the reason. A user-visible surface requires at least one confirmed Persona.
+
 ## Visual review (conditional)
 
 Run this block when the change's design declares a visual interface (a
