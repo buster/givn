@@ -288,22 +288,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `54a2e9a7` -- `feat(visual-design-contract): Design guidance names the user-visible persona boundary`
 
-- [ ] Scenario: `Design-review guidance tests the opposite interface classification`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Design-review guidance tests the opposite interface classification`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "opposite classification"
+        exit status: 1
         ```
-  - [ ] GREEN: added the opposite-classification branch to
-        `assets/instructions/design-review.md` and
-        `assets/skills/givn-design-review/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the opposite-classification branch to
+        `assets/instructions/design-review.md`. Files:
+        `assets/instructions/design-review.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): Design-review guidance tests the opposite interface classification`
+  - [x] COMMIT: `d7fa4b6a` -- `feat(visual-design-contract): Design-review guidance tests the opposite interface classification`
 
 - [ ] Scenario: `Design-review guidance records the persona disposition`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
