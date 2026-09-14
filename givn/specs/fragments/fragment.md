@@ -29,3 +29,5 @@
 flowchart LR
   Consumer((Use cases)) -.->|include| Support[[Reusable support behavior]]
 ```
+
+<!-- givn:base-sha256:469c4d540c7c6c769a0b204d01d3f28af0c8532833624be190ade934f82b668d -->
