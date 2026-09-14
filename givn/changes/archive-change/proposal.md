@@ -56,6 +56,7 @@ backends share the proof pipeline and differ only in their operations.
 | Proposed capability | Route's recommendation | Decision | Rationale (if you deviated from route) |
 |---|---|---|---|
 | archive-proof | EXTEND archive-proof | `EXTEND archive-proof` | The existing capability owns the proof pipeline; this change restates it per backend and adds the Fossil path. |
+| adr-qualification-gate | EXTEND adr-qualification-gate | `NEW in fragments` | The capability lives under the support fragment, so the route's `EXTEND` form cannot resolve; the delta modifies the existing fragment scenario. |
 
 ## Out of Scope
 
