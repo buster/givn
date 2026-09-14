@@ -101,7 +101,9 @@ fn has_captured_transcript(world: &mut GivnWorld, title: String) {
 
 #[given(regex = r##"^the change's review\.md contains "([^"]+)"$"##)]
 fn review_md_contains(world: &mut GivnWorld, text: String) {
-    let review = format!("# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\n{text}\n");
+    let review = format!(
+        "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\nPERSONAS: fixture-persona\n\n{text}\n"
+    );
     std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }
 
@@ -160,8 +162,10 @@ fn review_md_persona_disposition(_world: &mut GivnWorld, _value: String) {
 }
 
 #[given("the change's review.md declares no persona disposition")]
-fn review_md_no_persona_disposition(_world: &mut GivnWorld) {
-    unimplemented!()
+fn review_md_no_persona_disposition(world: &mut GivnWorld) {
+    let review =
+        "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\nVISUAL-REVIEW: PASS\n";
+    std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }
 
 #[given(regex = r##"^the change's review\.md also contains "([^"]+)"$"##)]
