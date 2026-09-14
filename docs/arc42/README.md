@@ -20,8 +20,8 @@ run-declaration gate; the durable run-declaration facts live in chapters 3,
 6.15, 8.16, and the glossary.
 
 The `archive-proof` change proposes ADR-070: archive publication becomes
-forward-only and Git-backed, with a committed candidate, fail-closed
-per-scope runner results, and a verification receipt committed as the
+forward-only and backend-backed, with a published candidate, fail-closed
+per-scope runner results, and a verification receipt published as the
 evidence-only finalization. Durable archive facts live in chapters 2, 3, 5,
 6.7, 8.6, 8.9, 8.12, and the glossary.
 
@@ -30,6 +30,12 @@ version-control backend through one seam (a Git worktree first, then a Fossil
 checkout) and refuse absence, ambiguity, a nested root, or a missing executable
 by name. Durable facts live in chapters 2 (TC-21, TC-33), 3, 4, 5, 6.13/6.16,
 8.18, 10 (Q-50), and 11 (R-63, R-64, D-20).
+
+The `archive-change` change records ADR-072: publication through the seam is
+witness-bounded, the archive runs on Git and Fossil, and a candidate whose
+publication a hook rejected is republished on resume. Durable facts live in
+chapters 2 (TC-21, TC-31, TC-32), 3, 4, 5, 6.7/6.13/6.16, 7.3, 8.18, 10
+(Q-92), 11 (R-65, R-66, D-20), and the glossary.
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and

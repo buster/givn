@@ -24,6 +24,12 @@ Static musl linking and the exact release matrix are deployment work still to be
 proven; this documentation does not claim that all target artifacts currently
 build or ship.
 
+Operating a project additionally requires the executable of its selected SCM
+backend on `PATH`: `git` for a Git worktree, `fossil` for a Fossil checkout. A
+project whose marker is present but whose executable is missing is refused by
+name before any mutation. The repository acceptance suite needs both `git` and
+`fossil` installed.
+
 ## 7.4 Project Footprint
 
 `givn init` creates:

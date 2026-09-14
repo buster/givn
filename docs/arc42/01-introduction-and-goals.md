@@ -93,6 +93,7 @@ E2E evidence, and non-redundant architecture documentation.
 | CI systems | Need deterministic lint, test-runner, and archive outcomes. |
 | Consumer repositories | Use Givn's workflow but do not host Givn's own acceptance fixtures. |
 | Migrating project maintainers | Need a clean version-control boundary and an explicit plan for project-specific 0.3.0 work. |
+| Archiving developers | Need the archive proof to hold on the backend that owns their project, with the same candidate, receipt, and repair contract on Git and Fossil. |
 | Automation callers around givn (for example the kiekste preview host) | Consume the run declaration and the `givn run` machine contract (ready line, exit codes, port hand-off) to start products without guessing. |
 
 ## 1.5 Acceptance Ownership
