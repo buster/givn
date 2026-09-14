@@ -51,9 +51,9 @@ apply because nothing version-bearing is introduced.
 | Capability | Step definition file | Notes |
 |---|---|---|
 | prose-consolidation | `tests/steps/prose_consolidation_steps.rs` | no new definitions; the new scenarios reuse the existing `givn instructions` and `stdout contains` steps |
-| visual-design-contract | `tests/steps/visual_design_contract_steps.rs` | new then-step for the ejected proposal, review, and design-review templates |
+| visual-design-contract | `tests/steps/visual_design_contract_steps.rs` | new then-steps for the ejected proposal and design-review templates; the ejected review template reuses the existing step in `tests/steps/arc42_review_alignment_steps.rs` |
 | visual-design-contract | `tests/steps/prose_consolidation_steps.rs` | reused synchronized-guidance steps |
-| visual-review-gate | `tests/steps/visual_review_gate_steps.rs` | new fixture steps: declared UI states, state screenshots, persona disposition, deferral records |
+| visual-review-gate | `tests/steps/visual_review_gate_steps.rs` | new fixture steps: declared UI states, final-state screenshots for both viewports, state screenshots, empty state screenshots, persona disposition (including an empty value), and deferral records. The shared `review_md_contains` base gains `PERSONAS: fixture-persona` so the existing positive scenarios stay green under the new persona check |
 
 Test runner command (from `verify.command` in `givn/commands.yaml`):
 
@@ -171,12 +171,15 @@ assert:
 - `declares UI states`; `<viewport>--<state>.png`; `empty, loading, or error`.
 - `never deferred`; `operator question`; `recorded decision`.
 - `default browser driver`; `Playwright`; `does not pin`.
-- `Breakpoints`; `contrast`; `keyboard focus`; `semantics`.
+- `Breakpoints`; `contrast`; `keyboard focus`; `how each is verified`.
+- `is a Web UI row`; `needs a browser driver`.
 - `opposite classification`; `rendered in a browser`; `must say why`;
   `rendered page is a Web UI`; `restates`.
-- `per persona`; `relevance`; `evidence`; `operator confirmation`;
-  `disposition`; `confirmed Persona`; `reason`.
+- `per persona`; `relevance and evidence`; `operator confirmation`;
+  `disposition for every confirmed Persona`; `at least one confirmed Persona`;
+  `record the reason`.
 - `deferral`; `operator decision`; `fails the review`.
+- `state screenshots the review saw`; `each declared UI state`.
 - `user-visible`; `CLI text`.
 - Template markers: `States:`; `PERSONAS:`; `DEFERRAL:`;
   `OPERATOR-DECISION:`.
@@ -199,12 +202,39 @@ Order inside `check_visual_review`:
 
 `check_deferrals` runs for every change in `run_integrity_hook`: if
 `review.md` carries more `DEFERRAL:` lines than `OPERATOR-DECISION:` lines,
-the check fails with the expected marker.
+the check fails with the expected marker. Both marker checks strip fenced
+code blocks first, so the scaffolded examples in the review template never
+satisfy or trigger a check by themselves; a compliant change omits both
+lines when nothing is deferred.
 
 The state-evidence check is per declared state and viewport across the
 change, not per scenario: which scenario traverses which state is a design
 decision the guidance states, while the gate proves the state was captured
-at all. This split is recorded in `assumptions.md`.
+at all. The per-scenario intent lives in the guidance and the review; the
+gate boundary is recorded in `assumptions.md` (A5).
+
+The existing fenced-example unit test in `src/integrity_hook.rs` points at
+the archived `visual-ui-review` design and is a no-op; it is retargeted to an
+inline fixture so it exercises the parser again.
+
+## Compatibility constraints
+
+- The rewritten instructions must preserve every phrase asserted by the
+  permanent corpus, including `style-level`, `not pixel`, `docs/design/`,
+  `design tokens`, `component states`, `rendered reference`, `Samsung S24`,
+  `360x780`, `Full HD`, `1920x1080`, `improvement`, `updates the contract`,
+  `evidence/visual`, `final-state`, `animations are frozen`, `reports/`,
+  `VISUAL-REVIEW: PASS`, `VISUAL-REVIEW: UNVERIFIED`, `human sign-off`,
+  `transcript`, `API-only capabilities are exempt`, `no pixel-level`, and the
+  existing E2E-policy phrases asserted in `prose-consolidation.feature`.
+- The shared `review_md_contains` fixture gains `PERSONAS: fixture-persona`
+  in the same task as the persona check, so the four existing visual
+  scenarios that expect exit 0 or a specific evidence error keep their
+  outcome.
+- The positive gate scenarios (complete state evidence, confirmed persona,
+  operator decision) are paired with their negative counterparts in one
+  task; the negative scenario is the RED driver, the positive proves the
+  complete artifact passes.
 
 ## Architecture Impact
 
