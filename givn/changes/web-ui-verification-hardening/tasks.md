@@ -511,22 +511,29 @@ negative counterpart; the negative scenario is the RED driver.
 
 ### visual-review-gate
 
-- [ ] Scenario: `Review guidance tests the opposite interface classification`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Review guidance tests the opposite interface classification`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "opposite classification"
+        exit status: 1
         ```
-  - [ ] GREEN: added the opposite-classification check to
-        `assets/instructions/review.md` and
-        `assets/skills/givn-review/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the opposite-classification check to
+        `assets/instructions/review.md`. Files: `assets/instructions/review.md`.
+        Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): Review guidance tests the opposite interface classification`
+  - [x] COMMIT: `1e137a8e` -- `feat(visual-review-gate): Review guidance tests the opposite interface classification`
 
 - [ ] Scenario: `Review guidance fails a deferral without an operator decision`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:

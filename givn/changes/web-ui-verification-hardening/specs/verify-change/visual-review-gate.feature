@@ -10,7 +10,7 @@ Feature: Visual Review Gate
     And stdout contains "rendered page is a Web UI"
     And stdout contains "restates"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance fails a deferral without an operator decision
     Given a givn project
     When the user runs `givn instructions review --change visual-review-gate`
