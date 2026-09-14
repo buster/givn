@@ -17,6 +17,7 @@
 - choose-project-license
 - adr-qualification-gate
 - llm-attribution
+- llm-attribution-installation
 - scm-backend-selection
 
 ## Interactions
@@ -30,4 +31,6 @@ flowchart LR
   Consumer((Use cases)) -.->|include| Support[[Reusable support behavior]]
 ```
 
-<!-- givn:base-sha256:469c4d540c7c6c769a0b204d01d3f28af0c8532833624be190ade934f82b668d -->
+<!-- givn:base-sha256:db311dbecc71d458d4c2798500191f6e535506dcbef9a8dd9e69053fd2a72888 -->
+
+<!-- givn:base-sha256:db311dbecc71d458d4c2798500191f6e535506dcbef9a8dd9e69053fd2a72888 -->
