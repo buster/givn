@@ -11,7 +11,7 @@ Feature: prose-consolidation
     And stdout contains "no controls"
     And stdout contains "an HTTP client is not a valid driver"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy requires a rendered-state assertion
     Given a givn project
     When the user runs `givn instructions specs --change prose-consolidation`

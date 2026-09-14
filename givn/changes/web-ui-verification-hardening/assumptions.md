@@ -158,3 +158,25 @@ the artifacts named under "Impact".
 - Chosen: (b). A contract that names no state has no state evidence to
   require; naming a state with an empty file still fails.
 - Impact: `parse_visual_contract`, unit tests.
+
+## A15 — Instruction line breaks are load-bearing
+
+- Assumption: `givn instructions` embeds the asset text verbatim, so a phrase
+  asserted by a scenario must sit on one line in the asset. New guidance
+  sentences are written unwrapped (one sentence per line) where a scenario
+  asserts a phrase that would otherwise wrap.
+- Options: (a) unwrapped sentences in the asset; (b) assert shorter
+  fragments; (c) change the assertions after the design review.
+- Chosen: (a). It keeps the spec assertions intact and the guidance readable
+  as single sentences.
+- Impact: `assets/instructions/*.md`, the guidance scenarios.
+
+## A16 — Embedded assets need a package rebuild
+
+- Assumption: `rust_embed` does not track changes under `assets/` for
+  incremental rebuilds, so every targeted run after an asset edit is preceded
+  by `cargo clean -p givn`.
+- Options: (a) clean the givn package before each asset-driven run; (b) add a
+  build script that tracks `assets/`; (c) touch `src/config/embedded.rs`.
+- Chosen: (a) during this change; (b) is a separate improvement.
+- Impact: the RED/GREEN run commands in `tasks.md`.

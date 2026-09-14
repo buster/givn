@@ -66,23 +66,33 @@ negative counterpart; the negative scenario is the RED driver.
 
 ### prose-consolidation
 
-- [ ] Scenario: `Canonical policy classifies a browser-rendered page as a Web UI`
-  - [ ] RED: removed `@wip` from this scenario only; ran the single-scenario
+- [x] Scenario: `Canonical policy classifies a browser-rendered page as a Web UI`
+  - [x] RED: removed `@wip` from this scenario only; ran the single-scenario
         command → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        3 steps (2 passed, 1 failed)
+        stdout missing "renders HTML, CSS, or JavaScript in a browser"
+        exit status: 1
         ```
-  - [ ] GREEN: added the fail-closed classification to
-        `assets/instructions/specs.md`. Files: `assets/instructions/specs.md`.
-        Run → zero. Evidence:
+  - [x] GREEN: added the fail-closed classification to
+        `assets/instructions/specs.md` (unwrapped sentences so the asserted
+        phrases stay on one line; `cargo clean -p givn` before the run because
+        `rust_embed` does not track `assets/`). Files:
+        `assets/instructions/specs.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(prose-consolidation): Canonical policy classifies a browser-rendered page as a Web UI`
+  - [x] COMMIT: `e1d2a2f3` -- `feat(prose-consolidation): Canonical policy classifies a browser-rendered page as a Web UI`
 
 - [ ] Scenario: `Canonical policy requires a rendered-state assertion`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
