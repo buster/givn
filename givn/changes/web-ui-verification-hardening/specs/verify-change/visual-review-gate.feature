@@ -2,7 +2,7 @@
 
 Feature: Visual Review Gate
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance tests the opposite interface classification
     Given a givn project
     When the user runs `givn instructions review --change visual-review-gate`

@@ -193,6 +193,8 @@ the configured E2E command, and the normalized inventory-to-scenario mapping.
 Missing, downgraded, or over-produced coverage is unfinished work and must be
 fixed or classified under the three coverage buckets above.
 
+Before accepting a non-browser classification, state the opposite classification — a rendered page is a Web UI — and why it does not hold. A review that only restates the author's classification is incomplete.
+
 ## Use-case and Persona conformance
 
 Read the owning `usecase.md`, the proposal's use-case context, and any ideation
