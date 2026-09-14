@@ -87,6 +87,31 @@ receipt (`givn/archive/<id>/verification.json`):
 | Actors remain distinct from Persona biographies | | |
 | Migration ledger and coverage evidence complete, if applicable | | |
 
+Record the persona disposition as a real `PERSONAS:` line outside any code
+fence — a declared visual interface needs at least one confirmed Persona:
+
+```
+PERSONAS: <confirmed persona id>
+```
+
+A change without a user-visible surface records the reason instead:
+
+```
+PERSONAS: none — <reason + operator confirmation>
+```
+
+## Deferred mandatory checks
+
+A mandatory check may be deferred only after an operator question. Record the
+pair as real lines outside any code fence; a `DEFERRAL:` without a matching
+`OPERATOR-DECISION:` fails the review. Omit both lines when nothing is
+deferred.
+
+```
+DEFERRAL: <mandatory check>
+OPERATOR-DECISION: <the operator's recorded decision>
+```
+
 **Design.md conformance check** — implementation's actual commands, file
 layout, and framework/driver choices diffed against what design.md
 explicitly named. Any deviation implemented without first updating
