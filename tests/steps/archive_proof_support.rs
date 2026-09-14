@@ -319,6 +319,37 @@ pub(crate) fn parent_revision(world: &GivnWorld) -> String {
     }
 }
 
+/// Changed paths in the checkout, including untracked/`EXTRA` entries.
+pub(crate) fn dirty_entries(world: &GivnWorld) -> Vec<String> {
+    let env = env(world);
+    match env.backend() {
+        common::BackendKind::Git => {
+            let out = common::git(env, &["status", "--porcelain", "-uall"]);
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter_map(|line| line.get(3..).map(str::to_string))
+                .collect()
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(env, &["changes", "--differ"]);
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter_map(|line| {
+                    let rest = line.split_once(char::is_whitespace)?.1.trim();
+                    if rest.is_empty() {
+                        return None;
+                    }
+                    Some(
+                        rest.split_once("->")
+                            .map(|(_, destination)| destination.trim().to_string())
+                            .unwrap_or_else(|| rest.to_string()),
+                    )
+                })
+                .collect()
+        }
+    }
+}
+
 /// Whether the current revision contains `path`.
 pub(crate) fn revision_contains(world: &GivnWorld, path: &str) -> bool {
     match env(world).backend() {
