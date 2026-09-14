@@ -453,7 +453,6 @@ fn latest_revision_message(world: &GivnWorld) -> String {
         common::BackendKind::Fossil => {
             crate::steps::archive_proof_support::fossil_latest_comment(env)
         }
-        }
     }
 }
 
