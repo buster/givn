@@ -481,7 +481,7 @@ negative counterpart; the negative scenario is the RED driver.
         1 scenario (1 passed)
         6 steps (6 passed)
         ```
-  - [x] COMMIT: `TBD` -- `feat(visual-design-contract): The design-review template carries the persona disposition table`
+  - [x] COMMIT: `7f02f539` -- `feat(visual-design-contract): The design-review template carries the persona disposition table`
 
 - [ ] Scenario: `Synchronized authoring guidance carries the classification, driver, and persona rules`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:

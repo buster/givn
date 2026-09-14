@@ -21,6 +21,8 @@ source topic, and confirmed affected Persona IDs in the proposal. Never invent
 or silently promote a Persona, and never copy Persona biographies into the
 proposal.
 
+A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
+
 ## Rules
 
 - Write from the user's perspective. Use domain language (not technical terms).
