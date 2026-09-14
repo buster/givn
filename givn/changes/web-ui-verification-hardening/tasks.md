@@ -384,21 +384,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `9d93318f` -- `feat(visual-design-contract): Proposal guidance requires confirmed personas or a reasoned none`
 
-- [ ] Scenario: `The design template carries the state, breakpoint, and accessibility lines`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The design template carries the state, breakpoint, and accessibility lines`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        ejected design template missing "States:"
+        exit status: 1
         ```
-  - [ ] GREEN: added the `States:` line and the breakpoint and accessibility
-        bullets to `assets/templates/design.md`. Run → zero. Evidence:
+  - [x] GREEN: added the `States:` line and the breakpoint and accessibility
+        bullets to `assets/templates/design.md`. Files:
+        `assets/templates/design.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): The design template carries the state, breakpoint, and accessibility lines`
+  - [x] COMMIT: `db7678ed` -- `feat(visual-design-contract): The design template carries the state, breakpoint, and accessibility lines`
 
 - [ ] Scenario: `The proposal template carries the persona confirmation line`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
