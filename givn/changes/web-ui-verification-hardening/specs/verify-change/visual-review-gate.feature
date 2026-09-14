@@ -33,7 +33,7 @@ Feature: Visual Review Gate
     Then stdout contains "state screenshots the review saw"
     And stdout contains "each declared UI state"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A web contract with missing state evidence fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares a visual design contract naming viewports "mobile" and "desktop"
