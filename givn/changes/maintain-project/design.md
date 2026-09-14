@@ -101,7 +101,10 @@ givn/changes/maintain-project/specs/fragments/scm-backend-selection.feature
 
 The delta carries three scenarios: the migration e2e becomes a Git/Fossil
 outline, the migration-free Fossil upgrade is the new inventory row's `@e2e`,
-and the Fossil uncommitted-changes protection is a regular scenario.
+and the Fossil uncommitted-changes protection is a regular scenario. The
+fragment tombstone was dropped during implementation: the permanent scenario
+was already deleted (commit a224e40f) to keep the suite green, and the merge
+validates removed titles against the permanent corpus.
 
 | File | Binds |
 |---|---|
