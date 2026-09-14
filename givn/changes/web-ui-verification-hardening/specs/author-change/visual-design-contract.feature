@@ -18,7 +18,7 @@ Feature: Visual Design Contract
     And stdout contains "Playwright"
     And stdout contains "does not pin"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance requires breakpoints and accessibility
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`

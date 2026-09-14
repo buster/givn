@@ -118,6 +118,8 @@ Selenium or WebDriverIO are acceptable only when the design justifies the choice
   elevation.
 - **Component primitives**: each primitive with its component states —
   default, hover, focus, disabled, loading, empty, error.
+- **Breakpoints**: the viewport breakpoints and how the layout changes at each.
+- **Accessibility**: contrast, keyboard focus, and semantics (landmarks, headings, labels), and how each is verified.
 - **Screens covered**: one line per screen the change introduces or visibly
   changes.
 - **rendered reference**: at least one rendered reference view for the
