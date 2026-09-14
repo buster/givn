@@ -215,6 +215,8 @@ matching `@e2e` scenario and driving mechanism. One row per entry:
 |---|---|---|---|
 | (from the spec's inventory comment) | (the @e2e scenario title) | (Web UI / CLI / HTTP API / Library / Message bus) | (specific driver + action) |
 
+A capability that renders HTML, CSS, or JavaScript in a browser is a Web UI row: it needs a browser driver and a concrete action, never an HTTP client.
+
 **Every row must have a non-empty driving mechanism.** For a Web UI, the
 driving mechanism MUST name a specific browser driver (Playwright, Selenium,
 WebDriverIO) and describe what action it performs (click button X, fill

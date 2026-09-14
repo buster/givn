@@ -27,7 +27,7 @@ Feature: Visual Design Contract
     And stdout contains "keyboard focus"
     And stdout contains "how each is verified"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance requires a driver for every Web UI matrix row
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`
