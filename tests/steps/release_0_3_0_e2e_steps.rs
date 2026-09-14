@@ -389,6 +389,20 @@ fn fossil_first_child_checkin(env: &crate::common::TestEnv) -> String {
     .to_string()
 }
 
+/// The comment of the most recent check-in.
+fn fossil_latest_subject(env: &crate::common::TestEnv) -> String {
+    fossil_stdout(
+        env,
+        &[
+            "sql",
+            "select comment from event where type='ci' order by mtime desc limit 1",
+        ],
+    )
+    .trim()
+    .trim_matches('\'')
+    .to_string()
+}
+
 /// The paths a Fossil check-in changed, relative to the checkout root.
 fn fossil_revision_paths(env: &crate::common::TestEnv, revision: &str) -> Vec<String> {
     fossil_stdout(env, &["diff", "--brief", "--checkin", revision])
@@ -508,16 +522,7 @@ fn one_managed_upgrade_revision_exists(world: &mut GivnWorld) {
         "3",
         "expected Fossil's initial check-in, the fixture, and the managed check-in"
     );
-    let subject = fossil_stdout(
-        env,
-        &[
-            "sql",
-            "select comment from event where type='ci' order by mtime desc limit 1",
-        ],
-    )
-    .trim()
-    .trim_matches('\'')
-    .to_string();
+    let subject = fossil_latest_subject(env);
     assert!(subject.contains("update managed files"), "{subject}");
 }
 
