@@ -25,3 +25,13 @@ fn ejected_design_template_contains(world: &mut GivnWorld, needle: String) {
         "ejected design template missing {needle:?}: {content}"
     );
 }
+
+#[then(regex = r##"^the ejected proposal template contains "(.+)"$"##)]
+fn ejected_proposal_template_contains(_world: &mut GivnWorld, _needle: String) {
+    unimplemented!()
+}
+
+#[then(regex = r##"^the ejected design-review template contains "(.+)"$"##)]
+fn ejected_design_review_template_contains(_world: &mut GivnWorld, _needle: String) {
+    unimplemented!()
+}
