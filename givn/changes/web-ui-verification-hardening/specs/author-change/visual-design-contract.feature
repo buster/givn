@@ -50,7 +50,7 @@ Feature: Visual Design Contract
     And stdout contains "rendered in a browser"
     And stdout contains "must say why"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design-review guidance records the persona disposition
     Given a givn project
     When the user runs `givn instructions design-review --change visual-design-contract`
