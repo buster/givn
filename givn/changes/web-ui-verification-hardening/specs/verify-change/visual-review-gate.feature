@@ -26,7 +26,7 @@ Feature: Visual Review Gate
     And stdout contains "at least one confirmed Persona"
     And stdout contains "record the reason"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Review guidance names the state screenshots the vision review saw
     Given a givn project
     When the user runs `givn instructions review --change visual-review-gate`

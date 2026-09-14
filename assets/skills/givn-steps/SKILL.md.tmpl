@@ -73,7 +73,9 @@ does not define another policy.
 ## Visual capture mechanics
 
 For a visual interface, each `@e2e` scenario captures a final-state
-screenshot per contract viewport after the final assertion. Before every
+screenshot per contract viewport after the final assertion. When the contract
+declares UI states, each state the scenario traverses is captured as
+`<viewport>--<state>.png` (for example `mobile--empty.png`). Before every
 capture, animations are frozen (or `prefers-reduced-motion` is emulated) and
 fonts and network are settled, so the evidence is deterministic. Committed
 evidence lives under `evidence/visual/<scenario-slug>/<viewport>.png` — or

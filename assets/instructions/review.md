@@ -222,6 +222,7 @@ Run this block when the change's design declares a visual interface (a
   sees the committed screenshots and judges whether that Persona can reach
   its goal with what is shown. Record every finding with a disposition, and
   never invent a Persona.
+- The vision review names the state screenshots the review saw for each declared UI state.
 - End the block with `VISUAL-REVIEW: PASS` only when the evidence is
   complete, the baseline holds, and every Persona finding is dispositioned.
 - No pixel-level or coordinate findings: every finding names a contract rule
