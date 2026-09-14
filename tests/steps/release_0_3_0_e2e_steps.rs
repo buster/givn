@@ -325,7 +325,9 @@ fn command_fails_before_file_changes(world: &mut GivnWorld) {
     assert!(!output.status.success(), "upgrade unexpectedly succeeded");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("clean Git worktree") || stderr.contains("requires a Git repository"),
+        stderr.contains("clean Git worktree")
+            || stderr.contains("requires a Git repository")
+            || stderr.contains("version-controlled project"),
         "{stderr}"
     );
     let env = world.env.as_ref().expect("dirty project fixture");
@@ -435,6 +437,15 @@ fn git_required_report(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(stderr.contains("requires a Git repository"), "{stderr}");
+}
+
+#[then(
+    "the command explains that a version-controlled project is required for the automatic migration"
+)]
+fn version_controlled_required_report(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("version-controlled project"), "{stderr}");
 }
 
 #[given(regex = r#"^a Givn 0.2.0 project with an existing "([^"]+)" change$"#)]
