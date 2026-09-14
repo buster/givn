@@ -26,12 +26,29 @@ fn ejected_design_template_contains(world: &mut GivnWorld, needle: String) {
     );
 }
 
+fn ejected_template_contains(world: &mut GivnWorld, artifact: &str, file: &str, needle: &str) {
+    let stdout = crate::steps::stdout(world);
+    let expected = format!("givn/artifacts/{artifact}/{file}");
+    assert!(
+        stdout.contains(&expected),
+        "eject output did not identify the {artifact} template path: {stdout}"
+    );
+
+    let path = project_root(world).join(&expected);
+    let content = std::fs::read_to_string(&path)
+        .unwrap_or_else(|error| panic!("read ejected {artifact} template {}: {error}", path.display()));
+    assert!(
+        content.contains(needle),
+        "ejected {artifact} template missing {needle:?}: {content}"
+    );
+}
+
 #[then(regex = r##"^the ejected proposal template contains "(.+)"$"##)]
-fn ejected_proposal_template_contains(_world: &mut GivnWorld, _needle: String) {
-    unimplemented!()
+fn ejected_proposal_template_contains(world: &mut GivnWorld, needle: String) {
+    ejected_template_contains(world, "proposal", "proposal.md", &needle);
 }
 
 #[then(regex = r##"^the ejected design-review template contains "(.+)"$"##)]
-fn ejected_design_review_template_contains(_world: &mut GivnWorld, _needle: String) {
-    unimplemented!()
+fn ejected_design_review_template_contains(world: &mut GivnWorld, needle: String) {
+    ejected_template_contains(world, "design-review", "design-review.md", &needle);
 }

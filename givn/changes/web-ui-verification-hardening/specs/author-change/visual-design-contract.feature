@@ -83,7 +83,7 @@ Feature: Visual Design Contract
     And the ejected design template contains "Breakpoints"
     And the ejected design template contains "Accessibility"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The proposal template carries the persona confirmation line
     Given a project root with givn/ initialised
     When the user runs `givn eject proposal:template`
