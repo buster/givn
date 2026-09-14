@@ -117,4 +117,4 @@ scenario is deleted in the same commit that implements the Fossil upgrade.
 - [x] All tasks above checked with evidence and commit hashes. The three
       scenarios plus the retirement share one implementation commit because
       the seam operations, fixtures, and permanent alignment land together;
-      the commit is recorded below.
+      the commit is `a224e40f feat(release-0-3-0): the managed upgrade publishes allowlist-only revisions on both backends` (plan artifacts in `176cc8e4`).
