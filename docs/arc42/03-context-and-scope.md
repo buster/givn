@@ -24,8 +24,8 @@ flowchart LR
 | AI coding agent | Reads effective instructions, generated skills, review reports, and Arc42 docs; edits project artifacts and source. |
 | Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
 | Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and `GIVN_RESULT_FILE` and executes feature scenarios, reporting per-scope scenario counts. |
-| Git CLI | Answers backend selection (`rev-parse --is-inside-work-tree`), stores the archive candidate and finalization revisions, reports the worktree state for the committed-state witness, and provides the recovery history for forward repair. |
-| Fossil CLI | Answers checkout discovery and revision identity (`info`), reports the checkout state including `EXTRA` files for the committed-state witness, records and commits the archive candidate and finalization revisions, and provides the recovery history for forward repair. |
+| Git CLI | Answers backend selection (`rev-parse --is-inside-work-tree`), stores the archive candidate, finalization, and upgrade revisions, reports the worktree state for the committed-state witness, and provides the recovery history for forward repair. |
+| Fossil CLI | Answers checkout discovery and revision identity (`info`), reports the checkout state including `EXTRA` files for the committed-state witness, records and commits the archive candidate, finalization, upgrade, and `givn commit` revisions, and provides the recovery history for forward repair. |
 | Fossil checkout marker | `.fslckout` or `_FOSSIL_` at the project root identifies a Fossil checkout; the archive and the managed upgrade run on it through the selected backend. |
 | Started product | Spawned by `givn run` from the declared start command; its output is inherited, its exit code forwarded, and its signals forwarded on unix. |
 | Automation caller around givn (for example the kiekste preview host) | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |

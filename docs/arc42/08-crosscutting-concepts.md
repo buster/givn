@@ -546,7 +546,11 @@ baseline assertion quality remain review guidance, not runtime inference.
 
 ## 8.18 SCM Backend Selection
 
-Repository-state commands do not assume Git. A single seam
+Repository-state commands do not assume Git. `givn commit` creates one
+attributed revision through the selected backend on both backends, and the
+attribution plumbing is installed only where the backend supports it: Git
+receives the shared hook and its local activation, Fossil relies on the
+`givn commit` path and receives no hook. A single seam
 (`src/scm.rs::select`) probes the project root and returns a backend handle or
 a named refusal:
 
