@@ -45,15 +45,11 @@ The developer archives a reviewed change.
 
 ## Extensions
 
-- Uncommitted work outside the resolved evidence blocks the archive and names
-  the offending files.
+- Uncommitted work outside the resolved evidence blocks the archive and names the offending files.
 - A failed scope leaves an unproven candidate for forward repair.
-- Finalization refuses a tested tree that changed outside the resolved
-  evidence.
-- A backend hook rejects the candidate revision: the archive stays unproven
-  and repairable; the exact intermediate state is backend-specific.
-- No SCM backend is selected: the archive is refused by name before any
-  mutation.
+- Finalization refuses a tested tree that changed outside the resolved evidence.
+- A backend hook rejects the candidate revision: the archive stays unproven and repairable; the exact intermediate state is backend-specific.
+- No SCM backend is selected: the archive is refused by name before any mutation.
 - An already proven archive refuses another archive run.
 - A legacy archive without a receipt refuses another archive run.
 - A change present as both active and archived is refused as corrupt.
@@ -62,19 +58,14 @@ The developer archives a reviewed change.
 
 - A use-case replacement must match its recorded base revision.
 - Feature behavior is never silently dropped.
-- Only a proven archive is complete; an unproven candidate is never reported
-  as proven.
+- Only a proven archive is complete; an unproven candidate is never reported as proven.
 - A rerun resumes an unproven candidate and refuses a proven archive.
 - The candidate revision contains exactly the merged corpus paths.
 - The finalization revision contains only resolved evidence paths.
 - The tested revision equals the published candidate revision.
-- A file the backend would not publish still counts as dirty and blocks the
-  archive: Git untracked files and Fossil `EXTRA` files both block.
-- Givn publishes the candidate revision and the finalization revision on both
-  backends; the developer's per-scenario revisions remain theirs.
-- The hook-rejection promise is "unproven and repairable", not an identical
-  internal state: Git leaves the merge staged, Fossil leaves the merged state
-  uncommitted in the checkout.
+- A file the backend would not publish still counts as dirty and blocks the archive: Git untracked files and Fossil `EXTRA` files both block.
+- Givn publishes the candidate revision and the finalization revision on both backends; the developer's per-scenario revisions remain theirs.
+- The hook-rejection promise is "unproven and repairable", not an identical internal state: Git leaves the merge staged, Fossil leaves the merged state uncommitted in the checkout.
 
 ## Examples
 
