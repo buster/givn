@@ -195,6 +195,10 @@ fixed or classified under the three coverage buckets above.
 
 Before accepting a non-browser classification, state the opposite classification — a rendered page is a Web UI — and why it does not hold. A review that only restates the author's classification is incomplete.
 
+## Deferrals
+
+A deferral of a mandatory check without a recorded operator decision fails the review.
+
 ## Use-case and Persona conformance
 
 Read the owning `usecase.md`, the proposal's use-case context, and any ideation
