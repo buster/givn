@@ -31,6 +31,9 @@ mapping use-case guarantees, rules, events, capability ownership, and confirmed
 Persona impact to technical decisions and E2E evidence. Keep Actors in Gherkin
 distinct from Personas, which are stakeholder review lenses.
 
+Record the persona impact for every user-visible capability: a browser interface, a terminal interface, or CLI text output.
+A change with no user-visible surface records `none` with the reason.
+
 ## Version freshness (mandatory)
 
 Never write a specific version number for a language, runtime, framework,
