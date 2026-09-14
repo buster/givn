@@ -458,21 +458,30 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `9591a6e3` -- `feat(visual-design-contract): The review template carries the persona disposition and deferral markers`
 
-- [ ] Scenario: `The design-review template carries the persona disposition table`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `The design-review template carries the persona disposition table`
+  - [x] RED: removed `@wip` for this scenario only; temporarily restored the
+        previous design-review template; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        ejected design-review template missing "persona"
+        exit status: 1
         ```
-  - [ ] GREEN: added the Relevance and Evidence columns to the persona table
-        in `assets/templates/design-review.md`. Run → zero. Evidence:
+  - [x] GREEN: added the Relevance and Evidence columns to the persona table
+        in `assets/templates/design-review.md`. Files:
+        `assets/templates/design-review.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        6 steps (6 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): The design-review template carries the persona disposition table`
+  - [x] COMMIT: `TBD` -- `feat(visual-design-contract): The design-review template carries the persona disposition table`
 
 - [ ] Scenario: `Synchronized authoring guidance carries the classification, driver, and persona rules`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:

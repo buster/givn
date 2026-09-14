@@ -100,7 +100,7 @@ Feature: Visual Design Contract
     And the ejected review template contains "DEFERRAL:"
     And the ejected review template contains "OPERATOR-DECISION:"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The design-review template carries the persona disposition table
     Given a project root with givn/ initialised
     When the user runs `givn eject design-review:template`

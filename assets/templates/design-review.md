@@ -31,6 +31,15 @@ Questions that could not be resolved and were flagged explicitly.
 | Confirmed Persona coverage | | |
 | Actor and Persona distinction | | |
 
+### Persona disposition
+
+One row per confirmed persona, recording the relevance and the evidence; when
+no persona is confirmed, record the reason and the operator confirmation.
+
+| Persona | Relevance | Evidence |
+|---|---|---|
+| | | |
+
 ## Architecture documentation (arc42) check
 
 N/A if the arc42 addon is not enabled (`addons.arc42` in `givn/config.yaml`).
