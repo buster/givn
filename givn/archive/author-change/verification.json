@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "author-change",
-  "status": "pending",
-  "candidate_revision": null,
-  "tested_revision": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_revision": "069d8bba620f8ee88f3d906cddc76b57b5dd947d",
+  "tested_revision": "069d8bba620f8ee88f3d906cddc76b57b5dd947d",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 10.749281176
+    },
+    "regular": {
+      "status": "passed",
+      "total": 499,
+      "passed": 499,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 41.416927098
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7265,
+    "line_valid": 9246,
+    "line_percent": 78
+  },
   "started_at_unix": 1789423051,
-  "finished_at_unix": null
+  "finished_at_unix": 1789423141
 }
