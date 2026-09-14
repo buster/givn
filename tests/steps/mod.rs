@@ -55,6 +55,8 @@ pub mod run_execution_steps;
 pub mod run_execution_support;
 pub mod run_readme_steps;
 pub mod run_upgrade_steps;
+pub mod scm_backend_selection_e2e_steps;
+pub mod scm_backend_selection_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
 pub mod spec_overlap_gates_steps;
@@ -128,6 +130,8 @@ pub struct GivnWorld {
     /// Skip the generic archive auto-commit for fixtures that intentionally
     /// present a dirty or hook-rejecting worktree.
     pub(crate) skip_auto_commit: bool,
+    /// State for the SCM backend selection scenarios.
+    pub(crate) scm_fixture: scm_backend_selection_steps::ScmFixture,
 }
 
 /// A readiness probe running on a background thread.

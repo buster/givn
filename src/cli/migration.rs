@@ -350,7 +350,10 @@ pub fn prepare_managed_upgrade(
     target_version: &str,
     commit_message: &str,
 ) -> Result<Option<String>> {
-    ensure_clean_git(project_root)?;
+    let backend = crate::scm::select(project_root)?;
+    if !backend.dirty_entries()?.is_empty() {
+        bail!("automatic managed upgrade requires a clean Git worktree; no files were changed");
+    }
 
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
     let commands_path = project_root.join("givn/commands.yaml");
@@ -725,32 +728,6 @@ where
             "Git could not stage managed upgrade files: {}",
             command_output(&output)
         );
-    }
-    Ok(())
-}
-
-fn ensure_clean_git(project_root: &Path) -> Result<()> {
-    let repository =
-        git(project_root, ["rev-parse", "--is-inside-work-tree"]).map_err(|error| {
-            anyhow::anyhow!("automatic managed upgrade requires a Git repository: {error}")
-        })?;
-    if !repository.status.success() || String::from_utf8_lossy(&repository.stdout).trim() != "true"
-    {
-        bail!("automatic managed upgrade requires a Git repository; no files were changed");
-    }
-
-    let status = git(
-        project_root,
-        ["status", "--porcelain", "--untracked-files=all"],
-    )?;
-    if !status.status.success() {
-        bail!(
-            "could not inspect Git worktree before automatic upgrade: {}",
-            command_output(&status)
-        );
-    }
-    if !status.stdout.is_empty() {
-        bail!("automatic managed upgrade requires a clean Git worktree; no files were changed");
     }
     Ok(())
 }

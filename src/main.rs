@@ -8,6 +8,7 @@ mod hooks;
 mod integrity_hook;
 mod overlap;
 mod proof;
+mod scm;
 mod skills;
 mod spec;
 mod state;
