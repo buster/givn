@@ -30,8 +30,8 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
       commits the stamped message; the Git revision message carries the
       managed trailer. Targeted run green.
 - [x] REFACTOR: clean up; run still green.
-- [x] COMMIT: 1a756dfc -- the wrapper implementation (covers the three
-      wrapper scenarios' RED+GREEN).
+- [x] COMMIT: 1a756dfc with the Git-wrapper scope; the implementation slice
+      covers the three wrapper scenarios' RED+GREEN.
 
 ## Scenario: The SCM-neutral commit path attributes a Fossil check-in
 
@@ -59,7 +59,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
 - [x] GREEN: `install` asks the seam and prints the givn-commit path on
       Fossil without writing a hook; init exits 0. Targeted run green.
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc -- installation scope (backend-aware `install`).
+- [x] COMMIT: 1a756dfc (installation scope; shared implementation slice).
 
 ## Scenario: Consumer initializes a Fossil checkout and receives backend-aware guidance
 
@@ -67,7 +67,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
 - [x] GREEN: the generated givn-implement skill contains the committing
       section (template note rendered at init's skills sync).
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc -- guidance scope (template note).
+- [x] COMMIT: 1a756dfc (guidance scope; shared implementation slice).
 
 ## Scenario: Consumer initializes a plain directory and receives a named warning
 
@@ -76,7 +76,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
       `givn archive --change demo` refuses naming the missing
       version-controlled project.
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc -- no-SCM scope (init warning).
+- [x] COMMIT: 1a756dfc (no SCM scope; shared implementation slice).
 
 ## Scenario: Generated guidance names the commit path that works on every backend
 
@@ -84,7 +84,7 @@ Domain constraints (from `givn/changes/author-change/specs/author-change/usecase
 - [x] GREEN: the generated skill names `givn commit` and states the raw
       `fossil commit` limitation.
 - [x] REFACTOR: clean up.
-- [x] COMMIT: 1a756dfc -- prose scope (template note).
+- [x] COMMIT: 1a756dfc (prose scope; shared implementation slice).
 
 ## Finalize
 
