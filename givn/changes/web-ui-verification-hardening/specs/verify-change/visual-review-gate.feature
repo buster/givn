@@ -113,7 +113,7 @@ Feature: Visual Review Gate
     Then the command exits non-zero
     And stderr contains "empty"
 
-  @givn.added @wip
+  @givn.added
   Scenario: A deferral without an operator decision fails review
     Given a givn project with a change that has passed design-review
     And the change's design.md declares no visual design contract

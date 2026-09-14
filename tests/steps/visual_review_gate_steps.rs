@@ -176,6 +176,11 @@ fn review_md_no_persona_disposition(world: &mut GivnWorld) {
 }
 
 #[given(regex = r##"^the change's review\.md also contains "([^"]+)"$"##)]
-fn review_md_also_contains(_world: &mut GivnWorld, _text: String) {
-    unimplemented!()
+fn review_md_also_contains(world: &mut GivnWorld, text: String) {
+    let path = change_dir(world).join("review.md");
+    let mut review = std::fs::read_to_string(&path).unwrap_or_else(|_| {
+        "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n".to_string()
+    });
+    review.push_str(&format!("\n{text}\n"));
+    std::fs::write(&path, review).expect("write review.md");
 }

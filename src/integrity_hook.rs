@@ -22,6 +22,7 @@ pub fn run_integrity_hook(
     check_hash_presence(&change_dir)?;
     check_promised_files_exist(&change_dir)?;
     check_visual_review(&change_dir)?;
+    check_deferrals(&change_dir)?;
     if arc42_enabled {
         check_arc42_conformance(&change_dir)?;
     }
@@ -264,6 +265,34 @@ fn persona_disposition(review: &str) -> Option<String> {
             .strip_prefix("PERSONAS:")
             .map(|value| value.trim().to_string())
     })
+}
+
+/// Every `DEFERRAL:` in `review.md` needs a matching `OPERATOR-DECISION:`.
+/// Fenced examples are ignored, so the template scaffold neither satisfies
+/// nor triggers the check.
+fn check_deferrals(change_dir: &Path) -> Result<()> {
+    let review_path = change_dir.join("review.md");
+    if !review_path.exists() {
+        return Ok(());
+    }
+    let review = std::fs::read_to_string(&review_path)?;
+    let stripped = strip_fenced_blocks(&review);
+    let deferrals = stripped
+        .lines()
+        .filter(|line| line.trim_start().starts_with("DEFERRAL:"))
+        .count();
+    let decisions = stripped
+        .lines()
+        .filter(|line| line.trim_start().starts_with("OPERATOR-DECISION:"))
+        .count();
+    if deferrals > decisions {
+        bail!(
+            "review.md records {deferrals} DEFERRAL line(s) but only {decisions} \
+             OPERATOR-DECISION record(s) — a deferred mandatory check needs the operator's \
+             recorded decision"
+        );
+    }
+    Ok(())
 }
 
 /// Collect every delta `@e2e` scenario title that still needs visual evidence.
@@ -898,6 +927,34 @@ mod tests {
     fn fenced_persona_scaffold_does_not_count() {
         let review = "```\nPERSONAS: fixture-persona\n```\n";
         assert!(check_persona_disposition(review).is_err());
+    }
+
+    #[test]
+    fn deferral_requires_an_operator_decision() {
+        let (_dir, change) = make_change_dir();
+        std::fs::write(change.join("review.md"), "DEFERRAL: browser evidence\n").unwrap();
+        assert!(check_deferrals(&change).is_err());
+
+        std::fs::write(
+            change.join("review.md"),
+            "DEFERRAL: browser evidence\nOPERATOR-DECISION: accepted for this change\n",
+        )
+        .unwrap();
+        assert!(check_deferrals(&change).is_ok());
+
+        std::fs::write(change.join("review.md"), "no deferrals here\n").unwrap();
+        assert!(check_deferrals(&change).is_ok());
+    }
+
+    #[test]
+    fn fenced_deferral_scaffold_is_ignored() {
+        let (_dir, change) = make_change_dir();
+        std::fs::write(
+            change.join("review.md"),
+            "```\nDEFERRAL: example\nOPERATOR-DECISION: example\n```\n",
+        )
+        .unwrap();
+        assert!(check_deferrals(&change).is_ok());
     }
 
     #[test]
