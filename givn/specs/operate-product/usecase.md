@@ -94,3 +94,5 @@ flowchart LR
   Plan --> Product[[Start product]]
   Product --> Ready[[Observe readiness]]
 ```
+
+<!-- givn:base-sha256:aae78ef63640fc3cbb0c23449f9d8d3988f3376b1437cb4d2a541ea29a57455d -->
