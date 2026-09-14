@@ -451,20 +451,8 @@ fn latest_revision_message(world: &GivnWorld) -> String {
             String::from_utf8_lossy(&out.stdout).into_owned()
         }
         common::BackendKind::Fossil => {
-            let mut command = Command::new("fossil");
-            command
-                .args([
-                    "sql",
-                    "select comment from event where type='ci' order by mtime desc limit 1",
-                ])
-                .current_dir(env.root())
-                .env("FOSSIL_USER", "fixture")
-                .env("USER", "fixture");
-            let out = command.output().expect("run fossil");
-            String::from_utf8_lossy(&out.stdout)
-                .trim()
-                .trim_matches('\'')
-                .replace("\\n", "\n")
+            crate::steps::archive_proof_support::fossil_latest_comment(env)
+        }
         }
     }
 }
