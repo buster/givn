@@ -24,6 +24,15 @@ fn then_upgrade_publishes_revision(world: &mut GivnWorld) {
         &after, before,
         "the managed upgrade must publish a new revision"
     );
+    let stdout = super::stdout(world);
+    assert!(
+        stdout.contains("Refreshed"),
+        "stdout does not report the refresh: {stdout}"
+    );
+    assert!(
+        stdout.contains(&after),
+        "stdout does not name the published revision: {stdout}"
+    );
     assert!(
         env.path(".opencode/plugins/givn-attribution.js").is_file(),
         "the managed upgrade must restore the missing managed file"
