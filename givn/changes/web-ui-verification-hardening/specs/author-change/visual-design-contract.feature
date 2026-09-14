@@ -66,7 +66,7 @@ Feature: Visual Design Contract
     And stdout contains "mandatory check"
     And stdout contains "do not sign off"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Proposal guidance requires confirmed personas or a reasoned none
     Given a givn project
     When the user runs `givn instructions proposal --change visual-design-contract`

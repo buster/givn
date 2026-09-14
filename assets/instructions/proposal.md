@@ -23,6 +23,7 @@ language that a non-technical stakeholder can read and validate.
   ideation change seed, read its `usecase.md` and record the ID, source topic,
   and confirmed affected Persona IDs. Never invent or auto-promote Personas;
   do not copy Persona biographies into the proposal.
+- **Persona confirmation.** A change with a user-visible surface (a browser interface, a terminal interface, or CLI text output) names at least one confirmed Persona, or records `none` with the reason and the operator confirmation.
 
 **Structure:**
 1. Problem / Opportunity — what is wrong or missing?
