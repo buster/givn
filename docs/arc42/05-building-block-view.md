@@ -26,6 +26,7 @@ flowchart TD
     G --> O[overlap modules]
     G --> HOOK[hooks and integrity]
     G --> STATE[state]
+    G --> SCM[scm backend selection]
     G --> GITMOD[git worktree wrapper]
     G --> PROOF[proof receipts and runner results]
     G --> ASSET[embedded assets]
@@ -58,7 +59,7 @@ flowchart TD
 | `cli::skills` | Synchronize selected skill targets and opencode commands. |
 | `cli::attribution` | Stamp commit messages from optional runtime attribution, format Claude Bash hook responses, and install the checked-in Git hook with a local dispatcher. |
 | `cli::upgrade` | Refresh managed config comments, preserve uncommented overrides, backfill the `run:` scaffold into `givn/commands.yaml` when the key is absent, and dispatch the exact legacy migration preparation route. |
-| `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight Git state, calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration commits, and write the aggregate maintenance plan. |
+| `cli::migration` | Load the release migration catalog, resolve ordered bundle paths, preflight the selected backend state through the SCM seam, calculate the managed-path allowlist (including `givn/commands.yaml` for the run backfill), create managed/migration commits, and write the aggregate maintenance plan. |
 | `cli::run_block` | Validate the `run:` declaration with the deterministic rules (R1–R10) and produce labeled findings for `check review` and the archive gate. |
 | `cli::run` | Resolve the start plan (product type, port source, `--port`/`--print`), execute the declared command, probe readiness over `std::net`, print the ready line, forward child exit codes, and forward SIGINT/SIGTERM on unix. |
 | `cli::missing_run_command` | Sentinel behind `givn missing-run-command`: prints start-configuration guidance to stderr and exits 1. |
@@ -75,7 +76,8 @@ flowchart TD
 | Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and generated OpenCode/Claude harness integrations. |
 | `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and — for a declared visual interface — the visual verdict, the persona disposition, the final-state and per-state evidence completeness, plus the operator decision for any recorded deferral. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven) from the receipt. |
-| `git` | Root-bound Git wrapper for the archive boundary: worktree prerequisite, clean-state witness, HEAD resolution, and scoped commits. |
+| `scm` | Select the version-control backend for the project root (a Git worktree first, then a Fossil checkout), enforce the project-boundary rule, and refuse absence, ambiguity, a nested root, or a missing executable by name before any mutation. |
+| `git` | Git backend implementation: root-bound worktree prerequisite, clean-state witness, HEAD resolution, scoped staging, and scoped commits for the archive boundary and the selection seam. |
 | `proof` | Verification receipt and runner-result contract: archive provenance, fail-closed scope-result parsing, and the single evidence-path predicate shared by the clean witness and the finalization guard. |
 | `spec::coverage` | Emit behavior-hash specification inventories, compare migration baselines, and block missing behavior, lost E2E evidence, or lower interaction/source coverage. |
 

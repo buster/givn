@@ -8,14 +8,14 @@
 | **Agent target** | One generated guidance destination: `opencode`, `agents`, or `claude`, represented by `.opencode/`, `.agents/`, or `.claude/`. |
 | **Attribution context** | The runtime facts available while one commit is created: LLM, reasoning mode, harness, and Givn version. Missing facts remain unknown rather than inferred. |
 | **Model identity** | The provider and model pair selected by the harness for the current attribution context. Anti-terms: model name, model label. |
-| **Commit attribution** | The best-effort LLM and harness identification visible through a commit's committer identity and message trailers. |
+| **Commit attribution** | The best-effort LLM and harness identification visible through a revision's committer identity and message trailers; on Git through the hook, on Fossil through `givn commit`. |
 | **Harness** | The agent runtime that executes project commands, such as OpenCode or Claude Code. Anti-term: agent target. |
 | **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
-| **Attribution trailer** | The managed Git `Co-Authored-By` message trailer containing the commit-attribution context. |
+| **Attribution trailer** | The managed `Co-Authored-By` message trailer containing the commit-attribution context; on Git it is a commit message, on Fossil a check-in comment. |
 | **Managed co-author attribution** | The Givn-owned `Co-Authored-By` trailer formatted as `<model>/<reasoning>@<harness> with Givn <version>`; ordinary human co-author trailers remain user-owned. |
 | **Attribution status** | The message trailer value `complete` or `partial`, indicating whether the active attribution context supplied every expected field. |
-| **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. |
-| **Commit-attribution hook** | The checked-in `commit-msg` hook that appends best-effort attribution trailers without blocking a commit. Anti-term: post-artifact hook. |
+| **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. Fossil records its own user and has no equivalent override. |
+| **Commit-attribution hook** | The checked-in Git `commit-msg` hook that appends best-effort attribution trailers without blocking a commit. Anti-term: post-artifact hook. |
 | **Hook activation launcher** | The machine-local Git hook that preserves an existing `commit-msg` hook and delegates to the checked-in commit-attribution hook. |
 | **Installation report** | The `givn init` or `givn upgrade` output that names installed or refreshed shared plumbing and selected agent integrations. |
 | **Attribution retrofit** | Refreshing commit-attribution files in an existing project during `givn upgrade`, including the files needed to share the behavior. |
@@ -25,13 +25,13 @@
 | **Cascade** | Project-overrides-first lookup for an individual template, instruction, skill, or command asset, with embedded content as fallback. |
 | **Conditional section** | A marked region of a template retained only when its declared addon condition matches the current effective addon set; it is dropped from the generated file otherwise. |
 | **Change** | A unit of work under `givn/changes/<id>/` that, once archived, moves to `givn/archive/<id>/`. |
-| **Archive candidate** | A change whose accepted material has been merged into the permanent corpus at its archive location and committed, but which has not yet passed archive verification. Anti-terms: pending change, merged change. |
-| **Proven archive** | An archive candidate whose full suite and coverage passed for its tested commit, recorded by a verification receipt. Only a proven archive is complete and safe to publish. Anti-term: finished archive. |
+| **Archive candidate** | A change whose accepted material has been merged into the permanent corpus at its archive location and published as a revision, but which has not yet passed archive verification. Anti-terms: pending change, merged change. |
+| **Proven archive** | An archive candidate whose full suite and coverage passed for its tested revision, recorded by a verification receipt. Only a proven archive is complete and safe to publish. Anti-term: finished archive. |
 | **Legacy archive** | An archive directory produced before the receipt contract and therefore without a verification receipt. It is historical and is never re-published. Anti-term: unproven archive. |
-| **Verification receipt** | The durable machine-readable record binding a proven archive to the commit that was tested, the per-scope scenario counts, the coverage outputs, and the timing. Anti-terms: verification manifest, evidence cache. |
+| **Verification receipt** | The durable machine-readable record binding a proven archive to the revision that was tested, the per-scope scenario counts, the coverage outputs, and the timing. Anti-terms: verification manifest, evidence cache. |
 | **Verification scope** | One runner execution's declared boundary: the regular scenarios or the end-to-end scenarios. Each scope reports its own scenario counts. |
 | **Runner result** | The machine-readable scenario counts a verification scope's runner writes for Givn; a missing or non-reconciling result blocks proof. Anti-term: test summary. |
-| **Forward repair** | Repairing a failed archive on the current branch and rerunning the archive against the new committed state; the failed candidate is kept, never silently discarded. Anti-terms: rollback, restore. |
+| **Forward repair** | Repairing a failed archive in place and rerunning the archive against the new published state; the failed candidate is kept, never silently discarded. Anti-terms: rollback, restore. |
 | **Delta** | An active Gherkin feature marked `@givn.delta` that describes Added, Modified, or Removed scenarios. |
 | **Disposition** | A review entry for a deterministic overlap finding involving a change delta. |
 | **Fingerprint** | A deterministic masked assertion sequence plus best-effort facts: exit code, `contains` polarity, table values, `[DONE]`, and TTY mention. |
@@ -79,11 +79,11 @@
 | **ADR routing** | The single outcome `NEW_ADR`, `AMEND_ADR`, `SUPERSEDE_ADR`, or `CANONICAL_ARTIFACT` selected after qualification and duplicate checks. |
 | **Single-source architecture documentation** | The rule that current facts, behavior, implementation, process, and decision rationale each have one authoritative home rather than redundant copies. |
 | **Slash command** | A command file written from a command template into `.opencode/commands/` when `givn skills sync` runs. |
-| **Managed upgrade path** | The machine-safe portion of a version migration: config scaffold and generated Givn integrations refreshed under an explicit Git allowlist. |
+| **Managed upgrade path** | The machine-safe portion of a version migration: config scaffold and generated Givn integrations refreshed under an explicit SCM allowlist. |
 | **Maintenance change** | A visible Givn change for project-wide tooling or migration work that may intentionally skip a product feature specification. |
 | **Migration plan** | The proposal and detailed design generated for an upgrade so an LLM can derive project-specific tasks without fabricated completion evidence. |
-| **Upgrade Commit A** | The first automatic commit containing only the managed scaffold and generated integration changes. |
-| **Migration Commit B** | The second automatic commit containing the maintenance plan and the recorded hash of Upgrade Commit A. |
+| **Upgrade revision** | The first automatic revision of a managed upgrade, containing only the managed scaffold and generated integration changes. Former name: Upgrade Commit A. |
+| **Plan revision** | The second automatic revision of a migration-bearing upgrade, containing the maintenance plan and the recorded identifier of the upgrade revision. Former name: Migration Commit B. |
 | **Migration catalog** | Embedded release policy at `assets/migrations/catalog.yaml` that declares source/target bundle edges and their order. |
 | **Migration bundle** | A release-owned Proposal/Design asset pair describing one project migration phase. |
 | **Migration evidence** | The before/after snapshots, human-readable ledger, and comparison receipts proving that a semantic corpus migration preserved behavior, E2E evidence, interaction coverage, and source coverage. Anti-term: rename proof. |
@@ -132,6 +132,21 @@
 | **Persona disposition** | The review's record, as a `PERSONAS:` line, of the confirmed Persona that reviewed the rendered evidence; a declared visual interface requires at least one. Anti-term: persona note. |
 | **Deferral decision** | The operator's recorded approval (`OPERATOR-DECISION:`) that allows a mandatory check to be deferred when a project constraint conflicts with it; a `DEFERRAL:` without it fails review. Anti-term: waiver. |
 | **Style tile** | One rendered, concrete design option proposed to the user when no approved design exists. Anti-term: mockup (rejected as pixel-precise). |
+| **SCM backend** | The concrete version-control system givn talks to in a project: Git or Fossil. Selected per project, never per command. Anti-terms: provider, driver. |
+| **Revision** | One immutable recorded state of the project in the active SCM backend: a Git commit or a Fossil check-in. |
+| **Checkout** | The working directory givn operates in, as seen by the active SCM backend: a Git worktree or a Fossil checkout. |
+| **Clean state** | The state in which the active backend reports no changes outside the resolved evidence paths; Git untracked files and Fossil `EXTRA` files both count as dirty. |
+| **Candidate revision** | The revision that publishes the merged archive before verification; recorded unbound in the pending receipt. |
+| **Tested revision** | The revision against which every verification scope passed; recorded in the proven receipt. |
+| **Revision binding** | The receipt property that the tested revision is the published candidate revision. |
+| **Marker** | The project-root entry that identifies a version-control system: a `.git` entry (file or directory) for Git, or `.fslckout`/`_FOSSIL_` for Fossil. |
+| **Named refusal** | A command's failure that names the reason, the project root, and the missing prerequisite, exits non-zero, and mutates nothing. Anti-term: generic error. |
+| **Version-controlled project** | A project whose root carries a recognized backend marker and whose executable is available; a project without one is refused by name. |
+
+Fossil-specific clauses in this glossary (Fossil `EXTRA` dirty semantics,
+attribution through `givn commit`, the Fossil backend itself) describe the
+agreed target contract. The Fossil backend is not implemented yet; D-20 in
+chapter 11 tracks it.
 
 ### Visual-review invariants
 
@@ -177,7 +192,7 @@
 - A verification scope result must declare its scope and reconcile
   `passed + failed + skipped == total`, with at least one scenario and zero
   failures or skips (enforcement site: `proof::RunnerResult::read`).
-- Finalization changes only the tested commit's declared evidence paths
+- Finalization changes only the tested revision's declared evidence paths
   (enforcement site: `proof::is_evidence_path`).
 - A resumed candidate does not repeat the merge (enforcement site: pending
   receipt mode in `cli::archive`).

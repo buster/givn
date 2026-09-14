@@ -25,6 +25,12 @@ per-scope runner results, and a verification receipt committed as the
 evidence-only finalization. Durable archive facts live in chapters 2, 3, 5,
 6.7, 8.6, 8.9, 8.12, and the glossary.
 
+The `scm-backend` change records ADR-071: repository-state commands select the
+version-control backend through one seam (a Git worktree first, then a Fossil
+checkout) and refuse absence, ambiguity, a nested root, or a missing executable
+by name. Durable facts live in chapters 2 (TC-21, TC-33), 3, 4, 5, 6.13/6.16,
+8.18, 10 (Q-50), and 11 (R-63, R-64, D-20).
+
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
 historical records.

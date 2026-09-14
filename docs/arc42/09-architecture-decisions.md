@@ -36,6 +36,15 @@ classification reasoning and the quality of a persona disposition stay
 guidance-level. This remains an extension of the same boundary, not a new
 record.
 
+ADR-071 is accepted by the `scm-backend` change: repository-state commands ask
+one selection seam which version-control system owns the project root. Detection
+uses the project's own markers (Git worktree first, then a Fossil checkout) and
+refuses ambiguity, absence, a nested root, or a missing executable by name; no
+configuration key declares the backend. The seam is the prerequisite for the
+Fossil backend and for moving the archive publication onto the same contract.
+The mixed-setup and missing-executable consequences are carried by R-63 and
+R-64 in chapter 11.
+
 Individual ADRs preserve decision rationale and links. Current architecture
 facts remain in the relevant Arc42 chapters or implementation; the register is
 not a second copy of those facts.

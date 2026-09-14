@@ -283,10 +283,9 @@ script to stdout.
 ## 6.13 `givn upgrade` and declared migration bundles
 
 The command selects a declared migration path from the active config marker to
-the installed package version. It first verifies that the project is inside a
-Git worktree and that
-`git status --porcelain --untracked-files=all` is empty. A failed preflight
-returns before changing any project file.
+the installed package version. It first selects the project's version-control
+backend through the SCM seam (section 6.16) and verifies that the checkout is
+clean. A failed preflight returns before changing any project file.
 
 The command then refreshes `givn/config.yaml`, backfills the `run:` scaffold
 into `givn/commands.yaml` when the file exists and has no top-level `run:` key
@@ -362,3 +361,31 @@ resolves the plan without spawning: it emits one sh-eval-able line
 An ephemeral port is allocated by binding `127.0.0.1:0`, reading the port, and
 dropping the listener before spawn. Signal forwarding is unix-only; on other
 platforms a server product is refused at preflight with exit 1.
+
+## 6.16 SCM backend selection
+
+Every repository-state command starts by asking one selection seam which
+version-control backend owns the project root. Both marker kinds are probed
+before deciding, so an ambiguous root is never silently resolved:
+
+```mermaid
+flowchart TD
+  Cmd[repository-state command] --> GitProbe["git rev-parse --is-inside-work-tree"]
+  GitProbe -->|"git executable missing, .git present"| Missing[refusal: git not on PATH]
+  GitProbe -->|"true"| FossilProbe{".fslckout / _FOSSIL_ at root?"}
+  GitProbe -->|"false / no repo"| FossilProbe
+  FossilProbe -->|"yes and Git true"| Ambiguous[refusal: ambiguous markers]
+  FossilProbe -->|"yes and Git false"| Fossil[refusal: Fossil backend unavailable]
+  FossilProbe -->|"no and Git true"| Boundary{root == worktree top level?}
+  FossilProbe -->|"no and Git false"| None[refusal: no version-controlled project]
+  Boundary -->|yes| Git[Git backend]
+  Boundary -->|no| Nested[refusal: nested root]
+```
+
+Selection probes, and all refusals return, before any file is written. The
+fixed order is Git worktree, then Fossil checkout; both markers at the root are
+an ambiguity refusal, and an ancestor Fossil marker is ignored. A Git project
+whose root is nested inside a larger worktree is refused by name (TC-32). The
+Git backend exposes clean-state witness, revision identity, scoped staging, and
+scoped commit operations; the managed upgrade consumes them, and the archive
+publication moves onto the same seam in a later change.
