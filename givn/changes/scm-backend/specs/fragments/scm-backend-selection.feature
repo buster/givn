@@ -20,7 +20,7 @@ Feature: SCM backend selection
     And  stderr names the project root and the missing version-controlled project
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Fossil checkout is refused by name until the Fossil backend is available
     Given  a Fossil checkout whose project root is the checkout root
     When  the user runs `givn upgrade`
