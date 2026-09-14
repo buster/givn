@@ -72,13 +72,20 @@ fn given_nested_project(world: &mut GivnWorld) {
 }
 
 #[given("a Git worktree whose `git` executable is unavailable")]
-fn given_git_executable_unavailable(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_git_executable_unavailable(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    world.scm_fixture.snapshot = Some(snapshot_tree(&env.root()));
+    world.env = Some(env);
 }
 
 #[when("the user runs `givn upgrade` without the `git` executable on PATH")]
-fn when_upgrade_without_git(_world: &mut GivnWorld) {
-    unimplemented!()
+fn when_upgrade_without_git(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let empty_bin = env.path("no-git-bin");
+    std::fs::create_dir_all(&empty_bin).expect("create empty PATH directory");
+    let path = empty_bin.to_string_lossy().into_owned();
+    let out = common::run_givn_with_envs(env, &["upgrade"], &[("PATH", &path)]);
+    world.last_output = Some(out);
 }
 
 #[then("stderr names the project root and the missing version-controlled project")]
@@ -144,8 +151,12 @@ fn then_nested_refusal(world: &mut GivnWorld) {
 }
 
 #[then("stderr names the missing `git` executable")]
-fn then_missing_executable_refusal(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_missing_executable_refusal(world: &mut GivnWorld) {
+    let stderr = stderr(world);
+    assert!(
+        stderr.contains("`git`") && stderr.contains("not found"),
+        "stderr does not name the missing `git` executable: {stderr}"
+    );
 }
 
 #[then("no file in the project changed")]
