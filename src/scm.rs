@@ -31,7 +31,17 @@ pub fn select(project_root: &Path) -> Result<Backend> {
     let git = git_worktree(project_root)?;
     let fossil = fossil_marker(project_root);
     match (git, fossil) {
-        (true, None) => Ok(Backend::Git(crate::git::Worktree::open(project_root)?)),
+        (true, None) => {
+            let top = git_top_level(project_root)?;
+            if top != canonical(project_root) {
+                bail!(
+                    "the project root '{}' must be the worktree top level; it is nested inside '{}'",
+                    project_root.display(),
+                    top.display()
+                );
+            }
+            Ok(Backend::Git(crate::git::Worktree::at(project_root)))
+        }
         (true, Some(marker)) => bail!(
             "ambiguous version control at '{}': both a Git worktree marker and a Fossil checkout marker ({marker}) are present",
             project_root.display()
@@ -55,6 +65,27 @@ fn git_worktree(project_root: &Path) -> Result<bool> {
         .output()
         .with_context(|| format!("run `git rev-parse` in '{}'", project_root.display()))?;
     Ok(output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "true")
+}
+
+/// The canonicalized worktree top level for a project inside a Git worktree.
+fn git_top_level(project_root: &Path) -> Result<PathBuf> {
+    let output = Command::new("git")
+        .args(["rev-parse", "--show-toplevel"])
+        .current_dir(project_root)
+        .output()
+        .with_context(|| format!("run `git rev-parse` in '{}'", project_root.display()))?;
+    if !output.status.success() {
+        bail!(
+            "cannot resolve the Git worktree top level from '{}'",
+            project_root.display()
+        );
+    }
+    let top = String::from_utf8_lossy(&output.stdout).trim().to_string();
+    Ok(canonical(Path::new(&top)))
+}
+
+fn canonical(path: &Path) -> PathBuf {
+    std::fs::canonicalize(path).unwrap_or_else(|_| path.to_path_buf())
 }
 
 /// The Fossil checkout marker at the project root, when present.

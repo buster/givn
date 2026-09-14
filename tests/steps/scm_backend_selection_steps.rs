@@ -55,8 +55,20 @@ fn given_ambiguous_root(world: &mut GivnWorld) {
 }
 
 #[given("a Git project whose project root is nested inside the worktree top level")]
-fn given_nested_project(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_nested_project(world: &mut GivnWorld) {
+    let env = common::make_init_root_without_git();
+    common::git_init(&env);
+    let nested = env.path("nested");
+    std::fs::create_dir_all(&nested).expect("create nested project dir");
+    let out = common::run_givn_with_envs_in(&env, &nested, &["init"], &[]);
+    assert!(
+        out.status.success(),
+        "givn init in nested project failed: {}",
+        String::from_utf8_lossy(&out.stderr)
+    );
+    world.scm_fixture.snapshot = Some(snapshot_tree(&nested));
+    world.cwd_override = Some(nested);
+    world.env = Some(env);
 }
 
 #[given("a Git worktree whose `git` executable is unavailable")]
@@ -111,8 +123,24 @@ fn then_ambiguity_refusal(world: &mut GivnWorld) {
 }
 
 #[then("stderr names the project root and the worktree top level")]
-fn then_nested_refusal(_world: &mut GivnWorld) {
-    unimplemented!()
+fn then_nested_refusal(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let root = env.path("nested");
+    let top = env.root();
+    let stderr = stderr(world);
+    assert!(
+        stderr.contains(&root.display().to_string()),
+        "stderr does not name the nested project root: {stderr}"
+    );
+    let marker = "nested inside '";
+    let index = stderr
+        .find(marker)
+        .unwrap_or_else(|| panic!("stderr does not name the nesting: {stderr}"))
+        + marker.len();
+    assert!(
+        stderr[index..].starts_with(&top.display().to_string()),
+        "stderr does not name the worktree top level: {stderr}"
+    );
 }
 
 #[then("stderr names the missing `git` executable")]
@@ -122,7 +150,8 @@ fn then_missing_executable_refusal(_world: &mut GivnWorld) {
 
 #[then("no file in the project changed")]
 fn then_no_file_changed(world: &mut GivnWorld) {
-    let root = world.env.as_ref().expect("project root").root();
+    let env = world.env.as_ref().expect("project root");
+    let root = world.cwd_override.clone().unwrap_or_else(|| env.root());
     let before = world
         .scm_fixture
         .snapshot

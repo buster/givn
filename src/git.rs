@@ -15,6 +15,14 @@ pub struct Worktree {
 }
 
 impl Worktree {
+    /// Construct the handle for a root already validated by the selection
+    /// seam (`scm::select`), without repeating the prerequisite checks.
+    pub fn at(root: &Path) -> Self {
+        Self {
+            root: root.to_path_buf(),
+        }
+    }
+
     /// Open the worktree, refusing a non-repository and a project nested
     /// inside a larger repository.
     pub fn open(root: &Path) -> Result<Self> {

@@ -36,7 +36,7 @@ Feature: SCM backend selection
     And  stderr names the Git marker and the Fossil marker
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: A project root nested inside a larger Git worktree is refused by name
     Given  a Git project whose project root is nested inside the worktree top level
     When  the user runs `givn upgrade`
