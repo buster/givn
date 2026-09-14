@@ -3,6 +3,7 @@ mod cobertura;
 mod config;
 mod error;
 mod gherkin;
+mod fossil;
 mod git;
 mod hooks;
 mod integrity_hook;

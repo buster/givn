@@ -14,6 +14,8 @@ use anyhow::{Context, Result, bail};
 pub enum Backend {
     /// A Git worktree whose top level equals the project root.
     Git(crate::git::Worktree),
+    /// A Fossil checkout whose root equals the project root.
+    Fossil(crate::fossil::FossilCheckout),
 }
 
 impl Backend {
@@ -21,6 +23,7 @@ impl Backend {
     pub fn revision(&self) -> Result<String> {
         match self {
             Self::Git(worktree) => worktree.head(),
+            Self::Fossil(checkout) => checkout.revision(),
         }
     }
 
@@ -29,6 +32,7 @@ impl Backend {
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {
         match self {
             Self::Git(worktree) => worktree.dirty_entries(),
+            Self::Fossil(checkout) => checkout.dirty_entries(),
         }
     }
 
@@ -37,6 +41,7 @@ impl Backend {
     pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
         match self {
             Self::Git(worktree) => worktree.stage_paths(paths, force),
+            Self::Fossil(_) => self.upgrade_unavailable(),
         }
     }
 
@@ -44,6 +49,7 @@ impl Backend {
     pub fn has_staged_changes(&self) -> Result<bool> {
         match self {
             Self::Git(worktree) => worktree.has_staged_changes(),
+            Self::Fossil(_) => self.upgrade_unavailable(),
         }
     }
 
@@ -51,7 +57,42 @@ impl Backend {
     pub fn commit_staged(&self, message: &str) -> Result<()> {
         match self {
             Self::Git(worktree) => worktree.commit_staged(message),
+            Self::Fossil(_) => self.upgrade_unavailable(),
         }
+    }
+
+    /// Publish exactly `paths` as one revision. Returns the new revision.
+    pub fn publish(&self, paths: &[String], message: &str) -> Result<String> {
+        match self {
+            Self::Git(worktree) => worktree.commit(message, paths),
+            Self::Fossil(checkout) => checkout.publish(paths, message),
+        }
+    }
+
+    /// Whether `path` is present in the current revision.
+    pub fn revision_contains(&self, path: &str) -> Result<bool> {
+        match self {
+            Self::Git(worktree) => worktree.revision_contains(path),
+            Self::Fossil(checkout) => checkout.revision_contains(path),
+        }
+    }
+
+    /// Refuse commands whose Fossil path is not implemented yet.
+    pub fn require_managed_upgrade_support(&self) -> Result<()> {
+        match self {
+            Self::Git(_) => Ok(()),
+            Self::Fossil(_) => self.upgrade_unavailable(),
+        }
+    }
+
+    fn upgrade_unavailable<T>(&self) -> Result<T> {
+        let Self::Fossil(checkout) = self else {
+            unreachable!("only the Fossil backend refuses the managed upgrade");
+        };
+        bail!(
+            "Fossil checkout detected at '{}'; the Fossil backend is not available for the managed upgrade in this version",
+            checkout.root().display()
+        )
     }
 }
 
@@ -75,10 +116,12 @@ pub fn select(project_root: &Path) -> Result<Backend> {
             "ambiguous version control at '{}': both a Git worktree marker and a Fossil checkout marker ({marker}) are present",
             project_root.display()
         ),
-        (false, Some(_)) => bail!(
-            "Fossil checkout detected at '{}'; the Fossil backend is not available in this version",
-            project_root.display()
-        ),
+        (false, Some(_)) => {
+            fossil_executable(project_root)?;
+            Ok(Backend::Fossil(crate::fossil::FossilCheckout::at(
+                project_root,
+            )))
+        }
         (false, None) => bail!(
             "no Git worktree or Fossil checkout found at '{}'; a version-controlled project is required",
             project_root.display()
@@ -125,6 +168,19 @@ fn git_top_level(project_root: &Path) -> Result<PathBuf> {
     }
     let top = String::from_utf8_lossy(&output.stdout).trim().to_string();
     Ok(canonical(Path::new(&top)))
+}
+
+/// Refuse a Fossil checkout when its executable is not on PATH.
+fn fossil_executable(project_root: &Path) -> Result<()> {
+    match Command::new("fossil").arg("version").output() {
+        Ok(_) => Ok(()),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => bail!(
+            "Fossil checkout detected at '{}' but the `fossil` executable was not found on PATH",
+            project_root.display()
+        ),
+        Err(error) => Err(error)
+            .with_context(|| format!("run `fossil version` in '{}'", project_root.display())),
+    }
 }
 
 fn canonical(path: &Path) -> PathBuf {

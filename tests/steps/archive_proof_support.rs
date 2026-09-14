@@ -44,8 +44,16 @@ pub(crate) fn receipt_status(world: &GivnWorld, id: &str) -> String {
 
 /// Create the fixture project if the scenario has none.
 pub(crate) fn ensure_env(world: &mut GivnWorld) {
+    ensure_env_on(world, common::BackendKind::Git);
+}
+
+/// Create the fixture project on the named backend if the scenario has none.
+pub(crate) fn ensure_env_on(world: &mut GivnWorld, backend: common::BackendKind) {
     if world.env.is_none() {
-        world.env = Some(common::make_init_root());
+        world.env = Some(match backend {
+            common::BackendKind::Git => common::make_init_root(),
+            common::BackendKind::Fossil => common::make_fossil_root(),
+        });
     }
 }
 
@@ -209,7 +217,18 @@ pub(crate) fn write_change_artifacts_at(base: &Path, id: &str, with_e2e: bool) {
 /// Full archive-ready fixture: initialized committed project, result runner,
 /// commands, and a completed change.
 pub(crate) fn ready_change(world: &mut GivnWorld, id: &str, with_e2e: bool, kind: &str) {
-    ensure_env(world);
+    ready_change_on(world, common::BackendKind::Git, id, with_e2e, kind);
+}
+
+/// Same as [`ready_change`] but on the named backend.
+pub(crate) fn ready_change_on(
+    world: &mut GivnWorld,
+    backend: common::BackendKind,
+    id: &str,
+    with_e2e: bool,
+    kind: &str,
+) {
+    ensure_env_on(world, backend);
     let env = env(world);
     disable_coverage(env);
     write_result_runner(env, kind);
@@ -217,6 +236,55 @@ pub(crate) fn ready_change(world: &mut GivnWorld, id: &str, with_e2e: bool, kind
     write_change_artifacts(env, id, with_e2e);
     common::commit_fixture(env);
     world.last_change_id = Some(id.to_string());
+}
+
+/// Parse the backend step value used by the backend-parameterized Givens.
+pub(crate) fn backend_kind(value: &str) -> common::BackendKind {
+    match value {
+        "Git" => common::BackendKind::Git,
+        "Fossil" => common::BackendKind::Fossil,
+        other => panic!("unknown backend step value '{other}'"),
+    }
+}
+
+/// Paths changed by the current revision, relative to the project root.
+pub(crate) fn revision_paths(world: &GivnWorld) -> Vec<String> {
+    let env = env(world);
+    match env.backend() {
+        common::BackendKind::Git => {
+            let out = common::git(env, &["show", "--name-only", "--format=", "HEAD"]);
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter(|line| !line.trim().is_empty())
+                .map(str::to_string)
+                .collect()
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(env, &["diff", "--brief", "--checkin", "current"]);
+            String::from_utf8_lossy(&out.stdout)
+                .lines()
+                .filter_map(|line| {
+                    let rest = line.split_once(char::is_whitespace)?.1.trim();
+                    if rest.is_empty() {
+                        None
+                    } else {
+                        Some(rest.to_string())
+                    }
+                })
+                .collect()
+        }
+    }
+}
+
+/// Whether the current revision contains `path`.
+pub(crate) fn revision_contains(world: &GivnWorld, path: &str) -> bool {
+    let env = env(world);
+    match env.backend() {
+        common::BackendKind::Git => common::git(env, &["cat-file", "-e", &format!("HEAD:{path}")])
+            .status
+            .success(),
+        common::BackendKind::Fossil => common::fossil(env, &["cat", path]).status.success(),
+    }
 }
 
 /// Run `givn archive --change <id>` from the fixture.

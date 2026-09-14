@@ -71,6 +71,12 @@ impl Worktree {
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
     }
 
+    /// Whether `path` is present in the current `HEAD` revision.
+    pub fn revision_contains(&self, path: &str) -> Result<bool> {
+        let output = run_git(&self.root, &["cat-file", "-e", &format!("HEAD:{path}")])?;
+        Ok(output.status.success())
+    }
+
     /// Modified tracked files plus untracked non-ignored files, as paths
     /// relative to the repository root.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {

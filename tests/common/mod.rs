@@ -10,10 +10,21 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 use tempfile::TempDir;
 
+/// The version-control fixture the project root emulates.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum BackendKind {
+    Git,
+    Fossil,
+}
+
 /// Handle carrying the per-test temp directory. Drop removes the directory.
 #[derive(Debug)]
 pub struct TestEnv {
     dir: TempDir,
+    /// Repository file for a Fossil fixture; kept outside the checkout so it
+    /// is never an `EXTRA` entry.
+    fossil_repo: Option<TempDir>,
+    backend: BackendKind,
 }
 
 impl TestEnv {
@@ -26,13 +37,22 @@ impl TestEnv {
     pub fn path(&self, rel: &str) -> PathBuf {
         self.root().join(rel)
     }
+
+    /// The version-control fixture this environment emulates.
+    pub fn backend(&self) -> BackendKind {
+        self.backend
+    }
 }
 
 /// A bare temp directory with no `givn/` subtree — for the uninitialised
 /// project scenario. Do NOT run `givn init` here.
 pub fn make_bare_root() -> TestEnv {
     let dir = TempDir::new().expect("create bare temp dir");
-    TestEnv { dir }
+    TestEnv {
+        dir,
+        fossil_repo: None,
+        backend: BackendKind::Git,
+    }
 }
 
 /// The default fixture: a temp directory with `givn init` already run, so
@@ -49,6 +69,15 @@ pub fn make_bare_root() -> TestEnv {
 pub fn make_init_root() -> TestEnv {
     let env = make_init_root_without_git();
     git_init(&env);
+    env
+}
+
+/// An initialized fixture whose project root is a real Fossil checkout.
+pub fn make_fossil_root() -> TestEnv {
+    let mut env = make_init_root_without_git();
+    env.backend = BackendKind::Fossil;
+    env.fossil_repo = Some(TempDir::new().expect("create fossil repo temp dir"));
+    fossil_init(&env);
     env
 }
 
@@ -282,7 +311,9 @@ pub fn run_givn_with_envs_in(
         .current_dir(cwd)
         // Runner-scoped variables describe the outer suite invocation and
         // must never leak into fixture projects.
-        .env_remove("GIVN_FEATURES");
+        .env_remove("GIVN_FEATURES")
+        // Fossil refuses to commit without a user; Git fixtures ignore it.
+        .env("FOSSIL_USER", "fixture");
     for (key, value) in environments {
         command.env(key, value);
     }
@@ -399,7 +430,73 @@ pub fn git_commit_all(env: &TestEnv, message: &str) {
 /// The archive starts from a committed state, so generic fixtures emulate
 /// the developer's commit; dirty-tree scenarios invoke `givn` directly.
 pub fn commit_fixture(env: &TestEnv) {
-    if is_git_repo(env) {
-        git_commit_all(env, "fixture: archive input");
+    match env.backend {
+        BackendKind::Git => {
+            if is_git_repo(env) {
+                git_commit_all(env, "fixture: archive input");
+            }
+        }
+        BackendKind::Fossil => fossil_commit_all(env, "fixture: archive input"),
     }
+}
+
+// ─── Fossil fixtures ───────────────────────────────────────────────────────
+
+/// Run a Fossil command in the fixture root with a deterministic user.
+pub fn fossil(env: &TestEnv, args: &[&str]) -> Output {
+    Command::new("fossil")
+        .args(args)
+        .current_dir(env.root())
+        .env("FOSSIL_USER", "fixture")
+        .env("USER", "fixture")
+        .output()
+        .expect("spawn fossil subprocess")
+}
+
+/// Turn the fixture into a real Fossil checkout and commit its initial state.
+pub fn fossil_init(env: &TestEnv) {
+    let repo = env
+        .fossil_repo
+        .as_ref()
+        .expect("a fossil repo temp dir")
+        .path()
+        .join("repo.fossil");
+    let repo = repo.to_string_lossy().into_owned();
+    let init = fossil(env, &["init", &repo]);
+    assert!(
+        init.status.success(),
+        "fossil init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    let open = fossil(env, &["open", "-f", &repo]);
+    assert!(
+        open.status.success(),
+        "fossil open failed: {}",
+        String::from_utf8_lossy(&open.stderr)
+    );
+    // Tests rewrite files within the same second; disable the mtime shortcut
+    // so Fossil always hashes and never reports a stale check-out.
+    let settings = fossil(env, &["settings", "mtime-changes", "off"]);
+    assert!(
+        settings.status.success(),
+        "fossil settings failed: {}",
+        String::from_utf8_lossy(&settings.stderr)
+    );
+    fossil_commit_all(env, "fixture: initial state");
+}
+
+/// Record all pending fixture writes and commit them.
+pub fn fossil_commit_all(env: &TestEnv, message: &str) {
+    let add = fossil(env, &["addremove"]);
+    assert!(
+        add.status.success(),
+        "fossil addremove failed: {}",
+        String::from_utf8_lossy(&add.stderr)
+    );
+    let commit = fossil(env, &["commit", "--allow-empty", "-m", message]);
+    assert!(
+        commit.status.success(),
+        "fossil commit failed: {}",
+        String::from_utf8_lossy(&commit.stderr)
+    );
 }

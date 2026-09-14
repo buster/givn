@@ -349,8 +349,9 @@ pub fn prepare_managed_upgrade(
     commit_message: &str,
 ) -> Result<Option<String>> {
     let backend = crate::scm::select(project_root)?;
+    backend.require_managed_upgrade_support()?;
     if !backend.dirty_entries()?.is_empty() {
-        bail!("automatic managed upgrade requires a clean Git worktree; no files were changed");
+        bail!("automatic managed upgrade requires a clean checkout; no files were changed");
     }
 
     let managed_paths = crate::skills::targets::managed_generated_paths(project_root)?;
@@ -685,6 +686,7 @@ fn commit_migration_plan(
     change_id: &str,
 ) -> Result<String> {
     let backend = crate::scm::select(project_root)?;
+    backend.require_managed_upgrade_support()?;
     let relative = relative_managed_paths(project_root, [migration_dir.to_path_buf()])?;
     backend
         .stage_paths(&relative, true)

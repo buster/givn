@@ -21,6 +21,49 @@ fn ready_change(world: &mut GivnWorld, id: String) {
     support::ready_change(world, &id, false, "pass");
 }
 
+#[given(regex = r#"^a (Git|Fossil) project with a completed change "([^"]+)" ready to archive$"#)]
+fn backend_ready_change(world: &mut GivnWorld, backend: String, id: String) {
+    support::ready_change_on(world, support::backend_kind(&backend), &id, false, "pass");
+}
+
+#[then("the candidate revision is published")]
+fn candidate_revision_published(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    assert!(
+        support::revision_contains(world, &format!("givn/archive/{id}/verification.json")),
+        "the candidate revision does not contain the pending receipt; stderr: {}",
+        crate::steps::stderr(world)
+    );
+}
+
+#[then("the candidate revision contains exactly the merged corpus paths")]
+fn candidate_revision_exact_paths(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let prefixes = [
+        "givn/specs/".to_string(),
+        format!("givn/archive/{id}/"),
+        format!("givn/changes/{id}/"),
+    ];
+    let paths = support::revision_paths(world);
+    assert!(!paths.is_empty(), "the candidate revision changed no paths");
+    for path in &paths {
+        assert!(
+            prefixes.iter().any(|prefix| path.starts_with(prefix)),
+            "the candidate revision contains a path outside the merged corpus: {path}"
+        );
+    }
+    assert!(
+        paths.iter().any(|path| path.starts_with("givn/specs/")),
+        "the candidate revision does not contain the merged permanent specs"
+    );
+    assert!(
+        paths
+            .iter()
+            .any(|path| path == &format!("givn/archive/{id}/verification.json")),
+        "the candidate revision does not contain the pending receipt"
+    );
+}
+
 #[given(
     regex = r#"^a givn project with a completed change "([^"]+)" whose delta adds an @e2e scenario$"#
 )]
@@ -573,7 +616,7 @@ fn set_runner_kind(world: &mut GivnWorld, kind: &str) {
     support::ensure_env(world);
     let env = support::env(world);
     support::write_result_runner(env, kind);
-    common::git_commit_all(env, "fixture: runner change");
+    common::commit_fixture(env);
 }
 
 fn read_permanent_specs(world: &GivnWorld) -> String {
