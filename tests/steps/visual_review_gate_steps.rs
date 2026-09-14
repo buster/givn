@@ -157,8 +157,11 @@ fn has_empty_state_screenshot(
 }
 
 #[given(regex = r##"^the change's review\.md declares the persona disposition "(.*)"$"##)]
-fn review_md_persona_disposition(_world: &mut GivnWorld, _value: String) {
-    unimplemented!()
+fn review_md_persona_disposition(world: &mut GivnWorld, value: String) {
+    let review = format!(
+        "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n\nVISUAL-REVIEW: PASS\n\nPERSONAS: {value}\n"
+    );
+    std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }
 
 #[given("the change's review.md declares no persona disposition")]
