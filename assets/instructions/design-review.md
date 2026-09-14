@@ -38,6 +38,7 @@ Required branches — cover every one (or explicitly record "no issue found"):
   equivalent rendered reference) and the user approves one; the approved
   direction is recorded in `design.md`. Without an approved contract,
   design-review does not sign off.
+- **Interface classification** — test the opposite classification before accepting a non-browser interface: a screen rendered in a browser is a Web UI, so a design that declares no browser driver must say why the opposite does not hold.
 - **ADR qualification** — delegate the complete qualification procedure to the
   canonical Arc42 addon instruction by running `givn instructions arc42-docs
   --change <id>`. Check only candidates whose structured verdict has all

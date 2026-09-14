@@ -42,7 +42,7 @@ Feature: Visual Design Contract
     And stdout contains "CLI text"
     And stdout contains "reason"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design-review guidance tests the opposite interface classification
     Given a givn project
     When the user runs `givn instructions design-review --change visual-design-contract`
