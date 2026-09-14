@@ -10,7 +10,7 @@ Feature: Visual Design Contract
     And stdout contains "even when it needs only a page request"
     And stdout contains "no controls"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance names the default browser driver
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`

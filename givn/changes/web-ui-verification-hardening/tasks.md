@@ -168,24 +168,29 @@ negative counterpart; the negative scenario is the RED driver.
 
 ### visual-design-contract
 
-- [ ] Scenario: `Design guidance classifies a browser-rendered screen as a Web UI`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Design guidance classifies a browser-rendered screen as a Web UI`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "renders HTML, CSS, or JavaScript in a browser"
+        exit status: 1
         ```
-  - [ ] GREEN: added the fail-closed classification to
-        `assets/instructions/design.md` and
-        `assets/skills/givn-design/SKILL.md.tmpl`. Files:
-        `assets/instructions/design.md`,
-        `assets/skills/givn-design/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the fail-closed classification to
+        `assets/instructions/design.md`. Files: `assets/instructions/design.md`.
+        Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): Design guidance classifies a browser-rendered screen as a Web UI`
+  - [x] COMMIT: `b82fe9b5` -- `feat(visual-design-contract): Design guidance classifies a browser-rendered screen as a Web UI`
 
 - [ ] Scenario: `Design guidance names the default browser driver`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:

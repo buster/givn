@@ -110,6 +110,10 @@ not the pixels.
 Record `- Interface: web` for it even when it needs only a page request and exposes no controls.
 `- Interface: none` is reserved for a change with no rendered screen.
 
+**Default browser driver:** Playwright is the default browser driver.
+Resolve the current Playwright version at design time and record the source (see Version freshness); givn does not pin a version.
+Selenium or WebDriverIO are acceptable only when the design justifies the choice.
+
 - **design tokens**: color roles, spacing scale, typography scale, radii,
   elevation.
 - **Component primitives**: each primitive with its component states —
