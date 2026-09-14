@@ -180,6 +180,8 @@ desktop in Full HD (1920x1080 CSS pixels). Screenshots are captured after the
 final assertion with animations frozen and fonts and network settled;
 intermediate captures are debug artifacts, not review evidence.
 
+When the design's `## Visual Design Contract` declares UI states, every `@e2e` scenario commits one screenshot per viewport for the state it traverses: the final state as `<viewport>.png`, and each additional declared state as `<viewport>--<state>.png` (for example the empty, loading, or error state).
+
 For a Web UI, every `@e2e` scenario asserts the visual baseline at every
 interaction, in addition to its primary assertion:
 

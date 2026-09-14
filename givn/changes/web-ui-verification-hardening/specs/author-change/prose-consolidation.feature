@@ -19,7 +19,7 @@ Feature: prose-consolidation
     And stdout contains "changes between two observations"
     And stdout contains "static heading"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy requires evidence for every declared UI state
     Given a givn project
     When the user runs `givn instructions specs --change prose-consolidation`
