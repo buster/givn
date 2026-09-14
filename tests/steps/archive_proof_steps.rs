@@ -173,6 +173,25 @@ fn unproven_candidate_failed_suite(world: &mut GivnWorld, id: String) {
     world.last_change_id = Some(id);
 }
 
+#[given(
+    regex = r#"^an unproven archive candidate "([^"]+)" in a (Git|Fossil) project whose full suite failed$"#
+)]
+fn backend_unproven_candidate_failed_suite(world: &mut GivnWorld, id: String, backend: String) {
+    support::ready_change_on(world, support::backend_kind(&backend), &id, false, "fail");
+    let out = support::run_archive(world, &id);
+    assert!(
+        !out.status.success(),
+        "fixture archive unexpectedly succeeded: {}",
+        String::from_utf8_lossy(&out.stdout)
+    );
+    world.last_change_id = Some(id);
+}
+
+#[then("the verification receipt names the repaired revision")]
+fn receipt_names_repaired_revision(world: &mut GivnWorld) {
+    receipt_names_tested_commit(world);
+}
+
 #[given(regex = r#"^an unproven archive candidate "([^"]+)" whose coverage gate failed$"#)]
 fn unproven_candidate_failed_coverage(world: &mut GivnWorld, id: String) {
     support::ensure_env(world);
@@ -195,7 +214,7 @@ fn unproven_candidate_failed_coverage(world: &mut GivnWorld, id: String) {
 #[given("the developer commits a repair")]
 fn developer_commits_repair(world: &mut GivnWorld) {
     let env = support::env(world);
-    common::git_commit_all(env, "fix: repair the candidate");
+    common::commit_fixture(env);
 }
 
 #[given("the full suite now passes against the merged permanent specs")]
@@ -484,8 +503,7 @@ fn receipt_names_tested_commit(world: &mut GivnWorld) {
         .expect("a change id is required");
     let receipt = support::receipt(world, &id);
     let tested = receipt["tested_commit"].as_str().unwrap_or_default();
-    let parent = common::git(support::env(world), &["rev-parse", "HEAD~1"]);
-    let parent = String::from_utf8_lossy(&parent.stdout).trim().to_string();
+    let parent = support::parent_revision(world);
     assert_eq!(tested, parent);
 }
 

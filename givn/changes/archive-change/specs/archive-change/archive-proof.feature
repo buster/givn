@@ -21,7 +21,7 @@ Feature: Archive Proof
       | Git     |
       | Fossil  |
 
-  @givn.modified @wip
+  @givn.modified
   Scenario Outline: Repairing a failed candidate forward proves it without repeating the merge
     Given  an unproven archive candidate "proof-demo" in a <backend> project whose full suite failed
     And  the developer commits a repair
