@@ -323,7 +323,10 @@ pub(crate) fn parent_revision(world: &GivnWorld) -> String {
 pub(crate) fn fossil_latest_comment(env: &common::TestEnv) -> String {
     let out = common::fossil(
         env,
-        &["sql", "select comment from event where type='ci' order by mtime desc limit 1"],
+        &[
+            "sql",
+            "select comment from event where type='ci' order by mtime desc limit 1",
+        ],
     );
     assert!(
         out.status.success(),
