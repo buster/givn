@@ -606,6 +606,20 @@ fn candidate_state_committed(world: &mut GivnWorld) {
     );
 }
 
+#[then("the merged state is present in the checkout but not committed")]
+fn merged_state_in_checkout_uncommitted(world: &mut GivnWorld) {
+    let id = world.last_change_id.clone().expect("a change id");
+    let dirty = support::dirty_entries(world);
+    assert!(
+        dirty.iter().any(|path| path.starts_with("givn/specs/")),
+        "the merged state is not present in the checkout: {dirty:?}"
+    );
+    assert!(
+        !support::revision_contains(world, &format!("givn/archive/{id}/verification.json")),
+        "the merged state was committed despite the rejected hook"
+    );
+}
+
 #[then("the merged state is staged but not committed")]
 fn merged_state_staged(world: &mut GivnWorld) {
     let id = world

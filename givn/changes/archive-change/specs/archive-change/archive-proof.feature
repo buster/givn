@@ -86,7 +86,7 @@ Feature: Archive Proof
       | Git     |
       | Fossil  |
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rejected candidate revision on Git leaves the merge staged
     Given  a givn project with a completed change "proof-demo" ready to archive
     And  a commit hook rejects the archive candidate revision
