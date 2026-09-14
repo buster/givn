@@ -360,22 +360,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `3b3741df` -- `feat(visual-design-contract): Design-review guidance requires an operator question before a deferral`
 
-- [ ] Scenario: `Proposal guidance requires confirmed personas or a reasoned none`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Proposal guidance requires confirmed personas or a reasoned none`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "user-visible"
+        exit status: 1
         ```
-  - [ ] GREEN: added the persona confirmation rule to
-        `assets/instructions/proposal.md` and
-        `assets/skills/givn-propose/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the persona confirmation rule to
+        `assets/instructions/proposal.md`. Files:
+        `assets/instructions/proposal.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): Proposal guidance requires confirmed personas or a reasoned none`
+  - [x] COMMIT: `9d93318f` -- `feat(visual-design-contract): Proposal guidance requires confirmed personas or a reasoned none`
 
 - [ ] Scenario: `The design template carries the state, breakpoint, and accessibility lines`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
