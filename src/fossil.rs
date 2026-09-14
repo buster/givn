@@ -101,6 +101,11 @@ impl FossilCheckout {
     /// the caller allows it rather than detected from a refusal.
     pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
         for path in paths {
+            // A managed path that does not exist in this checkout (for
+            // example a Git-only hook file) has nothing to record.
+            if !self.root.join(path).exists() {
+                continue;
+            }
             let mut args: Vec<&str> = vec!["add"];
             if force {
                 args.push("--force");
@@ -111,6 +116,12 @@ impl FossilCheckout {
             self.run_checked(&args)?;
         }
         Ok(())
+    }
+
+    /// Record every pending change (new, edited, and removed files) for the
+    /// next commit.
+    pub fn record_all_changes(&self) -> Result<()> {
+        self.run_checked(&["addremove"])
     }
 
     /// Whether the checkout holds pending changes. Fossil has no index; the

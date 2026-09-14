@@ -491,6 +491,16 @@ pub fn fossil_checkout(env: &TestEnv) {
     );
 }
 
+/// A bare Fossil checkout (no `givn/` scaffold yet) for scenarios that run
+/// `givn init` inside an existing checkout.
+pub fn make_fossil_root_bare() -> TestEnv {
+    let mut env = make_bare_root();
+    env.backend = BackendKind::Fossil;
+    env.fossil_repo = Some(TempDir::new().expect("create fossil repo temp dir"));
+    fossil_checkout(&env);
+    env
+}
+
 /// An initialized fixture with a real Fossil checkout whose scaffold is not
 /// recorded yet; the caller stages and commits (optionally after setting an
 /// ignore-glob so generated agent files stay unmanaged).
