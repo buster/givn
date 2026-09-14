@@ -112,8 +112,11 @@ fn review_md_no_verdict(world: &mut GivnWorld) {
 }
 
 #[given(regex = r##"^the change's design\.md declares the UI states "([^"]+)"$"##)]
-fn design_declares_ui_states(_world: &mut GivnWorld, _states: String) {
-    unimplemented!()
+fn design_declares_ui_states(world: &mut GivnWorld, states: String) {
+    let path = change_dir(world).join("design.md");
+    let mut design = std::fs::read_to_string(&path).expect("read design.md");
+    design.push_str(&format!("- States: {states}\n"));
+    std::fs::write(&path, design).expect("write design.md");
 }
 
 #[given(regex = r##"^the change has final-state screenshots for "([^"]+)" at both viewports$"##)]

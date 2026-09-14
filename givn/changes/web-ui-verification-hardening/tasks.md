@@ -582,22 +582,31 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `059e832a` -- `feat(visual-review-gate): Review guidance records the persona disposition`
 
-- [ ] Scenario: `Review guidance names the state screenshots the vision review saw`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Review guidance names the state screenshots the vision review saw`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "state screenshots the review saw"
+        exit status: 1
         ```
-  - [ ] GREEN: added the state-screenshot naming rule to
-        `assets/instructions/review.md`, `assets/skills/givn-review/SKILL.md.tmpl`,
-        and `assets/skills/givn-steps/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the state-screenshot naming rule to
+        `assets/instructions/review.md` and the state capture convention to
+        `assets/skills/givn-steps/SKILL.md.tmpl`. Files:
+        `assets/instructions/review.md`,
+        `assets/skills/givn-steps/SKILL.md.tmpl`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): Review guidance names the state screenshots the vision review saw`
+  - [x] COMMIT: `148a2a93` -- `feat(visual-review-gate): Review guidance names the state screenshots the vision review saw`
 
 - [ ] Scenario: `A web contract with missing state evidence fails review`
   - [ ] RED: removed `@wip` for this scenario only; added the fixture steps

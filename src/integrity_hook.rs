@@ -83,6 +83,7 @@ fn check_readme_impact(change_dir: &Path) -> Result<()> {
 pub struct VisualContract {
     pub interface: VisualInterface,
     pub viewports: Vec<String>,
+    pub states: Vec<String>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -112,6 +113,7 @@ pub fn parse_visual_contract(design: &str) -> Option<VisualContract> {
 
     let mut interface = VisualInterface::None;
     let mut viewports = Vec::new();
+    let mut states = Vec::new();
     for line in &lines[start + 1..end] {
         let trimmed = line.trim();
         if let Some(value) = trimmed.strip_prefix("- Interface:") {
@@ -133,11 +135,18 @@ pub fn parse_visual_contract(design: &str) -> Option<VisualContract> {
                 })
                 .filter(|name| !name.is_empty())
                 .collect();
+        } else if let Some(value) = trimmed.strip_prefix("- States:") {
+            states = value
+                .split(',')
+                .map(|entry| entry.trim().to_lowercase())
+                .filter(|name| !name.is_empty())
+                .collect();
         }
     }
     Some(VisualContract {
         interface,
         viewports,
+        states,
     })
 }
 
@@ -286,6 +295,26 @@ fn check_visual_evidence(change_dir: &Path, contract: &VisualContract) -> Result
                              '{viewport}' (expected {})",
                             path.display()
                         ));
+                    }
+                }
+                if !titles.is_empty() {
+                    for state in &contract.states {
+                        for viewport in &contract.viewports {
+                            let found = titles.iter().any(|candidate| {
+                                is_non_empty_file(
+                                    &evidence_root
+                                        .join(scenario_slug(candidate))
+                                        .join(format!("{viewport}--{state}.png")),
+                                )
+                            });
+                            if !found {
+                                errors.push(format!(
+                                    "visual state evidence missing for state '{state}' at viewport \
+                                     '{viewport}' (expected a non-empty {viewport}--{state}.png \
+                                     under evidence/visual/<scenario-slug>/)"
+                                ));
+                            }
+                        }
                     }
                 }
             }
@@ -738,12 +767,9 @@ mod tests {
     }
 
     #[test]
-    fn real_change_design_with_fenced_example_is_exempt() {
-        let path = std::path::Path::new("givn/changes/visual-ui-review/design.md");
-        if path.exists() {
-            let design = std::fs::read_to_string(path).unwrap();
-            assert!(parse_visual_contract(&design).is_none());
-        }
+    fn fenced_contract_example_with_states_is_ignored() {
+        let design = "# Design\n\n```\n## Visual Design Contract\n\n- Interface: web\n- Viewports: mobile (360x780)\n- States: empty\n```\n";
+        assert_eq!(parse_visual_contract(design), None);
     }
 
     #[test]
@@ -752,6 +778,78 @@ mod tests {
         let contract = parse_visual_contract(design).unwrap();
         assert_eq!(contract.interface, VisualInterface::Web);
         assert_eq!(contract.viewports, vec!["mobile", "desktop"]);
+        assert!(contract.states.is_empty());
+    }
+
+    #[test]
+    fn states_are_parsed_and_optional() {
+        let with_states = "## Visual Design Contract\n\n- Interface: web\n- Viewports: mobile (360x780)\n- States: empty, loading, error\n";
+        let contract = parse_visual_contract(with_states).unwrap();
+        assert_eq!(contract.states, vec!["empty", "loading", "error"]);
+
+        let empty_line = "## Visual Design Contract\n\n- Interface: web\n- Viewports: mobile (360x780)\n- States:\n";
+        assert!(parse_visual_contract(empty_line).unwrap().states.is_empty());
+    }
+
+    fn write_web_contract_with_states(change: &std::path::Path, states: &str) {
+        let design = format!(
+            "## Visual Design Contract\n\n- Interface: web\n- Viewports: mobile (360x780), desktop (1920x1080)\n- States: {states}\n"
+        );
+        std::fs::write(change.join("design.md"), design).unwrap();
+    }
+
+    fn write_delta_e2e(change: &std::path::Path, title: &str) {
+        let specs = change.join("specs/fixture");
+        std::fs::create_dir_all(&specs).unwrap();
+        let feature = format!(
+            "@givn.delta @fixture\n\nFeature: Fixture\n\n  @givn.added @e2e\n  Scenario: {title}\n    Given a\n    When b\n    Then c\n"
+        );
+        std::fs::write(specs.join("fixture.feature"), feature).unwrap();
+    }
+
+    fn write_evidence(change: &std::path::Path, title: &str, file: &str) {
+        let path = change
+            .join("evidence/visual")
+            .join(scenario_slug(title))
+            .join(file);
+        std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+        std::fs::write(path, b"bytes").unwrap();
+    }
+
+    #[test]
+    fn declared_states_require_evidence_per_viewport() {
+        let (_dir, change) = make_change_dir();
+        write_web_contract_with_states(&change, "empty, loading");
+        write_delta_e2e(&change, "Consumer opens the dashboard");
+        write_evidence(&change, "Consumer opens the dashboard", "mobile.png");
+        write_evidence(&change, "Consumer opens the dashboard", "desktop.png");
+        let design = std::fs::read_to_string(change.join("design.md")).unwrap();
+        let contract = parse_visual_contract(&design).unwrap();
+        assert!(check_visual_evidence(&change, &contract).is_err());
+
+        write_evidence(&change, "Consumer opens the dashboard", "mobile--empty.png");
+        write_evidence(&change, "Consumer opens the dashboard", "desktop--empty.png");
+        write_evidence(&change, "Consumer opens the dashboard", "mobile--loading.png");
+        write_evidence(&change, "Consumer opens the dashboard", "desktop--loading.png");
+        assert!(check_visual_evidence(&change, &contract).is_ok());
+    }
+
+    #[test]
+    fn empty_state_evidence_file_counts_as_missing() {
+        let (_dir, change) = make_change_dir();
+        write_web_contract_with_states(&change, "empty");
+        write_delta_e2e(&change, "Consumer opens the dashboard");
+        write_evidence(&change, "Consumer opens the dashboard", "mobile.png");
+        write_evidence(&change, "Consumer opens the dashboard", "desktop.png");
+        write_evidence(&change, "Consumer opens the dashboard", "mobile--empty.png");
+        let empty = change
+            .join("evidence/visual")
+            .join(scenario_slug("Consumer opens the dashboard"))
+            .join("desktop--empty.png");
+        std::fs::write(empty, b"").unwrap();
+        let design = std::fs::read_to_string(change.join("design.md")).unwrap();
+        let contract = parse_visual_contract(&design).unwrap();
+        assert!(check_visual_evidence(&change, &contract).is_err());
     }
 
     #[test]
