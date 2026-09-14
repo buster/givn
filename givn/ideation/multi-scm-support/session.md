@@ -80,3 +80,11 @@ suggested order: `scm-backend` (prerequisite), `archive-change`,
   hook as a fallback.
 - Three personas: primary user, technical role, givn maintainer; audience
   dropped.
+
+## Completion (2026-09-15)
+
+All seven change seeds are implemented, reviewed, and archived with proven
+verification receipts: scm-backend, archive-change, maintain-project,
+author-change, verify-change, inspect-change-state, operate-product. The
+durable record of implementation assumptions is
+`givn/ideation/multi-scm-support/assumptions.md` (A1-A19).
