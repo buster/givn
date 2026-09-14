@@ -55,6 +55,11 @@ the artifacts named under "Impact".
 - Chosen: operator decision, + states.
 - Impact: `assets/instructions/specs.md`, `assets/instructions/design.md`,
   `assets/skills/givn-steps/SKILL.md.tmpl`, gate evidence check.
+- Enforcement split: the guidance states the per-scenario intent; the gate
+  proves per declared state and viewport that evidence exists at all, because
+  the binary cannot know which scenario traverses which state. The review
+  instruction names the state screenshots the review saw. This boundary is
+  also recorded in design.md and chapter 11 (D-19).
 
 ## A6 — Persona requirement boundary (F4)
 
@@ -95,3 +100,61 @@ the artifacts named under "Impact".
   hash recorded in `tasks.md`, per the project workflow.
 - Chosen: project rule, no alternative.
 - Impact: git history.
+
+## A10 — Positive/negative gate scenario pairing
+
+- Assumption: the positive gate scenarios (complete state evidence, confirmed
+  persona, operator decision) cannot fail RED on their own; each is paired
+  with its negative counterpart in one task, where the negative drives the
+  production change and the positive proves the complete artifact passes.
+- Options: (a) pair them in one task; (b) mark them fixture-coupled and
+  forbid a commit until the paired production code lands; (c) make positives
+  assert a new observable only the new code produces.
+- Chosen: (a), because the gate outcome is binary and the negative scenario
+  is the honest RED driver.
+- Impact: `tasks.md` structure, review evidence.
+
+## A11 — Deferral and persona marker parsing
+
+- Assumption: both marker checks ignore fenced code blocks, so the review
+  template may scaffold examples inside a fence; a compliant change omits
+  `DEFERRAL:`/`OPERATOR-DECISION:` entirely when nothing is deferred, and
+  `PERSONAS:` must be a real line outside a fence.
+- Options: (a) strip fences; (b) treat the raw text and require no scaffold;
+  (c) add a `DEFERRAL: none` sentinel.
+- Chosen: (a). It keeps the template instructive without making the scaffold
+  itself pass or trigger a check.
+- Impact: `check_deferrals`, `check_persona_disposition`,
+  `assets/templates/review.md`, review instructions.
+
+## A12 — Persona rule vs this change's own `none`
+
+- Assumption: the change itself records `Confirmed Personas: none` because
+  givn's owning use cases declare no personas and inventing one is forbidden;
+  the operator's instruction to proceed is recorded here and the disposition
+  must be revisited after the change.
+- Options: (a) record `none` with the reason and flag it; (b) invent a
+  persona; (c) stop and ask the operator now.
+- Chosen: (a). Option (b) violates the no-invention rule; option (c)
+  contradicts the operator's explicit instruction to assume and record.
+- Impact: `proposal.md`, `design.md`, `review.md`, this file.
+
+## A13 — Classification wording in the matrix
+
+- Assumption: the matrix guidance links classification and driver with the
+  phrases "is a Web UI row" and "needs a browser driver"; the existing
+  "NOT a valid driving mechanism" sentence stays.
+- Options: keep the existing matrix rule unchanged (no new RED); add the
+  classification link (chosen); restructure the matrix section.
+- Chosen: add the link, so the scenario has a fail-first assertion and the
+  rule is stated in one place.
+- Impact: `assets/instructions/design.md`, `assets/skills/givn-design/SKILL.md.tmpl`.
+
+## A14 — Empty `- States:` line
+
+- Assumption: an empty `- States:` value yields no declared states, so no
+  state evidence is required; the unit tests cover the parser behavior.
+- Options: (a) treat empty as an error; (b) treat empty as "no states".
+- Chosen: (b). A contract that names no state has no state evidence to
+  require; naming a state with an empty file still fails.
+- Impact: `parse_visual_contract`, unit tests.

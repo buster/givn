@@ -14,7 +14,7 @@
 | 8 | 08 crosscutting-concepts | Yes | The visual review discipline gains fail-closed classification, per-state evidence, persona disposition, and the deferral decision. | Section 8.17 is extended. |
 | 9 | 09 architecture-decisions | Yes | The new mandatory checks extend ADR-028's boundary; a refinement amends ADR-028 rather than creating a new record. | Chapter 09 records the third ADR-028 amendment. |
 | 10 | 10 quality-requirements | Yes | New gate-safety quality scenarios for state evidence, persona disposition, deferral, and classification. | Q-88 to Q-91. |
-| 11 | 11 risks-and-technical-debt | Yes | New risks: marker-only persona evidence, omitted deferrals, state-evidence growth; new guidance-level debt. | R-60 to R-62 and D-19. |
+| 11 | 11 risks-and-technical-debt | Yes | New risks: marker-only persona evidence, omitted deferrals, state-evidence growth; new guidance-level debt; R-57's evidence scope is revised. | R-57 revised; R-60 to R-62 and D-19 added. |
 | 12 | 12 glossary | Yes | New domain terms and invariants. | Web UI classification, UI state evidence, Persona disposition, Deferral decision, and the extended visual-review invariants. |
 
 ## Notes
@@ -31,6 +31,36 @@
 
 ADR action: AMEND_ADR
 ADR target: ADR-028
+
+### Qualification verdict
+
+qualification: QUALIFIED
+alternatives: PASS
+architectural_impact: PASS
+durable_consequence: PASS
+lower_level_artifact: PASS
+existing_adr_check: PASS
+must_be_shared: SUPPORTING
+routing: AMEND_ADR
+canonical_artifact: null
+target_adr: ADR-028
+replacement_adr: null
+
+- alternatives: the new checks can run inside the non-deactivatable integrity
+  member (chosen) or as removable `post` hooks (rejected by the ADR-028
+  boundary).
+- architectural_impact: the decision fixes which checks no `post` entry may
+  disable.
+- durable_consequence: reversal would move checks back out of the integrity
+  member and re-open the boundary the ADR exists to close.
+- lower_level_artifact: the check semantics live in `design.md` and the
+  review guidance; only the boundary membership belongs to ADR-028.
+- existing_adr_check: the active and archived registers were searched; ADR-028
+  is the matching boundary and already carries two amendments of the same
+  kind, so a new record would duplicate it.
+
+The amendment is recorded in chapter 09 and in the ADR-028 body's Decision
+Outcome, consistent with the two prior amendments.
 
 ---
 

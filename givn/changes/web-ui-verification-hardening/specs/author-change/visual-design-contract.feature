@@ -7,7 +7,7 @@ Feature: Visual Design Contract
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`
     Then stdout contains "renders HTML, CSS, or JavaScript in a browser"
-    And stdout contains "Interface: web"
+    And stdout contains "even when it needs only a page request"
     And stdout contains "no controls"
 
   @givn.added @wip
@@ -25,14 +25,14 @@ Feature: Visual Design Contract
     Then stdout contains "Breakpoints"
     And stdout contains "contrast"
     And stdout contains "keyboard focus"
-    And stdout contains "semantics"
+    And stdout contains "how each is verified"
 
   @givn.added @wip
   Scenario: Design guidance requires a driver for every Web UI matrix row
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`
-    Then stdout contains "browser driver"
-    And stdout contains "not a valid driving mechanism"
+    Then stdout contains "is a Web UI row"
+    And stdout contains "needs a browser driver"
 
   @givn.added @wip
   Scenario: Design guidance names the user-visible persona boundary
@@ -55,8 +55,7 @@ Feature: Visual Design Contract
     Given a givn project
     When the user runs `givn instructions design-review --change visual-design-contract`
     Then stdout contains "per persona"
-    And stdout contains "relevance"
-    And stdout contains "evidence"
+    And stdout contains "relevance and evidence"
     And stdout contains "operator confirmation"
 
   @givn.added @wip

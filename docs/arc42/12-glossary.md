@@ -129,7 +129,7 @@
 | **UI state evidence** | The committed `<viewport>--<state>.png` screenshots for each UI state a contract declares (empty, loading, error), in addition to the final-state screenshot. Anti-term: state dump. |
 | **Visual baseline** | The mechanical checks asserted at every visual interaction: labeled controls, no internal identifiers in visible text, a real page title and heading, no duplicated visible content, a designed error state, the configured language, and reduced-motion. Anti-term: UI checklist. |
 | **Visual verdict** | The review's explicit machine-checkable outcome for a visual change: `VISUAL-REVIEW: PASS` or `VISUAL-REVIEW: UNVERIFIED`. Anti-term: visual review note. |
-| **Persona disposition** | The review's record, as a `PERSONAS:` line, of the confirmed Persona that reviewed the rendered evidence — or the reasoned confirmation that no user-visible surface exists. Anti-term: persona note. |
+| **Persona disposition** | The review's record, as a `PERSONAS:` line, of the confirmed Persona that reviewed the rendered evidence; a declared visual interface requires at least one. Anti-term: persona note. |
 | **Deferral decision** | The operator's recorded approval (`OPERATOR-DECISION:`) that allows a mandatory check to be deferred when a project constraint conflicts with it; a `DEFERRAL:` without it fails review. Anti-term: waiver. |
 | **Style tile** | One rendered, concrete design option proposed to the user when no approved design exists. Anti-term: mockup (rejected as pixel-precise). |
 

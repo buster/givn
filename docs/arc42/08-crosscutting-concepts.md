@@ -514,10 +514,12 @@ The contract declares, in machine-readable lines before its prose:
 - `- States: empty, loading, error` for web — optional; when present, each
   declared state needs committed evidence;
 - `- Design system: docs/design/design-system.md` — the durable project style
-  source;
-- `- Evidence: givn/changes/<id>/evidence/visual/<scenario-slug>/<viewport>.png`
-  (web), `.../<viewport>--<state>.png` for each declared state, or
-  `.../<scenario-slug>/transcript.txt` (terminal).
+  source.
+
+The evidence path convention is fixed, not a parsed contract line:
+`givn/changes/<id>/evidence/visual/<scenario-slug>/<viewport>.png` (web),
+`.../<viewport>--<state>.png` for each declared state, or
+`.../<scenario-slug>/transcript.txt` (terminal).
 
 The canonical `specs` instruction owns the visual baseline: at every
 interaction, controls are labeled, no internal identifier or state name is
