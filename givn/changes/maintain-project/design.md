@@ -96,7 +96,6 @@ Executable scenarios in the change delta:
 ```text
 givn/changes/maintain-project/specs/maintain-project/release-0-3-0.feature
 givn/changes/maintain-project/specs/maintain-project/usecase.md
-givn/changes/maintain-project/specs/fragments/scm-backend-selection.feature
 ```
 
 The delta carries three scenarios: the migration e2e becomes a Git/Fossil
