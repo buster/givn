@@ -142,18 +142,22 @@ fn has_state_screenshots_both(world: &mut GivnWorld, title: String, states: Stri
 }
 
 #[given(regex = r##"^the change has a state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]
-fn has_state_screenshot(_world: &mut GivnWorld, _title: String, _viewport: String, _state: String) {
-    unimplemented!()
+fn has_state_screenshot(world: &mut GivnWorld, title: String, viewport: String, state: String) {
+    let path = evidence_path(world, &title, &format!("{viewport}--{state}.png"));
+    std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+    std::fs::write(&path, b"state screenshot bytes").expect("write screenshot");
 }
 
 #[given(regex = r##"^the change has an empty state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]
 fn has_empty_state_screenshot(
-    _world: &mut GivnWorld,
-    _title: String,
-    _viewport: String,
-    _state: String,
+    world: &mut GivnWorld,
+    title: String,
+    viewport: String,
+    state: String,
 ) {
-    unimplemented!()
+    let path = evidence_path(world, &title, &format!("{viewport}--{state}.png"));
+    std::fs::create_dir_all(path.parent().unwrap()).expect("create evidence dir");
+    std::fs::write(&path, b"").expect("write empty state screenshot");
 }
 
 #[given(regex = r##"^the change's review\.md declares the persona disposition "(.*)"$"##)]
