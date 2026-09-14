@@ -36,7 +36,7 @@ fn carries_proven_receipt(world: &mut GivnWorld, id: String) {
     let receipt = support::receipt(world, &id);
     assert_eq!(receipt["status"], "proven");
     assert!(
-        receipt["tested_commit"]
+        receipt["tested_revision"]
             .as_str()
             .is_some_and(|s| !s.is_empty()),
         "proven receipt does not name the tested commit: {receipt}"
