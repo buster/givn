@@ -23,10 +23,6 @@ impl FossilCheckout {
         }
     }
 
-    pub fn root(&self) -> &Path {
-        &self.root
-    }
-
     /// The displayed 40-hex identifier of the current checkout revision.
     pub fn revision(&self) -> Result<String> {
         let output = self.run(&["info"])?;
@@ -97,6 +93,39 @@ impl FossilCheckout {
             bail!("the commit was rejected: {}", stderr(&output));
         }
         self.revision()
+    }
+
+    /// Record exactly `paths` for the next commit. `force` is reserved for
+    /// the calculated managed allowlist: `fossil add` on an ignored path
+    /// exits 0 after an interactive prompt, so `--force` is passed whenever
+    /// the caller allows it rather than detected from a refusal.
+    pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
+        for path in paths {
+            let mut args: Vec<&str> = vec!["add"];
+            if force {
+                args.push("--force");
+            }
+            args.push("--");
+            let path = path.to_string_lossy();
+            args.push(&path);
+            self.run_checked(&args)?;
+        }
+        Ok(())
+    }
+
+    /// Whether the checkout holds pending changes. Fossil has no index; the
+    /// clean-state preflight bounds the pending set to the staged writes.
+    pub fn has_staged_changes(&self) -> Result<bool> {
+        Ok(!self.dirty_entries()?.is_empty())
+    }
+
+    /// Commit the pending changes.
+    pub fn commit_staged(&self, message: &str) -> Result<()> {
+        let output = self.run(&["commit", "-m", message])?;
+        if !output.status.success() {
+            bail!("the commit was rejected: {}", stderr(&output));
+        }
+        Ok(())
     }
 
     /// Whether `path` is present in the current revision.

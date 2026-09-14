@@ -455,6 +455,13 @@ pub fn fossil(env: &TestEnv, args: &[&str]) -> Output {
 
 /// Turn the fixture into a real Fossil checkout and commit its initial state.
 pub fn fossil_init(env: &TestEnv) {
+    fossil_checkout(env);
+    fossil_commit_all(env, "fixture: initial state");
+}
+
+/// Create the Fossil repository and open it in the fixture root without
+/// recording anything; the caller stages and commits.
+pub fn fossil_checkout(env: &TestEnv) {
     let repo = env
         .fossil_repo
         .as_ref()
@@ -482,7 +489,17 @@ pub fn fossil_init(env: &TestEnv) {
         "fossil settings failed: {}",
         String::from_utf8_lossy(&settings.stderr)
     );
-    fossil_commit_all(env, "fixture: initial state");
+}
+
+/// An initialized fixture with a real Fossil checkout whose scaffold is not
+/// recorded yet; the caller stages and commits (optionally after setting an
+/// ignore-glob so generated agent files stay unmanaged).
+pub fn make_fossil_root_uncommitted() -> TestEnv {
+    let mut env = make_init_root_without_git();
+    env.backend = BackendKind::Fossil;
+    env.fossil_repo = Some(TempDir::new().expect("create fossil repo temp dir"));
+    fossil_checkout(&env);
+    env
 }
 
 /// Record all pending fixture writes and commit them.
