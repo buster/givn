@@ -312,22 +312,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `d7fa4b6a` -- `feat(visual-design-contract): Design-review guidance tests the opposite interface classification`
 
-- [ ] Scenario: `Design-review guidance records the persona disposition`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Design-review guidance records the persona disposition`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "per persona"
+        exit status: 1
         ```
-  - [ ] GREEN: added the per-persona relevance and evidence rule to
-        `assets/instructions/design-review.md` and
-        `assets/skills/givn-design-review/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the per-persona relevance and evidence rule to
+        `assets/instructions/design-review.md`. Files:
+        `assets/instructions/design-review.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): Design-review guidance records the persona disposition`
+  - [x] COMMIT: `cc8bc2a4` -- `feat(visual-design-contract): Design-review guidance records the persona disposition`
 
 - [ ] Scenario: `Design-review guidance requires an operator question before a deferral`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
