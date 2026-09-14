@@ -120,6 +120,10 @@ assertion when the system exposes a higher-level consumer interface. Database
 state is a valid primary boundary only when the database itself is the public
 interface used by the consumer.
 
+**Web UI classification (fail-closed):** a capability whose interface renders HTML, CSS, or JavaScript in a browser is a Web UI — even when it needs only a page request, exposes no controls, and keeps no server-side state.
+For a Web UI the browser driver rule below applies, and an HTTP client is not a valid driver.
+The HTTP client is the real interface only for a pure REST/HTTP API.
+
 **Real-interface driving rule:** for a browser-UI capability, drive the actual
 browser through a real browser driver: click, type, navigate, and read the
 rendered page. An HTTP request to a backend route, or `fetch()`/
