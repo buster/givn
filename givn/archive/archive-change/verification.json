@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "archive-change",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_commit": "2c17eebf7dc9838334e7544a01293f92a19459a4",
+  "tested_commit": "2c17eebf7dc9838334e7544a01293f92a19459a4",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 86,
+      "passed": 86,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 8.674892508
+    },
+    "regular": {
+      "status": "passed",
+      "total": 490,
+      "passed": 490,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 35.551831414
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7187,
+    "line_valid": 9161,
+    "line_percent": 78
+  },
   "started_at_unix": 1789400668,
-  "finished_at_unix": null
+  "finished_at_unix": 1789400754
 }
