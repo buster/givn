@@ -885,6 +885,21 @@ fn final_register_has_forward_only_adr(world: &mut GivnWorld) {
     assert_eq!(proposed, 0, "unexpected proposed ADR count");
 }
 
+#[then("the final register has 28 accepted decisions and no proposed decisions")]
+fn final_register_has_witness_publication_adr(world: &mut GivnWorld) {
+    let register = guidance(world);
+    let accepted = register
+        .lines()
+        .filter(|line| line.contains("| accepted |"))
+        .count();
+    let proposed = register
+        .lines()
+        .filter(|line| line.contains("| proposed |"))
+        .count();
+    assert_eq!(accepted, 28, "unexpected accepted ADR count");
+    assert_eq!(proposed, 0, "unexpected proposed ADR count");
+}
+
 #[then("the final register has 27 accepted decisions and no proposed decisions")]
 fn final_register_has_scm_backend_adr(world: &mut GivnWorld) {
     let register = guidance(world);
