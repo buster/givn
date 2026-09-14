@@ -57,6 +57,18 @@ impl Worktree {
         Ok(parse_porcelain_z(&output.stdout))
     }
 
+    /// Stage every pending change (tracked and untracked).
+    pub fn stage_all(&self) -> Result<()> {
+        let output = run_git(&self.root, &["add", "-A"])?;
+        if !output.status.success() {
+            bail!(
+                "cannot stage the pending changes: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
     /// Stage exactly `paths` relative to the repository root. `force` is
     /// reserved for the calculated managed allowlist; it is never widened to
     /// a directory or the complete worktree.

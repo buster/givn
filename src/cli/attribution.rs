@@ -35,7 +35,33 @@ fn stamp_message_values(
 ) -> Result<()> {
     let original = std::fs::read_to_string(path)
         .with_context(|| format!("read commit message {}", path.display()))?;
-    let body = original
+    let stamped = stamp_text(&original, version, llm, reasoning, harness);
+    std::fs::write(path, stamped)
+        .with_context(|| format!("write commit message {}", path.display()))?;
+    Ok(())
+}
+
+/// `message` with the managed attribution trailer, when attribution context
+/// is active; the message unchanged otherwise. Existing managed trailers are
+/// replaced, so stamping is idempotent.
+pub fn stamped_message(message: &str) -> String {
+    if std::env::var_os("GIVN_ATTRIBUTION_ACTIVE").is_none() {
+        return message.to_string();
+    }
+    let llm = attribution_value("GIVN_ATTRIBUTION_LLM");
+    let reasoning = attribution_value("GIVN_ATTRIBUTION_REASONING");
+    let harness = attribution_value("GIVN_ATTRIBUTION_HARNESS");
+    stamp_text(
+        message,
+        env!("CARGO_PKG_VERSION"),
+        &llm,
+        &reasoning,
+        &harness,
+    )
+}
+
+fn stamp_text(message: &str, version: &str, llm: &str, reasoning: &str, harness: &str) -> String {
+    let body = message
         .lines()
         .filter(|line| !is_managed_trailer(line))
         .collect::<Vec<_>>()
@@ -43,11 +69,7 @@ fn stamp_message_values(
         .trim_end()
         .to_string();
 
-    let stamped =
-        format!("{body}\n\nCo-Authored-By: {llm}/{reasoning}@{harness} with Givn {version}\n",);
-    std::fs::write(path, stamped)
-        .with_context(|| format!("write commit message {}", path.display()))?;
-    Ok(())
+    format!("{body}\n\nCo-Authored-By: {llm}/{reasoning}@{harness} with Givn {version}\n",)
 }
 
 fn is_managed_trailer(line: &str) -> bool {

@@ -4,6 +4,7 @@
 //! piped stdin), persisting the selection in `givn/config.yaml`, and the
 //! `givn skills sync` target selection.
 
+use crate::common;
 use crate::steps::GivnWorld;
 use cucumber::{given, then, when};
 
@@ -173,4 +174,75 @@ fn consumer_runs(world: &mut GivnWorld, cmd: String) {
     }
     let out = crate::common::run_givn(env, &argv);
     world.last_output = Some(out);
+}
+
+#[given("a Fossil checkout without a givn/ directory")]
+fn given_fossil_checkout_without_givn(world: &mut GivnWorld) {
+    world.env = Some(common::make_fossil_root_bare());
+}
+
+#[then("stdout names the givn commit attribution path")]
+fn then_stdout_names_givn_commit_path(world: &mut GivnWorld) {
+    assert!(
+        crate::steps::stdout(world).contains("givn commit path only"),
+        "stdout does not name the givn commit attribution path: {}",
+        crate::steps::stdout(world)
+    );
+}
+
+#[then("no .githooks directory exists")]
+fn then_no_githooks_directory(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    assert!(
+        !env.root().join(".githooks").exists(),
+        "the Fossil project received Git attribution plumbing"
+    );
+}
+
+#[then("the generated guidance names the commit path of the active backend")]
+fn then_guidance_names_commit_path(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let skill = env.root().join(".opencode/skills/givn-implement/SKILL.md");
+    let text = std::fs::read_to_string(&skill)
+        .unwrap_or_else(|e| panic!("read generated skill {}: {e}", skill.display()));
+    assert!(
+        text.contains("givn commit"),
+        "the generated guidance does not name `givn commit`"
+    );
+}
+
+#[then("the generated guidance states that a raw fossil commit carries no attribution")]
+fn then_guidance_states_fossil_limitation(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let skill = env.root().join(".opencode/skills/givn-implement/SKILL.md");
+    let text = std::fs::read_to_string(&skill)
+        .unwrap_or_else(|e| panic!("read generated skill {}: {e}", skill.display()));
+    assert!(
+        text.contains("carries no attribution"),
+        "the generated guidance does not state the Fossil limitation"
+    );
+}
+
+#[then("stdout warns that archive and managed upgrade are unavailable")]
+fn then_stdout_warns_no_scm(world: &mut GivnWorld) {
+    assert!(
+        crate::steps::stdout(world).contains("archive and managed upgrade are unavailable"),
+        "stdout does not warn about the missing backend: {}",
+        crate::steps::stdout(world)
+    );
+}
+
+#[then("a later archive is refused by name")]
+fn then_later_archive_refused(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    let out = common::run_givn(env, &["archive", "--change", "demo"]);
+    assert!(
+        !out.status.success(),
+        "archive unexpectedly succeeded without a backend"
+    );
+    let stderr = String::from_utf8_lossy(&out.stderr);
+    assert!(
+        stderr.contains("version-controlled project"),
+        "the refusal does not name the missing version-controlled project: {stderr}"
+    );
 }

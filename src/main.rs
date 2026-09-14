@@ -47,6 +47,14 @@ enum Commands {
         #[arg(long, value_delimiter = ',')]
         agents: Vec<String>,
     },
+    /// Create one attributed revision through the selected SCM backend.
+    Commit {
+        /// Revision message.
+        #[arg(short, long)]
+        message: String,
+        /// Paths to record (defaults to every pending change).
+        paths: Vec<String>,
+    },
     /// Create a new change scaffold.
     New {
         /// Change identifier (kebab-case).
@@ -319,6 +327,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             no_addons,
             agents,
         } => cli::init::run(force, no_addons, &agents),
+        Commands::Commit { message, paths } => cli::commit::run(&message, &paths),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions {
             artifact,
