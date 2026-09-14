@@ -124,9 +124,9 @@ Feature: Archive Proof
     And  the change directory still exists under givn/changes/
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive requires a version-controlled project
-    Given  a givn project without a Git worktree or a Fossil checkout
+    Given  a project root without a Git worktree or a Fossil checkout
     And  a completed change "proof-demo" with all required artifacts
     And  the project declares a complete run declaration
     When  the user runs `givn archive --change proof-demo`
@@ -135,9 +135,9 @@ Feature: Archive Proof
     And  the change directory still exists under givn/changes/
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: Archive requires the project root to be the checkout root
-    Given  a givn project nested inside a larger Git worktree
+    Given  a givn project nested inside a larger Git repository
     And  a completed change "proof-demo" ready to archive
     When  the user runs `givn archive --change proof-demo`
     Then  the command exits non-zero
@@ -145,7 +145,7 @@ Feature: Archive Proof
     And  the change directory still exists under givn/changes/
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Fossil checkout without the fossil executable is refused by name
     Given  a Fossil checkout whose project root is the checkout root
     And  a completed change "proof-demo" with all required artifacts

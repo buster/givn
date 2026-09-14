@@ -245,6 +245,12 @@ fn placeholder_step(_world: &mut GivnWorld) {
     // No-op: used by @givn.removed scenarios that need a single step to parse.
 }
 
+#[given("placeholder")]
+fn removed_scenario_placeholder(_world: &mut GivnWorld) {
+    // No-op: a @givn.removed scenario carries exactly one placeholder step so
+    // the parser accepts it; the scenario is deleted at archive.
+}
+
 #[given("a project root without a givn/ directory")]
 fn bare_root(world: &mut GivnWorld) {
     world.env = Some(common::make_bare_root());

@@ -177,6 +177,34 @@ fn runner_records_invocations(world: &mut GivnWorld) {
     set_runner_kind(world, "record");
 }
 
+#[when(
+    regex = r"^the user runs `givn archive --change ([^`]+)` without the `fossil` executable on PATH$"
+)]
+fn archive_without_fossil(world: &mut GivnWorld, id: String) {
+    let env = world.env.as_ref().expect("project root");
+    if world.snapshot_on_run {
+        world.scm_fixture.snapshot = Some(
+            crate::steps::scm_backend_selection_steps::snapshot_tree(&env.root()),
+        );
+        world.snapshot_on_run = false;
+    }
+    let empty_bin = env.path("no-fossil-bin");
+    fs::create_dir_all(&empty_bin).expect("create empty PATH directory");
+    let path = empty_bin.to_string_lossy().into_owned();
+    let out = common::run_givn_with_envs(env, &["archive", "--change", &id], &[("PATH", &path)]);
+    world.last_change_id = Some(id);
+    world.last_output = Some(out);
+}
+
+#[then("stderr names the missing `fossil` executable")]
+fn stderr_names_missing_fossil(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("`fossil`") && stderr.contains("not found"),
+        "stderr does not name the missing `fossil` executable: {stderr}"
+    );
+}
+
 #[given("a commit hook rejects the archive candidate commit")]
 fn rejecting_commit_hook(world: &mut GivnWorld) {
     let hooks = support::root(world).join(".git/hooks");

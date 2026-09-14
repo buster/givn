@@ -42,8 +42,9 @@ fn given_managed_file_missing(world: &mut GivnWorld) {
 #[given("a project root without a Git worktree or a Fossil checkout")]
 fn given_project_without_backend(world: &mut GivnWorld) {
     let env = common::make_init_root_without_git();
-    world.scm_fixture.snapshot = Some(snapshot_tree(&env.root()));
     world.env = Some(env);
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
 }
 
 #[given("a Fossil checkout whose project root is the checkout root")]
