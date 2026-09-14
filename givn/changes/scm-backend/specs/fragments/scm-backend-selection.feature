@@ -4,7 +4,7 @@ Feature: SCM backend selection
   Commands that select a backend act on the version-control system that owns
   the project root, or refuse by name before anything changes.
 
-  @givn.added @e2e @wip
+  @givn.added @e2e
   Scenario: A Git worktree at the project root selects the Git backend
     Given  a Git project whose project root is the worktree top level
     And  a managed file is missing from the project

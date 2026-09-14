@@ -17,16 +17,26 @@ pub(crate) struct ScmFixture {
     /// Project tree snapshot taken before the invocation, for the
     /// "no file in the project changed" assertion.
     pub(crate) snapshot: Option<Vec<(PathBuf, Vec<u8>)>>,
+    /// Revision before the invocation, for the "publishes a revision"
+    /// assertion.
+    pub(crate) head_before: Option<String>,
 }
 
 #[given("a Git project whose project root is the worktree top level")]
-fn given_git_project_at_root(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_git_project_at_root(world: &mut GivnWorld) {
+    let env = common::make_init_root();
+    let head = common::git(&env, &["rev-parse", "HEAD"]);
+    assert!(head.status.success(), "read fixture HEAD");
+    world.scm_fixture.head_before = Some(String::from_utf8_lossy(&head.stdout).trim().to_string());
+    world.env = Some(env);
 }
 
 #[given("a managed file is missing from the project")]
-fn given_managed_file_missing(_world: &mut GivnWorld) {
-    unimplemented!()
+fn given_managed_file_missing(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("project root");
+    std::fs::remove_file(env.path(".opencode/plugins/givn-attribution.js"))
+        .expect("remove managed integration");
+    common::git_commit_all(env, "fixture: drop managed integration");
 }
 
 #[given("a project root without a Git worktree or a Fossil checkout")]

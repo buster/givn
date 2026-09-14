@@ -84,6 +84,55 @@ impl Worktree {
         Ok(parse_porcelain_z(&output.stdout))
     }
 
+    /// Stage exactly `paths` relative to the repository root. `force` is
+    /// reserved for the calculated managed allowlist; it is never widened to
+    /// a directory or the complete worktree.
+    pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
+        if paths.is_empty() {
+            bail!("refusing to stage with no paths");
+        }
+        let mut args = vec!["add".to_string()];
+        if force {
+            args.push("-f".to_string());
+        }
+        args.push("--".to_string());
+        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
+        let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+        let output = run_git(&self.root, &refs)?;
+        if !output.status.success() {
+            bail!(
+                "failed to stage paths: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
+    /// Whether the index holds staged changes.
+    pub fn has_staged_changes(&self) -> Result<bool> {
+        let output = run_git(&self.root, &["diff", "--cached", "--quiet", "--exit-code"])?;
+        match output.status.code() {
+            Some(0) => Ok(false),
+            Some(1) => Ok(true),
+            _ => bail!(
+                "could not inspect staged changes: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ),
+        }
+    }
+
+    /// Commit the staged changes.
+    pub fn commit_staged(&self, message: &str) -> Result<()> {
+        let output = run_git(&self.root, &["commit", "-m", message])?;
+        if !output.status.success() {
+            bail!(
+                "the commit was rejected: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
     /// Stage exactly `paths` and create one commit. Returns the commit id.
     pub fn commit(&self, message: &str, paths: &[String]) -> Result<String> {
         if paths.is_empty() {
@@ -98,7 +147,7 @@ impl Worktree {
             if ignore.status.success() {
                 continue;
             }
-            stageable.push(path.clone());
+            stageable.push(PathBuf::from(path));
         }
         if stageable.is_empty() {
             bail!(
@@ -106,24 +155,11 @@ impl Worktree {
                 paths.join(", ")
             );
         }
-        let mut add = vec!["add".to_string(), "--".to_string()];
-        add.extend(stageable);
-        let add_refs: Vec<&str> = add.iter().map(String::as_str).collect();
-        let add_output = run_git(&self.root, &add_refs)?;
-        if !add_output.status.success() {
-            bail!(
-                "archive blocked: failed to stage the archive paths: {}",
-                String::from_utf8_lossy(&add_output.stderr).trim()
-            );
-        }
-
-        let commit_output = run_git(&self.root, &["commit", "-m", message])?;
-        if !commit_output.status.success() {
-            bail!(
-                "archive blocked: the commit was rejected: {}",
-                String::from_utf8_lossy(&commit_output.stderr).trim()
-            );
-        }
+        self.stage_paths(&stageable, false).map_err(|error| {
+            anyhow::anyhow!("archive blocked: failed to stage the archive paths: {error}")
+        })?;
+        self.commit_staged(message)
+            .map_err(|error| anyhow::anyhow!("archive blocked: {error}"))?;
         self.head()
     }
 }

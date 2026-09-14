@@ -17,11 +17,40 @@ pub enum Backend {
 }
 
 impl Backend {
+    /// The current revision identifier of the project.
+    pub fn revision(&self) -> Result<String> {
+        match self {
+            Self::Git(worktree) => worktree.head(),
+        }
+    }
+
     /// Modified tracked files plus untracked non-ignored files, as paths
     /// relative to the project root.
     pub fn dirty_entries(&self) -> Result<Vec<PathBuf>> {
         match self {
             Self::Git(worktree) => worktree.dirty_entries(),
+        }
+    }
+
+    /// Stage exactly `paths`; `force` is reserved for the calculated managed
+    /// allowlist.
+    pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
+        match self {
+            Self::Git(worktree) => worktree.stage_paths(paths, force),
+        }
+    }
+
+    /// Whether the index holds staged changes.
+    pub fn has_staged_changes(&self) -> Result<bool> {
+        match self {
+            Self::Git(worktree) => worktree.has_staged_changes(),
+        }
+    }
+
+    /// Commit the staged changes.
+    pub fn commit_staged(&self, message: &str) -> Result<()> {
+        match self {
+            Self::Git(worktree) => worktree.commit_staged(message),
         }
     }
 }
