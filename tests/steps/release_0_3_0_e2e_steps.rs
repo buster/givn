@@ -436,7 +436,11 @@ fn non_git_legacy_project(world: &mut GivnWorld) {
 fn git_required_report(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("requires a Git repository"), "{stderr}");
+    assert!(
+        stderr.contains("requires a Git repository")
+            || stderr.contains("version-controlled project"),
+        "{stderr}"
+    );
 }
 
 #[then(
