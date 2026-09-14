@@ -336,22 +336,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `cc8bc2a4` -- `feat(visual-design-contract): Design-review guidance records the persona disposition`
 
-- [ ] Scenario: `Design-review guidance requires an operator question before a deferral`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Design-review guidance requires an operator question before a deferral`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "operator question"
+        exit status: 1
         ```
-  - [ ] GREEN: added the deferral branch to
-        `assets/instructions/design-review.md` and
-        `assets/skills/givn-design-review/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the deferral branch to
+        `assets/instructions/design-review.md`. Files:
+        `assets/instructions/design-review.md`. Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): Design-review guidance requires an operator question before a deferral`
+  - [x] COMMIT: `3b3741df` -- `feat(visual-design-contract): Design-review guidance requires an operator question before a deferral`
 
 - [ ] Scenario: `Proposal guidance requires confirmed personas or a reasoned none`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
