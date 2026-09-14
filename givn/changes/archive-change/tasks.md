@@ -59,9 +59,16 @@ new ADR-072; the permanent scenario and the delta both assert 28.
       2.26 `[611144ddd9]`; `.github/workflows/ci.yml` installs the package
       (`apt-get update && apt-get install -y --no-install-recommends fossil`)
       before the acceptance suites, and `AGENTS.md` records the prerequisite.
-- [ ] E2E count proof: the change scope runs the full set and the `@e2e`
-      scope a strictly smaller set. Paste both outputs. (Recorded once the
-      e2e scenario is implemented.)
+- [x] E2E count proof: the change scope runs the full set and the `@e2e`
+      scope a strictly smaller set:
+
+      ```text
+      GIVN_FEATURES=givn/changes/archive-change/specs ./run-tests.sh
+      Summary: 17 tests run: 17 passed, 0 skipped
+
+      GIVN_FEATURES=givn/changes/archive-change/specs ./run-tests.sh --e2e
+      Summary: 1 test run: 1 passed, 16 skipped
+      ```
 
 ## Scenario: Archive publishes the merged candidate before running the full suite
 
@@ -240,92 +247,142 @@ uncommitted; the archive is unproven.
 Domain constraint: mirrored strictness — Fossil `EXTRA` files block like Git
 untracked files, and the refusal mutates nothing.
 
-- [ ] RED: removed `@wip`; bound the EXTRA Given and the snapshot Then;
-      targeted run exited non-zero. Paste output.
-- [ ] GREEN: the Fossil clean-state witness includes `EXTRA` entries and names
-      them. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the EXTRA Given with `unimplemented!()`;
+      targeted run exited non-zero (`not implemented`, 1 failed).
+- [x] GREEN: the Fossil clean-state witness reports `EXTRA` paths; the Given
+      writes the EXTRA file, the lazy snapshot runs after all Givens, and the
+      refusal names it and changes nothing. Targeted run:
+
+      ```text
+      1 feature, 1 scenario (1 passed), 7 steps (7 passed)
+      ```
+
+- [x] REFACTOR: harness fix — the no-mutation snapshot now skips backend
+      bookkeeping (`.git`, `.fslckout`, `_FOSSIL_`) because Fossil rewrites
+      `.fslckout` while merely reporting changes; the assertion reports only
+      the differing paths. Targeted run still exited zero.
+- [x] COMMIT: `fbe73828` (shared with the Fossil edited-file scenario).
 
 ## Scenario: A Fossil edited file blocks the archive
 
 Domain constraint: the Fossil witness covers `EDITED` entries, not only
 `EXTRA`.
 
-- [ ] RED: removed `@wip`; bound the edited-file Given; targeted run exited
-      non-zero. Paste output.
-- [ ] GREEN: the witness reports `EDITED` paths and names them. Targeted run
-      exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the edited-file Given with
+      `unimplemented!()`; targeted run exited non-zero.
+- [x] GREEN: the Given writes and commits a tracked file, edits it, and the
+      witness names it; the refusal changes nothing. Targeted run:
+
+      ```text
+      1 feature, 1 scenario (1 passed), 7 steps (7 passed)
+      ```
+
+- [x] REFACTOR: shared with the EXTRA scenario's snapshot fix. Targeted run
+      still exited zero.
+- [x] COMMIT: `fbe73828 feat(archive-proof): A Fossil EXTRA file and a Fossil edited file block the archive`.
 
 ## Scenario: Archive requires a version-controlled project
 
 Domain constraint: no usable backend is refused by name before any mutation.
 
-- [ ] RED: removed `@wip`; bound the snapshot Then; targeted run exited
-      non-zero. Paste output.
-- [ ] GREEN: `scm::select`'s no-backend refusal carries the archive's neutral
-      wording and the change directory survives. Targeted run exited zero.
-      Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED/GREEN: removed `@wip`; the steps reuse the seed-1 refusal fixtures
+      and Thens, so after aligning the delta's Given texts with the existing
+      bindings this is an immediate GREEN with no new production code. The
+      seed-1 `given_project_without_backend` now takes the lazy run-time
+      snapshot and skips the auto-commit. Targeted run:
+
+      ```text
+      4 scenarios (4 passed), 17 steps (17 passed)
+      ```
+
+- [x] REFACTOR: bound `Given placeholder` for the delta's `@givn.removed`
+      tombstones so the whole change scope runs; formatted.
+- [x] COMMIT: `50938b01` (shared with the checkout-root and missing-fossil
+      refusals).
 
 ## Scenario: Archive requires the project root to be the checkout root
 
 Domain constraint: a nested project root is refused by name before any
 mutation.
 
-- [ ] RED: removed `@wip`; bound the nested-root Then; targeted run exited
-      non-zero. Paste output.
-- [ ] GREEN: the archive consumes `scm::select`'s boundary refusal and mutates
-      nothing. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED/GREEN: removed `@wip`; all steps reuse the existing nested-project
+      fixture and the seed-1 worktree-top-level Then (the permanent
+      repository-root step text was re-bound to the neutral message in
+      scenario 3), so this is an immediate GREEN with no new production code.
+      Targeted run: 4 scenarios (4 passed), 17 steps (17 passed).
+- [x] REFACTOR: none needed.
+- [x] COMMIT: `50938b01`.
 
 ## Scenario: A Fossil checkout without the fossil executable is refused by name
 
 Domain constraint: a marker without its executable is refused by name before
 any mutation.
 
-- [ ] RED: removed `@wip`; bound the PATH-reduced invocation and the
-      missing-executable Then; targeted run exited non-zero. Paste output.
-- [ ] GREEN: `scm::select` maps `NotFound` for the Fossil probe to the named
-      refusal. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the PATH-reduced invocation and the
+      missing-executable Then with `unimplemented!()`; targeted run exited
+      non-zero.
+- [x] GREEN: `scm::select` maps the Fossil probe's `NotFound` to
+      ``Fossil checkout detected at '<root>' but the `fossil` executable was
+      not found on PATH``; the custom When takes the lazy snapshot. Targeted
+      run:
+
+      ```text
+      1 feature, 1 scenario (1 passed), 8 steps (8 passed)
+      ```
+
+- [x] REFACTOR: formatted; the permanent fragments suite stays green
+      (117 scenarios).
+- [x] COMMIT: `50938b01 feat(archive-proof): Archive requires a version-controlled project, the checkout root, and a Fossil executable`.
 
 ## Scenario: The migration preserves independent architecture history across three proposed decisions
 
 Domain constraint: the register holds exactly the accepted records, now 28
 with ADR-072.
 
-- [ ] RED: removed `@wip` from the delta scenario; the `28 accepted decisions`
-      binding starts as `unimplemented!()`; targeted run exited non-zero.
-      Paste output.
-- [ ] GREEN: added the count binding; aligned the permanent
+- [x] RED: removed `@wip`; the `28 accepted decisions` binding started as
+      `unimplemented!()`; targeted run exited non-zero.
+- [x] GREEN: added the 28 binding; aligned the permanent
       `givn/specs/fragments/adr-qualification-gate.feature` scenario to 28 in
-      the same commit. Targeted run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+      the same commit. Targeted run:
+
+      ```text
+      1 feature, 1 scenario (1 passed), 11 steps (11 passed)
+      GIVN_FEATURES=givn/specs/fragments: 18 features, 117 scenarios (117 passed)
+      ```
+
+- [x] REFACTOR: removed the stale `@wip`; formatted.
+- [x] COMMIT: `3cc1dbc2 feat(adr-qualification-gate): The migration preserves independent architecture history across three proposed decisions`.
 
 ## Scenario: Consumer archives a completed change and receives a proven archive
 
 Domain constraint: the real CLI archives on both backends through the real
 interface; the receipt is proven.
 
-- [ ] RED: removed `@wip` from the `@e2e` outline; the e2e Given/Then bodies
-      start as `unimplemented!()`; `verify.e2e_command` targeted at the
-      scenario exited non-zero. Paste output.
-- [ ] GREEN: the e2e fixture builds a committed Git project and a committed
-      Fossil checkout, runs the compiled binary, and asserts the proven
-      receipt on both examples. Targeted e2e run exited zero. Paste output.
-- [ ] REFACTOR: clean up; targeted e2e run still exited zero. Paste output.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: removed `@wip`; bound the backend-parameterized e2e Given with
+      `unimplemented!()` and made the e2e count step commit through the
+      backend-aware fixture; the targeted `@e2e` run exited non-zero.
+- [x] GREEN: the e2e fixture builds a committed Git project and a committed
+      Fossil checkout and drives the compiled binary; both examples assert the
+      proven receipt. Targeted e2e run:
+
+      ```text
+      GIVN_CUCUMBER_TAGS='@e2e' GIVN_FEATURES=givn/changes/archive-change/specs cargo test --test features_runner -- --name "Consumer archives a completed change and receives a proven archive"
+      1 feature, 2 scenarios (2 passed), 10 steps (10 passed)
+      ```
+
+- [x] REFACTOR: removed the now-unused `Worktree::open` (dead code) and its
+      test's use of it; reordered the module declarations so
+      `cargo fmt --all -- --check` is clean; re-bound the release-0-3-0
+      unclean-upgrade step to the neutral "clean checkout" message. Full suite
+      473/473 and e2e 84/84 green.
+- [x] COMMIT: `1eb9fbf6 test(e2e): Consumer archives a completed change and receives a proven archive`.
 
 ## Finalize
 
-- [ ] Full suite green: `./run-tests.sh` and `./run-tests.sh --e2e`.
-- [ ] `cargo clippy --workspace --all-targets -- -D warnings` clean.
-- [ ] `givn lint --change archive-change` exits 0.
-- [ ] All tasks above checked with evidence and commit hashes.
+- [x] Full suite green: `./run-tests.sh` 473/473 and `./run-tests.sh --e2e`
+      84/84.
+- [x] `cargo clippy --workspace --all-targets -- -D warnings` clean;
+      `cargo fmt --all -- --check` clean.
+- [x] `givn lint --change archive-change` exits 0 (`2 file(s) checked —
+      clean`).
+- [x] All tasks above checked with evidence and commit hashes.
