@@ -110,3 +110,48 @@ fn review_md_no_verdict(world: &mut GivnWorld) {
     let review = "# Review: fixture\n\nREADME-IMPACT: none\n\nREVIEW: PASS\n";
     std::fs::write(change_dir(world).join("review.md"), review).expect("write review.md");
 }
+
+#[given(regex = r##"^the change's design\.md declares the UI states "([^"]+)"$"##)]
+fn design_declares_ui_states(_world: &mut GivnWorld, _states: String) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^the change has final-state screenshots for "([^"]+)" at both viewports$"##)]
+fn has_final_state_screenshots_both(_world: &mut GivnWorld, _title: String) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^the change has state screenshots for "([^"]+)" at both viewports for states "([^"]+)"$"##)]
+fn has_state_screenshots_both(_world: &mut GivnWorld, _title: String, _states: String) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^the change has a state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]
+fn has_state_screenshot(_world: &mut GivnWorld, _title: String, _viewport: String, _state: String) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^the change has an empty state screenshot for "([^"]+)" at viewport "([^"]+)" in state "([^"]+)"$"##)]
+fn has_empty_state_screenshot(
+    _world: &mut GivnWorld,
+    _title: String,
+    _viewport: String,
+    _state: String,
+) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^the change's review\.md declares the persona disposition "(.*)"$"##)]
+fn review_md_persona_disposition(_world: &mut GivnWorld, _value: String) {
+    unimplemented!()
+}
+
+#[given("the change's review.md declares no persona disposition")]
+fn review_md_no_persona_disposition(_world: &mut GivnWorld) {
+    unimplemented!()
+}
+
+#[given(regex = r##"^the change's review\.md also contains "([^"]+)"$"##)]
+fn review_md_also_contains(_world: &mut GivnWorld, _text: String) {
+    unimplemented!()
+}
