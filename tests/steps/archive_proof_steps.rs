@@ -4,7 +4,7 @@ use std::fs;
 use std::os::unix::fs::PermissionsExt;
 use std::path::PathBuf;
 
-use cucumber::{given, then};
+use cucumber::{given, then, when};
 
 use super::archive_proof_support as support;
 use crate::common;
@@ -159,6 +159,90 @@ fn rejecting_commit_hook(world: &mut GivnWorld) {
     permissions.set_mode(0o755);
     fs::set_permissions(&hook, permissions).expect("make hook executable");
     world.skip_auto_commit = true;
+}
+
+#[given("a commit hook rejects the archive candidate revision")]
+fn rejecting_commit_hook_backend(world: &mut GivnWorld) {
+    match support::env(world).backend() {
+        common::BackendKind::Git => {
+            let hooks = support::root(world).join(".git/hooks");
+            fs::create_dir_all(&hooks).expect("create hooks dir");
+            let hook = hooks.join("commit-msg");
+            fs::write(&hook, "#!/bin/sh\nexit 1\n").expect("write rejecting hook");
+            let mut permissions = fs::metadata(&hook).expect("hook metadata").permissions();
+            permissions.set_mode(0o755);
+            fs::set_permissions(&hook, permissions).expect("make hook executable");
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(
+                support::env(world),
+                &[
+                    "hook",
+                    "add",
+                    "--command",
+                    "exit 1",
+                    "--type",
+                    "before-commit",
+                ],
+            );
+            assert!(
+                out.status.success(),
+                "fossil hook add failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+    world.skip_auto_commit = true;
+}
+
+#[when("the commit hook accepts the archive candidate revision")]
+fn accepting_commit_hook(world: &mut GivnWorld) {
+    match support::env(world).backend() {
+        common::BackendKind::Git => {
+            let hook = support::root(world).join(".git/hooks/commit-msg");
+            fs::remove_file(&hook).expect("remove rejecting hook");
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(support::env(world), &["hook", "delete", "all"]);
+            assert!(
+                out.status.success(),
+                "fossil hook delete failed: {}",
+                String::from_utf8_lossy(&out.stderr)
+            );
+        }
+    }
+    world.skip_auto_commit = false;
+}
+
+#[then("stderr names the candidate revision rejection")]
+fn stderr_names_candidate_revision_rejection(world: &mut GivnWorld) {
+    let stderr = crate::steps::stderr(world);
+    assert!(
+        stderr.contains("candidate revision") && stderr.contains("rejected"),
+        "stderr missing candidate rejection: {stderr}"
+    );
+}
+
+#[then("the tested revision contains the merged permanent specs")]
+fn tested_revision_contains_merged_specs(world: &mut GivnWorld) {
+    let id = world
+        .last_change_id
+        .clone()
+        .expect("a change id is required");
+    let receipt = support::receipt(world, &id);
+    let tested = receipt["tested_revision"]
+        .as_str()
+        .unwrap_or_default()
+        .to_string();
+    assert!(
+        !tested.is_empty(),
+        "the receipt does not name the tested revision: {receipt}"
+    );
+    let merged = "givn/specs/demo-cap/demo-cap.feature";
+    assert!(
+        support::revision_contains_at(world, &tested, merged),
+        "the tested revision {tested} does not contain {merged}"
+    );
 }
 
 #[given(regex = r#"^an unproven archive candidate "([^"]+)" whose full suite failed$"#)]
