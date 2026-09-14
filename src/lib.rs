@@ -9,6 +9,7 @@ pub mod cobertura;
 pub mod config;
 pub mod error;
 pub mod gherkin;
+pub mod fossil;
 pub mod git;
 pub mod hooks;
 pub mod integrity_hook;
