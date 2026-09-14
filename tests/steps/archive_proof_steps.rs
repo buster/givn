@@ -24,6 +24,8 @@ fn ready_change(world: &mut GivnWorld, id: String) {
 #[given(regex = r#"^a (Git|Fossil) project with a completed change "([^"]+)" ready to archive$"#)]
 fn backend_ready_change(world: &mut GivnWorld, backend: String, id: String) {
     support::ready_change_on(world, support::backend_kind(&backend), &id, false, "pass");
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
 }
 
 #[then("the candidate revision is published")]
@@ -74,6 +76,8 @@ fn ready_change_with_e2e(world: &mut GivnWorld, id: String) {
 #[given("a givn project without Git version control")]
 fn project_without_git(world: &mut GivnWorld) {
     world.env = Some(common::make_init_root_without_git());
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
 }
 
 #[given("a givn project nested inside a larger Git repository")]
@@ -90,6 +94,30 @@ fn nested_project(world: &mut GivnWorld) {
     );
     world.cwd_override = Some(nested);
     world.env = Some(env);
+    world.snapshot_on_run = true;
+    world.skip_auto_commit = true;
+}
+
+#[given(regex = r#"^the project has an EXTRA file "([^"]+)"$"#)]
+fn extra_file(world: &mut GivnWorld, path: String) {
+    let target = support::project_base(world).join(&path);
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).expect("create parent dir");
+    }
+    fs::write(&target, "extra\n").expect("write EXTRA file");
+    world.skip_auto_commit = true;
+}
+
+#[given(regex = r#"^the project has an edited file "([^"]+)"$"#)]
+fn edited_file(world: &mut GivnWorld, path: String) {
+    let target = support::project_base(world).join(&path);
+    if let Some(parent) = target.parent() {
+        fs::create_dir_all(parent).expect("create parent dir");
+    }
+    fs::write(&target, "// original\n").expect("write tracked file");
+    common::commit_fixture(support::env(world));
+    fs::write(&target, "// edited\n").expect("edit tracked file");
+    world.skip_auto_commit = true;
 }
 
 #[given(regex = r#"^the project has an uncommitted change to "([^"]+)"$"#)]

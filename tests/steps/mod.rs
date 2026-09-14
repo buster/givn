@@ -130,6 +130,9 @@ pub struct GivnWorld {
     /// Skip the generic archive auto-commit for fixtures that intentionally
     /// present a dirty or hook-rejecting worktree.
     pub(crate) skip_auto_commit: bool,
+    /// Take the tree snapshot right before the next invocation, after every
+    /// Given has finished writing, for the no-mutation assertion.
+    pub(crate) snapshot_on_run: bool,
     /// State for the SCM backend selection scenarios.
     pub(crate) scm_fixture: scm_backend_selection_steps::ScmFixture,
 }
@@ -412,6 +415,11 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     // The archive starts from a committed project state; generic fixtures
     // emulate the developer's commit. Dirty-tree scenarios use a dedicated
     // step that skips this.
+    if world.snapshot_on_run {
+        let root = world.cwd_override.clone().unwrap_or_else(|| env.root());
+        world.scm_fixture.snapshot = Some(scm_backend_selection_steps::snapshot_tree(&root));
+        world.snapshot_on_run = false;
+    }
     if args.first().is_some_and(|arg| arg == "archive") && !world.skip_auto_commit {
         common::commit_fixture(env);
     }
