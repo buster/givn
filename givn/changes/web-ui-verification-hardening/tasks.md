@@ -558,22 +558,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `89370d57` -- `feat(visual-review-gate): Review guidance fails a deferral without an operator decision`
 
-- [ ] Scenario: `Review guidance records the persona disposition`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Review guidance records the persona disposition`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "disposition for every confirmed Persona"
+        exit status: 1
         ```
-  - [ ] GREEN: added the persona disposition rule to
-        `assets/instructions/review.md` and
-        `assets/skills/givn-review/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: added the persona disposition rule to
+        `assets/instructions/review.md`. Files: `assets/instructions/review.md`.
+        Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-review-gate): Review guidance records the persona disposition`
+  - [x] COMMIT: `059e832a` -- `feat(visual-review-gate): Review guidance records the persona disposition`
 
 - [ ] Scenario: `Review guidance names the state screenshots the vision review saw`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
