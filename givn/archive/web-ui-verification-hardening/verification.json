@@ -1,11 +1,33 @@
 {
   "schema": 1,
   "change": "web-ui-verification-hardening",
-  "status": "pending",
-  "candidate_commit": null,
-  "tested_commit": null,
-  "scopes": {},
-  "coverage": null,
+  "status": "proven",
+  "candidate_commit": "9f378222512f87305ebfb2108889cc7abe24e0f8",
+  "tested_commit": "9f378222512f87305ebfb2108889cc7abe24e0f8",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 84,
+      "passed": 84,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 7.266197819
+    },
+    "regular": {
+      "status": "passed",
+      "total": 474,
+      "passed": 474,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 31.946923452
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7027,
+    "line_valid": 8988,
+    "line_percent": 78
+  },
   "started_at_unix": 1789360741,
-  "finished_at_unix": null
+  "finished_at_unix": 1789360831
 }
