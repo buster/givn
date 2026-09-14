@@ -91,7 +91,7 @@ Feature: Visual Design Contract
     And the ejected proposal template contains "Confirmed Personas"
     And the ejected proposal template contains "operator confirmation"
 
-  @givn.added @wip
+  @givn.added
   Scenario: The review template carries the persona disposition and deferral markers
     Given a project root with givn/ initialised
     When the user runs `givn eject review:template`
