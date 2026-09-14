@@ -246,3 +246,30 @@ fn then_later_archive_refused(world: &mut GivnWorld) {
         "the refusal does not name the missing version-controlled project: {stderr}"
     );
 }
+
+#[given(regex = r"^a (Git|Fossil) project$")]
+fn given_backend_project(world: &mut GivnWorld, backend: String) {
+    world.env = Some(match backend.as_str() {
+        "Git" => common::make_init_root(),
+        "Fossil" => common::make_fossil_root(),
+        other => panic!("unknown backend '{other}'"),
+    });
+}
+
+#[then(regex = r"^stdout reports the active backend as (\w+)$")]
+fn then_stdout_reports_scm(world: &mut GivnWorld, scm: String) {
+    assert!(
+        crate::steps::stdout(world).contains(&format!("SCM: {scm}")),
+        "stdout does not report SCM: {scm} — {}",
+        crate::steps::stdout(world)
+    );
+}
+
+#[then("stdout names archive and managed upgrade as unavailable")]
+fn then_stdout_names_unavailable(world: &mut GivnWorld) {
+    assert!(
+        crate::steps::stdout(world).contains("archive and managed upgrade are unavailable"),
+        "stdout does not name the unavailable commands: {}",
+        crate::steps::stdout(world)
+    );
+}
