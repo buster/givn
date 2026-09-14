@@ -242,13 +242,7 @@ fn first_commit_has_managed_paths(world: &mut GivnWorld) {
                 "expected Fossil's initial check-in, the fixture, the managed, and the plan check-ins"
             );
             let managed = fossil_first_child_checkin(env);
-            fossil_stdout(env, &["diff", "--brief", "--checkin", &managed])
-                .lines()
-                .filter_map(|line| -> Option<String> {
-                    Some(line.split_once(char::is_whitespace)?.1.trim().to_string())
-                })
-                .collect::<Vec<_>>()
-                .join("\n")
+            fossil_revision_paths(env, &managed).join("\n")
         }
     };
     assert!(!changed.is_empty(), "Commit A has no changed paths");
@@ -393,6 +387,16 @@ fn fossil_first_child_checkin(env: &crate::common::TestEnv) -> String {
     .trim()
     .trim_matches('\'')
     .to_string()
+}
+
+/// The paths a Fossil check-in changed, relative to the checkout root.
+fn fossil_revision_paths(env: &crate::common::TestEnv, revision: &str) -> Vec<String> {
+    fossil_stdout(env, &["diff", "--brief", "--checkin", revision])
+        .lines()
+        .filter_map(|line| -> Option<String> {
+            Some(line.split_once(char::is_whitespace)?.1.trim().to_string())
+        })
+        .collect()
 }
 
 fn legacy_fossil_project() -> crate::common::TestEnv {
