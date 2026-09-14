@@ -95,7 +95,7 @@ Feature: Archive Proof
     And  the merged state is staged but not committed
     And  the archive candidate is recorded as unproven
 
-  @givn.added @wip
+  @givn.added
   Scenario: A rejected candidate revision on Fossil leaves the merged state uncommitted
     Given  a Fossil project with a completed change "proof-demo" ready to archive
     And  a commit hook rejects the archive candidate revision
