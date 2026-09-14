@@ -8,18 +8,28 @@ Domain constraints: the recorded revision identifier is opaque (Q11) — non-emp
 
 ## Scenario: An opaque revision identifier passes the integrity check
 
-- [ ] RED/GREEN: immediate GREEN acceptance pin (all steps reused; no
-      production change needed). Record the run.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED/GREEN: immediate GREEN acceptance pin (all steps reused; the check
+      already accepts opaque identifiers). Targeted run:
+
+      ```text
+      1 scenario (1 passed)  /  exit 0
+      ```
+
+- [x] COMMIT: c872f0b5 (shared slice; the delta scenario needed no production
+      change).
 
 ## Scenario: Integrity hook fails on placeholder commit hash
 
-- [ ] RED: the modified Then (`revision identifier`) fails against the old
-      message before the code change. Record the run.
-- [ ] GREEN: the messages say "revision identifier"; the permanent feature is
-      aligned in the same commit.
-- [ ] COMMIT: hash recorded: `<hash>`
+- [x] RED: with the message change stashed the modified Then failed:
+
+      ```text
+      stderr missing "revision identifier": [integrity] line 1: commit hash is a placeholder: `___`
+      ```
+
+- [x] GREEN: the messages say "revision identifier"; the permanent feature is
+      aligned; the fragments suite passes (104 scenarios).
+- [x] COMMIT: 43efbe93.
 
 ## Finalize
 
-- [ ] Full suite green; lint exits 0; all tasks checked with hashes.
+- [x] Full suite green (486/486); lint exits 0; all tasks checked.
