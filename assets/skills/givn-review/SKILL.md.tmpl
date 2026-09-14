@@ -21,6 +21,12 @@ outcomes. Confirm the accepted `usecase.md` is represented in the change and
 that no actor was replaced by a Persona biography. Migration changes must also
 account for every ledger entry and preserve E2E evidence.
 
+Record the disposition for every confirmed Persona; when none is confirmed, record the reason. A user-visible surface requires at least one confirmed Persona.
+
+Before accepting a non-browser classification, state the opposite classification — a rendered page is a Web UI — and why it does not hold. A review that only restates the author's classification is incomplete.
+
+A deferral of a mandatory check without a recorded operator decision fails the review.
+
 ## Step 0: fabrication audit (mandatory, before anything else)
 
 A change can reach review with every task checked off, the runner exiting
@@ -172,6 +178,7 @@ Run this block when the change's design declares a visual interface (a
   sees the committed screenshots and judges whether that Persona can reach
   its goal with what is shown. Record every finding with a disposition; never
   invent a Persona.
+- The vision review names the state screenshots the review saw for each declared UI state.
 - Every finding names a contract rule or a failed Persona goal: no pixel-level
   or coordinate finding is accepted.
 - A style improvement inside the contract updates the contract; it is not a

@@ -180,3 +180,15 @@ the artifacts named under "Impact".
   build script that tracks `assets/`; (c) touch `src/config/embedded.rs`.
 - Chosen: (a) during this change; (b) is a separate improvement.
 - Impact: the RED/GREEN run commands in `tasks.md`.
+
+## A17 — Pre-existing formatting drift
+
+- Assumption: `cargo fmt --check` reports two diffs in
+  `src/cli/migration.rs` that already exist at the base commit and are
+  untouched by this change; the files this change touched are rustfmt-clean
+  under edition 2024.
+- Options: (a) leave the unrelated drift and note it; (b) format
+  `migration.rs` in this change; (c) skip formatting entirely.
+- Chosen: (a), to keep the change diff focused; (b) belongs to its own
+  change.
+- Impact: review's local-environment check.

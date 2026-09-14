@@ -115,6 +115,15 @@ Include the runner and every production process started by tests. For each:
 - Merge its profile before export.
 - Name one exercised production path expected to be non-zero.
 
+## Web UI classification and driver
+
+A screen that renders HTML, CSS, or JavaScript in a browser is a Web UI: record `- Interface: web` even when it needs only a page request and exposes no controls.
+Playwright is the default browser driver; resolve the current version at design time and record the source — givn does not pin a version.
+A capability that renders HTML, CSS, or JavaScript in a browser is a Web UI row: it needs a browser driver and a concrete action, never an HTTP client.
+
+The contract names the Breakpoints and the Accessibility checks (contrast, keyboard focus, semantics), each with how it is verified.
+Record the persona impact for every user-visible capability: a browser interface, a terminal interface, or CLI text output; a change with no user-visible surface records `none` with the reason.
+
 ### Interaction Coverage Matrix (mandatory)
 
 Map every normalized entry from the canonical specs policy to its matching
