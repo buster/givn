@@ -297,7 +297,7 @@ Feature: Run command declaration
     When the user runs `givn upgrade`
     Then the command exits 0
     And the working tree is clean
-    And the latest commit contains "givn/commands.yaml"
+    And the latest revision contains "givn/commands.yaml"
 
   Scenario: A repeated upgrade creates no additional commit
     Given a git-managed project with givn initialised
@@ -305,4 +305,4 @@ Feature: Run command declaration
     When the user runs `givn upgrade`
     And the user runs `givn upgrade` again
     Then the command exits 0
-    And the latest commit is unchanged by the second upgrade
+    And the latest revision is unchanged by the second upgrade
