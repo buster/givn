@@ -62,9 +62,23 @@ fn git_worktree(project_root: &Path) -> Result<bool> {
     let output = Command::new("git")
         .args(["rev-parse", "--is-inside-work-tree"])
         .current_dir(project_root)
-        .output()
-        .with_context(|| format!("run `git rev-parse` in '{}'", project_root.display()))?;
-    Ok(output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "true")
+        .output();
+    match output {
+        Ok(output) => {
+            Ok(output.status.success() && String::from_utf8_lossy(&output.stdout).trim() == "true")
+        }
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+            if project_root.join(".git").exists() {
+                bail!(
+                    "Git worktree detected at '{}' but the `git` executable was not found on PATH",
+                    project_root.display()
+                );
+            }
+            Ok(false)
+        }
+        Err(error) => Err(error)
+            .with_context(|| format!("run `git rev-parse` in '{}'", project_root.display())),
+    }
 }
 
 /// The canonicalized worktree top level for a project inside a Git worktree.

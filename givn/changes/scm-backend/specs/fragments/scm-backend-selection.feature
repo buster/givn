@@ -44,7 +44,7 @@ Feature: SCM backend selection
     And  stderr names the project root and the worktree top level
     And  no file in the project changed
 
-  @givn.added @wip
+  @givn.added
   Scenario: A Git worktree without the Git executable is refused by name
     Given  a Git worktree whose `git` executable is unavailable
     When  the user runs `givn upgrade` without the `git` executable on PATH
