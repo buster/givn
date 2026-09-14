@@ -533,14 +533,11 @@ fn user_changes_remain_unchanged(world: &mut GivnWorld) {
         std::fs::read(env.path("user-work.txt")).expect("read user change"),
         b"uncommitted user change\n"
     );
-    match env.backend() {
-        crate::common::BackendKind::Git => {
-            assert!(git_stdout(env, &["status", "--porcelain"]).contains("?? user-work.txt"))
-        }
-        crate::common::BackendKind::Fossil => {
-            assert!(fossil_stdout(env, &["changes", "--differ"]).contains("user-work.txt"))
-        }
-    }
+    let dirty = crate::steps::archive_proof_support::dirty_entries(world);
+    assert!(
+        dirty.iter().any(|path| path.contains("user-work.txt")),
+        "the user change is no longer reported dirty: {dirty:?}"
+    );
 }
 
 #[given("a project that already has the current-version migration change")]
