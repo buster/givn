@@ -240,22 +240,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `a9385537` -- `feat(visual-design-contract): Design guidance requires breakpoints and accessibility`
 
-- [ ] Scenario: `Design guidance requires a driver for every Web UI matrix row`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Design guidance requires a driver for every Web UI matrix row`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "is a Web UI row"
+        exit status: 1
         ```
-  - [ ] GREEN: linked classification and driver in the matrix rule in
-        `assets/instructions/design.md` and
-        `assets/skills/givn-design/SKILL.md.tmpl`. Run → zero. Evidence:
+  - [x] GREEN: linked classification and driver in the matrix rule in
+        `assets/instructions/design.md`. Files: `assets/instructions/design.md`.
+        Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        4 steps (4 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(visual-design-contract): Design guidance requires a driver for every Web UI matrix row`
+  - [x] COMMIT: `0a4360ff` -- `feat(visual-design-contract): Design guidance requires a driver for every Web UI matrix row`
 
 - [ ] Scenario: `Design guidance names the user-visible persona boundary`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:

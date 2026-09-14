@@ -34,7 +34,7 @@ Feature: Visual Design Contract
     Then stdout contains "is a Web UI row"
     And stdout contains "needs a browser driver"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Design guidance names the user-visible persona boundary
     Given a givn project
     When the user runs `givn instructions design --change visual-design-contract`
