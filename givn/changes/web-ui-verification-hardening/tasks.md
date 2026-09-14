@@ -118,22 +118,29 @@ negative counterpart; the negative scenario is the RED driver.
         ```
   - [x] COMMIT: `4c944227` -- `feat(prose-consolidation): Canonical policy requires a rendered-state assertion`
 
-- [ ] Scenario: `Canonical policy requires evidence for every declared UI state`
-  - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
+- [x] Scenario: `Canonical policy requires evidence for every declared UI state`
+  - [x] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 failed)
+        stdout missing "declares UI states"
+        exit status: 1
         ```
-  - [ ] GREEN: added the per-state evidence rule to
+  - [x] GREEN: added the per-state evidence rule to
         `assets/instructions/specs.md`. Files: `assets/instructions/specs.md`.
         Run → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] REFACTOR: re-ran → zero. Evidence:
+  - [x] REFACTOR: re-ran → zero. Evidence:
         ```
-        <paste output>
+        1 feature
+        1 scenario (1 passed)
+        5 steps (5 passed)
         ```
-  - [ ] COMMIT: `<hash>` -- `feat(prose-consolidation): Canonical policy requires evidence for every declared UI state`
+  - [x] COMMIT: `1331246f` -- `feat(prose-consolidation): Canonical policy requires evidence for every declared UI state`
 
 - [ ] Scenario: `Canonical policy refuses a silent deferral of a mandatory check`
   - [ ] RED: removed `@wip` for this scenario only; run → non-zero. Evidence:

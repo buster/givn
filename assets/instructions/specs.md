@@ -131,6 +131,9 @@ rendered page. An HTTP request to a backend route, or `fetch()`/
 is not a valid browser E2E substitute. For an API-only capability, a real HTTP
 client is the correct interface.
 
+**No silent deferral:** a mandatory check is never deferred because of a project constraint.
+When a constraint conflicts with a mandatory check (for example "no dependencies" versus a browser driver), the conflict is put to the operator as an operator question; only the operator's recorded decision may allow the deferral, and a review without that record fails the review.
+
 **Interface obstacle rule:** an interface obstacle is a design gap, not a
 reason to weaken the assertion or switch to a lower-level boundary. Apply the
 concrete fix documented in `design.md` before implementing the scenario.

@@ -27,7 +27,7 @@ Feature: prose-consolidation
     And stdout contains "<viewport>--<state>.png"
     And stdout contains "empty, loading, or error"
 
-  @givn.added @wip
+  @givn.added
   Scenario: Canonical policy refuses a silent deferral of a mandatory check
     Given a givn project
     When the user runs `givn instructions specs --change prose-consolidation`
