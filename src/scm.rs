@@ -41,15 +41,16 @@ impl Backend {
     pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
         match self {
             Self::Git(worktree) => worktree.stage_paths(paths, force),
-            Self::Fossil(_) => self.upgrade_unavailable(),
+            Self::Fossil(checkout) => checkout.stage_paths(paths, force),
         }
     }
 
-    /// Whether the index holds staged changes.
+    /// Whether the backend holds staged changes. Fossil has no index, so the
+    /// pending checkout changes stand in for the staged set.
     pub fn has_staged_changes(&self) -> Result<bool> {
         match self {
             Self::Git(worktree) => worktree.has_staged_changes(),
-            Self::Fossil(_) => self.upgrade_unavailable(),
+            Self::Fossil(checkout) => checkout.has_staged_changes(),
         }
     }
 
@@ -57,7 +58,7 @@ impl Backend {
     pub fn commit_staged(&self, message: &str) -> Result<()> {
         match self {
             Self::Git(worktree) => worktree.commit_staged(message),
-            Self::Fossil(_) => self.upgrade_unavailable(),
+            Self::Fossil(checkout) => checkout.commit_staged(message),
         }
     }
 
@@ -75,24 +76,6 @@ impl Backend {
             Self::Git(worktree) => worktree.revision_contains(path),
             Self::Fossil(checkout) => checkout.revision_contains(path),
         }
-    }
-
-    /// Refuse commands whose Fossil path is not implemented yet.
-    pub fn require_managed_upgrade_support(&self) -> Result<()> {
-        match self {
-            Self::Git(_) => Ok(()),
-            Self::Fossil(_) => self.upgrade_unavailable(),
-        }
-    }
-
-    fn upgrade_unavailable<T>(&self) -> Result<T> {
-        let Self::Fossil(checkout) = self else {
-            unreachable!("only the Fossil backend refuses the managed upgrade");
-        };
-        bail!(
-            "Fossil checkout detected at '{}'; the Fossil backend is not available for the managed upgrade in this version",
-            checkout.root().display()
-        )
     }
 }
 

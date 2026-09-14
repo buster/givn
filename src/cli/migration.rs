@@ -349,7 +349,6 @@ pub fn prepare_managed_upgrade(
     commit_message: &str,
 ) -> Result<Option<String>> {
     let backend = crate::scm::select(project_root)?;
-    backend.require_managed_upgrade_support()?;
     if !backend.dirty_entries()?.is_empty() {
         bail!("automatic managed upgrade requires a clean checkout; no files were changed");
     }
@@ -428,7 +427,7 @@ fn commit_managed_upgrade(
     let relative = relative_managed_paths(project_root, paths)?;
     backend
         .stage_paths(&relative, true)
-        .context("Git could not stage managed upgrade files")?;
+        .context("the selected backend could not stage the managed upgrade files")?;
 
     if !backend.has_staged_changes()? {
         return Ok(None);
@@ -436,7 +435,7 @@ fn commit_managed_upgrade(
 
     backend
         .commit_staged(commit_message)
-        .context("Git could not create the managed upgrade commit")?;
+        .context("the selected backend could not create the managed upgrade revision")?;
     Ok(Some(backend.revision()?))
 }
 
@@ -686,16 +685,15 @@ fn commit_migration_plan(
     change_id: &str,
 ) -> Result<String> {
     let backend = crate::scm::select(project_root)?;
-    backend.require_managed_upgrade_support()?;
     let relative = relative_managed_paths(project_root, [migration_dir.to_path_buf()])?;
     backend
         .stage_paths(&relative, true)
-        .context("Git could not stage the aggregate migration plan")?;
+        .context("the selected backend could not stage the aggregate migration plan")?;
     backend
         .commit_staged(&format!(
             "docs(upgrade): record aggregate migration plan {change_id}"
         ))
-        .context("Git could not create the aggregate migration-plan commit")?;
+        .context("the selected backend could not create the aggregate migration-plan revision")?;
     backend
         .revision()
         .context("read the migration-plan revision")

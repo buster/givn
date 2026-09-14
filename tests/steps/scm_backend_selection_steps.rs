@@ -113,20 +113,6 @@ fn then_no_backend_refusal(world: &mut GivnWorld) {
     );
 }
 
-#[then("stderr names the Fossil checkout and the unavailable Fossil backend")]
-fn then_fossil_refusal(world: &mut GivnWorld) {
-    let root = world.env.as_ref().expect("project root").root();
-    let stderr = stderr(world);
-    assert!(
-        stderr.contains("Fossil checkout") && stderr.contains(&root.display().to_string()),
-        "stderr does not name the Fossil checkout at the project root: {stderr}"
-    );
-    assert!(
-        stderr.contains("not available"),
-        "stderr does not name the unavailable Fossil backend: {stderr}"
-    );
-}
-
 #[then("stderr names the Git marker and the Fossil marker")]
 fn then_ambiguity_refusal(world: &mut GivnWorld) {
     let stderr = stderr(world);
