@@ -3,46 +3,6 @@
 [![Branch Coverage: n/a](https://img.shields.io/badge/branch%20coverage-n--a-brightgreen)](coverage/cobertura-coverage.xml)
 <!-- givn:end:coverage-badge -->
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ```
   ________  .__
  /  _____/  |__|__  __ ____
@@ -62,7 +22,7 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   delta document, the executable test your runner executes, and — after
   archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
 - **One change lifecycle.** propose → spec → design → design-review → tasks →
-  implement → review → archive. Archive is forward-only and Git-backed: it
+  implement → review → archive. Archive is forward-only and backend-backed: it
   commits the merged archive candidate, runs each verification scope once
   against that commit, and records a verification receipt; a failed candidate
   stays in place and is repaired forward. Tagged delta scenarios merge into
@@ -118,11 +78,17 @@ givn init                             # scaffold givn/ + generate skills + AGENT
 /givn-archive
 ```
 
-`givn init` also checks in shared Git commit-attribution plumbing and activates
-it locally when the project is a Git worktree. OpenCode and Claude Code targets
-receive best-effort runtime integrations; when an agent exposes attribution
-context, the commit committer and message show the LLM, reasoning mode, harness,
-and Givn version. Missing context never blocks a human commit.
+Commit each scenario with `givn commit -m "feat(<capability>): <title>"`: it
+works on Git and Fossil, records the named paths or every pending change, and
+stamps the managed attribution trailer when the harness provides context.
+
+`givn init` checks in shared Git commit-attribution plumbing and activates it
+locally when the project is a Git worktree; a Fossil checkout receives no hook
+and reports `commit attribution: givn commit path only` (a raw `fossil commit`
+carries no attribution). OpenCode and Claude Code targets receive best-effort
+runtime integrations; when an agent exposes attribution context, the commit
+committer and message show the LLM, reasoning mode, harness, and Givn version.
+Missing context never blocks a human commit.
 
 ## Default workflow
 

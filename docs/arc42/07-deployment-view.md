@@ -41,7 +41,7 @@ givn/specs/
 givn/changes/
 givn/archive/
 .githooks/commit-msg                 # checked-in shared commit hook
-.opencode/plugins/givn-attribution.js # when opencode is selected
+.opencode/plugins/givn-attribution.js # when opencode is selected (Git and Fossil)
 .claude/hooks/givn-attribution.sh    # when claude is selected
 .claude/settings.json                # merged Givn hook entry when claude is selected
 ```

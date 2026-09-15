@@ -71,7 +71,7 @@ Mechanical check, before trusting anything else:
 1. Grep every step definition file for empty/trivial bodies (`{}`, bare
    `pass`/`return`, whitespace-only, no assertion reference). Record files
    scanned and findings (file:line).
-2. For every checked `[x]` task, confirm a commit exists and `git show
+2. For every checked `[x]` task, confirm a revision exists and `git show
    --stat <hash>` touches production source, not just spec/stub. Record
    any checked task with no commit or a spec-only commit.
 3. For every component design.md said would be created, confirm it exists

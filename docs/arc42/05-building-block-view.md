@@ -7,7 +7,7 @@ reads the latest assistant model from the transcript named by the hook payload,
 then composes an exported environment prefix before the complete Bash command.
 The generated Claude shell hook remains a thin launcher. OpenCode model
 extraction remains in its generated plugin asset. The same attribution CLI
-stamps only the managed co-author line at the Git commit boundary and removes
+stamps only the managed co-author line at the commit boundary (`givn commit` on every backend, the hook on Git) and removes
 stale legacy Givn attribution trailers.
 
 ## 5.1 Level 0 - System
@@ -76,7 +76,7 @@ flowchart TD
 | `overlap::analysis` | Find title duplicates, shape matches, subsets, long scenarios, dispositions, and net-delta receipts. |
 | `hooks` | Execute configured hooks with `GIVN_FEATURES`; built-in hook names are resolved and cannot be made allow-failure. |
 | Embedded attribution assets | Provide the checked-in `.githooks/commit-msg` hook and generated OpenCode/Claude harness integrations. |
-| `integrity_hook` | Check commit-hash/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and — for a declared visual interface — the visual verdict, the persona disposition, the final-state and per-state evidence completeness, plus the operator decision for any recorded deferral. |
+| `integrity_hook` | Check revision-identifier/task evidence, promised step-definition files, Arc42 affected-file edits, coverage configuration, the review-level README impact decision, and — for a declared visual interface — the visual verdict, the persona disposition, the final-state and per-state evidence completeness, plus the operator decision for any recorded deferral. |
 | `state` | Derive status from artifact paths, markers, skip files, and the manifest graph; expose archive provenance (legacy/pending/proven) from the receipt. |
 | `scm` | Select the version-control backend for the project root (a Git worktree first, then a Fossil checkout), enforce the project-boundary rule, refuse absence, ambiguity, a nested root, or a missing executable by name before any mutation, and expose the shared revision, clean-state, publication, and revision-content operations. |
 | `fossil` | Implement the Fossil checkout handle: revision identity from `fossil info`, the clean-state witness from `fossil changes --differ` (including `EXTRA` entries), witness-bounded publication through `fossil addremove` plus `fossil commit`, allowlist staging through `fossil add [--force]`, and revision-content checks through `fossil cat`. |

@@ -151,7 +151,8 @@ the orchestrator proceeds. A reported blocker goes to the user.
 Before moving on, the orchestrator itself (not another subagent) checks:
 
 1. Re-run the scenario yourself, targeted. Confirm zero exit now.
-2. Check the commit: `git show --stat <hash>`. Exists, and touches
+2. Check the revision: inspect the recorded identifier (for example
+   `git show --stat <hash>` on Git). Exists, and touches
    production source (not only spec/stub), unless a pure step-reuse case.
 3. Grep the step file(s) touched for empty bodies (`{}`, bare
    `pass`/`return`). Any match = reject.

@@ -198,10 +198,10 @@ PHASES = [
         checks=[
             Card("archive gates",
                  ["required artifacts complete &#183; PASS markers present &#183; hooks green &#183;",
-                  "fresh similarity gate re-run directly before the merge"]),
+                  "merge validated against the recorded narrative base revisions"]),
             Card("post-merge proof",
                  ["verify suite (+ e2e) against merged specs &#183; coverage addon gate &#8212;",
-                  "any failure rolls specs and README back from the backup"]),
+                  "any failure leaves the candidate unproven and repairable forward"]),
         ],
     ),
 ]
