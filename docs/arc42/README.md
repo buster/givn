@@ -20,7 +20,7 @@ run-declaration gate; the durable run-declaration facts live in chapters 3,
 6.15, 8.16, and the glossary.
 
 The `archive-proof` change proposes ADR-070: archive publication becomes
-forward-only and backend-backed, with a published candidate, fail-closed
+forward-only and SCM-backed (Git or Fossil), with a published candidate, fail-closed
 per-scope runner results, and a verification receipt published as the
 evidence-only finalization. Durable archive facts live in chapters 2, 3, 5,
 6.7, 8.6, 8.9, 8.12, and the glossary.

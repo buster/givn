@@ -22,7 +22,7 @@ A single-binary, Gherkin-first spec-driven workflow tool.
   delta document, the executable test your runner executes, and — after
   archiving — the permanent spec under `givn/specs/`. No parallel `spec.md`.
 - **One change lifecycle.** propose → spec → design → design-review → tasks →
-  implement → review → archive. Archive is forward-only and backend-backed: it
+  implement → review → archive. Archive is forward-only and SCM-backed (Git or Fossil): it
   commits the merged archive candidate, runs each verification scope once
   against that commit, and records a verification receipt; a failed candidate
   stays in place and is repaired forward. Tagged delta scenarios merge into

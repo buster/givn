@@ -130,6 +130,26 @@ impl FossilCheckout {
         Ok(!self.dirty_entries()?.is_empty())
     }
 
+    /// Commit exactly `paths` (already recorded), leaving other pending
+    /// changes untouched. Returns an error when none of them changed.
+    pub fn commit_paths(&self, message: &str, paths: &[PathBuf]) -> Result<()> {
+        let mut args: Vec<String> = vec![
+            "commit".to_string(),
+            "-m".to_string(),
+            message.to_string(),
+            "--".to_string(),
+        ];
+        for path in paths {
+            args.push(path.to_string_lossy().into_owned());
+        }
+        let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+        let output = self.run(&refs)?;
+        if !output.status.success() {
+            bail!("the commit was rejected: {}", stderr(&output));
+        }
+        Ok(())
+    }
+
     /// Commit the pending changes.
     pub fn commit_staged(&self, message: &str) -> Result<()> {
         let output = self.run(&["commit", "-m", message])?;

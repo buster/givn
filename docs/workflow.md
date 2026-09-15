@@ -149,7 +149,7 @@ givn archive        → artifact existence/completeness + PASS markers + all req
 
 ## 7. Archiving step by step
 
-`givn archive --change <id>` (forward-only, backend-backed, two revisions):
+`givn archive --change <id>` (forward-only, SCM-backed, two revisions):
 
 1. Preconditions: the selected backend (a Git worktree or a Fossil checkout)
    whose root is the project root; a committed checkout (only declared

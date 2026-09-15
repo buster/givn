@@ -65,9 +65,9 @@ pub struct Receipt {
     pub schema: u32,
     pub change: String,
     pub status: String,
-    #[serde(default)]
+    #[serde(default, alias = "candidate_commit")]
     pub candidate_revision: Option<String>,
-    #[serde(default)]
+    #[serde(default, alias = "tested_commit")]
     pub tested_revision: Option<String>,
     #[serde(default)]
     pub scopes: BTreeMap<String, ScopeOutcome>,

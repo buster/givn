@@ -221,3 +221,44 @@ fn collect_tree(root: &std::path::Path, dir: &std::path::Path, out: &mut Vec<(Pa
         }
     }
 }
+
+#[given("a Fossil checkout nested inside a Git worktree")]
+fn given_fossil_checkout_nested_in_git(world: &mut GivnWorld) {
+    let env = common::make_init_root_without_git();
+    common::git_init(&env);
+    let nested = env.path("nested");
+    std::fs::create_dir_all(&nested).expect("create nested dir");
+    let repo_dir = env.path("fossil-repo");
+    std::fs::create_dir_all(&repo_dir).expect("create fossil repo dir");
+    let repo = repo_dir.join("repo.fossil");
+    let run = |args: &[&str], cwd: &std::path::Path| {
+        std::process::Command::new("fossil")
+            .args(args)
+            .current_dir(cwd)
+            .env("FOSSIL_USER", "fixture")
+            .env("USER", "fixture")
+            .output()
+            .expect("run fossil fixture command")
+    };
+    let repo = repo.to_string_lossy().into_owned();
+    let init = run(&["init", &repo], &env.root());
+    assert!(
+        init.status.success(),
+        "fossil init failed: {}",
+        String::from_utf8_lossy(&init.stderr)
+    );
+    let open = run(&["open", "-f", &repo], &nested);
+    assert!(
+        open.status.success(),
+        "fossil open failed: {}",
+        String::from_utf8_lossy(&open.stderr)
+    );
+    let scaffold = common::run_givn_with_envs_in(&env, &nested, &["init"], &[]);
+    assert!(
+        scaffold.status.success(),
+        "givn init in the nested checkout failed: {}",
+        String::from_utf8_lossy(&scaffold.stderr)
+    );
+    world.cwd_override = Some(nested);
+    world.env = Some(env);
+}
