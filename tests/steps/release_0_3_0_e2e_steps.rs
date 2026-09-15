@@ -9,6 +9,26 @@ fn clean_legacy_project(world: &mut GivnWorld) {
     world.env = Some(legacy_git_project());
 }
 
+#[given("a clean Fossil project created with Givn 0.2.0")]
+fn fossil_clean_legacy_project(world: &mut GivnWorld) {
+    world.env = Some(legacy_fossil_project());
+}
+
+#[given("a clean Fossil project with current Givn files and a stale generated integration")]
+fn fossil_current_project_with_stale_integration(world: &mut GivnWorld) {
+    world.env = Some(current_fossil_project_with_stale_integration());
+}
+
+#[given("a Givn 0.2.0 Fossil project with uncommitted user changes")]
+fn fossil_dirty_project(world: &mut GivnWorld) {
+    let env = legacy_fossil_project();
+    let config = std::fs::read(env.path("givn/config.yaml")).expect("read legacy config");
+    std::fs::write(env.path("user-work.txt"), "uncommitted user change\n")
+        .expect("write user change");
+    world.additional_output = Some(String::from_utf8(config).expect("legacy config is UTF-8"));
+    world.env = Some(env);
+}
+
 pub(crate) fn legacy_git_project() -> crate::common::TestEnv {
     let env = crate::common::make_bare_root();
     let init = crate::common::run_givn_with_stdin(&env, &["init", "--no-addons"], "");
@@ -196,22 +216,35 @@ fn no_migration_change_exists(world: &mut GivnWorld) {
 #[then("one commit contains only the managed scaffold and generated agent integration changes")]
 fn first_commit_has_managed_paths(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
-    let commits = git_stdout(env, &["rev-list", "--reverse", "HEAD"]);
-    let hashes: Vec<&str> = commits.lines().collect();
-    assert!(
-        hashes.len() >= 3,
-        "expected fixture, A, and B commits: {commits}"
-    );
-    let changed = git_stdout(
-        env,
-        &[
-            "diff-tree",
-            "--no-commit-id",
-            "--name-only",
-            "-r",
-            hashes[1],
-        ],
-    );
+    let changed = match env.backend() {
+        crate::common::BackendKind::Git => {
+            let commits = git_stdout(env, &["rev-list", "--reverse", "HEAD"]);
+            let hashes: Vec<&str> = commits.lines().collect();
+            assert!(
+                hashes.len() >= 3,
+                "expected fixture, A, and B commits: {commits}"
+            );
+            git_stdout(
+                env,
+                &[
+                    "diff-tree",
+                    "--no-commit-id",
+                    "--name-only",
+                    "-r",
+                    hashes[1],
+                ],
+            )
+        }
+        crate::common::BackendKind::Fossil => {
+            assert_eq!(
+                fossil_checkin_count(env),
+                "4",
+                "expected Fossil's initial check-in, the fixture, the managed, and the plan check-ins"
+            );
+            let managed = fossil_first_child_checkin(env);
+            fossil_revision_paths(env, &managed).join("\n")
+        }
+    };
     assert!(!changed.is_empty(), "Commit A has no changed paths");
     for path in changed.lines() {
         assert!(
@@ -239,9 +272,14 @@ fn current_version_migration_change_exists(world: &mut GivnWorld) {
 #[then("the migration change records the managed upgrade commit")]
 fn migration_records_upgrade_commit(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("legacy project fixture");
-    let commits = git_stdout(env, &["rev-list", "--reverse", "HEAD"]);
-    let hashes: Vec<&str> = commits.lines().collect();
-    let commit_a = hashes.get(1).expect("Commit A hash");
+    let commit_a = match env.backend() {
+        crate::common::BackendKind::Git => {
+            let commits = git_stdout(env, &["rev-list", "--reverse", "HEAD"]);
+            let hashes: Vec<&str> = commits.lines().collect();
+            hashes.get(1).expect("Commit A hash").to_string()
+        }
+        crate::common::BackendKind::Fossil => fossil_first_child_checkin(env),
+    };
     let design = {
         let id = find_migration_change_id(env);
         std::fs::read_to_string(env.path(&format!("givn/changes/{id}")).join("design.md"))
@@ -309,6 +347,127 @@ fn git_stdout(env: &crate::common::TestEnv, args: &[&str]) -> String {
     String::from_utf8_lossy(&output.stdout).into_owned()
 }
 
+fn fossil(env: &crate::common::TestEnv, args: &[&str]) -> std::process::Output {
+    std::process::Command::new("fossil")
+        .args(args)
+        .current_dir(env.root())
+        .env("FOSSIL_USER", "fixture")
+        .env("USER", "fixture")
+        .output()
+        .expect("run fossil fixture command")
+}
+
+fn fossil_stdout(env: &crate::common::TestEnv, args: &[&str]) -> String {
+    let output = fossil(env, args);
+    assert!(
+        output.status.success(),
+        "fossil command failed: {}",
+        String::from_utf8_lossy(&output.stderr)
+    );
+    String::from_utf8_lossy(&output.stdout).into_owned()
+}
+
+/// The number of check-ins in the fixture repository.
+fn fossil_checkin_count(env: &crate::common::TestEnv) -> String {
+    fossil_stdout(env, &["sql", "select count(*) from event where type='ci'"])
+        .trim()
+        .to_string()
+}
+
+/// The displayed identifier of the first child check-in (the managed
+/// upgrade revision in a fixture with one fixture commit).
+fn fossil_first_child_checkin(env: &crate::common::TestEnv) -> String {
+    fossil_stdout(
+        env,
+        &[
+            "sql",
+            "select substr((select uuid from blob where rid=cid),1,40) from plink order by mtime limit 1 offset 1",
+        ],
+    )
+    .trim()
+    .trim_matches('\'')
+    .to_string()
+}
+
+/// The comment of the most recent check-in.
+fn fossil_latest_subject(env: &crate::common::TestEnv) -> String {
+    fossil_stdout(
+        env,
+        &[
+            "sql",
+            "select comment from event where type='ci' order by mtime desc limit 1",
+        ],
+    )
+    .trim()
+    .trim_matches('\'')
+    .to_string()
+}
+
+/// The paths a Fossil check-in changed, relative to the checkout root.
+fn fossil_revision_paths(env: &crate::common::TestEnv, revision: &str) -> Vec<String> {
+    fossil_stdout(env, &["diff", "--brief", "--checkin", revision])
+        .lines()
+        .filter_map(|line| -> Option<String> {
+            Some(line.split_once(char::is_whitespace)?.1.trim().to_string())
+        })
+        .collect()
+}
+
+fn legacy_fossil_project() -> crate::common::TestEnv {
+    let env = crate::common::make_fossil_root_uncommitted();
+    let config_path = env.path("givn/config.yaml");
+    let config = std::fs::read_to_string(&config_path).expect("read fixture config");
+    std::fs::write(
+        &config_path,
+        config.replace(
+            &format!("givn_config_version: \"{}\"", env!("CARGO_PKG_VERSION")),
+            "givn_config_version: \"0.2.0\"",
+        ),
+    )
+    .expect("write legacy fixture config");
+
+    let generated_skill = env.path(".opencode/skills/givn-spec/SKILL.md");
+    let mut skill = std::fs::read_to_string(&generated_skill).expect("read generated skill");
+    skill.push_str("\nlegacy generated marker\n");
+    std::fs::write(generated_skill, skill).expect("mark generated skill as legacy");
+
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
+        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
+    );
+    // Keep the generated agent files unmanaged so the upgrade's force-add is
+    // observable, then record the rest as the fixture's initial check-in.
+    let ignore = fossil(
+        &env,
+        &[
+            "settings",
+            "ignore-glob",
+            ".opencode/*,AGENTS.md,.gitignore",
+        ],
+    );
+    assert!(
+        ignore.status.success(),
+        "fossil settings failed: {}",
+        String::from_utf8_lossy(&ignore.stderr)
+    );
+    common::fossil_commit_all(&env, "fixture: Givn 0.2.0 project");
+    env
+}
+
+fn current_fossil_project_with_stale_integration() -> crate::common::TestEnv {
+    let env = crate::common::make_fossil_root_uncommitted();
+    let generated_skill = env.path(".opencode/skills/givn-spec/SKILL.md");
+    let mut skill = std::fs::read_to_string(&generated_skill).expect("read generated skill");
+    skill.push_str("\nstale generated marker\n");
+    std::fs::write(generated_skill, skill).expect("mark generated skill as stale");
+    common::write_commands_yaml(
+        &env.path("givn/commands.yaml"),
+        "verify:\n  command: \"./emit-result.sh regular\"\n  e2e_command: \"\"\n",
+    );
+    common::fossil_commit_all(&env, "fixture: Givn current project");
+    env
+}
+
 #[given("a Givn 0.2.0 project with uncommitted user changes")]
 fn dirty_legacy_project(world: &mut GivnWorld) {
     let env = legacy_git_project();
@@ -325,7 +484,9 @@ fn command_fails_before_file_changes(world: &mut GivnWorld) {
     assert!(!output.status.success(), "upgrade unexpectedly succeeded");
     let stderr = String::from_utf8_lossy(&output.stderr);
     assert!(
-        stderr.contains("clean Git worktree") || stderr.contains("requires a Git repository"),
+        stderr.contains("clean checkout")
+            || stderr.contains("requires a Git repository")
+            || stderr.contains("version-controlled project"),
         "{stderr}"
     );
     let env = world.env.as_ref().expect("dirty project fixture");
@@ -346,6 +507,25 @@ fn no_commit_is_created(world: &mut GivnWorld) {
     );
 }
 
+#[then("no revision is created")]
+fn no_revision_is_created(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("dirty project fixture");
+    // Fossil's repository starts with one initial empty check-in.
+    assert_eq!(fossil_checkin_count(env), "2");
+}
+
+#[then("one managed upgrade revision exists")]
+fn one_managed_upgrade_revision_exists(world: &mut GivnWorld) {
+    let env = world.env.as_ref().expect("current project fixture");
+    assert_eq!(
+        fossil_checkin_count(env),
+        "3",
+        "expected Fossil's initial check-in, the fixture, and the managed check-in"
+    );
+    let subject = fossil_latest_subject(env);
+    assert!(subject.contains("update managed files"), "{subject}");
+}
+
 #[then("the user changes remain byte-for-byte unchanged")]
 fn user_changes_remain_unchanged(world: &mut GivnWorld) {
     let env = world.env.as_ref().expect("dirty project fixture");
@@ -353,7 +533,11 @@ fn user_changes_remain_unchanged(world: &mut GivnWorld) {
         std::fs::read(env.path("user-work.txt")).expect("read user change"),
         b"uncommitted user change\n"
     );
-    assert!(git_stdout(env, &["status", "--porcelain"]).contains("?? user-work.txt"));
+    let dirty = crate::steps::archive_proof_support::dirty_entries(world);
+    assert!(
+        dirty.iter().any(|path| path.contains("user-work.txt")),
+        "the user change is no longer reported dirty: {dirty:?}"
+    );
 }
 
 #[given("a project that already has the current-version migration change")]
@@ -434,7 +618,20 @@ fn non_git_legacy_project(world: &mut GivnWorld) {
 fn git_required_report(world: &mut GivnWorld) {
     let output = crate::steps::output(world);
     let stderr = String::from_utf8_lossy(&output.stderr);
-    assert!(stderr.contains("requires a Git repository"), "{stderr}");
+    assert!(
+        stderr.contains("requires a Git repository")
+            || stderr.contains("version-controlled project"),
+        "{stderr}"
+    );
+}
+
+#[then(
+    "the command explains that a version-controlled project is required for the automatic migration"
+)]
+fn version_controlled_required_report(world: &mut GivnWorld) {
+    let output = crate::steps::output(world);
+    let stderr = String::from_utf8_lossy(&output.stderr);
+    assert!(stderr.contains("version-controlled project"), "{stderr}");
 }
 
 #[given(regex = r#"^a Givn 0.2.0 project with an existing "([^"]+)" change$"#)]

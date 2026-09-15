@@ -31,16 +31,20 @@ Feature: Givn 0.3.0 release and legacy project migration
     And every migration bundle has a source, target, order, proposal asset, and design asset
 
   @e2e
-  Scenario: A clean 0.2.0 project receives a reviewable aggregate migration plan
-    Given a clean Git project created with Givn 0.2.0
-    When the consumer invokes `givn upgrade` for migration
-    Then the command exits successfully
-    And the project config identifies the current Givn version
-    And one commit contains only the managed scaffold and generated agent integration changes
-    And a migration change for the current version exists
-    And the migration change records the managed upgrade commit
-    And the migration change contains a proposal and detailed design
-    And the migration change intentionally has no product specification
+  Scenario Outline: A clean 0.2.0 project receives a reviewable aggregate migration plan
+    Given  a clean <backend> project created with Givn 0.2.0
+    When  the consumer invokes `givn upgrade` for migration
+    Then  the command exits successfully
+    And  the project config identifies the current Givn version
+    And  one commit contains only the managed scaffold and generated agent integration changes
+    And  a migration change for the current version exists
+    And  the migration change records the managed upgrade commit
+    And  the migration change contains a proposal and detailed design
+    And  the migration change intentionally has no product specification
+    Examples:
+      | backend |
+      | Git |
+      | Fossil |
 
   @e2e
   Scenario: A clean project without migration requirements receives one managed upgrade commit
@@ -66,10 +70,10 @@ Feature: Givn 0.3.0 release and legacy project migration
     And the command reports that the project is already prepared for migration
 
   Scenario: A project outside Git is protected from a partial automatic migration
-    Given a Givn 0.2.0 project that is not a Git repository
-    When the consumer invokes `givn upgrade` for migration
-    Then the command fails before changing project files
-    And the command explains that a Git repository is required for the automatic migration
+    Given  a Givn 0.2.0 project that is not a Git repository
+    When  the consumer invokes `givn upgrade` for migration
+    Then  the command fails before changing project files
+    And  the command explains that a version-controlled project is required for the automatic migration
 
   Scenario: An existing migration plan is never overwritten
     Given a Givn 0.2.0 project with an existing "migrate-0-2-0-to-0-4-0" change
@@ -98,3 +102,18 @@ Feature: Givn 0.3.0 release and legacy project migration
     Then  the command exits non-zero
     And  the error reports "spec index" is not an available command
     And  the error output stays free of "embedding" and "download" wording
+  @e2e
+  Scenario: A clean Fossil project receives the same managed upgrade revision shape
+    Given  a clean Fossil project with current Givn files and a stale generated integration
+    When  the consumer invokes `givn upgrade` for migration-free refresh
+    Then  the command exits successfully
+    And  the project config identifies the current Givn version
+    And  one managed upgrade revision exists
+    And  no migration change exists
+
+  Scenario: A Fossil project with uncommitted changes is protected from automatic migration commits
+    Given  a Givn 0.2.0 Fossil project with uncommitted user changes
+    When  the consumer invokes `givn upgrade` for migration
+    Then  the command fails before changing project files
+    And  no revision is created
+    And  the user changes remain byte-for-byte unchanged

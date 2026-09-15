@@ -16,3 +16,10 @@ Feature: Commit attribution installation
     Then  the command exits 0
     And  stdout reports that commit attribution plumbing was refreshed
     And  the managed upgrade commit contains the checked-in hook and attribution integrations
+  @e2e
+  Scenario: Consumer initializes a Fossil project and receives the givn commit path without a hook
+    Given  a Fossil checkout without a givn/ directory
+    When  the consumer initializes Givn in the project
+    Then  the command exits 0
+    And  stdout names the givn commit attribution path
+    And  no .githooks directory exists

@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "change": "verify-change",
+  "status": "proven",
+  "candidate_revision": "8ae237b06aa8295c8d2e6f6c02c2a9f0d3aac072",
+  "tested_revision": "8ae237b06aa8295c8d2e6f6c02c2a9f0d3aac072",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 91,
+      "passed": 91,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 9.357391496
+    },
+    "regular": {
+      "status": "passed",
+      "total": 500,
+      "passed": 500,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 39.176137449
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7265,
+    "line_valid": 9246,
+    "line_percent": 78
+  },
+  "started_at_unix": 1789424012,
+  "finished_at_unix": 1789424093
+}

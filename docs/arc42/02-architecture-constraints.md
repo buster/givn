@@ -20,7 +20,7 @@ register](adr/README.md).
 | TC-10 | Delta tags use the `@givn.*` namespace. | `src/gherkin/delta.rs`, `src/gherkin/merge.rs` |
 | TC-11 | `givn lint` is static and never runs the project test suite. | `src/cli/lint.rs` |
 | TC-13 | The dependency-age policy checks locked registry crates through `scripts/check-dep-age.sh`. | Script and project policy |
-| TC-21 | Automatic managed upgrades and declared migrations require a Git repository with a clean worktree. | `src/cli/migration.rs`, migration E2E scenarios |
+| TC-21 | Automatic managed upgrades and declared migrations require a version-controlled project selected at the project root and a clean checkout; they run on Git and Fossil with the same guarantees. | `src/scm.rs`, `src/cli/migration.rs`, migration E2E scenarios |
 | TC-22 | Ignored generated paths are force-staged only through the calculated Givn-owned allowlist. | `src/cli/migration.rs`, ignored-path migration E2E fixture |
 | TC-25 | `givn run` signal forwarding (SIGINT/SIGTERM) is unix-only via a direct `libc` dependency; on other platforms server products refuse to start at preflight while cli/library products work. | `Cargo.toml` `[target.'cfg(unix)'.dependencies]`, `src/cli/run.rs` |
 | TC-26 | givn never derives run-declaration content from repository sources, build manifests, container files, or framework conventions; the declaration is author-owned configuration validated only by deterministic rules. | `src/cli/run_block.rs`, run-command feature specs |
@@ -28,8 +28,9 @@ register](adr/README.md).
 | TC-28 | Runtime attribution is process-scoped and optional; it is never persisted as model selection in `givn/config.yaml`. | OpenCode/Claude integrations and commit-attribution protocol |
 | TC-29 | The OpenCode attribution integration reads the selected provider and model from the required `chat.params` payload's `model` object, with optional `chat.message` enrichment; payload drift remains a best-effort compatibility risk. | `assets/agent-integrations/opencode/givn-attribution.js`, OpenCode plugin scenario |
 | TC-30 | The Claude attribution integration resolves the latest assistant model from the PreToolUse payload's transcript before using process fallbacks, exports context for the complete Bash command, and remains non-blocking when transcript metadata is missing or unreadable. | `src/cli/attribution.rs`, Claude attribution scenario |
-| TC-31 | Archive publication is forward-only and requires a Git worktree. Givn commits the merged archive candidate before verification, records the pending/proven state in `givn/archive/<id>/verification.json`, and never rolls the permanent corpus back. | `src/git.rs`, `src/proof.rs`, `src/cli/archive.rs`, archive-proof feature specs |
-| TC-32 | The givn project must be the Git repository root; the archive refuses a project nested inside a larger repository. | `src/git.rs`, archive-proof nested-project scenario |
+| TC-31 | Archive publication is forward-only and runs on the selected backend. Givn publishes the merged archive candidate revision before verification, records the pending/proven state in `givn/archive/<id>/verification.json`, and never rolls the permanent corpus back. Publication is witness-bounded: Git stages exactly the candidate paths, Fossil records all changes and commits the witnessed dirty set (ADR-072). | `src/scm.rs`, `src/fossil.rs`, `src/proof.rs`, `src/cli/archive.rs`, archive-proof feature specs |
+| TC-32 | The givn project must be the checkout root (the Git worktree top level or the Fossil checkout root); the archive refuses a project nested inside a larger repository. A root inside an ancestor Fossil checkout carries no marker at the root and is refused as having no version-controlled project. | `src/scm.rs`, archive-proof nested-project scenario |
+| TC-33 | Repository-state commands select the backend through one seam: a Git worktree selects Git and a Fossil checkout with the `fossil` executable available selects Fossil; both markers at the root, no version control, a nested Git project root, and a marker without its executable are refused by name before any mutation. No configuration key declares the backend. | `src/scm.rs`, `scm-backend-selection` fragment scenarios |
 
 ## 2.2 Configuration and Gate Constraints
 
@@ -100,8 +101,9 @@ enforced by the runtime.
 The automatic 0.2.0-to-0.3.0 route may write and commit only the config
 scaffold, generated agent integrations, Givn-owned fenced blocks, and its own
 migration plan. It may force-stage an ignored managed path only after the path
-has been calculated explicitly. It must refuse a dirty or non-Git project
-before writing and must never force-stage a directory or the complete worktree.
+has been calculated explicitly. It must refuse a dirty or non-version-controlled
+project before writing and must never force-stage a directory or the complete
+worktree.
 Domain specs, source code, ejected facets, durable Arc42 content, and
 architecture decisions remain project-owned and are changed only through the
 LLM-guided maintenance change.

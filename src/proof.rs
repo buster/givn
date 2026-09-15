@@ -65,10 +65,10 @@ pub struct Receipt {
     pub schema: u32,
     pub change: String,
     pub status: String,
-    #[serde(default)]
-    pub candidate_commit: Option<String>,
-    #[serde(default)]
-    pub tested_commit: Option<String>,
+    #[serde(default, alias = "candidate_commit")]
+    pub candidate_revision: Option<String>,
+    #[serde(default, alias = "tested_commit")]
+    pub tested_revision: Option<String>,
     #[serde(default)]
     pub scopes: BTreeMap<String, ScopeOutcome>,
     #[serde(default)]
@@ -81,14 +81,14 @@ pub struct Receipt {
 
 impl Receipt {
     /// Write the pending receipt committed with the candidate. It cannot name
-    /// the candidate commit's own hash, so both commit fields stay unset.
+    /// the candidate revision's own identifier, so both revision fields stay unset.
     pub fn write_pending(archive_dir: &Path, change: &str, started_at_unix: u64) -> Result<()> {
         let receipt = Self {
             schema: 1,
             change: change.to_string(),
             status: STATUS_PENDING.to_string(),
-            candidate_commit: None,
-            tested_commit: None,
+            candidate_revision: None,
+            tested_revision: None,
             scopes: BTreeMap::new(),
             coverage: None,
             started_at_unix: Some(started_at_unix),
@@ -103,7 +103,7 @@ impl Receipt {
     pub fn write_proven(
         archive_dir: &Path,
         change: &str,
-        tested_commit: &str,
+        tested_revision: &str,
         scopes: BTreeMap<String, ScopeOutcome>,
         coverage: Option<CoverageOutcome>,
         started_at_unix: u64,
@@ -113,8 +113,8 @@ impl Receipt {
             schema: 1,
             change: change.to_string(),
             status: STATUS_PROVEN.to_string(),
-            candidate_commit: Some(tested_commit.to_string()),
-            tested_commit: Some(tested_commit.to_string()),
+            candidate_revision: Some(tested_revision.to_string()),
+            tested_revision: Some(tested_revision.to_string()),
             scopes,
             coverage,
             started_at_unix: Some(started_at_unix),

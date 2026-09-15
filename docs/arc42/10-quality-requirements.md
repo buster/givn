@@ -59,7 +59,7 @@ graph TD
 | Q-47 | Architecture documentation | Effective and generated guidance are compared. | The canonical Arc42 instruction owns the procedure; derived guidance uses the same policy without claiming runtime enforcement, and project overrides remain effective. |
 | Q-48 | Release | A clean project marked 0.2.0 runs the 0.3.0 upgrade. | Managed config/integrations are updated, Commit A contains only the allowlist, and a maintenance plan with Commit A evidence is committed separately. |
 | Q-49 | Release safety | A project has uncommitted or untracked work. | Upgrade fails before writing or committing and preserves the worktree byte-for-byte. |
-| Q-50 | Release safety | A project is not a Git repository. | The automatic route fails before writing and explains the required Git boundary. |
+| Q-50 | Release safety | A project has no usable version-control backend. | The automatic route fails before writing and names the project root and the missing version-controlled project. |
 | Q-51 | Release safety | A migration plan already exists. | Upgrade reports it and never overwrites or duplicates the plan. |
 | Q-52 | Migration guidance | An LLM opens the generated maintenance change. | Proposal and design provide ordered project-specific prompts; no synthetic product spec or fabricated pass evidence exists. |
 | Q-53 | Maintenance archive | A completed migration change intentionally skips `specs`. | Global verification uses permanent specs, archive succeeds, and no migration feature is added to permanent specs. |
@@ -90,6 +90,7 @@ graph TD
 | Q-89 | Gate safety | A declared visual interface has no `PERSONAS:` line, or the line names `none`. | `givn check review` fails naming the persona disposition. |
 | Q-90 | Gate safety | `review.md` records a `DEFERRAL:` without an `OPERATOR-DECISION:`. | `givn check review` fails naming the missing operator decision. |
 | Q-91 | Gate safety | A capability renders HTML/CSS/JS in a browser without controls or server state. | The emitted specs and design guidance classify it as a Web UI and require a browser driver; review rejects an HTTP-only step as a downgraded e2e scenario. |
+| Q-92 | Portability | A completed change is archived in a Fossil checkout. | The same proof runs as on Git: the candidate check-in contains exactly the merged corpus paths, the receipt binds the tested revision, and the finalization check-in contains only the archive evidence. |
 
 ## 10.3 Verification Signals
 

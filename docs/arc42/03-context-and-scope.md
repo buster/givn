@@ -24,7 +24,9 @@ flowchart LR
 | AI coding agent | Reads effective instructions, generated skills, review reports, and Arc42 docs; edits project artifacts and source. |
 | Project filesystem | Stores `givn/`, source code, `AGENTS.md`, generated agent files, and durable `docs/arc42/`. |
 | Test runner | Is configured in `givn/commands.yaml`; receives `GIVN_FEATURES` and `GIVN_RESULT_FILE` and executes feature scenarios, reporting per-scope scenario counts. |
-| Git CLI | Stores the archive candidate and finalization commits, reports the worktree state for the committed-state witness, and provides the recovery history for forward repair. |
+| Git CLI | Answers backend selection (`rev-parse --is-inside-work-tree`), stores the archive candidate, finalization, and upgrade revisions, reports the worktree state for the committed-state witness, and provides the recovery history for forward repair. |
+| Fossil CLI | Answers checkout discovery and revision identity (`info`), reports the checkout state including `EXTRA` files for the committed-state witness, records and commits the archive candidate, finalization, upgrade, and `givn commit` revisions, and provides the recovery history for forward repair. |
+| Fossil checkout marker | `.fslckout` or `_FOSSIL_` at the project root identifies a Fossil checkout; the archive and the managed upgrade run on it through the selected backend. |
 | Started product | Spawned by `givn run` from the declared start command; its output is inherited, its exit code forwarded, and its signals forwarded on unix. |
 | Automation caller around givn (for example the kiekste preview host) | Reads the run declaration and drives `givn run` through its machine contract (ready line, exit codes, port hand-off); it never guesses start information. |
 | CI | Runs static lint, configured test commands, mandatory checks, and archive/review gates. |
@@ -50,7 +52,7 @@ not alter other content.
 | `givn check review --change <id>` | in/out | Mandatory checks and the overlap disposition gate. |
 | `givn readme check` | out | Deterministic README report: open placeholders, legacy scaffold texts, development and run managed block damage, unmanaged or missing README; exit status reflects findings. |
 | `givn run [--port <n>] [--print]` | in/out | Starts the declared product; for servers waits for readiness, prints `givn run: ready at http://127.0.0.1:<port><ready_path>` on stdout, forwards the child's exit code, and forwards SIGINT/SIGTERM on unix. Exit codes: 0 nothing-to-start/clean shutdown, 1 preflight findings or `--port` without `port_env`, 2 readiness timeout, 130 SIGINT, 143 SIGTERM. `--print` emits one sh-eval-able start line without executing. |
-| `givn upgrade` on a 0.2.0 project | in/out | Clean-worktree preflight, managed scaffold synchronization, two Git commits, and creation of a maintenance migration change. |
+| `givn upgrade` on a 0.2.0 project | in/out | Clean-checkout preflight through the selected backend, managed scaffold synchronization, two backend commits, and creation of a maintenance migration change. |
 | `assets/migrations/catalog.yaml` | in | Release-owned migration bundle policy used to resolve version gaps and aggregate ordered migration phases. |
 | `givn/archive/<id>/` | out | Archived change directory, its pending/proven verification receipt, and the raw per-scope runner results. |
 | Agent target directories | out | Selected `.opencode`, `.agents`, and `.claude` skill paths; opencode commands use `.opencode/commands`. |
@@ -83,6 +85,10 @@ not alter other content.
   duplicates`, `spec progress`, `spec coverage`, `spec route`) with
   deterministic overlap fingerprints and per-use-case narrative files.
 - Repository-owned compiled-CLI acceptance fixtures.
+- Version-control backend selection at the project root through one seam: Git
+  and Fossil are implemented for the archive and the managed upgrade; both
+  markers, no version control, a nested root, and a missing executable are
+  refused by name before mutation.
 - Strict ADR qualification guidance and canonical routing of architecture rationale.
 - Version 0.3.0 release metadata and the 0.2.0-to-0.3.0 LLM migration path.
 

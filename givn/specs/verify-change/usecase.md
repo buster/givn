@@ -1,4 +1,4 @@
-<!-- givn:base-sha256:bf62026e253ae1a6378388e8d6effa65e06830f7c1ae921d398bf8734a41ae65 -->
+
 # Use case: verify-change
 
 ## Level
@@ -102,3 +102,5 @@ flowchart LR
   Check --> Migration[[Compare migration evidence]]
   Check --> Findings[[Resolve findings]]
 ```
+
+<!-- givn:base-sha256:634310afb3ea4205aaf02bf35416963306989833259ca942e70986625c970a24 -->
