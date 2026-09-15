@@ -103,9 +103,6 @@ Key sections:
   display `name` (built-in hook names always ignore `allow_failure`).
 - `addons:` / `extras:` — see tables above.
 
-Semantic retrieval knobs are environment variables, not config keys — see the
-semantic duplicate pipeline section in [`workflow.md`](workflow.md).
-
 ## What givn creates in your project
 
 ```
@@ -113,12 +110,10 @@ givn/
 ├── config.yaml                       # documented + versioned: overlay + verify.command
 ├── commands.yaml                     # project-owned test and coverage scripts
 ├── specs/<group>/<cap>.feature       # permanent merged spec (source of truth)
-├── .spec-index.json                  # E5 embedding index (incremental, content-hashed)
 ├── changes/<id>/                     # active change (state = which files exist)
 │   ├── proposal.md
 │   ├── specs/<group>/<cap>.feature   # delta: @givn.delta + added|modified|removed
 │   ├── design.md  tasks.md  design-review.md  review.md
-│   ├── semantic-review.md            # generated evidence/classification worklist
 │   └── arc42.md                      # optional: arc42 addon marker (STATUS: DONE)
 ├── archive/<id>/                     # archived changes: report, verification.json, results/
 └── (ejected overrides, on demand)

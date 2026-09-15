@@ -66,7 +66,7 @@ historical records.
 ## Related Documents
 
 - [`../../README.md`](../../README.md) - user-facing project overview.
-- [`../TASKS.md`](../TASKS.md) - project implementation task breakdown.
+- [`../workflow.md`](../workflow.md) - ordered workflow phases, gates, and chokepoints.
 - [`../migrations/0.2.0-to-0.3.0.md`](../migrations/0.2.0-to-0.3.0.md) - LLM prompt pack for the 0.3.0 project migration.
 - [`../migrations/README.md`](../migrations/README.md) - release-owned migration bundle and aggregate-plan contract.
 

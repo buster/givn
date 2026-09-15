@@ -78,11 +78,11 @@ superseded by [ADR-069](ADR-069-single-feature-free-binary.md) and moved to
 |---|---|
 | Manifest and addons | [`src/config/overlay.rs`](../../../src/config/overlay.rs), [`src/config/manifest.rs`](../../../src/config/manifest.rs), [`src/cli/init.rs`](../../../src/cli/init.rs), [`givn/commands.yaml`](../../../givn/commands.yaml) |
 | Hooks and mandatory checks | [`src/cli/check.rs`](../../../src/cli/check.rs), [`src/hooks.rs`](../../../src/hooks.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs) |
-| Archive proof | [`src/git.rs`](../../../src/git.rs), [`src/proof.rs`](../../../src/proof.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs), [`givn/changes/archive-proof/`](../../../givn/changes/archive-proof/) |
+| Archive proof | [`src/scm.rs`](../../../src/scm.rs), [`src/fossil.rs`](../../../src/fossil.rs), [`src/proof.rs`](../../../src/proof.rs), [`src/cli/archive.rs`](../../../src/cli/archive.rs), [`givn/archive/archive-proof/`](../../../givn/archive/archive-proof/) |
 | SCM backend selection | [`src/scm.rs`](../../../src/scm.rs), [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`givn/specs/fragments/scm-backend-selection.feature`](../../../givn/specs/fragments/scm-backend-selection.feature) |
 | Agent ownership | [`src/skills/targets.rs`](../../../src/skills/targets.rs), [`src/cli/agents_block.rs`](../../../src/cli/agents_block.rs), [`src/cli/absolute_mode.rs`](../../../src/cli/absolute_mode.rs) |
 | Release migration | [`src/cli/migration.rs`](../../../src/cli/migration.rs), [`assets/migrations/catalog.yaml`](../../../assets/migrations/catalog.yaml), [`docs/migrations/0.2.0-to-0.3.0.md`](../../migrations/0.2.0-to-0.3.0.md), and release migration feature scenarios |
-| PR #27 measurements | [`semantic-duplicates-real-model-filter-report.md`](../../semantic-duplicates-real-model-filter-report.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
+| PR #27 measurements | [`semantic-duplicates-real-model-analysis.md`](../../archive/analysis/semantic-duplicates-real-model-analysis.md) and its linked benchmark/manual reports; raw JSON reports are local and ephemeral under the paths stated there. |
 
 ## Archived ADRs
 
