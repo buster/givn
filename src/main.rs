@@ -48,6 +48,12 @@ enum Commands {
         agents: Vec<String>,
     },
     /// Create one attributed revision through the selected SCM backend.
+    ///
+    /// Records the named paths (or every pending change) and commits them.
+    /// The managed attribution trailer is appended when the harness exports
+    /// attribution context (GIVN_ATTRIBUTION_ACTIVE); otherwise the message
+    /// is committed unchanged. Fails when the checkout has no pending
+    /// changes or no backend owns the project.
     Commit {
         /// Revision message.
         #[arg(short, long)]

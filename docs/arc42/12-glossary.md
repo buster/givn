@@ -147,8 +147,8 @@
 
 Fossil-specific clauses in this glossary (Fossil `EXTRA` dirty semantics,
 attribution through `givn commit`, the Fossil backend itself) describe the
-agreed target contract. The archive and the managed upgrade run on Fossil;
-commit attribution through `givn commit` remains a later topic seed.
+implemented contract: the archive, the managed upgrade, and the SCM-neutral
+commit path all run on Git and Fossil.
 
 ### Visual-review invariants
 

@@ -86,7 +86,7 @@ change's design and left `proposed` until the full suite and the @e2e scope
 stayed green; the compatibility obligation is carried by R-45 in chapter 11.
 
 ADR-070 is accepted by the `archive-proof` change: publication becomes
-forward-only and Git-backed — the merged archive candidate is committed before
+forward-only and backend-backed — the merged archive candidate is published before
 verification, each verification scope runs once with a fail-closed runner
 result, and the verification receipt is committed as the evidence-only
 finalization. Unlike ADR-067, this record is accepted before the archive runs:

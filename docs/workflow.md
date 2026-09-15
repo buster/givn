@@ -89,9 +89,10 @@ RED      Remove @wip from THIS scenario only. Run the runner targeting this
 GREEN    Replace stubs with real assertions, write minimum production code,
          list every production file touched. MUST exit zero.
 REFACTOR Clean up with no behaviour change. Re-run this scenario. MUST stay zero.
-COMMIT   One commit for RED+GREEN+REFACTOR. Message contains the scenario
-         title verbatim ("feat(<capability>): <title>"). Record the hash in
-         tasks.md immediately.
+COMMIT   One revision for RED+GREEN+REFACTOR via
+         `givn commit -m "feat(<capability>): <title>"` (works on Git and
+         Fossil; raw Git commits are stamped by the hook, raw Fossil
+         check-ins are not). Record the identifier in tasks.md immediately.
 ```
 
 - Setup task comes first: proof that the runner is strict (an empty step must
@@ -123,11 +124,11 @@ COMMIT   One commit for RED+GREEN+REFACTOR. Message contains the scenario
 | lint hook | built-in hook (`verify`, `lint`, …) | parse errors (severity 1) outrank duplicate titles (3), which outrank `@wip`/PENDING (2); exit code = highest severity. Built-in hooks can never be downgraded via `allow_failure`. |
 | verify sentinel | hooks running `verify.command` | fails until a real Gherkin runner is configured |
 | verify-e2e anti-bypass | hooks | `@e2e` scenarios exist but `verify.e2e_command` is still the sentinel ⇒ fail; cross-checks tasks.md intent so tag removal cannot bypass it |
-| integrity | part of `givn check review` + `integrity` hook | every `[x] COMMIT:` line has a real hash (no placeholders, no duplicate hashes, ≥1 hash required); Step Definitions table entries exist and are non-empty; arc42 chapters marked "Affected: Yes" differ from template; coverage config complete if addon enabled |
+| integrity | part of `givn check review` + `integrity` hook | every `[x] COMMIT:` line records a real revision identifier (no placeholders, no duplicates, at least one required); Step Definitions table entries exist and are non-empty; arc42 chapters marked "Affected: Yes" differ from template; coverage config complete if addon enabled |
 | `@wip` gate | `givn check tasks` | any non-removed `@wip` scenario in delta features ⇒ block |
 | overlap dispositions | `givn check review` | every `shape_match` finding involving delta files has a disposition row in `review.md`; missing `review.md` ⇒ block |
 | semantic review | `givn check review --change <id>` | see §6 |
-| conventional commits | local git `commit-msg` hook | message matches Conventional Commits regex (this repository's own setup) |
+| conventional commits | `givn commit`, or the local Git `commit-msg` hook | message matches the Conventional Commits regex (this repository's own setup); the hook exists only on Git |
 
 Chokepoints:
 
@@ -193,11 +194,12 @@ the `/givn-spec` skill instructs agents to use `spec index` / `spec search` /
 
 ## 8. Archiving step by step
 
-`givn archive --change <id>` (forward-only, Git-backed, two commits):
+`givn archive --change <id>` (forward-only, backend-backed, two revisions):
 
-1. Preconditions: a Git worktree whose root is the project root; a committed
-   worktree (only declared evidence paths may be dirty); the change exists and
-   is active; all `apply.requires` artifacts exist and are complete
+1. Preconditions: the selected backend (a Git worktree or a Fossil checkout)
+   whose root is the project root; a committed checkout (only declared
+   evidence paths may be dirty); the change exists and is active; all
+   `apply.requires` artifacts exist and are complete
    (`tasks.md` fully checked, `REVIEW: PASS` marker present).
 2. Structural gates run before any mutation: configured archive hooks, the
    run-declaration gate, the README completeness gate, use-case/delta

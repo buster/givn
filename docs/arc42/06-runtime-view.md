@@ -156,7 +156,7 @@ For `givn check tasks`, the binary runs the non-configurable mandatory checks:
 
 For `givn check review`, it runs:
 
-1. The integrity hook for task hashes, promised files, enabled Arc42 or
+1. The integrity hook for task revision identifiers, promised files, enabled Arc42 or
    coverage checks, and — when `design.md` declares a visual interface — the
    visual verdict, the persona disposition, the final-state and per-state
    evidence, and the operator decision for any recorded deferral.
@@ -405,6 +405,5 @@ whose root is nested inside a larger worktree is refused by name (TC-32). The
 Git backend exposes clean-state witness, revision identity, scoped staging, and
 scoped commit operations; the managed upgrade consumes them. The Fossil backend
 exposes the clean-state witness (including `EXTRA` entries), revision identity,
-witness-bounded publication, and revision-content checks; the archive consumes
-them, while the managed upgrade refuses a Fossil checkout by name until its
-path exists (section 6.13).
+witness-bounded publication, allowlist staging, and revision-content checks;
+the archive and the managed upgrade consume them (section 6.13).

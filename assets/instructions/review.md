@@ -45,7 +45,7 @@ empty/no-op stubs. Mechanical check, before trusting any other artifact:
 7. **Identify the exact file(s) `verify.e2e_command` actually invokes.**
    Read the command itself from `givn/config.yaml`, not just its name — a
    file merely containing "e2e" in its path is not evidence it is bound to
-   that command. Then run `git status` and search the tree for any other
+   that command. Then inspect the working state and search the tree for any other
    `@e2e` step implementation for the same capability, including untracked
    or uncommitted files. If more than one implementation exists, read all
    of them. A weaker/downgraded implementation being reviewed while a

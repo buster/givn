@@ -367,11 +367,11 @@
     <div class="checks">
       <div class="check">
         <b>archive gates</b><span class="tag blocking">blocking</span>
-        <small>required artifacts complete · PASS markers present · all required hooks green · fresh similarity gate re-run directly before the merge</small>
+        <small>required artifacts complete · PASS markers present · all required hooks green · merge validated against the recorded narrative base revisions</small>
       </div>
       <div class="check">
         <b>post-merge proof</b><span class="tag blocking">blocking</span>
-        <small>verify suite (+ e2e) against merged specs · coverage addon gate — any failure rolls specs and README back from the backup</small>
+        <small>verify suite (+ e2e) against merged specs · coverage addon gate — any failure leaves the candidate unproven and repairable forward</small>
       </div>
     </div>
   </section>

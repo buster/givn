@@ -40,7 +40,7 @@ The `archive-change` change records ADR-072: publication through the seam is
 witness-bounded, the archive runs on Git and Fossil, and a candidate whose
 publication a hook rejected is republished on resume. Durable facts live in
 chapters 2 (TC-21, TC-31, TC-32), 3, 4, 5, 6.7/6.13/6.16, 7.3, 8.18, 10
-(Q-92), 11 (R-65, R-66, D-20), and the glossary.
+(Q-92), 11 (R-65, R-66), and the glossary.
 
 Only accepted, non-superseded ADRs are current architecture. See the [chapter 9
 register](adr/README.md) for status, relationships, evidence, reserved IDs, and
