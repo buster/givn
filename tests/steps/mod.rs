@@ -55,6 +55,8 @@ pub mod run_execution_steps;
 pub mod run_execution_support;
 pub mod run_readme_steps;
 pub mod run_upgrade_steps;
+pub mod scm_backend_selection_e2e_steps;
+pub mod scm_backend_selection_steps;
 pub mod skill_rewrites_steps;
 pub mod spec_discovery_deterministic_steps;
 pub mod spec_overlap_gates_steps;
@@ -128,6 +130,11 @@ pub struct GivnWorld {
     /// Skip the generic archive auto-commit for fixtures that intentionally
     /// present a dirty or hook-rejecting worktree.
     pub(crate) skip_auto_commit: bool,
+    /// Take the tree snapshot right before the next invocation, after every
+    /// Given has finished writing, for the no-mutation assertion.
+    pub(crate) snapshot_on_run: bool,
+    /// State for the SCM backend selection scenarios.
+    pub(crate) scm_fixture: scm_backend_selection_steps::ScmFixture,
 }
 
 /// A readiness probe running on a background thread.
@@ -236,6 +243,12 @@ fn init_root_no_addons(world: &mut GivnWorld) {
 #[given("a placeholder step")]
 fn placeholder_step(_world: &mut GivnWorld) {
     // No-op: used by @givn.removed scenarios that need a single step to parse.
+}
+
+#[given("placeholder")]
+fn removed_scenario_placeholder(_world: &mut GivnWorld) {
+    // No-op: a @givn.removed scenario carries exactly one placeholder step so
+    // the parser accepts it; the scenario is deleted at archive.
 }
 
 #[given("a project root without a givn/ directory")]
@@ -408,6 +421,11 @@ fn user_runs(world: &mut GivnWorld, cmd: String) {
     // The archive starts from a committed project state; generic fixtures
     // emulate the developer's commit. Dirty-tree scenarios use a dedicated
     // step that skips this.
+    if world.snapshot_on_run {
+        let root = world.cwd_override.clone().unwrap_or_else(|| env.root());
+        world.scm_fixture.snapshot = Some(scm_backend_selection_steps::snapshot_tree(&root));
+        world.snapshot_on_run = false;
+    }
     if args.first().is_some_and(|arg| arg == "archive") && !world.skip_auto_commit {
         common::commit_fixture(env);
     }

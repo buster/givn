@@ -16,6 +16,11 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
     }
 
     let manifest = load_effective()?;
+    let scm = scm_name(&project_root);
+
+    if !json {
+        print_scm_line(&project_root);
+    }
 
     if let Some(id) = change {
         let change_dir = crate::state::resolve_change_dir(&project_root, id)?;
@@ -28,6 +33,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
                         serde_json::to_string_pretty(&serde_json::json!({
                             "id": id,
                             "archived": true,
+                            "scm": scm,
                         }))?
                     );
                 } else {
@@ -39,7 +45,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
         }
         let state = ChangeState::from_manifest(&change_dir, &manifest);
         if json {
-            print_json(&state)?;
+            print_json(&state, scm)?;
         } else {
             print_detail(&state);
         }
@@ -51,7 +57,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
         // Auto-default to detail view when exactly one active change exists.
         if changes.len() == 1 {
             if json {
-                print_json(&changes[0])?;
+                print_json(&changes[0], scm)?;
             } else {
                 print_detail(&changes[0]);
                 print_unproven_archives(&unproven);
@@ -67,6 +73,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
                         "active": [],
                         "archived": [],
                         "unproven_archives": [],
+                        "scm": scm,
                     }))?
                 );
             } else {
@@ -81,6 +88,7 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
                 "active": active,
                 "archived": archived,
                 "unproven_archives": unproven,
+                "scm": scm,
             });
             println!("{}", serde_json::to_string_pretty(&out)?);
         } else {
@@ -98,6 +106,26 @@ pub fn run(change: Option<&str>, json: bool) -> Result<()> {
     }
 
     Ok(())
+}
+
+/// The backend name for machine-readable output.
+fn scm_name(project_root: &std::path::Path) -> &'static str {
+    match crate::scm::select(project_root) {
+        Ok(crate::scm::Backend::Git(_)) => "git",
+        Ok(crate::scm::Backend::Fossil(_)) => "fossil",
+        Err(_) => "none",
+    }
+}
+
+/// Report the version-control backend that owns the project (A19: any
+/// selection failure reports `none` with the unavailable note; the specific
+/// reason surfaces from the command that needs the backend).
+fn print_scm_line(project_root: &std::path::Path) {
+    match crate::scm::select(project_root) {
+        Ok(crate::scm::Backend::Git(_)) => println!("SCM: git"),
+        Ok(crate::scm::Backend::Fossil(_)) => println!("SCM: fossil"),
+        Err(_) => println!("SCM: none (archive and managed upgrade are unavailable)"),
+    }
 }
 
 /// Surface unproven archive candidates and route the developer to resume.
@@ -220,7 +248,7 @@ fn summary_json(state: &ChangeState) -> serde_json::Value {
     })
 }
 
-fn print_json(state: &ChangeState) -> Result<()> {
+fn print_json(state: &ChangeState, scm: &str) -> Result<()> {
     let artifacts: Vec<serde_json::Value> = state
         .artifacts
         .iter()
@@ -260,6 +288,7 @@ fn print_json(state: &ChangeState) -> Result<()> {
 
     let mut out = serde_json::json!({
         "id": state.id,
+        "scm": scm,
         "stage": state.stage_label(),
         "all_required_done": state.all_required_done(),
         "next_required": next,

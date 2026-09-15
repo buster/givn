@@ -296,9 +296,9 @@ user values for review where it cannot map them. Addon flags are preserved;
 enabling a new addon remains an explicit `givn addons enable` operation.
 Ejected facets are not automatically replaced.
 
-For every managed upgrade, it refuses a non-Git or dirty worktree before any
-write, stages only a calculated list of Givn-owned paths, and creates one commit
-if the managed files changed. A declared migration route adds an aggregate
+For every managed upgrade, it refuses a project without a usable backend or a
+dirty checkout before any write, stages only a calculated list of Givn-owned
+paths, and creates one commit if the managed files changed. A declared migration route adds an aggregate
 maintenance change under `givn/changes/` and a second commit containing its
 ordered bundle plan. Existing active plans are detected through their visible
 `migration.yaml` metadata; archived plans are historical and do not block a
@@ -543,3 +543,33 @@ binary enforces the verdict marker, the persona disposition, the deferral
 pair, and the final-state plus per-state evidence completeness in the
 integrity hook; the persona judgment, the classification reasoning, and the
 baseline assertion quality remain review guidance, not runtime inference.
+
+## 8.18 SCM Backend Selection
+
+Repository-state commands do not assume Git. `givn commit` creates one
+attributed revision through the selected backend on both backends, and the
+attribution plumbing is installed only where the backend supports it: Git
+receives the shared hook and its local activation, Fossil relies on the
+`givn commit` path and receives no hook. A single seam
+(`src/scm.rs::select`) probes the project root and returns a backend handle or
+a named refusal:
+
+- a Git worktree selects Git;
+- a Fossil checkout selects Fossil when the `fossil` executable is available;
+- both markers at the root are refused as ambiguous;
+- no marker is refused as "no version-controlled project";
+- a project root nested inside a larger Git worktree is refused by name;
+- a Git or Fossil marker without its executable is refused by name.
+
+Detection order is fixed (Git first, then Fossil); ancestor Fossil markers are
+ignored. No configuration key declares the backend (ADR-071). Refusals name the
+project root and the missing prerequisite, mutate nothing, and return before
+any write. The Git backend exposes clean-state witness, revision identity,
+scoped staging (force only for the calculated managed allowlist), and scoped
+commits; the managed upgrade consumes them. The Fossil backend exposes the
+clean-state witness (including `EXTRA` entries), revision identity,
+witness-bounded publication, allowlist staging (`fossil add [--force]`, force
+only for the calculated managed allowlist), and revision-content checks; the
+archive and the managed upgrade consume them. Publication is witness-bounded
+on both backends (ADR-072): the exact dirty set is validated against the
+resolved publication paths before anything is recorded.

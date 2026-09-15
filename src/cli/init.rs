@@ -100,13 +100,36 @@ pub fn run(force: bool, no_addons: bool, agents: &[String]) -> Result<()> {
         }
     }
 
+    // Backend awareness: name the selected backend's limits instead of
+    // staying silent about commands that cannot work here (Q2, Q7).
+    match crate::scm::select(&project_root) {
+        Ok(crate::scm::Backend::Fossil(_)) => {}
+        Err(_) => {
+            println!(
+                "\n  warning: no Git worktree or Fossil checkout found at '{}'",
+                project_root.display()
+            );
+            println!(
+                "  warning: archive and managed upgrade are unavailable until the project is version-controlled"
+            );
+        }
+        Ok(_) => {}
+    }
+
     // Summary: what got installed/initialized, so the user doesn't have to
     // manually enable addons afterwards (or wonder what just happened).
     println!("\n{}", "─".repeat(52));
     println!("\nInstalled:\n");
     println!("  givn/config.yaml, givn/{{specs,changes,archive}}");
     println!("  core skills and commands");
-    println!("  commit attribution: .githooks/commit-msg (best effort)");
+    match crate::scm::select(&project_root) {
+        Ok(crate::scm::Backend::Fossil(_)) => {
+            println!(
+                "  commit attribution: givn commit path only (raw fossil commit is not stamped)"
+            )
+        }
+        _ => println!("  commit attribution: .githooks/commit-msg (best effort)"),
+    }
     if let Ok(targets) = crate::config::overlay::load_skills_targets(&project_root) {
         for target in targets {
             match target.as_str() {

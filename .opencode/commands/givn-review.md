@@ -71,7 +71,7 @@ Mechanical check, before trusting anything else:
 1. Grep every step definition file for empty/trivial bodies (`{}`, bare
    `pass`/`return`, whitespace-only, no assertion reference). Record files
    scanned and findings (file:line).
-2. For every checked `[x]` task, confirm a commit exists and `git show
+2. For every checked `[x]` task, confirm a revision exists and `git show
    --stat <hash>` touches production source, not just spec/stub. Record
    any checked task with no commit or a spec-only commit.
 3. For every component design.md said would be created, confirm it exists
@@ -89,7 +89,8 @@ Mechanical check, before trusting anything else:
    driving the browser (click/type/navigate via a real driver), record it
    as a downgraded scenario — the interaction was never real.
 7. Identify the EXACT file(s) `<verify.e2e_command>` actually invokes — read
-   the command, not just a filename containing "e2e". Then run `git status`
+   the command, not just a filename containing "e2e". Then run `git status` (Git)
+   or `fossil changes --differ` (Fossil)
    and search the tree (including untracked/uncommitted files) for any
    other `@e2e` step implementation of the same capability. If more than
    one exists, read all of them. Reviewing a weaker implementation while a

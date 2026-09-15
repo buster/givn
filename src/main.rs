@@ -2,12 +2,14 @@ mod cli;
 mod cobertura;
 mod config;
 mod error;
+mod fossil;
 mod gherkin;
 mod git;
 mod hooks;
 mod integrity_hook;
 mod overlap;
 mod proof;
+mod scm;
 mod skills;
 mod spec;
 mod state;
@@ -44,6 +46,20 @@ enum Commands {
         /// `--force`), same as the prompt it replaces.
         #[arg(long, value_delimiter = ',')]
         agents: Vec<String>,
+    },
+    /// Create one attributed revision through the selected SCM backend.
+    ///
+    /// Records the named paths (or every pending change) and commits them.
+    /// The managed attribution trailer is appended when the harness exports
+    /// attribution context (GIVN_ATTRIBUTION_ACTIVE); otherwise the message
+    /// is committed unchanged. Fails when the checkout has no pending
+    /// changes or no backend owns the project.
+    Commit {
+        /// Revision message.
+        #[arg(short, long)]
+        message: String,
+        /// Paths to record (defaults to every pending change).
+        paths: Vec<String>,
     },
     /// Create a new change scaffold.
     New {
@@ -317,6 +333,7 @@ fn dispatch(cli: Cli) -> anyhow::Result<()> {
             no_addons,
             agents,
         } => cli::init::run(force, no_addons, &agents),
+        Commands::Commit { message, paths } => cli::commit::run(&message, &paths),
         Commands::New { id, skip } => cli::new::run(&id, &skip),
         Commands::Instructions {
             artifact,

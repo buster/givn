@@ -1,0 +1,33 @@
+{
+  "schema": 1,
+  "change": "maintain-project",
+  "status": "proven",
+  "candidate_revision": "b8eace4eb7a6561c0ca9541f5b73a6ddeb5c749f",
+  "tested_revision": "b8eace4eb7a6561c0ca9541f5b73a6ddeb5c749f",
+  "scopes": {
+    "e2e": {
+      "status": "passed",
+      "total": 88,
+      "passed": 88,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 8.860861635
+    },
+    "regular": {
+      "status": "passed",
+      "total": 492,
+      "passed": 492,
+      "failed": 0,
+      "skipped": 0,
+      "seconds": 36.447173629
+    }
+  },
+  "coverage": {
+    "status": "passed",
+    "line_covered": 7196,
+    "line_valid": 9167,
+    "line_percent": 78
+  },
+  "started_at_unix": 1789419223,
+  "finished_at_unix": 1789419303
+}

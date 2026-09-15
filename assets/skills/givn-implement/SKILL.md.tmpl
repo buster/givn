@@ -154,3 +154,16 @@ E2E smoke tests:
 ```
 verify.e2e_command (configured in givn/config.yaml)
 ```
+
+## Committing
+
+Commit each finished scenario atomically:
+
+```sh
+givn commit -m "feat(<capability>): <scenario title>"
+```
+
+`givn commit` works on every backend and stamps the managed attribution
+trailer when the harness provides context. Raw commits are stamped by the
+Git `commit-msg` hook; a raw `fossil commit` carries no attribution, so use
+`givn commit` when attribution matters.

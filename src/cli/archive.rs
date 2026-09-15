@@ -20,8 +20,8 @@ enum Witness {
 /// Archive a completed change (ADR-070, arc42 ch.6.7).
 ///
 /// Forward-only publication:
-/// 1. Git worktree prerequisite and clean-state witness (evidence paths are
-///    exempt so a failed attempt stays resumable).
+/// 1. Selected-backend prerequisite and clean-state witness (evidence paths
+///    are exempt so a failed attempt stays resumable).
 /// 2. Fresh only: structural gates, merge, publish the candidate, and commit
 ///    it with a pending receipt.
 /// 3. Run each verification scope once against the committed candidate and
@@ -40,7 +40,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     let archive_target = project_root.join("givn/archive").join(change);
     let specs_dir = project_root.join("givn/specs");
 
-    let worktree = crate::git::Worktree::open(&project_root)?;
+    let backend = crate::scm::select(&project_root)?;
 
     let fresh = match crate::proof::read_status(&project_root, change) {
         ArchiveProof::Corrupt => bail!(
@@ -65,16 +65,12 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     };
 
     // Clean-state witness: evidence paths left by a failed attempt stay
-    // resumable; anything else is uncommitted work.
-    ensure_clean(
-        &worktree,
-        &project_root,
-        change,
-        &manifest,
-        Witness::Project,
-    )?;
-
+    // resumable; anything else is uncommitted work. A resume whose candidate
+    // publication was rejected is exempt: its merged state is intentionally
+    // dirty, and `publish_candidate` republishes it after validating the
+    // exact dirty set.
     if fresh {
+        ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
         println!(
             "[{}] Archiving change '{change}'...",
             crate::subprocess::local_timestamp()
@@ -233,36 +229,34 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         crate::proof::Receipt::write_pending(&archive_target, change, crate::proof::unix_now())?;
         std::fs::remove_dir_all(&change_dir)?;
 
-        let candidate_paths = vec![
-            "givn/specs".to_string(),
-            format!("givn/archive/{change}"),
-            format!("givn/changes/{change}"),
-        ];
-        worktree
-            .commit(
-                &format!("chore({change}): publish archive candidate"),
-                &candidate_paths,
-            )
-            .with_context(|| {
-                format!(
-                    "archive blocked: the candidate commit was rejected. The merged state is \
-                     staged but not committed; the archive is not proven. Resolve the Git error \
-                     and rerun `givn archive --change {change}`."
-                )
-            })?;
+        publish_candidate(&backend, change)?;
         println!(
             "[{}] ✓ Candidate committed",
             crate::subprocess::local_timestamp()
         );
     } else {
-        // Resume: the merge is already committed. Re-check the e2e
-        // precondition against the permanent corpus before re-running.
+        // Resume: when the pending receipt is not in the current revision, a
+        // backend hook rejected the candidate publication and the merged
+        // on-disk state must be published again; otherwise the merge is
+        // already committed.
+        let receipt_path = format!("givn/archive/{change}/verification.json");
+        if backend.revision_contains(&receipt_path)? {
+            ensure_clean(&backend, &project_root, change, &manifest, Witness::Project)?;
+        } else {
+            println!(
+                "[{}] Resuming rejected candidate '{change}' — publishing the merged state...",
+                crate::subprocess::local_timestamp()
+            );
+            publish_candidate(&backend, change)?;
+        }
+        // Re-check the e2e precondition against the permanent corpus before
+        // re-running.
         let merged_has_e2e = crate::gherkin::parse::has_e2e_scenarios(&specs_dir);
         ensure_e2e_configured(&manifest, merged_has_e2e, &specs_dir)?;
     }
 
     // 8. Verification scopes run once against the committed candidate.
-    let tested_commit = worktree.head()?;
+    let tested_revision = backend.revision()?;
     let started_at_unix = crate::proof::unix_now();
     let mut scopes = std::collections::BTreeMap::new();
 
@@ -335,19 +329,19 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
         }
     }
 
-    let head = worktree.head()?;
-    if head != tested_commit {
+    let head = backend.revision()?;
+    if head != tested_revision {
         bail!(
-            "archive blocked: the tested tree changed — HEAD is {head} but {tested_commit} was \
+            "archive blocked: the tested tree changed — the current revision is {head} but {tested_revision} was \
              verified. Repair the committed state and rerun `givn archive --change {change}`."
         );
     }
-    ensure_clean(&worktree, &project_root, change, &manifest, Witness::Tested)?;
+    ensure_clean(&backend, &project_root, change, &manifest, Witness::Tested)?;
 
     crate::proof::Receipt::write_proven(
         &archive_target,
         change,
-        &tested_commit,
+        &tested_revision,
         scopes,
         coverage,
         started_at_unix,
@@ -369,7 +363,7 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
             }
         }
     }
-    worktree.commit(&format!("chore({change}): prove archive"), &evidence_paths)?;
+    backend.publish(&evidence_paths, &format!("chore({change}): prove archive"))?;
 
     println!(
         "[{}] ✓ Archived '{change}' to {}",
@@ -386,15 +380,47 @@ pub fn run(change: &str, verbose: bool) -> Result<()> {
     Ok(())
 }
 
+/// Publish the merged candidate revision, validating the exact paths and
+/// reporting a rejection as an unproven, repairable state.
+fn publish_candidate(backend: &crate::scm::Backend, change: &str) -> Result<()> {
+    let candidate_paths = vec![
+        "givn/specs".to_string(),
+        format!("givn/archive/{change}"),
+        format!("givn/changes/{change}"),
+    ];
+    backend
+        .publish(
+            &candidate_paths,
+            &format!("chore({change}): publish archive candidate"),
+        )
+        .with_context(|| {
+            format!(
+                "archive blocked: the candidate revision was rejected. {}. The archive is \
+                 not proven. Resolve the error and rerun `givn archive --change {change}`.",
+                rejection_state(backend)
+            )
+        })?;
+    Ok(())
+}
+
+/// The backend-specific sentence describing a rejected candidate's
+/// intermediate state.
+fn rejection_state(backend: &crate::scm::Backend) -> &'static str {
+    match backend {
+        crate::scm::Backend::Git(_) => "The merged state is staged but not committed",
+        crate::scm::Backend::Fossil(_) => "The merged state stays in the checkout uncommitted",
+    }
+}
+
 /// Block unless the dirty worktree contains only evidence paths.
 fn ensure_clean(
-    worktree: &crate::git::Worktree,
+    backend: &crate::scm::Backend,
     project_root: &Path,
     change: &str,
     manifest: &crate::config::manifest::Manifest,
     witness: Witness,
 ) -> Result<()> {
-    let dirty = worktree.dirty_entries()?;
+    let dirty = backend.dirty_entries()?;
     let offending: Vec<String> = dirty
         .iter()
         .filter(|path| !crate::proof::is_evidence_path(project_root, change, manifest, path))

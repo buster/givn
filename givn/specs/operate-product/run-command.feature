@@ -292,17 +292,17 @@ Feature: Run command declaration
     Then the commands file is unchanged
 
   Scenario: The upgrade commit includes the backfilled run declaration
-    Given a git-managed project with givn initialised
-    And the commands file has no run declaration
-    When the user runs `givn upgrade`
-    Then the command exits 0
-    And the working tree is clean
-    And the latest commit contains "givn/commands.yaml"
+    Given  a git-managed project with givn initialised
+    And  the commands file has no run declaration
+    When  the user runs `givn upgrade`
+    Then  the command exits 0
+    And  the working tree is clean
+    And  the latest revision contains "givn/commands.yaml"
 
   Scenario: A repeated upgrade creates no additional commit
-    Given a git-managed project with givn initialised
-    And the commands file has no run declaration
-    When the user runs `givn upgrade`
-    And the user runs `givn upgrade` again
-    Then the command exits 0
-    And the latest commit is unchanged by the second upgrade
+    Given  a git-managed project with givn initialised
+    And  the commands file has no run declaration
+    When  the user runs `givn upgrade`
+    And  the user runs `givn upgrade` again
+    Then  the command exits 0
+    And  the latest revision is unchanged by the second upgrade

@@ -125,8 +125,10 @@ JSON output is a findings array; it is not test-runner output.
 ## 6.5 `givn status` and `givn graph`
 
 Both commands load the effective manifest and derive state from the change
-filesystem. `status` reports artifact paths, task checkbox progress, sign-off
-markers, optionality, next required artifact, and skipped artifacts. `graph`
+filesystem. `status` opens with the selected backend line (`SCM: git`,
+`SCM: fossil`, or `SCM: none` with the unavailable note) and reports artifact
+paths, task checkbox progress, sign-off markers, optionality, next required
+artifact, and skipped artifacts. `graph`
 adds dependency edges, archive-gate flags, and configured post-hook names.
 
 The state rules are:
@@ -154,7 +156,7 @@ For `givn check tasks`, the binary runs the non-configurable mandatory checks:
 
 For `givn check review`, it runs:
 
-1. The integrity hook for task hashes, promised files, enabled Arc42 or
+1. The integrity hook for task revision identifiers, promised files, enabled Arc42 or
    coverage checks, and — when `design.md` declares a visual interface — the
    visual verdict, the persona disposition, the final-state and per-state
    evidence, and the operator decision for any recorded deferral.
@@ -194,8 +196,9 @@ branch. With the embedded default manifest, standard post lists are empty.
 
 ## 6.7 `givn archive --change <id>`
 
-The archive is forward-only and runs in two committed stages against a Git
-worktree, using the state model below:
+The archive is forward-only and runs in two published stages against the
+selected backend (a Git worktree or a Fossil checkout), using the state model
+below:
 
 | Archive directory state | Meaning | Command behavior |
 |---|---|---|
@@ -208,36 +211,39 @@ worktree, using the state model below:
 sequenceDiagram
     participant D as Developer
     participant A as givn archive
-    participant G as Git
+    participant S as SCM backend (Git or Fossil)
     participant R as Runner
     D->>A: givn archive --change id
-    A->>G: worktree prerequisite + clean-state witness
+    A->>S: select backend + clean-state witness
     alt fresh archive
         A->>A: structural gates (artifacts, hooks, run declaration, README, merge preconditions)
         A->>A: merge use-case docs and deltas, move change to givn/archive/id
         A->>A: write pending verification.json
-        A->>G: commit candidate (givn/specs, givn/archive/id, givn/changes/id)
+        A->>S: publish candidate revision (givn/specs, givn/archive/id, givn/changes/id)
+    else resume, pending receipt not in the current revision (a rejected hook)
+        A->>S: publish the on-disk candidate revision again
     end
     A->>R: verify.command with GIVN_RESULT_FILE=results/regular.json
     R-->>A: fail-closed scope result
     A->>R: verify.e2e_command with results/e2e.json, or not_applicable
     A->>A: coverage gate when the addon is enabled
     A->>A: refresh managed README blocks
-    A->>G: HEAD == tested commit and dirty files subset of evidence paths?
-    A->>A: write proven receipt (candidate = tested commit, scope counts, coverage, timing)
-    A->>G: commit finalization (receipt, results, README, coverage output)
+    A->>S: revision == tested revision and dirty files subset of evidence paths?
+    A->>A: write proven receipt (candidate = tested revision, scope counts, coverage, timing)
+    A->>S: publish finalization revision (receipt, results, README, coverage output)
     A-->>D: proven archive
 ```
 
 Stages:
 
-1. Validate the change id, open the Git worktree (a non-Git project, or a
-   project nested below the repository root, is refused), and read the
-   archive provenance.
-2. Clean-state witness: modified tracked files and untracked non-ignored files
-   block the archive by name, except the declared evidence paths (the target
-   archive directory, `README.md`, and the configured coverage paths), which
-   keep a failed attempt resumable.
+1. Validate the change id, select the backend through the SCM seam (no usable
+   backend, or a project nested below the checkout root, is refused by name),
+   and read the archive provenance.
+2. Clean-state witness: files the selected backend would not publish block the
+   archive by name (Git untracked files and Fossil `EXTRA` entries included),
+   except the declared evidence paths (the target archive directory,
+   `README.md`, and the configured coverage paths), which keep a failed attempt
+   resumable.
 3. Fresh only — structural gates before any mutation: `apply.requires`
    completeness, configured archive hooks, the run-declaration gate, the
    README completeness gate, use-case and delta prevalidation, and the
@@ -245,22 +251,25 @@ Stages:
    `verify.e2e_command` blocks here, leaving the change active.
 4. Fresh only — merge and publish the candidate: parse and merge every delta,
    merge use-case narratives, copy the change directory to `givn/archive/<id>/`,
-   remove the active directory, write the pending receipt, and commit exactly
-   those paths as the candidate commit. A rejected commit is reported as an
-   unproven, staged tree for forward repair.
-5. Verification against the committed HEAD: the regular scope (`verify.command`)
-   and the E2E scope (`verify.e2e_command`, only when merged permanent specs
-   contain `@e2e`; otherwise `not_applicable`) each run once and must write a
-   reconciling runner result with scenarios, no failures, and no skips.
+   remove the active directory, write the pending receipt, and publish exactly
+   those paths as the candidate revision. A rejected publication is reported as
+   an unproven, repairable state; on resume the merged on-disk state is
+   published again instead of assuming the merge is committed.
+5. Verification against the published candidate revision: the regular scope
+   (`verify.command`) and the E2E scope (`verify.e2e_command`, only when merged
+   permanent specs contain `@e2e`; otherwise `not_applicable`) each run once
+   and must write a reconciling runner result with scenarios, no failures, and
+   no skips.
 6. Coverage when enabled: measure, validate, and publish once against the
    candidate, with no backup or rollback path.
-7. Finalization: refresh managed README blocks, verify that `HEAD` still
-   equals the tested commit and that every dirty path is a declared evidence
-   path, write the proven receipt, then commit the evidence-only finalization.
+7. Finalization: refresh managed README blocks, verify that the current
+   revision still equals the tested revision and that every dirty path is a
+   declared evidence path, write the proven receipt, then publish the
+   evidence-only finalization revision.
 
-Any failure after the candidate commit leaves the candidate unproven in place
-and prints the forward-repair instruction (`givn archive --change <id>` after
-repairing the committed state). Archive's checks are hard-coded in
+Any failure after the candidate publication leaves the candidate unproven in
+place and prints the forward-repair instruction (`givn archive --change <id>`
+after repairing the committed state). Archive's checks are hard-coded in
 `src/cli/archive.rs`; they are not configurable artifact `post` hooks, and
 archive does not call the explicit `check review` mandatory branch.
 
@@ -283,10 +292,14 @@ script to stdout.
 ## 6.13 `givn upgrade` and declared migration bundles
 
 The command selects a declared migration path from the active config marker to
-the installed package version. It first verifies that the project is inside a
-Git worktree and that
-`git status --porcelain --untracked-files=all` is empty. A failed preflight
-returns before changing any project file.
+the installed package version. It first selects the project's version-control
+backend through the SCM seam (section 6.16) and verifies that the checkout is
+clean on that backend; a dirty checkout or a missing backend executable is
+refused before any file changes. Managed staging records exactly the
+calculated allowlist on both backends — `git add [-f]` on Git, `fossil add
+[--force]` on Fossil — and the managed and plan revisions are committed
+through the same seam. A failed preflight returns before changing any project
+file.
 
 The command then refreshes `givn/config.yaml`, backfills the `run:` scaffold
 into `givn/commands.yaml` when the file exists and has no top-level `run:` key
@@ -362,3 +375,35 @@ resolves the plan without spawning: it emits one sh-eval-able line
 An ephemeral port is allocated by binding `127.0.0.1:0`, reading the port, and
 dropping the listener before spawn. Signal forwarding is unix-only; on other
 platforms a server product is refused at preflight with exit 1.
+
+## 6.16 SCM backend selection
+
+Every repository-state command starts by asking one selection seam which
+version-control backend owns the project root. Both marker kinds are probed
+before deciding, so an ambiguous root is never silently resolved:
+
+```mermaid
+flowchart TD
+  Cmd[repository-state command] --> GitProbe["git rev-parse --is-inside-work-tree"]
+  GitProbe -->|"git executable missing, .git present"| Missing[refusal: git not on PATH]
+  GitProbe -->|"true"| FossilProbe{".fslckout / _FOSSIL_ at root?"}
+  GitProbe -->|"false / no repo"| FossilProbe
+  FossilProbe -->|"yes and Git true"| Ambiguous[refusal: ambiguous markers]
+  FossilProbe -->|"yes and Git false"| FossilExec{"fossil executable on PATH?"}
+  FossilExec -->|no| FossilMissing[refusal: fossil not on PATH]
+  FossilExec -->|yes| Fossil[Fossil backend]
+  FossilProbe -->|"no and Git true"| Boundary{root == worktree top level?}
+  FossilProbe -->|"no and Git false"| None[refusal: no version-controlled project]
+  Boundary -->|yes| Git[Git backend]
+  Boundary -->|no| Nested[refusal: nested root]
+```
+
+Selection probes, and all refusals return, before any file is written. The
+fixed order is Git worktree, then Fossil checkout; both markers at the root are
+an ambiguity refusal, and an ancestor Fossil marker is ignored. A Git project
+whose root is nested inside a larger worktree is refused by name (TC-32). The
+Git backend exposes clean-state witness, revision identity, scoped staging, and
+scoped commit operations; the managed upgrade consumes them. The Fossil backend
+exposes the clean-state witness (including `EXTRA` entries), revision identity,
+witness-bounded publication, allowlist staging, and revision-content checks;
+the archive and the managed upgrade consume them (section 6.13).

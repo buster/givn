@@ -15,52 +15,33 @@ pub struct Worktree {
 }
 
 impl Worktree {
-    /// Open the worktree, refusing a non-repository and a project nested
-    /// inside a larger repository.
-    pub fn open(root: &Path) -> Result<Self> {
-        let inside = run_git(root, &["rev-parse", "--is-inside-work-tree"])?;
-        if !inside.status.success() {
-            bail!(
-                "archive blocked: Git is required to archive a change — '{}' is not a Git work tree",
-                root.display()
-            );
-        }
-
-        let top = run_git(root, &["rev-parse", "--show-toplevel"])?;
-        if !top.status.success() {
-            bail!(
-                "archive blocked: Git is required to archive a change — cannot resolve the repository root from '{}'",
-                root.display()
-            );
-        }
-        let top_level = String::from_utf8_lossy(&top.stdout).trim().to_string();
-        let top_path =
-            std::fs::canonicalize(&top_level).unwrap_or_else(|_| PathBuf::from(&top_level));
-        let root_canonical = std::fs::canonicalize(root).unwrap_or_else(|_| root.to_path_buf());
-        if top_path != root_canonical {
-            bail!(
-                "archive blocked: the project root must be the repository root — '{}' is nested inside '{}'",
-                root.display(),
-                top_path.display()
-            );
-        }
-
-        Ok(Self {
+    /// Construct the handle for a root already validated by the selection
+    /// seam (`scm::select`), without repeating the prerequisite checks.
+    pub fn at(root: &Path) -> Self {
+        Self {
             root: root.to_path_buf(),
-        })
+        }
     }
 
+    /// Open the worktree, refusing a non-repository and a project nested
+    /// inside a larger repository.
     /// The current `HEAD` commit id.
     pub fn head(&self) -> Result<String> {
         let output = run_git(&self.root, &["rev-parse", "HEAD"])?;
         if !output.status.success() {
             bail!(
-                "archive blocked: cannot resolve HEAD in '{}': {}",
+                "cannot resolve the current revision in '{}': {}",
                 self.root.display(),
                 String::from_utf8_lossy(&output.stderr).trim()
             );
         }
         Ok(String::from_utf8_lossy(&output.stdout).trim().to_string())
+    }
+
+    /// Whether `path` is present in the current `HEAD` revision.
+    pub fn revision_contains(&self, path: &str) -> Result<bool> {
+        let output = run_git(&self.root, &["cat-file", "-e", &format!("HEAD:{path}")])?;
+        Ok(output.status.success())
     }
 
     /// Modified tracked files plus untracked non-ignored files, as paths
@@ -69,11 +50,72 @@ impl Worktree {
         let output = run_git(&self.root, &["status", "--porcelain", "-z", "-uall"])?;
         if !output.status.success() {
             bail!(
-                "archive blocked: cannot read the Git worktree state: {}",
+                "cannot read the checkout state: {}",
                 String::from_utf8_lossy(&output.stderr).trim()
             );
         }
         Ok(parse_porcelain_z(&output.stdout))
+    }
+
+    /// Stage every pending change (tracked and untracked).
+    pub fn stage_all(&self) -> Result<()> {
+        let output = run_git(&self.root, &["add", "-A"])?;
+        if !output.status.success() {
+            bail!(
+                "cannot stage the pending changes: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
+    /// Stage exactly `paths` relative to the repository root. `force` is
+    /// reserved for the calculated managed allowlist; it is never widened to
+    /// a directory or the complete worktree.
+    pub fn stage_paths(&self, paths: &[PathBuf], force: bool) -> Result<()> {
+        if paths.is_empty() {
+            bail!("refusing to stage with no paths");
+        }
+        let mut args = vec!["add".to_string()];
+        if force {
+            args.push("-f".to_string());
+        }
+        args.push("--".to_string());
+        args.extend(paths.iter().map(|path| path.to_string_lossy().into_owned()));
+        let refs: Vec<&str> = args.iter().map(String::as_str).collect();
+        let output = run_git(&self.root, &refs)?;
+        if !output.status.success() {
+            bail!(
+                "failed to stage paths: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
+    }
+
+    /// Whether the index holds staged changes.
+    pub fn has_staged_changes(&self) -> Result<bool> {
+        let output = run_git(&self.root, &["diff", "--cached", "--quiet", "--exit-code"])?;
+        match output.status.code() {
+            Some(0) => Ok(false),
+            Some(1) => Ok(true),
+            _ => bail!(
+                "could not inspect staged changes: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            ),
+        }
+    }
+
+    /// Commit the staged changes.
+    pub fn commit_staged(&self, message: &str) -> Result<()> {
+        let output = run_git(&self.root, &["commit", "-m", message])?;
+        if !output.status.success() {
+            bail!(
+                "the commit was rejected: {}",
+                String::from_utf8_lossy(&output.stderr).trim()
+            );
+        }
+        Ok(())
     }
 
     /// Stage exactly `paths` and create one commit. Returns the commit id.
@@ -90,7 +132,7 @@ impl Worktree {
             if ignore.status.success() {
                 continue;
             }
-            stageable.push(path.clone());
+            stageable.push(PathBuf::from(path));
         }
         if stageable.is_empty() {
             bail!(
@@ -98,24 +140,11 @@ impl Worktree {
                 paths.join(", ")
             );
         }
-        let mut add = vec!["add".to_string(), "--".to_string()];
-        add.extend(stageable);
-        let add_refs: Vec<&str> = add.iter().map(String::as_str).collect();
-        let add_output = run_git(&self.root, &add_refs)?;
-        if !add_output.status.success() {
-            bail!(
-                "archive blocked: failed to stage the archive paths: {}",
-                String::from_utf8_lossy(&add_output.stderr).trim()
-            );
-        }
-
-        let commit_output = run_git(&self.root, &["commit", "-m", message])?;
-        if !commit_output.status.success() {
-            bail!(
-                "archive blocked: the commit was rejected: {}",
-                String::from_utf8_lossy(&commit_output.stderr).trim()
-            );
-        }
+        self.stage_paths(&stageable, false).map_err(|error| {
+            anyhow::anyhow!("archive blocked: failed to stage the archive paths: {error}")
+        })?;
+        self.commit_staged(message)
+            .map_err(|error| anyhow::anyhow!("archive blocked: {error}"))?;
         self.head()
     }
 }
@@ -203,7 +232,7 @@ mod tests {
         std::fs::write(root.path().join("coverage/report.xml"), "x").unwrap();
         std::fs::write(root.path().join("README.md"), "updated\n").unwrap();
 
-        let worktree = Worktree::open(root.path()).unwrap();
+        let worktree = Worktree::at(root.path());
         worktree
             .commit(
                 "chore: evidence",

@@ -255,21 +255,29 @@ fn working_tree_is_clean(world: &mut GivnWorld) {
     );
 }
 
-#[then(regex = r#"^the latest commit contains "(.*)"$"#)]
-fn latest_commit_contains(world: &mut GivnWorld, path: String) {
+#[then(regex = r#"^the latest revision contains "(.*)"$"#)]
+fn latest_revision_contains(world: &mut GivnWorld, path: String) {
     let env = world
         .env
         .as_ref()
         .expect("a project root is required first");
-    let names = git_fixture_stdout(env, &["show", "--name-only", "--format=", "HEAD"]);
+    let names = match env.backend() {
+        common::BackendKind::Git => {
+            git_fixture_stdout(env, &["show", "--name-only", "--format=", "HEAD"])
+        }
+        common::BackendKind::Fossil => {
+            let out = common::fossil(env, &["diff", "--brief", "--checkin", "current"]);
+            String::from_utf8_lossy(&out.stdout).into_owned()
+        }
+    };
     assert!(
-        names.lines().any(|line| line.trim() == path),
-        "latest commit must touch {path}; it touches:\n{names}"
+        names.lines().any(|line| line.contains(&path)),
+        "the latest revision must touch {path}; it touches:\n{names}"
     );
 }
 
-#[then("the latest commit is unchanged by the second upgrade")]
-fn latest_commit_unchanged(world: &mut GivnWorld) {
+#[then("the latest revision is unchanged by the second upgrade")]
+fn latest_revision_unchanged(world: &mut GivnWorld) {
     let env = world
         .env
         .as_ref()

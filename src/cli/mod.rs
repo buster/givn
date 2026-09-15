@@ -5,6 +5,7 @@ pub mod attribution;
 
 pub mod archive;
 pub mod check;
+pub mod commit;
 pub mod coverage_gate;
 pub mod eject;
 pub mod git;

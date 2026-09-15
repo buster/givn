@@ -24,6 +24,12 @@ Static musl linking and the exact release matrix are deployment work still to be
 proven; this documentation does not claim that all target artifacts currently
 build or ship.
 
+Operating a project additionally requires the executable of its selected SCM
+backend on `PATH`: `git` for a Git worktree, `fossil` for a Fossil checkout. A
+project whose marker is present but whose executable is missing is refused by
+name before any mutation. The repository acceptance suite needs both `git` and
+`fossil` installed.
+
 ## 7.4 Project Footprint
 
 `givn init` creates:
@@ -35,7 +41,7 @@ givn/specs/
 givn/changes/
 givn/archive/
 .githooks/commit-msg                 # checked-in shared commit hook
-.opencode/plugins/givn-attribution.js # when opencode is selected
+.opencode/plugins/givn-attribution.js # when opencode is selected (Git and Fossil)
 .claude/hooks/givn-attribution.sh    # when claude is selected
 .claude/settings.json                # merged Givn hook entry when claude is selected
 ```
@@ -69,8 +75,8 @@ plan. For a release without a selected route, it creates one managed commit
 when files changed and no migration plan. Project overrides, durable Arc42 chapters, and user-owned
 `AGENTS.md` content outside givn blocks remain under project control.
 
-The managed route requires Git and a clean worktree. Non-Git and dirty projects
-receive no partial update; the public migration guide describes the
-evidence-preserving recovery path. A migration catalog route may span multiple
-versions, but all of its bundle phases are delivered in one ordered aggregate
-maintenance change.
+The managed route requires a version-controlled project and a clean checkout.
+Projects without a usable backend and dirty projects receive no partial update;
+the public migration guide describes the evidence-preserving recovery path. A
+migration catalog route may span multiple versions, but all of its bundle
+phases are delivered in one ordered aggregate maintenance change.
