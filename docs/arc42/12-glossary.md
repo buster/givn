@@ -13,7 +13,6 @@
 | **Reasoning mode** | The harness-reported effort or thinking variant active when a commit is created. |
 | **Attribution trailer** | The managed `Co-Authored-By` message trailer containing the commit-attribution context; on Git it is a commit message, on Fossil a check-in comment. |
 | **Managed co-author attribution** | The Givn-owned `Co-Authored-By` trailer formatted as `<model>/<reasoning>@<harness> with Givn <version>`; ordinary human co-author trailers remain user-owned. |
-| **Attribution status** | The message trailer value `complete` or `partial`, indicating whether the active attribution context supplied every expected field. |
 | **Committer identity** | The Git name and email stored as the commit creator; an agent integration may provide the name while Git supplies the configured email fallback. Fossil records its own user and has no equivalent override. |
 | **Commit-attribution hook** | The checked-in Git `commit-msg` hook that appends best-effort attribution trailers without blocking a commit. Anti-term: post-artifact hook. |
 | **Hook activation launcher** | The machine-local Git hook that preserves an existing `commit-msg` hook and delegates to the checked-in commit-attribution hook. |
